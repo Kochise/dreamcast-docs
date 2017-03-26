@@ -1,0 +1,1373 @@
+Some notes on the Tiling Accelerator:
+
+update: filled in some stuff about blending modes and clarified and corrected
+some stuff.
+
+2001-08-18 update: filled in some stuff on sprites and modifier volumes
+
+Note: There are a few different incarnations of the PowerVR-chipset and they
+are not completely compatible with each other. Unfortunately previous versions
+of this document contained information only relevant to the older CLX1 chipset
+whereas the Dreamcast uses a chipset similar to the newer CLX2. Information has
+now been updated and where differences exist they are noted with the tags CLX1
+and CLX2. [This note was mistakenly excluded from the previous version.]
+
+
+The interface used to communicate with the Tiling Accelerator is mapped to
+memory at address 0x10000000. The normal mode of operation is not to access
+this area directly but to use either the two Store Queues of the SH-4, or DMA
+(currently not described in this document) to send information to it.
+A transfer to the TA can be up to 64 bytes, which is the maximum size of the
+two store queues. The full contents of a Store Queue is always sent, so it is
+only possible to send either 32 bytes or 64 bytes to the Tiling Accelerator.
+The data of such a transfer is hereafter referred to as a list, which is the
+smallest piece of information the Tiling Accelerator can process.
+
+A list consists of a command followed by parameters whose format depend on the
+command. The general format for a list is as follows:
+
+The first word is the command and consists of:
+	     +-----------------+	
+	bit: | 31-29 |  28-0   |
+	name:|  cmd  | options |
+	     +-----------------+
+	cmd: 0 - END_OF_LIST
+	     1 - USER_CLIP
+	     2 - ???
+	     3 - ???
+	     4 - POLYGON / MODIFIER_VOLUME
+	     5 - SPRITE
+	     6 - ???
+	     7 - VERTEX
+
+	options: The format of the options changes depending on the command.
+
+
+This first word is followed by either 7 or 15 words of parameters, to make a
+list of 32 or 64 bytes. Since the format changes for these, I will list the
+commands, the options and the parameters together with a short description of
+what they do. Reserved or unused options and parameters should be set to 0.
+
+--------------------------------------------------------------------------------
+
+Command 0 - END_OF_LIST:
+
+Options:
+~~~~~~~~
+	+----------------------+
+	|         28-0         | 
+	| reserved? (set to 0) |
+	+----------------------+
+		
+Parameters:
+~~~~~~~~~~~
+1-7:	Not used
+
+Description:
+~~~~~~~~~~~~
+Sent after all data of a specific listtype has been sent to the Tiling
+Accelerator and will generate an IRQ when registration for that listtype
+has been completed. After terminating a listtype with this list it is not
+possible to send more instances of that listtype in the same registration
+process.
+
+
+
+--------------------------------------------------------------------------------
+
+Command	1 - USER_CLIP
+
+Options:
+~~~~~~~~
+	+----------------------+
+	|         28-0         | 
+	| reserved? (set to 0) |
+	+----------------------+
+Parameters:
+~~~~~~~~~~~
+1-3:	Not used
+
+4:	+---------------------+
+	|        31-0         |
+	|        Xmin         |
+	+---------------------+
+5:	+---------------------+
+	|        31-0         |
+	|        Ymin         |
+	+---------------------+
+6:	+---------------------+
+	|        31-0         |
+	|        Xmax         |
+	+---------------------+
+7:	+---------------------+
+	|        31-0         |
+	|        Ymax         |
+	+---------------------+
+
+Description:
+~~~~~~~~~~~~
+Sets the User Clipping for the Tile Buffer
+
+
+
+--------------------------------------------------------------------------------
+
+Command 4 - POLYGON / MODIFIER_VOLUME
+Command 5 - SPRITE
+
+Options:
+~~~~~~~~
+	+----------------------------------------------------------+
+	|   28-27   |   26-24  |    23   |   22-20   |    19-18    | 
+	| reserved? | listtype | unknown | reserved? | striplength |
+	+----------------------------------------------------------+
+	+--------------------------------------------------------------+
+	|   17-16  |    15-8   |     7    |       6       |    5-4     |
+	| clipmode | reserved? | modifier | modifier mode | colourtype |
+	+--------------------------------------------------------------+
+	+------------------------------------------+
+	|    3    |     2    |    1    |     0     |
+	| texture | specular | shading | UV format |
+	+------------------------------------------+
+
+	listtype (26-24):
+	~~~~~~~~~~~~~~~~~
+	0: opaque polygon
+	1: opaque modifier		(only valid for MODIFIER)
+	2: transparent polygon
+	3: transparent modifier		(only valid for MODIFIER)
+	4: punchthru polygon
+
+	striplength (19-18):
+	~~~~~~~~~~~~~~~~~~~~
+	0: striplength 1
+	1: striplength 2
+	2: striplength 4
+	3: striplength 6
+
+	clipmode (17-16):
+	~~~~~~~~~~~~~~~~~
+	0: disable user clip
+	1: reserved
+	2: user clip inside
+	3: user clip outside
+
+	modifier (7):
+	~~~~~~~~~~~~~
+	0: polygon is not affected by modifier volume
+	1: polygon is affected by modifier volume	(only valid for POLYGON)
+
+	modifier mode (6):
+	~~~~~~~~~~~~~~~~~~
+	0: cheap shadow modifier
+	1: normal modifier
+
+	colour type (5-4):
+	~~~~~~~~~~~~~~~~~
+	0: 32bit ARGB packed colour
+	1: 32bit * 4 floating point colour	(not valid for SPRITES)
+	2: intensity				(not valid for SPRITES)
+	3: intensity from previous face		(not valid for SPRITES)
+
+	texture (3):
+	~~~~~~~~~~~~
+	0: disable texture
+	1: enable texture
+
+	specular (2):
+	~~~~~~~~~~~~~
+	0: disable specular highlight
+	1: enable specular highlight	(not valid for SPRITES)
+
+	shading (1):
+	~~~~~~~~~~~~
+	0: flat shading
+	1: gouraud shading		(not valid for SPRITES)
+
+	UV format (0):
+	~~~~~~~~~~~~~~
+	0: 32 bit float			(not valid for SPRITES)
+	1: 16 bit float
+
+if polygon (listtype 0, 2, 4) is specified (for a POLYGON or SPRITE list):
+1:	+-------------------------------------------------------+
+	|   31-29   |    28-27    |   26   |    25   |    24    |
+	| depthmode | cullingmode | zwrite | texture | specular |
+	+-------------------------------------------------------+
+	+-----------------------------------------------------------+
+	|    23   |    22    |     21    |      20      |    19-0   |
+	| shading | UVFormat | reserved? | D calc exact | reserved? |
+	+-----------------------------------------------------------+
+	depthmode (31-29):
+	~~~~~~~~~~~~~~~~~~
+	0: never
+	1: less
+	2: equal
+	3: lessequal
+	4: greater
+	5: notequal
+	6: greaterequal
+	7: always
+
+	cullingmode (28-27):
+	~~~~~~~~~~~~~~~~~~~~
+	0: disable culling
+	1: cull small
+	2: cull counterclockwise
+	3: cull clockwise
+
+	zwrite (26):
+	~~~~~~~~~~~~
+	0: enable zwrite
+	1: disable zwrite
+
+	texture (25):
+	~~~~~~~~~~~~~
+	0: disable texture
+	1: enable texture
+
+	specular (24):	(this doesnt seem correct; redundant + non-working)
+	~~~~~~~~~~~~~~
+	0: disable specular highlight
+	1: enable specular highlight
+
+	shading (23):	(this doesnt seem correct; redundant + non-working)
+	~~~~~~~~~~~~~
+	0: flat shading
+	1: gouraud shading
+
+	UVFormat (22):	(this doesnt seem correct; redundant + non-working)
+	~~~~~~~~~~~~~~
+	0: 32-bit float
+	1: 16-bit float
+
+	D calc exact (20):
+	~~~~~~~~~~~~~~~~~~
+	0: approximate mipmap D parameter
+	1: calculate mipmap D parameter exact
+
+
+2:	+-----------------------------------------------------------------+
+	| 31-29    | 28-26    | 25      | 24      | 23-22 |  21   |   20  |
+	| srcblend | dstblend | srcmode | dstmode | fog   | clamp | alpha |
+	+-----------------------------------------------------------------+
+	+-------------------------------------------------------------------+
+	| 19         | 18-17   | 16-15    | 14-12  | 11-8   | 7-6           |
+	| text.alpha | UV flip | UV clamp | filter | mipmap | text. shading |
+	+-------------------------------------------------------------------+
+	+---------------+
+	| 5-3   | 2-0   |
+	| Usize | Vsize |
+	+---------------+
+
+	(blending info is not completely accurate)
+
+	srcblend (31-29):
+	~~~~~~~~~~~~~~~~~
+	0: zero (0, 0, 0, 0)
+	1: one (1, 1, 1, 1)
+	2: dst colour (ad, Rd, Gd, Bd)
+	3: inverse dst colour (1 - ad, 1 - Rd, 1 - Gd, 1 - Bd)
+	4: src alpha (as, as, as, as)
+	5: inverse src alpha (1 - as, 1 - as, 1 - as, 1 - as)
+	6: dst alpha (ad, ad, ad, ad)
+	7: inverse dst alpha (1 - ad, 1 - ad, 1 - ad, 1 - ad)
+
+	dstblend (28-26):
+	~~~~~~~~~~~~~~~~~
+	0: zero (0, 0, 0, 0)
+	1: one (1, 1, 1, 1)
+	2: src colour (as, Rs, Gs, Bs)
+	3: inverse src colour (1 - as, 1 - Rs, 1 - Gs, 1 - Bs)
+	4: src alpha (as, as, as, as)
+	5: inverse src alpha (1 - as, 1 - as, 1 - as, 1 - as)
+	6: dst alpha (ad, ad, ad, ad)
+	7: inverse dst alpha (1 - ad, 1 - ad, 1 - ad, 1 - ad)
+
+	srcmode (25):
+	~~~~~~~~~~~~~
+	0: disable src blending
+	1: enable src blending
+
+	dstmode (24):
+	~~~~~~~~~~~~~
+	0: disable dst blending
+	1: enable dst blending
+
+	fog (23-22):
+	~~~~~~~~~~~~
+	0: fog table
+	1: fog vertex
+	2: fog disabled
+	3: fog table2
+
+	clamp (21):
+	~~~~~~~~~~~
+	0: disable colour clamping
+	1: enable colour clamp
+
+	alpha (20):
+	~~~~~~~~~~~
+	0: disable alpha bit
+	1: enable alpha bit
+
+	texture alpha (19):
+	~~~~~~~~~~~~~~~~~~~
+	0: enable texture transparency
+	1: disable texture transparency
+
+	UV flip (18-17):
+	~~~~~~~~~~~~~~~~
+	0: disable UV flipping
+	1: flip V when repeating texture
+	2: flip U when repeating texture
+	3: flip U and V when repeating texture
+
+	UV clamp (16-15):
+	~~~~~~~~~~~~~~~~~
+	0: disable UV clamping
+	1: clamp V
+	2: clamp U
+	3: clamp U and V
+
+	filter (14-12):
+	~~~~~~~~~~~~~~~
+	0: point sample
+	1: bi-linear
+	2: ???
+	3: ???
+	4: tri-linear, one pass
+	5: ???
+	6: tri-linear, two passes
+	7: ???
+
+	mipmap (11-8):
+	~~~~~~~~~~~~~~
+	0: reserved?
+	1: D=0.25
+	2: D=0.50
+	3: D=0.75
+	4: D=1.00 (normal mode)
+	5: D=1.25
+	6: D=1.50
+	7: D=1.75
+	8: D=2.00
+	9: D=2.25
+	10: D=2.50
+	11: D=2.75
+	12: D=3.00
+	13: D=3.25
+	14: D=3.50
+	15: D=3.75
+
+	texture shading (7-6):
+	~~~~~~~~~~~~~~~~~~~~~~
+	0: colour = texture-RGB + offset-RGB
+	   alpha = texture-alpha
+
+	1: colour = shading-RGB * texture-RGB + offset-RGB
+	   alpha = texture-alpha
+
+	2: colour = (texture-RGB * texture-alpha)
+	                   + (shading-RGB * (1 - texture-alpha)) + offset-RGB
+	   alpha = shading-alpha
+
+	3: colour = (texture-RGB * shading-RGB) + offset-RGB
+	   alpha = shading-alpha * texture-alpha
+
+	Usize (5-3):
+	~~~~~~~~~~~~
+	0: 8 pixels
+	1: 16 pixels
+	2: 32 pixels
+	3: 64 pixels
+	4: 128 pixels
+	5: 256 pixels
+	6: 512 pixels
+	7: 1024 pixels
+
+	Vsize (2-0):
+	~~~~~~~~~~~~
+	0: 8 pixels
+	1: 16 pixels
+	2: 32 pixels
+	3: 64 pixels
+	4: 128 pixels
+	5: 256 pixels
+	6: 512 pixels
+	7: 1024 pixels
+
+
+if texture is specified:
+3:	+--------------------------------------------------------+
+	|   31   | 30 |    29-27    |   26-21  |       20-0      |
+	| mipmap | VQ | pixelformat | special* | texture surface |
+	+--------------------------------------------------------+
+
+	mipmap (31):
+	~~~~~~~~~~~~
+	0: disable mipmap
+	1: enable mipmap
+
+	VQ (30):
+	~~~~~~~~
+	0: disable compression
+	1: enable VQ compression for texture
+
+	pixelformat for texture (29-27):
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	0: ARGB15555
+	1: RGB565
+	2: ARGB4444
+	3: YUV422
+	4: BUMP
+	5: 4BPP_PALETTE
+	6: 8BPP_PALETTE
+
+	texture surface (20-0):
+	~~~~~~~~~~~~~~~~~~~~~~~
+	address in framebuffer for texture surface.
+	lowest 3 bits of address is automatically read as 0 and added.
+
+
+
+	special* (26-21):
+	~~~~~~~~~~~~~~~~
+	in palette mode these bits specify palette bank to be used.
+	in other cases they mean the following:
+
+	+-------------------------------------------+
+	|   26-25   |    24    |   23-22   |   21   |
+	| reserved? | twiddled | reserved? | stride |
+	+-------------------------------------------+
+
+	twiddled (24):
+	~~~~~~~~~~~~~~
+	0: twiddled texture
+	1: non-twiddled texture
+
+	stride (21):
+	~~~~~~~~~~~~
+	0: no stride
+	1: stride
+
+
+
+
+if colour type intensity (2) is specified (also used for colours of SPRITES?):
+4: 	+-------------------------+
+	|      31-0               |
+	| BaseColourAlpha (float) |
+	+-------------------------+
+5:	+-----------------------+
+	|     31-0              |
+	| BaseColourRed (float) |
+	+-----------------------+
+6:	+-------------------------+
+	|      31-0               |
+	| BaseColourGreen (float) |
+	+-------------------------+
+7:	+------------------------+
+	|      31-0              |
+	| BaseColourBlue (float) |
+	+------------------------+
+
+if colour type intensity (2) is specified together with specular hightlight:
+
+4-7:	Not used
+
+8:	+-------------------------+
+	|      31-0               |
+	| BaseColourAlpha (float) |
+	+-------------------------+
+9:	+-----------------------+
+	|     31-0              |
+	| BaseColourRed (float) |
+	+-----------------------+
+10:	+-------------------------+
+	|      31-0               |
+	| BaseColourGreen (float) |
+	+-------------------------+
+11:	+------------------------+
+	|      31-0              |
+	| BaseColourBlue (float) |
+	+------------------------+
+12:	+---------------------------+
+	|       31-0                |
+	| OffsetColourAlpha (float) |
+	+---------------------------+
+13:	+-------------------------+
+	|      31-0               |
+	| OffsetColourRed (float) |
+	+-------------------------+
+14:	+---------------------------+
+	|       31-0                |
+	| OffsetColourGreen (float) |
+	+---------------------------+
+15:	+--------------------------+
+	|       31-0               |
+	| OffsetColourBlue (float) |
+	+--------------------------+
+
+
+
+if modifier volume (listtype 1, 3) is specified:
+1:	+-----------------------------------+
+	|         31-29       | 28-0        |
+	| ModifierInstruction | reservered? |
+	+-----------------------------------+
+
+	ModifierInstruction (31-29):
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	0: other polygon
+	1: first polygon in inclusion volume
+	2: last polygon in exclusion volume
+
+
+
+2-7:	Not used
+
+Description:
+~~~~~~~~~~~~
+This list does not draw any primitives but sets up the environent for primitives
+following. One or more VERTEX lists are expected to follow and it is an error to
+send any other list until the VERTEX lists have been sent and terminated (see
+description of VERTEX below for elaboration).
+
+A POLYGON is a standard polygon in 3d-space. A MODIFIER_VOLUME is a special
+type of polygon that is never directly drawn but interacts with other
+polygons. Depending on whether the polygons are inside or outside the
+MODIFIER_VOLUME, different parameters for texturing, shading etc. will be
+used. This can be an effective way of simulating shadows etc. A SPRITE is a
+polygon in 2d-space, meaning it will not have to perform any kind of
+perspective-correcting texturing or shading calculations (hence it will
+generally be faster to render).
+
+POLYGONS use any of the below VERTICES (except type 15, 16, and 17) depending
+on the environment specified. SPRITES use types 15, 16 depending on whether
+texturing is enabled whereas MODIFIER_VOLUMES always use type 17.
+
+--------------------------------------------------------------------------------
+
+Command 7 - VERTEX
+
+Options:
+~~~~~~~~
+	+----------------------------+
+	| 28  |          27-0        |
+	| eos | reserved? (set to 0) |
+	+----------------------------+
+
+	eos (28):
+	~~~~~~~~~
+	0: normal vertex
+	1: end-of-strip (indicates last vertex has been sent)
+
+Parameters:
+~~~~~~~~~~~
+Parameters depend on the environment set by the POLYGON, MODIFIER_VOLUME, or
+SPRITE list that must precede this. The eos-bit should be set for the last
+vertex sent in a triangle-strip. In cases of SPRITE-lists this must always be
+set because they contain all the vertices inside one VERTEX-list (this is
+possibly also true for MODIFIER_VOLUMES). The different types depend on what
+is specified in the previous environment. Using the wrong type may cause
+unpredictable behaviour.
+
+
+type 0: non-textured, packed-colour:
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	CLX1:				CLX2:
+	+-------------+			Not used
+	|    31-0     |
+	| Base Colour |
+	+-------------+
+
+5:	Not used
+
+6:	CLX1:				CLX2:
+	Not used			+-------------+
+					|    31-0     |
+					| Base Colour |
+					+-------------+
+
+7:	Not used
+
+
+
+
+
+type 1: non-textured, floating colour:
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	+---------------------------+
+	|       31-0                |
+	| Base Colour Alpha (float) |
+	+---------------------------+
+5:	+-------------------------+
+	|      31-0               |
+	| Base Colour Red (float) |
+	+-------------------------+
+6:	+---------------------------+
+	|       31-0                |
+	| Base Colour Green (float) |
+	+---------------------------+
+7:	+--------------------------+
+	|       31-0               |
+	| Base Colour Blue (float) |
+	+--------------------------+
+
+
+
+
+
+type 2: non-textured, intensity:
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	CLX1:				CLX2:
+	+------------------------+	Not used
+	|      31-0              |
+	| Base Intensity (float) |
+	+------------------------+
+
+5:	Not used
+
+6:	CLX1:				CLX2:
+	Not used			+------------------------+
+					|      31-0              |
+					| Base Intensity (float) |
+					+------------------------+
+
+7:	Not used
+
+
+
+
+
+type 3: textured, packed-colour:
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	+------------+
+	| 31-0       |
+	|  U (float) |
+	+------------+
+5:	+------------+
+	| 31-0       |
+	|  V (float) |
+	+------------+
+6:	+-------------+
+	|    31-0     |
+	| Base Colour |
+	+-------------+
+7:	+---------------+
+	|     31-0      |
+	| Offset Colour |
+	+---------------+
+
+
+
+
+type 4: textured, packed-colour, 16bit UV:
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	+-----------------------+
+	| 31-16     | 15-0      |
+	| U (float) | V (float) |
+	+-----------------------+
+
+5:	Not used
+
+6:	+-------------+
+	|    31-0     |
+	| Base Colour |
+	+-------------+
+7:	+---------------+
+	|     31-0      |
+	| Offset Colour |
+	+---------------+
+
+
+
+
+
+type 5: textured, floating colour:
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	+------------+
+	| 31-0       |
+	|  U (float) |
+	+------------+
+5:	+------------+
+	| 31-0       |
+	|  V (float) |
+	+------------+
+
+6-7:	Not used
+
+8:	+---------------------------+
+	|        31-0               |
+	| Base Colour Alpha (float) |
+	+---------------------------+
+9:	+-------------------------+
+	|       31-0              |
+	| Base Colour Red (float) |
+	+-------------------------+
+10:	+---------------------------+
+	|        31-0               |
+	| Base Colour Green (float) |
+	+---------------------------+
+11:	+--------------------------+
+	|       31-0               |
+	| Base Colour Blue (float) |
+	+--------------------------+
+12:	+-----------------------------+
+	|         31-0                |
+	| Offset Colour Alpha (float) |
+	+-----------------------------+
+13:	+---------------------------+
+	|        31-0               |
+	| Offset Colour Red (float) |
+	+---------------------------+
+14:	+-----------------------------+
+	|         31-0                |
+	| Offset Colour Green (float) |
+	+-----------------------------+
+15:	+----------------------------+
+	|        31-0                |
+	| Offset Colour Blue (float) |
+	+----------------------------+
+
+
+
+
+
+type 6: textured, floating colour, 16-bit UV
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	+-----------------------+
+	| 31-16     | 15-0      |
+	| U (float) | V (float) |
+	+-----------------------+
+
+5-7:	Not used
+
+8:	+---------------------------+
+	|        31-0               |
+	| Base Colour Alpha (float) |
+	+---------------------------+
+9:	+-------------------------+
+	|       31-0              |
+	| Base Colour Red (float) |
+	+-------------------------+
+10:	+---------------------------+
+	|        31-0               |
+	| Base Colour Green (float) |
+	+---------------------------+
+11:	+--------------------------+
+	|       31-0               |
+	| Base Colour Blue (float) |
+	+--------------------------+
+12:	+-----------------------------+
+	|         31-0                |
+	| Offset Colour Alpha (float) |
+	+-----------------------------+
+13:	+---------------------------+
+	|        31-0               |
+	| Offset Colour Red (float) |
+	+---------------------------+
+14:	+-----------------------------+
+	|         31-0                |
+	| Offset Colour Green (float) |
+	+-----------------------------+
+15:	+----------------------------+
+	|        31-0                |
+	| Offset Colour Blue (float) |
+	+----------------------------+
+
+
+
+
+
+type 7: textured, intensity
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	+------------+
+	| 31-0       |
+	|  U (float) |
+	+------------+
+5:	+------------+
+	| 31-0       |
+	|  V (float) |
+	+------------+
+6:	+------------------------+
+	|      31-0              |
+	| Base Intensity (float) |
+	+------------------------+
+7:	+--------------------------+
+	|       31-0               |
+	| Offset Intensity (float) |
+	+--------------------------+
+
+
+
+
+
+type 8: textured, intensity, 16-bit UV
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	+------------------------+
+	| 31-16     | 15-0       |
+	| U (float) | V (float)  |
+	+------------------------+
+
+5:	Not used
+
+6:	+------------------------+
+	|      31-0              |
+	| Base Intensity (float) |
+	+------------------------+
+7:	+--------------------------+
+	|       31-0               |
+	| Offset Intensity (float) |
+	+--------------------------+
+
+
+
+
+
+
+type 9: non-textured, packed-color, affected by modifier volume
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	+---------------+
+	|      31-0     |
+	| Base Colour 0 |
+	+---------------+
+5:	+---------------+
+	|      31-0     |
+	| Base Colour 1 |
+	+---------------+
+
+6-7:	Not used
+
+
+
+
+
+type 10: non-textured, intensity, affected by modifier volume
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	+---------------------+
+	|    31-0             |
+	| Intensity 0 (float) |
+	+---------------------+
+5:	+---------------------+
+	|    31-0             |
+	| Intensity 1 (float) |
+	+---------------------+
+
+6-7:	Not used
+
+
+
+
+
+
+type 11: textured, packed-colour, affected by modifier volume:
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	+-------------+
+	| 31-0        |
+	|  U0 (float) |
+	+-------------+
+5:	+-------------+
+	| 31-0        |
+	|  V0 (float) |
+	+-------------+
+6:	+---------------+
+	|      31-0     |
+	| Base Colour 0 |
+	+---------------+
+7:	+-----------------+
+	|       31-0      |
+	| Offset Colour 0 |
+	+-----------------+
+8:	+-------------+
+	| 31-0        |
+	|  U1 (float) |
+	+-------------+
+9:	+-------------+
+	| 31-0        |
+	|  V1 (float) |
+	+-------------+
+10:	+---------------+
+	|      31-0     |
+	| Base Colour 1 |
+	+---------------+
+11:	+-----------------+
+	|       31-0      |
+	| Offset Colour 1 |
+	+-----------------+
+
+12-15:	Not used
+
+
+
+
+
+
+type 12: textured, packed-colour, 16-bit UV, affected by modifier volume
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	+--------------+
+	| 31-16 | 15-0 |
+	|   U0  |  V0  |
+	+--------------+
+
+5:	Not used
+
+6:	+---------------+
+	|      31-0     |
+	| Base Colour 0 |
+	+---------------+
+7:	+-----------------+
+	|       31-0      |
+	| Offset Colour 0 |
+	+-----------------+
+8:	+--------------+
+	| 31-16 | 15-0 |
+	|   U1  |  V1  |
+	+--------------+
+
+9:	Not used
+
+10:	+---------------+
+	|      31-0     |
+	| Base Colour 1 |
+	+---------------+
+11:	+-----------------+
+	|       31-0      |
+	| Offset Colour 1 |
+	+-----------------+
+
+12-15:	Not used
+
+
+
+
+
+type 13: textured, intensity, affected by modifier volume
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	+-------------+
+	| 31-0        |
+	|  U0 (float) |
+	+-------------+
+5:	+-------------+
+	| 31-0        |
+	|  V0 (float) |
+	+-------------+
+6:	+--------------------------+
+	|       31-0               |
+	| Base Intensity 0 (float) |
+	+--------------------------+
+7:	+----------------------------+
+	|        31-0                |
+	| Offset Intensity 0 (float) |
+	+----------------------------+
+8:	+-------------+
+	| 31-0        |
+	|  U1 (float) |
+	+-------------+
+9:	+-------------+
+	| 31-0        |
+	|  V1 (float) |
+	+-------------+
+10:	+--------------------------+
+	|       31-0               |
+	| Base Intensity 1 (float) |
+	+--------------------------+
+11:	+----------------------------+
+	|        31-0                |
+	| Offset Intensity 1 (float) |
+	+----------------------------+
+
+12-15:	Not used
+
+
+
+
+
+type 14: textured, intensity, 16-bit UV, affected by modifier volume
+
+1:	+------------+
+	| 31-0       |
+	|  X (float) |
+	+------------+
+2:	+------------+
+	| 31-0       |
+	|  Y (float) |
+	+------------+
+3:	+------------+
+	| 31-0       |
+	|  Z (float) |
+	+------------+
+4:	+--------------+
+	| 31-16 | 15-0 |
+	|  U0   |  V0  |
+	+--------------+
+
+5:	Not used
+
+6:	+--------------------------+
+	|       31-0               |
+	| Base Intensity 0 (float) |
+	+--------------------------+
+7:	+----------------------------+
+	|        31-0                |
+	| Offset Intensity 0 (float) |
+	+----------------------------+
+8:	+--------------+
+	| 31-16 | 15-0 |
+	|  U1   |  V1  |
+	+--------------+
+
+9:	Not used
+
+10:	+--------------------------+
+	|       31-0               |
+	| Base Intensity 1 (float) |
+	+--------------------------+
+11:	+----------------------------+
+	|        31-0                |
+	| Offset Intensity 1 (float) |
+	+----------------------------+
+
+12-15:	Not used
+
+
+
+
+
+type 15: non-textured sprite
+
+1:	+-------------+
+	| 31-0        |
+	|  AX (float) |
+	+-------------+
+2:	+-------------+
+	| 31-0        |
+	|  AY (float) |
+	+-------------+
+3:	+-------------+
+	| 31-0        |
+	|  AZ (float) |
+	+-------------+
+4:	+-------------+
+	| 31-0        |
+	|  BX (float) |
+	+-------------+
+5:	+-------------+
+	| 31-0        |
+	|  BY (float) |
+	+-------------+
+6:	+-------------+
+	| 31-0        |
+	|  BZ (float) |
+	+-------------+
+7:	+-------------+
+	| 31-0        |
+	|  CX (float) |
+	+-------------+
+8:	+-------------+
+	| 31-0        |
+	|  CY (float) |
+	+-------------+
+9:	+-------------+
+	| 31-0        |
+	|  CZ (float) |
+	+-------------+
+10:	+-------------+
+	| 31-0        |
+	|  DX (float) |
+	+-------------+
+11:	+-------------+
+	| 31-0        |
+	|  DY (float) |
+	+-------------+
+
+12-15:	Not used
+
+
+
+
+type 16: textured sprite
+
+1:	+-------------+
+	| 31-0        |
+	|  AX (float) |
+	+-------------+
+2:	+-------------+
+	| 31-0        |
+	|  AY (float) |
+	+-------------+
+3:	+-------------+
+	| 31-0        |
+	|  AZ (float) |
+	+-------------+
+4:	+-------------+
+	| 31-0        |
+	|  BX (float) |
+	+-------------+
+5:	+-------------+
+	| 31-0        |
+	|  BY (float) |
+	+-------------+
+6:	+-------------+
+	| 31-0        |
+	|  BZ (float) |
+	+-------------+
+7:	+-------------+
+	| 31-0        |
+	|  CX (float) |
+	+-------------+
+8:	+-------------+
+	| 31-0        |
+	|  CY (float) |
+	+-------------+
+9:	+-------------+
+	| 31-0        |
+	|  CZ (float) |
+	+-------------+
+10:	+-------------+
+	| 31-0        |
+	|  DX (float) |
+	+-------------+
+11:	+-------------+
+	| 31-0        |
+	|  DY (float) |
+	+-------------+
+
+12:	Not used
+
+13:	+--------------+
+	| 31-16 | 15-0 |
+	|  AU   |  AV  |
+	+--------------+
+14:	+--------------+
+	| 31-16 | 15-0 |
+	|  BU   |  BV  |
+	+--------------+
+15:	+--------------+
+	| 31-16 | 15-0 |
+	|  CU   |  CV  |
+	+--------------+
+
+
+
+
+
+
+type 17: shadow volume
+
+1:	+-------------+
+	| 31-0        |
+	|  AX (float) |
+	+-------------+
+2:	+-------------+
+	| 31-0        |
+	|  AY (float) |
+	+-------------+
+3:	+-------------+
+	| 31-0        |
+	|  AZ (float) |
+	+-------------+
+4:	+-------------+
+	| 31-0        |
+	|  BX (float) |
+	+-------------+
+5:	+-------------+
+	| 31-0        |
+	|  BY (float) |
+	+-------------+
+6:	+-------------+
+	| 31-0        |
+	|  BZ (float) |
+	+-------------+
+7:	+-------------+
+	| 31-0        |
+	|  CX (float) |
+	+-------------+
+8:	+-------------+
+	| 31-0        |
+	|  CY (float) |
+	+-------------+
+9:	+-------------+
+	| 31-0        |
+	|  CZ (float) |
+	+-------------+
+
+10-15:	Not used
+
+
+Description:
+~~~~~~~~~~~~
+Most of these should be self-explanatory, but a few maybe need to be clarified.
+If a polygon is affected by a MODIFIER_VOLUME it should use type 9-14 which
+have two instances of every parameter. This means that the parts of the polygon
+(if any) that are outside the MODIFIER_VOLUME will use the first set of
+parameters, while those parts inside will use the second set.

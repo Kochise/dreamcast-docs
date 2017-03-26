@@ -1,0 +1,452 @@
+Reference guide to the TA registers
+
+This is a continuation of my previous text 'ta-into.txt' which described how
+to construct TA lists. This document provides information about the
+TA registers.
+
+Thanks must go to Dan Potter and Sergio Moreira for very helpful contributions.
+
+
+reach me at: jlo@ludd.luth.se
+
+
+
+Introduction
+
+The TA works by receiving lists containing vertex information. Unlike most
+architectures, the PVR core uses a technique known as deferred rendering
+whereby no polygons are rendered until the whole scene has been setup. The
+advantage is that the PVR will only render those polygons that are actually
+visible thus creating a very high fillrate. The downside is that this requires
+more memory in form of buffers. Since the Dreamcast has 8 MB of VRAM this is
+not that big of a problem. Besides the framebuffer, there are three buffers of
+interest;
+
+ * The Vertex Buffer contains the information sent to the TA through the lists.
+
+ * The Object Pointer Buffer contains pointers into the Vertex Buffer for
+   objects that may appear inside a tile.
+
+ * The Tile Buffer contains pointers to the Object Pointer Buffer for every
+   primitive type (opaque polygon, translucent modifier etc)
+
+
+
+The PVR can work in two different modes; vertex registration mode and vertex
+rendering mode. If double-buffering is employed, vertex registration can take
+place while rendering is underway, creating an efficient implementation of the
+deferred rendering paradigm.
+
+
+
+Vertex Buffer
+
+The Vertex Buffer is the most simple one. It grows upwards in memory as more
+information is sent to the TA. After setting it up, the PVR handles the
+management of this buffer by itself so there is little do for the user.
+
+
+
+Object Pointer Buffer
+
+This buffer possesses the most complex structure of the three. Fortunately most
+of it is managed by the PVR so the user doesn't have to worry too much about
+its internal structure.
+
+There are two different parts to this buffer. The first part consists of 5
+matrices of Object Pointer Segments, one for each primitive type, arranged
+in a special order, to be referenced from the Tile Buffer (described later).
+This part of the buffer is fixed at a known size. The other part is variable
+in size as new segments are allocated and linked from the first part.
+
+The Object Pointer Segments are separate linked lists with the following
+appearance;
+
+	Segment 0 for Tile 0, 0;
+	Object Pointer 0
+	Object Pointer 1
+	...
+	Object Pointer n
+	Pointer to Segment 1 for Tile 0, 0
+
+
+The arrangement of the segments in memory is;
+
+	Segment 0, Tile 0, 0, opaque polygon
+	Segment 0, Tile 1, 0, opaque polygon
+	Segment 0, Tile 2, 0, opaque polygon
+	...
+	Segment 0, Tile x, 0, opaque polygon
+	Segment 0, Tile 0, 1, opaque polygon
+	Segment 0, Tile 1, 1, opaque polygon
+	Segment 0, Tile 2, 1, opaque polygon
+	...
+	Segment 0, Tile x, y, opaque polygon
+
+
+The above is the Opaque Polygon Object Pointer Buffer Matrix. It is followed by
+matrices for the rest of the primitives. The order (important) should be:
+
+	* Opaque Polygon
+	* Opaque Modifier
+	* Translucent Polygons
+	* Translucent Modifiers
+	* Punch-through Polygons
+
+The sizes of the segments are controlled by register a05f8140;
+
+a05f8140: (object pointer buffer control)
++---------------------------------------------------------------------
+| 31-21 | 20      | 19-18 | 17-16         | 15-14 | 13-12    | 11-10 |
+| n/a   | unknown | n/a   | punch-through | n/a   | transmod | n/a   |
++---------------------------------------------------------------------
+-------------------------------------------------+
+| 9-8       | 7-6 | 5-4       | 3-2 | 1-0        |
+| transpoly | n/a | opaquemod | n/a | opaquepoly |
+-------------------------------------------------+
+
+	unknown:
+		like name indicates :(
+		seems to always be set though
+
+
+	punch-through:
+		0: size_0: Punch-through Polygons disabled
+		1: size_8: 7 Object Pointers + 1 Segment Pointer
+		2: size_16: 15 Object Pointers + 1 Segment Pointer
+		3: size_32: 31 Object Pointers + 1 Segment Pointer
+
+	transmod:
+		0: size_0: Translucent Modifiers disabled
+		1: size_8: 7 Object Pointers + 1 Segment Pointer
+		2: size_16: 15 Object Pointers + 1 Segment Pointer
+		3: size_32: 31 Object Pointers + 1 Segment Pointer
+
+	transpoly:
+		0: size_0: Translucent Polygons disabled
+		1: size_8: 7 Object Pointers + 1 Segment Pointer
+		2: size_16: 15 Object Pointers + 1 Segment Pointer
+		3: size_32: 31 Object Pointers + 1 Segment Pointer
+
+	opaquemod:
+		0: size_0: Opaque Modifiers disabled
+		1: size_16: 7 Object Pointers + 1 Segment Pointer
+		2: size_32: 15 Object Pointers + 1 Segment Pointer
+		3: size_64: 31 Object Pointers + 1 Segment Pointer
+
+	opaquepoly:
+		0: size_0: opaque polygons disabled
+		1: size_16: 7 Object Pointers + 1 Segment Pointer
+		2: size_32: 15 Object Pointers + 1 Segment Pointer
+		3: size_64: 31 Object Pointers + 1 Segment Pointer
+
+
+The Object Pointers are references to objects that appear inside the tile
+associated with the segment. If there are more objects in one tile than fits
+into one segment, the last word in the segment points to a new segment.
+Notable here is that these new segments are allocated BEFORE the first
+Object Pointer Buffer Matrix, so the linked lists actually grow downwards in
+memory.
+
+
+
+Tile Buffer
+
+The PVR does not render the entire framebuffer when it is performing a
+rendering sequence. Instead the framebuffer is divided into 32x32-pixel tiles
+which the PVR processes seperately, reducing overhead by a large amount.
+The Tile Buffer is divided into segments corresponding to the tiles the
+framebuffer is split into. The size of the Tile Buffer is dependant on the
+resolution of the framebuffer, ie. a 640x480 screen will make the Tile Buffer
+contain 20x15 segments. The aspect ratio of the Tile Buffer should be written
+to register a05f813c according to:
+
+a05f813c: (tile buffer control)
++----------------+
+| 31-16  | 15-0  |
+| height | width |
++----------------+
+
+	height:
+		height of tile buffer in segments - 1
+
+	width:
+		width of tile buffer in segments - 1
+
+
+
+The segments contain a control word followed by 5 pointers (one for each
+primitive type). The control word has the following appearance:
+
++----------------------------------------------------+
+| 31  | 30  | 29   | 28   | 27-15 | 13-8 | 7-2 | 1-0 |
+| eob | ??? | sort | init | ???   |  y   | x   | n/a |
++----------------------------------------------------+
+
+	eob: (set on last segment in Tile Buffer)
+		0: normal
+		1: end of Tile Buffer
+
+	sort:
+		0: autosorting translucent polygons off (the must be submitted
+		   in sorted order to the TA)
+		1: autosorting translucent polygons on
+
+	init: (set on first segment in Tile Buffer)
+		0: normal
+		1: initialize Tile Buffer
+
+	y:
+		y position of the tile corresponding to this segment
+
+	x:
+		x position of the tile corresponding to this segment
+
+
+
+
+The five words following are pointers into the Object Pointer Buffer. Bit 31
+of the pointers is set when there is no primitive of that type. The order of
+the pointers is as follows;
+
+	* opaque polygon
+	* opaque modifier
+	* translucent polygon
+	* translucent modifier
+	* punch-through polygon
+
+Unlike the Vertex Buffer, the Tile Buffer must be setup manually before using
+the TA. This is done by allocating a chunk of memory in the VRAM and filling
+out the required Tile Buffer structure. If primitives of a specific type are
+to be used, the Tile Segment must contain a pointer to the corresponding Object
+Pointer Buffer Segment. Since the sizes of the Object Pointer Buffer Matrices
+are known it is possible to calculate the location of this according to:
+
+	pointer = start_of_matrix + (width_of_tile_buffer * size_N * tile_Y)
+			+ (size_N * tile_X)			(1)
+
+	where start_of_matrix is the address of the primitive's matrix and
+	size_N is the size of the segments in bytes.
+
+
+The creation of the Tile Buffer need normally only be done once, at the very
+beginning before any vertex registration or rendering is begun.
+
+
+
+Sending vertex data to the Tile Accelerator
+
+To be able to receive vertex data, the TA must have a Vertex Buffer in which
+to put the received data aswell as an Object Pointer Buffer.
+
+The register a05f8140 should be written with the size information for all the
+different primitive types.
+
+The register a05f8124 should be written with the address of the first
+Object Pointer Buffer Matrix. Since this buffer has the potential to grow 
+arbitrarily large as more vertex data are received, register a05f812c contains
+the last address that can be safely written to. Important to remember that the
+Object Pointer Buffer actually grows downwards in memory so a05f812c should be
+set to:
+
+	a05f812c = address_of_first_OPB_matrix - OPB_size		(2)
+
+To set up the Object Pointer Buffer, the start address should also be written
+to register a05f8164 to initialize it. The current position in the
+Object Pointer Buffer can be read from register a05f8134.
+
+The Vertex Buffer start address should be written to register a05f8128 and the
+end address to register a05f8130, because otherwise it could grow too large
+and overwrite other data. a05f8138 contains the current position in
+the vertex buffer.
+
+To actually perform the initialization, 0x80000000 should be written to
+register a05f8144 and then read (to clear the bit).
+
+After this procedure has been performed vertex registration is possible.
+
+
+
+Rendering vertex data to the framebuffer
+
+To render data, vertex registration must have been initiated and finished. It
+is then a simple matter of instructing the PVR where to get the data and kick
+it off. Register a05f8020 should be written with the Vertex Buffer address and
+register a05f802c with the address of the Tile Buffer. Register a05f8014 is
+then written with all bits set to start the rendering procedure.
+
+
+
+Summary of registers:
+
+a05f8014: (start render)
++--------+
+| 31-0   |
+| render |
++--------+
+
+	render:
+		write 1 to all bits to start rendering procedure
+
+
+a05f8020: (vertex buffer start, rendering mode)
++--------------+
+| 31-24 | 23-0 |
+| n/a   | addr |
++--------------+
+
+	addr:
+		location of vertex buffer in VRAM (32-byte aligned)
+
+a05f802c: (tile buffer start, rendering mode)
++--------------+
+| 31-24 | 23-0 |
+| n/a   | addr |
++--------------+
+
+	addr:
+		location of tile buffer in VRAM (32-byte aligned)
+
+
+a05f8124: (object pointer buffer start, registration mode)
++--------------+
+| 31-24 | 23-0 |
+| ???   | addr |
++--------------+
+
+	addr:
+		start of object pointer buffer in VRAM (32-byte aligned)
+
+a05f8128: (vertex buffer start, registration mode)
++--------------+
+| 31-24 | 23-0 |
+| n/a   | addr |
++--------------+
+
+	addr:
+		start of vertex buffer in VRAM (32-byte aligned)
+
+a05f812c: (object pointer buffer end, registration mode)
++--------------+
+| 31-24 | 23-0 |
+| n/a   | addr |
++--------------+
+
+	addr:
+		end of object pointer buffer in VRAM (128-byte aligned)
+
+a05f8130: (vertex buffer end, registration mode)
++--------------+
+| 31-24 | 23-0 |
+| n/a   | addr |
++--------------+
+
+	addr:
+		end of vertex buffer in VRAM (32-byte aligned)
+
+a05f8134: (object pointer buffer position, registration mode)
++--------------+
+| 31-23 | 22-0 |
+| n/a   | addr |
++--------------+
+
+	addr:
+		current object pointer buffer position according to;
+		(POSITION / 4) - size_N
+		where size_N is determined through register a05f8140
+
+a05f8138: (vertex buffer position, registration mode)
++--------------+
+| 31-23 | 23-0 |
+| n/a   | addr |
++--------------+
+
+	addr:
+		current vertex buffer position
+
+a05f813c: (tile buffer control)
++----------------+
+| 31-16  | 15-0  |
+| height | width |
++----------------+
+
+	height:
+		height of tile buffer in segments - 1
+
+	width:
+		width of tile buffer in segments - 1
+
+
+a05f8140: (object pointer buffer control)
++---------------------------------------------------------------------
+| 31-21 | 20      | 19-18 | 17-16         | 15-14 | 13-12    | 11-10 |
+| n/a   | unknown | n/a   | punch-through | n/a   | transmod | n/a   |
++---------------------------------------------------------------------
+-------------------------------------------------+
+| 9-8       | 7-6 | 5-4       | 3-2 | 1-0        |
+| transpoly | n/a | opaquemod | n/a | opaquepoly |
+-------------------------------------------------+
+
+	unknown:
+		like name indicates :(
+		seems to always be set though
+
+
+	punch-through:
+		0: size_0 -  Punch-through Polygons disabled
+		1: size_8 -  7 Object Pointers + 1 Segment Pointer
+		2: size_16 - 15 Object Pointers + 1 Segment Pointer
+		3: size_32 - 31 Object Pointers + 1 Segment Pointer
+
+	transmod:
+		0: size_0 -  Translucent Modifiers disabled
+		1: size_8 -  7 Object Pointers + 1 Segment Pointer
+		2: size_16 - 15 Object Pointers + 1 Segment Pointer
+		3: size_32 - 31 Object Pointers + 1 Segment Pointer
+
+	transpoly:
+		0: size_0 - Translucent Polygons disabled
+		1: size_8 - 7 Object Pointers + 1 Segment Pointer
+		2: size_16 - 15 Object Pointers + 1 Segment Pointer
+		3: size_32 - 31 Object Pointers + 1 Segment Pointer
+
+	opaquemod:
+		0: size_0 - Opaque Modifiers disabled
+		1: size_8 - 7 Object Pointers + 1 Segment Pointer
+		2: size_16 - 15 Object Pointers + 1 Segment Pointer
+		3: size_32 - 31 Object Pointers + 1 Segment Pointer
+
+	opaquepoly:
+		0: size_0 - Opaque Polygons disabled
+		1: size_8 -  7 Object Pointers + 1 Segment Pointer
+		2: size_16 - 15 Object Pointers + 1 Segment Pointer
+		3: size_32 - 31 Object Pointers + 1 Segment Pointer
+
+a05f8144: (vertex registration init)
++-------------+
+| 31   | 30-0 |
+| init | n/a  |
++-------------+
+
+	init:
+		0: normal
+		1: initialize vertex registration
+
+a05f8164: (object pointer buffer init)
++--------------+
+| 31-24 | 23-0 |
+| n/a   | addr |
++--------------+
+
+	addr:
+		address of object pointer buffer in VRAM (32-byte aligned)
+
+
+
+Some Caveats
+
+Nothing in this document is official; nothing should be expected to be correct.
+I have tried hard to ensure that everything accurately reflects the reality
+of the PVR, but there are no guarantees that this is the case.
+
+If you find any inaccuracies, please contact me at: jlo@ludd.luth.se

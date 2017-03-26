@@ -1,0 +1,2747 @@
+<!DOCTYPE html PUBLIC "-//IETF//DTD HTML//EN">
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+
+<title>Dreamcast Programming - VMS CPU</title>
+
+<script id="RTCEarlyScript" type="text/javascript"> window.oldSetTimeout=window.setTimeout;window.setTimeout=function(func,delay){return window.oldSetTimeout(function(){try{if(!document.documentElement.getAttribute('stopTimers')){if(typeof func=='string') {var nfunc = new Function(func); nfunc();} else func();}}catch(ex){}},delay);};  window.oldSetInterval=window.setInterval;window.setInterval=function(func,delay){return window.oldSetInterval(function(){try{if(!document.documentElement.getAttribute('stopTimers')){if(typeof func=='string') {var nfunc = new Function(func); nfunc();} else func();}}catch(ex){}},delay);}; </script></head>
+
+<body alink="red" bgcolor="black" link="#6699cc" text="white" vlink="#6677cc">
+<top>
+
+<img alt="" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/dc_mark.gif" align="right">
+
+<p><img alt="VMS CPU" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/asw4kq4vlpnfxtobd3366p2z0ge0klcsaptfl5pfdzam5z4peszmp3ikkzgz.gif" style="border: none;" valign="top" height="43" width="142"></p>
+
+
+
+<p>The CPU in the VMS is a customized Sanyo microcontroller which is code
+    compatible with the LC86000 series.</p>
+
+
+
+<p>For assembler and other development tools, check out the
+    <a href="http://mc.pp.se/dc/sw.html">software</a> page.</p>
+
+
+<br clear="right">
+
+
+
+<p><img alt="Memory model" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hwhvnjki1vaw5xeayq6ziu4zt3iviz1k7v9vg1a813hvla7lxbcasujq0tps.gif" style="border: none;" valign="top" height="35" width="187"></p>
+
+
+
+<p>The CPU uses two disjoint address spaces, ROM space which is used
+      for fetching instructions and by the LDC instruction, and RAM
+      space which is used for loading and storing operands.  ROM space 
+      is 65536 bytes large, and on the VMS in game mode, it is the
+      same as the first half of the <a href="http://mc.pp.se/dc/vms/flashmem.html">flash
+      memory</a>.  RAM space is 512 bytes large, and is divided in
+      two halves. The first half (address 0 though FF) is general
+      purpose RAM, used for variable storage.  The
+      second half (address 100 through 1FF) is used for special
+      function registers (SFR area).  The general purpose RAM area
+      can be mapped to one of two banks of 256 bytes each, using the
+      PSW register.  The first of these banks is used by the VMS
+      firmware, and contains <a href="http://mc.pp.se/dc/vms/fw.html#sysvar">system variables</a>.  The CPU stack is also
+      located in this bank.  The other bank is exclusively for
+      application use, and selected by the firmware before game mode
+      is entered.</p>
+
+
+
+<p>A complete <a href="http://mc.pp.se/dc/vms/sfr.html">list of the special function registers</a>
+  is available.</p>
+
+
+<a name="addressing">
+<p><img alt="Addressing modes" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hwhvnjki1vaw5xeayq6ziu4zt3iviz15lsi43qnakk4yfikm08v6z3zu7444.gif" style="border: none;" valign="top" height="35" width="231"></p>
+</a>
+
+
+<p>Many instructions operate implicitly on some fixed SFR(s) (typically
+    ACC).  Additional operands in either ROM or RAM space can be added 
+    using one or more of the following addressing modes:
+
+    
+</p><dl>
+
+      
+<dt>Immediate (i8)</dt>
+
+      
+<dd>An 8-bit integer constant immediately following the opcode in 
+	ROM space.</dd>
+
+      
+<dt>Direct (d9)</dt>
+
+      
+<dd>Any location in RAM space (either RAM or an SFR) specified with 
+	an absolute 9-bit address.</dd>
+
+      
+<dt>Indirect (@Ri)</dt>
+
+      
+<dd>A RAM or SFR location specified with the contents of a RAM
+	cell (see below).</dd>
+
+      
+<dt>Bit specifier (b3)</dt>
+
+      
+<dd>A 3-bit integer constant indicating which bit (0-7) to be
+	affected by the instruction.  0 is the least significant bit,
+        and 7 is the most significant bit.</dd>
+
+      
+<dt>Absolute (a12/a16)</dt>
+
+      
+<dd>A program location in ROM space specified with an absolute
+	12- or 16-bit address.  In the case of a 12-bit address, the
+	four most significant bits of PC will remain unaffected.  That
+	mode is thus restricted to jumping within the same 4K
+	segment.  In both modes, the address is given in big endian
+	byte order.</dd>
+
+      
+<dt>Relative (r8/r16)</dt>
+
+      
+<dd>A program location in ROM space specified with a relative
+	offset from the address of the following instruction.  An 8-bit 
+	offset is treated as signed, whereas a 16-bit offset is
+	treated as unsigned.  16-bit offsets are given in <b>little</b> endian
+	byte order.</dd>
+
+    
+</dl>
+<p></p>
+
+
+
+<p>The indirect addressing mode requires some more detailed explanation.
+    As said earlier, it uses the contents of a memory cell to
+    determine the RAM/SFR address of the operand.  There are four
+    possible indirection modes, @R0 through @R3, which (normally) uses 
+    the RAM locations 0 through 3 respecitively to determine the
+    target address.  Since these locations only contain 8 bits of data 
+    each, they don't span the entire RAM space.  Instead, the most
+    signigicant bit of the address is taken from the most significant
+    bit of the indirection mode number.  This means that @R0 and @R1
+    will always access the RAM half and that @R2 and @R3 will always
+    access the SFR half.</p>
+
+
+
+<p>To make things even more interresting, the memory cells used for
+    fetching the target address aren't locked to address 0-3, but can
+    be selected from four possible ranges.  This selection is done
+    with two bits in the PSW register, IRBK0 and IRBK1 (bit 3 and 4).</p>
+
+
+
+<p>Summary:
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">IRBK1</th><th bgcolor="#404000">IRBK0</th><th bgcolor="#404000">Mode</th><th bgcolor="#404000">Address read from</th><th bgcolor="#404000">Operand in</th>
+</tr>
+
+<tr align="center">
+
+<td rowspan="4" bgcolor="#404000">0</td>
+
+<td rowspan="4" bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">@R0</td>
+
+<td bgcolor="#404000">000</td>
+
+<td bgcolor="#404000">RAM (000-0FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td bgcolor="#404000">@R1</td>
+
+<td bgcolor="#404000">001</td>
+
+<td bgcolor="#404000">RAM (000-0FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td bgcolor="#404000">@R2</td>
+
+<td bgcolor="#404000">002</td>
+
+<td bgcolor="#404000">SFR (100-1FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td bgcolor="#404000">@R3</td>
+
+<td bgcolor="#404000">003</td>
+
+<td bgcolor="#404000">SFR (100-1FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td rowspan="4" bgcolor="#404000">0</td>
+
+<td rowspan="4" bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">@R0</td>
+
+<td bgcolor="#404000">004</td>
+
+<td bgcolor="#404000">RAM (000-0FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td bgcolor="#404000">@R1</td>
+
+<td bgcolor="#404000">005</td>
+
+<td bgcolor="#404000">RAM (000-0FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td bgcolor="#404000">@R2</td>
+
+<td bgcolor="#404000">006</td>
+
+<td bgcolor="#404000">SFR (100-1FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td bgcolor="#404000">@R3</td>
+
+<td bgcolor="#404000">007</td>
+
+<td bgcolor="#404000">SFR (100-1FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td rowspan="4" bgcolor="#404000">1</td>
+
+<td rowspan="4" bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">@R0</td>
+
+<td bgcolor="#404000">008</td>
+
+<td bgcolor="#404000">RAM (000-0FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td bgcolor="#404000">@R1</td>
+
+<td bgcolor="#404000">009</td>
+
+<td bgcolor="#404000">RAM (000-0FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td bgcolor="#404000">@R2</td>
+
+<td bgcolor="#404000">00A</td>
+
+<td bgcolor="#404000">SFR (100-1FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td bgcolor="#404000">@R3</td>
+
+<td bgcolor="#404000">00B</td>
+
+<td bgcolor="#404000">SFR (100-1FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td rowspan="4" bgcolor="#404000">1</td>
+
+<td rowspan="4" bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">@R0</td>
+
+<td bgcolor="#404000">00C</td>
+
+<td bgcolor="#404000">RAM (000-0FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td bgcolor="#404000">@R1</td>
+
+<td bgcolor="#404000">00D</td>
+
+<td bgcolor="#404000">RAM (000-0FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td bgcolor="#404000">@R2</td>
+
+<td bgcolor="#404000">00E</td>
+
+<td bgcolor="#404000">SFR (100-1FF)</td>
+
+</tr>
+
+<tr align="center">
+
+<td bgcolor="#404000">@R3</td>
+
+<td bgcolor="#404000">00F</td>
+
+<td bgcolor="#404000">SFR (100-1FF)</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+</p>
+
+
+
+<p><img alt="Interrupt vectors" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hwhvnjki1vaw5xeayq6ziu4zt3iviz1jh6uyfq229bkw43v1yfwa4rsfqvyo.gif" style="border: none;" valign="top" height="35" width="203"></p>
+
+
+
+<p>When an interrupt occurs, the CPU branches to a predetermined address as shown by the
+following table.  Execution can be resumed at the previous location using the <tt>RETI</tt>
+instruction.
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Address</th><th bgcolor="#404000">Cause</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">00</td>
+
+<td bgcolor="#404000">Reset</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">03</td>
+
+<td bgcolor="#404000">INT0 interrupt (external)</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">0B</td>
+
+<td bgcolor="#404000">INT1 interrupt (external)</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">13</td>
+
+<td bgcolor="#404000">INT2 interrupt (external) or T0L overflow</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">1B</td>
+
+<td bgcolor="#404000">INT3 interrupt (external) or Base Timer overflow</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">23</td>
+
+<td bgcolor="#404000">T0H overflow</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">2B</td>
+
+<td bgcolor="#404000">T1H or T1L overflow</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">33</td>
+
+<td bgcolor="#404000">SIO0 interrupt</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">3B</td>
+
+<td bgcolor="#404000">SIO1 interrupt</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">43</td>
+
+<td bgcolor="#404000">RFB interrupt</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">4B</td>
+
+<td bgcolor="#404000">P3 interrupt</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+</p>
+
+
+
+<p><img alt="Instruction set" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hwhvnjki1vaw5xeayq6ziu4zt3iviz15dyej97a27cxbn72gtxzqrmyo4x7f.gif" style="border: none;" valign="top" height="35" width="174"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th></th><th bgcolor="#404000">0</th><th bgcolor="#404000">1</th><th bgcolor="#404000">2, 3</th><th bgcolor="#404000">4-7</th><th bgcolor="#404000">8-F</th>
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">0</th>
+<td bgcolor="#404000">NOP</td>
+
+<td bgcolor="#404000">BR r8</td>
+
+<td bgcolor="#404000">LD d9</td>
+
+<td bgcolor="#404000">LD @Ri</td>
+
+<td rowspan="2" bgcolor="#404000">CALL a12</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">1</th>
+<td bgcolor="#404000">CALLR r16</td>
+
+<td bgcolor="#404000">BRF r16</td>
+
+<td bgcolor="#404000">ST d9</td>
+
+<td bgcolor="#404000">ST @Ri</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">2</th>
+<td bgcolor="#404000">CALLF a16</td>
+
+<td bgcolor="#404000">JMPF a16</td>
+
+<td bgcolor="#404000">MOV #i8,d9</td>
+
+<td bgcolor="#404000">MOV #i8,@Ri</td>
+
+<td rowspan="2" bgcolor="#404000">JMP a12</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">3</th>
+<td bgcolor="#404000">MUL</td>
+
+<td bgcolor="#404000">BE #i8,r8</td>
+
+<td bgcolor="#404000">BE d9,r8</td>
+
+<td bgcolor="#404000">BE @Ri,#i8,r8</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">4</th>
+<td bgcolor="#404000">DIV</td>
+
+<td bgcolor="#404000">BNE #i8,r8</td>
+
+<td bgcolor="#404000">BNE d9,r8</td>
+
+<td bgcolor="#404000">BNE @Ri,#i8,r8</td>
+
+<td rowspan="2" bgcolor="#404000">BPC d9,b3,r8</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">5</th>
+<td></td>
+
+<td></td>
+
+<td bgcolor="#404000">DBNZ d9,r8</td>
+
+<td bgcolor="#404000">DBNZ @Ri,r8</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">6</th>
+<td colspan="2" bgcolor="#404000">PUSH d9</td>
+
+<td bgcolor="#404000">INC d9</td>
+
+<td bgcolor="#404000">INC @Ri</td>
+
+<td rowspan="2" bgcolor="#404000">BP d9,b3,r8</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">7</th>
+<td colspan="2" bgcolor="#404000">POP d9</td>
+
+<td bgcolor="#404000">DEC d9</td>
+
+<td bgcolor="#404000">DEC @Ri</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">8</th>
+<td bgcolor="#404000">BZ r8</td>
+
+<td bgcolor="#404000">ADD #i8</td>
+
+<td bgcolor="#404000">ADD d9</td>
+
+<td bgcolor="#404000">ADD @Ri</td>
+
+<td rowspan="2" bgcolor="#404000">BN d9,b3,r8</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">9</th>
+<td bgcolor="#404000">BNZ r8</td>
+
+<td bgcolor="#404000">ADDC #i8</td>
+
+<td bgcolor="#404000">ADDC d9</td>
+
+<td bgcolor="#404000">ADDC @Ri</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">A</th>
+<td bgcolor="#404000">RET</td>
+
+<td bgcolor="#404000">SUB #i8</td>
+
+<td bgcolor="#404000">SUB d9</td>
+
+<td bgcolor="#404000">SUB @Ri</td>
+
+<td rowspan="2" bgcolor="#404000">NOT1 d9,b3</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">B</th>
+<td bgcolor="#404000">RETI</td>
+
+<td bgcolor="#404000">SUBC #i8</td>
+
+<td bgcolor="#404000">SUBC d9</td>
+
+<td bgcolor="#404000">SUBC @Ri</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">C</th>
+<td bgcolor="#404000">ROR</td>
+
+<td bgcolor="#404000">LDC</td>
+
+<td bgcolor="#404000">XCH d9</td>
+
+<td bgcolor="#404000">XCH @Ri</td>
+
+<td rowspan="2" bgcolor="#404000">CLR1 d9,b3</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">D</th>
+<td bgcolor="#404000">RORC</td>
+
+<td bgcolor="#404000">OR #i8</td>
+
+<td bgcolor="#404000">OR d9</td>
+
+<td bgcolor="#404000">OR @Ri</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">E</th>
+<td bgcolor="#404000">ROL</td>
+
+<td bgcolor="#404000">AND #i8</td>
+
+<td bgcolor="#404000">AND d9</td>
+
+<td bgcolor="#404000">AND @Ri</td>
+
+<td rowspan="2" bgcolor="#404000">SET1 d9,b3</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">F</th>
+<td bgcolor="#404000">ROLC</td>
+
+<td bgcolor="#404000">XOR #i8</td>
+
+<td bgcolor="#404000">XOR d9</td>
+
+<td bgcolor="#404000">XOR @Ri</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+
+
+<p>
+
+</p><p><img alt="ADD" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yi3b8tgjwka968m08bul8cshexmqnf.gif" style="border: none;" valign="top" height="23" width="37"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">ADD #i8</td>
+
+<td bgcolor="#404000">10000001 i7i6i5i4i3i2i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">ADD d9</td>
+
+<td bgcolor="#404000">1000001d8 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">ADD @Ri</td>
+
+<td bgcolor="#404000">100001i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Add the operand to the ACC register.  CY, AC and OV are set according
+to the result.
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="ADDC" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yggzkdmum62uxkroq1htkwgdqy5nwv.gif" style="border: none;" valign="top" height="23" width="49"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">ADDC #i8</td>
+
+<td bgcolor="#404000">10010001 i7i6i5i4i3i2i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">ADDC d9</td>
+
+<td bgcolor="#404000">1001001d8 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">ADDC @Ri</td>
+
+<td bgcolor="#404000">100101i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Add the operand and the carry bit (CY) to the ACC register.
+CY, AC and OV are set according to the result.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="SUB" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yt4drd1pmojwscp44p742m7tm4b7my.gif" style="border: none;" valign="top" height="23" width="35"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">SUB #i8</td>
+
+<td bgcolor="#404000">10100001 i7i6i5i4i3i2i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">SUB d9</td>
+
+<td bgcolor="#404000">1010001d8 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">SUB @Ri</td>
+
+<td bgcolor="#404000">101001i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Subtract the operand from the ACC register.  CY, AC and OV are set according
+to the result.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="SUBC" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yn5ausj5s7tuqjkei6d3kzldmtdjym.gif" style="border: none;" valign="top" height="23" width="47"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">SUBC #i8</td>
+
+<td bgcolor="#404000">10110001 i7i6i5i4i3i2i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">SUBC d9</td>
+
+<td bgcolor="#404000">1011001d8 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">SUBC @Ri</td>
+
+<td bgcolor="#404000">101101i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Subtract the operand and the carry bit (CY) from the ACC register.
+CY, AC and OV are set according to the result.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="INC" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y42ten8gby4tm8y7pkvwfeuynmov09.gif" style="border: none;" valign="top" height="23" width="28"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">INC d9</td>
+
+<td bgcolor="#404000">0110001d8 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">INC @Ri</td>
+
+<td bgcolor="#404000">011001i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Increment the operand by one.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="DEC" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yjb3axj6lzs2pmqrt6v5op3k83t77t.gif" style="border: none;" valign="top" height="23" width="35"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">DEC d9</td>
+
+<td bgcolor="#404000">0111001d8 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">DEC @Ri</td>
+
+<td bgcolor="#404000">011101i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Decrement the operand by one.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="MUL" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y7p1nfagjyw4o38oo32k75gwxpymi0.gif" style="border: none;" valign="top" height="23" width="38"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">MUL</td>
+
+<td bgcolor="#404000">00110000</td>
+
+<td bgcolor="#404000">7</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Perform a multiplication.  The ACC and C registers together form a 16-bit
+operand (ACC being the high 8 bits, and C being the low 8 bits) which is
+multiplied by the contents of the B register.  The result is a 24-bit
+number that is stored in the ACC, C and B registers (the high 8 bits are
+stored in B, the middle 8 bits in ACC, and the low 8 bits in C).
+CY is cleared, and OV is set if the result is greater than 16 bits, otherwise
+cleared.  AC is not affected.
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="DIV" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ypm1net3sc6znu2dxknh03uppv10y7.gif" style="border: none;" valign="top" height="23" width="29"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">DIV</td>
+
+<td bgcolor="#404000">01000000</td>
+
+<td bgcolor="#404000">7</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Perform a division.  The ACC and C registers together form a 16-bit
+operand (ACC being the high 8 bits, and C being the low 8 bits) which is
+divided by the contents of the B register.  The result is a 16-bit quotient
+that is stored in ACC and C (the high 8 bits in ACC, and the low 8 bits in C),
+and an 8-bit remainder that is stored in B.  CY is cleared, and OV is set if
+the remainder is zero, otherwise cleared.  AC is not affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="AND" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yiiyej56h8x5npikhcl41e49a8va8f.gif" style="border: none;" valign="top" height="23" width="37"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">AND #i8</td>
+
+<td bgcolor="#404000">11100001 i7i6i5i4i3i2i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">AND d9</td>
+
+<td bgcolor="#404000">1110001d8 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">AND @Ri</td>
+
+<td bgcolor="#404000">111001i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Perform bitwise AND between the operand and the ACC register.  No PSW flags
+are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="OR" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yodk2kt1gj4651k572j300itax4xm9.gif" style="border: none;" valign="top" height="23" width="24"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">OR #i8</td>
+
+<td bgcolor="#404000">11010001 i7i6i5i4i3i2i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">OR d9</td>
+
+<td bgcolor="#404000">1101001d8 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">OR @Ri</td>
+
+<td bgcolor="#404000">110101i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Perform bitwise OR between the operand and the ACC register.  No PSW flags
+are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="XOR" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yn0eeo4m0j58zcmoek6lhbqb0839pw.gif" style="border: none;" valign="top" height="23" width="36"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">XOR #i8</td>
+
+<td bgcolor="#404000">11110001 i7i6i5i4i3i2i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">XOR d9</td>
+
+<td bgcolor="#404000">1111001d8 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">XOR @Ri</td>
+
+<td bgcolor="#404000">111101i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Perform bitwise XOR between the operand and the ACC register.  No PSW flags
+are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="ROL" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y4n1uzapqxbsqjsm2pri1eowe7ofyj.gif" style="border: none;" valign="top" height="23" width="34"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">ROL</td>
+
+<td bgcolor="#404000">11100000</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Rotate the contents of the ACC register one bit to the left.  The most
+signigicant bit will wrap immediately around to the least signigicant bit.
+No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="ROLC" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yl0cnss4h5mmuq2rtor0fp3mfjihiw.gif" style="border: none;" valign="top" height="23" width="45"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">ROLC</td>
+
+<td bgcolor="#404000">11110000</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Rotate the contents of the ACC register one bit to the left.  The most
+signigicant bit is copied to the CY flag, and the old value of CY will
+be place in the least signigicant bit.  The AC and OV flags are unaffected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="ROR" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ypnbhaphlhcdynvdcg9dr7e1jnk42g.gif" style="border: none;" valign="top" height="23" width="35"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">ROR</td>
+
+<td bgcolor="#404000">11000000</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Rotate the contents of the ACC register one bit to the right.  The least
+signigicant bit will wrap immediately around to the most signigicant bit.
+No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="RORC" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ylcht76sy1q2fi9ylzo34ao7dfx3s2.gif" style="border: none;" valign="top" height="23" width="47"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">RORC</td>
+
+<td bgcolor="#404000">11010000</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Rotate the contents of the ACC register one bit to the right.  The least
+signigicant bit is copied to the CY flag, and the old value of CY will
+be place in the most signigicant bit.  The AC and OV flags are unaffected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="LD" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y4p0xuy8ws1emfrww0w5zo0etkf5f4.gif" style="border: none;" valign="top" height="23" width="21"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">LD d9</td>
+
+<td bgcolor="#404000">0000001d8 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">LD @Ri</td>
+
+<td bgcolor="#404000">000001i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Load the operand into the ACC register.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="ST" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y7ui812zxeb2510cd9s65uugjeb86v.gif" style="border: none;" valign="top" height="23" width="22"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">ST d9</td>
+
+<td bgcolor="#404000">0001001d8 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">ST @Ri</td>
+
+<td bgcolor="#404000">000101i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Store the contents of the ACC register into the operand address.
+No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="MOV" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yc6maenste0mhp5vzkqnlcvi136ty5.gif" style="border: none;" valign="top" height="23" width="41"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">MOV #i8,d9</td>
+
+<td bgcolor="#404000">0010001d8 d7d6d5d4d3d2d1d0 i7i6i5i4i3i2i1i0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">MOV #i8,@Rj</td>
+
+<td bgcolor="#404000">001001j1j0 i7i6i5i4i3i2i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Set the contents of the operand to a constant value.
+No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="LDC" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ybxkfg75vyzavrwev00aj2jdtcmp92.gif" style="border: none;" valign="top" height="23" width="33"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">LDC</td>
+
+<td bgcolor="#404000">11000001</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Load a constant from ROM space into the ACC register.  The ROM address is
+formed by adding the old value of ACC to the contents of the TRH and TRL
+registers viewed as a 16-bit value (TRH being the upper 8 bits, and TRL
+being the lower 8 bits).  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="PUSH" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ypeixmqjjhznefrow41z6j3xziev8h.gif" style="border: none;" valign="top" height="23" width="47"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">PUSH d9</td>
+
+<td bgcolor="#404000">0110000d8 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+
+Push the operand on the stack.  The <a href="http://mc.pp.se/dc/vms/sfr.html#SP">SP register</a> is
+first incremented by one, and the operand value is then stored at the
+resulting stack position.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="POP" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yh4snb9dwqcftwjwhko15c3maq7di4.gif" style="border: none;" valign="top" height="23" width="35"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">POP d9</td>
+
+<td bgcolor="#404000">0111000d8 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+
+Pop the operand from the stack.  The value is read from the stack position
+pointed out by the current value of the <a href="http://mc.pp.se/dc/vms/sfr.html#SP">SP register</a>,
+and SP is then decremented by one.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="XCH" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yttq6ba63ylvbynfbd6ia7ea1nbk0i.gif" style="border: none;" valign="top" height="23" width="35"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">XCH d9</td>
+
+<td bgcolor="#404000">1100001d8 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">XCH @Ri</td>
+
+<td bgcolor="#404000">110001i1i0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Exchange the contents of the operand with the contents of the ACC
+register.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="JMP" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yk77ni3gnsasphlyp5awsvk5zf216y.gif" style="border: none;" valign="top" height="23" width="36"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">JMP a12</td>
+
+<td bgcolor="#404000">001a111a10a9a8 a7a6a5a4a3a2a1a0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Jump unconditionally.  The target address is specified using a 12-bit
+absolute address, so the upper 4 bits of this address must be the same
+as for the instruction following the JMP.  No PSW flags are affected.
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="JMPF" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yfg14j6rfrawyhxxvdg9md0u6omqkw.gif" style="border: none;" valign="top" height="23" width="45"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">JMPF a16</td>
+
+<td bgcolor="#404000">00100001 a15a14a13a12a11a10a9a8 a7a6a5a4a3a2a1a0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Jump unconditionally.  The target address is specified using a full
+16-bit absolute address.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="BR" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y92j5ca26ewj1hl7x4hymlu72nptyr.gif" style="border: none;" valign="top" height="23" width="22"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">BR r8</td>
+
+<td bgcolor="#404000">00000001 r7r6r5r4r3r2r1r0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Branch unconditionally.  The target address is specified using an
+8-bit relative address.  The signed 8-bit offset is added to the
+address of the instruction following the BR.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="BRF" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yjxga2yc6m6i9ycow1ux55kb1hjuh7.gif" style="border: none;" valign="top" height="23" width="32"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">BRF r16</td>
+
+<td bgcolor="#404000">00010001 r7r6r5r4r3r2r1r0 r15r14r13r12r11r10r9r8</td>
+
+<td bgcolor="#404000">4</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Branch unconditionally.   The target address is specified using a
+16-bit relative address.  The unsigned 16-bit offset is added to the
+address of the instruction following the BRF minus one to produce the target
+address.  The addition is performed modulo 65536, which makes it
+possible to branch to a lower address as well.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="BZ" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ymqodcly2zn4txzn8for24h3zoag0m.gif" style="border: none;" valign="top" height="23" width="21"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">BZ r8</td>
+
+<td bgcolor="#404000">10000000 r7r6r5r4r3r2r1r0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Branch if the ACC register is zero.  See BR for address calculation.
+No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="BNZ" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ycubja0tj8ngl1jc3f6t61bwgd9xx1.gif" style="border: none;" valign="top" height="23" width="35"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">BNZ r8</td>
+
+<td bgcolor="#404000">10010000 r7r6r5r4r3r2r1r0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Branch if the ACC register is not zero.  See BR for address calculation.
+No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="BP" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ygo1fx1f1c7lkadf9gi82g2l09nwis.gif" style="border: none;" valign="top" height="23" width="21"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">BP d9,b3,r8</td>
+
+<td bgcolor="#404000">011d81b2b1b0 d7d6d5d4d3d2d1d0 r7r6r5r4r3r2r1r0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Branch if the specified bit of the operand is set.  See BR for address
+calculation.  No PSW flags are affected.
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="BPC" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ymvqqdlziwa6s4o9c4otp2lkhs7qpa.gif" style="border: none;" valign="top" height="23" width="33"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">BPC d9,b3,r8</td>
+
+<td bgcolor="#404000">010d81b2b1b0 d7d6d5d4d3d2d1d0 r7r6r5r4r3r2r1r0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+If the specified bit of the operand is set, clear the bit and branch.
+See BR for address calculation.  No PSW flags are affected.
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="BN" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y1hwsszb519ti9e2h9a7rt2tys9egw.gif" style="border: none;" valign="top" height="23" width="23"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">BN d9,b3,r8</td>
+
+<td bgcolor="#404000">100d81b2b1b0 d7d6d5d4d3d2d1d0 r7r6r5r4r3r2r1r0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Branch if the specified bit of the operand is not set.  See BR for address
+calculation.  No PSW flags are affected.
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="DBNZ" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ykvd9j8jirfeauv0cmimkixpky6mzp.gif" style="border: none;" valign="top" height="23" width="47"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">DBNZ d9,r8</td>
+
+<td bgcolor="#404000">0101001d8 d7d6d5d4d3d2d1d0 r7r6r5r4r3r2r1r0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">DBNZ @Ri,r8</td>
+
+<td bgcolor="#404000">010101i1i0 r7r6r5r4r3r2r1r0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Decrement the operand by one, and branch if the result is not zero.  See
+BR for address calculation.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="BE" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y2533c64o6vgkaqfyu989w2l9p45fr.gif" style="border: none;" valign="top" height="23" width="21"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">BE #i8,r8</td>
+
+<td bgcolor="#404000">00110001 i7i6i5i4i3i2i1i0 r7r6r5r4r3r2r1r0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">BE d9,r8</td>
+
+<td bgcolor="#404000">0011001d8 d7d6d5d4d3d2d1d0 r7r6r5r4r3r2r1r0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">BE @Rj,#i8,r8</td>
+
+<td bgcolor="#404000">001101j1j0 i7i6i5i4i3i2i1i0 r7r6r5r4r3r2r1r0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Branch if the contents of the ACC register (or the indirect operand in the
+third form above) are equal to the immediate or direct operand.  See BR
+for address calculation.  Additionally, CY is set to 1 if ACC (or the indirect
+operand) is strictly less than the immediate or direct operand.  AC and OV
+are unaffected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="BNE" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ymiaalall0l54byvbmbce0j5hnpf4t.gif" style="border: none;" valign="top" height="23" width="34"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">BNE #i8,r8</td>
+
+<td bgcolor="#404000">01000001 i7i6i5i4i3i2i1i0 r7r6r5r4r3r2r1r0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">BNE d9,r8</td>
+
+<td bgcolor="#404000">0100001d8 d7d6d5d4d3d2d1d0 r7r6r5r4r3r2r1r0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">BNE @Rj,#i8,r8</td>
+
+<td bgcolor="#404000">010001j1j0 i7i6i5i4i3i2i1i0 r7r6r5r4r3r2r1r0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Branch if the contents of the ACC register (or the indirect operand in the
+third form above) are not equal to the immediate or direct operand.  See BR
+for address calculation.  Additionally, CY is set to 1 if ACC (or the indirect
+operand) is strictly less than the immediate or direct operand.  AC and OV
+are unaffected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="CALL" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yi08ed0zugosbg14zosswebq0ndswm.gif" style="border: none;" valign="top" height="23" width="43"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">CALL a12</td>
+
+<td bgcolor="#404000">000a111a10a9a8 a7a6a5a4a3a2a1a0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Call function.  The entry address of the function is specified using a
+12-bit absolute address, so the upper 4 bits of this address must be the same
+as for the instruction following the CALL.  The return address (the address
+of the instruction following the CALL instruction) is pushed on the stack.
+The lower 8 bits of the address are pushed first, then the upper 8 bits.
+No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="CALLF" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yrl74scdwn4t6hpa8043tcvxakzfyc.gif" style="border: none;" valign="top" height="23" width="52"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">CALLF a16</td>
+
+<td bgcolor="#404000">00100000 a15a14a13a12a11a10a9a8 a7a6a5a4a3a2a1a0</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Call function.  The entry address of the function is specified using a full
+16-bit absolute address.  The return address (the address of the instruction
+following the CALLF instruction) is pushed on the stack.  The lower 8 bits
+of the address are pushed first, then the upper 8 bits.  No PSW flags are
+affected.
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="CALLR" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y3j9m5bhliodedbfh7h15yb5t8s9oz.gif" style="border: none;" valign="top" height="23" width="53"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">CALLR r16</td>
+
+<td bgcolor="#404000">00010000 r7r6r5r4r3r2r1r0 r15r14r13r12r11r10r9r8</td>
+
+<td bgcolor="#404000">4</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Call function.  The entry address of the function is specified using a
+16-bit relative address.  The unsigned 16-bit offset is added to the
+address of the instruction following the CALLR minus one to produce the target
+address.  The addition is performed modulo 65536, which makes it
+possible to call a lower address as well.  The return address (the
+address of the instruction following the CALLR instruction) is pushed
+on the stack.  The lower 8 bits of the address are pushed first, then
+the upper 8 bits.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="RET" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ymb59rpo570jpuvoe8w88db8kwikay.gif" style="border: none;" valign="top" height="23" width="32"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">RET</td>
+
+<td bgcolor="#404000">10100000</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Return from function.  The PC register is popped from the stack.  The upper
+8 bits are popped first, then the lower 8 bits.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="RETI" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yga4aw237crmoeif30culfyzgzxp1g.gif" style="border: none;" valign="top" height="23" width="36"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">RETI</td>
+
+<td bgcolor="#404000">10110000</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Return from interrupt.  The PC register is popped from the stack.  The upper
+8 bits are popped first, then the lower 8 bits.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="CLR1" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ycjkzf4jgzussp8dwcun48fb92au97.gif" style="border: none;" valign="top" height="23" width="39"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">CLR1 d9,b3</td>
+
+<td bgcolor="#404000">110d81b2b1b0 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Clear the specified bit in the operand.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="SET1" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ygudui4sgaxwzlg21pyu6unalvmjyz.gif" style="border: none;" valign="top" height="23" width="40"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">SET1 d9,b3</td>
+
+<td bgcolor="#404000">111d81b2b1b0 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Set the specified bit in the operand.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="NOT1" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yb7a83rrxm5pknmtjh93hzhdl794kg.gif" style="border: none;" valign="top" height="23" width="43"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">NOT1 d9,b3</td>
+
+<td bgcolor="#404000">101d81b2b1b0 d7d6d5d4d3d2d1d0</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Invert the specified bit in the operand.  No PSW flags are affected.
+
+
+<p></p>
+
+
+<p>
+
+</p><p><img alt="NOP" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yf2pkzj1pjcp7dkmbcx9kmbmpfry3g.gif" style="border: none;" valign="top" height="23" width="37"></p>
+
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Mnemonic</th><th bgcolor="#404000">Code</th><th bgcolor="#404000">Cycles</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">NOP</td>
+
+<td bgcolor="#404000">00000000</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Do nothing.  No PSW flags are affected.
+<p></p>
+
+
+
+<hr>
+<a href="http://www.roxen.com/"><img alt="Powered by Roxen" src="Dreamcast%20Programming%20-%20VMS%20CPU_files/internal-roxen-power-small-white.gif" height="40" align="right" border="0" width="40"></a><a href="http://mc.pp.se/dc/">Dreamcast Programming</a> by <i><a href="mailto:marcus@mc.pp.se">Marcus Comstedt</a></i><br>
+
+<!-- Created: Mon Nov  8 17:52:41 MET 1999 -->
+<!-- hhmts start -->
+Last modified: Mon Mar 27 17:27:05 MEST 2000
+<!-- hhmts end -->
+
+</top>
+
+
+
+
+</body></html>

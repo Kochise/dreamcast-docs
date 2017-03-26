@@ -1,0 +1,61 @@
+
+
+The IP0000.BIN file is present on every Dreamcast disc, and contains information about the software on the disc. The structure described below is repeated in the 16 first sectors of the first Mode-1 track on the disc (the area reserved for boot code by ISO9660), so it is readable in a normal CD-ROM player. For the Dreamcast to consider a disc bootable, this structure must also be duplicated in the high-density region, together with some standard bootstrap code and an additional region enforcement layer. 
+
+All the fields in the IP0000.BIN are plain ASCII, padded with spaces to their full length. Offset Contents 
+000-00F Hardware ID (always "SEGA SEGAKATANA ") 
+010-01F Maker ID (always "SEGA ENTERPRISES") 
+020-02F Device Information (see below) 
+030-037 Area Symbols (see below) 
+038-03F Peripherals (see below) 
+040-049 Product number ("HDR-nnnn" etc.) 
+04A-04F Product version 
+050-05F Release date (YYYYMMDD) 
+060-06F Boot filename (usually "1ST_READ.BIN") 
+070-07F Name of the company that produced the disc 
+080-0FF Name of the software 
+ 
+
+
+
+
+The Device Information field begins with a four digit hexadecimal number, which is some kind of checksum on the Product number and Product version fields. Then comes the string " GD-ROM", and finally an indication of how many discs this software uses, and which of these discs that this is. This is indicated by two positive numbers separated with a slash. So if this is the second disc of three, the Device Information string might be "8B40 GD-ROM2/3  ".
+
+
+
+The Area Symbols string consists of eight characters, which are either space or a specific letter. Each of these represent a geographical region in which the disc is designed to work. So far, only the first three are assigned. These are Japan (and the rest of East Asia), USA + Canada, and Europe, respectively. If the character for a particular region is a space, the disc will not be playable in that region. If it contains the correct region character, it will be. The region characters for the first three regions are J, U, and E, respectively. So a disc only playable in Europe would have an Area Symbols string of "  E     ".
+
+
+
+The Device Information field is a 28 bit long bitfield represented by a 7 digit hexadecimal number. The meaning of the individual bits in each digit is given below: 
+
+<A><-------B------> <C->
+0000 0000 0000 0000 0000 0000 0000
+^^^^ ^^^^ ^^^^ ^^^^ ^^^^    ^    ^
+|||| |||| |||| |||| ||||    |    |
+|||| |||| |||| |||| ||||    |    +----- Uses Windows CE
+|||| |||| |||| |||| ||||    |
+|||| |||| |||| |||| ||||    +-----  VGA box support
+|||| |||| |||| |||| ||||
+|||| |||| |||| |||| |||+----- Other expansions
+|||| |||| |||| |||| ||+----- Puru Puru pack
+|||| |||| |||| |||| |+----- Mike device
+|||| |||| |||| |||| +----- Memory card
+|||| |||| |||| |||+------ Start + A + B + Directions
+|||| |||| |||| ||+------ C button
+|||| |||| |||| |+------ D button
+|||| |||| |||| +------ X button
+|||| |||| |||+------- Y button
+|||| |||| ||+------- Z button
+|||| |||| |+------- Expanded direction buttons
+|||| |||| +------- Analog R trigger
+|||| |||+-------- Analog L trigger
+|||| ||+-------- Analog horizontal controller
+|||| |+-------- Analog vertical controller
+|||| +-------- Expanded analog horizontal
+|||+--------- Expanded analog vertical
+||+--------- Gun
+|+--------- Keyboard
++--------- Mouse
+
+The group of bits indicated by B above indicate the discs minimum controller requirements. So if the "Z button" bit is set, the software can not be used with a controller that doesn't have a Z button. The A group indicates which optional peripherals the disc supports. The C group indicates which kinds of expansion units that the disc supports. The "VGA box support" bit indicates that the disc can be run in VGA mode. The WinCE bit speaks for itself... 

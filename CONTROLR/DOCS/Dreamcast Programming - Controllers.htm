@@ -1,0 +1,525 @@
+<!DOCTYPE html PUBLIC "-//IETF//DTD HTML//EN">
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+
+<title>Dreamcast Programming - Controllers</title>
+
+</head>
+
+<body alink="red" bgcolor="black" link="#6699cc" text="white" vlink="#6677cc">
+<top>
+
+<img alt="" src="Dreamcast%20Programming%20-%20Controllers_files/dc_mark.gif" align="right">
+
+<p><img alt="Controllers" src="Dreamcast%20Programming%20-%20Controllers_files/asw4kq4vlpnfxtobd3366p2z0ge0klcsdvpkp3a8twxwanzzvpn0lr26q3ce.gif" style="border: none;" valign="top" height="43" width="161"></p>
+
+
+The Dreamcast Controller (HKT-7700) has five buttons, one directional pad,
+one analogue joystick, and two analogue triggers.  In order to be able
+to provide feedback for all these actuators, the controller speaks with
+the Dreamcast unit using a <a href="http://mc.pp.se/dc/maplebus.html">serial protocol</a>.  The serial connection is
+bi-directional, which allows the Dreamcast to upload data into docked
+VMS units.
+<br clear="right">
+
+
+
+<p>
+
+All the logic of the controller is contained in a single chip (IC1)
+which is labled as follows:
+</p><pre>+--------------+
+| SEGA         |
+| E2 MAPLE BUS |
+| 315-6125-AB  |
+| 841A2A20     |
++--------------+
+</pre>
+<p></p>
+
+
+
+<p>
+Male connector pinout:
+
+<br>
+<img alt="[5 3 1][4 2]" src="Dreamcast%20Programming%20-%20Controllers_files/plug.gif">
+
+<br>
+The plate on top of the connector is for the cable shield.  It
+is internally connected to pin 3 (GND).
+</p>
+
+
+
+<p>
+Internal connector inside controller pinout:
+
+<br>
+<img alt="[1 2 3 4 5]" src="Dreamcast%20Programming%20-%20Controllers_files/cn1.gif">
+</p>
+
+
+
+<p>
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000"><font color="#ff3333">red</font></td>
+
+<td bgcolor="#404000">serial data</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">2</td>
+
+<td bgcolor="#404000"><font color="#5533ff">blue</font></td>
+
+<td bgcolor="#404000">+5V</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">3</td>
+
+<td bgcolor="#404000"><font color="black">black</font></td>
+
+<td bgcolor="#404000">GND</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">4</td>
+
+<td bgcolor="#404000"><font color="#33cc33">green</font></td>
+
+<td bgcolor="#404000">sense (connected to GND inside controller/keyboard)</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">5</td>
+
+<td bgcolor="#404000"><font color="white">white</font></td>
+
+<td bgcolor="#404000">serial data</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+</p>
+
+
+
+
+<p><img alt="Gamepad Condition structure" src="Dreamcast%20Programming%20-%20Controllers_files/hwhvnjki1vaw5xeayq6ziu4zt3iviz1epwqa8m9nhay7ymnd3ga97tg9xpxs.gif" style="border: none;" valign="top" height="35" width="362"></p>
+
+
+
+<p>
+The current state of a gamepad is queried with the Get condition request.
+The condition stucture for the Controller function code ($001) is as follows:
+
+</p><pre>int16 buttons       ; digital buttons bitfield (little endian)
+int8 rtrigger       ; right analogue trigger (0-255)
+int8 ltrigger       ; left analogue trigger (0-255)
+int8 joyx           ; analogue joystick X (0-255)
+int8 joyy           ; analogue joystick Y (0-255)
+int8 joyx2          ; second analogue joystick X (0-255)
+int8 joyy2          ; second analogue joystick Y (0-255)</pre>
+
+The buttons bitfield contains zeroes for pressed buttons, and ones for
+unpressed buttons.
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Bit</th><th bgcolor="#404000">Button</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">C</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">B</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">2</td>
+
+<td bgcolor="#404000">A</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">3</td>
+
+<td bgcolor="#404000">START</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">4</td>
+
+<td bgcolor="#404000"><img alt="UP" src="Dreamcast%20Programming%20-%20Controllers_files/up.gif"></td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">5</td>
+
+<td bgcolor="#404000"><img alt="DOWN" src="Dreamcast%20Programming%20-%20Controllers_files/down.gif"></td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">6</td>
+
+<td bgcolor="#404000"><img alt="LEFT" src="Dreamcast%20Programming%20-%20Controllers_files/left.gif"></td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">7</td>
+
+<td bgcolor="#404000"><img alt="RIGHT" src="Dreamcast%20Programming%20-%20Controllers_files/right.gif"></td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">8</td>
+
+<td bgcolor="#404000">Z</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">9</td>
+
+<td bgcolor="#404000">Y</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">10</td>
+
+<td bgcolor="#404000">X</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">11</td>
+
+<td bgcolor="#404000">D</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">12</td>
+
+<td bgcolor="#404000"><img alt="UP" src="Dreamcast%20Programming%20-%20Controllers_files/up.gif">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">13</td>
+
+<td bgcolor="#404000"><img alt="DOWN" src="Dreamcast%20Programming%20-%20Controllers_files/down.gif">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">14</td>
+
+<td bgcolor="#404000"><img alt="LEFT" src="Dreamcast%20Programming%20-%20Controllers_files/left.gif">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">15</td>
+
+<td bgcolor="#404000"><img alt="RIGHT" src="Dreamcast%20Programming%20-%20Controllers_files/right.gif">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+<p></p>
+
+
+
+<p><img alt="Gamepad Function data bitfield" src="Dreamcast%20Programming%20-%20Controllers_files/hwhvnjki1vaw5xeayq6ziu4zt3iviz13hjbmvx298wd1fx5hk1fcxln5r936.gif" style="border: none;" valign="top" height="35" width="383"></p>
+
+
+
+<p>The <a href="http://mc.pp.se/dc/maplebus.html#funcdata"><tt>function_data</tt></a> for the
+Controller function code is a bitfield describing which controls are present
+on the particular device (zero = not present, one = present):
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Bit</th><th bgcolor="#404000">Control</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">C</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">B</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">2</td>
+
+<td bgcolor="#404000">A</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">3</td>
+
+<td bgcolor="#404000">START</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">4</td>
+
+<td bgcolor="#404000"><img alt="UP" src="Dreamcast%20Programming%20-%20Controllers_files/up.gif"></td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">5</td>
+
+<td bgcolor="#404000"><img alt="DOWN" src="Dreamcast%20Programming%20-%20Controllers_files/down.gif"></td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">6</td>
+
+<td bgcolor="#404000"><img alt="LEFT" src="Dreamcast%20Programming%20-%20Controllers_files/left.gif"></td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">7</td>
+
+<td bgcolor="#404000"><img alt="RIGHT" src="Dreamcast%20Programming%20-%20Controllers_files/right.gif"></td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">8</td>
+
+<td bgcolor="#404000">Z</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">9</td>
+
+<td bgcolor="#404000">Y</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">10</td>
+
+<td bgcolor="#404000">X</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">11</td>
+
+<td bgcolor="#404000">D</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">12</td>
+
+<td bgcolor="#404000"><img alt="UP" src="Dreamcast%20Programming%20-%20Controllers_files/up.gif">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">13</td>
+
+<td bgcolor="#404000"><img alt="DOWN" src="Dreamcast%20Programming%20-%20Controllers_files/down.gif">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">14</td>
+
+<td bgcolor="#404000"><img alt="LEFT" src="Dreamcast%20Programming%20-%20Controllers_files/left.gif">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">15</td>
+
+<td bgcolor="#404000"><img alt="RIGHT" src="Dreamcast%20Programming%20-%20Controllers_files/right.gif">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">16</td>
+
+<td bgcolor="#404000">Analogue R trigger</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">17</td>
+
+<td bgcolor="#404000">Analogue L trigger</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">18</td>
+
+<td bgcolor="#404000">Analogue horizontal</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">19</td>
+
+<td bgcolor="#404000">Analogue vertical</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">20</td>
+
+<td bgcolor="#404000">Analogue horizontal 2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">21</td>
+
+<td bgcolor="#404000">Analogue vertical 2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+</p>
+
+
+
+<hr>
+<a href="http://www.roxen.com/"><img alt="Powered by Roxen" src="Dreamcast%20Programming%20-%20Controllers_files/internal-roxen-power-small-white.gif" height="40" align="right" border="0" width="40"></a><a href="http://mc.pp.se/dc/">Dreamcast Programming</a> by <i><a href="mailto:marcus@mc.pp.se">Marcus Comstedt</a></i><br>
+
+<!-- Created: Thu Aug 19 01:49:33 MET DST 1999 -->
+<!-- hhmts start -->
+Last modified: Sat Aug 26 16:15:12 MEST 2000
+<!-- hhmts end -->
+
+</top>
+
+
+
+
+</body></html>

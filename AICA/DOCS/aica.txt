@@ -1,0 +1,542 @@
+AICA soundsystem of the Dreamcast
+by Lars Olsson <jlo@ludd.luth.se>
+v0.1 (rough notes), 2001-Jun-15
+
+
+The AICA registers are mapped both to the SH4 and the ARM7.
+The base address is 0x00800000 on the ARM7-side and
+0xa0700000 on the SH4-side.
+
+The ARM7 is running at 25MHz (possibly slower...must do some checking)
+
+It appears the registers are really 16-bit but arranged
+on 32-bit boundries. The ARM7 can access the registers
+either as 32-bit words or as 8-bit; the SH4 can only
+access them as 32-bit (because of the G2 FIFO).
+
+
+
+00800000 - 00802000: (64 sound channels)
+
+each channel consists of 32 32-bit registers.
+
+
+00800000 (ch0_cfg_addr_hi)
++----------------------------------------------------------------+
+| 31-16 | 15-14     | 13-11 | 10 | 9    | 8-7    | 6-5 | 4-0     |
+| n/a   | key-event | n/a   | u  | loop | format | n/a | addr_hi |
++----------------------------------------------------------------+
+
+	key-event:
+		00: no change (or key off? need to recheck)
+		01: no change
+		10: key-off
+		11: key-on
+
+		(note: if loop is set it must be cleared for the waveform
+		       to stop playing)
+
+	u:
+		only noise when set :/
+		(could be direction...im only using ADPCM waveform, which
+		could explain the noise..if so it rocks!!! (for my
+		xm-player that is, no need to waste sample-space by doing
+		repeats and stuff for ping-pong loops =)
+
+	loop:
+		0: waveform is played once
+		1: waveform is repeated according to loop-points
+
+	format:
+		0: 16bit
+		1: 8bit
+		2: ADPCM 4bit
+		3: ADPCM 4bit + loop (? dont know about this, since looping 
+		                      seems to work fine for 2, but i haven't
+				      tried diff start point than 0x0000 which
+				      might require this setting since ADPCM
+				      store delta instead of absolute values)
+
+	addr_hi:
+		highest 5 bits of waveform start address
+
+
+00800004: (ch0_addr_lo)
++-----------------+
+| 31-16 | 15-0    |
+| n/a   | addr_lo |
++-----------------+
+
+	addr_lo:
+		lowest 16 bits of waveform start address
+
+
+00800008: (ch0_loop_start)
++---------------+
+| 31-16 | 15-0  |
+| n/a   | start |
++---------------+
+
+	start:
+		starting sample of loop
+
+
+0080000c: (ch0_loop_end)
++--------------+
+| 31-16 | 15-0 |
+| n/a   | end  |
++--------------+
+
+	end:
+		ending sample of loop
+
+
+00800010: (ch0_adsr1)
++----------------------------------+
+| 31-16 | 15-11 | 10-6 | 5   | 4-0 |
+| n/a   | DR    | SR?  | n/a | AR  |
++----------------------------------+
+
+	envelope register for amplitude
+
+	DR:
+		decay rate
+
+	SR?:
+		sustain rate (need to check by doing a key off, only guess)
+
+	AR:
+		attack rate
+
+
+00800014: (ch0_adsr2)
++---------------------------------------+
+| 31-16 | 15  | 14  | 13-10 | 9-5 | 4-0 |
+| n/a   | n/a | ??? | ???   | ??? | ??? |
++---------------------------------------+
+
+	envelope register for amplitude
+
+	this register is seemingly kind of strange since
+	the behaviour of 00800010 changes in odd ways
+	when setting certain bits...will have to investigate
+	more thoroughly later...
+
+	unknown:
+		set to 0x1f
+
+
+00800018: (ch0_pitch)
++----------------------+
+| 31-16 | 15-11 | 10-0 |
+| n/a   | oct   | fns  |
++----------------------+
+
+	controls the pitch of the waveform
+
+	oct:
+		calculated according to:
+
+			[formula later]
+
+	fns:
+		calculated according to:
+
+			[formula later]
+
+
+0080001c: (ch0_lfo1)
++-----------------+
+| 31-16 | 15-0    |
+| n/a   | unknown |
++-----------------+
+
+	envelope register for pitch
+
+	unknown:
+		set to 0x4210
+
+
+00800020: (ch0_lfo2)
++-----------------+
+| 31-16 | 15-0    |
+| n/a   | unknown |
++-----------------+
+
+	envelope register for pitch
+
+	unknown:
+		set to 0x0000
+
+
+00800024: (ch0_pan_volume)
++------------------------------------+
+| 31-16 | 15-12 | 11-8   | 7-5 | 4-0 |
+| n/a   | ???   | volume | ??? | pan |
++------------------------------------+
+
+	volume:
+		aica level for this channel
+
+	pan:	the position of this channel
+		this is sort of confusing:
+
+		0x00: almost in the middle
+		0x0f: all panned to the left
+		0x10: almost in the middle
+		0x1f: all panned to the right
+
+
+00800028: (ch0_volume2?)
++--------------------------+
+| 31-16 | 15-8   | 7-0     |
+| n/a   | volume | unknown |
++--------------------------+
+
+	volume:
+		logarithmic volume
+
+	unknown:
+		set to 0x24
+
+
+0080002c: (ch0_???)
++-----------------+
+| 31-16 | 15-0    |
+| n/a   | unknown |
++-----------------+
+
+	unknown:
+		set to 0x1fff
+
+
+00800030: (ch0_???)
++-----------------+
+| 31-16 | 15-0    |
+| n/a   | unknown |
++-----------------+
+
+	unknown:
+		set to 0x1fff
+
+
+00800034: (ch0_???)
++-----------------+
+| 31-16 | 15-0    |
+| n/a   | unknown |
++-----------------+
+
+	unknown:
+		set to 0x1fff
+
+
+00800038: (ch0_???)
++-----------------+
+| 31-16 | 15-0    |
+| n/a   | unknown |
++-----------------+
+
+	unknown:
+		set to 0x1fff
+
+
+0080003c: (ch0_???)
++-----------------+
+| 31-16 | 15-0    |
+| n/a   | unknown |
++-----------------+
+
+	unknown:
+		set to 0x1fff
+
+
+00800040: (ch0_???)
++-----------------+
+| 31-16 | 15-0    |
+| n/a   | unknown |
++-----------------+
+
+	unknown:
+		set to 0x0000
+
+
+00800044: (ch0_???)
++-----------------+
+| 31-16 | 15-0    |
+| n/a   | unknown |
++-----------------+
+
+	unknown:
+		set to 0x0000
+
+
+00800048: (ch0_???)
++-----------------+
+| 31-16 | 15-0    |
+| n/a   | unknown |
++-----------------+
+
+	unknown:
+		set to 0x0000
+
+0080004c - 008007c: (not used, it seems)
+
+
+[the other channels use the same layout as the above registers]
+
+00800080 - 008000fc: (ch1)
+00800100 - 0080017c: (ch2)
+00800180 - 008001fc: (ch3)
+00800200 - 0080027c: (ch4)
+00800280 - 008002fc: (ch5)
+00800300 - 0080037c: (ch6)
+00800380 - 008003fc: (ch7)
+00800400 - 0080047c: (ch8)
+00800480 - 008004fc: (ch9)
+00800500 - 0080057c: (ch10)
+00800580 - 008005fc: (ch11)
+00800600 - 0080067c: (ch12)
+00800680 - 008006fc: (ch13)
+00800700 - 0080077c: (ch14)
+00800780 - 008007fc: (ch15)
+00800800 - 0080087c: (ch16)
+00800880 - 008008fc: (ch17)
+00800900 - 0080097c: (ch18)
+00800980 - 008009fc: (ch19)
+00800a00 - 00800a7c: (ch20)
+00800a80 - 00800afc: (ch21)
+00800b00 - 00800b7c: (ch22)
+00800b80 - 00800bfc: (ch23)
+00800c00 - 00800c7c: (ch24)
+00800c80 - 00800cfc: (ch25)
+00800d00 - 00800d7c: (ch26)
+00800d80 - 00800dfc: (ch27)
+00800e00 - 00800e7c: (ch28)
+00800e80 - 00800efc: (ch29)
+00800f00 - 00800f7c: (ch30)
+00800f80 - 00800ffc: (ch31)
+00801000 - 0080107c: (ch32)
+00801080 - 008010fc: (ch33)
+00801100 - 0080117c: (ch34)
+00801180 - 008011fc: (ch35)
+00801200 - 0080127c: (ch36)
+00801280 - 008012fc: (ch37)
+00801300 - 0080137c: (ch38)
+00801380 - 008013fc: (ch39)
+00801400 - 0080147c: (ch40)
+00801480 - 008014fc: (ch41)
+00801500 - 0080157c: (ch42)
+00801580 - 008015fc: (ch43)
+00801600 - 0080167c: (ch44)
+00801680 - 008016fc: (ch45)
+00801700 - 0080177c: (ch46)
+00801780 - 008017fc: (ch47)
+00801800 - 0080187c: (ch48)
+00801880 - 008018fc: (ch49)
+00801900 - 0080197c: (ch50)
+00801980 - 008019fc: (ch51)
+00801a00 - 00801a7c: (ch52)
+00801a80 - 00801afc: (ch53)
+00801b00 - 00801b7c: (ch54)
+00801b80 - 00801bfc: (ch55)
+00801c00 - 00801c7c: (ch56)
+00801c80 - 00801cfc: (ch57)
+00801d00 - 00801d7c: (ch58)
+00801d80 - 00801dfc: (ch59)
+00801e00 - 00801e7c: (ch60)
+00801e80 - 00801efc: (ch61)
+00801f00 - 00801f7c: (ch62)
+00801f80 - 00801ffc: (ch63)
+
+00802000: (???)
+
+00802004: (???)
+
+00802008: (???)
+
+0080200c: (???)
+
+00802010: (???)
+
+00802014: (???)
+
+00802018: (???)
+
+0080201c: (???)
+
+00802020: (???)
+
+00802024: (???)
+
+00802028: (???)
+
+0080202c: (???)
+
+00802030: (???)
+
+00802034: (???)
+
+00802038: (???)
+
+0080203c: (???)
+
+
+00802040: (cd_pan_volume_left)
++---------------------------------------------+
+| 31-16 | 15-13 | 12    | 11-8    | 7-5 | 4-0 |
+| n/a   | n/a   | init? | volume  | n/a | pan |
++---------------------------------------------+
+
+	volume:
+		aica level volume for CD audio for left channel
+
+	pan:	the position of the left channel
+		this is sort of confusing:
+
+		0x00: almost in the middle
+		0x0f: all panned to the left
+		0x10: almost in the middle
+		0x1f: all panned to the right
+
+
+00802044: (cd_pan_volume_right)
++---------------------------------------------+
+| 31-16 | 15-13 | 12    | 11-8    | 7-5 | 4-0 |
+| n/a   | n/a   | init? | volume  | n/a | pan |
++---------------------------------------------+
+
+	volume:
+		aica level volume for CD audio for right channel
+
+	pan:	the position of the right channel
+		this is sort of confusing:
+
+		0x00: almost in the middle
+		0x0f: all panned to the left
+		0x10: almost in the middle
+		0x1f: all panned to the right
+
+
+00802890: (irq_timer_count)
++---------------+
+| 31-16 | 15-0  |
+| n/a   | count |
++---------------+
+
+	count:
+		(set to 0x00d4)
+
+
+0080289c: (???)
++--------------+
+| 31-16 | 15-0 |
+| n/a   | ???  |
++--------------+
+
+
+008028a4: (???)
++--------------+
+| 31-16 | 15-0 |
+| n/a   | ???  |
++--------------+
+
+
+008028a8: (???)
++------------------------+
+| 31-16 | 15-8 | 7-0     |
+| n/a   | ???  | unknown |
++------------------------+
+
+	unknown:
+		set to 0x18
+
+
+008028ac: (???)
++------------------------+
+| 31-16 | 15-8 | 7-0     |
+| n/a   | ???  | unknown |
++------------------------+
+
+	unknown:
+		set to 0x50
+
+
+008028b0: (???)
++------------------------+
+| 31-16 | 15-8 | 7-0     |
+| n/a   | ???  | unknown |
++------------------------+
+
+	unknown:
+		set to 0x08
+
+
+008028b4: (irq_mask)
++--------------+
+| 31-16 | 15-0 |
+| n/a   | ???  |
++--------------+
+
+
+008028b8: (irq_request)
++--------------+
+| 31-16 | 15-0 |
+| n/a   | ???  |
++--------------+
+
+
+008028bc: (irq_pending)
++--------------+
+| 31-16 | 15-0 |
+| n/a   | ???  |
++--------------+
+
+
+008028b?: (irq_clear)
++--------------+
+| 31-16 | 15-0 |
+| n/a   | ???  |
++--------------+
+
+
+00802d00: (irq_pend)
++--------------+
+| 31-16 | 15-0 |
+| n/a   | mask |
++--------------+
+
+
+00802d04: (irq_clear)
++--------------+
+| 31-16 | 15-0 |
+| n/a   | pend |
++--------------+
+
+
+00803bfc - 008033fc: (dsp registers)
++--------------+
+| 31-16 | 15-0 |
+| n/a   | ???? |
++--------------+
+
+
+[this is mayhaps also accessible to the ARM7 but not tested]
+
+a0702c00: (av_ctrl)
++-------------------------------------+
+| 31-16 | 15-10 | 9-8   | 7-1 | 0     |
+|  n/a  | n/a   | cable | n/a | reset |
++-------------------------------------+
+
+	cable:
+		type of video cable the display is to be set for:
+
+		0: VGA
+		1: ???
+		2: RGB
+		3: composite
+
+	reset:
+		0: normal
+		1: reset ARM7
+

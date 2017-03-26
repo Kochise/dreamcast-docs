@@ -1,0 +1,1834 @@
+<!DOCTYPE html PUBLIC "-//IETF//DTD HTML//EN">
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<title>Dreamcast Programming - PowerVR</title>
+
+</head>
+
+<body alink="red" text="white" bgcolor="black" link="#6699cc" vlink="#6677cc">
+<top>
+
+<img alt="" src="Dreamcast%20Programming%20-%20PowerVR_files/dc_mark.gif" align="right">
+
+<p><img valign="top" alt="PowerVR" src="Dreamcast%20Programming%20-%20PowerVR_files/asw4kq4vlpnfxtobd3366p2z0ge0klchplivrnrsverfa2o6m0yz02n83tqt.gif" style="border: none;" height="43" width="133"></p>
+
+
+
+<p>The NEC PowerVR chip consists of a true-colour RAMDAC, and a hardware 3D 
+engine based on a <i>Tile Accelerator</i>.  The Tile Accelerator divides the
+scene into 32 by 32 pixel <i>tiles</i>, which can be rendered individually.
+Each tile is then rendered into an internal 32 by 32 pixel frame
+buffer in register memory before it is copied to the main frame buffer.  As
+rendering is done to the internal frame buffer, the fill rate is very high.
+Also, no texel data is actually fetched from texture VRAM until the tile is
+copied to the frame buffer, which means that the texture fill rate is not
+affected by overpainting at all.
+</p>
+
+<br clear="right">
+
+
+
+<p>
+
+</p><p><img valign="top" alt="3D engine principle overview" src="Dreamcast%20Programming%20-%20PowerVR_files/hwhvnjki1vaw5xeayq6ziu4zt3iviz1f2lpf1p2f366hhc8mbzrrjas2e5oe.gif" style="border: none;" height="35" width="359"></p>
+
+
+The follwing diagram shows the principle by which the hardware 3D
+engine works:
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+
+<td bgcolor="#404000"><img src="Dreamcast%20Programming%20-%20PowerVR_files/ta.gif"></td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+
+There are two stages, which can be run in parallell (provided
+you have dual sets of buffers of course).  During the Binning stage, the
+Tile Accelerator is fed graphic primitives (either using DMA or directly by
+the CPU using the Store Queues or direct writes), which it will compile to an
+internal format.  While doing this, it will register in which tiles this
+primitive might be visible by putting it in one or more <i>tile bins</i>.
+(If it's not visible in any tile, it can be completely clipped of course.)
+During the rendering stage, the ISP/TSP will read the lists created by
+the Tile Accelerator, and for each tile render the primitives visible for
+that tile into its internal framebuffer, before writing it out to the right
+place in the VRAM framebuffer, where the RAMDAC can display it.
+<p></p>
+
+
+
+<p>
+For a double buffering stratgy that allows you to run both stages
+simultanously (but for different frames, i.e. binning frame N+1 while
+rendering frame N), you need double sets of buffers for the display list
+and the tile bins, as well as double frame buffers to avoid rendering
+artifacts to be visible on the screen.  The following diagram shows
+which tile bin set and frame buffer to use to avoid conflict:
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">Frame #</th><th bgcolor="#404000">Bin to TB #</th><th bgcolor="#404000">Render from TB #</th><th bgcolor="#404000">Render to FB #</th><th bgcolor="#404000">Display FB #</th>
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">1</th>
+<td bgcolor="#404000">1</td>
+
+<td></td>
+
+<td></td>
+
+<td></td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">2</th>
+<td bgcolor="#404000">2</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">1</td>
+
+<td></td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">3</th>
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">2</td>
+
+<td bgcolor="#404000">2</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">4</th>
+<td bgcolor="#404000">2</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">5</th>
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">2</td>
+
+<td bgcolor="#404000">2</td>
+
+<td bgcolor="#404000">1</td>
+
+</tr>
+
+<tr align="center">
+<th bgcolor="#404000">6</th>
+<td bgcolor="#404000">2</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+
+etc.  As you can see, there is a two frame latency, i.e. frame 1 will
+not be visible on screen until frame 3 is being generated.
+</p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="Video memory" src="Dreamcast%20Programming%20-%20PowerVR_files/hwhvnjki1vaw5xeayq6ziu4zt3iviz1d6lgch2ayczbizk2rej462pe5yls8.gif" style="border: none;" height="35" width="182"></p>
+
+
+There are 8 megabytes of video memory, located in memory area 1
+(see the <a href="http://mc.pp.se/dc/memory.html">memory map</a>).  This memory is organized
+as two banks of 32×1Mbit each, and depending on the value of address bit 24
+they can either be accessed sequentially as 32 bit memory, or parallelly as
+64 bit memory.  In both cases, you get 8 megabytes of continuous address space,
+but the correspondence of address to memory cell is slightly different, as
+this figure shows:
+<p></p>
+
+
+
+<p>
+
+<table>
+
+
+<tbody><tr>
+<th>32 bit interface</th><th>64 bit interface</th>
+</tr>
+
+
+<tr><td>
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+
+<tbody><tr>
+
+<td bgcolor="#404000"><tt>0xA57FFFFC</tt></td>
+
+<td rowspan="3" bgcolor="#404000">&nbsp;&nbsp;&nbsp;&nbsp;Bank 2&nbsp;&nbsp;&nbsp;&nbsp;</td>
+
+</tr>
+
+
+<tr align="center">
+
+<td bgcolor="#404000">.<br>
+.<br>
+.</td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000"><tt>0xA5400000</tt></td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000"><tt>0xA53FFFFC</tt></td>
+
+<td rowspan="3" bgcolor="#404000">&nbsp;&nbsp;&nbsp;&nbsp;Bank 1&nbsp;&nbsp;&nbsp;&nbsp;</td>
+
+</tr>
+
+
+<tr align="center">
+
+<td bgcolor="#404000">.<br>
+.<br>
+.</td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000"><tt>0xA5000000</tt></td>
+
+</tr>
+
+
+<tr align="center">
+
+<td></td>
+
+<td bgcolor="#404000">0 ... 31</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+
+<td>
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+
+<tbody><tr>
+
+<td bgcolor="#404000"><tt>0xA47FFFF8</tt></td>
+
+<td rowspan="3" bgcolor="#404000">&nbsp;&nbsp;&nbsp;&nbsp;Bank 1&nbsp;&nbsp;&nbsp;&nbsp;</td>
+
+<td rowspan="3" bgcolor="#404000">&nbsp;&nbsp;&nbsp;&nbsp;Bank 2&nbsp;&nbsp;&nbsp;&nbsp;</td>
+
+</tr>
+
+
+<tr align="center">
+
+<td bgcolor="#404000">.<br>
+.<br>
+.</td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000"><tt>0xA4000000</tt></td>
+
+</tr>
+
+
+<tr align="center">
+
+<td></td>
+
+<td bgcolor="#404000">0 ... 31</td>
+
+<td bgcolor="#404000">32 ... 63</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+
+</tr></tbody></table>
+
+</p>
+
+
+
+<p>So, the bytes <tt>0xA4000000-0xA4000003</tt> correspond to
+<tt>0xA5000000-0xA5000003</tt>, <tt>0xA4000004-0xA4000007</tt> to
+<tt>0xA5400000-0xA5400003</tt>, <tt>0xA4000008-0xA400000B</tt> to
+<tt>0xA5000004-0xA5000007</tt> and so on.  Both interfaces can handle
+16-bit writes and up, 8-bit writes are not possible.  It is possible to
+read any length of word, including 8-bit, though.</p>
+
+
+
+<p>
+In the following register descriptions, an address specification using
+the 32 bit interface will be referred to as a <i>32 bit address</i>, and
+an address specification using the 64 bit interface as a <i>64 bit address</i>,
+although this should not be mistaken as the width of the actual address
+since both types of addresses are really 23 bits wide.
+</p>
+
+
+
+
+<p>
+
+</p><p><img valign="top" alt="RAMDAC Registers" src="Dreamcast%20Programming%20-%20PowerVR_files/hwhvnjki1vaw5xeayq6ziu4zt3iviz1mplug71q9v36vcou8kcgxh2ejlo9k.gif" style="border: none;" height="35" width="234"></p>
+
+The addresses given here are to the P2 area, as the registers should
+of course be accessed without cache.
+
+The register descriptions are partly based on research done by bITmASTER
+and maiwe.
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F8040 - Border colour RGB" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yr8636gejdbo7d50ywz29wf0li41pf.gif" style="border: none;" height="23" width="250"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="8"></td>
+
+<td colspan="8" bgcolor="#404000">Red</td>
+
+<td colspan="8" bgcolor="#404000">Green</td>
+
+<td colspan="8" bgcolor="#404000">Blue</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+This register sets the solid colour displayed around the main display area.
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F8044 - Display mode" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ypsugrtiqh263zqdez8q862xqovwyi.gif" style="border: none;" height="23" width="208"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="8"></td>
+
+<td bgcolor="#404000">C</td>
+
+<td colspan="19"></td>
+
+<td colspan="2" bgcolor="#404000">COL</td>
+
+<td bgcolor="#404000">SD</td>
+
+<td bgcolor="#404000">DE</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+
+<dl>
+
+
+<dt>C - Clock double enable</dt>
+
+
+<dd>Setting this bit doubles the pixel clock, giving a scan rate suitable
+for VGA monitors.</dd>
+
+
+<dt>COL - Colour mode select</dt>
+
+
+<dd>Selects the frame buffer pixel colour mode (all colour modes are little endian, e.g. in RGB888 the blue byte comes first)<br>
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th colspan="2" bgcolor="#404000">Value</th><th bgcolor="#404000">Colour mode</th><th bgcolor="#404000">Bytes per pixel</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">RGB555</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">RGB565</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">RGB888</td>
+
+<td bgcolor="#404000">3</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">RGB888</td>
+
+<td bgcolor="#404000">4</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+</dd>
+
+
+<dt>SD - Scan Double enable</dt>
+
+
+<dd>Setting this bit makes each scan line be sent twice, allowing low
+resolutions in VGA mode.</dd>
+
+
+<dt>DE - Display Enable</dt>
+
+
+<dd>This bit must be set for any graphics to be display.  If it is set to zero,
+only the border colour will be visible.</dd>
+
+
+</dl>
+
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F8050 - Video memory base offset 1" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y822qbj1fbav5r6tiy7ke1qlwejuhe.gif" style="border: none;" height="23" width="324"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="9"></td>
+
+<td colspan="21" bgcolor="#404000">32-bit Address</td>
+
+<td colspan="2"></td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+This sets the address in the video RAM of the first pixel displayed (top left).
+Address 0 means the first byte of the video RAM bank 1 (usually accessed as
+<tt>A5000000</tt> from the CPU).  The address must be longword aligned.
+This register is used for noninterlaced screens and the long field of
+interlaced screens.
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F8054 - Video memory base offset 2" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y4w8qc7fmycbkwl6ltqkyirrhqbs3h.gif" style="border: none;" height="23" width="326"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="9"></td>
+
+<td colspan="21" bgcolor="#404000">32-bit Address</td>
+
+<td colspan="2"></td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Same as <tt>A05F8050</tt>, but used for the short field of interlaced screens.
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F805C - Display size and modulo" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yazoa85f9ytkzsn62p2futb1eg6irz.gif" style="border: none;" height="23" width="298"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="2"></td>
+
+<td colspan="10" bgcolor="#404000">Modulo</td>
+
+<td colspan="10" bgcolor="#404000">Lines per field</td>
+
+<td colspan="10" bgcolor="#404000">Pixel data per line</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+This register determines how much pixel data to display each field, and the
+modulo between each line of data.
+
+<dl>
+
+
+<dt>Modulo</dt>
+
+
+<dd>The number of 32-bit words to skip between each line, plus 1.  I.e. a
+ value of 1 means the lines are stored immediatelty after each other in 
+memory.</dd>
+
+
+<dt>Lines per field</dt>
+
+
+<dd>How many lines of pixels to fetch and display each field, minus 1.  
+Since this is per field and not per frame, it should be set to half the 
+total vertical resolution (minus 1) in interlaced mode.</dd>
+
+
+<dt>Pixel data per line</dt>
+
+
+<dd>The number of 32-bit words of pixel data to fetch and display each 
+line, minus 1.  If you want X pixels per line, and each pixel is Y 
+bytes, X*Y/4-1 is the correct value to write.</dd>
+
+
+</dl>
+
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F80CC - Raster event position" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yfwm6e89rjfoiizda03hmotnislc2u.gif" style="border: none;" height="23" width="272"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="6"></td>
+
+<td colspan="10" bgcolor="#404000">Top</td>
+
+<td colspan="6"></td>
+
+<td colspan="10" bgcolor="#404000">Bottom</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+This register defines two rasterlines on the screen, which when they are passed by
+the raster beam will generate a raster event (which optionally causes
+an interrupt).  The rasterline for the "Top" raster event is typically set just above the display
+area, and the rasterline for the "Bottom" raster event just below the display area.
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F80D0 - Video encapsulation" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ycy6czt6f5gwbqswmm5cfgnqyy8dya.gif" style="border: none;" height="23" width="265"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="23"></td>
+
+<td bgcolor="#404000">VO</td>
+
+<td colspan="2" bgcolor="#404000">BC</td>
+
+<td></td>
+
+<td bgcolor="#404000">I</td>
+
+<td colspan="2"></td>
+
+<td bgcolor="#404000">HP</td>
+
+<td bgcolor="#404000">VP</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+
+<dl>
+
+
+<dt>VO - Video Output enable</dt>
+
+
+<dd>Set to 1 to enable video output.</dd>
+
+
+<dt>I - Interlace</dt>
+
+
+<dd>Set to 1 to enable interlaced video.</dd>
+
+
+<dt>BC - Broadcast standard</dt>
+
+
+<dd>Used to select type of colour sync for composite video<br>
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th colspan="2" bgcolor="#404000">Value</th><th bgcolor="#404000">Broadcast standard</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">NTSC</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">PAL</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">PAL-M (?)</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">PAL-N (?)</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+</dd>
+
+
+<dt>HP - H-sync polarity</dt>
+
+
+<dd>Set to 1 to for positive H-sync, 0 for negative H-sync.</dd>
+
+
+<dt>VP - V-sync polarity</dt>
+
+
+<dd>Set to 1 to for positive V-sync, 0 for negative V-sync.</dd>
+
+
+</dl>
+
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F80D4 - Border horizontal range" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yayacm4efnc3jklkzgfyf7qbb20ul6.gif" style="border: none;" height="23" width="293"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="6"></td>
+
+<td colspan="10" bgcolor="#404000">Start</td>
+
+<td colspan="6"></td>
+
+<td colspan="10" bgcolor="#404000">Stop</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+This register selects the horizontal range in which the border colour is
+displayed.  Left and right of this range, the border is displayed as black.
+
+<dl>
+
+
+<dt>Start</dt>
+
+
+<dd>The number of pixels from the horizontal sync where border display starts.</dd>
+
+
+<dt>Stop</dt>
+
+
+<dd>The number of pixels from the horizontal sync where border display ends.</dd>
+
+
+</dl>
+
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F80D8 - Full video size" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y6svnnuqkter87lmi94y7xknz9mthq.gif" style="border: none;" height="23" width="213"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="6"></td>
+
+<td colspan="10" bgcolor="#404000">Vertical</td>
+
+<td colspan="6"></td>
+
+<td colspan="10" bgcolor="#404000">Horizontal</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+This register selects the total number of lines and "pixels" (including lace)
+between each retrace.  The horizontal and vertical refresh rate are determined
+by this register, and the pixel clock.  For 50Hz (PAL), set V=624 H=863.  For
+60Hz (NTSC/VGA), set V=524 H=857.  (Halve the V value for non-interlaced
+PAL/NTSC screens.)
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F80DC - Border vertical range" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yokn02y98i5le4b58tkctvv3vmmrj5.gif" style="border: none;" height="23" width="273"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="6"></td>
+
+<td colspan="10" bgcolor="#404000">Start</td>
+
+<td colspan="6"></td>
+
+<td colspan="10" bgcolor="#404000">Stop</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+This register selects the vertical range in which the border colour is
+displayed.  Above and below this range, the border is displayed as black.
+
+<dl>
+
+
+<dt>Start</dt>
+
+
+<dd>The number of scanlines from the vertical sync where border display starts.</dd>
+
+
+<dt>Stop</dt>
+
+
+<dd>The number of scanlines from the vertical sync where border display ends.</dd>
+
+
+</dl>
+
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F80E8 - Additional video settings" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ypa2o4a41pczg03h2pfufsvsi9gyvs.gif" style="border: none;" height="23" width="300"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="10"></td>
+
+<td colspan="6" bgcolor="#404000">N</td>
+
+<td colspan="7"></td>
+
+<td bgcolor="#404000">LR</td>
+
+<td colspan="8"></td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Misc additional video settings.
+
+<dl>
+
+
+<dt>N</dt>
+
+
+<dd>Unknown.  Set to 22.</dd>
+
+
+<dt>LR</dt>
+
+
+<dd>Low-res; setting this bit makes each pixel be output twice, effectively
+giving a 320 pixel horizontal resolution.</dd>
+
+
+</dl>
+
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F80EC - Display horizontal position" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y6oaz9zawcwl7f6q2gms0bq3xyw692.gif" style="border: none;" height="23" width="316"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="22"></td>
+
+<td colspan="10" bgcolor="#404000">Horizontal pos</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+This register sets the distance from the horizontal sync to where pixel display starts.
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F80F0 - Display vertical position" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y9f7efvwsdw6viswja2nox8d4fw37x.gif" style="border: none;" height="23" width="291"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="6"></td>
+
+<td colspan="10" bgcolor="#404000">Vertical pos 2</td>
+
+<td colspan="6"></td>
+
+<td colspan="10" bgcolor="#404000">Vertical pos 1</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+This register sets the distance (in scanlines) from the vertical sync to where pixel display starts.
+
+<dl>
+
+
+<dt>Vertical pos 1</dt>
+
+
+<dd>This value is used for noninterlaced screens and the long fields of
+interlaced screens</dd>
+
+
+<dt>Vertical pos 2</dt>
+
+
+<dd>This value is used for the short fields of interlaced screens</dd>
+
+
+</dl>
+
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="Tile Accelerator Registers" src="Dreamcast%20Programming%20-%20PowerVR_files/hwhvnjki1vaw5xeayq6ziu4zt3iviz1oqdvvtrcsugc2ego0rqyfntjdcm1f.gif" style="border: none;" height="35" width="312"></p>
+
+The addresses given here are to the P2 area, as the registers should
+of course be accessed without cache.
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F8124 - Tile Bin base output address" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y8ry8edcempnx2um6ts7k6ga3wadqa.gif" style="border: none;" height="23" width="329"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="9"></td>
+
+<td colspan="21" bgcolor="#404000">32-bit Address</td>
+
+<td colspan="2"></td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+This sets the address of the Tile Bin array to which the Tile Accelerator
+should perform its binning.  64 bytes of memory per tile will be used
+at the video memory address pointed out by this register.
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F8128 - Display list base output address" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yao9w7bp70o791vjw12un01b4sxmyh.gif" style="border: none;" height="23" width="356"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="9"></td>
+
+<td colspan="21" bgcolor="#404000">32-bit Address</td>
+
+<td colspan="2"></td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+This sets the address of the compiled Display dist buffer to which the Tile
+Accelerator should output the processed primitives.  The amount of memory
+needed depends on how large the scene is.
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F813C - Tile Bin array size" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y2ozuqywehe9sitt3x37bldmvmx2i7.gif" style="border: none;" height="23" width="241"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="12"></td>
+
+<td colspan="4" bgcolor="#404000">Vertical</td>
+
+<td colspan="10"></td>
+
+<td colspan="6" bgcolor="#404000">Horizontal</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+The size of the Tile Bin array in rows and columns.
+
+<dl>
+
+
+<dt>Vertical</dt>
+
+
+<dd>How many tiles high the Tile Bin array is, minus 1.  Each tile is 32 pixels
+high.</dd>
+
+
+<dt>Horizontal</dt>
+
+
+<dd>How many tiles wide the Tile Bin array is, minus 1.  Each tile is 32 pixels
+wide.</dd>
+
+
+</dl>
+
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="ISP/TSP Registers" src="Dreamcast%20Programming%20-%20PowerVR_files/hwhvnjki1vaw5xeayq6ziu4zt3iviz1d1h9agiagzoca8rsejshk2gogsbf9.gif" style="border: none;" height="35" width="218"></p>
+
+The addresses given here are to the P2 area, as the registers should
+of course be accessed without cache.
+<p></p>
+
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F8020 - Display list base input address" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ybvxmvle67he934cn534zvxfuho7v3.gif" style="border: none;" height="23" width="345"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="9"></td>
+
+<td colspan="21" bgcolor="#404000">32-bit Address</td>
+
+<td colspan="2"></td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+The address of the compiled Display list created by the Tile Accelerator which
+contains the primitives for the scene.
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F802C - Tile Bin header input address" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yom19tbix8l9ja0g92e5cd3t23axpu.gif" style="border: none;" height="23" width="337"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="9"></td>
+
+<td colspan="21" bgcolor="#404000">32-bit Address</td>
+
+<td colspan="2"></td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+The address of a structure describing the location and clipping(?) of each
+tile on the screen, as well as pointers to the respective Tile Bin buffers.
+This structure has to be created before any rendering can be done, but can
+be reused in subsequent renders using the same set of Tile Bin buffers.
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F804C - Render output modulo" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yiz3zabjijvin24xhyd8yg4011unl8.gif" style="border: none;" height="23" width="284"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="23"></td>
+
+<td colspan="9" bgcolor="#404000">Modulo</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+The modulo of the frame buffer to which rendering is to take place, in
+bytes / 8.
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F8048 - Render output pixel format" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yqdb7i949mqqu143097b68qflx4f1x.gif" style="border: none;" height="23" width="317"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="8"></td>
+
+<td colspan="8" bgcolor="#404000">TH</td>
+
+<td colspan="12"></td>
+
+<td bgcolor="#404000">D</td>
+
+<td colspan="3" bgcolor="#404000">COL</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+The pixel format of the frame buffer to which rendering is to take place.
+
+<dl>
+
+
+<dt>TH - Alpha threshold</dt>
+
+
+<dd>Set this to control the alpha threshold level when output colour mode
+is ARGB1555.</dd>
+
+
+<dt>D - Dither enable</dt>
+
+
+<dd>Setting this bit enables dithering in highcolour modes.</dd>
+
+
+<dt>COL - Colour mode select</dt>
+
+
+<dd>Selects the frame buffer pixel colour mode (all colour modes are little endian, e.g. in RGB888 the blue byte comes first)<br>
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th colspan="3" bgcolor="#404000">Value</th><th bgcolor="#404000">Colour mode</th><th bgcolor="#404000">Bytes per pixel</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">RGB555</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">RGB565</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">ARGB4444</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">ARGB1555</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">RGB888</td>
+
+<td bgcolor="#404000">4</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">ARGB888</td>
+
+<td bgcolor="#404000">4</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+</dd>
+
+
+</dl>
+
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F8060 - Render output address" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y1v01vo9v8zy8fw2s1kvbncf8pssv7.gif" style="border: none;" height="23" width="283"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="9"></td>
+
+<td colspan="21" bgcolor="#404000">32-bit Address</td>
+
+<td colspan="2"></td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+The address of the frame buffer to which rendering is to take place.
+The coordinates for the individual tiles will be added as an offset to
+this base address.
+<p></p>
+
+
+
+<p>
+
+</p><p><img valign="top" alt="A05F8108 - Texture palette colour mode" src="Dreamcast%20Programming%20-%20PowerVR_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ymi8lug79lupummbtbj7h3j1h6ndlx.gif" style="border: none;" height="23" width="326"></p>
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28</th><th bgcolor="#404000">27</th><th bgcolor="#404000">26</th><th bgcolor="#404000">25</th><th bgcolor="#404000">24</th><th bgcolor="#404000">23</th><th bgcolor="#404000">22</th><th bgcolor="#404000">21</th><th bgcolor="#404000">20</th><th bgcolor="#404000">19</th><th bgcolor="#404000">18</th><th bgcolor="#404000">17</th><th bgcolor="#404000">16</th><th bgcolor="#404000">15</th><th bgcolor="#404000">14</th><th bgcolor="#404000">13</th><th bgcolor="#404000">12</th><th bgcolor="#404000">11</th><th bgcolor="#404000">10</th><th bgcolor="#404000">9</th><th bgcolor="#404000">8</th><th bgcolor="#404000">7</th><th bgcolor="#404000">6</th><th bgcolor="#404000">5</th><th bgcolor="#404000">4</th><th bgcolor="#404000">3</th><th bgcolor="#404000">2</th><th bgcolor="#404000">1</th><th bgcolor="#404000">0</th>
+</tr>
+
+<tr>
+
+<td colspan="30"></td>
+
+<td colspan="2" bgcolor="#404000">COL</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+The format of the entries in the palettes used by CLUT mode textures.
+
+<dl>
+
+
+<dt>COL - Colour mode select</dt>
+
+
+<dd>
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+<tbody><tr>
+<th colspan="2" bgcolor="#404000">Value</th><th bgcolor="#404000">Colour mode</th><th bgcolor="#404000">Bytes per entry</th>
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">ARGB1555</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">RGB565</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">ARGB4444</td>
+
+<td bgcolor="#404000">2</td>
+
+</tr>
+
+<tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">ARGB8888</td>
+
+<td bgcolor="#404000">4</td>
+
+</tr>
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+<br>
+Note that each palette entry always occupies 4 bytes of
+address space, even if only two bytes are used.</dd>
+
+
+</dl>
+
+<p></p>
+
+
+
+<hr>
+<a href="http://www.roxen.com/"><img alt="Powered by Roxen" src="Dreamcast%20Programming%20-%20PowerVR_files/internal-roxen-power-small-white.gif" align="right" border="0" height="40" width="40"></a><a href="http://mc.pp.se/dc/">Dreamcast Programming</a> by <i><a href="mailto:marcus@mc.pp.se">Marcus Comstedt</a></i><br>
+
+<!-- Created: Thu Jul  6 21:59:09 MEST 2000 -->
+<!-- hhmts start -->
+Last modified: Wed Apr 25 12:39:02 MEST 2001
+<!-- hhmts end -->
+
+</top>
+
+
+
+
+</body></html>

@@ -1,0 +1,366 @@
+<!DOCTYPE html PUBLIC "-//IETF//DTD HTML//EN">
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<title>Dreamcast Programming - Memory Map</title>
+
+</head>
+
+<body alink="red" text="white" bgcolor="black" link="#6699cc" vlink="#6677cc">
+<top>
+
+<img alt="" src="Dreamcast%20Programming%20-%20Memory%20Map_files/dc_mark.gif" align="right">
+
+<p><img valign="top" alt="Memory Map" src="Dreamcast%20Programming%20-%20Memory%20Map_files/asw4kq4vlpnfxtobd3366p2z0ge0klcnq63os7z47wzhuyfaiztetbuhxrwy.gif" style="border: none;" height="43" width="198"></p>
+
+
+The Dreamcast uses 32-bit logical addresses, but the physical address range
+is only 29-bit.  When the built-in MMU is active, the mapping between logical
+and physical address is basically left up to the programmer (see the SH4
+Hardware Manual for details), however the normal mode of operation in the
+Dreamcast is to have the MMU disabled, in which the mapping is fixed as
+described below.
+<br clear="right">
+
+
+
+<p>
+
+</p><p><img valign="top" alt="Logical address format" src="Dreamcast%20Programming%20-%20Memory%20Map_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5ytnm4jiy3mxyrg9mk6i7i66ziv454b.gif" style="border: none;" height="23" width="187"></p>
+
+When the MMU is disabled, the 32-bit logical addresses have the following
+format:
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+
+<tbody><tr>
+<th bgcolor="#404000">31</th><th bgcolor="#404000">30</th><th bgcolor="#404000">29</th><th bgcolor="#404000">28 ... 0</th>
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000">P</td>
+
+<td bgcolor="#404000">ALT</td>
+
+<td bgcolor="#404000">NC</td>
+
+<td bgcolor="#404000">Physical address</td>
+
+</tr>
+
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+
+In addition to the physical address, the following modifier bits are used:
+
+
+<dl>
+
+
+<dt>P - Privileged Access</dt>
+
+
+<dd>Addresses with the P bit set can only be accessed when the CPU is running
+in privileged mode, that is when the MD bit in the status register is set.
+(An exception to this is the <a href="#storeq">Store Queue</a> though.)
+P inhibits the MMU, and enables the ALT and NC bits.  If P is not set, ALT and
+NC are ignored.</dd>
+
+
+<dt>ALT - Alternate Address Space</dt>
+
+
+<dd>Setting this bit gives an alternate mapping of the physical address bits.
+If NC is also set, the builtin CPU I/O registers are selected.  If NC is not
+set, MMU translation is selected (if MMU is enabled) even though P is set.</dd>
+
+
+<dt>NC - Not Cacheable</dt>
+
+
+<dd>Setting this bit circumvents the data cache, which is useful for accessing
+external hardware registers.</dd>
+
+
+</dl>
+
+
+The following table show the possible combinations:
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+
+<tbody><tr>
+<th bgcolor="#404000">P</th><th bgcolor="#404000">ALT</th><th bgcolor="#404000">NC</th><th bgcolor="#404000">Address range</th><th bgcolor="#404000">Description</th><th bgcolor="#404000">Area name</th>
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">X</td>
+
+<td bgcolor="#404000">X</td>
+
+<td bgcolor="#404000"><tt>0x00000000-0x7FFFFFFF</tt><br>
+(Physical address space repeats 4 times)</td>
+
+<td bgcolor="#404000">Address translation through MMU (if enabled).  Can be accessed in both User and Privileged mode.</td>
+
+<td bgcolor="#404000">U0/P0</td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000"><tt>0x80000000-0x9FFFFFFF</tt></td>
+
+<td bgcolor="#404000">Privileged mode only.</td>
+
+<td bgcolor="#404000">P1</td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000"><tt>0xA0000000-0xBFFFFFFF</tt></td>
+
+<td bgcolor="#404000">Privileged mode only, no cache.</td>
+
+<td bgcolor="#404000">P2</td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">0</td>
+
+<td bgcolor="#404000"><tt>0xC0000000-0xDFFFFFFF</tt></td>
+
+<td bgcolor="#404000">Privileged mode only.  Address translation through MMU (if enabled).</td>
+
+<td bgcolor="#404000">P3</td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000">1</td>
+
+<td bgcolor="#404000"><tt>0xE0000000-0xFFFFFFFF</tt></td>
+
+<td bgcolor="#404000">Privileged mode only.  Internal I/O register access.  No cache.</td>
+
+<td bgcolor="#404000">P4</td>
+
+</tr>
+
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+
+<p></p>
+
+
+
+<p>
+</p><p><img valign="top" alt="Physical address format" src="Dreamcast%20Programming%20-%20Memory%20Map_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5yo6xyz38uau3fzsrgimzo8vqqpj7al.gif" style="border: none;" height="23" width="196"></p>
+
+
+With exception of the P4 area, the different logical address areas share
+the same physical address space.  This address space (of 29 bits) is divided
+into eight different areas of 64MB size each.
+
+
+<table bgcolor="#808020" border="0" cellpadding="1" cellspacing="0">
+
+<tbody><tr>
+
+<td>
+<table border="0" cellpadding="3" cellspacing="2">
+
+
+<tbody><tr>
+<th bgcolor="#404000">Physical address</th><th bgcolor="#404000">Contents</th><th bgcolor="#404000">Name</th>
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000">0x00000000-0x03FFFFFF</td>
+
+<td bgcolor="#404000">Boot ROM (2MB)<br>
+Flash ROM (256K)<br>
+Hardware registers</td>
+
+<td bgcolor="#404000">Area 0</td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000">0x04000000-0x07FFFFFF</td>
+
+<td bgcolor="#404000">Video RAM (8MB)</td>
+
+<td bgcolor="#404000">Area 1</td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000">0x08000000-0x0BFFFFFF</td>
+
+<td></td>
+
+<td bgcolor="#404000">Area 2</td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000">0x0C000000-0x0FFFFFFF</td>
+
+<td bgcolor="#404000">System RAM (16MB)</td>
+
+<td bgcolor="#404000">Area 3</td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000">0x10000000-0x13FFFFFF</td>
+
+<td bgcolor="#404000">Tile accelerator command input</td>
+
+<td bgcolor="#404000">Area 4</td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000">0x14000000-0x17FFFFFF</td>
+
+<td bgcolor="#404000">Expansion (modem) port</td>
+
+<td bgcolor="#404000">Area 5</td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000">0x18000000-0x1BFFFFFF</td>
+
+<td></td>
+
+<td bgcolor="#404000">Area 6</td>
+
+</tr>
+
+
+<tr>
+
+<td bgcolor="#404000">0x1C000000-0x1FFFFFFF</td>
+
+<td bgcolor="#404000">Internal I/O registers (same as P4)</td>
+
+<td bgcolor="#404000">Area 7</td>
+
+</tr>
+
+
+</tbody></table>
+</td>
+
+</tr>
+
+</tbody></table>
+
+Accesses to Area 7 require the CPU to be running in privileged mode even if
+the access is through U0.
+
+<p></p>
+
+
+
+<p>
+<a name="storeq">
+</a></p><p><a name="storeq"><img valign="top" alt="Store Queue" src="Dreamcast%20Programming%20-%20Memory%20Map_files/hlcfhu1cyw2cyj7k6g8xd5wjq7q2w5y2jqn3hwdktkglhliqbqso5ewg8y4d.gif" style="border: none;" height="23" width="102"></a></p><a name="storeq">
+</a>
+
+To be described later...
+<p></p>
+
+
+
+<hr>
+<a href="http://www.roxen.com/"><img alt="Powered by Roxen" src="Dreamcast%20Programming%20-%20Memory%20Map_files/internal-roxen-power-small-white.gif" align="right" border="0" height="40" width="40"></a><a href="http://mc.pp.se/dc/">Dreamcast Programming</a> by <i><a href="mailto:marcus@mc.pp.se">Marcus Comstedt</a></i><br>
+
+<!-- Created: Tue May  9 16:53:20 MEST 2000 -->
+<!-- hhmts start -->
+Last modified: Sat Nov 18 19:41:50 MET 2000
+<!-- hhmts end -->
+
+</top>
+
+
+
+
+
+</body></html>
