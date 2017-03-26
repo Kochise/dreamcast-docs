@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# bin2o (heh)
+# script to convert a binary data to an elf object file
+# (c)2000 Dan Potter
+# $Id: bin2o,v 1.3 2002/11/03 04:57:39 bardtx Exp $
+
+if [ $# != 3 ]; then
+	echo usage: $0 \<input file\> \<symbol\> \<output file\>
+	exit 0
+fi
+
+# Gotta do a different binary target here depending on the target
+if [ $KOS_ARCH = "dreamcast" ]; then
+	echo "SECTIONS { .rodata : { _$2 = .; *(.data); _$2_end = .; } }" > /tmp/script.ld
+	$KOS_LD --no-warn-mismatch --format binary --oformat elf32-shl $1 -o $3 -r -EL -T /tmp/script.ld
+fi
+
+if [ $KOS_ARCH = "gba" ]; then
+	echo "SECTIONS { .rodata : { $2 = .; *(.data); $2_end = .; } }" > /tmp/script.ld
+	$KOS_LD --no-warn-mismatch --format binary --oformat elf32-littlearm $1 -o $3 -r -EL -T /tmp/script.ld
+fi
+
+if [ $KOS_ARCH = "ps2" ]; then
+	echo "OUTPUT_ARCH(mips:5900) SECTIONS { .rodata : { _$2 = .; *(.data); _$2_end = .; } }" > /tmp/script.ld
+	$KOS_LD --no-warn-mismatch --format binary --oformat elf64-littlemips -mips3 $1 -o $3 -r -EL -T /tmp/script.ld
+fi
+
+rm -f /tmp/script.ld
+

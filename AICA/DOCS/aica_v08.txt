@@ -1,0 +1,630 @@
+
+wo iss alles? wie geht alles? (tm)
+by yamato in 2002
+
+
+// ----------------------------------------------------------------------------
+//
+// Yamaha AICA Sound System Hardware Reference v0.8
+//
+//
+// WARNING: i do not guarantee the information given in this
+//          text file to be correct. some parts are only guesses
+//          and imaginations. if you find something new, a mistake or have
+//          a comment then please drop me a message to yamato@20to4.net so i can
+//          improve future versions. 
+//
+//          thank you and good luck
+//
+// ----------------------------------------------------------------------------
+
+
+
+
+The AICA registers are accessable from both the SH4 and the ARM7.
+The base address is 0x00800000 on the ARM7-side and
+0xa0700000 on the SH4-side.
+
+all panning values on the AICA are 5 bit signed values.
+
+	-15 (0x1f)			full right
+	-14 (0x1e)
+ 	[...]
+	-01 (0x11)
+ 	 00 (0x10 / 0x00) 	middle
+ 	 01 (0x01)
+ 	 02 (0x02)
+ 	[...]
+	 15 (0x0f)			full left
+
+
+// ============================================================================
+// ============================================================================
+// ============================================================================
+// Channel Registers
+	
+	Each channel register set consists of 32 32-bit registers, but only the first
+	18 registers are actually used by the hardware. The remaining 14 registers
+	are just placeholders and simplyfy the calculation of the channel register sets.
+	
+	The base address for the channels is 0x00800000 which is also the base address
+	for the Channel 0 Registers, followed by the Channel 1 Registers and so on.
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0000 - PlayControl
+
++----------------------------------------------------------------+
+| 31-16 | 15-14     | 13-11 | 10 | 9    | 8-7    | 6-0           |
+| n/a   | key-event | n/a   | u  | loop | format | addr_hi       |
++----------------------------------------------------------------+
+
+	key-event:	playstate / playtrigger
+				00: key off (??)
+				01: is playing (??)
+				10: key off	(stop)
+				11: key on	(play)
+				
+				other guess:
+				bit 14: 0 = key off, 1 = key on
+				bit 15: 0 = "aftertouch" off, 1 = "aftertouch" = on
+				meaning of aftertouch: works with looping samples properly only.
+				if the channel is stopped by clearing bit 14, it continues playing
+				but goes into the release phase of the evelopes.
+
+				note: 	clear bit 14 for key-off 
+					description of bit 15 is only a guess and might be wrong.
+
+	u:			??
+
+	loop:		0: forward looping disabled
+				1: forward looping enabled (inifite loop)
+
+				note:	if looping is enabled it must be disabled for the channel to stop playing
+
+	format:		0 - 16bit
+				1 - 8bit
+				2 - ADPCM 4bit
+				3 - Looping ADPCM 4bit
+
+	addr_hi:	higher 7 bits of sample start address
+		
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0004 - SampleAddrLow
+
++-----------------+
+| 31-16 | 15-0    |
+| n/a   | addr_lo |
++-----------------+
+
+	addr_lo:	lower 16 bits of sample start address
+		
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0008 - LoopStart
+
++---------------+
+| 31-16 | 15-0  |
+| n/a   | pos   |
++---------------+
+
+	pos:	Set Loop Start Address in samples (0x0000 to 0xfffd).
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x000c - LoopEnd
+
++--------------+
+| 31-16 | 15-0 |
+| n/a   | pos  |
++--------------+
+
+	pos:	Set Loop End Address in samples (0x0001 to 0xffff, Loop End must be > Loop
+			Start Address) 
+			if no looping is desired this register must be set to the sample length
+			in samples before a channel is played
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0010 - AmpEnv1
+
++----------------------------------+
+| 31-16 | 15-11 | 10-6 | 5   | 4-0 |
+| n/a   | dec2  | dec1 | ... | att |
++----------------------------------+
+
+	amplitude envelope 1
+
+	dec2:	Stage 2 decay transition time from 8100 to 0.0 msec, 0x00 to 0x1f respectively
+
+	dec1:	Stage 1 decay transition time from 8100 to 0.0 msec, 0x00 to 0x1f respectively
+
+	att:	Attack transition time from 8100 to 0.0 msec, 0x00 to 0x1f respectively
+		
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0014 - AmpEnv2
+
++----------------------------------------+
+| 31-16 | 15  | 14  | 13-10 | 9-5  | 4-0 |
+| n/a   | n/a | link| key   | dlev | res |
++----------------------------------------+
+
+	amplitude envelope 2
+
+	res:	Release transition time from 8100 to 0.0 msec, 0x00 to 0x1f respectively
+
+	dlev:	(decay level) Specifies the EG level for transition from stage 1 to stage 2
+
+	key:	Specifies the rate of EG key rate scaling, minimum to maximum, 0x00 to
+			0x0e, 0x0f scaling is off
+
+	link:	links playback EG to transition to DecayRate1 level when playback
+			address exceeds loop start address
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0018 - SampleRatePitch
+
++----------------------+
+| 31-16 | 15-11 | 10-0 |
+| n/a   | oct   | fns  |
++----------------------+
+Pitch in cents. (-8400 to 8400)
+Changes the pitch of a currently running voice channel in increments of cents.
+
+	controls the pitch of the waveform
+
+	oct:
+		calculated according to:
+
+			[formula later]
+
+	fns:
+		calculated according to:
+
+			[formula later]
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+//  0x001c - LFOControl
+
++-------------------------------------------+
+| 15 | 14-10 | 9-8   | 7-5   | 4-3   | 2-0  |
+| rst| freq  | form1 |depth1 | form2 |depth2|
++-------------------------------------------+
+
+	pitch and amplitude lfo register
+
+	rst: 	Reset LFO at start of playback (0 = no, 1 = yes)
+	
+	freq: 	Sets LFO frequency, 0.17 hz to 172.30 hz, 0x00 to 0x1f
+	
+	form1: 	Sets the pitch LFO waveshape to SAW, SQUARE, TRIANGLE or NOISE,
+			0x00 to 0x03 respectively
+	
+	depth1:	Set the LFO depth to modulate pitch from (-3 to 2) cent ranges to (-231 to
+			202) cent ranges, 0x00 to 0x07
+
+	form2:	Sets the Amplitude LFO waveshape to SAW, SQUARE, TRIANGLE or
+			NOISE, 0x00 to 0x03 respectively
+
+	depth2: Sets the amount of amplitude modulation from -0.4 db displacement to
+			-24.0 db displacement, 0x00 to 0x07
+	
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0020 - DSPChannelSend
+
++-------------------------------+
+| 31-16 | 11-8   | 7-4  |3-0    |
+| n/a   | dspsend| ...  |dspchn |
++-------------------------------+
+
+	dspchn:		DSP channel number to route THIS channel to (Channel 0-15)
+	
+	dspsend:	Channel Send Level to DSP mixer (0-15)
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0024 - DirectPanVolSend
+
++------------------------------------+
+| 31-16 | 15-12 | 11-8   | 7-5 | 4-0 |
+| n/a   | ???   | volume | ??? | pan |
++------------------------------------+
+
+	volume: direct send level (0-15)
+		
+	pan:	position of this channel
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0028 - LPF1Volume
+
++--------------------------------------+
+| 31-16 | 15-8   |      5     |  4-0   |
+|       | volume |  filteroff |filterq |
++--------------------------------------+
+
+	filterq:	FilterResonance   Q = 0.75 x value -3 (0x00 to 0x1f), from -3 to 20.25 db
+
+	filteroff:	1 = LowPassFilter off, 0 = LowPassFilter on
+
+	volume:		logarithmic volume from silence to full amplitude, 0xff to 0x00 respectively.
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x002c - LPF2
+
++----------------------+
+| 31-16 | 12-0         |
+| n/a   | filterValue0 |
++----------------------+
+
+	filterValue0: 	starting filter frequency (13 bit) from 1hz to 20khz (0x0000 to 0x1fff) at
+					attack start
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0030 - LPF3
+
++----------------------+
+| 31-16 |    12-0      |
+| n/a   |  filterValue1|
++----------------------+
+
+	filterValue1:	stage 1 filter frequency (13 bit) from 1hz to 20khz (0x0000 to 0x1fff) at
+					decay start time
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0034 - LPF4
+
++---------------------+
+| 31-16 |    12-0     |
+| n/a   | filterValue2|
++---------------------+
+
+	filterValue2:	stage 2 filter frequency (13 bit) from 1hz to 20khz (0x0000 to 0x1fff) at
+					sustain start time
+					
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0038 - LPF5
+
++---------------------+
+| 31-16 |     12-0    |
+| n/a   | filterValue3|
++---------------------+
+
+	filterValue3:	stage 3 filter frequency (13 bit) from 1hz to 20khz (0x0000 to 0x1fff) at
+					KeyOff time
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x003c - LPF6
+
++---------------------+
+| 31-16 |    12-0     |
+| n/a   | filterValue4|
++---------------------+
+
+	filterValue4:	release filter frequency (13 bit) from 1hz to 20khz (0x0000 to 0x1fff)
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0040 - LPF7
+
++----------------------+
+| 31-16 | 12-8 | 7-0   |
+| n/a   |  att | dec1  |
++----------------------+
+
+	att: filterAttackRate 0x1f to 0x00, short to long transition, approximately 3.1 to 118200 msecs
+	
+	dec1: filterDecayRate1 0x1f to 0x00, short to long transition, approximately 3.1 to 118200 msecs
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0044 - LPF8
+
++----------------------+
+| 31-16 | 12-8  | 7-0  |
+| n/a   |  dec2 | rel  |
++----------------------+
+
+	dec2:	filterDecayRate2 0x1f to 0x00, short to long transition, approximately 3.1 to 118200 msecs
+	
+	rel:	filterReleaseRate 0x1f to 0x00, short to long transition, approximately 3.1 to 118200 msecs
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x0048 to 0x007c - 14 32bit Empty Registers
+
+
+// ============================================================================
+// ============================================================================
+// ============================================================================
+
+
+	
+
+// ============================================================================
+// ============================================================================
+// ============================================================================
+// DSP Output Mixer Channels Registers
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x2000 to 0x203c - 18 32bit DSP Output Mixer registers
+
+	each register is 32bits long and stands for one of the DSP Output Channels.
+	the last two output channels 16 and 17 are hardwired to the GDROM drive
+	and are used for cd audio track playback directly from the disc media. 
+	channel 16 is for the left GDDA channel and channel 17 is for right GDDA channel. 
+	the two mono channels that make up the stereo channel can be swapped
+	by setting the opposite panning positions to the corresponding registers.
+	
+	although channels 0-15 are output channels those two GDDA channels registers
+	control the direct send volume and not the mixer output volume.
+
++-------------------------------------+
+| 31-16 | 15-12 | 11-8    | 7-5 | 4-0 |
+| n/a   | n/a   | volume  | n/a | pan |
++-------------------------------------+
+	
+	volume: volume for this output mixer channel
+	pan:	panning for this output mixer channel
+
+	// 0x2040 - DSPLeftCDDASend (channel 16)
+	// 0x2044 - DSPRightCDDASend (channel 17)
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x2800 - MasterVolume
+
++---------------------------+
+| 31-16 | 15-8 | 7-4  | 3-0 |
+| n/a   | mode | ...  | vol |
++---------------------------+
+	
+	vol:	master volume of the whole sound system (0-15)
+	mode:	mono/stereo mode
+			0x00 = stereo
+			0x80 = mono
+	
+			note:	this register returns always 0x10 when read. 
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x2804 - DSPProgramAddr (dsp fx program address)
+
+	DSP Ringbuffer size & DSP ringbuffer base address
+	
+	the address of the 128 dsp fx program registers is written here to
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x2808 - INTBusRequest
+
+	when an bus access from outside (DSP?? G2??) is requested an FIQ #5 is raised and 
+	this register goes to 0x100. the ARM7 should wait for this register then before leaving
+	the interrupt handler and continuing execution.
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x280c - ChnInfoReq
+// channel information request
+
++-----------------------------+
+| 31-16 | 15-14  | 13-8 | 7-0 |
+| n/a   | pend   | req  | pend|
++-----------------------------+
+		
+		req:	channel number for which status information is requested
+				the channel's current playposition is written to the PlayPos register
+		
+		pend:	these bits should not be touched
+
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x2810 - other channel status register
+
+	lower word goes to 0x7fff when channel is playing and to 0x4000 if channel is stopped.
+	looping channels seem to go to 0x4000 when end marker is reached and then back to 0x7fff.
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x2814 - PlayPos
+// 
+
++------------------+
+| 31-16 |   15-0   |
+| n/a   | position |
++------------------+
+
+		position:	the channel's current playposition in samples.
+					the requested channel number must have been written to the
+					ChnInfoReq register before this register can be read.
+
+
+
+
+
+// ============================================================================
+// ============================================================================
+// ============================================================================
+// Interrupt and timer registers
+	
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x2890 - INTTimerStart
+
+	a timer interrupt (interrupt #2) is raised when this counter reaches
+	the value in the INTTimerEnd register (only guess).
+	to get an interrupt period of about one millisecond set this register to
+	256 - (44100 / 1000) = 212 = 0xD4. this is the common used value.
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x289c - INTTimerEnd (only guess)
+
+	when the INTTimerCount register is equal to this register an interrupt #2 
+	is raised. 
+	this register is set to zero usually.
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x28a4 - INTTimerTrigger
+
+	write 0x00 to stop the INTTimerCount register (??)
+	write 0x40 to start the INTTimerCount register
+				
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x28a8 - ARMClock - GUESS
++--------------+
+| 31-8  |  7-0 |
+| n/a   |  mhz |
++--------------+
+	
+	mhz:		sets the speed of the ARM7 CPU in MHz steps. 
+				00 = 1 MHz, 24 = 25 MHz
+				don't try to overclock the ARM7 it may get burned or something.	
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x28ac - unknown
++-----------------+
+| 31-16 | 15-0    |
+| n/a   | unknown |
++-----------------+
+
+	unknown:	default value is 0x50 (80)
+		
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x28b0 - unknown (max interrupts for interrupt queue??)
++-----------------+
+| 31-16 | 15-0    |
+| n/a   | unknown |
++-----------------+
+
+	unknown:	default value is 0x08
+
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x28b4 - INTEnable
+
+	write 0x20 to enable interrupts to SH4 system
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x28b8 - INTSend
+
+	0x20 hold pending	
+	0x20 is cleared
+	
+	write 0x20 to raise an interrupt on the SH4
+	
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x28bc - INTReset
+
+	write 0x20 to reset the interrupt system
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x2c00: ARMReset
++-------------------------------------+
+| 31-16 | 15-10 | 9-8   | 7-1 | 0     |
+|  n/a  | n/a   | cable | n/a | reset |
++-------------------------------------+
+
+	cable:
+		type of video cable the display is to be set for:
+
+		0: VGA
+		1: ???
+		2: RGB
+		3: composite
+
+	reset:
+		0: normal
+		1: reset ARM7
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x2d00 - INTReqest
+
++--------------+
+| 31-16 | 2-0  |
+| n/a   | num  |
++--------------+
+
+	num:	interrupt number that is beeing requested when an interrupt occurs.
+			2 = timer interrupt
+			5 = bus request interrupt
+			other interrupts are not used.
+
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// 0x2d04 - INTClear
+
++--------------+
+| 31-16 | 15-0 |
+| n/a   | clear|
++--------------+
+
+	write 0x01 several times to ensure that all interrupts (in the interrupt queue ??)
+	are discarded.
+	
+	write 0x01 when finishing the FIQ handler four times, i.e. when all interrupt request
+	processing is done.
+	
+
+
+
+// ============================================================================
+// ============================================================================
+// ============================================================================
+// 128 DSP FX Program registers
+// for each step there is one 32 bit register
+// since this is a 128 step DSP there are 128 registers
+// each step is an DSP instruction
+
+// 0x3000 - 0x31FC	128 instruction registers
+// 0x3200 - 0x32FC (64 registers)
+// 0x3400 - 0x3BFC (512 registers)
+// 0x4000 - 0x43FC (256 registers)
+
+
+
+
+
+
