@@ -1,0 +1,90 @@
+=============================================================================
+Check Sheet for Dreamcast Program (for direct hardware control) Version 0.20
+                                              03/03/99 SEGA Tech Support
+=============================================================================
+
+<< Drawing (without Kamui) >>
+
+ - Kamui is being used to access the drawing system register when the graphic 
+  chip for the development target differs from the product version.  
+
+--------------------------------------------------------------------------------
+* The following check items will become valid when the same graphic chip is used 
+  for development targets and product versions.  Until then, Kamui must be used as 
+  shown above.
+--------------------------------------------------------------------------------
+
+ - Soft reset and register settings are being initialized before TA transfer.
+ - During Ch2 DMA, suspension of Ch2 DMA is being confirmed and a soft reset is being
+  used to empty TA FIFO upon forcible interruption of TA.
+ - When using user tile clipping, more than 1 invisible dummy polygon is being sent
+  before setting global parameters to change items such as the area.
+ - Direct data (such as texture) is being sent while YUV macro block send is 
+  in progress.
+ - End of TSP is being used for drawing complete interrupt. 
+ - The display area is set to the drawing area minus 1 when the y scale is reduced.
+ - An invisible opaque polygon that covers the entire screen is registered when using
+  presorted half-transparent polygons.
+ - Half-transparent sorting mode is set to auto sort when using modifiers 
+  with half-transparent and tri-linear polygons.
+ - Intensity shadow volume is being used for polygons that use bump map texture. 
+ - The nu screen is being divided into an even number of sections when strip buffer 
+  mode is being used for the frame buffer.  
+ - The value set for FB_X_CLIP or FB_Y_CLIP exceeds the screen size when using strip 
+  buffer mode for the frame buffer.
+
+<< SH4 >>
+
+ - The SAR, DAR, DMATCR, and CHCR registers of SH4-DMA are only being rewritten 
+  when the CHCR DE bit is set to 0.
+ - DMA for channels 1 and 3 is being used in accordance with the workaround described
+  under "Failure to write peripheral module control register during DMA transfer" 
+  in the manual.
+ - An NMI has been generated during DMA. 
+ - Flash memory is not being accessed before setting G1FRC and G1FWC.
+ - 32-byte access to system ROM is not being used before setting G1FRC and G1FWC. 
+ - Only system ROM is being accessed before setting the CPU BSC.
+
+<< File System >>
+
+ - Two commands are not being written to the command register in immediate succession.
+ - Undefined commands are not being issued.
+ - Commands are not being issued with incorrect parameters. 
+ - Operation is being implemented according to protocol.
+ - Data registers are being accessed in words and other registers are being accessed 
+  in bytes.
+ - ROM and FLASH are not being accessed during DMA. 
+ - The transfer mode (feature register) is set correctly.
+ - G1 Bus is set correctly.
+ - The drive select register is not being accessed.
+ - Error processing is working properly with all commands. 
+
+<< Peripherals >>
+
+ - The command that indicates the end of each command in the command file is located 
+  at the 8th long word of a 32-byte boundary.
+ - The command file is composed of long word units.  
+ - A storage address indicated for received data in the command file is at a 32-byte 
+  boundary 
+ - The address of the Maple register in the command file starts with 0x0???????. 
+ - DMA is being disabled when writing values to the system control and DMA trigger 
+  selection registers.
+
+<< Sound >>
+
+ -  When accessing sound memory and registers, long access (4-byte) is always being 
+  done using 4-byte boundaries.
+ - Sound memory is being accessed through the cache through area. 
+ - Addresses other than those of defined memory and registers are not being accessed. 
+ -  After data has been written to sound memory, FIFO is being checked to ensure 
+  that it is empty before doing read operations. 
+ -  FIFO is being checked to ensure that it is empty when writes to sound memory are
+  performed more than 9 times in succession.
+ -  Before reset/control of the sound CPU, VREG contents in the same register are always 
+  saved. 
+ -  When reading RTC data, measures are being taken to ensure that data being read is 
+not invalid because it is in the process of being updated. (such as reading the 
+data twice and verifying that it is the same). 
+ - Sound system internal DMA is being used. 
+
+ - EOF -

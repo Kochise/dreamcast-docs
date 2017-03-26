@@ -1,0 +1,50 @@
+PVR Dma module for KallistiOS 1-1-8
+=== === ====== === ========== =====
+(C) Roger Cattermole 2002
+http://www.boob.co.uk
+
+This enables the use of pvr texture dma for copying data from ram to vram, rather than merely using store queues.
+
+
+
+Instructions
+============
+
+Add pvrdma.c to "/kernel/arch/dreamcast/hardware/"
+
+==========
+
+In "/kernel/arch/dreamcast/include/dc/pvr.h" add:
+
+void pvr_texture_dma(pvr_ptr_t dest, void * src, uint32 count);
+void pvr_dma_init();
+void pvr_dma_shutdown();
+void pvr_dma_irq_hnd(uint32 code);
+
+==========
+
+In "/kernel/arch/dreamcast/hardware/hardware.c" add:
+
+pvr_dma_init();
+
+pvr_dma_shutdown();
+
+==========
+
+In "/kernel/arch/dreamcast/hardware/pvr/pvr_texture.c"
+
+Change void pvr_txr_load to:
+
+#define PVR_DMA 
+
+void pvr_txr_load(void * src, pvr_ptr_t dst, uint32 count) { 
+	#ifdef PVR_DMA
+	pvr_texture_dma(dst, src, count);
+	#else
+	if (count % 4)
+		count = (count & 0xfffffffc) + 4;
+	sq_cpy((uint32 *)dst, (uint32 *)src, count);
+	#endif
+}
+
+===========

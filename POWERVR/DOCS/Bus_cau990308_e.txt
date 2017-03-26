@@ -1,0 +1,74 @@
+Å°(1) 	Care must be taken when writing to the TA.  
+
+(1.1) 	Access size is restricted to 32 bytes.  The write address must be set to 	a 32-byte boundary.  Reads are inhibited.  (Reading this address will not 	cause a hang up to occur, but the returned data will be inconsistent.)  
+
+(1.2) 	Incorrect operation will result if write-back is not carefully controlled 	when using the cache for TA writes.  (If writeback occurs before all 32 bytes 	of write data are ready, incomplete data will be sent to the 		TA.  For example, if an interrupt occurs while 4-byte data is being assembled, 	and the interrupt entry address is the same as the address currently being 	accessed, cache contents are replaced and data sent will not be as expected.)  
+
+
+Å°(2) 	In some cases, the access sequence intended by the program cannot be 	maintained. 
+
+(2.1) 	All DMA runs in the cycle steal mode.   Consequently, the sequence of 	operation cannot be assured when two or more types of DMA are running 	simultaneously.  Similarly, CPU and DMA access sequences cannot be assured.  	In order to preserve the sequence, it is necessary to confirm completion 	of DMA.  
+
+(2.2) 	If TA Thru writes take place while accessing texture memory by CPU program, 	the sequence of the PVRi/f texture memory access can be reversed with that 	of the TA Thru write.  
+	* When reads or writes are performed via PVRi/f after TA Thru writes, the 	actual sequence of access to texture memory may be reversed so that the PVRi/f 	access occurs first. 
+        (There is no method for positively ascertaining completion of a TA Thru 	write.)
+	* When writes are performed via TA Thru after PVRi/f writes, the actual 		sequence of access to texture memory may be reversed so that the TA Thru 	access occurs first.
+        (The sequence can be maintained by inserting a dummy read via PVRi/f after 	the PVRi/f write.) 
+
+(2.3) 	If a write to TA follows rewriting of the TA control register, the TA write 	may actually take place before the control register is changed, resulting 	in misoperation.  
+    	The sequence can be maintained by inserting a dummy read after the control 	register write.   
+
+(2.4)	When AICA reads are performed after AICA writes, AICA reads occur first.
+	The FFST register (FIFO status register) can be used to confirm that the 	write has been completed.  
+
+Å°(3)	In setting the starting addresses for Maple-DMA, GD-DMA, AICA-DMA, 	Extenal-DMA1, Extenal-DMA2, and PVR-DMA, the upper three bits (bit31, 	30, and 29) must be set to 000. 
+
+        MDSTAR (Maple-DMA command table address)
+        CDSTAR (GD-DMA start address on Root Bus)
+        ADSTAG (AICA-DMA start address on AICA)
+        ADSTAR (AICA-DMA start address on Root Bus)
+        E1STAG (Ext-DMA1 start address on External)
+        E1STAR (Ext-DMA1 start address on Root Bus)
+        E2STAG (Ext-DMA2 start address on External)
+        E2STAR (Ext-DMA2 start address on Root Bus)
+        PDSTAP (PVR-DMA start address on Power VR)
+        PDSTAR (PVR-DMA start address on Root Bus)
+
+
+Å°(4) 	During GD-DMA, access to system ROM and flash memory is inhibited. 
+      	Any attempted access will be ignored.  (Write data is discarded and data 	read will be of indeterminate value.)
+
+Å°(5) 	Suspension of DMA
+
+(5.1)	Any DMA operation can be suspended by clearing the DMA enable register, but 	suspended DMA cannot be restarted from the point of suspension. 
+
+(5.2) 	Even if DMA is suspended, it takes some time before DMA operation actually 	stops.  This is because DMA continues until the hardware reaches an 	appropriate stopping place.  
+	Therefore, after suspending DMA, end of operation must be 	confirmed.
+      	(Even if Maple-DMA is suspended, it does not stop until sending and receiving 	have been completed on one channel.)  
+       	For example, DMA suspension takes a very long time when the channel 	is set to receive 1024 bytes, because receiving does not stop until 1024 	bytes have been received. 
+
+(5.3) 	Care must be taken that an interrupt does not occur when PVR-DMA, 	AICA-DMA, Extenal-DMA1, and Extenal-DMA2 are suspended. 
+	Before clearing the DMA enable register, PDTNRM, PDTEXT, G2DTNRM, and 	G2DTEXT register settings must be changed to mask interrupts. 
+
+(5.4) 	When stopping SH4 DMAC, end Holly DMA first, then after 	confirming that 	it has ended, stop SH4 DMAC.
+      	If SH4 DMAC is stopped first, Holly DMA will not stop. 
+
+(5.5) 	Only AICA-DMA, Extenal-DMA1, and Extenal-DMA2 can be suspended and then 		restarted from the point where DMA was stopped.  
+      	When suspending, use the following registers:
+        ADSUSP (AICA-DMA suspend request/status)
+        E1SUSP (Ext-DMA1 suspend request/status)
+        E2SUSP (Ext-DMA2 suspend request/status)
+
+
+Å°(6) 	In SH4 ch1-DMA and ch3-DMA, Holly access is inhibited when the transmit 		size is set to the quad word. 
+   	(Quad word size DMA is possible in system memory.) 
+
+
+Å°(7) 	When DMA is initiated by interrupt, terminal status must be considered when 	using external interrupts (G2EXTINT, G2MDMINT, G2AICINT, or G1GDINT). 
+	When input remains at the L level, DMA does not start because the hardware 	uses the terminal's falling edge as a trigger pulse. 
+
+
+Å°(8) 	If a NMI occurs during DMA, the system will hang up.  
+      	(NMIs are not used in this system, so there should not be a problem.  	Although DMA stops working, CPU reads and writes are still possible.  	The only way to recover from this condition is with a power-on reset.)
+
+

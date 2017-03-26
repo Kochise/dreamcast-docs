@@ -1,0 +1,1 @@
+pchk020_txt lists items that must be followed if application program accesses hardware directly.  However it does not cover all restrictions.  Please be sure to read other restriction documents as well.

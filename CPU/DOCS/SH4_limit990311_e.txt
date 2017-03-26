@@ -1,0 +1,887 @@
+Restrictions on CPU use                                                           11 Mar 99. No.1 Dev.Dept.
+
+
+[Chapter 2]  Programming Model ___________________________________________________________________________
+ < 1> A hardware reset does not result in the same state as a manual reset.
+                    * This is because the SCK2/MRESET terminal is pulled up
+ < 2> The standby mode is disabled
+                    * This is because clock output stops and the system hangs
+ < 3> Ownership of the bus is not released.
+                    * This is because the /BREQ terminal is locked 'H'
+
+   >> There is no restriction on use of registers.
+
+
+[Chapter 3]  Memory Management Unit (MMU) _______________________________________________________________
+
+< 1> The external memory space is used as follows.
+        Area 0:	BootROM, FlashMemory, Holly-Register, MODEM, AICA, G2_External_area
+        Area 1:	TextureMemory
+        Area 2: Not used
+        Area 3: SystemMemory
+        Area 4: Polygon-Converter, YUV-Converter, TextureMemory
+        Area 5: G2_External_area
+        Area 6: Not used
+
+   >> There are no restrictions on register use.
+
+
+[Chapter 4]  Cache ______________________________________________________________________________________    
+
+< 1> Areas capable of cache access are as follows.
+        SystemMemory ..................... Read/Write                 : 0C000000-0CFFFFFF,0E000000-0EFFFFFF
+        BootROM .......................... Read/-                     : 00000000-001FFFFF		      ^Revised
+        FlashMemory ...................... Read/-                     : 00200000-0021FFFF		      ^Revised
+        TextureMemory[via PVRi/f] ........ Read/Write                 : 04000000-047FFFFF,06000000-067FFFFF
+                                                                        05000000-057FFFFF,07000000-077FFFFF
+        G2_External_area ................. Depends on specifications  : 01000000-01FFFFFF,03000000-03FFFFFF
+                                                                        14000000-17FFFFFF
+    - BootROM and FlashMemory are write-inhibited.
+    - Whether or not the cache can be used to access G2_External_areadepends on the device specifications.
+ < 2> Areas capable of write access using cache are as follows.
+        Polygon-Converter[via TA-FIFO] ...    -/Write                 : 10000000-107FFFFF,12000000-127FFFFF
+        YUV-Converter[via TA-FIFO] .......    -/Write      Å@         : 10800000-10FFFFFF,12800000-12FFFFFF
+        TextureMemory[via TA-FIFO] .......    -/Write                 : 11000000-117FFFFF,13000000-137FFFFF
+    - When using the cache via the TA-FIFO path, a 32-byte boundary must be set on addresses written.
+                    * This is because data is written to TA-FIFO in the order in which it is output.
+    - Incorrect operation will result if write-back is not carefully controlled when using the cache via 
+      TA-FIFO.
+      (This is because, if a write-back occurs before 32 bytes of write-back data have been accumulated, 
+      the data is sent to TA-FIFO. For example, if an interrupt occurs while data is being prepared in 
+      chunks of 4 bytes, duplication of the current address by the address entry used by the interrupt will 
+      result in cache replacement, so that the intended data is not sent. When using the cache to write to 
+      TA^FIFO, interrupts must be inhibited, at least until 32 bytes of data have accumulated.)
+ < 3> Areas that can be accessed by store queue are as follows.
+        SystemMemory ..................... Read/Write                 : 0C000000-0CFFFFFF,0E000000-0EFFFFFF
+        Polygon-Converter[via TA-FIFO] ...    -/Write                 : 10000000-107FFFFF,12000000-127FFFFF
+        YUV-Converter[via TA-FIFO] .......    -/Write                 : 10800000-10FFFFFF,12800000-12FFFFFF
+        TextureMemory[via TA-FIFO] .......    -/Write                 : 11000000-117FFFFF,13000000-137FFFFF
+        TextureMemory[via PVRi/f] ........ Read/Write                 : 04000000-047FFFFF,06000000-067FFFFF
+                                                                        05000000-057FFFFF,07000000-077FFFFF
+        G2_External_area ................. Depends on specifications  : 01000000-01FFFFFF,03000000-03FFFFFF
+                                                                        14000000-17FFFFFF
+    - Store queue access is limited to write only.
+    - Whether or not store queue access to the G2_External_area is possible varies according to device 
+      specifications.
+
+   >> There is no restriction on use of registers.
+
+
+[Chapter 5]  Exception Processing _______________________________________________________________________
+
+ < 1> A hardware reset is the same as a power-on reset.
+      A hardware reset does not result in a manual reset.
+                    * This is because the SCK2/MRESET terminal is pulled up
+ < 2> Power-on or manual resets cannot be initiated by watchdog timer.
+                    * Although the CPU is initialized, other chips are not, meaning that erroneous operation 
+                      may result.                                                                               
+ < 3> The system may not recover normally in the event of a manual reset, a Hitachi-UDI reset, a command TLB 
+     multi-bit exception, or a data TLB multi-bit exception.
+                    * Although the CPU is initialized, other chips are not, meaning that erroneous operation 
+                      may result.
+    - Since manipulating the Holly SFRES (SoftwarerReset) register results in a system reset, use this 
+      method for recovery.
+                    * This method results in the same operation as a PowerON reset, so all chips are reset.
+    - Alternatively, initiate a PowerON reset.
+ < 4> Non-maskable interrupts are for use only during debugging, and must not be generated by the product.
+                    * Because the NMI terminal is pulled up.
+    - If a NMI occurs during DMA, the DMA sequence between SH4 and Holly is disrupted and no futher DMA         ^Added
+      is possible. (However, data can still be read and written normally.) Normal DMA operation can only be 
+      restored by PowerOn reset.
+ < 5> Only terminals /IRL1 and /IRL2 are used for external interrupts.
+                    * Terminals /IRL0 and /IRL3 are pulled up.
+        Terminals /IRL3-/IRL0=1001 : Level 6 external interrupt
+        Terminals /IRL3-/IRL0=1011 : Level 4 external interrupt
+        Terminals /IRL3-/IRL0=1101 : Level 2 external interrupt
+        Level 1, 3, 5, 7, 8, 9, 10, 11, 12, 13, 14, and 15 external interrupts are not generated.               
+ < 6> The following interrupts are not generated.
+        TMU2/TICPI2 : Input capture interrupt                      * The TCLK terminal is pulled up             
+        RTC/ATI	    : Alarm interrupt                              * RTC is not used in products                
+	RTC/PRI     : Periodic interrupt                           * RTC is not used in products                
+	RTC/CUI     : Digit roll-up interrupt                      * RTC is not used in products                
+	SCI/ERI     : Receive error interrupt                      * SCI is not used                            
+	SCI/RXI     : Receive data full interrupt                  * SCI is not used                            
+	SCI/TXI     : Send data empty interrupt                    * SCI is not used                            
+	SCI/TEI     : Send completed interrupt                     * SCI is not used                            
+	REF/RCMI    : Compare match interrupt                      * Inhibited because refresh used             
+	DMAC/DMTE0  : DMAC-ch0 transfer completed interrupt        * Inhibited                                  
+	GPI0/GPI0I  : I/O port interrupt	* Use of I/O port interrupts is inhibited                       
+ < 7> The Hitachi-UDI interrupt is only for debugging.
+
+   >> There is no restriction on use of registers.
+
+
+[Chapter 6]  Floating Point Unit ___________________________________________________________________________
+
+ < 1> No restrictions on use.
+
+
+[Chapter 7]  Command Set ___________________________________________________________________________________
+
+ < 1> No restrictions on use.
+
+
+[Chapter 9]  Low Power Mode ________________________________________________________________________________
+
+ < 1> The sleep mode can be used.                                                                               
+ < 2> The deep sleep mode is inhibited.                                                                         
+                    * Because self-refresh operation is inhibited.
+ < 3> The standby mode is inhibited.
+                    * Because clock output stops and the system hangs.
+ < 4> The module standby function can be used.
+    - The enable bit must be set to OFF for each module before stopping supply of the clock to the modules.     
+ < 5> Clock supply is stopped because the SCI is not used.
+      (In the event that SCI has been used, it must be stopped before stopping supply of the clock.)
+ < 6> Clock supply is stopped because the RTC is not used in products.
+      (Before setting the standby control register and stopping the clock supply, RTC control register 2 
+      must be set and the RTC stopped.)
+
+   >> Standby Control Register(STBCR)  FFC00004 ÅÅ 03                        %%% Setting must be changed %%%    
+
+                                   [0000:0011] initial   = 0000:0000
+                                    |||| ||||
+                                    |||| |||`- MSTP0     :    1 = Stop clock supply to SCI
+                                    |||| ||`-- MSTP1     :    1 = Stop clock supply to RTC
+                                    |||| |`--- MSTP2     :    0 = Activates TMU
+                                    |||| `---- MSTP3     :    0 = Activates SCIF
+                                    |||`------ MSTP4     :    0 = Activates DMAC
+                                    ||`------- PPU       :    0 = Pulls up terminals related to peripheral 
+                                    ||                            modules (MD0/SCK,MD1/TXD2,MD2/RXD2,MD7/TXD,
+                                    ||                            MD8/RTS2,SCK2/MRESET,RXD,CTS2,DREQ0/DBREQ,
+                                    ||                            DACK0/TDACK,DRAK0/BAVL,DREQ1/TR,DACK1/ID0,
+                                    ||                            DRAK1/ID1,TCLK)
+                                    |`-------- PHZ       :    0 = Terminals related to peripheral modules 
+                                    |                             are in the normal state while in the 
+                                    |                             standby mode(MD0/SCK,MD1/TXD2,MD7/TXD,
+                                    |                             MD8/RTS2,CTS2, DACK0/TDACK,
+                                    |                             DRAK0/BAVL,DACK1/ID0, DRAK1/ID1)
+                                    `--------- STBY      :    0 = Shift to sleep mode upon SLEEP command
+
+   >> Standby Control Register 2(STBCR2)  FFC00010 ÅÅ 00                 %%% Setting must not be changed %%%    
+
+                                   [0---:----] initial   = 0000:0000
+                                    |
+                                    `--------- DSLP      :    0 = Shift to sleep mode upon SLEEP command
+
+[Chapter 10]	Clock Generation Circuit ___________________________________________________________________
+
+ < 1> Clock input is through EXTAL, rather than by crystal oscillator.   * Terminal MD8=0
+ < 2> The clock is used in operational mode 5.                           * Terminal MD2=1,Terminal MD1=0,
+                                                                           Terminal MD0=1
+        1/2 cycle                     :    Off
+        PLL1                          :     On
+        PLL2                          :     On
+        EXTAL clock input             :  33MHz                           * 13.5000MHzÅ~400ÅÄ27ÅÄ2ÅÄ3
+        CPU clock (IÉ≥)               : 200MHz (EXTALÅ~6  )
+        Bus clock (BÉ≥)               : 100MHz (EXTALÅ~3  )
+        Peripheral module clock (PÉ≥) :  50MHz (EXTALÅ~3/2)
+ < 3> CKI0 is the clock output.
+ < 4> Use of the watchdog timer mode that applies a reset to the CPU is inhibited.
+                    * Erroneous operation can result, because while the CPU is initialized, other chips are 
+                      not.
+
+   >> Frequency control register(FRQCR)  FFC00000 ÅÅ 0E0A                 %%% Settings cannot be changed %%%
+
+                         [----:1110:0000:1010] initial   = 0000:1110:0000:1010 (When above MD is set)
+                               |||| |||| ||||
+                               |||| |||| |`++- PFC2-0    :  010 = Peripheral clock(Å~1/4)
+                               |||| ||`+-+---- BFC2-0    :  001 = Bus clock       (Å~1/2)
+                               |||`-++-------- IFC2-0    :  000 = CPU clock       (Å~1)
+                               ||`------------ PLL2EN    :    1 = PLL2 used
+                               |`------------- PLL1EN    :    1 = PLL1 used
+                               `-------------- CKOEN     :    1 = CKIO clock output
+
+   >> Watchdog timer counter (WTCNT)  FFC00008                                %%% No restrictions on use %%%
+
+                         [----:----:****:****] initial   = 0000:0000
+                         (0101 1010)
+
+   >> Watchdog timer control/status register (WTCSR)  FFC0000C ÅÅ A500        %%% No restrictions on use %%%    
+                                                                                  <<bits 6 and 5 are fixed>>
+                         [----:----:*00*:****] initial   = 0000:0000
+                         (1010 0101)|||| ||||
+                                    |||| |`++- CKS2-0    : Arbitrary   WTCNT clock selection
+                                    |||| |                       (clock from divider 2 is 200 MHz)
+                                    |||| `---- IOVF      : Arbitrary   Overflow flag
+                                    ||||                         (used in the interval timer mode)
+                                    |||`------ WOVF      : Arbitrary   Overflow flag
+                                    |||                          (not set in the interval timer mode)
+                                    ||`------- RSTS      :    0 = Power-on reset
+                                    ||                           (Ignored in the interval timer mode)
+                                    |`-------- WT/IT     :    0 = Use in the interval timer mode.
+                                    `--------- TME       : Arbitrary  (Timer enable)
+
+
+[Chapter 11]	Realtime Clock (RTC) _______________________________________________________________________
+
+ < 1> The RTC is stopped because it is  not used in products.
+ < 2> The TCLK terminal is used as input.
+ < 3> RTC control register 2 (RCR2) must be set before setting the standby control register (STBCR).
+
+
+   >> 64 Hz counter(R64CNT)  FFC80000                                               %%% Access inhibited %%%
+   >> Second counter (RSECCNT)	FFC80004                                            %%% Access inhibited %%%
+   >> Minute counter (RMINCNT)	FFC80008                                            %%% Access inhibited %%%
+   >> Hour counter (RHRCNT)	FFC8000C                                            %%% Access inhibited %%%
+   >> Weekday counter (RWKCNT)	FFC80010                                            %%% Access inhibited %%%
+   >> Day counter (RDAYCNT)	FFC80014                                            %%% Access inhibited %%%
+   >> Month counter (RMONCNT)	FFC80018                                            %%% Access inhibited %%%
+   >> Year counter (RYRCNT)	FFC8001C                                            %%% Access inhibited %%%
+   >> Second alarm register (RSECAR)	FFC80020                                    %%% Access inhibited %%%
+   >> Minute alarm register (RMINAR)	FFC80024                                    %%% Access inhibited %%%
+   >> Hour alarm register (RHRAR)	FFC80028                                    %%% Access inhibited %%%
+   >> Weekday alarm register (RWKAR)	FFC8002C                                    %%% Access inhibited %%%
+   >> Day alarm register (RDAYAR)	FFC80030                                    %%% Access inhibited %%%
+   >> Month alarm register (RMONAR)	FFC80034                                    %%% Access inhibited %%%
+
+   >> RTC control register 1 (RCR1)	FFC80038 = 00                     %%% Settings cannot be changed %%%
+
+                                   [*--0:0--*] initial   = XXX0:0XXX
+                                    |  | |  |
+                                    |  | |  `- AF        : Arbitrary  (alarm flag)
+                                    |  | `---- AIE       :    0 = Alarm interrupts not generated
+                                    |  `------ CIE       :    0 = Round-up interrupts not generated
+                                    `--------- CF        : Arbitrary  (Rounding flag)
+
+   >> RTC control register 2 (RCR2)  FFC8003C ÅÅ 02                         %%% Settings must be changed %%%    
+
+                                   [*000:0010] initial   = X000:1001
+                                    |||| ||||
+                                    |||| |||`- START     :    0 = Counter stopped
+                                    |||| ||`-- RESET     :    1 = Divider circuit reset
+                                    |||| |`--- ADJ       :    0 = Normal clock operation
+                                    |||| `---- RTCEN     :    0 = RTC crystal oscillator stopped
+                                    |`++------ PES2-0    :  000 = Periodic interrupts not generated
+                                    `--------- PEF       : Arbitrary  (periodic interrupt flag)
+
+
+[Chapter 12]	Timer Unit (TMU) ___________________________________________________________________________
+
+ < 1> External clock and input capture function are not used              * TCLK terminal input is pulled up
+ < 2> Internal RTC output clock cannot be used                            * RTC is not used in products
+ < 3> The peripheral module clock (P?) is 50 MHz
+
+   >> Timer output control register (TOCR)  FFD80000 ÅÅ 00                %%% Settings cannot be changed %%%
+
+                                   [----:---0] initial   = 0000:0000
+                                            |
+                                            `- TCOE      :    0 = TCLK terminal input
+
+   >> Timer start register (TSTR)  FFD80004                                   %%% No restrictions on use %%%
+
+                                   [----:-***] initial   = 0000:0000
+                                          |||
+                                          ||`- STR0      : Arbitrary  (timer counter 0 control)
+                                          |`-- STR1      : Arbitrary  (timer counter 1 control)
+                                          `--- STR2      : Arbitrary  (timer counter 2 control)
+
+   >> Timer constant register 0 (TCOR0)  FFD80008                             %%% No restrictions on use %%%
+
+   >> Timer counter 0 (TCNT0)  FFD8000C                                       %%% No restrictions on use %%%
+
+   >> Timer control register 0 (TCR0)  FFD80010                               %%% No restrictions on use %%%
+                                                                                  <<bits 4 and 3 are fixed>>
+                         [----:---*:--*0:0***] initial   = 0000:0000:0000:0000
+                                  |   || ||||
+                                  |   || |`++- TPSC2-0   : Arbitrary  (timer prescalar 000-100)
+                                  |   |`-+---- CKEG1-0   :   00 = Rising edge
+                                  |   `------- UNIE      : Arbitrary  (Underflow interrupt control)
+                                  `----------- UNF       : Arbitrary  (Underflow flag)
+
+   >> Timer constant register 1 (TCOR1)  FFD80014                             %%% No restrictions on use %%%
+
+   >> Timer counter 1 (TCNT1)  FFD80018                                       %%% No restrictions on use %%%
+
+   >> Timer control register 1 (TCR1)  FFD8001C                               %%% No restrictions on use %%%
+                                                                                  <<bits 4 and 3 are fixed>>
+                         [----:---*:--*0:0***] initial   = 0000:0000:0000:0000
+                                  |   || ||||
+                                  |   || |`++- TPSC2-0   : Arbitrary  (timer prescalar 000-100)
+                                  |   |`-+---- CKEG1-0   :   00 = Rising edge
+                                  |   `------- UNIE      : Arbitrary  (Underflow interrupt control)
+                                  `----------- UNF       : Arbitrary  (Underflow flag)
+
+   >> Timer constant register 2 (TCOR2)  FFD80020                             %%% No restrictions on use %%%
+
+   >> Timer counter 2 (TCNT2)  FFD80024                                       %%% No restrictions on use %%%
+
+   >> Timer control register 2(TCR2)  FFD80028                                %%% No restrictions on use %%%
+                                                                            <<bits 7, 6, 4 and 3 are fixed>>
+                         [----:--**:00*0:0***] initial   = 0000:0000:0000:0000
+                                 || |||| ||||
+                                 || |||| |`++- TPSC2-0   : Arbitrary  (timer prescalar 000-100)
+                                 || |||`-+---- CKEG1-0   :   00 = Rising edge
+                                 || ||`------- UNIE      : Arbitrary  (Underflow interrupt control)
+                                 || `+-------- ICPE1-0   :   00 = Input capture function disabled
+                                 |`----------- UNF       : Arbitrary  (Underflow flag)
+                                 `------------ ICPF      : Arbitrary  (Input capture innterrupt flag)
+
+   >> Input capture register (TCPR2)  FFD8002C                                      %%% Access inhibited %%%
+
+
+[Chapter 13] Bus State Controller (BSC) ____________________________________________________________________
+      (Synchronous DRAM indicated as SDRAM)
+
+ < 1> External requests are not generated.                               * The /BREQ terminal is fixed to 'H'.
+ < 2> Used as little-endian                                              * MD5=1
+ < 3> Used in the master mode                                            * MD7=1
+ < 4> Area 0 bux size is 64 bits                                         * MD4=0,MD3=0
+ < 5> Area 0 is used by the MPX bus                                      * MD6=0
+ < 6> The external memory space is used as follows.
+        Area 0 | 64bit : MPX   : 3wait + external wait  | BootROM, FlashMemory, Holly-Register, MODEM,
+                                                        | AICA, G2_External_area
+        Area 1 | 64bit : MPX   : 3wait + external wait  | TextureMemory
+        Area 2 | 64bit : MPX   : 3wait + external wait  | Reserved                                              
+        Area 3 | 64bit : SDRAM : wait ignored           | SystemMemory
+        Area 4 | 64bit : MPX   : 0wait + external wait  | Polygon-Converter, YUV-Converter, TextureMemory
+        Area 5 | 64bit : MPX   : 3wait + external wait  | G2_External_area
+        Area 6 | 64bit : MPX   : 3wait + external wait  | Reserved                                              
+ < 7> SDRAM is used in the following mode
+        Burst length = 4
+        Wrap type    = Sequential
+        CAS latency  = 3
+ < 8> SDRAM is used in the RAS down mode
+ < 9> Use of the SDRAM self-refresh mode is inhibited
+ <10> The SDRAM refresh interval is 15040 nsec (10nsec*16*94)
+ <11> The following SDRAMs are used                                                                             
+                     |    SET4-8M     |    SET4-32M    |         Mass produced-16M            |
+                     |                |    SET5-32M    |                  SET5-16M            |
+        -------------+----------------+----------------+--------------------------------------+
+        SDRAM        |        SAMSUNG |        SAMSUNG |          SAMSUNG |               NEC |
+                     | KM416S1020B-10 | KM416S4030A-10 | KM432S2030BT-GLT | uPD4564323G5-A10S |
+         Capacity    |         16Mbit |         64Mbit |           64Mbit |            64Mbit |
+         Bus width   |       16bitbus |       16bitbus |         32bitbus |          32bitbus |
+         Banks       |          2BANK |          4BANK |            4BANK |             4BANK |
+         Number used |              4 |              4 |                2 |                 2 |
+        -------------+----------------+----------------+--------------------------------------+
+        WR-PRE(TRWL) |           1clk |           1clk |             1clk |            10nsec |
+        PRE-RAS(TPC) |         26nsec |         24nsec |           20nsec |            20nsec |
+        RAS-CAS(RCD) |         26nsec |         24nsec |           20nsec |            30nsec |
+        RAS-PRE      |         50nsec |         50nsec |           50nsec |            60nsec |
+        RAS-RAS      |         80nsec |         80nsec |           70nsec |            80nsec |
+        REF-RAS(TRAS)|         80nsec |         80nsec |           70nsec |            60nsec |
+        -------------+----------------+----------------+--------------------------------------+
+        AMX          | 000            | 010            | 100              | 100               |
+        -------------+----------------+----------------+--------------------------------------+
+
+   >> Bus control register 1 (BCR1)  FF800000 ÅÅ A3020008             %%% Change of settings is required %%%
+
+     [101-:--11:--00:001-:0000:0000:0000:10-0] initial   = 1010:0000:0000:0000:0000:0000:0000:0000
+      |||    ||   || |||  |||| |||| |||| || |
+      |||    ||   || |||  |||| |||| |||| || `- A56PCM    :    0 = Area 56 normal memory
+      |||    ||   || |||  |||| |||| |||`-++--- DRAMTP2-0 :  010 = Area 2 normal memory,Area 3SDRAM
+      |||    ||   || |||  |||| |||| `++------- A6BST2-0  :  000 = Area 6 normal memory (ignored with MPX)
+      |||    ||   || |||  |||| |`++----------- A5BST2-0  :  000 = Area 5 normal memory (ignored with MPX)
+      |||    ||   || |||  ||`+-+-------------- A0BST2-0  :  000 = Area 0 normal memory (ignored with MPX)
+      |||    ||   || |||  |`------------------ HIZCNT    :    0 = Hi-z during standby with bus released
+      |||    ||   || |||  |                                      (RAS,RAS2,WEn,RD,RD2)
+      |||    ||   || |||  `------------------- HIZMEM    :    0 = Hi-z during standby
+      |||    ||   || |||                                         (A[25:0],BS,CSn,RD/WR,CE2A,CE2B,RD/WR2)
+      |||    ||   || ||`---------------------- MEMMPX    :    1 = Area 1-6 is MPX
+      |||    ||   || |`----------------------- PSHR      :    0 = Master mode
+      |||    ||   || `------------------------ BREQEN    :    0 = External request invalid
+      |||    ||   |`-------------------------- A4MBC     :    0 = Area 4 normal mode (MPX priority)
+      |||    ||   `--------------------------- A1MBC     :    0 = Area 1 normal mode (MPX priority)
+      |||    |`------------------------------- OPUP      :    1 = Control terminal not pulled up
+      |||    |                                                   (A[25:0],BS,CSn,RD,WEn,RD/WR,RAS,RAS2,CE2A,
+      |||    |                                                    CE2B,RD2,RD/WR2)
+      |||    `-------------------------------- IPUP      :    1 = Control terminal not pulled up
+      |||                                                        (NMI,IRL3-0,BREQ,MD6,RDY)
+      ||`------------------------------------- A0MPX     :    1 = Area 0 is MPX
+      |`-------------------------------------- MASTER    :    0 = Master
+      `--------------------------------------- ENDIAN    :    1 = Little-endian
+
+   >> Bus control register 2 (BCR2)  FF800004 ÅÅ 0001                 %%% Change of settings is required %%%    
+
+                         [0000:0000:0000:00-1] initial   = 0011:1111:1111:1100
+                          |||| |||| |||| || |
+                          |||| |||| |||| || `- PORTEN    :    1 = Port hold
+                          |||| |||| |||| `+--- A1SZ1-0   :   00 = Area 1 is 64 bits
+                          |||| |||| ||`+------ A2SZ1-0   :   00 = Area 2 is 64 bits
+                          |||| |||| `+-------- A3SZ1-0   :   00 = Area 3 is 64 bits
+                          |||| ||`+----------- A4SZ1-0   :   00 = Area 4 is 64 bits
+                          |||| `+------------- A5SZ1-0   :   00 = Area 5 is 64 bits
+                          ||`+---------------- A6SZ1-0   :   00 = Area 6 is 64 bits
+                          `+------------------ A0SZ1-0   :   00 = Area 0 is 64 bits
+
+   >> Wait control register 1 (WCR1)  FF800008 ÅÅ 01110111            %%% Change of settings is required %%%
+
+     [-000:-001:-001:-001:-000:-001:-001:-001] initial   = 0111:0111:0111:0111:0111:0111:0111:0111
+       |||  |||  |||  |||  |||  |||  |||  |||
+       |||  |||  |||  |||  |||  |||  |||  `++- A0IW2-0   :  001 = Area 0 idle cycles=1
+       |||  |||  |||  |||  |||  |||  `++------ A1IW2-0   :  001 = Area 1 idle cycles=1
+       |||  |||  |||  |||  |||  `++----------- A2IW2-0   :  001 = Area 2 idle cycles=1
+       |||  |||  |||  |||  `++---------------- A3IW2-0   :  000 = SDRAM used in RAS down mode
+       |||  |||  |||  `++--------------------- A4IW2-0   :  001 = Area 4 idle cycles=1
+       |||  |||  `++-------------------------- A5IW2-0   :  001 = Area 5 idle cycles=1
+       |||  `++------------------------------- A6IW2-0   :  001 = Area 6 idle cycles=1
+       `++------------------------------------ DMAIW2-0  :  000 = SDRAM used in RAS down mode
+                                              * Since SDRAM is used in the RAS down mode, DMAIW2-0 and 
+                                                A3IW2-0 are 000.
+
+   >> Wait control register 2 (WCR2)  FF80000C ÅÅ 618066D8            %%% Change of settings is required %%%    
+
+     [0110:0001:1000:000-:011-:0110:1101:1000] initial   = 1111:1111:1111:1110:1110:1111:1111:1111
+      |||| |||| |||| |||  |||  |||| |||| ||||
+      |||| |||| |||| |||  |||  |||| |||| |`++- A0B2-0    :  000 = Area 0 burst pitch=0
+      |||| |||| |||| |||  |||  |||| ||`+-+---- A0W2-0    :  011 = 3 waits for 1st Area 0 data, 
+      |||| |||| |||| |||  |||  |||| ||                            0 waits for subsequent data
+      |||| |||| |||| |||  |||  |||`-++-------- A1W2-0    :  011 = 3 waits for 1st Area 1 data, 
+      |||| |||| |||| |||  |||  |||                                0 waits for subsequent data
+      |||| |||| |||| |||  |||  `++------------ A2W2-0    :  011 = 3 waits for 1st Area 2 data, 
+      |||| |||| |||| |||  |||                                     0 waits for subsequent data                   
+      |||| |||| |||| |||  `++----------------- A3W2-0    :  011 = SDRAM CAS latency =3
+      |||| |||| |||| `++---------------------- A4W2-0    :  000 = 1 wait for 1st Area 4 read data,
+      |||| |||| ||||                                              0 waits for subsequent data
+      |||| |||| |`++-------------------------- A5B2-0    :  000 = Area 5 burst pitch=0
+      |||| ||`+-+----------------------------- A5W2-0    :  011 = 3 waits for 1st Area 5 data, 
+      |||| ||                                                     0 waits for subsequent data
+      |||`-++--------------------------------- A6B2-0    :  000 = Area 6 burst pitch=0
+      `++------------------------------------- A6W2-0    :  011 = 3 waits for 1st Area 6 data, 
+                                                                  0 waits for subsequent data                   
+
+   >> Wait control register 3 (WCR3)  FF800010 ÅÅ 07777777        %%% Change of settings is not required %%%    
+                                                                      * Because only MPX and SDRAM are used
+     [----:-111:-111:-111:-111:-111:-111:-111] initial   = 0000:0111:0111:0111:0111:0111:0111:0111
+            |||  |||  |||  |||  |||  |||  |||
+            |||  |||  |||  |||  |||  |||  |`+- A0H1-0    :   11 = Area 0 data hold=3
+            |||  |||  |||  |||  |||  |||  `--- A0S0      :    1 = Area 0 write strobe setup=1
+            |||  |||  |||  |||  |||  |`+------ A1H1-0    :   11 = Area 1 data hold=3
+            |||  |||  |||  |||  |||  `-------- A1S0      :    1 = Area 1 write strobe setup=1
+            |||  |||  |||  |||  |`+----------- A2H1-0    :   11 = Area 2 data hold=3
+            |||  |||  |||  |||  `------------- A2S0      :    1 = Area 2 write strobe setup=1
+            |||  |||  |||  |`+---------------- A3H1-0    :   11 = Area 3 data hold=3
+            |||  |||  |||  `------------------ A3S0      :    1 = Area 3 write strobe setup=1
+            |||  |||  |`+--------------------- A4H1-0    :   11 = Area 4 data hold=3
+            |||  |||  `----------------------- A4S0      :    1 = Area 4 write strobe setup=1
+            |||  |`+-------------------------- A5H1-0    :   11 = Area 5 data hold=3
+            |||  `---------------------------- A5S0      :    1 = Area 5 write strobe setup=1
+            |`+------------------------------- A6H1-0    :   11 = Area 6 data hold=3
+            `--------------------------------- A6S0      :    1 = Area 6 write strobe setup=1
+
+   >> Individual memory control register (MCR)  FF800014 ÅÅ C0121204  (SET4-8M)
+                                                                      %%% Change of settings is required %%%    
+                                           FF800014 ÅÅ C0121214  (SET4-32M,SET5-32M)
+                                           FF800014 ÅÅ C00A0E24  (SET5-16M,mass produced-16M)
+
+     [1*00:0---:0-01:0-10:0001:0010:0000:0100] initial   = 0000:0000:0000:0000:0000:0000:0000:0000
+      |||| |    | || | || |||| |||| |||| ||||
+      |||| |    | || | || |||| |||| |||| |||`- EDOMODE   :    0 = SDRAM, so 0
+      |||| |    | || | || |||| |||| |||| ||`-- RMODE     :    0 = Perform CAS before RAS refres
+      |||| |    | || | || |||| |||| |||| ||                       Self-refresh is inhibited.
+      |||| |    | || | || |||| |||| |||| |`--- RFSH      :    1 = Perform refresh
+      |||| |    | || | || |||| |||| ||`+-+---- AMX2-0    :  000 = 16M,16bus,2BANK,4(SET4-8M)
+      |||| |    | || | || |||| |||| ||                      010 = 64M,16bus,4BANK,4(SET4-32M,SET5-32M)
+      |||| |    | || | || |||| |||| ||                      100 = 64M,32bus,4BANK,2
+      |||| |    | || | || |||| |||| ||                            (SET5-16M,mass produced-16M)
+      |||| |    | || | || |||| |||| |`-------- AMXEXT    :    0 = Bank address normal
+      |||| |    | || | || |||| |||`-+--------- SZ1-0     :   00 = SDRAM=64bit
+      |||| |    | || | || |||| ||`------------ BE        :    1 = DRAM burst (1 because of RAS down)
+      |||| |    | || | || |||`-++------------- TRAS2-0   :  100 = REF-RAS=8+TRC=8 (SET4-8M,SET4-32M,SET5-32M)
+      |||| |    | || | || |||                               011 = REF-RAS=7+TRC=7 
+      |||| |    | || | || |||                                     (SET5-16M,mass produced-16M)
+      |||| |    | || | || `++----------------- TRWL2-0   :  000 = Write precharge=1
+      |||| |    | || | `+--------------------- RCD1-0    :   10 = RAS-CAS=3
+      |||| |    | `+-+------------------------ TPC2-0    :  010 = PRE-RAS=3 (SET4-8M,SET4-32M,SET5-32M)
+      |||| |    |                                           001 = PRE-RAS=2 (SET5-16M,Mass produced-16M)
+      |||| |    `----------------------------- TCAS      :    0 = CAS negate=1
+      ||`+-+---------------------------------- TRC2-0    :  000 = RAS precharge after refresh=0
+      |`-------------------------------------- MRSET     :    *   When 0, all banks are precharged for SDMR 
+      |                                                           writes
+      |                                                           When 1, SDMR writes are according to the 
+      |                                                           mode register settings
+      `--------------------------------------- RASD      :    1 = RAS down mode
+
+                                     * Self-refresh is inhibited because of time is required for CAS before 
+                                       RAS refresh with certain combinations TRAS and TRC when self refresh 
+                                       is enabled
+
+   >> PCMCIA control register (PCR)  FF800018 ÅÅ 0000             %%% Change of settings is not required %%%    
+                                                                               * Because PCMCIA is not used
+                         [0000:0000:0000:0000] initial   = 0000:0000:0000:0000
+                          |||| |||| |||| ||||
+                          |||| |||| |||| |`++- A6TEH2-0  :  000 = Area 6PCMCIAOE/WE negate address delay=0
+                          |||| |||| ||`+-+---- A5TEH2-0  :  000 = Area 5PCMCIAOE/WE negate address delay=0
+                          |||| |||`-++-------- A6TED2-0  :  000 = Area 6PCMCIA address-OE/WE assert delay=0
+                          |||| `++------------ A5TED2-0  :  000 = Area 5PCMCIA address-OE/WE assert delay=0
+                          ||`+---------------- A6PCW1-0  :   00 = Area 6PCMCIA wait=0
+                          `+------------------ A5PCW1-0  :   00 = Area 5PCMCIA wait=0
+
+   >> SDRAM mode register (SDMR)  FF940190 ÅÅ FF                                    %%% Setting required %%%
+                                                 * Simultaneous MCR, MRSET control is required when setting.
+       Address=FF940000+[0000:0001:1001:0000]
+                                 || |||| |
+                                 || ||`+-+---- BL        :  010 = Burst length=4
+                                 || |`-------- WT        :    0 = Wrap type   =Sequential
+                                 `+-+--------- LTMODE    :  011 = CAS latency =3
+
+   >> Refresh timer control/status register (RTCSR)  FF80001C ÅÅ A510 %%% Change of settings is required %%%
+
+                         [----:----:*001:0***] initial   = 0000:0000:0000:0000
+                         (1010 0101)|||| ||||
+                                    |||| |||`- LMTS      : any (overflow limit select)
+                                    |||| ||`-- OVIE      : any (overflow interrupt control)
+                                    |||| |`--- OVF       : any (overflow flag)
+                                    ||`+-+---- CKS2-0    :  010 = clock =CKIO/16=160nsec
+                                    |`-------- CMIE      :    0 = compare match interrupts inhibited
+                                    `--------- CMF       : any (compare match flag)
+
+   >> Refresh timer counter (RTCNT)  FF800020 ÅÅ A500             %%% Change of settings is not required %%%
+                                   * Setting not required, but may be set for uniformity of start-up routine
+                         [----:----:0000:0000] initial   = 0000:0000:0000:0000
+                         (1010 0101)
+
+   >> Refresh time constant (RTCOR)  FF800024 ÅÅ A55E                 %%% Change of settings is required %%%
+
+                         [----:----:0101:1110] initial   = 0000:0000:0000:0000
+                         (1010 0101)|||| ||||
+                                    `+++-++++-           :   5E = 94(10nsec*16*94=15040nsec)
+
+   >> Refresh count register (RFCR)  FF800028                                 %%% No restrictions on use %%%
+
+                         [----:---*:****:****] initial   = 0000:0000:0000:0000
+                         (1010 010)
+
+
+[Chapter 14] Direct Memory Access Controller (DMAC) ________________________________________________________
+
+ < 1> The DMAC is used in the DDT mode.
+ < 2> Channel 0 is used by hardware, so software access is inhibited.
+   -  Use of the DMA termination interrupt is inhibited.
+   -  The hardware uses channel 0 in the single address burst mode with a transfer data length of 32 bytes 
+      for burst mode, external requests, and rising edge detection.                                             
+ < 3> Channel 2 performs DMA operation in combination with ch2-DMA of Holly. Both the CPU DMAC channel 2 
+      register and the Holly ch2-DMA register must be controlled by software at the same time.
+   -  Transfer is restricted to block transfer with a data length of 32 bytes.
+   -  The only possible address mode is the single address mode.
+   -  Transfer initiation is possible only through external requests (from external address sopace to external device)
+      Low level detection is used for sampling.
+   -  Bus operation is restricted to the burst mode.
+   -  DMA termination interrupts can be generated either by CPU DMAC or by Holly ch2-DMA.
+      Select one or the other. (Enabling both will simply result in generation of two interrupts.)
+ < 4> Channel 1 and channel 3 can be used as follows.
+        *************************************************************************                               
+        ***** Note: When using channel 1 or channel 3 DMA, refer to other   *****
+        *****       documentation regarding "write failures to the          *****
+        *****       peripheral module control register during DMA           *****
+        *****       transfers".                                             *****
+        *************************************************************************
+   -  Possible transfer data lengths (8bit, 16bit, 32bit, 64bit, 32byte) depend on the area specification of 
+      the source and destination.
+      Specification of a 64 bit transfer data length is possible only when byth the source and destination 
+      are SystemMemory.
+   -  The only address mode that can be used is the dual address mode.
+   -  Either SCIF interrupts or auto requests can be used to request transfer initiation.    ---*1              
+   -  Either the cycle steal mode or the burst mode can be used as be bus mode.              ---*1              
+   -  The DMA termination interrupt can be used.
+
+   >> DMA source address register 0 (SAR0)  FFA00000                                %%% Access inhibited %%%
+
+   >> DMA destination address register 0 (DAR0)  FFA00004                           %%% Access inhibited %%%
+
+   >> DMA transfer count register 0 (DMATCR0)  FFA00008                             %%% Access inhibited %%%
+
+   >> DMA channel control register 0 (CHCR0)  FFA0000C                              %%% Access inhibited %%%
+
+   >> DMA source address register 1 (SAR1)  FFA00010                          %%% No restrictions on use %%%
+
+   >> DMA destination address register 1 (DAR1)  FFA00014                     %%% No restrictions on use %%%
+
+   >> DMA transfer count register 1 (DMATCR1)  FFA00018                       %%% No restrictions on use %%%
+
+   >> DMA channel control register 1 (CHCR1)  FFA0001C ÅÅ 00005440            %%% No restrictions on use %%%
+                                                                               <<bits31:24,19:16 are fixed>>    
+     [0000:0000:----:0000:****:****:****:-***] initial   = 0000:0000:0000:0000:0000:0000:0000:0000              
+      |||| ||||      |||| |||| |||| ||||  |||
+      |||| ||||      |||| |||| |||| ||||  ||`- DE        : any (DMAC enable)
+      |||| ||||      |||| |||| |||| ||||  |`-- TE        : any (transfer end)
+      |||| ||||      |||| |||| |||| ||||  `--- IE        : any (interrupt enable)
+      |||| ||||      |||| |||| |||| |`++------ TS2-0     : any (transfer size)
+      |||| ||||      |||| |||| |||| |                      64-bit specification is only possible for 
+      |||| ||||      |||| |||| |||| |                      SystemMemory
+      |||| ||||      |||| |||| |||| `--------- TM        : any transmit modeÅj                                  
+      |||| ||||      |||| |||| ||||                               0 = Cycle steal mode                ---*1
+      |||| ||||      |||| |||| ||||                               1 = Burst mode
+      |||| ||||      |||| |||| `+++----------- RS3-0     : any (resource select)
+      |||| ||||      |||| ||||                                    0100,0101,0110,1010,1011
+      |||| ||||      |||| ||||                                    are only possible values            ---*1     
+      |||| ||||      |||| ||`+---------------- SM1-0     : any (source address mode)
+      |||| ||||      |||| `+------------------ DM1-0     : any (destination address mode)
+      |||| ||||      |||`--------------------- AL        :    0 = DDT mode (DACK high active)
+      |||| ||||      ||`---------------------- AM        :    0 = DACK output upon read
+      |||| ||||      |`----------------------- RL        :    0 = DDT mode (DRAK high active)
+      |||| ||||      `------------------------ DS        :    0 = DREQ low level detection
+      |||| |||`------------------------------- DTC       :    0 = No PCMCIA (PCMCIAdestination wait)
+      |||| `++-------------------------------- DSA2-0    :  000 = No PCMCIA (PCMCIA destination space 
+      ||||                                                        attribute
+      |||`------------------------------------ STC       :    0 = No PCMCIA (PCMCIA source wait)
+      `++------------------------------------- SSA2-0    :  000 = No PCMCIA (PCMCIA source space attribute)
+
+   >> DMA source address register 2 (SAR2)  FFA00020    %%% Only SystemMemory addresses can be specified %%%
+                                      * Addresses must be specified as 32 byte boundaries (bit4-0 must be 0)
+
+   >> DMA destination addresss register 2 (DAR2)  FFA00024                          %%% Access inhibited %%%
+
+   >> DMA transfer count register 2 (DMATCR2)  FFA00028                       %%% No restrictions on use %%%
+                        * The transfer count specified must be the same as that specified on the Holly side.
+                          With the CPU DMAC, the transfer count is specified in units of 32 bytes, but with
+                          Holly it is specified in bytes.
+
+   >> DMA channel control register 2 (CHCR2)  FFA0002C ÅÅ 000012C0            %%% No restrictions on use %%%    
+                                                                     <<bit31:24,19,17,15:14,11:4 are fixed>>
+     [0000:0000:----:0-0-:00**:0010:1100:-***] initial   = 0000:0000:0000:0000:0000:0000:0000:0000
+      |||| ||||      | |  |||| |||| ||||  |||
+      |||| ||||      | |  |||| |||| ||||  ||`- DE        : any (DMAC enab le)
+      |||| ||||      | |  |||| |||| ||||  |`-- TE        : any (transfer end)
+      |||| ||||      | |  |||| |||| ||||  `--- IE        : any (interrupt enable)
+      |||| ||||      | |  |||| |||| |`++------ TS2-0     :  100 = 32 byte block transfer
+      |||| ||||      | |  |||| |||| `--------- TM        :    1 = burst mode
+      |||| ||||      | |  |||| `+++----------- RS3-0     : 0010 = external request
+      |||| ||||      | |  ||||                                   (external address space -> external device)
+      |||| ||||      | |  ||`+---------------- SM1-0     : any (source address mode)
+      |||| ||||      | |  `+------------------ DM1-0     :   00 = DDT mode (destination address fixed)
+      |||| ||||      | `---------------------- AM        :    0 = DACK output when read
+      |||| ||||      `------------------------ DS        :    0 = DREQ low level detection
+      |||| |||`------------------------------- DTC       :    0 = No PCMCIA (PCMCIA destination wait)
+      |||| `++-------------------------------- DSA2-0    :  000 = No PCMCIA 
+      ||||                                                        (PCMCIA destination space attribute)
+      |||`------------------------------------ STC       :    0 = No PCMCIA (PCMCIA source wait)
+      `++------------------------------------- SSA2-0    :  000 = No PCMCIA (PCMCIA source space attribute)
+
+   >> DMA source address register 3 (SAR3)  FFA00030                          %%% No restrictions on use %%%
+
+   >> DMA destination address register 3 (DAR3)  FFA00034                     %%% No restrictions on use %%%
+
+   >> DMA transfer count register 3 (DMATCR3)  FFA00038                       %%% No restrictions on use %%%
+
+   >> DMA channel control register 3 (CHCR3)  FFA0003C ÅÅ 00005440            %%% No restrictions on use %%%
+                                                                                 <<bit31:24,19,17are fixed>>    
+     [0000:0000:----:0-0-:****:****:****:-***] initial   = 0000:0000:0000:0000:0000:0000:0000:0000              
+      |||| ||||      | |  |||| |||| ||||  |||
+      |||| ||||      | |  |||| |||| ||||  ||`- DE        : any (DMAC enable)
+      |||| ||||      | |  |||| |||| ||||  |`-- TE        : any (transfer end)
+      |||| ||||      | |  |||| |||| ||||  `--- IE        : any (interrupt enable)
+      |||| ||||      | |  |||| |||| |`++------ TS2-0     : any (transfer size)
+      |||| ||||      | |  |||| |||| |                      64-bit specification is possible only with 
+      |||| ||||      | |  |||| |||| |                      SystemMemory.
+      |||| ||||      | |  |||| |||| `--------- TM        : anyÅitransmit modeÅj                                 
+      |||| ||||      | |  |||| ||||                               0 = cycle steal mode                ---*1
+      |||| ||||      | |  |||| ||||                               1 = burst mode
+      |||| ||||      | |  |||| `+++----------- RS3-0     : any (resource select)
+      |||| ||||      | |  ||||                             0100,0101,0110,1010,1011 
+      |||| ||||      | |  ||||                             are only possible values                   ---*1     
+      |||| ||||      | |  ||`+---------------- SM1-0     : any (source address mode)
+      |||| ||||      | |  `+------------------ DM1-0     : any (destination address mode)
+      |||| ||||      | `---------------------- AM        :    0 = DACK output when read
+      |||| ||||      `------------------------ DS        :    0 = DREQ low level detection
+      |||| |||`------------------------------- DTC       :    0 = No PCMCIA (PCMCIA destination wait)
+      |||| `++-------------------------------- DSA2-0    :  000 = No PCMCIA (PCMCIA destination space attribute)
+      |||`------------------------------------ STC       :    0 = No PCMCIA (PCMCIA source wait)
+      `++------------------------------------- SSA2-0    :  000 = No PCMCIA (PCMCIA source space attribute)
+
+   >> DMA operation register (DMAOR)  FFA00040 ÅÅ 00008201            %%% Change of settings is required %%%
+                                                                                       <<bit2:1 can be any>>
+     [----:----:----:----:1---:--10:----:-**1] initial   = 0000:0000:0000:0000:0000:0000:0000:0000
+                          |      ||       |||
+                          |      ||       ||`- DME       :    DMAC enable
+                          |      ||       |`-- NMIF      : any (NMI flag)
+                          |      ||       `--- AE        : any (address error flag)
+                          |      `+----------- PR1-0     :   10 = ch2 priority  (11 = round robin     Åc*2)     
+                          `------------------- DDT       :    1 = DDT mode
+
+   [Notes]                                                                                                      
+    *1. The workaround described separately for "Write failures to peripheral module control register   
+        during DMA transfer" cannot be applied in all situation.
+    *2. In some cases, it may be necessary to specify round robin priority when using the workaround 
+        for "Write failures to peripheral module control register during DMA transfer". However, 
+        ordinarily ch2 priority should be specified.
+
+
+[Chapter 15] Serial communication interface (SCI) __________________________________________________________
+
+ < 1> Use of the SCI is inhibited.                                                   *  The SCI is not used.
+
+
+[Chapter 16] Serial communication interface with built-in FIFO (SCIF) ______________________________________    
+
+ < 1> No restrictions on use.
+ < 2> The peripheral module clock (PÉ≥) is 50MHz
+ < 3> With the device itself, the terminals are handled as follows.
+        SCK2=H                                                           * The SCK2 terminal is pulled up.
+        RxD2=H                                                           * The RxD2 terminal is pulled up.
+        CTS2=H                                                           * The CTS2 terminal is pulled up.
+        RTS2=L                                                           * The RTS2 terminal is pulled down.
+
+   >> There are no restrictions on register use.
+
+
+[Chapter 17] Smart card interface __________________________________________________________________________
+
+ < 1> Use of smart card interface is inhibited.                      * The smart card interface is not used.
+
+
+[Chapter 18] I/O Port ______________________________________________________________________________________    
+
+ < 1> General-purpose I/O ports are used as follows.
+        PORT0,PORT1,PORT5-PORT7,PORT10-PORT19 : Reserved
+        PORT2-PORT4                           : TV mode settings (output)
+        PORT8,PORT9                           : AV connector cable ID (input)
+    - Port control register A is configured after configuring port data register A.
+    - GPIO interrupts are not used.
+ < 2> The SCI I/O port is not used.
+ < 3> The SCIF I/O port can be used.
+
+   >> Port control register A (PCTRA)  FF80002C ÅÅ 000A03F0           %%% Change of settings is required %%%
+
+     [0000:0000:0000:1010:0000:0011:1111:0000] initial   = 0000:0000:0000:0000:0000:0000:0000:0000
+      |||| |||| |||| |||| |||| |||| |||| ||||
+      |||| |||| |||| |||| |||| |||| |||| |||`- PB0IO     :    0 = Port 0 input
+      |||| |||| |||| |||| |||| |||| |||| ||`-- PB0PUP    :    0 = Port 0 pulled up
+      |||| |||| |||| |||| |||| |||| |||| |`--- PB1IO     :    0 = Port 1 input
+      |||| |||| |||| |||| |||| |||| |||| `---- PB1PUP    :    0 = Port 1 pulled up
+      |||| |||| |||| |||| |||| |||| |||`------ PB2IO     :    1 = Port 2 output
+      |||| |||| |||| |||| |||| |||| ||`------- PB2PUP    :    1 = Port 2 not pulled up
+      |||| |||| |||| |||| |||| |||| |`-------- PB3IO     :    1 = Port 3 output
+      |||| |||| |||| |||| |||| |||| `--------- PB3PUP    :    1 = Port 3 not pulled up
+      |||| |||| |||| |||| |||| |||`----------- PB4IO     :    1 = Port 4 output
+      |||| |||| |||| |||| |||| ||`------------ PB4PUP    :    1 = Port 4 not pulled up
+      |||| |||| |||| |||| |||| |`------------- PB5IO     :    0 = Port 5 input
+      |||| |||| |||| |||| |||| `-------------- PB5PUP    :    0 = Port 5 pulled up
+      |||| |||| |||| |||| |||`---------------- PB6IO     :    0 = Port 6 input
+      |||| |||| |||| |||| ||`----------------- PB6PUP    :    0 = Port 6 pulled up
+      |||| |||| |||| |||| |`------------------ PB7IO     :    0 = Port 7 input
+      |||| |||| |||| |||| `------------------- PB7PUP    :    0 = Port 7 pulled up
+      |||| |||| |||| |||`--------------------- PB8IO     :    0 = Port 8 input
+      |||| |||| |||| ||`---------------------- PB8PUP    :    1 = Port 8 not pulled up
+      |||| |||| |||| |`----------------------- PB9IO     :    0 = Port 9 input
+      |||| |||| |||| `------------------------ PB9PUP    :    1 = Port 9 not pulled up
+      |||| |||| |||`-------------------------- PB10IO    :    0 = Port 10 input
+      |||| |||| ||`--------------------------- PB10PUP   :    0 = Port 10 pulled up
+      |||| |||| |`---------------------------- PB11IO    :    0 = Port 11 input
+      |||| |||| `----------------------------- PB11PUP   :    0 = Port 11 pulled up
+      |||| |||`------------------------------- PB12IO    :    0 = Port 12 input
+      |||| ||`-------------------------------- PB12PUP   :    0 = Port 12 pulled up
+      |||| |`--------------------------------- PB13IO    :    0 = Port 13 input
+      |||| `---------------------------------- PB13PUP   :    0 = Port 13 pulled up
+      |||`------------------------------------ PB14IO    :    0 = Port 14 input
+      ||`------------------------------------- PB14PUP   :    0 = Port 14 pulled up
+      |`-------------------------------------- PB15IO    :    0 = Port 15 input
+      `--------------------------------------- PB15PUP   :    0 = Port 15 pulled up
+
+   >> Port data register A (PDTRA)  FF800030 ÅÅ F***                  %%% Change of settings is required %%%
+
+                         [1111:11**:111*:**11] initial   = XXXX:XXXX:XXXX:XXXX
+                          |||| |||| |||| ||||
+                          |||| |||| |||| |||`- PB0DT     :    1 = Port 0 data
+                          |||| |||| |||| ||`-- PB1DT     :    1 = Port 1 data
+                          |||| |||| |||| |`--- PB2DT     : any  = Port 2 data
+                          |||| |||| |||| `---- PB3DT     : any  = Port 3 data
+                          |||| |||| |||`------ PB4DT     : any  = Port 4 data
+                          |||| |||| ||`------- PB5DT     :    1 = Port 5 data
+                          |||| |||| |`-------- PB6DT     :    1 = Port 6 data
+                          |||| |||| `--------- PB7DT     :    1 = Port 7 data
+                          |||| |||`----------- PB8DT     : any  = Port 8 data
+                          |||| ||`------------ PB9DT     : any  = Port 9 data
+                          |||| |`------------- PB10DT    :    1 = Port 10 data
+                          |||| `-------------- PB11DT    :    1 = Port 11 data
+                          |||`---------------- PB12DT    :    1 = Port 12 data
+                          ||`----------------- PB13DT    :    1 = Port 13 data
+                          |`------------------ PB14DT    :    1 = Port 14 data
+                          `------------------- PB15DT    :    1 = Port 15 data
+
+   >> Port control register B (PCTRB)  FF800040                                     %%% Access inhibited %%%
+
+   >> Port data register B (PDTRB)  FF800044                                        %%% Access inhibited %%%
+
+   >> GPIO interrupt control register (GPIOIC)  FF800048                            %%% Access inhibited %%%
+
+   >> Serial port register (SCSPTR1)  FFE0001C                                      %%% Access inhibited %%%
+
+   >> Serial port register (SCSPTR2)  FFE80020                                %%% No restrictions on use %%%
+
+                         [----:----:****:--**] initial   = 0000:0000:0X0X:000X
+                                    ||||   ||
+                                    ||||   |`- SPB2DT    : any = RxD2 input,TxD2 output data
+                                    ||||   `-- SPB2IO    : any = TxD2 output conditions
+                                    |||`------ CTSDT     : any = CTS2 I/O data
+                                    ||`------- CTSIO     : any = CTS2 I/O
+                                    |`-------- RTSDT     : any = RTS2 I/O data
+                                    `--------- RTSIO     : any = RTS2 I/O
+
+
+[Chapter 19] Interrupt Controller (INTC) ___________________________________________________________________
+
+ < 1> Non-maskable interrupts are for debugger use only, and are not generated in products.            
+                                                               * Because NMI terminal is pulled up.
+    - If a NMI occurs during DMA, the DMA sequence between SH4 and Holly is disrupted and no futher DMA         ^Added
+      is possible. (However, data can still be read and written normally.) Normal DMA operation can only be 
+      restored by PowerOn reset.
+ < 2> NMI is detected at the rising edge.
+ < 3> Only terminals /IRL1 and /IRL2 are used for external interrupts.                             
+                                                               * Terminals /IRL0 and /IRL3 are pulled up.
+        Terminals /IRL3-/IRL0=1001 : Level 6 external interrupt
+        Terminals /IRL3-/IRL0=1011 : Level 4 external interrupt
+        Terminals /IRL3-/IRL0=1101 : Level 2 external interrupt
+        Level 1, 3, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15 external interrupts are not generated.                   
+ < 4> IRL interrupts are level encoded interrupts.
+ < 5> The following interrupts are not generated.
+        TMU2/TICPI2 : Input capture interrupt                  * The TCLK terminal is pulled up.                
+        RTC/ATI     : Alarm interrupt                          * The RTC is not used in products.               
+        RTC/PRI     : Periodic interrupt                       * The RTC is not used in products.               
+        RTC/CUI     : Roll left interrupt                      * The RTC is not used in products.               
+        SCI/ERI     : Receive error interrupt                  * The SCI is not used.                           
+        SCI/RXI     : Receive data full interrupt              * The SCI is not used.                           
+        SCI/TXI     : Send data empty interrupt                * The SCI is not used.                           
+        SCI/TEI     : Send end interrupt                       * The SCI is not used.                           
+        REF/RCMI    : Compare match interrupt                  * Inhibited because refresh used.                
+        DMAC/DMTE0  : DMAC-ch0 transfer end interrupt          * DMAC-ch0 transfer end interrupts inhibited.    
+        GPIO/GPIOI  : I/O port interrupt                       * I/O port interrupts inhibited.                 
+ < 6> Hitachi-UDI interrupts are for debugger use only.
+
+   >> Interrupt control register (ICR)  FFD00000 ÅÅ 8000          %%% Change of settings is not required %%%    
+
+                         [10--:--00:0---:----] initial   = 1000:0000:0000:0000
+                          ||     || |
+                          ||     || `--------- IRLM      :    0 = IRL interrupts are  level encoded
+                          ||     |`----------- NMIE      :    0 = NMI is detected at rising edge
+                          ||     `------------ NMIB      :    0 = NMI requests are held when SR. BL are 1
+                          |`------------------ MAI       :    0 = Interrupts are still enabled when NMI is L
+                          `------------------- NMIL      : any (NMI input level)
+
+   >> Interrupt priority level configuration register A (IPRA)  FFD00004      %%% No restrictions on use %%%
+                                                                                         <<bit3:fixed to 0>>
+                         [****:****:****:0000] initial   = 0000:0000:0000:0000
+                          |||| |||| |||| ||||
+                          |||| |||| |||| `+++- (RTC)     : 0000 = RTC interrupt request mask
+                          |||| |||| `+++------ (TMU2)    : any  (TMU2 interrupt request)
+                          |||| `+++----------- (TMU1)    : any  (TMU1 interrupt request)
+                          `+++---------------- (TMU0)    : any  (TMU0 interrupt request)
+
+   >> nterrupt priority level configuration register B (IPRB)  FFD00008       %%% No restrictions on use %%%
+                                                                                         <<bit7:fixed to 0>>
+                         [****:****:0000:----] initial   = 0000:0000:0000:0000
+                          |||| |||| ||||
+                          |||| |||| `+++------ (SCI)     : 0000 = SCI interrupt request mask
+                          |||| `+++----------- (REF)     : any (REF interrupt request)
+                          `+++---------------- (WDT)     : any (WDT interrupt request)
+
+   >> Interrupt priority level configuration register C (IPRC)  FFD0000C       %%% No restrictions on use %%%   
+                                                                                    <<bit15:12,3:fixed to 0>>
+                         [0000:****:****:0000] initial   = 0000:0000:0000:0000
+                          |||| |||| |||| ||||
+                          |||| |||| |||| `+++- (H-UDI)   : 0000 = Hitachi-UDI interrupt request mask
+                          |||| |||| `+++------ (SCIF)    : any (SCIF interrupt request)
+                          |||| `+++----------- (DMAC)    : any (DMAC interrupt request)
+                          `+++---------------- (GPIO)    : 0000 = GPIO interrupt request mask
+
+
+[Chapter 20] User Break Controller__________________________________________________________________________
+
+ < 1> User break controller is for debugger only, and thus cannot be used.
+
+
+[Chapter 21] Hitachi User Debugging Interface (Hitachi-UDI)_________________________________________________
+
+ < 1> Hitachi user debugging interface is for debugger only, and thus cannot be used.
+
+
