@@ -1,0 +1,72 @@
+Slinkie -- next gen debugger host tool for DC and KOS (mainly)
+
+Goals
+-----
+- Capable of working over BBA, or LA; later on, USB adapters.
+- Uploading chunks of memory to the DC on demand
+- Downloading chunks of memory from the DC on demand
+- PC->DC and DC->PC file I/O, with completion callbacks on the DC side
+- Capability to switch the "root" on the PC side
+- "Pretty" interface on the DC side, while program not running
+- ISO redirection to a PC image
+- Optional interrupt-driven I/O for best speed and async operations
+- Full info querying on DC side so that the hosted program can find out:
+  * IPs and ports of the PC and DC side
+  * Mac address of the PC side
+  * Version and capabilities of Slinkie
+- Capability to break into a running program at any time and/or terminate it
+- Ability to optionally use normal networking in hosted program while still
+  using Slinkie for debugging
+- Capability to attach to a running program, if support is built in
+- Endian-agnostic
+- Address acquisition by:
+  * Built-in address
+  * "Spy ARP" (reading the dest IP from packets with our MAC)
+  * BBA Flash settings
+  * BOOTP/DHCP
+
+Design Pieces
+-------------
+- Swappable link-level interface like in dcload 1.0.4
+- Simple UDP-based stack, also like dcload 1.0.4
+- Wire-level compatibility with dcload (for the most part)
+- Default exception handlers used to catch crashes before hosted program
+  starts running (or if it doesn't setup its own)
+- Three modes: exclusive, immediate and cooperative.
+  * Exclusive is when there is no hosted program running at all.
+  * Immediate is when Slinkie is in full, halted control of the CPU, but the
+    running program is otherwise still running (e.g., no messing with the
+    frame buffer).
+  * Cooperative is when Slinkie is more or less in the background and is
+    generally letting the hosted program run.
+- Two file modes: async and sync. In async mode, a file operation is requested
+  and program control returns immediately; a callback is called from an IRQ
+  handler when data is ready. In sync mode, immediate mode is entered until
+  the requested data is transferred, or an error happens.
+- Limited hosted program integration for:
+  * I/O completion callbacks
+  * IRQ hooking for cooperative mode
+  * Net stack integration (new ethernet "device")
+- Total program size, including stack, less than 48K
+- Syscall interface like in dcload
+
+Syscalls
+--------
+The following syscalls will be available to the running program:
+- Get Slinkie version info
+- Get IP/MAC info
+- Read host fd
+- Write host fd
+- Open host fd
+- Close host fd
+- Seek host fd
+- Get stats on a host file (size, time, type, attributes)
+- Change host root directory
+- Get host clock time
+- Open host dir
+- Read host dir
+- Close host dir
+- Exit running program
+- Set async mode completion callback (or sync mode)
+- Set IRQ hooking / unhooking callbacks
+- Get ethernet device driver

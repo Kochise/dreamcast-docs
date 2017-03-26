@@ -1,0 +1,14 @@
+/* KallistiOS ##version##
+
+   newlib_execve.c
+   Copyright (C)2004 Dan Potter
+
+*/
+
+#include <sys/reent.h>
+#include <errno.h>
+
+int _execve_r(struct _reent * reent) {
+	reent->_errno = EAGAIN;
+	return -1;
+}

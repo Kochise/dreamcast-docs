@@ -1,0 +1,171 @@
+**********************************************************************
+* MPEG 1.0/2.0 _AUDIO_ PLAYER, V0.59n                                * 
+*                                                                    *
+* (full?) MPEG 1.0/2.0, Layer 1,2 and 3 support                      *
+* Layer-3 realtime only with a 'fast' machine                        *
+* Since April 97, 128kbit j-stereo should work on a 486DX4-120.      *
+* With 2:1 down-sampling or using the downmix-mode even a 486DX2-66  *
+* should play such a stream in realtime!                             *
+*                                                                    *
+* I still claim to have the fastest MPEG Audio Player for UNIX ;)    *
+**********************************************************************
+
+Please read first the important information in the COPYING file.
+
+written/modfied by:
+   Michael Hipp (email: Michael.Hipp@student.uni-tuebingen.de)
+   Oliver Fromme <oliver.fromme@heim3.tu-clausthal.de>
+    (several enhancements, man pages, Makefile, FreeBSD port, License, etc.)
+
+Uses code (or at least ideas) from:
+  MPEG Software Simulation Group: reference decoder package
+  Tobias Bading: idea for DCT64 in subband synthesis from maplay package
+  Jeff Tsay and Mikko Tommila: MDCT36 from maplay package
+  Philipp Knirsch <phil@mpik-tueb.mpg.de>: DCT36/manual unroll idea
+  Thomas Woerner <..> (SGI Audio)
+  Damien Clermonte <..> (HP-UX audio fixes)
+  Niclas Lindstrom <nil@wineasy.se>: OS2 port
+  Stefan Bieschewski <stb@acm.org>: Pentium optimizations, decode_i586.s
+  Martin Denn <mdenn@unix-ag.uni-kl.de>: NAS port
+  Niklas Beisert <nbeisert@physik.tu-muenchen.de> MPEG 2.5 tables
+  <mycroft@NetBSD.ORG> and <augustss@cs.chalmers.se>: NetBSD
+  Kevin Brintnall <kbrint@visi.com> BSD patch
+  Tony Million: win32 port
+  Steven Tiger Lang: advanced shuffle
+  Henrik P Johnson: HTTP auth patch
+  Eric B. Mitchell: esd port
+  and more ....
+
+current distribution site for new test versions is:
+  http://www-ti.informatik.uni-tuebingen.de/~hippm/mpg123.html
+
+here's Oliver Fromme's mpg123 page:
+  http://mpg.123.org/
+  (includes information about the mpg123 mailing list)
+
+and you can get the latest release from here:
+  ftp.tu-clausthal.de:/pub/unix/audio/mpg123
+  http://ftp.tu-clausthal.de/pub/unix/audio/mpg123
+
+------------------------------------------------------------------------
+
+This version plays a layer3,112Kbit/s,J-Stereo stream on my AMD 5x86/133Mhz
+with about 66% CPU load. (on the console, NO X11)
+If your machine isn't fast enough you may try the downsampling
+feature (--2to1 and --4to1 options)
+Playing in '--singlemix' (stero reduced to mono) also saves some
+CPU cycles, though the whole code is optimized for 'full' stereo playing. 
+
+'Benchmarks': (+/- 2%)
+----------------------
+(AMD 486/133MHZ,ASUS SP3G,256KB cache,DIRTY-TAG installed,(BusLogic SCSI))
+(Layer3, 112Kbit/s, Joint-Stereo stream (partially MS stereo, no I-stereo))
+(Compiled with: -DI386_ASSEM -DREAL_IS_FLOAT -DLINUX -Wall -O2 -m486
+   -fomit-frame-pointer -funroll-all-loops -finline-functions -ffast-math)
+
+  full quality:     (stero)     66% (-> may work on 486DX4-100)
+                    (singlemix) 38% (-> should work on 486DX2-66)
+  2:1 downsampling: (stereo)    48%
+                    (singlemix) 30% (-> should work on 486DX-50)
+
+---------------------------------------------------------------------
+Description:
+
+This isn't a new player. It's a near fully rewritten version based on the
+mpegaudio (FHG-version) package. The DCT algorithm in the
+synthesis filter is a rewritten version of the DCT first seen in the maplay
+package, which was written by Tobias Bading (bading@cs.tu-berlin.de). The 
+rewrite was neccassary, because the GPL may not allow this copyright mix.
+The mpegaudio package was written by various people from the MPEG/audio
+software simulation group. The maplay is under GPL .. You can find the
+original source code and the mpegaudio package on: ftp.tnt.uni-hannover.de.
+
+Especially layer3.c common.c and mpg123.h is based on the dist10 package.
+The code is fullly rewritten but I'm using sometimes the
+same variable names or similar function names as in the
+original package.
+
+In the current layer3.c I'm using a DCT36 from Jeff Tsay's 
+(ctsay@pasteur.eecs.berkeley.edu) maplay 1.2+ package. His code is
+under GPL .. I also tried the enhancement from Mikko Tommila. His
+code is also in layer3.c (but it's disabled at the moment, because
+it was slightly slower than the unrolled 9 point DCT (at least on 
+_my_ system)). Theoretically it should be faster. You may try it on
+your system.
+
+The output can converted to different audio formats and
+rates. Currently, only (very simple) audiosupport for
+the most common computer systems. It's possible
+to build a 'generic' version which needs an external
+audio player for playing.
+
+I have tested the program with a lot of teststreams, but it's very 
+likely, that there are still a few bugs.
+
+NAS notes: (from Martin Denn)
+-----------------------------
+you may wanna play with the following defines: (from audio.c)
+  NAS_SOUND_PORT_DURATION 
+  NAS_SOUND_LOW_WATER_MARK
+Change them to optimize the player for your environment. For slow
+networks a proven config is:
+#define NAS_SOUND_PORT_DURATION 10 /* seconds */
+#define NAS_SOUND_LOW_WATER_MARK 75 /* percent */
+
+Pentium optimization notes:
+---------------------------
+The ASM optimaztions are especially for Intel Pentium FPUs.
+On other processorts the egcs compiler optimiazation
+may do a better job.
+
+3DNow notes:
+------------
+You need a new 'as'. ie. the 'as' from binutils-2.9.1.0.19a
+
+
+have fun,
+           Mike
+
+----------------------------------------------------------------------------
+
+Just for info:
+    I'm also working (but not at the moment) on a DSP port for this package. 
+    A first testversion of the _LAYER-2_ part is finished and seems
+    to work in realtime with my 20MHZ ADSP-2115 
+
+----------------------------------------------------------------------------
+
+Copyrights (c) 1995,1996,1997 of all changes/modifications and
+of the new code by Michael Hipp. All rights reserved.
+Copyrights (c) 1997 of several enhancements by Oliver Fromme.
+See the packages 'maplay 1.2(+)' and 'mpegaudio' for their copy-policies.
+Copyrights (c) 1997 of the OS2 specific parts by Niclas Lindstrom
+
+known bugs:
+-----------
+  layer 3 i-stereo not heavily tested
+   btw: I'm looking for i-stereo teststreams .. maybe you could send me a few
+  Layer 1 not heavily tested
+  no CRC checking ..
+  no 'free format streams'
+  no clean audio interface
+  MPEG 2.0, Layer1 and Layer2 not tested (and probably will not work)
+  MPEG 2.0, Layer3 not heavily tested .. may has bugs.
+
+related information:
+--------------------
+  If you need an mp3 frame re(assembler) and stream debug tool you should
+  have a look at the mp3asm program on Olli's mpg123 page.(http://mpg.123.org)
+
+
+******************************************************************************
+*
+* This is software with ABSOLUTELY NO WARRANTY.
+* Use it at your OWN RISK. It's possible to damage e.g. hardware or your hearing
+* due to a bug or for other reasons. 
+*
+* I do not warrant that the program is free of infringement of any third-party
+* patents.
+*
+******************************************************************************
+

@@ -1,0 +1,53 @@
+Drawing model for Tiki
+----------------------
+
+To handle the translucency issue for GL, Tiki will use the following setup:
+
+- Things will always be drawn with the depth buffer enabled. The difference
+between opaque and translucent list items is whether GL_BLEND is turned
+on or off. Individual drawables can turn the depth buffer usage on or off,
+but in general they should not. An example of one that might is the particle
+storm drawables in FoF.
+
+- When drawing the top-level scene object, we'll traverse down the tree and
+make a linear list of all objects to be drawn. Each object should be able
+to specify whether it will draw into the opaque or translucent list, or
+both. These will be separated into two lists (an object could be on both).
+
+- The opaque list will be sorted by the object's Z position value. These
+are drawn from front to back. This sorting step can be removed if it turns
+out to be a bigger drain on CPU time than GPU fill time.
+
+- The translucent list will be sorted by the object's Z position value. These
+are drawn back to front.
+
+
+To support this usage, Drawable objects will need to gain a new method,
+drawsInList(), which returns true if the object will want to draw during a
+certain list. This will default to true in the base class to avoid having
+to retrofit all objects. subDraw() can also use this method to avoid calling
+draw() on objects which won't do any drawing during that list, saving the
+effort of these "if (list != Opaque)" type checks.
+
+An alternate solution is to simply always include all objects in both
+lists, in which case the worst case scenario is that every object in the
+scene is sorted once per frame (sort once, then draw backwards for opaque,
+and forwards for translucent). This also avoids the need to add a
+drawsInList() method. In a scene with a lot of translucent objects this
+will quickly approach (or even outpace -- 2 method calls) the speed of
+having all the extra drawsInList() overhead. In a scene with 99% opaques,
+we'll waste a lot of time (assuming an unsorted opaque list anyway). Some
+research may be warranted here...
+
+Drawable objects should probably also have a way to cache the output of the
+getPosition() method. A call to getPosition() should calculate based on its
+translation and its parent's translation, and then store that value
+internally for future calls. When the object's setTranslate() method is
+called, the cache can be invalidated; additionally, any child objects
+should also be invalidated. To avoid all this hassle (since the main place
+the repeated call speed matters is in the sorting) there can just be a
+private member of Drawable with the cached getPosition() output, and the
+drawAll() type method can be a member of Drawable as well. Alternatively
+each object could have its internal cache set when it's traversed
+initially, and then an operator< could compare these values for sorting
+with STL.

@@ -1,0 +1,34 @@
+subdirs: $(patsubst %, _dir_%, $(SUBDIRS))
+
+$(patsubst %, _dir_%, $(SUBDIRS)):
+	@$(MAKE) -C $(patsubst _dir_%, %, $@)
+
+clean_subdirs: $(patsubst %, _clean_dir_%, $(SUBDIRS))
+
+$(patsubst %, _clean_dir_%, $(SUBDIRS)):
+	@$(MAKE) -C $(patsubst _clean_dir_%, %, $@) clean
+
+ifeq ($(strip $(DEVKITPRO)),)
+$(error "Please set DEVKITPRO in your environment. export DEVKITPRO=<path to>devkitARM)
+endif
+
+TIKI_BASE_LIBS=-ltiki -L$(DEVKITPRO)/libnds/lib -lnds9
+
+
+CXXFLAGS=-I$(DEVKITPRO)/libnds/include
+CXXFLAGS+=-I$(TIKI_DIR)/include
+CXXFLAGS+=-I$(TIKI_DIR)/nds/include -g
+CXXFLAGS+=-I$(TIKI_DIR)/3rdparty/zlib
+CXXFLAGS+=-I$(TIKI_DIR)/3rdparty/libjpeg
+CXXFLAGS+=-I$(TIKI_DIR)/3rdparty/libpng
+CXXFLAGS+=-I$(TIKI_DIR)/3rdparty/libogg/include
+CXXFLAGS+=-I$(TIKI_DIR)/3rdparty/libvorbis/include
+CXXFLAGS+=-I$(TIKI_DIR)/3rdparty/libvorbis/lib
+CXXFLAGS+=-DARM9
+CXXFLAGS+=-mcpu=arm9tdmi -mtune=arm9tdmi -ffast-math -mthumb -mthumb-interwork
+CFLAGS=$(CXXFLAGS)
+CXXFLAGS+=-fno-rtti
+
+LDFLAGS=-specs=ds_arm9.specs -mthumb -mthumb-interwork -mno-fpu -L$(DEVKITPRO)/lib -lgcc
+
+include $(DEVKITARM)/ds_rules

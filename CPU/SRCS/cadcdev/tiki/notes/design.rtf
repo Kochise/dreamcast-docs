@@ -1,0 +1,49 @@
+{\rtf1\mac\ansicpg10000\cocoartf102
+{\fonttbl\f0\fswiss\fcharset77 Helvetica;\f1\fswiss\fcharset77 Helvetica-Bold;}
+{\colortbl;\red255\green255\blue255;}
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ql\qnatural
+
+\f0\fs24 \cf0 Tiki - Toolkit for making games portable to OSX, Win32, and Linux\
+\
+- Include space "Tiki", and namespace "tiki". All include files will go in a flat dir.\
+- Tsunami primitives, renamed and in a namespace\
+- Parallax primitives, renamed and in a namespace\
+- Animation speed management\
+- Loaded asset management (specifically, reload-on-demand textures)\
+- Improved Sound class allowing a 3D position\
+- Sound streaming capability\
+- OggVorbis playback\
+- Event-based, async input system\
+- Thread creation, sync, and termination\
+- Time query to a microsecond resolution\
+- FS interface -- finding app's resources, saving and loading prefs, FS navigation, etc\
+\
+\
+
+\f1\b New Display Model
+\f0\b0 \
+\
+For the Dreamcast the most important distinction was whether the polys being drawn were opaque or translucent. For GL the most important distinction is the layering order, so that polys can be drawn from back to front with regard to translucency.\
+\
+To that end, Tiki will no longer have a concept of "lists". Instead the sub-drawable ordering will be very strictly adhered to when actually rendering the output. Each drawable must then do what it needs to internally to enforce layering.\
+\
+Each Drawable will have a new flag "contains translucency". The rendering algorithm then goes something like this:\
+\
+- Start at the bottom of the stack and work upwards until we find something with translucency\
+- Work back down towards the bottom, drawing each object.\
+- Draw the object with translucency.\
+- Repeat, with the already drawn objects representing "the bottom".\
+\
+This will ensure the maximal usage of the depth buffer while still providing proper layering for translucency.\
+\
+\
+
+\f1\b New Animation Model
+\f0\b0 \
+\
+In the Dreamcast things were generally assumed to go 60fps, and if they didn't, a hack was in place to skip the appropriate frames' worth of animation as needed. The idea of animating by frame count, well, sucks.\
+\
+We'll still call nextFrame() once per frame on each Drawable, but it will now have a parameter -- time. This could be the actual system clock value, but most importantly it is monotonically increasing as the program runs. The default implementation of nextFrame() will automatically store the time each time it runs and you can call back up to get the amount of elapsed time since the last frame, if you care. Otherwise, frame way!\
+\
+\
+}

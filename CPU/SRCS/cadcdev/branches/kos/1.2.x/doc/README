@@ -1,0 +1,269 @@
+KallistiOS ##version##
+README (c)2000-2002 Dan Potter
+
+OVERVIEW
+--------
+KallistiOS is a pseudo-real-time operating system for gaming consoles,
+licensed under the terms of the *new* BSD license (the one without the
+advertising clause). It has currently been ported to the Dreamcast*,
+Gameboy Advance*, and PlayStation 2* platforms, though the DC port is
+still the most advanced and functional of the lot.
+
+Depending on whether you wish to see the fnords, you can pronounce it
+"kallisti-o's" (like a cereal) or "kallisti o s" (like an operating
+system). We like the former since it's silly to be so serious most of the
+time =). "Kallisti" means "to the fairest" in Greek. This was the word (so
+the story goes) that was inscribed on the golden apple that Eris threw
+into the banquet of the gods to start the Trojan war. This somehow landed
+her the title of matriarch of a silly religion called Discordianism, which
+is what the name pays homage to. If you want a short abbreviation, you can
+also refer to it as "KOS", which can be pronounced "k-os" (chaos) =).
+
+Note that this name is _not_ to be confused or associated with either the
+professional development company Kalisto Software* or the cracking group
+"Kalisto".
+
+Now that that is cleared up... =)
+
+Like most embedded kernels, KallistiOS has two major modes of operation. 
+In the first mode, it can be linked directly into a program. In this case
+you have very fine control over what gets included in the binary and how
+and when it is initialized. It is also by far the simplest way to make use
+of it (hearken back to the days of libdream...). This mode is now considered
+the default method of using KallistiOS and will be the best supported in the
+future.
+
+The second mode is potentially more versatile and fun. You can run the
+standalone KallistiOS binary and have it load programs and multitask like
+a regular OS. The virtualized file system is used in this loading process,
+so the first (and subsequent) loaded binaries can be sitting on a CD,
+embedded in the kernel, or even come across from a PC debugger host. OS
+mode is currently somewhat broken, also due to bit rot.
+
+Note that although "os mode" encourages the use of threads and a file system,
+it may be taylored to fit your needs. Likewise, the library mode may use
+threads and the VFS.
+
+What KallistiOS is primarily:
+- Processor manager (threads, MMU, store queues, DMA, exceptions, etc)
+- Pseudo-POSIX layer (printf, files, threads, etc)
+- DC HAL (hardware abstraction layer)
+
+What KallistiOS provides optionally:
+- Process management (ELF binary loading, process spawning, etc)
+- Optional complex OS services (simple windowing system, etc)
+
+What KallistiOS is NOT:
+- UNIX (or even compatible)
+- Linux/BSD (those are their own ports! =)
+- Memory protection; programs can overwrite eachother at will#
+- Pretty much anything else you can think of that's not in the above list
+
+(# There is an MMU module for the DC port, but nothing really uses it at
+   this point.)
+
+If you're looking for all these features in a solid proven kernel, then
+look no further than Linux or NetBSD. On the other hand, if you want a
+simple kernel that you can grok in a few hours and use simply, use KallistiOS!
+
+As an aside, if you are interested in a skeleton version of KOS that uses
+the MMU and memory protection, a real process model, etc, check out
+KOS-MMU. It's not being worked on any more but it has some interesting
+code in it and is a clean example of a simple OS. Most of the interesting
+code from KOS-MMU has been merged into KOS 1.1.x.
+
+
+LICENSING
+---------
+Please read the file "LICENSE" for more information about this subject.
+This program is now distributed under a similar set of terms as earlier
+ones (libdream), and has changed since KallistiOS 0.7 (GPL). Even so,
+some of the software distributed with KOS (newlib math routines, Xing
+MP3 engine) are under different licenses. Please read "LICENSE" if in
+doubt!
+
+This software is based in part on the work of the Independent JPEG
+Group (see addons/libjpeg/README).
+
+I have also added a somewhat informative "licensing" section to the FAQ.
+
+If in doubt, please contact us. If you want to use KOS in a project, we'd
+love to hear from you anyway!
+
+
+PREREQUISITES
+-------------
+Building KallistiOS from source entirely requires two things:
+- GNU Binutils / GCC, cross-compile to the platform of your choice; for
+  DC this is a compiler targeted for "sh-elf", for GBA this is
+  a compiler targeted for "arm-elf", and for PS2 you'll need the
+  PS2DEV "ee" compiler. See below about version notes.
+- GNU Binutils / GCC / GNU Make for your host platform
+
+If you don't have any of the above, please see this site for some more
+instructions and a build script that may help you:
+
+DC:  http://www.boob.co.uk/
+GBA: http://www.gbadev.org/
+PS2: http://ps2dev.sf.net/
+
+On the DC, you'll want GCC 3.0.4. It's far better than the 2.9x series at
+this point and even compiles nicely with -O2, unlike previous versions.
+The default optimization setting in the enclosed environ files is -O1,
+but if you have 3.0.4 you can safely crank this up to -O2 now. If you
+want to build SPU programs then you will also need an ARM tool chain.
+Precompiled binaries are included for the ARM code that is used by
+the addons, however. Various people have had mixed results with using
+GCC 3.1.x and 3.2.x for DC devel, but the unanimous remark is that
+it doesn't seem to work with KOS, so I'd stick with 3.0.4.
+
+On the GBA, GCC 3.0.x is also the build you want to use. It includes
+the new ARM-supplied backend for that CPU target. It also provides a
+compiler that works with both ARM and Thumb mode code, including
+interworking (though good luck getting that to work!).
+
+For PS2, you're stuck with a 2.95.2 derivative for the EE, because that's
+what Sony provided and no one has managed to fully update to the latest
+versions AFAIK. YMMV, there may be a new one by now. Note that the PS2 port
+currently only builds for the RTE sub-arch, which is the loader DVD used
+with the PS2 Linux Kit. So using KOS for PS2 currently requires that you
+have a Linux Kit. You can buy one here:
+
+http://us.playstation.com/hardware/more/SCPH-97047.asp
+
+
+BUILDING
+--------
+Building KOS itself is actually quite simple, especially if you don't want
+to add new sections for yourself. Just edit environ.sh or environ.tcsh to
+suit your setup. Please see the same environ scripts for your target
+platform in the 'doc' directory.
+
+After you have a working environ script, run it with 'source environ.sh'
+or 'source environ.tcsh' (depending on your shell) and run your make
+program. For BSD people this will be 'gmake', otherwise it will probably
+be just 'make'. It should be done after a few minutes. If something goes
+wrong, please check the FAQ; if that fails, email one of us and we'll see
+what we can do. I recommend putting the 'source' line above into your
+shell's .rc/.login.
+
+This process should work (and has been tested) under Linux, BSD, and
+Cygwin. It is very doubtful that it will work in any non-Unix
+environment.
+
+
+VERSION CODES
+-------------
+As I may or may not have mentioned, we are switching to a Linux-style
+versioning system with KOS. All KOS versions are now composed of three
+sections: major, minor, micro. Major revisions are generally something
+that changes the OS fundamentally, or when we run out of single-digit
+major version numbers =). For example, the change in 1.0.x -> 1.1.x
+where we moved from an OS style target to a library style target as the
+main goal will probably result in the next "stable" release being 2.0.0.
+The minor version number is used to denote a development series. Even
+numbered minor versions are considered stable, while odd-number versions
+are considered unstable, incomplete, etc. When we feel like significant
+progress has been made since the last stable release, we'll make a new
+stable release. Finally, the micro version denotes a sequence in the
+development series. 1.1.0 would be the first snapshot of the 1.1
+development series.
+
+And as always, if you want to be on the bleeding edge, use the CVS tree
+from SourceForge.
+
+
+HACKING
+-------
+If you are planning on doing your own hacking and potentially submitting
+patches for me to include, then I'd very much appreciate it if you would
+do this against the CVS tree rather than a release tree. There are helpful
+instructions on SourceForge for getting an anon CVS tree, and you can
+generate patches for me like so:
+
+cvs diff -ruN
+
+I don't guarantee that any patch will get included (especially if your patch
+contains a lot of reformatting, sloppy coding, things at cross-purposes with
+the primary thrust of KOS, etc), but I will make an effort to at least
+examine and comment on any submitted patches.
+
+Please also read coding_style.txt if you want to submit things to the
+KOS core. Except in some exceptional circumstances, I will want the
+code to match up style-wise in at least the core lib. Things in add-ons
+aren't quite as important.
+
+
+OS MODE IS GONE FOR NOW
+-----------------------
+
+The standard KOS 1.0.x "os mode" is now integrated back into the source tree
+again, but it is not the default build mode. Instead, it is provided as an
+add-on library if you want to use that mode in your programs, and the old
+"kernel" tree is provided as a sample "os mode" program.
+
+It still needs some debugging work, and it's not ready for "primetime"
+again yet. If you want to build and experiment yourself, please feel
+free. Look in the "libos" directory under "addons". Note that OS mode is
+a legacy item from KOS 1.0.x, and as such is pretty Dreamcast* specific.
+
+In fact, all of the userland pieces have been removed in this version and
+will be put back in a later version. I mainly included as much of "os mode"
+as I did to support a few users that are using the OS this way.
+
+
+PLATFORM NOTES
+--------------
+Dreamcast*
+
+- MPGLIB (LGPL MP3 library, which is also faster) is included, but does
+  not work. If you want to screw with it yourself, check the libmp3 Makefile
+  and look at sndmp3_mpglib.c in that dir.
+
+Gameboy Advance*
+
+- This port is now being maintained by Gil Megidish.
+- There is not a lot of hardware support yet. IRQs aren't even supported,
+  so don't even think about trying to use threads yet =). This port is
+  somewhat immature however, so I expect the support to improve over
+  time.
+- KOS is currently configured to run as Thumb code from the ROM. This can
+  be changed by editing the config script to set the compiler flags and
+  editing kernel/arch/gba/kernel/startup.s to remove the "bx" call and
+  make it a regular jump.
+- In future versions I hope to have a more elegant system to combine Thumb
+  and ARM mode code (including automated copying of your ARM code into RAM
+  with the data segment). You can see the beginnings of this in the linker
+  script.
+
+PlayStation 2*
+
+- This port currently only supports booting on the Linux Kit RTE. If anyone
+  who has a raw PS2DEV setup would like to port things around to work on
+  the raw PS2 as well, I'd be happy to accept any help.
+- It is designed to be used with ps2-load-ip as a loader.
+- There is basically no hardware support yet, just a CPU/kernel-core port.
+
+
+END
+---
+That's where we leave off here. Now that you have a build and ready copy,
+you're ready to get to the more fun things. Please read the other documents
+in the "doc" directory for more information. Also check the FAQ if there
+is something you were wondering.
+
+Also, please take note of our new web URL (below). We have moved hosting
+to SourceForge for all console-related things.
+
+					Cryptic Allusion
+					http://gamedev.allusion.net/
+
+
+* "Sega" and "Dreamcast" are registered trademarks of Sega Enterprises, Ltd. 
+  "Nintendo" and "Gameboy Advance" are registered trademarks of Nintendo of America
+  Kalisto Software is a registered trademark of Kalisto Software, Inc. 
+  "PlayStation" is a registered trademark of Sony Computer Entertainment America
+  Any other trademarks are trademarks of their respective owners.
+
+KOS Version Id: $Id: README,v 1.12 2003/05/23 03:08:00 bardtx Exp $
+

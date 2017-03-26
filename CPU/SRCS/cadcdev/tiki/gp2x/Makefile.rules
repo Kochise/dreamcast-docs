@@ -1,0 +1,23 @@
+%.o: %.c
+	@echo "Compiling $< to $@"
+	@gcc $(CFLAGS) -c $< -o $@
+
+%.o: %.cc
+	@echo "Compiling $< to $@"
+	@g++ $(CFLAGS) $(CXXFLAGS) -c $< -o $@
+
+%.o: %.cpp
+	@echo "Compiling $< to $@"
+	@g++ $(CFLAGS) $(CXXFLAGS) -c $< -o $@
+
+subdirs: $(patsubst %, _dir_%, $(SUBDIRS))
+
+$(patsubst %, _dir_%, $(SUBDIRS)):
+	@$(MAKE) -C $(patsubst _dir_%, %, $@)
+
+clean_subdirs: $(patsubst %, _clean_dir_%, $(SUBDIRS))
+
+$(patsubst %, _clean_dir_%, $(SUBDIRS)):
+	@$(MAKE) -C $(patsubst _clean_dir_%, %, $@) clean
+
+TIKI_BASE_LIBS=-ltiki -lcodegen -lgles_cm

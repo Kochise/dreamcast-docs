@@ -1,0 +1,2391 @@
+%% KallistiOS Manual for KOS ##version##
+%%
+%% kos.tex
+%% (c)2000-2002 Dan Potter
+%%
+%% Built for LaTeX2e
+
+%% Setup some basic stuff
+\documentclass[english]{report}
+\usepackage{geometry}
+\geometry{verbose,letterpaper,tmargin=0.5in,bmargin=0.5in,lmargin=0.5in,rmargin=0.5in}
+\usepackage{setspace}
+\onehalfspacing
+%%\usepackage{makeidx}
+%%\makeindex
+
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Textclass specific LaTeX commands.
+ \newenvironment{lyxcode}
+   {\begin{list}{}{
+     \setlength{\rightmargin}{\leftmargin}
+     \raggedright
+     \setlength{\itemsep}{0pt}
+     \setlength{\parsep}{0pt}
+     \normalfont\ttfamily}%
+    \item[]}
+   {\end{list}}
+
+\makeatother
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Define some macros that we'll use to "abstract" the style in the
+%% document. This way if we change our minds later, it's a lot easier
+%% to fix.
+
+%% Function names will be in typewriter font
+\newcommand{\funcname}[1]{%
+	\texttt{#1}%
+}
+
+%% Program names are in bold
+\newcommand{\progname}[1]{%
+	\textbf{#1}%
+}
+
+%% Directory names are in bold
+\newcommand{\dirname}[1]{%
+	\textbf{#1}%
+}
+
+%% Paramater names are in italics
+\newcommand{\paramname}[1]{%
+	\textit{#1}%
+}
+
+%% Structure or data type name
+\newcommand{\dtname}[1]{%
+	\textit{#1}%
+}
+
+%% Library name
+\newcommand{\libname}[1]{%
+	\textbf{#1}%
+}
+
+%% Code snippets
+\newcommand{\code}[1]{%
+	\texttt{#1}%
+}
+
+%% Constants
+\newcommand{\constname}[1]{%
+	\texttt{#1}%
+}
+
+%% Trademark symbol
+\newcommand{\tm}[0]{ (tm) }
+
+%% KOS Version
+\newcommand{\kosversion}{ \#\#version\#\# }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Title and Author
+\title{Cryptic Allusion KallistiOS / Programmer's Manual}
+\author{\copyright 2000-2002 Dan Potter}
+
+%% Insert the title page and table of contents in the output here
+\maketitle
+\tableofcontents{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Legal mumbo-jumbo
+\chapter*{Legal}
+
+``Sega'' and ``Dreamcast'' are registered trademarks of Sega
+Enterprises, Ltd. This package has no association with Sega or any
+of its affiliates, besides working on their hardware.
+
+``Gameboy Advance'' is a registered trademark of Nintendo, Inc.
+This package has no association with Nintendo or any of its affiliates,
+besides working on some of their hardware.
+
+All other trademarks are owned by their respective trademark holders.
+
+KallistiOS \copyright 2000-2002 Dan Potter. Other portions \copyright their individual
+authors; please contact the authors for information on using and/or
+distriburing their code.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+\begin{enumerate}
+\item Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer. 
+\item Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution. 
+\item Neither the name of Cryptic Allusion nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+\end{enumerate}
+THIS SOFTWARE IS PROVIDED BY THE AUTHORS AND CONTRIBUTORS ``AS IS''
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter*{Version Info}
+
+This documentation is for KallistiOS version \kosversion. If the version
+code says ``\#{}\#version\#\#'', then this is an interim in-progress copy
+from CVS rather than from a numbered release.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Overview}
+
+Welcome to KallistiOS! If this documentation looks familiar to users
+of libdream, that's because it is -- this is basically a ``port''
+of the documentation, with new sections added as neccessary, and other
+sections modified. You'll find some entire sections marked
+``\textbf{\emph{UNPORTED FROM LIBDREAM}}''
+and these haven't been updated to KOS yet. Some
+other sections are simply unfinished as yet. Bear with us here, this
+is a \emph{lot} of documentation to write.
+
+The following is copied from the README file:
+
+\begin{quote}
+KallistiOS is a pseudo-real-time operating system for gaming consoles,
+licensed under the terms of the \textbf{new} BSD license (the one
+without the advertising clause). It has currently been ported to the
+Dreamcast\tm and Gameboy Advance\tm platforms.
+
+Depending on whether you wish to see the fnords, you can pronounce
+it ``kallisti-o's'' (like a cereal) or ``kallisti~o~s'' (like an operating
+system). We like the former since
+it's silly to be so serious most of the time =). ``Kallisti''
+means ``to the fairest'' in Greek. This was the word
+(so the story goes) that was inscribed on the golden apple that Eris
+threw into the banquet of the gods to start the Trojan war. This somehow
+landed her the title of matriarch of a silly religion called Discordianism,
+which is what the name pays homage to. If you want a short abbreviation,
+you can also refer to it as ``KOS'', which can be
+pronounced ``k-os'' (chaos =) or just plain old ``k-o-s''.
+
+Note that this name is \emph{not} to be confused or associated with either
+the professional development company Kalisto Software(tm) or the cracking
+group ``Kalisto''.
+
+Now that that is cleared up... =)
+
+Like most embedded kernels, KallistiOS is designed to be linked directly
+into a program. Unlike some simple libraries, however, KallistiOS
+(abbreviated elsewhere as KOS) also includes a full thread scheduler,
+virtual file system, etc. The only real difference is that your program
+is linked directly into the kernel instead of being run in a {}``userland''
+state.
+
+\end{quote}
+
+Note that the only active port of KOS is for the Dreamcast(tm), so
+the rest of this document will refer to that port unless otherwise
+stated.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Getting Started}
+
+We assume that you have gotten a working compiler set up. The compiler
+you need depends entirely on the platform you wish to use KOS with.
+At the moment, only the DC platform is very well supported. The others
+may or may not compile at this time. So this document will focus on
+that aspect of KOS.
+
+The first thing you'll want to do is get a working binary image of
+the KOS libraries. You may download KOS in binary or source form.
+
+If you downloaded KOS in binary form, then you'll still need a binary
+for \progname{genromfs} if you want to use the ROMFS file system (which
+will probably come in quite handy for development). Linux tends to
+come with this binary, BSD users can compile one using the copy included
+with the KOS sources, and Cygwin users will likewise need to compile
+it or obtain a binary from the same place you got the KOS package.
+
+The first thing you'll want to do in either case is to customize an
+``environ'' script. This script is run inside your shell to set
+various environment variables so that the KOS build scripts and tools
+know where to find KOS and the compiler toolchains (for DC, an SH-4
+compiler, and optionally, an ARM7 compiler). Look in the \dirname{doc}
+tree for samples. If you are using \progname{bash} (the default
+for Cygwin) then you should start with one ending in ``.sh'' and
+if you are using \progname{tcsh} then you should start with one ending
+in ``.tcsh''. Generally it shouldn't take more than changing a
+few base directory variables at the top of the file, and the environ
+script will be ready to go. You then need to either execute this script
+before working (``\code{source environ.sh}'' or ``\code{source environ.tcsh}''),
+or put the appropriate command in your shell's startup script. The
+instructions on how to do basic shell things like that is beyond the
+scope of this document, so look to Cygwin and/or {*}nix help groups
+if you want to find it.
+
+Now that you think you've got your environ script setup correctly,
+type \progname{set} (under \progname{bash}) or \progname{setenv} (under
+\progname{tcsh}) and look at the environment variables. You should see
+a whole bunch of them starting with ``KOS''. If that's true then
+this step is probably complete.
+
+If you downloaded the source package for KOS, then you'll want to
+compile it now. Just change the directory to the root of the KOS tree
+(e.g., inside ``kos-\kosversion'') and type \progname{make}. After a few
+minutes everything should have completed successfully. If not, then
+you might need to recheck the above steps and make sure everything
+is set up properly. If all else fails, try asking on the \emph{dcdev}
+or \emph{cadcdev-kallistios} mailing lists.
+
+Well, now that that is (hopefully) out of the way, we'll proceed on
+to writing a KallistiOS program.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{A Basic KOS Program}
+
+A KOS program is pretty simple and straightforward. Each C module
+should include \dirname{kos.h} as a system header (e.g. ``\code{\#include
+<kos.h>}'').%
+%
+\footnote{Alternatively it is possible to include individual headers as you
+use them; but with the speed of modern C compilers there is generally
+no good reason to do this unless you have a namespace conflict.
+}
+%
+You should have a C-standard ``main'', which is called
+\funcname{main}. It is also possible to use several directives outside
+your \funcname{main} function that modify the initialization and shutdown
+behavior of KOS. It should be instructive to follow along in one of
+the Hello World examples for your platform to see how a basic KOS
+program should look.
+
+You can have KOS automatically initialize subsystems if you want them
+to be active during your program. For example, you will probably want
+IRQs to be active in your program. On the other hand, you might not
+want threading active.%
+%
+\footnote{In KOS 1.1.6 and above, threading is \emph{always} active; it is
+not a matter of threaded or not, but cooperative vs pre-emptive threading.
+Cooperative threading is the equivalent of the old KOS non-threaded
+mode, it just adds a little bit to the binary size.
+}
+%
+A basic KOS init flags line looks like this:
+
+%%\index{KOS\_INIT\_FLAGS}
+\begin{lyxcode}
+KOS\_INIT\_FLAGS(INIT\_DEFAULT);
+\end{lyxcode}
+
+The parameter is a bitmask describing what you want to be initialized
+by default. The constant INIT\_DEFAULT is available on every platform
+as a generic way to initialize as much of KOS at once as is feasible.
+For example, on the DC, this constant enables IRQs and pre-emptive
+threads.
+
+Another directive available to you is the romdisk directive. It looks
+like this:
+
+%%\index{KOS\_INIT\_ROMDISK}
+\begin{lyxcode}
+KOS\_INIT\_ROMDISK(romdisk);
+\end{lyxcode}
+
+The parameter is a pointer to a ROMFS image created by \progname{genromfs}.
+ROMFS was taken from Linux (the specification, not any code) and the
+Linux and KOS implementations are 100\% compatible, except that KOS
+doesn't implement a few ROMFS features such as hard links and soft
+links. You can, for example, mount the same ROMFS image in KOS and
+under a loopback device in Linux. If you don't want a ROMFS, then
+you should use the constant \constname{ROMDISK\_NONE}. ROMFS images are
+generally included in the binary by using the KOS utility \progname{bin2o},
+which is included in the {}``utils'' tree. The Hello World Makefiles
+show how to do this.
+
+Note that leaving out either of the above init lines will cause KOS
+to use defaults. \constname{KOS\_INIT\_FLAGS} defaults to using \constname{INIT\_DEFAULT}
+for its flags, and \constname{KOS\_INIT\_ROMDISK} defaults to \constname{NULL} (no romdisk).
+
+By the time your \funcname{main} function is called, the basic KOS systems
+should be ready to go! If you want to use any of the extra/add-on
+libraries that come aggregated with KOS, then you will need to initialize
+them seperately. These might include 3D support, an MP3 or OGG playback
+library, KGL, etc.
+
+For more info on the different subsystems, please see the chapter
+devoted to that system. For examples, see the ``examples'' directory
+off the KOS root.
+
+Now that you know what a basic KOS program looks like, you'll probably
+want to start figuring out how to use the various parts of the library.
+The following chapters are more in the way of a reference manual than
+a tutorial. The next chapter describes the portable parts of KOS which
+are present on every platform (though in some cases there are minor
+differences). The chapters after that describe the various platform-specific
+parts of KOS, and the final chapters describe the add-on libraries
+which are aggregated with the KOS distribution.
+
+
+\section{A Note on C++ Compatibility}
+%%\index{C++}
+
+KOS supports compiling with C++ support {}``out of the box''. The
+headers are guarded with \code{extern ``C''} and we have avoided
+the silly new keywords in stdc++ such as ``or'' and ``and''.
+So you should be able to use KOS from a C++ program exactly as if
+you were using it from a C program, except that you must make sure
+you include all of the headers you need.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{The Fully Portable Subsystems}
+
+All of the following subsystems are written in a portable fashion
+so that the code should compile on any new platform for which a hardware
+abstraction layer is created. The HAL (located under \dirname{kernel/arch} for
+each platform) will be discussed in the next section.
+
+
+\section{Data Types}
+%%\index{int8}
+%%\index{int16}
+%%\index{int32}
+%%\index{int64}
+%%\index{uint8}
+%%\index{uint16}
+%%\index{uint32}
+%%\index{uint64}
+
+Before we get started on the individual systems, I figured a small
+word about data types is in order. Almost everything in KOS uses the
+following conventions for data types. KOS' architecture specific type
+header (\dirname{arch/type.h}) defines types \dtname{int8}, \dtname{int16},
+\dtname{int32}, and \dtname{int64} to match signed integers of the appropriate
+number of bits. \dtname{uint8}, \dtname{uint16}, \dtname{uint32}, and
+\dtname{uint64} are the same, but unsigned. All of those types have
+corresponding volatile versions with a 'v' prefix (\dtname{vint8},
+\dtname{vuint8}, etc). Booleans or countsare often stored as \dtname{int}, but counts
+are also often \dtname{uint32}, depending on the circumstance. Functions
+that can return errors generally return them as a negative \dtname{int}, and
+success as a zero \dtname{int}. Strings are passed around as \dtname{const~char~*}.
+Individual characters are generally \dtname{int}. Several other
+misc types are defined, including some ANSI C compatibility types
+(\dtname{u\_short}, etc) but those are the main ones.
+
+
+\section{ANSI C library}
+
+KOS' built-in \libname{libc} supports most of the standard ANSI C functions,
+ported mostly from the BSD library. KOS also includes an integrated
+copy of the Newlib \libname{libm} library so that you are guaranteed
+that your libraries all match up.
+
+The libc includes the stdio file functions as well, to wrap its native
+VFS functions, so that you do not have to port that functionality.
+
+\funcname{memcpy2}, \funcname{memset2}, \funcname{memcpy4} and \funcname{memset4}
+are hardware helper functions which work like \funcname{memset} and
+\funcname{memcpy}, but they copy the specified number of bits at a time.
+\funcname{memalign} is a memory helper function which assures alignment
+on a certain byte boundary for hardware buffers.
+
+Many people have commented that KOS' libc is somewhat spartan compared
+to many modern libc's such as glibc, BSD, and Newlib. However, we
+feel like the KOS libc is probably more than sufficient for most console
+efforts (games, demos, etc). If you want a more complete portability
+layer then you might be looking in the wrong place -- perhaps DC Linux
+or NetBSD would be better suited to your application. KOS makes no
+bones about being pretty bare when it comes to standard POSIX style
+functionality. Still, there's more than enough here to drive the console-intensive
+parts of your application as long as you're willing to do a bit of
+porting work.
+
+
+\section{VFS (Virtual File System)}
+
+KOS contains a reasonably capable VFS (virtual file system), much
+like a *nix. It provides the basic file operations which you have
+come to expect as a programmer: \funcname{open} (with path translation,
+thus the {}``virtual'' part of VFS), \funcname{read}, \funcname{write},
+\funcname{seek}, \funcname{tell}, \funcname{readdir}, \funcname{ioctl}, \funcname{rename},
+\funcname{unlink}, \funcname{mmap}. VFS also provides an unconventional
+but very helpful function, \funcname{total}, which returns the total
+file size if possible. Some of these functions may not work on all
+file systems. For example, you cannot \funcname{write} to a CD or a
+ROMFS image. But you can \funcname{write} to a VMU on a DC. You also
+cannot \funcname{mmap} on most file systems, the notable exceptions
+being fs\_romdisk and fs\_vmu. Failure in these functions is indicated
+(as mentioned above) by a negative return value, except in the case
+of \funcname{open}, which may eventually be changed to conform anyway.
+
+%%
+
+\subsection{file\_t fs\_open(const char * fn, int mode)}
+
+Opens a file on the VFS. This function searches its VFS table for
+the longest match against the first of \paramname{fn}, and then passes
+off the rest of the functionality to the given VFS with the remainder
+of the path. The returned value should be considered opaque and will
+be zero (or \constname{NULL} if you prefer) on error, or a valid file handle otherwise.
+The \paramname{mode} parameter should be one of \constname{O\_RDONLY},
+\constname{O\_RDWR}, \constname{O\_APPEND}, or \constname{O\_WRONLY}, potentially
+logically or'd with \constname{O\_TRUNC}, \constname{O\_DIR}, or
+\constname{O\_META}.
+
+%%
+
+\subsection{void fs\_close(file\_t hnd)}
+
+Closes an opened VFS file. Handle values passed to this function (and
+all other VFS functions below) are \emph{not} checked for validity!
+If you try to pass an already closed handle (or a random value) to
+this function, the result will be undefined.
+
+%%
+
+\subsection{ssize\_t fs\_read(file\_t hnd, void * buffer, size\_t cnt)}
+
+Reads up to \paramname{cnt} bytes from the file handle \paramname{hnd}, and
+stores them into \paramname{buffer}. The actual number of read bytes will
+be returned.
+
+%%
+
+\subsection{ssize\_t fs\_write(file\_t hnd, const void * buffer, size\_t cnt)}
+
+Writes up to \paramname{cnt} bytes from \paramname{buffer} and stores them to
+the file handle \paramname{hnd}. The actual number of written bytes will
+be returned.
+
+%%
+
+\subsection{off\_t fs\_seek(file\_t hnd, off\_t offset, int whence)}
+
+Works like the ANSI \texttt{fseek} function. The file pointed to by
+\paramname{hnd} will be seeked to \paramname{offset}, where \paramname{offset} is
+interpreted as specified in \paramname{whence}. The actual file position
+will be returned. The \paramname{whence} parameter is one of \constname{SEEK\_SET},
+\constname{SEEK\_CUR}, or \constname{SEEK\_END}.
+
+%%
+
+\subsection{off\_t fs\_tell(file\_t hnd)}
+
+Returns the file position of the handle \paramname{hnd}.
+
+%%
+
+\subsection{size\_t fs\_total(file\_t hnd)}
+
+Returns the total byte size of the handle \paramname{hnd}, if applicable.
+
+%%
+
+\subsection{dirent\_t * fs\_readdir(file\_t hnd)}
+
+Reads the next directory entry from the handle \paramname{hnd}. The file
+handle is assumed to have been opened using \texttt{fs\_open(...,
+O\_DIR)}. The returned pointer may be queried for values unless it
+is \constname{NULL}, which signifies the end of the directory listing.
+
+%%
+
+\subsection{int fs\_ioctl(file\_t hnd, void * data, size\_t size)}
+
+Perform a device/fs specific I/O Control message on the given file
+handle. This is entirely fs dependent. The only existing fs handler
+which supports this ioctl is fs\_iso9660, which uses it to hint that
+the data/index cache should be flushed and the CD TOC should be rescanned.
+
+%%
+
+\subsection{int fs\_rename(const char * fn1, const char * fn2)}
+
+Move/rename a file, if possible. The two files \emph{must} be located
+on the same file system. Returns a negative value on failure.
+
+%%
+
+\subsection{int fs\_unlink(const char * fn)}
+
+Delete a file, if possible. Returns a negative value on failure.
+
+%%
+
+\subsection{int fs\_chdir(const char * fn)}
+
+Change the working directory for the current thread. Any relative
+path (i.e., a path not beginning with ``/'') will be treated as
+relative to this directory. This value will be inherited by any thread
+created by the thread which called this function. Returns a negative
+value on failure.
+
+%%
+
+\subsection{void * fs\_mmap(file\_t hnd)}
+
+Returns a pointer to a buffer containing the full data of the handle
+\paramname{hnd}. Depending on how the file was opened, the buffer may or
+may not be writable. This call may not succeed (limited memory, inability
+of the file system to perform the call, etc). In this case, the function
+will return \constname{NULL}.
+
+%%
+
+\subsection{const char * fs\_getwd()}
+
+Returns the working directory for the current thread.
+
+%%
+
+\subsection{int fs\_handler\_add(const char * prefix, vfs\_handler * hnd)}
+
+Adds a new VFS handler to the VFS system. Each of the built-in file
+systems performs this call on startup. The file system will be placed
+on the file heirarchy at \paramname{prefix}, and will be accessed using
+the functions pointed to by \paramname{hnd}. Since this is considered an
+arcane and fairly internal piece of the VFS, please look at the source
+code for an existing handler if you wish to write a new one. It is
+fairly simple but beyond the scope of this document.
+
+%%
+
+\subsection{int fs\_handler\_remove(const vfs\_handler * hnd)}
+
+Removes a previously added VFS handler. Each built-in file system
+performs this call on shutdown.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{File System: fs\_builtin}
+
+This file system module is somewhat deprecated, but it is still included
+and maintained because it has some interesting properties that could
+be useful to a programmer.
+
+The basic concept of fs\_builtin is that you pass it a table of ``files'',
+which really consist of pointers to data blocks and file sizes. It
+then manages file handles on these files and all of the normal VFS
+functions work on them.
+
+This used to be used for building files into program images, but that
+function has been relocated to the much more able fs\_romdisk. The
+interesting property of fs\_builtin is that the pointers are arbitrary
+and point to blocks of data that can be changed on the fly. This could,
+for example, be used to implement a /proc like filesystem. In practice,
+it hasn't been used for anything like that.
+
+fs\_builtin mounts itself on \dirname{/bi} on the tree.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{File System: fs\_romdisk}
+
+fs\_romdisk is the primary method by which one builds files into a
+program image in KOS (faster loading, easy for debugging, etc). A
+romdisk image is generated using the program \progname{genromfs}; this
+image is converted to a binary object and linked with the program.
+The KOS initialization sets up fs\_romdisk to point to this image.
+Any number of arbitrarily structured directories and files are also
+possible in fs\_romdisk.
+
+fs\_romdisk mounts itself on \dirname{/rd} on the tree.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Memory Allocation System}
+
+KOS contains a full set of ANSI-standard memory allocation functions,
+implemented with the very popular \libname{dlmalloc} library. This library
+is public domain and is very efficient for quickly allocating and
+freeing a large number of memory blocks, such as one might do from
+a C++ program.
+
+The KOS kernel library also contains the GCC stub functions required
+for the use of the \code{new} and \code{delete} operators in C++.
+Thus you may write basic C++ programs without including any extra
+libraries to do so. In some cases, you may want to include libk++
+as well, which is a very minimalistic stdc++ library for KOS. This
+avoids the necessity of building libstdc++ from GCC for about 99\%
+of the cases.
+
+Finally, if you feel comfortable with building your own KOS libraries
+and you are also comfortable with Makefiles, you may use the debug
+mallocator included with KOS. This is done by replacing ``malloc.o''
+in \dirname{kernel/mm/Makefile} with \dirname{malloc\_debug.o} and rebuilding.
+The debug mallocator never frees memory, so be aware of this if you
+use a lot of memory blocks. However, it does do buffer checking to
+look for overrun and underrun conditions, doubly freed blocks, leaked
+pointers, and other anomalies. If you enable the debug mallocator,
+you will also want to set \constname{INIT\_MALLOCSTATS} in your \constname{KOS\_INIT\_FLAGS}
+line. This will tell the kernel to print out malloc stats when the
+program has exited since this is where all the extra checking is performed.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Network System}
+
+In addition to low-level drivers on applicable platforms, KOS supports
+a fully abstracted network datagram system. This system is capable
+of enumerating devices attached to the system and letting the program
+send and receive datagrams on those devices. Usually the network system
+is attached to something more high level, such as a TCP/IP stack.
+To enable networking, you must use the \constname{INIT\_NET} flag on the
+\constname{KOS\_INIT\_FLAGS} line.
+
+The pieces of the network system which are actually functional and
+well-specified are described below.
+
+%%
+
+\subsection{int net\_input(netif\_t * device, const uint8 * data, int len)}
+
+Low-level device drivers should call this function to register datagram
+input to the network system. The low-level driver's handle should
+be passed as \paramname{device}, while \paramname{data} and \paramname{len} are the
+data and length of the datagram.
+
+%%
+
+\subsection{net\_input\_func net\_input\_set\_target(net\_input\_func t)}
+
+Sets the output port for datagram inputs. The function \paramname{t} will
+be called any time a datagram is available from a call to \funcname{net\_input}.
+This function returns the address of the old function. The default
+target is a simple ICMP echo (ping) handler.
+
+%%
+
+\subsection{int net\_reg\_device(netif\_t * device)}
+
+Registers a potentially available device driver with the network system.
+This should be called by any low-level driver which wants to make
+itself available. Note that the device need not be physically present
+on the system -- the network system will scan for available drivers
+at init time.
+
+%%
+
+\subsection{int net\_unreg\_device(netif\_t * device)}
+
+Unregisters a previously registered network device.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Thread System}
+
+KOS contains a fully functional thread system, including priority
+based scheduling, thread sync primitives with their own queues, zero-CPU-usage
+sleeping, and the choice between cooperative and pre-emptive thread
+models.
+
+In the cooperative thread model, a thread will only ever be interrupted
+if it manually places itself on a wait queue. This can be accomplished
+by calling the \funcname{thd\_sleep} function or waiting on an unavailable
+thread sync primitive. Use of cooperative threading mode with multiple
+threads has not really been tested very well, so use it at your own
+risk. We currently recommend sticking with a single thread if you
+want to use cooperative mode (this is what it was mainly designed
+for).
+
+In pre-emptive mode, a timer interrupt is called HZ times per second
+(a constant in \dirname{arch.h}) to re-schedule. The current thread is placed
+back on the ready queue and another thread is pulled from it. This
+may be the same thread if no other threads are running. The effect
+is what you usually see in modern operating systems when running more
+than one program at once -- all of the programs seem to be running
+simultaneously. The very big difference between those schedulers and
+the KOS pre-emptive scheduler is that KOS' scheduler does exactly
+what you tell it to do. There are no temporary priority boosts or
+decay, or anything of the like. This means that, like most real-time
+embedded kernels, if you place a thread at a high priority, \emph{no
+other thread will execute until it is sleeping, has had its priority
+lowered, or quits}. I highlight the previous statement because thread
+priorities may be very useful for your application, but you must be
+careful not to cause a situation where your high-priority thread is
+always the one running. You also have to watch for ``priority inversion'',
+but discussion of these topics is beyond the scope of this document
+-- go get a CS operating systems textbook. =)
+
+Pre-emptive thread mode is the default (for \constname{INIT\_DEFAULTS}). You can
+cancel this out by using (\code{INIT\_DEFAULTS \& \~{}INIT\_THD\_PREEMPT})
+in your \constname{KOS\_INIT\_FLAGS} line, or by creating your own bitmask manually
+and leaving that part out.
+
+On to the function reference...
+
+%%
+
+\subsection{kthread\_t * thd\_create(void (* routine)(void * param), void * param)}
+
+Creates a new thread and returns the \dtname{kthread\_t} structure representing
+it. The thread will begin at \paramname{routine}, and its single and only
+parameter will be \paramname{param}. In case of failure, \constname{NULL} will be returned.
+
+%%
+
+\subsection{int thd\_destroy(kthread\_t * thd)}
+
+Destroys a previously created thread. \emph{This is not recommended}.
+Instead, if at all possible, a thread should quit on its own in a
+graceful manner. However, if you must kill a thread which hasn't died,
+then you can use this function. Any resources the thread had allocated
+or locked (such as memory, thread sync primitives, etc) will not be
+freed.
+
+%%
+
+\subsection{void thd\_exit()}
+
+Gracefully exit the current thread. This function will never return.
+
+%%
+
+\subsection{void thd\_schedule()}
+
+Manually re-schedule. \emph{This function is to be called only inside
+an interrupt/syscall context}. It assumes that interrupts are disabled
+and that we have entered the routine by saving the previous context
+into the appropriate \dtname{kthread\_t}.
+
+%%
+
+\subsection{void thd\_schedule\_next(kthread\_t * thd)}
+
+Same basic thing as \funcname{thd\_schedule}, but you may specify a
+thread to be manually scheduled next. This can be useful if, for example,
+a device driver needs to pass control back to some code which was
+placed on a wait queue as quickly as possible.
+
+%%
+
+\subsection{void thd\_pass()}
+
+The caller voluntarily gives up the rest of its timeslice. Any remaining
+timeslice will be given to the next scheduled thread. Note that the
+timeslice does \emph{not} start over when this happens, so used incorrectly
+it could theoretically cause starvation issues.
+
+%%
+
+\subsection{void thd\_sleep(int ms)}
+
+The caller will sleep the requested number of milliseconds. This function
+will return at a time equal to or greater than the requested delay.
+This is not guaranteed to be precise, and will certainly not be more
+precise than \constname{HZ} allows. While the caller is sleeping, zero CPU time
+is spent (it is not scheduled at all).
+
+%%
+
+\subsection{int thd\_set\_prio(kthread\_t * thd, prio\_t prio)}
+
+Sets the priority of the given thread. The default priority is \constname{PRIO\_DEFAULT}
+and the maximum priority is \constname{PRIO\_MAX}. A larger value means lower priority.
+
+%%
+
+\subsection{kthread\_t * thd\_get\_current()}
+
+Retrive the \dtname{kthread\_t} for the caller.
+
+%%
+
+\subsection{const char * thd\_get\_label(kthread\_t * thd)}
+
+Retrieve the ``thread label'' for the given thread. This is an
+arbitrary free-form string which identifies the thread for debugging
+purposes.
+
+%%
+
+\subsection{void thd\_set\_label(kthread\_t * thd, const char * label)}
+
+Sets the ``thread label'' for the given thread.
+
+%%
+
+\subsection{const char * thd\_get\_pwd(kthread\_t * thd)}
+
+Retrieve the current working directory for the given thread. This
+is used by the VFS for relative paths.
+
+%%
+
+\subsection{void thd\_set\_pwd(kthread\_t * thd, const char * pwd)}
+
+Sets the current working directory for the given thread.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Sync Objects: Semaphore}
+
+Semaphores should be familiar to most computer science people and
+programmers. A semaphore is a counted sync primitive. The best analogy
+for this is a bank. In a bank, you have N tellers and M customers.
+Each customer can either go directly to an open window, or must take
+a ticket and wait until a teller is available.
+
+In concise terms, each semaphore contains a count value. When a thread
+wants to use the limited resource represented by the semaphore, it
+must call \funcname{sem\_wait} or \funcname{sem\_wait\_timed}. If the
+count is greater than zero, then the count is decreased and the thread
+is allowed to continue, all in an atomic and thread-safe manner. If
+the count is already zero, then the thread is placed on a queue and
+must sleep until another thread performs a \funcname{sem\_signal}. That
+function checks to see if anyone is waiting and wakes them. In this
+way, control is very efficiently passed between waiting threads.
+
+A very simple condition variable can be created by using a semaphore
+with an initial count of zero. A mutex can be created by using an
+initial count of one. For this reason, semaphores are mostly considered
+to be the fundamental thread sync primitive.
+
+%%
+
+\subsection{semaphore\_t * sem\_create(int value)}
+
+Create and return a new semaphore with an initial value of \paramname{value}.
+
+%%
+
+\subsection{void sem\_destroy(semaphore\_t * sem)}
+
+Destroy a previously created semaphore.
+
+%%
+
+\subsection{void sem\_wait(semaphore\_t * sem)}
+
+``Wait'' on the given semaphore. The operation is described above.
+
+%%
+
+\subsection{int sem\_wait\_timed(semaphore\_t * sem, int timeout)}
+
+``Wait'' on the given semaphore for a maximum of \paramname{timeout}
+milliseconds. If the semaphore has not been signaled in that time,
+then return with an error code (negative value).
+
+%%
+
+\subsection{void sem\_signal(semaphore\_t * sem)}
+
+``Signal'' on the given semaphore. Any waiting thread will be
+placed back on the scheduler's ready queue.
+
+%%
+
+\subsection{int sem\_count(semaphore\_t * sem)}
+
+Return the current count of the semaphore. Note that although this
+may be used to check if it's likely that the thread will be put to
+sleep, this is not an entirely reliable way to check this because
+of race condition issues.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Sync Objects: Condition Variable}
+
+Condition variables are like a pulsed one-count semaphore. N threads
+may wait on a condition variable. When a thread calls signal, one
+waiting thread is released. This is like a Win32 ``Event'' sync
+primitive.
+
+Note however, that there is no function to release all waiting threads
+simultaneously, so this is not really very useful above a semaphore
+at the moment. Will be documented in more detail later.
+
+%%
+
+\subsection{condvar\_t * cond\_create()}
+
+%%
+
+\subsection{void cond\_destroy(condvar\_t * cv)}
+
+%%
+
+\subsection{void cond\_wait(condvar\_t * cv)}
+
+%%
+
+\subsection{void cond\_signal(condvar\_t * cv)}
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Platform-Independent Images}
+
+Most people would argue that this has no business in the main kernel
+library, and they may very well be right. However, I wanted this to
+be a standard part of KOS on any platform it got ported to so that
+you're guaranteed some platform-independet, device-dependent representation
+of images. This way, any image loader library that is ported to KOS
+can convert to this data format and it can be used by anything in
+the kernel that understands it (drivers, etc).
+
+KOS doesn't try to put any limitations on what format the image may
+take; instead it tries to encapsulate most of the common formats you'd
+want to use in writing a game or demo and then provides an ``out''
+for platform-specific things that are just too strange to be used
+elsewhere. A good example of this (though one which isn't actually
+used currently) would be the PVR2's ``twiddled'' textures. Some
+somewhat strange things that it \emph{does} cover are inverted axis
+textures (e.g., for GL) and YUV formats for MPEG\tm.
+
+The majority of the PII system is just format specifications so that
+pieces have a common language to talk about the images. This includes
+a structure (\dtname{kos\_img\_t}) that contains a pointer to the raw data,
+width and height in pixels, and a format descriptor. The first three
+pieces are pretty self-explanatory, so I won't waste any time on those.
+However, the format descriptor deserves some attention.
+
+The format descriptor is composed of two parts: the platform independent
+part, and the platform dependent part. Each of these parts is 16 bits
+wide. The platform independent part is further divided into a format
+specifier and standard flags. The format specifier may be one of:
+
+\begin{itemize}
+\item \constname{KOS\_IMG\_FMT\_NONE} -- Undefined / Unknown
+\item \constname{KOS\_IMG\_FMT\_RGB888} -- Interleaved r/g/b/ bytes (24-bit)
+\item \constname{KOS\_IMG\_FMT\_ARGB8888} -- Interleaved a/r/g/b bytes (32-bit)
+\item \constname{KOS\_IMG\_FMT\_RGB565} -- r/g/b 5/6/5 (16-bit)
+\item \constname{KOS\_IMG\_FMT\_ARGB4444} -- a/r/g/b 4/4/4/4 (16-bit)
+\item \constname{KOS\_IMG\_FMT\_ARGB1555} -- a/r/g/b 1/5/5/5 (16-bit)
+\item \constname{KOS\_IMG\_FMT\_PAL4BPP} -- Paletted (4-bits per pixel)
+\item \constname{KOS\_IMG\_FMT\_PAL8BPP} -- Paletted (8-bits per pixel)
+\item \constname{KOS\_IMG\_FMT\_YUV422} -- y/u/v 4/2/2 (8-bit)
+\item \constname{KOS\_IMG\_FMT\_BGR565} -- b/g/r 5/6/5 (16-bit)
+\item \constname{KOS\_IMG\_FMT\_RGBA8888} -- r/g/b/a bytes (32-bit)
+\end{itemize}
+
+The attributes will be a bitmask with the following:
+
+\begin{itemize}
+\item \constname{KOS\_IMG\_INVERTED\_X} -- The image is flipped along the X axis
+\item \constname{KOS\_IMG\_INVERTED\_Y} -- The image is flipped along the Y axis (usually used with GL)
+\end{itemize}
+
+There is one function associated with the PII system currently:
+
+\begin{itemize}
+\item void kos\_img\_free(kos\_img\_t * img, int struct\_also)
+
+Frees the image pointed to by \paramname{img}. If \paramname{struct\_also} is
+non-zero, then the \dtname{kos\_img\_t} struct itself will also be freed. This
+function is to ensure future compatibility in code that calls libraries
+to allocate images and then needs to free them later itself.
+
+\end{itemize}
+
+Several macros are also available for tearing apart and putting together
+the format descriptor:
+
+\begin{itemize}
+\item \constname{KOS\_IMG\_FMT\_I(x)} -- given a format descriptor \emph{x}, return
+the platform independent part
+\item \constname{KOS\_IMG\_FMT\_D(x)} -- given \emph{x}, return the platform dependent
+part
+\item \constname{KOS\_IMG\_FMT(i,d)} -- given an independent part \emph{i} and a dependent
+part \emph{d}, return a full format descriptor
+\end{itemize}
+Note that \code{KOS\_IMG\_FMT(KOS\_IMG\_FMT\_I(x), KOS\_IMG\_FMT\_D(x))}
+=== x.
+
+In the future, the PII system may also include functions to convert
+between image formats, but this hasn't been done yet.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Hardware Abstraction Layer: Portable Parts}
+
+Underneath the platform independent pieces of KOS is a comprehensive
+hardware abstraction layer (HAL). This piece of code implements a
+standard API (plus a number of other things that provide ways to get
+directly to hardware functionality when necessary) which may be used
+by the platform independent pieces and also by user programs. The
+HAL includes the following pieces (and maybe more, depending on the
+needs of the platform):
+
+\begin{itemize}
+\item C runtime startup / shutdown, including \funcname{atexit}
+\item C++ runtime setup / shutdown, \emph{not} including RTTI and exceptions
+\item A basic ``bootstrap'' debug I/O system (e.g., serial port)
+\item Setup of various KOS systems and hardware drivers from the init bitmasks
+\item Misc program control calls
+\item IRQ management / Context management (for threading)
+\item Realtime Clock (RTC) management
+\item Basic memory management (free pool for the system dlmalloc)
+\item MMU management if applicable/desired
+\item Timer management
+\item Cache coherency management (O/I-Cache flushing/writeback/invalidation, ITLB flushing, etc)
+\item Program image replacement (aka \funcname{exec})
+\item Kernel/Interrupt mode-User mode transitioning (syscall)
+\item Low-level contention prevention (spinlocks)
+\item Platform-independent API for streaming sound and playing sound effects (optional)
+\item Platform-independent API for basic device input (optional, not yet specified)
+\item Platform-independent API for basic frame-buffer access (optional, not yet specified)
+\item Platform-specific file systems (e.g., for memory cards) *
+\item Platform-specific hardware drivers / APIs (3D, SPU, etc) *
+\item Misc platform-specific utility functions *
+\end{itemize}
+
+The three items above marked with a star (*) are part of the non-portable
+section of the HAL, and thus will be covered in the next chapter.
+However, they are listed here for completeness. The parts marked ``not
+yet specified'' have been potentially planned, but not yet designed
+or implemented, so they will not be specified here at all.
+
+Note also that while we try to keep fairly generic pieces (like timer
+handling) either to a generic interface, or providing a generic interface,
+there are many cases where it's simply not possible. For example,
+every CPU has different sets of exceptions you can catch in software.
+Some are similar across CPUs, some aren't. This is a low-level enough
+thing, though, where making it portable would have probably caused
+more trouble than it would have saved. In the sections below where
+that is the case, this document will not expound further upon the
+subject in a platform-specific manner. You will need to refer to the
+headers and source code for the platform in question when writing
+something that uses these low-level interfaces.
+
+Most users of KOS who are simply writing programs to use it will never
+need to look through most of this chapter of the manual. You will
+be much more interested in the next chapter.
+
+But now, without further delay...
+
+%%%%%%%%%%%%%%%%%%
+
+\section{C/C++ Runtime}
+
+All of this stuff is completely under the covers for the vast majority
+of programs out there (and/or conforms to the ANSI C spec, such as
+\funcname{atexit}). If you need to know more about this part, then
+please visit your friendly local source code. Other sections which
+have no visible interface (or which have already been described, like
+\constname{KOS\_INIT\_FLAGS}) will also not be discussed in this document.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Misc Program Control Calls}
+
+These pieces are part of the HAL but don't really fit anywhere else.
+They are just generic, and mainly related to startup/shutdown.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Bootstrap Debug Input/Output}
+
+Every architecture supported by KOS supports the concept of a debug
+I/O console. Sometimes this may not be connected to anything (especially
+in the really embedded ports like GBA) but this is where all debug
+and printf output goes by default, and this is where any pieces (such
+as DC's libconio) will grab their key input if configured to do so
+from the dbgio channel.
+
+%%
+
+\subsection{dbgio\_printk\_func dbgio\_set\_printk(dbgio\_printk\_func func)}
+
+Set a function to capture all debug output that comes through \funcname{dbgio\_printf},
+and return the old function. This is used by, e.g., dc-tool. The type for
+the function is:
+
+\begin{lyxcode}
+typedef void (* dbgio\_printk\_func)(const char *);
+\end{lyxcode}
+
+%%
+
+\subsection{void dbgio\_set\_parameters(int baud, int fifo)}
+
+Set serial parameters; this is not as platform independent as  I want
+it to be, but it should be generic enough to be useful. The
+baud rate will be set to \paramname{baud} and if \paramname{fifo}
+is non-zero, the serial FIFO will be enabled.
+
+%%
+
+\subsection{void dbgio\_write(int c)}
+
+Write one char to the debug port. You must call \funcname{dbgio\_flush()}
+to actually ensure that the output was sent.
+
+%%
+
+\subsection{void dbgio\_flush()}
+
+Flush all buffered bytes out of the port buffer, if any.
+
+%%
+
+\subsection{void dbgio\_write\_buffer(const uint8 * data, int len)}
+
+Send an entire buffer of data. This is just a shortcut for sending
+each byte of data with \funcname{dbgio\_write}.
+
+%%
+
+\subsection{void dbgio\_read\_buffer(uint8 * data, int len)}
+
+Read an entire block of data. This is just a shortcut for reading
+each byte of data with \funcname{dbgio\_read}. Note that this
+function will block until it has \paramname{len} bytes of data.
+
+%%
+
+\subsection{void dbgio\_write\_str(const char * str)}
+
+Send a C string (null-terminated).
+
+%%
+
+\subsection{int dbgio\_read()}
+
+Read one char from the debug port (-1 if nothing to read).
+
+%%
+
+\subsection{void dbgio\_disable()}
+
+Disable debug I/O globally; all debug output will be discarded and
+debug input will always return failure. This can be used as a quick
+way to disable all of your debug output before burning a final
+copy of your game/demo, etc.
+
+%%
+
+\subsection{void dbgio\_enable()}
+
+Enable debug I/O globally (after calling \funcname{dbgio\_disable}).
+
+%%
+
+\subsection{int dbgio\_printf(const char * fmt, ...)}
+
+Works like \funcname{dbgio\_write\_str}, but provides formatting
+capabilities. There is a limit to the number of characters that
+can be in the resulting string, so don't pass arbitrarily long
+strings to this function.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{IRQ/Context Management}
+
+IRQ management requires a few data structures and macros which are
+portable across platforms, and which will be described up front:
+
+\begin{itemize}
+\item \dtname{irq\_context\_t} -- the basic structure describing an IRQ context;
+  this is used both for saving the state of a program during IRQs and
+  for switching contexts during threading
+\item \dtname{irq\_t} -- the type used to uniquely identify an interrupt/exception
+\item \dtname{irq\_handler} -- the function type for an interrupt/exception handler
+\item \constname{REG\_BYTE\_CNT} -- the number of bytes required to store the context on this platform
+\item \constname{CONTEXT\_PC(x)} -- macro to retrieve the current ``program counter''
+  or ``instruction pointer'' from a context
+\item \constname{CONTEXT\_FP(x)} -- macro to retrieve the current ``frame pointer'' from a context
+\item \constname{CONTEXT\_SP(x)} -- macro to retrieve the current ``stack pointer'' from a context
+\item \constname{TIMER\_IRQ} -- the interrupt/execption identifier (of type \dtname{irq\_t})
+  to be used to hook the timer interrupt
+\item Various other values of type \dtname{irq\_t} for interrupts/exceptions available
+  on this platform
+\end{itemize}
+
+The rest is handled through the function interface.
+
+%%
+
+\subsection{int irq\_inside\_int()}
+
+Returns non-zero if the caller is executing inside an interrupt handler.
+
+%%
+
+\subsection{void irq\_force\_return()}
+
+This is kind of a weird one. This assumes that you have interrupts
+disabled, but are not actually running inside an interrupt handler,
+and you want to pretend that you were in fact inside an interrupt
+handler and return from that interrupt. This can be used to, for example,
+force a context switch without actually switching into ``kernel''
+mode. We don't really use this anymore (deprecated in favor of the
+syscall interface).
+
+%%
+
+\subsection{int irq\_set\_handler(irq\_t source, irq\_handler hnd)}
+
+Set a handler for the given interrupt. The definition of \dtname{irq\_handler}
+may platform dependent, but is generally:
+
+\begin{lyxcode}
+typedef void (*irq\_handler)(irq\_t source, irq\_context\_t * context);
+\end{lyxcode}
+
+%%
+
+\subsection{int irq\_set\_global\_handler(irq\_handler hnd)}
+
+Set a global interrupt handler. This routine will receive all interrupts
+and exceptions in favor of any individual handlers. Use with caution.
+
+%%
+
+\subsection{void irq\_set\_context(irq\_context\_t *regbank)}
+
+Change our ``IRQ context''. This should \textbf{never} be done
+with interrupts enabled. Basically whenever an interrupt occurs, the
+program context is saved into the current IRQ context. This is usually
+part of the \dtname{kthread\_t} structure. When the interrupt handler returns,
+the IRQ context is re-established and the program continues. You can
+use this function to swap contexts in an interrupt handler (the thread
+system does this).
+
+%%
+
+\subsection{irq\_context\_t * irq\_get\_context()}
+
+Return a pointer to the current IRQ context. Note that it's not valid
+behavior to get this pointer and then use \constname{CURRENT\_xx()} from above
+on it because the values aren't valid until an interrupt occurs. Thus
+it is mainly used inside an interrupt handler to see who got interrupted.
+
+%%
+
+\subsection{void irq\_create\_context(irq\_context\_t * context, uint32 stack\_pointer,
+   uint32 routine, uint32 * args, int usermode)}
+
+Creates an \dtname{irq\_context\_t} from scratch. This is used mainly for creating
+new threads. The new values will be written to \paramname{context}, which
+must be pre-allocated. The initialo stack location will be \paramname{stack\_pointer},
+the initial PC will be \paramname{routine}, and \paramname{args} will be available
+as arguments to the routine (though the number of arguments is platform
+dependent). The \paramname{usermode} flag is a leftover from an earlier
+adaptation of KOS and may be removed later, but if non-zero it essentially
+tells us to create a context which will run with reduced privelges
+and in a user-capable address space.
+
+%%
+
+\subsection{int irq\_disable()}
+
+Disable all IRQs and return the original IRQ state.
+
+%%
+
+\subsection{void irq\_enable()}
+
+Enable all IRQs.
+
+%%
+
+\subsection{void irq\_restore(int v)}
+
+Restore an old IRQ state from what was returned from \funcname{irq\_disable}.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Realtime Clock (RTC) Management}
+
+Most systems contain a realtime clock of some sort which keeps track
+of the date and time in the outside world. This set of functions is
+designed to access that.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Basic Memory Management}
+
+On most systems, you simply have a flat chunk of RAM available which
+dlmalloc and other higher level pieces will manage. This very basic
+low-level memory management simply tracks that and provides a standard
+Unix(tm) style sbrk() function call. This effectively abstracts the
+address space.
+
+Eventually we'll probably have functions for both getting and setting
+the time, but for now there's just one to retrieve it.
+
+\subsection{time\_t rtc\_unix\_secs()}
+
+Returns the current day/time in *nix "seconds since 1970" format.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{MMU Management}
+
+Most users of KOS will have no need of a memory management/mapping
+unit, but in case you do, this set of functions should provide for
+it. This is mostly abstracted as much as possible so as to not be
+platform-dependent, but there are limitations.
+
+Nothing currently uses this and it probably doesn't even fully work,
+so this part isn't filled in right now. See \dirname{mmu.h} under the arch
+of your choice if you want more info.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Timer Management}
+
+Every platform should contain at least one available timer interrupt.
+These functions manage that timer interrupt and any others that may
+be available.
+
+The DC part is relevant enough here that I'm going to go ahead and
+document it as well for this part.
+
+%%
+
+\subsection{Totally Portable Parts}
+
+\subsubsection{void timer\_ms\_gettime(uint32 * secs, uint32 * msecs)}
+
+Returns the number of seconds and milliseconds since the program was
+started. This is for fine timing where the time of day doesn't really
+matter.
+
+\subsubsection{int timer\_ints\_enabled(int which)}
+
+Returns non-zero if the requested timer is enabled. The value of
+\paramname{which} is entirely platform dependent, but you can always
+use the constant \constname{TIMER\_ID} to refer to the primary
+timer that is used for threading and such.
+
+\subsubsection{void timer\_disable\_ints(int which)}
+
+Disables interrupts for the requested timer.
+
+\subsubsection{void timer\_enable\_ints(int which)}
+
+Enables interrupts for the requested timer.
+
+\subsubsection{void timer\_spin\_sleep(int ms)}
+
+Precise spin-loop sleep function. On the DC, this function does
+not interfere in any way with threading or other timer usage because
+it uses TMU1. On other platforms, this may be different.
+
+\subsubsection{void timer\_primary\_enable()}
+
+Enable the "primary" timer -- start it counting and enable any
+associated interrupts. This is generally the timer used by
+pre-emptive threading.
+
+\subsubsection{void timer\_primary\_disable()}
+
+Disable the "primary" timer.
+
+%%
+
+\subsection{DC Parts}
+
+The SH-4 contains four usable timers, and we support three. These are
+\constname{TMU0}, \constname{TMU1}, and \constname{TMU2}. \constname{TMU0}
+is the "primary" timer, \constname{TMU1} is used by \funcname{timer\_spin\_sleep},
+and the other is available for programmer usage.
+
+\subsubsection{int timer\_prime(int which, uint32 speed, int interrupts)}
+
+Pre-initialize a timer; setup the values but don't actually start it running.
+Timer \paramname{which} will be set to expire in \paramname{speed} milliseconds,
+and if \paramname{interrupts} is non-zero, interrupts will be enabled for it.
+
+\subsubsection{int timer\_start(int which)}
+
+Starts the requested timer actually running.
+
+\subsubsection{int timer\_stop(int which)}
+
+Stops the requested timer from running.
+
+\subsubsection{uint32 timer\_count(int which)}
+
+Returns the count value of the requested timer.
+
+\subsubsection{int timer\_clear(int which)}
+
+Clears the underflow bit of the requested timer and returns what
+its count value was.
+
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Cache Coherency Management}
+
+Some processors have very good interal cache coherency, while some
+processors (notably embedded RISC chips) force you to be more careful
+about cache coherency. These functions are provided to ensure that
+you can maintain that coherency when doing things like loading new
+code into RAM.
+
+\subsection{void icache\_flush\_range(uint32 start, uint32 count)}
+
+Flush a range of instruction cache starting at the physical address
+\paramname{start} and going for \paramname{count} bytes. The value
+of \paramname{count} may be rounded up to the next closest possible
+size.
+
+\subsection{void dcache\_inval\_range(uint32 start, uint32 count)}
+
+Invalidate a range of data/operand cache starting at the given
+physical address and going for the given number of bytes. If the
+processor is using write-back cache, then the contents of the
+write-back cache will be \emph{lost}.
+
+\subsection{void dcache\_flush\_range(uint32 start, uint32 count)}
+
+Flush a range of data/operand cache starting at the given
+physical address and going for the given number of bytes. If the
+processor is using write-back cache, then the contents of the
+cache will be written out to RAM before being invalidated.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Program Image Replacement}
+
+Kiosk/menu type programs (and others) often have the need to load
+a new image in place of the running image. This isn't the same as
+loading and executing a userland program, but instead replaces the
+running KOS image with an entirely new image (which may or may not
+be KOS based). This set of functions helps you with that task.
+
+\subsection{void arch\_exec\_at(const void * image, uint32 length, uint32 address)}
+
+Loads the program image located at \paramname{image} with a length
+of \paramname{length} bytes to the physical address \paramname{address},
+and executes it. Note that \paramname{address} may overlap the existing
+program, and this is just fine. If necessary, this function will build
+a trampoline to copy and run the new image.
+
+This function will never return.
+
+\subsection{void arch\_exec(const void * image, uint32 length)}
+
+Same as \funcname{arch\_exec\_at}, but it loads the program at the
+default program location for the platform before running it.
+
+This function will never return.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Syscall}
+
+There are times when you want to transition into a ``kernel mode''
+state as if an interrupt had occured, but you don't want to have to
+wait for one. Most processors have a ``trap'' or ``int'' instruction
+which will manually cause this processor state. These functions wrap
+that functionality.
+
+\subsection{void syscall\_set\_return(irq\_context\_t * context, int value)}
+
+Sets the ``return value'' for \paramname{context} to \paramname{value}.
+If a user performed a syscall, then the target routine might call this
+function to set the value that the program will think it was returned.
+
+This generally just pokes a value into one of the registers in the context,
+but it's platform dependent.
+
+\subsection{SET\_RETURN(thread, value)}
+
+Macro that sets a return value for the named thread. This is just a wrapper
+for \funcname{syscall\_set\_return}.
+
+\subsection{SET\_MY\_RETURN(value)}
+
+Like \constname{SET\_RETURN}, but it sets the value on the ``current''
+thread, which would generally be the one who invoked the syscall target.
+
+\subsection{RETURN(value}
+
+Sets the return value on the current thread and then causes a thread
+schedule.
+
+\subsection{SYSCALL(routine)}
+
+Use this macro to insert the platform-dependent code for invoking a syscall
+at the given address. \paramname{routine} is generally a function pointer.
+
+
+%%%%%%%%%%%%%%%%%%
+
+\section{Spinlocks}
+
+Spinlocks are a much lighter weight (though less efficient) way to
+prevent contention between threads. In KOS they can also allow you
+to prevent contention between interrupt handlers and normal user code
+while still providing performance by allowing critical sections that
+still allow interrupts to happen.
+
+The data type for a spinlock is \dtname{spinlock\_t}. This value can either
+be initialized statically with \constname{SPINLOCK\_INITIALIZER}, or it
+can be initialized programmatically with \funcname{spinlock\_init}.
+
+These are usually implemented as macros for speed.
+
+\subsection{void spinlock\_init(spinlock\_t * lock)}
+
+Initializes the given spinlock. It will be unlocked initially.
+
+\subsection{void spinlock\_lock(spinlock\_t * lock)}
+
+Attempts to lock the spinlock. If it is already locked then the function
+will not return until the caller owns the lock.
+
+\subsection{void spinlock\_unlock(spinlock\_t * lock)}
+
+Unlocks the given spinlock, if it's locked. Note that any thread
+can unlock any spinlock -- there is no lock ownership.
+
+\subsection{int spinlock\_is\_locked(spinlock\_t * lock)}
+
+Returns non-zero if the given lock is locked. This is helpful for,
+e.g., allocating memory inside an interrupt.
+
+%%%%%%%%%%%%%%%%%%
+
+\section{PI API for Sound}
+
+The output of streaming sound and sound effects is one of the basic
+pieces that you will want for any demo/game program you write, and
+basically every target platform of KOS will have some method of doing
+that. This set of functions helps you interact with that hardware
+without necessarily knowing how it works underneath. Note that initializing
+and using this API will usually prevent lower-level access (or will
+contend with it in bad ways), though this is usually reversable by
+shutting it down.
+
+Note that although this API is designed to be platform independent
+eventually, it is currently only implemented on the DC and its
+headers are located with the DC headers. This may change in the
+future, though, and if you include \dirname{kos.h} then you
+shouldn't have troubles.
+
+\subsection{int snd\_mem\_init(uint32 reserve)}
+
+Setup the sound allocation system. Generally allocates a buffer for
+sound usage and reserves \paramname{reserve} bytes at the front for
+system overhead. The value for \paramname{reserve} should never
+be zero because this would allow for valid sound mem handles to
+indicate an error condition in \funcname{snd\_mem\_malloc}.
+
+\subsection{void snd\_mem\_shutdown()}
+
+Shut down the sound allocation system, and free any structures
+related to it.
+
+\subsection{uint32 snd\_mem\_malloc(size\_t size)}
+
+Allocate a chunk of sound RAM and return a handle to it. This will generally
+be an offset into a pre-allocated sound buffer (or in the case of the DC,
+the SPU RAM). A zero return value signifies failure.
+
+\subsection{void snd\_mem\_free(uint32 addr)}
+
+Frees a previously allocated chunk of sound RAM.
+
+\subsection{uint32 snd\_mem\_available()}
+
+Returns the largest chunk of sound RAM available.
+
+\subsection{int snd\_init()}
+
+Initialize the overall sound system. This is generally preferred to calling
+\funcname{snd\_mem\_init} directly.
+
+\subsection{void snd\_shutdown()}
+
+Shut down the overall sound system. This is generally preferred to calling
+\funcname{snd\_mem\_shutdown} directly.
+
+\subsection{int snd\_sfx\_load(const char * fn)}
+
+Load the sound sample located on the VFS at \paramname{fn}. Currently this
+function only knows about RIFF WAV files, but this may change later. Returns
+a handle to the loaded effect.
+
+\subsection{void snd\_sfx\_unload(int idx)}
+
+Unload a single loaded sample. Call with the handle you got back above.
+
+\subsection{void snd\_sfx\_unload\_all()}
+
+Unload all samples loaded with \funcname{snd\_sfx\_load}. This function
+is deprecated in favor of freeing individual samples.
+
+\subsection{void snd\_sfx\_play(int idx, int vol, int pan)}
+
+Play the given sound effect at volume \paramname{vol} (0-255) and with
+panning \paramname{pan} (0 - 255, 128 is center).
+
+\subsection{int snd\_stream\_init(void* (* callback)(int, int *))}
+
+Setup the sound system for streaming sound data. \paramname{callback} will be
+called whenever the system needs more data for output (see below for more
+info about the callback).
+
+This function calls \funcname{snd\_init} implicitly, so there is no need
+to call it beforehand.
+
+\subsection{void snd\_stream\_shutdown()}
+
+Shuts down the sound streaming system.
+
+This function calls \funcname{snd\_shutdown} implicitly, so there is no need
+to call it afterwards.
+
+\subsection{void snd\_stream\_set\_callback(void *(*func)(int req, int *ret))}
+
+Sets the callback function for the streaming mechanism. When we are running low on
+data in the circular output buffers, \paramname{func} will be called. It will
+receive a request for the number of samples we'd like to get. The function
+should return a pointer to where those samples are located and return
+via \paramname{ret} how many we actually got back. If
+the return value is NULL, then the stream is considered finished.
+
+\subsection{void snd\_stream\_queue\_enable()}
+
+Enable sound stream queueing. This allows you to very finely tune when the
+playback will start in relation to other events in your program (for example,
+if you need music exactly timed to the graphics).
+
+\subsection{void snd\_stream\_queue\_disable()}
+
+Disable queueing.
+
+\subsection{void snd\_stream\_queue\_go()}
+
+If queueing is enabled, calling this function will make it actually start
+playing instantly.
+
+\subsection{void snd\_stream\_start(uint32 freq, int st)}
+
+Start stream playback with the given frequency. If \paramname{st} is
+non-zero, then we are playing a stereo stream. If queueing is enabled,
+then the stream will not actually start but will just fill its buffers
+and get ready.
+
+\subsection{void snd\_stream\_stop()}
+
+Stops any playing stream.
+
+\subsection{int snd\_stream\_poll()}
+
+Polls the stream driver to see if we need more data. This may not be
+required on all platforms; on the DC it is currently required.
+
+If the return value is -1, then there was an internal error (including
+a \constname{NULL} callback. If -3, then the stream has ended. If zero,
+then everything is hunky dory.
+
+\subsection{void snd\_stream\_volume(int vol)}
+
+Set the volume of the streaming output (0-255).
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Hardware Abstraction Layer: DC Parts; OUT OF DATE}
+
+\textbf{\emph{UNCONVERTED FROM LIBDREAM}}
+
+
+\section{Basic Video (video.c)}
+
+The basic video subsystem of libdream is designed to facilitate frame
+buffer setup and access. It does not handle 3D acceleration, that
+is handled in the ``TA'' module. The basic usage of the video
+system is to call vid\_init with the desired parameters, and then
+use one of the ``vram'' pointers to access video memory.
+
+The following variables and functions are available in basic video:
+
+
+\subsection{uint32 *vram\_l}
+
+Pointer to video memory (0xa5000000) as a 32-bit unsigned integer
+array. Use this to access video memory when in RGB888 mode, or when
+copying large regions (not recommended =).
+
+
+\subsection{uint32 *vram\_s}
+
+Similar to vram\_l, but accesses as a 16-bit unsigned integer array.
+Use this to access video memory when in RGB555 or RGB565 mode.
+
+
+\subsection{int vram\_config}
+
+Stores the first parameter to vid\_init, which is the pixel format.
+
+
+\subsection{int vram\_size}
+
+Stores the total size (in pixels) of one page of video frame buffer.
+
+
+\subsection{int vid\_cable\_type}
+
+Stores the cable\_type parameter to the video init function below.
+
+
+\subsection{int vid\_check\_cable()}
+
+Checks and returns the attached video cable type; the three constants
+matching the return values are CT\_VGA, CT\_RGB, and CT\_COMPOSITE.
+
+
+\subsection{int vid\_init(int cable\_type, int disp\_mode, int pixel\_mode)}
+
+Does full frame buffer initialization with the requested cable type,
+display mode, and pixel mode. You should pass the return value from
+vid\_check\_cable() as the first parameter. dc\_setup() does this
+for you. disp\_mode constants are DM\_320x240, DM\_640x480 and DM\_800x608.
+pixel\_mode constants are PM\_RGB555, PM\_RGB565, and PM\_RGB888.
+
+
+\subsection{void vid\_set\_start(uint32 start)}
+
+Set the ``start address'' register, which governs where in the
+frame buffer the output picture comes from. This can be used for ``double
+buffering'', but it will most commonly be used during 3D acceleration.
+
+
+\subsection{void vid\_border\_color(int r, int g, int b)}
+
+Set the border color. The border is the area outside the standard
+viewing area. On NTSC this is mostly above and below the picture.
+I'm not sure what it is on PAL. Generally unless you're doing some
+odd debugging you'll want to set this to black (vid\_init does this
+for you).
+
+
+\subsection{void vid\_clear(int r, int g, int b)}
+
+Clears the first page of frame buffer based on the current video mode,
+with the given color. This is most useful when using frame buffer
+access, not 3D access.
+
+
+\subsection{void vid\_empty()}
+
+Clear the entirety of video memory using zeros. This is done using
+longwords so it's fairly quick. Once again, mainly used with 3D setup.
+
+
+\subsection{void vid\_waitvbl()}
+
+Wait for a vertical blank period. Vertical blank is the period between
+the time that the scan beam reaches the bottom of the screen and the
+time that it reaches the top and starts drawing again. This is relevant
+because this is the best time to draw to the frame buffer without
+causing ``tearing'' or other artifacts. It's also generally when
+you want to switch start addresses.
+
+
+\section{BIOS Fonts (biosfont.c)}
+
+BIOS fonts are the ones you see in the boot manager on the Dreamcast.
+These are stored in ROM and so are available to any program. You will
+probably recognize them immidiately since they are used all over the
+place in official productions. The BIOS font contains European Latin-1
+characters (which we support) and Kanji (which we don't support yet
+but will eventually). The Latin-1 characters are bit masks of size
+12x24, so each character uses 36 bytes. I suspect that the Kanji characters
+are 24x24, but I haven't tested this yet. These functions are frame-buffer
+agnostic except that they expect a 16-bit pixel size.
+
+The following functions are available:
+
+
+\subsection{void* bfont\_find\_char(int ch)}
+
+Returns the address in ROM of the given character, after being mapped
+to the BIOS font. 
+
+
+\subsection{void bfont\_draw(uint16 *buffer, int bufwidth, int c)}
+
+Draws Latin-1 character 'c' at the given location in 'buffer', and
+assumes that 'buffer' is 'bufwidth' pixels wide. For example, to draw
+an 'a' at 20,20 in a 640x480 framebuffer, you'd use bfont\_draw(vram\_s+20*640+20,
+640, 'a').
+
+
+\subsection{void bfont\_draw\_str(uint16 *buffer, int bufwidth, char *str)}
+
+Exactly like bfont\_draw, but it takes a string and draws each character
+in turn.
+
+
+\section{PC Fonts (font.c)}
+
+The PC font system handles bitmapped fonts that are 8 pixels wide,
+and any number of pixels tall. The module is being deprecated in favor
+of the BIOS font module, so I won't describe it here. If you want
+more information, please reference font.c itself.
+
+
+\section{Sound Processor Unit (spu.c)}
+
+The sound processor unit (as mentioned in the README) is a Yamaha(tm)
+AICA sound system. To use the processor you will need to write a seperate
+program that runs on the ARM7 RISC core and uses the AICA's own registers.
+This isn't covered in this document (or anywhere, to my knowledge).
+For some decent examples, though, take a look at ``s3mplay'' on
+the Cryptic Allusion DCDev site (see README).
+
+The following defines and functions are available to assist in using
+the sound processor:
+
+
+\subsection{SMP\_BASE}
+
+All samples loaded to the AICA should proceed from this location relative
+to sound RAM (which maps to 0xa0810000 in the SH-4). This is mainly
+used in the S3M player but it's a good guideline to follow in general
+since it gives you 64k of space for the sound program (which is generally
+plenty).
+
+
+\subsection{void snd\_ram\_write\_wait()}
+
+The AICA's RAM is attached to the chip itself rather than the SH-4,
+and so access proceeds through an ASIC. You must call this function
+every 8 long-words of written sound memory so that the ASIC's FIFO
+can catch up. If you don't, the data won't be written accurately.
+
+
+\subsection{void snd\_load\_arm(void *src, int size)}
+
+Loads an ARM7 program and starts it executing. The program will be
+loaded at offset 0, so it needs to begin with reset/exception vectors.
+
+
+\subsection{void snd\_stop\_arm()}
+
+Stops execution in the ARM7, and disables all AICA synthesizer channels.
+This insures that whatever was going on in the SPU is stopped completely.
+
+
+\subsection{void snd\_init()}
+
+Initialize the SPU: disable the ARM7 and clear sound memory.
+
+
+\subsection{void snd\_load(void *src, int dest, int len)}
+
+Load miscellaneous data into the SPU's RAM. 'src' is where to load
+from, and 'dest' is relative to the SPU based (so you could pass,
+e.g., SMP\_BASE here). 'len' is in bytes but will be rounded up to
+long-words.
+
+
+\section{CD-Rom Access (cdfs.c)}
+
+Libdream provides the capability to use CD and CDR discs in the GD-Rom
+drive using this module.
+
+Note that this file has been specifically crippled (or rather, we
+just never wrote it in) so that it can't access Sega's GD discs. This
+means that you can't access the data on any commercial game. There
+are really only a few legitimate reasons for doing this so we've disabled
+the feature to avoid coming under fire for assisting with copyright
+infringement. If you really want to know how, I'm sure you can figure
+it out =).
+
+The following functions are available:
+
+
+\subsection{uint32 iso\_open(const char *path, int oflag)}
+
+Open a file on the CD, using absolute path ``path'', with open
+flags ``oflag''. Note that in the current system, ``path''
+must use forward slashes for path seperators (but can mix upper and
+lower case freely with no troubles), and ``oflag'' must be O\_RDONLY
+or (O\_RDONLY | O\_DIR). A file descriptor will be returned, or a
+zero on error.
+
+
+\subsection{void iso\_close(uint32 fd)}
+
+Close the file referenced by the given file descriptor.
+
+
+\subsection{int iso\_read(uint32 fd, void *buf, int count)}
+
+Read ``nbyte'' bytes from the file referenced by ``fd'', into
+buffer ``buf''. Note that this function will always read the surrounding
+2048 byte sector before extracting the parts you want, so you should
+never read less than 2048 bytes unless that's all you want. Reading
+more than 2048 does work. The number of bytes read will be returned.
+
+
+\subsection{long iso\_lseek(uint32 fd, long offset, int whence)}
+
+Seek in file ``fd'' by ``offset'' bytes, relative to ``whence''.
+``whence'' is one of the standard STDIO constants: SEEK\_SET,
+SEEK\_CUR, SEEK\_END. ``offset'' may be positive or negative depending
+on the usage. The new file location will be returned.
+
+
+\subsection{long iso\_tell(uint32 fd)}
+
+Returns the current file pointer within ``fd''.
+
+
+\subsection{dirent\_t *iso\_readdir(uint32 dirfd)}
+
+Read the next entry (if any) from the opened directory. Returns a
+pointer to a dirent\_t on success (see fs\_iso9660.h for more info
+on dirent\_t) or \constname{NULL} if nothing is left.
+
+
+\subsection{int cdrom\_init() int iso\_init()}
+
+Initialize the GD-Rom drive for reading CD/CDR media, and initialize
+the file system driver.
+
+
+\section{Timer Counters (timer.c)}
+
+This module supports the SH-4's internal timer perhipherals. Support
+is provided for TMU0 through TMU2. WDT (watchdog) is defined but not
+supported yet. TMU0 through TMU2 may all be used independently and
+count at different rates.
+
+The following defines and functions are available:
+
+
+\subsection{TMU0, TMU1, TMU2, WDT}
+
+These are constants used to identify which timer you wish to operate
+on.
+
+
+\subsection{int timer\_prime(int which, uint32 speed)}
+
+Primes a timer, but does not start it. ``which'' is one of the
+timer constants, and ``speed'' is a times per second rate which
+the counter will bottom out. So if you set speed to ``1'', then
+the timer will hit bottom after one second, and start counting again.
+Returns 0 for success.
+
+
+\subsection{int timer\_start(int which)}
+
+Starts the requested timer counting (after priming it).
+
+
+\subsection{int timer\_stop(int which)}
+
+Stops the requested timer.
+
+
+\subsection{uint32 timer\_count(int which)}
+
+Returns the current timer count. The only way you can really make
+use of this externally is to get the timer count after priming but
+before starting, and scale the real-time results.
+
+
+\subsection{int timer\_clear(int which)}
+
+Clears the timer underflow bit and returns what its value was. Underflow
+is set when the timer counts down. So for example, you could start
+a timer on a 1HZ cycle and poll this function until it returns true.
+At that point you'd have waited for a second, and the timer is already
+counting down again.
+
+
+\subsection{void timer\_sleep(int ms)}
+
+Uses TMU0 to sleep for the given number of milliseconds.
+
+
+\subsection{int timer\_init()}
+
+Setup timers (enable and stop all).
+
+
+\section{Maple Access (maple.c)}
+
+Libdream 0.7 includes Jordan DeLong's rewritten maple access code.
+This is a lot more modular and it is setup for future expansion with
+queueing multiple frames and DMA completion interrupts. For now it
+basically does the same as Marcus' old maple routines but with cleaner
+code.
+
+In general using the maple bus consists of finding your peripheral
+(using DEVINFO queries), and storing this address; when you want to
+use the peripheral, you send it a condition query message and get
+a frame back describing the state of the peripheral. Most of the exported
+functions in maple.c won't be useful to mere mortals =) but that's
+a good thing since there are specific support modules for each of
+the major peripherals we have had access to.
+
+The following functions are available:
+
+
+\subsection{void maple\_init(int quiet)}
+
+Initialize the maple bus; if ``quiet'' is non-zero, then the bus
+scan will not produce any output.
+
+
+\subsection{void maple\_shutdown()}
+
+Shut down all maple bus operations.
+
+
+\subsection{uint8 maple\_create\_addr(uint8 port, uint8 unit)}
+
+Create a maple address for the given port and unit.
+
+
+\subsection{int maple\_docmd\_block(...)}
+
+Parameters omitted for topic brevity: int8 cmd, uint8 addr, uint8
+datalen, void *data, maple\_frame\_t retframe. This is the main
+``work horse'' of the maple system. ``cmd'' should be one
+of the maple command constants in maple.h; ``addr'' should be
+created with maple\_create\_addr (or one of the maple\_*\_addr functions
+below); ``datalen'' is the length of the extra data (beyond what's
+in the frame header), ``data'' is a pointer to extra data (if
+any) that goes after the frame header; and ``retframe'' is a maple\_frame\_t
+that you should pass in to be filled in with return data. Zero is
+returned on success, and -1 returned on error. For some examples of
+using docmd\_block directly, please check one of the maple peripheral
+modules.
+
+
+\subsection{int maple\_rescan\_bus(int quiet)}
+
+Rescans the maple bus. This will be neccessary if the user swaps out
+any controllers or memory cards. It also determines what is where
+and stores that info for later usage. If ``quiet'' is non-zero,
+it produces no output.
+
+
+\subsection{uint8 maple\_device\_addr(int code)}
+
+Pass a maple function code, and it returns the address of the first
+one that matches it. 
+
+
+\subsection{uint8 maple\_*\_addr()}
+
+These include controller, mouse, kb, lcd, and vmu currently. Each
+one searches the maple bus to find the first matching type of peripheral
+and returns an address.
+
+
+\section{Maple Peripheral Support Modules}
+
+Support modules are included for standard controllers, keyboards,
+VMUs, and mice. Most peripherals fit into these molds. Eventually
+we'll probably add support for more things like the purupuru pack
+(force feedback) but we don't have one yet, so we can't. =) Notable
+among this list is the mouse since it just came out. Wow your friends
+by writing software that uses it before Sega gets a chance! =)
+
+Since these are mostly the same (except for names and structure values)
+I won't go over them in detail. Each module generally contains a poll
+function that checks the state of the peripheral and fills in a device-specific
+structure. See the header files for the specific structure information.
+I'll list out the poll functions here for convienence though.
+
+
+\subsection{int cont\_get\_cond(uint8 addr, cont\_cond\_t *cond)}
+
+Check controller status. Returns which buttons are pressed and the
+state of the various analog controls.
+
+
+\subsection{int kbd\_get\_cond(uint8 addr, kbd\_cond\_t *cond)}
+
+Check keyboard status. Returns up to six keys being pressed at once.
+There are other support functions for the keyboard that you should
+look up in keyboard.h if you want to use it seriously. These do queueing
+and buffering for you. If you want this functionality, you should
+use kbd\_poll(uint8 addr) and then kbd\_get\_key() to get key presses.
+
+
+\subsection{int vmu\_draw\_lcd(uint8 addr, void *bitmap)}
+
+Draws the given bitmap to the LCD screen. Generally these are on VMUs
+(which is why it's part of vmu.c) but it's not required. The bitmap
+should be a 48x32 bit array. The picture will show up right side up
+on the VMU itself, so when it's inserted in a controller you'll need
+to flip it in each direction.
+
+
+\subsection{int vmu\_block\_read(uint8 addr, uint16 blocknum, uint8 *buffer)}
+
+Read the requested block of the VMU's flash ram and put it in ``buffer''.
+
+
+\subsection{int vmu\_block\_write(uint8 addr, uint16 blocknum, uint8 *buffer)}
+
+Take what's in ``buffer'' and write it to the requested block
+of the VMU's flash ram.
+
+
+\subsection{int mouse\_get\_cond(uint8 addr, mouse\_cond\_t *cond)}
+
+Gets the condition of the mouse peripheral specified. Returns button
+states and delta x, y, and z (roller).
+
+
+\section{Tile Accelerator (ta.c)}
+
+The Tile Accelerator (3D acceleration) really deserves its own book,
+but for completeness (and my hands are getting tired =) I'm just going
+to go over the basics of setting it up and the functions you use to
+do so. For more specific information, look around on the web for various
+documents describing the TA, and look in the examples. Hopefully this
+section can be more fleshed out in future versions.
+
+The TA is exactly what it says: the screen in the PVR 3D chip is broken
+up into 32x32 pixel tiles. So in 640x480, you'd really have a 20x15
+tile field, not a 640x480 pixel field. The PVR's 3D magic happens
+by taking each of these tiles along with a ``display list'' describing
+what is to be displayed on the screen, and doing internal z-buffering.
+This means that each polygon is drawn only once, so even though there
+is not a standard z-buffer present, the end result looks like there
+is one. Opaque polygons, opaque volume modifiers (fog, etc), translucent
+polygons, translucent modifiers, and punch-through polygons (which
+can ``cut'' pieces of other polygons out, I think) must be sent
+to the TA, in that order. Each list is rendered in that order as well,
+for each tile, and so the more lists you send, the slower the rendering
+process gets. Opaque polygons are the fastest obviously, followed
+by punch-throughs, translucent polygons, and then the volume modifiers. 
+
+Because of the tile system, there is no user clipping neccessary:
+the TA works backwards by intersecting polygons and volumes with each
+tile before rendering. The end result of all of this is that all you
+have to do as a user is cull out the completely useless polygons (if
+you feel like it), arrange things in polygon ``strips'' as much
+as possible, and then throw the various lists to the TA. Then sit
+back and wait for it to do its work.
+
+The PVR chip is not magic: it is powerful and can accelerate the drawing
+process to an amazing degree, but it still draws in terms of screen
+coordinates. So it is really a fancy 2D accelerator with perspective
+correction support for textures, and z-buffering.
+
+Coordinates in the PVR start at 0,0 (all coordinates are floating
+point numbers) and go to 640,480, in the normal mode. Any coordinates
+outside this will work but will be clipped. Z coordinates start at
+0 and move out of the screen towards the viewer. As far as I can tell,
+in normal mode, it wants Z and not 1/Z (W). I may be wrong of course.
+I'm no 3D hardware expert.
+
+All that being said, the basic operation goes something like this:
+
+\begin{enumerate}
+\item Setup the TA (ta\_init); initialize the background plane structure
+\item Load any textures you may want to use
+\item For each frame:
+\end{enumerate}
+\begin{itemize}
+\item Call ta\_begin\_render to initialize the rendering process.
+\item Construct and send one or more polygon headers for opaque polygons,
+each followed by zero or more verteces; each vertex strip must end
+with an ``end of list'' marker.
+\item Call ta\_commit\_eol to finish the opaque list.
+\item Construct and send one or more polygon headers for translucent polygons
+(same process as above).
+\item Call ta\_commit\_eol to finish the translucent list.
+\item Call ta\_finish\_frame to finish the rendering process and wait for
+a vertical blank to flip pages.
+\end{itemize}
+Here are the structures and functions needed to do these things:
+
+
+\subsection{struct pv\_str ta\_page\_values{[}2{]}}
+
+Holds all the internal rendering data for the page flipper and renderer.
+This is useful mainly if you want to do something like take a screen
+shot (you can find the current frame buffer).
+
+
+\subsection{bkg\_poly ta\_bkg}
+
+The background plane polygon. The background plane is currently automatically
+a 640x480, three-point opaque polygon. I'm not even sure if you can
+change this. For the values to load into this, take a look at one
+of the 3D example programs. If you want to do color shifting you can
+change this on the fly.
+
+
+\subsection{poly\_hdr\_t}
+
+A polygon header; this is always four flag long-words and four dummy
+words. The four dummy words are actually used with different types
+of shading and volume modifiers, but these are not supported yet in
+libdream. You should fill this structure directly (if you know what
+you're doing) or use ta\_build\_poly\_hdr.
+
+
+\subsection{vertex\_oc\_t}
+
+Represents a single opaque/colored vertex with floating point coordinates
+and ARGB values. Actually it works fine for translucent polygons also
+but the naming convention stuck.
+
+
+\subsection{vertex\_ot\_t}
+
+Represents a single opaque/textured vertex with floating point coordinates
+and ARGB values. Actually it works fine for translucent polygons also.
+
+
+\subsection{int ta\_curpage}
+
+The current working page (out of ta\_page\_values above).
+
+
+\subsection{void ta\_init()}
+
+Initializes the TA and prepares for page flipped 3D.
+
+
+\subsection{void ta\_send\_queue(void *sql, int size)}
+
+Sends one (or two) store queue(s) full of data to the TA.
+
+
+\subsection{void ta\_begin\_render()}
+
+Call before you start drawing a frame.
+
+
+\subsection{void ta\_commit\_poly\_hdr(poly\_hdr\_t *polyhdr)}
+
+Sends one polygon header to the TA. This needs to be done when you
+want to change drawing modes; e.g., opaque color, opaque textured,
+translucent color, translucent textured.
+
+
+\subsection{void ta\_commit\_vertex(void *vertex, int size)}
+
+Sends one vertex to the TA; this can be a vertex\_oc\_t or vertex\_ot\_t.
+Pass along the result of sizeof() on the vertex.
+
+
+\subsection{void ta\_commit\_eol()}
+
+Sends the ``end of list'' marker to the TA. This ought to be used
+after all opaque polygons are sent, and again after all translucent
+polygons are sent.
+
+
+\subsection{void ta\_finish\_frame()}
+
+Call after you've finished sending all data. This completes the rendering
+process in the alternate screen buffer and then waits for a vertical
+blank to switch to the new page.
+
+
+\subsection{void ta\_build\_poly\_hdr(poly\_hdr\_t *target, ...)}
+
+Parameters omitted for brevity: int translucent, int textureformat,
+int tw, int th, uint32 textureaddr, int filtering. This builds a polygon
+header for you so you don't have to diddle with bitfields. Translucent
+should be one of TA\_OPAQUE or TA\_TRANSLUCENT. Textureformat needs
+to be one of the texture format constants or TA\_NO\_TEXTURE. This
+includes whether it's twiddled or not (for info on twiddled textures,
+look for the PVR E3 presentation online). The rest of the parameters
+are only relevant if textureformat is not TA\_NO\_TEXTURE. tw and
+th are the texture width and height, and must be powers of two between
+8 and 1024. Textureaddr is the address within the PVR RAM that you
+loaded the texture, and it must be aligned on an 8-byte boundary.
+Filtering should be TA\_NO\_FILTER or TA\_BILINEAR\_FILTER. Note that
+bi-linear filtering is a fairly expensive operation unless you store
+your textures in the PVR RAM in twiddled format, in which case it's
+free.
+
+
+\subsection{void ta\_load\_texture(uint32 dest, void *src, int size)}
+
+Loads a texture into PVR ram at the given offset. ``size'' must
+be a multiple of 4 and will be rounded up if it's not already. A seperate
+function is required because the PVR requires you to send all texture
+data to 0xa4000000, not 0xa5000000. This must also be done after ta\_init.
+
+
+\subsection{void *ta\_texture\_map(uint32 loc)}
+
+Maps a given PVR offset to a texture space. You should use this if
+you want to write directly into texture ram. Once again, it must be
+done after ta\_init.
+
+
+\chapter{DC Add-On Libraries}
+
+
+\section{libconio -- console}
+
+
+\section{libdcplib -- fonts for PVR}
+
+
+\section{libdcutils -- misc utility functions}
+
+
+\section{libimageload -- image loader / ditherer}
+
+
+\section{libjpeg (KOS specific parts)}
+
+
+\section{libmodplug (KOS specific parts)}
+
+
+\section{libmp3 -- mp3 playback lib}
+
+
+\section{liboggvorbisplay -- ogg playback lib}
+
+
+\section{libpcx -- PCX loader}
+
+
+\section{libpng (KOS specific parts)}
+
+
+\section{libtga -- TGA loader}
+
+
+\section{lua (KOS specific parts)}
+
+
+\section{lwip (KOS specific parts)}
+
+
+%% \chapter{Index}
+%%\printindex{}
+
+\chapter{About this document}
+This document was originally written in a stock LyX 1.1.6fix4 distribution,
+and has since been converted to raw LaTeX2e.
+
+\end{document}

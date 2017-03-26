@@ -1,0 +1,31 @@
+Filesystem Changes
+
+Terminology:
+ * File Descriptor -- Unix-style file handle as returned by open()
+ * Handle -- Underlying file struct (like old KOS VFS fs_open return)
+
+- Change handles to be file descriptors. Instead of a memory address,
+return values from fs_open are descriptors that point to a table which
+contains the memory addresses of handles.
+
+- Each process gets its own descriptor->handle table.
+
+- Handles will gain a reference count, and each open descriptor pointing to
+one of them increases the usage count.
+
+- When a parent process creates a child process, the parent's descriptor
+table should be copied to the child, and the usage counts increased as
+appropriate.
+
+- When a process dies, all descriptors in its table should have the usage
+counts of their handles decreased appropriately.
+
+- If an handles's usage count ever hits zero, it is closed/destroyed.
+
+- A descriptor of -1 will become the error return value (or just <0)
+
+- Descriptors 0, 1, and 2 should always map to stdin, stdout, and stderr,
+like Unix.
+
+- Add fs_dup and fs_dup2 with the same functionality as the unix ones.
+

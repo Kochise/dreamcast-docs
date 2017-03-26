@@ -1,0 +1,286 @@
+Slinkie UDP Protocol
+
+This protocol is basically the same as dcload-ip. This is mainly just a
+simple documented version of it. There are a few differences in available
+packet types however (some minor ones removed, a few extensions added),
+and in some cases extensions are made where it won't affect compatibility.
+
+All integer values are stored in _network-order_ (use htonl). All strings
+are ASCII one byte per character strings, null-terminated. In general if a
+value is not used, it should be set to zero (earlier dcload-ip versions
+may or may not honor this, but Slinkie does).
+
+All commands PC->DC will have the following format:
+- 4 bytes: packet type
+- 4 bytes: address (Addr)
+- 4 bytes: size (Size)
+- N bytes: payload
+
+Note that Size does not necessarily refer to the size of the payload, but
+generally to the size of a buffer, request count, etc.
+
+Generally these are RPC-style commands, and the response from the DC to the
+PC will have the same format.
+
+All commands DC->PC will have the 4-byte "packet type" value, followed by
+a variable set of fields depending on the packet type. All will fall into
+one of these categories:
+
+Type		Abbr	Description
+-----------------------------------------------------------
+int		i	1 4-byte integer value
+string		s	a string
+int-string	is	1 4-byte integer value plus a string
+2int-string	2is	2 4-byte integer values plus a string
+3int		3i	3 4-byte integer values
+3int-string	3is	3 4-byte integer values plus a string
+type/addr/size	tas	Same as PC->DC packets
+
+The interpretation of the integer and string values will vary depending on
+the packet type as well. All of the above packet type permutations are
+preceeded by a 4-byte packet type code.
+
+In general, for the DC->PC packets some binary transfers may happen, followed
+by a RETV packet to give the return value and signal the end of the RPC.
+
+Note that below, the listed packet type is a string copied into the 4-byte
+packet type field.
+
+
+The following packet types may be sent PC->DC:
+
+- EXEC
+
+Execute loaded program at the address specified in Addr, switching Slinkie
+to Cooperative mode. If a program was already running, it will be
+discarded. The Size field will have its LSb set if the console is
+requested, and the next MSb set if ISO redirection is requested. An
+identical packet will be sent back as an ACK.
+
+- LBIN: begin PC->DC binary data transfer
+
+Begin transferring data to the address specified in Addr. The total data
+size should be specified in Size. Followed by multiple PBIN packets from
+the PC, and a final DBIN.
+
+- PBIN: chunk of binary data PC->DC (binary packet)
+
+One packet of data from the PC to the DC during an LBIN transfer. Each
+packet should contain up to 1024 bytes. Addr specifies the address where
+the data goes, and Size is the size of this packet. The last packet may
+contain fewer than 1024 bytes, but all preceeding packets should always
+contain exactly 1024 payload bytes.
+
+- DBIN: finish binary data transfer
+
+Complete an SBIN or LBIN transfer. In an LBIN, The DC ACKs with another
+DBIN packet. If any pieces of data were detected missing then the DC may
+re-request the missing pieces one at a time by setting the address and size
+in Addr and Size. Otherwise these fields will be set to zero in the ACK
+DBIN.
+
+- SBIN: begin DC->PC binary data transfer
+
+Begin transferring data from the address specified in Addr. The total data
+size should be specified in Size. Followed by multiple SBIN packets to the
+PC, and a DBIN packet with Addr and Size set to zero. If any packets were
+missed, the PC will issue another SBIN request.
+
+- SBIQ: send binary quiet
+
+This is deprecated and included only for compatibility with dcload-ip for
+now. Exactly equivalent to SBIN. Slinkie determines SBIN/SBIQ depending on
+whether a program is executing.
+
+- SREG: DC->PC register dump transfer (Slinkie ONLY)
+
+Requests a transfer of the full set of CPU registers from the running
+program, at the point which it was interrupted. The response to this will
+be a PBIN packet with the register dump of the running program (Cooperative
+and Immediate modes), or of the program before it was terminated (Exclusive
+mode). When interrupt driven operation is enabled, this can be used
+periodically to see where the program counter is located and such. The
+register dump will be in the following format:
+
+  * R0 - R15
+  * PC, PR, GBR, VBR
+  * MACH, MACL, SR
+  * FR0_BANK - FR15_BANK
+  * FR0 - FR15
+  * FPSCR, FPUL
+
+- VERS: request version info
+
+Request the target version. This RPC-style call will return a VERS packet
+with an integer version code in the Addr field (Slinkie ONLY) and a
+human-readable string in the String field. dcload-ip will always return a
+string starting with "DCLOAD-IP" while Slinkie will always return a string
+starting with "Slinkie". This can be used to determine if protocol
+extensions will be honored.
+
+- RETV: RPC call return value
+
+This is used for several of the console commands below. It's used to return
+values from an RPC call. The value will be stored as Addr. After this
+packet, an identical DC->PC packet is expected as an ACK.
+
+- RBOT: reboot the target DC
+
+Reboot the target DC. In dcload-ip this just restarts dcload-ip. In Slinkie
+this will actually reset the whole machine. No response is expected.
+
+- PAUS: pause the running program (Slinkie ONLY)
+
+Break out of the running program temporarily. Slinkie will go into
+Immediate mode and continue accepting commands, but the loaded program will
+not be running. After this packet, a similar DC->PC packet is expected as
+an ACK, but with Addr set to the running program's PC. If a program was
+not running, then this command will fail (returns Addr = 0).
+
+- RSUM: resume the running program (Slinkie ONLY)
+
+Resume a paused target program. Slinkie will transition from Immediate back
+into Cooperative mode and let the program continue. After this packet, an
+identical DC->PC packet is expected as an ACK. If a program was running,
+or not loaded, this command will fail. (returns Addr = -1).
+
+- TERM: terminate the running program (Slinkie ONLY)
+
+Kill the running program. An identical packet is expected as a response
+ACK. Slinkie will switch back to Exclusive mode.
+
+- CDTO: CD tray open (Slinkie ONLY)
+
+Emulates the CD tray opening and closing in ISO redirect mode. Addr specifies
+the closedness (0 = open, 1 = closed). Swapping images mid-run will cause
+an open and close to happen as well. After this packet, an identical DC->PC
+packet is expected as an ACK.
+
+
+
+The following packet types may be sent DC->PC. In the Slinkie protocol,
+"friendly" packet types can be used in addition to the DCxx ones (which
+are deprecated).
+
+Also in Slinkie only, where the packet type has a star by it, a special
+sequentially increasing "serial" field is present as an extra integer. This
+field will be used by the host to determine if a re-transmitted request is
+a duplicate. Serial starts at zero and goes up to $ffffffff, then wraps
+around to zero again. When a Slinkie target is detected, the host program
+should always ignore packets with an already-seen serial (or rather, take
+it as a hint to re-transmit the results of the last request).
+
+- HVRS [tas]: request host version
+
+In Slinkie ONLY, this RPC-style call will result in a matching HVRS packet
+with the same format as VERS.
+
+- EXIT/DC00 [tas]: program exited (incl return code)
+
+The target program finished. In dcload-ip, Address and Size are always
+zero. In Slinkie, Address will contain the return code.
+
+- DC01: file stat -- NOT SUPPORTED
+
+- FDWR/DD02 [3i*]: write to fd
+
+Write to an open fd on the host PC. int0 will be the fd, int1 will be the
+source buffer address, and int2 is the number of bytes to write. This
+RPC-style call will result in an SBIN transfer of the data from the
+specified buffer as well as a RETV packet with the number of bytes written.
+
+Note: the DD is not a typo, though perhaps it was a typo in dcload.
+
+- FDRD/DC03 [3i*]: read from fd
+
+Read from an open fd on the host PC. int0 will be the fd, int1 will be the
+destination buffer address, and int2 is the number of bytes to read. This
+RPC-style call will result in an LBIN transfer of the data into the
+specified buffer as well as a RETV packet with the number of bytes read.
+
+- FDOP/DC04 [2is]: open file descriptor
+
+Open a file on the host PC. int0 will be the open flags (rdonly, etc). In
+dcload-ip, int1 is the umask to use with the file; Slinkie ignores this
+value. String is the file name relative to the host fs root. This RPC-style
+call will result in a RETV packet with the fd.
+
+- FDCL/DC05 [i]: close fd
+
+Close an open fd on the host PC. int0 is the fd. This RPC-style call will
+result in a RETV packet with the result (should be zero on success).
+
+- DC06: create file -- NOT SUPPORTED
+
+- DC07: link -- NOT SUPPORTED
+
+- DELE/DC08 [s]: delete host file / unlink
+
+Delete a file on the host PC. String is the name, relative to the host
+root. Results in a RETV.
+
+- CHRT/DC09 [s]: change host root dir
+
+Changes the host PC's root directory. For example if the host PC root is
+/tmp, and the KOS mount point is /pc, the file /pc/foo will refer to
+/tmp/foo on the PC. Results in a RETV.
+
+- DC10: chmod -- NOT SUPPORTED
+
+- FDSE/DC11 [3i*]: lseek fd
+
+Seek a file on the host PC. int0 will be the fd, int1 will be the seek
+value, and int2 will be the whence value. Results in a RETV with the new
+file position.
+
+- TIME/DC12 [i]: get host clock time
+
+No parameters actually passed. Results in a RETV with the time in seconds
+since Jan 1, 1970.
+
+- STAT/DC13 [2is]: get file stat
+
+Get stat info on a file by name. int0 is the address to place the return
+value in, int1 is the buffer size, and String is the file name relative to
+host root. Results in an LBIN transfer plus a RETV. The format of the
+returned struct matches the standard POSIX struct, but the numerical
+members are in _little endian_ byte order, not big endian as is proper for
+network transmission. Also note that Slinkie's slsh will only fill in the
+fields needed for KOS: st_mode, st_size and st_mtime; everything else is
+set to zero.
+
+- DC14: utime -- NOT SUPPORTED
+
+- DROP/DC16 [s]: open directory
+
+Open a directory on the host PC. String is the name of the dir relative to
+host root. Results in a RETV with the handle.
+
+- DRCL/DC17 [i]: close directory
+
+Close an open directory handle. int0 is the handle. Results in a RETV with
+the result (zero means success).
+
+- DRRD/DC18 [3i*]: read directory
+
+Read a dirent from an open dir handle. int0 is the handle, int1 is the
+buffer address, int2 is the size of the buffer. Results in a RETV with zero
+if there are no more entries, or non-zero if an entry was read. The
+returned struct matches the standard POSIX dirent_t, but the numerical
+members are in _little endian_ byte order. Also note that Slinkie's slsh
+will only fill in the field needed for KOS: d_name; everything else is set
+to zero.
+
+- CDRD/DC19 [3i]: read CDFS sector
+
+Read sectors from the emulated ISO image. int0 will be the sector number,
+int1 is the destination buffer address, and int1 is the number of bytes.
+Results in an LBIN transfer of the data into the specified buffer, plus
+a RETV.
+
+- CRSH [2i]: notify host of program crash (Slinkie ONLY)
+
+If the running program activates Slinkie's built-in exception handling, then
+a dump will be made to the target screen and this packet will be generated
+to the host PC. The PC can then call SREG to get the last known register
+contents for a dump.

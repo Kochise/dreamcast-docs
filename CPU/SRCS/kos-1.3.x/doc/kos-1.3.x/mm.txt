@@ -1,0 +1,78 @@
+
+------------- MALLOC -----------------
+
+- Use dlmalloc, with custom MORECORE and MORECORE_CONTIGUOUS=0
+
+- For custom MORECORE, we provide kos_brk. Because of the above, brk will
+always be called with an argument that is a multiple of the page size.
+
+- Because we must track groups of pages, we employ an exceedingly simple
+"meta-malloc" which is only capable of allocating fixed-size entries (see
+below). These entries, in turn, track groups of pages allocated as arena
+space for malloc(). As we will never be asked to free an arena chunk in the
+middle of the allocated space, these entries are allocated linearly, in
+order.
+
+- kos_brk, upon its initial call, allocates a single page as an initial page
+directory. This page, and all page dir pages, contain a TAILQ entry at the
+front, padded to the size of a full pagegrp struct. The rest of the page
+is occupied by a struct like so:
+
+struct pagegrp {
+  	ptr_t	base;
+  	size_t	pagecnt;
+}
+
+If 'base' is zero, the entry is considered unused. Thus the only work required
+to add a page to the page dir is to allocate a page, memset it to zeros, and
+add it to the tailq of page dir pages.
+
+- When 'brk' is called with a positive value, we assert that the requested
+amount is a multiple of pages. We then call mm_palloc with a requested page
+of the page right after the last entry. If we successfully get that range,
+we just extend the size of the last active range and return the newly
+allocated space. If we didn't successfully get the range, we add a new
+chunk to the page dir and return that new chunk.
+
+- When 'brk' is called with zero, we return the byte after the last allocated
+page in the page dir (xxx: need to verify that dlmalloc doesn't write to this
+space ever!)
+
+- When 'brk' is called with a negative value, we start at the last active
+page in the page dir and start freeing pages. As chunks are fully freed, we
+remove them from the page dir. The algorithm goes something like this:
+
+  * If 'tofree' > curchunk->pagecnt, free the whole thing and decr tofree;
+    otherwise, curchunk->pagecnt -= tofree.
+  * Repeat as necessary until 'tofree' is zero.
+
+As pages are removed from the page dir, we call mm_pfree on them.
+
+
+------------- PROCESSES -----------------
+
+- Every loaded process has its own allocator, including the kernel. At any
+time, the kernel should be able to earmark and free every page that a
+process has allocated for itself. A process should be loaded into buffers
+allocated with mm_palloc, and the process should be the owner of those
+pages so that a single mm_pfreeall suffices to remove all allocated memory
+for the process itself.
+
+- All allocation calls in a given piece of code _must_ be assigned to the
+allocator for that code. Note that threads have nothing to do with it
+because one process may make a call into another process, which in turn
+allocates a block. If the first process dies, the second process' tables
+could easily become corrupted.
+
+- Any time an allocation takes place in a process which might be caused by
+a client process (e.g., vblank_handler_add), the block should be marked
+with the process ID of the caller so that it can be cleaned up on a
+process' untimely demise.
+
+- If a client process can pass an address into a server process, the server
+process should be ready for the possibility that the block may, at any time
+and without warning, be pulled out from under it and its contents lost. For
+example, keeping a vital chunk of TAILQ pointer info in a block passed in
+by a client is a baaaad idea.
+
+

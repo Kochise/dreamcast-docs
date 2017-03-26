@@ -1,0 +1,187 @@
+ps2-load-ip 1.0.1 - a PS2 RTE ethernet loader by Dan Potter
+
+
+-------------------------------------------------= Overview =----------
+ps2-load-ip is a port/rewrite of Andrew Kieschnick's dc-load-ip, but
+targeted at the PS2 RTE (the boot environment that comes with the PS2
+Linux kit). It provides a basic environment for you to load RTE programs
+over the ethernet and run them.
+
+ps2-load-ip is almost entirely protocol-level compatible with dc-load-ip.
+You should be able to use dc-tool with ps2-load-ip and ps2-tool with
+dc-load-ip, though of course you won't get BFD support (so it would
+only work with BINs and SRECs). Additionally, the feature set isn't
+identical between them -- ps2-load-ip has no support for anything like
+CDFS redirection, and I'm planning on adding more features to ps2-load-ip
+than dc-load-ip has as well. The basic protocol should remain approximately
+equivalent though.
+
+-------------------------------------------------= Features =----------
+* Load elf, srec, and bin
+* GS console on the PS2, with a syscall to write to it
+* SMAP driver supports up to 100mbit ethernet
+* PC file server / console support over ethernet
+
+Note that in this version, the ethernet console still isn't
+very fast to use as a file system and console while the program is
+running, but it does work now.
+
+------------------------------------------= Source Licenses =----------
+Please look in the doc/COPYING directory for info about the licenses
+on the various pieces of included code.
+
+---------------------------------------------= Requirements =----------
+First and foremost, you must have a PS2 with the PS2 Linux Kit installed.
+This system is designed to let you boot and run programs using the
+Linux RunTime Environment (RTE). If you want to do raw "PS2DEV" work,
+then you'll want to get something like NapLink.
+
+To build ps2-load-ip, you will need a GCC cross-compiler targeted for
+raw PS2DEV work, not one targeted for PS2 Linux. This means that you
+also can't use the default built-in gcc on PS2 Linux to build the
+target binary (though someone may prove me wrong if we can get all
+the command line args right...). Either way, you'll need that cross-compiler
+to build any programs to run with ps2-load-ip anyway, so you might as
+well get that out of the way first. Go here, and look under "Getting
+Started":
+
+http://ps2dev.sf.net/
+
+They also have some pre-built binaries for Cygwin, though I haven't
+tried them (I use Linux).
+
+-------------------------------------------------= Building =----------
+Edit Makefile.cfg for your system and network, and then run make. Depending
+on your dev requirements, you may also want to edit this file:
+
+  target-src/minikos/link-rte.ld
+
+ps2-load-ip is built by default to load at 0x80010000, where Linux usually
+loads; it requires approximately 128k of space there, so your programs
+would need to load starting at 0x80030000. If you want to write
+programs that load into this space, then obviously this will cause a
+problem. In this case, edit the linker file and change the base address,
+or use something like RedBoot.
+
+---------------------------------------------= Installation =----------
+1. PC - run make install (installs ps2-tool)
+2. PS2
+   a. Boot your PS2 into the Linux kit using the RTE boot DVD
+   b. Log in as root and mount your memory card (e.g., /mnt/mc00)
+   c. Copy the file target-src/ps2lip.elf to the memory card
+   d. Add a line like this to your p2lboot.cnf:
+
+"ps2-load-ip"	ps2lip.elf ""	203 /dev/hda1 ps2lip ps2-load-ip 
+
+      Be careful with that file! If you screw it up, you may not be
+      able to boot into your Linux install anymore. SCEI recommends that
+      you keep a backup memory card, and I'm recommend this as well,
+      especially if you'll be doing your own dev work with the RTE.
+   e. Unmount the memory card, shutdown, and reboot. You should now
+      have a "ps2-load-ip" option on your RTE boot menu.
+
+----------------------------------------= On-screen Display =----------
+When ps2-load-ip boots up, you'll get a purple screen with a banner
+in the upper left, and a very basic (somewhat slow) text console
+below that. Because its GS driver is very basic and has only a putpixel
+function, ps2-load-ip saves CPU time by simply wrapping around to the
+top of the console when output reaches the bottom. The next few lines
+in front of the cursor position are automatically cleared to prevent
+confusion about where the current output is located.
+
+If all is well with the world, you should get an initial console output
+that looks something like this:
+
+
+ps2-load-ip Copyright (c) 2000-2002 Dan Potter, Andrew Kieschnick,
+   YAEGASHI Takeshi, SCEI, RedHat, and others.
+This binary was built Tue Oct 29 22:54:48 MST 2002
+  by bard@foobar.baz
+
+SMAP Ethernet Detected, MAC 00:04:1f:00:ea:35
+eth: Auto-negotiation complete. 100Mbps Half duplex mode.
+Pre-configured IP appears to be 10.3.2.8
+
+
+Once you see that last message, it's ready to go. You should be able
+to ping your PS2 and get timely responses, and ps2-tool should be
+functional as well.
+
+After that point, console output will follow what is going on inside
+ps2-load-ip, though it tries to avoid being overly chatty. Note that
+after each program runs, the GS console and SMAP drivers will be
+reinitialized from scratch, which will produce a couple of ethernet
+messages again. This is to ensure that you're free to do whatever you
+like during your dev work and that ps2-load-ip will still be able
+to bring the machine back to a usable load-ready state.
+
+----------------------------------------= Future Improvements =--------
+For future versions, I am currently planning:
+
+- Exception handler
+
+-------------------------------------------------------= Misc =--------
+* Look in doc/NETWORK for some further info about the networking
+  capabilities of ps2-load-ip.
+* Bug reports and patches are welcome
+
+
+
+---------------------------------= Original dc-load-ip README =--------
+dcload-ip 1.0.1 - a Dreamcast ethernet loader by <andrewk@napalm-x.com>
+
+Features
+
+* Load elf, srec, and bin
+* PC I/O (read, write, etc to PC - compatible with original dcload)
+* Exception handler
+* Extremely fast (at least for me - I get 1130Kbyte/sec on 10mbit half-duplex)
+* Now works on 100mbit (I get 2580Kbyte/sec on 100mbit half-duplex)
+
+Building
+
+1. Edit Makefile.cfg for your system and network, and then run make
+
+Installation
+
+1. PC - run make install (installs dc-tool)
+2. DC
+   a. cd make-cd, edit Makefile, insert blank cd-r, run make
+ or 
+   b. take target-src/1st_read/1st_read.bin and stuff it on a cd yourself
+      (please use the IP.BIN from the make-cd directory if you are going
+       to distribute either cds or cd images)
+  
+On-screen display
+
+* If you see the message "NO BROADBAND ADAPTER DETECTED!" or 
+  "ERROR INITIALIZING BROADBAND ADAPTER", something has gone wrong.
+* The correct display is something like:
+  dcload-ip 1.0.1        <- name/version
+  00:d0:f1:02:ab:dd      <- dc hardware address
+  c0.a8.00.04            <- dc ip address (in hex)
+  idle...                <- status
+
+Testing
+
+1. cd example-src
+2. dc-tool -x console-test (tests some PC I/O)
+3. dc-tool -x exception-test (generates an exception)
+4. dc-tool -x gethostinfo (displays the ip and port of the dc-tool host)
+
+Notes
+
+* You can use arp instead of setting the dreamcast's ip in Makefile.cfg
+* Tested systems: Debian GNU/Linux 2.2
+* There are almost certainly bugs
+* Patches and improvements are welcome
+
+Credits
+* rtl8139 code based on code by Dan Potter
+* There are some various files from newlib-1.8.2 here
+* video.s was written by Marcus Comstedt
+* initial win32 porting and implementation of -t by Florian 'Proff' Schulze
+* win32 bugfix by The Gypsy
+* fixes for cygwin by Florian 'Proff' Schulze
+* rx config bug pointed out by Slant
+

@@ -1,0 +1,43 @@
+# KallistiOS ##version##
+#
+# Makefile.rules
+# (c)2000-2001 Dan Potter
+#   
+# $Id: Makefile.rules,v 1.9 2003/02/27 04:49:53 bardtx Exp $
+
+# Global KallistiOS Makefile include
+
+# Build rules
+%.o: %.c
+	kos-cc $(CFLAGS) -c $< -o $@
+
+%.o: %.cc
+	kos-c++ $(CFLAGS) $(CXXFLAGS) -c $< -o $@
+
+%.o: %.cpp
+	kos-c++ $(CFLAGS) $(CXXFLAGS) -c $< -o $@
+
+%.o: %.s
+	kos-as $< -o $@
+
+%.o: %.S
+	kos-as $< -o $@
+
+subdirs: $(patsubst %, _dir_%, $(SUBDIRS))
+
+$(patsubst %, _dir_%, $(SUBDIRS)):
+	$(MAKE) -C $(patsubst _dir_%, %, $@)
+
+clean_subdirs: $(patsubst %, _clean_dir_%, $(SUBDIRS))
+
+$(patsubst %, _clean_dir_%, $(SUBDIRS)):
+	$(MAKE) -C $(patsubst _clean_dir_%, %, $@) clean
+
+# Define KOS_ROMDISK_DIR in your Makefile if you want these two handy rules.
+ifdef KOS_ROMDISK_DIR
+romdisk.img:
+	$(KOS_GENROMFS) -f romdisk.img -d $(KOS_ROMDISK_DIR) -v -x .svn
+
+romdisk.o: romdisk.img
+	$(KOS_BASE)/utils/bin2o/bin2o romdisk.img romdisk romdisk.o
+endif

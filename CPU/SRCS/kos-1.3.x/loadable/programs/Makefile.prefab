@@ -1,0 +1,34 @@
+# KallistiOS ##version##
+#
+# modules/Makefile.prefab
+# Copyright (C)2000,2003 Dan Potter
+#   
+# $Id: Makefile.prefab,v 1.5 2003/08/02 23:13:53 bardtx Exp $
+
+all: $(TARGET)
+
+include $(KOS_BASE)/Makefile.rules
+
+# First one checks for missing symbols (and fully links with an offset
+# of zero so we can do tracebacks later), second one makes the real file.
+$(TARGET): $(OBJS)
+	$(KOS_CC) -g -ml -m4-single-only -O2 -g -Wl,-Ttext=0x00000000 -e _start -nostartfiles -nostdlib -o dbg-$(TARGET) $(KOS_BASE)/lib/crt0.o $(OBJS) -L$(KOS_BASE)/lib -L$(KOS_BASE)/addons/lib -Wl,--start-group $(LIBS) -lkos -lexports -lc -lgcc -Wl,--end-group
+#ifeq ($(LANG), cpp)
+#	$(KOS_CCPLUS) -g -ml -m4-single-only -O2 -Wl,-d -Wl,-Ur -Wl,-S -Wl,-x -nostartfiles -nostdlib -o $(TARGET) -Wl,-T $(KOS_BASE)/loadable/programs/shlelf_dc.xr $(OBJS) $(KOS_BASE)/lib/crt0.o -L$(KOS_BASE)/lib -L$(KOS_BASE)/addons/lib -Wl,--start-group $(LIBS) -lkos -lc -lgcc -Wl,--end-group
+#else
+#	$(KOS_CC) -g -ml -m4-single-only -O2 -Wl,-d -Wl,-r -Wl,-S -Wl,-x -nostartfiles -nostdlib -o $(TARGET) $(OBJS) $(KOS_BASE)/lib/crt0.o -L$(KOS_BASE)/lib -L$(KOS_BASE)/addons/lib -Wl,--start-group $(LIBS) -lkos -lc -lgcc -Wl,--end-group
+#endif
+	$(KOS_CC) -g -ml -m4-single-only -O2 -Wl,-d -Wl,-r -Wl,-S -Wl,-x -nostartfiles -nostdlib -o $(TARGET) -Wl,-T $(KOS_BASE)/loadable/programs/shlelf_dc.xr $(KOS_BASE)/lib/crt0.o $(OBJS) -L$(KOS_BASE)/lib -L$(KOS_BASE)/addons/lib -Wl,--start-group $(LIBS) -lkos -lc -lgcc -Wl,--end-group
+
+clean:
+	-rm -f $(OBJS) $(TARGET) dbg-$(TARGET) romdisk.o romdisk.img
+
+copy:
+	cp $(TARGET) $(KOS_BASE)/kernel/romdisk/
+
+# We'll include these in case the user wants 'em
+romdisk.o: romdisk.img
+	$(KOS_BASE)/utils/bin2o/bin2o romdisk.img romdisk romdisk.o
+
+romdisk.img:
+	$(KOS_GENROMFS) -f romdisk.img -d romdisk -v

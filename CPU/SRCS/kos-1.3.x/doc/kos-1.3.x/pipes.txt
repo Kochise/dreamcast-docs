@@ -1,0 +1,42 @@
+PTY Filesystem
+
+- Pseudo-terminals (PTYs) consist of two separate descriptorable files:
+  * Master terminal -- /pty/maXX
+  * Slave terminal  -- /pty/slXX
+Where XX is a two-digit hexidecimal number. maXX and slXX are a matched pair.
+
+Each of these is considered an endpoint for two buffered/queued data
+streams, one in each direction. So writing to the Master will make data
+readable on the Slave, and vice-versa.
+
+- If either end is opened in blocking mode (default), then the caller will
+block on write if there is no room left, or the caller will block on read
+if there is nothing left to read (note that requesting more than there is
+to read will not be considered a failure condition). The caller will be
+woken again when there is something to do. In non-block mode, the obvious
+things will happen -- fs_read or fs_write will return less than the
+requested number of bytes.
+
+- One special PTY (console) will always be considered the main "console" of
+the system. By default Master-output/Slave-input will read from the dbgio
+input, and the Master-input/Slave-output will write to the dbgio output. A
+debugger process may open the Master later and provide real I/O
+capabilities. More on this below...
+
+- To create a non-console PTY, one must call fs_pty_create. This will add a
+new Master/Slave pair to the filesystem and return file descriptors
+attached to the two. When everyone has closed a given Master/Slave (i.e.,
+all related descriptors are gone) the PTY will be destroyed.
+
+- The special console term (/pty/console) will never be destroyed since the
+kernel process will always maintain a connection to it. It is special in
+one other way as well: if the Master end is connectionless, it will default
+programmatically to the behavior described above (output-only to dbgio). If
+a connection is made, it will stop that behavior (though of course the
+connector may opt to call dbgio_write_str anyway). If the Master is closed
+again, the behavior will again revert to dbgio.
+
+- All processes have three opened descriptors to pipes by default: stdin,
+stdout, and stderr. The kernel's descriptors are always attached to
+/dev/console and thus all sub-processes will be as well until that
+situation is changed (e.g., a shell running in a terminal window).

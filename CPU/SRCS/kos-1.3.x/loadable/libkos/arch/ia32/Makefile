@@ -1,0 +1,6 @@
+all:
+	# foo
+
+clean:
+	# foo
+

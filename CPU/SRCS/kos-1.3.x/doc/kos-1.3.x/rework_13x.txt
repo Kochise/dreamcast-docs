@@ -1,0 +1,166 @@
+Ideas for the 1.3.x rework
+
+Ref sf-kos message ""Revolutionary" 1.3.x ideas".
+
+
+New tree layout
+---------------
+
+Basically the same as before, but build more separation into the kernel/lib
+distinction. We'll use those names -- kernel and koslib, rather than the
+older kernel/userland.
+
+The kernel tree will retain a minimalistic libc that is just enough for it
+to function, based on the current BSD-derived libc. The koslib portion may
+adopt a more full libc than before.
+
+
+Terminology
+-----------
+
+The main binary which is loaded from the CD (or from dcload during testing)
+is called the "kernel". With everything in place (not including bundled
+modules), it should be no larger than about 70-100KB.
+
+Pieces of code loaded into the kernel dlopen() style are called "modules".
+These are separate ELF files that will generally contain a full libc (or as
+much of it as they need anyway). They will export an entry function which
+will be called upon load. After the entry function exits, the module will
+remain resident until it is unloaded (which is accomplished through an
+exit function). These pieces are generally only used on demand through things
+like the VFS, although there is nothing against their starting up threads.
+
+Pieces of code loaded into the kernel as programs and meant to be run that
+way are called "programs". These will be linked against "koslib", which is
+basically a libc, libm, optional libk++, libkoslib (kernel service shims
+and platform-specific stuff) which contains full hardware drivers for
+things not in the kernel. Programs will export an entry function which will
+be called with the kernel name service as a parameter, and is expected to
+spawn its own process and thread using kernel primitive calls. The program
+is expected to call the kernel to terminate itself, at which point its
+threads will be terminated, any services it installed will be removed, its
+memory will be freed, process shell removed, etc.
+
+The only functional difference between a "module" and a "program" is the way
+it behaves with regards to the kernel. Modules are essentially DOS-style TSRs,
+while programs are what they sound like. It's entirely possible for something
+to behave like both, for example a windowing manager -- it will load and
+start a main thread with a PVR display loop, but it will also publish some
+services for client programs to use.
+
+
+New build process
+-----------------
+
+The kernel itself should be built with -m4-nofpu, and the threading package
+should be modified so that it does the DCLinux-style FPU usage detection.
+This way threads that are running entirely in the kernel have no need to
+save all the FPU regs. If, for example, an interrupt wants to switch out to
+another task, the FPU regs can be saved after the fact.
+
+Any loadable ELF that doesn't absolutely need real FPU support should also
+stick to -m4-nofpu. This would include things like the vast majority of the
+FS drivers, CD support, etc.
+
+Loadable ELFs that have the full subsystems like the PVR2DC driver absolutely
+_should_ be built with the standard -m4-single-only.
+
+All loadable ELFs should also be built with relocation information included
+in the binary so that it can be loaded anywhere in memory.
+
+Non-essential pieces for bootstrapping and kernel operation (like the CD
+drivers) should be moved out of the kernel and into loadable modules. These
+will generally be included in the kernel's romdisk image for bootstrapping
+purposes.
+
+
+Kernel functionality
+--------------------
+
+The following pieces must be built into the kernel statically:
+
+ * Exception / IRQ handling and routing
+ * ASIC/G2 bus functions
+ * VBlank multiplexer
+ * Basic serial I/O driver (also for default debug console until bootstrapped)
+ * Timer support
+ * Threading (including primitives like sem/mutex/genwait/etc)
+ * Realtime Clock
+ * Namespace mgr
+ * Block device manager
+ * Block dev: memory image
+ * Virtual Filesystem (VFS)
+ * VFS handlers: romdisk, pipes/fifos
+ * Console support (attached to various pipes)
+ * BIOS Lock (mutex against concurrent BIOS usage)
+ * ELF file loader / relocator
+ * Network base system (no drivers)
+ * Basic memory management
+ * Startup script parser / executor
+ * Store Queue support
+
+Unlike the old svcmpx system, the kernel (and in fact any loaded process)
+may publish a set of symbols using the namespace manager (nmmgr). These
+symbols will be dynamically linked into loaded programs like a shared
+library. Of course a process may also publish other types of things through
+nmmgr, such as VFS mounts, etc.
+
+All drivers and other functionality not in the above list should be moved
+out of the kernel tree and into the modules tree.
+
+
+koslib
+------
+
+The following will be included as part of the linkable lib that interfaces
+to various kernel pieces. Some pieces require additional modules to be loaded
+and thus are optional.
+
+ * BIOS font support
+ * Flash ROM support
+ * Cache flushing utils
+ * Stack tracing utils
+ * Math utils (matrix, fsqrt, etc)
+ * Any other misc util functions (screenshot, vmupkg, etc)
+
+ + Kernel and loadable module shims: this lib simply provides stubs for
+   exports from other modules so that programs can be linked to test for
+   undefined symbols.
+
+
+Loadable Modules
+----------------
+
+These things will/could be done as loadable modules:
+
+ * Low-level CD driver + filesystem (including CDDA support)
+ * Serial network driver, attaches to kernel serial driver
+ * Broadband Adapter driver, attaches to network API
+ * Lan Adapter driver, attaches to network API
+ * Maple system (including basic drivers and vmufs atomic read/write funcs)
+ * PowerVR2DC driver (both 2D and 3D accel)
+ * VFS: ramdisk
+ * VFS: builtin
+ * VFS: vmu filesystem (builds on maple module)
+ * PPP driver (not written)
+ * TCP/IP stack
+ * Network filesystem host [mini-Samba] (not written)
+ * Debug module: TCP/IP gdb stub capable of suspending and examining threads
+
+
+Full Programs
+-------------
+
+These will/can be written as full programs, linked against libkoslib and
+using all of the available facilities (maple, PVR, etc).
+
+ * Loader front end: Glues everything together to provide dcload-like
+   functionality. Must shut down things like maple and PVR when passing
+   control on to another ELF binary.
+ * JAM: Gwate GUI, wiiise from the gwaaave!!
+ * Conio driver: builds on pvr2dc driver to provide a basic text console
+   for things that use stdin/stdout pipes. Should implement basic vt100
+   codes as well as allowing for the graceful takeover of the console by
+   another app.
+ * Kosh: uses stdin/stdout and implements a command line useful for debugging
+   and other things.

@@ -1,0 +1,435 @@
+diff -ruN newlib-1.12.0/config-ml.in newlib-1.12.0-kos/config-ml.in
+--- newlib-1.12.0/config-ml.in	2004-01-04 16:42:16.000000000 -0800
++++ newlib-1.12.0-kos/config-ml.in	2004-08-07 09:30:51.000000000 -0700
+@@ -196,19 +196,19 @@
+ 
+ if [ "${ml_toplevel_p}" = yes ]; then
+ 
+-multidirs=
+-for i in `${CC-gcc} --print-multi-lib 2>/dev/null`; do
+-  dir=`echo $i | sed -e 's/;.*$//'`
+-  if [ "${dir}" = "." ]; then
+-    true
+-  else
+-    if [ -z "${multidirs}" ]; then
+-      multidirs="${dir}"
+-    else
+-      multidirs="${multidirs} ${dir}"
+-    fi
+-  fi
+-done
++multidirs=ml/m4-single-only
++#for i in `${CC-gcc} --print-multi-lib 2>/dev/null`; do
++#  dir=`echo $i | sed -e 's/;.*$//'`
++#  if [ "${dir}" = "." ]; then
++#    true
++#  else
++#    if [ -z "${multidirs}" ]; then
++#      multidirs="${dir}"
++#    else
++#      multidirs="${multidirs} ${dir}"
++#    fi
++#  fi
++#done
+ 
+ # Target libraries are configured for the host they run on, so we check
+ # $host here, not $target.
+diff -ruN newlib-1.12.0/newlib/configure.host newlib-1.12.0-kos/newlib/configure.host
+--- newlib-1.12.0/newlib/configure.host	2004-02-02 08:59:51.000000000 -0800
++++ newlib-1.12.0-kos/newlib/configure.host	2004-08-07 10:34:46.000000000 -0700
+@@ -178,6 +178,7 @@
+ 	;;
+   sh | sh64)
+ 	machine_dir=sh
++	newlib_cflags="${newlib_cflags} -DREENTRANT_SYSCALLS_PROVIDED -DMALLOC_PROVIDED -DABORT_PROVIDED -fno-crossjumping -fno-optimize-sibling-calls"
+ 	;;
+   sparc*)
+ 	machine_dir=sparc
+diff -ruN newlib-1.12.0/newlib/libc/sys/sh/ftruncate.c newlib-1.12.0-kos/newlib/libc/sys/sh/ftruncate.c
+--- newlib-1.12.0/newlib/libc/sys/sh/ftruncate.c	2003-07-10 08:31:30.000000000 -0700
++++ newlib-1.12.0-kos/newlib/libc/sys/sh/ftruncate.c	2004-08-07 09:40:01.000000000 -0700
+@@ -2,8 +2,8 @@
+ #include <sys/types.h>
+ #include "sys/syscall.h"
+ 
+-int
++/* int
+ ftruncate (int file, off_t length)
+ {
+   return __trap34 (SYS_ftruncate, file, length, 0);
+-}
++} */
+diff -ruN newlib-1.12.0/newlib/libc/sys/sh/sys/_types.h newlib-1.12.0-kos/newlib/libc/sys/sh/sys/_types.h
+--- newlib-1.12.0/newlib/libc/sys/sh/sys/_types.h	1969-12-31 16:00:00.000000000 -0800
++++ newlib-1.12.0-kos/newlib/libc/sys/sh/sys/_types.h	2004-08-07 09:22:27.000000000 -0700
+@@ -0,0 +1,42 @@
++/* ANSI C namespace clean utility typedefs */
++
++/* This file defines various typedefs needed by the system calls that support
++   the C library.  Basically, they're just the POSIX versions with an '_'
++   prepended.  This file lives in the `sys' directory so targets can provide
++   their own if desired (or they can put target dependant conditionals here).
++*/
++
++#ifndef	_SYS__TYPES_H
++#define _SYS__TYPES_H
++
++#include "lock.h"
++
++typedef long _off_t;
++__extension__ typedef long long _off64_t;
++
++#if defined(__INT_MAX__) && __INT_MAX__ == 2147483647
++typedef int _ssize_t;
++#else
++typedef long _ssize_t;
++#endif
++
++#define __need_wint_t
++#include <stddef.h>
++
++/* Conversion state information.  */
++typedef struct
++{
++  int __count;
++  union
++  {
++    wint_t __wch;
++    unsigned char __wchb[4];
++  } __value;		/* Value so far.  */
++} _mbstate_t;
++
++typedef _LOCK_RECURSIVE_T _flock_t;
++
++/* Iconv descriptor type */
++typedef void *_iconv_t;
++
++#endif	/* _SYS__TYPES_H */
+diff -ruN newlib-1.12.0/newlib/libc/sys/sh/sys/lock.h newlib-1.12.0-kos/newlib/libc/sys/sh/sys/lock.h
+--- newlib-1.12.0/newlib/libc/sys/sh/sys/lock.h	1969-12-31 16:00:00.000000000 -0800
++++ newlib-1.12.0-kos/newlib/libc/sys/sh/sys/lock.h	2004-08-07 10:41:28.000000000 -0700
+@@ -0,0 +1,36 @@
++#ifndef __SYS_LOCK_H__
++#define __SYS_LOCK_H__
++
++/* Map everything (approximately) to KOS stuff. Note that if the definition
++   of spinlock_t changes size, or the definition of SPINLOCK_INITIALIZER
++   changes, this will also have to be changed. */
++typedef int _LOCK_T;
++typedef struct { int a, b, c; } _LOCK_RECURSIVE_T;
++
++#define __LOCK_INIT(class,lock) class _LOCK_T lock = 0;
++#define __LOCK_INIT_RECURSIVE(class,lock) class _LOCK_T lock = { 0, 0, 0 };
++#define __lock_init(lock) __newlib_lock_init(&(lock))
++#define __lock_init_recursive(lock) __newlib_lock_init_recursive(&(lock))
++#define __lock_close(lock) __newlib_lock_close(&(lock))
++#define __lock_close_recursive(lock) __newlib_lock_close_recursive(&(lock))
++#define __lock_acquire(lock) __newlib_lock_acquire(&(lock))
++#define __lock_acquire_recursive(lock) __newlib_lock_acquire_recursive(&(lock))
++#define __lock_try_acquire(lock) __newlib_lock_try_acquire(&(lock))
++#define __lock_try_acquire_recursive(lock) __newlib_lock_try_acquire_recursive(&(lock))
++#define __lock_release(lock) __newlib_lock_release(&(lock))
++#define __lock_release_recursive(lock) __newlib_lock_release_recursive(&(lock))
++
++/* These are defined in KOS */
++void __newlib_lock_init(_LOCK_T *);
++void __newlib_lock_close(_LOCK_T *);
++void __newlib_lock_acquire(_LOCK_T *);
++void __newlib_lock_try_acquire(_LOCK_T *);
++void __newlib_lock_release(_LOCK_T *);
++
++void __newlib_lock_init_recursive(_LOCK_RECURSIVE_T *);
++void __newlib_lock_close_recursive(_LOCK_RECURSIVE_T *);
++void __newlib_lock_acquire_recursive(_LOCK_RECURSIVE_T *);
++void __newlib_lock_try_acquire_recursive(_LOCK_RECURSIVE_T *);
++void __newlib_lock_release_recursive(_LOCK_RECURSIVE_T *);
++
++#endif /* __SYS_LOCK_H__ */
+diff -ruN newlib-1.12.0/newlib/libc/sys/sh/syscalls.c newlib-1.12.0-kos/newlib/libc/sys/sh/syscalls.c
+--- newlib-1.12.0/newlib/libc/sys/sh/syscalls.c	2001-02-01 13:25:56.000000000 -0800
++++ newlib-1.12.0-kos/newlib/libc/sys/sh/syscalls.c	2004-08-07 10:24:07.000000000 -0700
+@@ -1,221 +1,2 @@
+-#include <_ansi.h>
+-#include <sys/types.h>
+-#include <sys/stat.h>
+-#include <sys/time.h>
+-#include "sys/syscall.h"
+-int errno;
+-
+-/* This is used by _sbrk.  */
+-register char *stack_ptr asm ("r15");
+-
+-int
+-_read (int file,
+-       char *ptr,
+-       int len)
+-{
+-  return __trap34 (SYS_read, file, ptr, len);
+-}
+-
+-int
+-_lseek (int file,
+-	int ptr,
+-	int dir)
+-{
+-  return __trap34 (SYS_lseek, file, ptr, dir);
+-}
+-
+-int
+-_write ( int file,
+-	 char *ptr,
+-	 int len)
+-{
+-  return __trap34 (SYS_write, file, ptr, len);
+-}
+-
+-int
+-_close (int file)
+-{
+-  return __trap34 (SYS_close, file, 0, 0);
+-}
+-
+-int
+-_link (char *old, char *new)
+-{
+-  return -1;
+-}
+-
+-caddr_t
+-_sbrk (int incr)
+-{
+-  extern char end;		/* Defined by the linker */
+-  static char *heap_end;
+-  char *prev_heap_end;
+-
+-  if (heap_end == 0)
+-    {
+-      heap_end = &end;
+-    }
+-  prev_heap_end = heap_end;
+-  if (heap_end + incr > stack_ptr)
+-    {
+-      _write (1, "Heap and stack collision\n", 25);
+-      abort ();
+-    }
+-  heap_end += incr;
+-  return (caddr_t) prev_heap_end;
+-}
+-
+-int
+-_fstat (int file,
+-	struct stat *st)
+-{
+-  st->st_mode = S_IFCHR;
+-  return 0;
+-}
+-
+-int
+-_open (const char *path,
+-	int flags)
+-{
+-  return __trap34 (SYS_open, path, flags, 0);
+-}
+-
+-int
+-_creat (const char *path,
+-	int mode)
+-{
+-  return __trap34 (SYS_creat, path, mode, 0);
+-}
+-
+-int
+-_unlink ()
+-{
+-  return -1;
+-}
+-
+-isatty (fd)
+-     int fd;
+-{
+-  return 1;
+-}
+-
+-_exit (n)
+-{
+-  return __trap34 (SYS_exit, n, 0, 0);
+-}
+-
+-_kill (n, m)
+-{
+-  return __trap34 (SYS_exit, 0xdead, 0, 0);
+-}
+-
+-_getpid (n)
+-{
+-  return 1;
+-}
+-
+-_raise ()
+-{
+-}
+-
+-int
+-_stat (const char *path, struct stat *st)
+-
+-{
+-  return __trap34 (SYS_stat, path, st, 0);
+-}
+-
+-int
+-_chmod (const char *path, short mode)
+-{
+-  return __trap34 (SYS_chmod, path, mode);
+-}
+-
+-int
+-_chown (const char *path, short owner, short group)
+-{
+-  return __trap34 (SYS_chown, path, owner, group);
+-}
+-
+-int
+-_utime (path, times)
+-     const char *path;
+-     char *times;
+-{
+-  return __trap34 (SYS_utime, path, times);
+-}
+-
+-int
+-_fork ()
+-{
+-  return __trap34 (SYS_fork);
+-}
+-
+-int
+-_wait (statusp)
+-     int *statusp;
+-{
+-  return __trap34 (SYS_wait);
+-}
+-
+-int
+-_execve (const char *path, char *const argv[], char *const envp[])
+-{
+-  return __trap34 (SYS_execve, path, argv, envp);
+-}
+-
+-int
+-_execv (const char *path, char *const argv[])
+-{
+-  return __trap34 (SYS_execv, path, argv);
+-}
+-
+-int
+-_pipe (int *fd)
+-{
+-  return __trap34 (SYS_pipe, fd);
+-}
+-
+-/* This is only provided because _gettimeofday_r and _times_r are
+-   defined in the same module, so we avoid a link error.  */
+-clock_t
+-_times (struct tms *tp)
+-{
+-  return -1;
+-}
+-
+-int
+-_gettimeofday (struct timeval *tv, struct timezone *tz)
+-{
+-  tv->tv_usec = 0;
+-  tv->tv_sec = __trap34 (SYS_time);
+-  return 0;
+-}
+-
+-static inline int
+-__setup_argv_for_main (int argc)
+-{
+-  char **argv;
+-  int i = argc;
+-
+-  argv = __builtin_alloca ((1 + argc) * sizeof (*argv));
+-
+-  argv[i] = NULL;
+-  while (i--) {
+-    argv[i] = __builtin_alloca (1 + __trap34 (SYS_argnlen, i));
+-    __trap34 (SYS_argn, i, argv[i]);
+-  }
+-
+-  return main (argc, argv);
+-}
+-
+-int
+-__setup_argv_and_call_main ()
+-{
+-  int argc = __trap34 (SYS_argc);
+-
+-  if (argc <= 0)
+-    return main (argc, NULL);
+-  else
+-    return __setup_argv_for_main (argc);
+-}
++// This is put in here to cause link errors if a proper newlib isn't present.
++int __newlib_kos_patch = 1;
+diff -ruN newlib-1.12.0/newlib/libc/sys/sh/trap.S newlib-1.12.0-kos/newlib/libc/sys/sh/trap.S
+--- newlib-1.12.0/newlib/libc/sys/sh/trap.S	2002-02-07 23:11:13.000000000 -0800
++++ newlib-1.12.0-kos/newlib/libc/sys/sh/trap.S	2004-08-07 09:39:14.000000000 -0700
+@@ -1,43 +0,0 @@
+-#if __SH5__
+-	.mode	SHmedia
+-#if __SH5__ == 32 && __SHMEDIA__
+-	.section	.text..SHmedia32, "ax"
+-#else
+-	.text
+-#endif
+-	.global ___trap34
+-___trap34:
+-	movi	34, r0
+-	trapa	r0
+-	pt/l	ret, tr1
+-	ptabs/l	r18, tr0
+-	beqi	r1, 0, tr1
+-#if __SH5__ == 64
+-	movi	((_errno >> 48) & 65535), r0
+-	shori	((_errno >> 32) & 65535), r0
+-	shori	((_errno >> 16) & 65535), r0
+-#else
+-	movi	((_errno >> 16) & 65535), r0
+-#endif
+-	shori	(_errno & 65535), r0
+-	stx.l	r0, r63, r1
+-ret:
+-	blink	tr0, r63
+-	
+-#else
+-	.text
+-	.global	___trap34
+-___trap34:
+-	trapa	#34
+-	tst	r1,r1	! r1 is errno
+-	bt	ret
+-	mov.l	perrno,r2
+-	mov.l	r1,@r2
+-ret:
+-	rts
+-	nop
+-	
+-	.align	2
+-perrno:
+-	.long	_errno
+-#endif /* ! __SH5__ */
+diff -ruN newlib-1.12.0/newlib/libc/sys/sh/truncate.c newlib-1.12.0-kos/newlib/libc/sys/sh/truncate.c
+--- newlib-1.12.0/newlib/libc/sys/sh/truncate.c	2003-07-10 08:31:30.000000000 -0700
++++ newlib-1.12.0-kos/newlib/libc/sys/sh/truncate.c	2004-08-07 09:39:55.000000000 -0700
+@@ -2,8 +2,8 @@
+ #include <sys/types.h>
+ #include "sys/syscall.h"
+ 
+-int
++/* int
+ truncate (const char *path, off_t length)
+ {
+   return __trap34 (SYS_truncate, path, length, 0);
+-}
++} */

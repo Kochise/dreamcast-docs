@@ -1,0 +1,222 @@
+Getting started with KOS 1.3.x
+
+
+Intro
+-----
+
+These first couple of sections talk about what's new and different in
+KOS 1.3.x. If you just want to dig in and get to the meat, skip down
+to "Getting started".
+
+
+What's the big deal?
+--------------------
+
+KOS, starting with the pre-1.3.0 CVS, has gone back to "OS mode" again.
+However, unlike the previous OS mode attempts (KOS 1.0.0 and earlier), the
+new OS mode is much simpler, more robust, and easier to use. Also where
+possible, KOS has adopted Unix-like conventions for its operations.
+
+As before, KOS 1.3.x consists of a basic kernel image and various binaries
+that will be loaded and run over the course of time. However, instead of
+trying to push all hardware/driver type functionality into the base kernel
+and only load "userland" programs, 1.3.x pushes all possible functionality
+into loadable binaries. Additionally, there is no longer a need for the
+clunky old svcmpx interface because any binary (including the kernel) can
+export a list of functions and variables for client programs to use. You
+can think of this as "reverse dynamic linking" -- instead of a program
+pulling in the libs it needs to run, you install the module and the
+programs can link into them.
+
+For example, one available module is a maple system. You can leave it out
+if you don't need it, or you can install it and all subsequent programs can
+import maple functions and use maple bus devices. File systems are also
+loaded this way, with two exceptions (romdisk and pty).
+
+The new design is much more modular than the old KOS 1.0.0 way, and miles
+beyond 1.1.x/1.2.x in that department. And to top it all off, your programs
+that use KOS will need very little in the way of source changes to work
+with the new version!
+
+However, the build process and the development methodology are a bit
+different, thus this document.
+
+
+Core improvements
+-----------------
+
+Besides the above, the core KOS systems have some nice improvements over
+the 1.2.x series.
+
+The two biggest changes are that all memory management is now done in terms
+of pages (and process-private page pools); and the file system now uses
+Unix-style file descriptors that can be duplicated, shared among processes,
+etc.
+
+Like standard programs on other OSes, malloc and all related functionality
+is now included in the libc itself. It is based on an up-to-date dlmalloc
+tuned for non-contiguous arena space (since we don't use the MMU). Each
+program gets its own private malloc pool (again, including the kernel) so
+that it is trivial to deallocate all memory resources belonging to a
+particular process. Additionally, it is now trivial to make a debug call
+into the page mapping system to get a readout of what pages are in use for
+what system, and where. This is useful for debugging. A reasonable effort
+is made to prevent page pool fragmentation by trying to allocate new pages
+for a process after the end of its current page set.
+
+Also, for malloc chunks larger than 1MB, dlmalloc invokes mmap directly
+instead of expanding its arena. This is extremely advantageous because if
+you want to load a temporary pack file (romdisk or similar), load some bits
+out of it, and then dump it, you'd have a huge 1MB hole in the middle that
+couldn't be used by other processes. Thanks to the large chunk mmaping this
+is no longer an issue.
+
+As mentioned above, Unix-style file descriptors are now used by processes
+instead of the old pointer-based file handles. The main reason for this is
+to maintain a symbolic to real file mapping per process so that we can
+implement the standard stdin/stdout/stderr. However, it also convienently
+provides us with pipe/redirection capabilities out of the box.
+
+A new pty filesystem has been introduced. This filesystem provides generic
+pipes that shovel data back and forth. The kernel's tty is now implemented
+using a pty, and this mechanism is intended to eventually replace the old
+dbgio method for most debug output. Of course it is possible to create new
+pty pairs for use with terminal programs, telnet servers, etc.
+
+
+Getting started
+---------------
+
+So how do you get started? Well, the basic setup is the same as before.
+Make sure you have an up-to-date CVS copy and a good environ.sh (the one
+from 1.2.x should work fine for the moment). Then go to the root and type
+'make', or whatever your Make program is ('gmake' for BSD users and so on).
+Hopefully if nothing goes wrong you'll have a kernel.elf in 'lib' that you
+can upload with the standard tools.
+
+By default nothing is placed in the kernel's romdisk. You'll need to put
+something there for it to work since the kernel itself doesn't do anything
+useful, it provides services to other programs. A simple way to populate
+this is to go into the 'kernel' dir and do this:
+
+make copy all
+
+This will copy all the ELF binaries from 'loadable' into the romdisk and
+rebuild the kernel image.
+
+When you run the kernel image, you'll notice a few changes over things that
+previously happened in KOS. For example, the VRAM is not touched at all,
+because that whole subsystem is part of libkos now and not the kernel.
+Instead, all of the action happens on the serial port. (My apologies to
+those who don't have a coders' cable, this is a problem that will be dealt
+with before too long.)
+
+After some derring-do, you'll get a Kosh prompt on your serial terminal.
+This is like the old Kosh. You can move around the file system, list
+directories, etc. Several new commands were added for KOS 1.3.x process
+functionality: ps, mstats, threads, sigquit. I'll leave it to you to figure
+out what these do.
+
+Additionally you can type the name of a program to run and it will be
+loaded and executed as an ELF binary. To run the program in the background,
+add a '&' to the end of it, just like in Unix.
+
+For a very simple example, try this:
+
+  cd /rd
+  fs_iso9660.elf
+  cd /cd
+  ls -l
+
+This loads the iso9660 module (no '&' required since it's a loadable
+module, this behavior may change later). Then you switch to the newly
+created /cd and list its contents. You can get a process list with 'ps'
+and send a sigquit to the fs_iso9660 process, which will remove /cd again.
+You can use 'exit' to quit the whole kernel.
+
+There's not just a whole lot more to be done here unless you want to go to
+a bit of tinkering effort. One thing you can do is check out the lwIP-based
+HTTP server. You'll need to edit this file:
+
+loadable/modules/net/net_lwip/module.c
+
+Change the IP address there to match your network, and run make. Then go
+back to the top-level kernel dir and run 'make copy all' again, and run the
+kernel.elf. Now do the following:
+
+  cd /rd
+  net_bba.elf
+  net_lwip.elf
+  httpd.elf &
+
+This loads the BBA driver and lwIP. The last starts an http server for you
+to play with on port 6200 (look in the httpd sources and play around to
+change this).
+
+That's the whirlwind tour for now. I hope to have many more example
+programs and such up before too long.
+
+
+Porting your stuff
+------------------
+
+Take a look at any of the makefiles in loadable/programs (e.g., the Kosh
+makefile). This will give you a good idea of the majority of the work that
+will be required (no, really!). A couple of other minor points must be
+addressed as well:
+
+- Values returned from fs_open and the like are sequential starting at zero
+  (even though 0, 1, and 2 are system fds). So if you want to check for an
+  open error, look for a return less than zero like in Unix open(). If your
+  code checked for FILEHND_INVALID, it'll still be ok.
+
+- Patching into the VFS has changed somewhat significantly. The underlying
+  code in VFS handlers doesn't really need much work, but you'll have to
+  change the way you interface to the VFS itself. Look at fs_ramdisk and
+  fs_romdisk for an example.
+
+- Remember that things aren't always initialized for you. For example, if
+  you want to use 2D video stuff, you'll need to call vid_init yourself.
+
+- Some deprecated APIs have been removed entirely. For example the old-style
+  maple APIs (cont_get_cond et al) are gone. If you used these, you must
+  switch to the new style.
+
+
+Where to go from here
+---------------------
+
+When all is said and done, I want KOS 1.3.x not just to function as a
+platform library for your code, but as a full development system.
+
+The goal is to eliminate the need for a low-level boot loader that eeks out
+a living in that 48K of space at 8c004000. There are many instances where
+it is extremely beneficial to have a persistent and complete TCP/IP stack
+and similar kernel facilities, all integrated with the client program's OS.
+KOS 1.3.x will provide these.
+
+When the goals are achieved, you'll do the following to develop using
+KOS 1.3.x:
+
+- Boot a KOS loader CD. This will bring up a basic kernel and ask you if
+you want to use serial, BBA, or Lan Adapter (of course with a default or
+auto choice if you make a custom CD).
+
+- "Log in" to the KOS instance using a PC host tool. This would work over
+the serial port or ethernet, depending on your setup. In all cases the
+results would be the same, it would just be a difference of speed. This
+process also creates /pc on the KOS side.
+
+- The PC host tool gives you a full Kosh shell to work with. You can load
+new programs from your PC, examine the state of the system, terminate
+programs, reboot the system, etc.
+
+- Thanks to the persistent communications facilities, it should be possible
+to build a "real" GDB stub for debugging programs running on the KOS
+environment. The rest of KOS would continue to function as normal and
+provide support for your debugging.
+
+We're a little ways off, but it's getting there slowly.
+
+
+$Id: user_intro.txt,v 1.1 2003/06/23 06:16:43 bardtx Exp $
