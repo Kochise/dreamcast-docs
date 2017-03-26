@@ -1,0 +1,1 @@
+scramble myfile.bin 1st_read.bin
