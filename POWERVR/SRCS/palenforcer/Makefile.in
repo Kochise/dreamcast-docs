@@ -1,0 +1,41 @@
+# Makefile for PAL-enforcer
+
+CC = @CC@
+CFLAGS = @CFLAGS@
+LD = @LD@
+OBJCOPY = @OBJCOPY@
+
+all:	1ST_READ.BIN
+
+1ST_READ.BIN:	main.elf
+	${OBJCOPY} -O binary main.elf 1ST_READ.BIN
+
+ main.elf:	crt0.o main.o image.o handler.o
+	${CC} ${CFLAGS} -Wl,-T,dc.x -L. -o main.elf -nostdlib -nostartfiles crt0.o main.o image.o handler.o -lgcc
+
+image.o:	image.raw
+	${LD} -A sh -b binary --oformat elf32-shl $< -o $@ -r -EL --no-warn-mismatch -T image.x
+
+main.o:	main.c
+	${CC} ${CFLAGS} -c main.c
+
+handler.o:	handler.bin
+	${LD} -A sh -b binary --oformat elf32-shl $< -o $@ -r -EL --no-warn-mismatch -T handler.x
+
+handler.bin:	handler.elf
+	${OBJCOPY} -O binary handler.elf handler.bin
+
+handler.elf:	handler-tmp.o
+	${CC} ${CFLAGS} -nostdlib -nostartfiles -Wl,-e,_break_handler,-Ttext,0x8c004000 -o handler.elf handler-tmp.o
+
+handler-tmp.o:	handler.c
+	${CC} ${CFLAGS} -c -o handler-tmp.o handler.c
+
+crt0.o:	crt0.S
+	${CC} ${CFLAGS} -c crt0.S
+
+clean:
+	rm -f *.o *.elf *.bin *.BIN
+
+distclean:
+	rm -f *.o *.elf *.bin *.BIN config.* Makefile

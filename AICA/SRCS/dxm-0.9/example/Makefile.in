@@ -1,0 +1,26 @@
+# Makefile for dxm
+
+DCC = @DCC@
+DCFLAGS = @DCFLAGS@
+DLD = @DLD@
+
+test:	crt0.o module.o module.dxm driver.o main.c
+	${DCC} ${DCFLAGS} -nostdlib -fno-builtin -Wl,-T,dc.x crt0.o main.c driver.o module.o ../src/sh4/control.o -lgcc -o test.elf
+
+crt0.o:	crt0.S
+	${DCC} ${DCFLAGS} -c crt0.S
+
+driver.o:	../src/arm/player.bin
+	${DLD} -A sh -b binary --oformat elf32-shl -o driver.o ../src/arm/player.bin -r -EL --no-warn-mismatch -T driver.x
+
+module.o:	module.dxm
+	${DLD} -A sh -b binary --oformat elf32-shl -o module.o module.dxm -r -EL --no-warn-mismatch -T module.x
+
+module.dxm:	aws_adwh.xm
+	../src/host/loader aws_adwh.xm module.dxm
+
+clean:
+	rm -f *.o *.elf module.dxm
+
+distclean:
+	rm -f *.o *.elf module.dxm Makefile

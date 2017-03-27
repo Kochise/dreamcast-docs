@@ -1,0 +1,42 @@
+# Makefile for dxm
+
+ACC = @ACC@
+AOBJCOPY = @AOBJCOPY@
+DCC = @DCC@
+ACFLAGS = @ACFLAGS@
+DCFLAGS = @DCFLAGS@
+
+all:	arm/player.bin sh4/loader.o host/loader sh4/control.o
+
+arm/player.bin:	arm/player.elf
+	${AOBJCOPY} -O binary arm/player.elf arm/player.bin
+
+arm/player.elf:	crt0.o aica.o main.o player.o
+	${ACC} ${ACFLAGS} -nostartfiles -nostdlib -o arm/player.elf crt0.o main.o player.o aica.o -lgcc -Wl,-T,arm.x
+
+crt0.o:	crt0.S
+	${ACC} ${ACFLAGS} -c crt0.S
+
+main.o:	main.c types.h dxm.h
+	${ACC} ${ACFLAGS} -c main.c
+
+aica.o:	aica.c	types.h dxm.h aica.h
+	${ACC} ${ACFLAGS} -c aica.c
+
+player.o:	player.c types.h dxm.h
+	${ACC} ${ACFLAGS} -c player.c
+
+sh4/loader.o:	loader.c types.h dxm.h
+	${DCC} ${DCFLAGS} -c -o sh4/loader.o loader.c
+
+sh4/control.o:	control.c sh4/types.h sh4/dxm.h
+	${DCC} ${DCFLAGS} -c -o sh4/control.o control.c
+
+host/loader:	loader.c types.h dxm.h
+	${CC} -O2 -DHOST -o host/loader loader.c
+
+clean:
+	rm -f *.o arm/player.bin arm/player.elf host/loader sh4/*.o
+
+distclean:
+	rm -f *.o arm/player.bin arm/player.elf host/loader sh4/*.o config.* Makefile

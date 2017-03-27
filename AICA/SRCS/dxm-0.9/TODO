@@ -1,0 +1,59 @@
+Issues:
+
+* only handles waveforms less than 64k frames (unfortunately this seems to
+  be a hardware restriction so not much can be done about it)
+  NOTE: the 64k limit is NOT in bytes, but sample-frames! this means that
+  it's possible to play 128kb 16-bit samples, 64kb 8-bit samples and 32k 4-bit
+  ADPCM samples. also note that ping-pong loop causes part of the loop-portion
+  to be copied and this will eat sample-frames so try to minimize the use of
+  ping-pong loops.
+
+* arpeggio command is not fully implemented
+
+* tremor command is not implemented
+
+* set finetune command currently has no effect.  
+
+* glissando slides are not implemented
+
+* delay note seems bugged (just noticed, maybe affects other similar cmds)
+
+* amiga frequency table is currently not (correctly) implemented
+
+* SH4 loader is incomplete so module must be pre-converted using the
+  host converter...
+
+* loader only handles the XM-format, though MOD, S3M, etc can be added
+  with "relatively" ease (or that was the intention anyway...)
+
+* Maybe make control.o into a library instead? (nah, not really worth it)
+
+* ARM was too slow so i moved one-shot waveform playing to the SH4 side instead
+  but this is completely untested....
+
+
+Known bugs:
+
+* sound is noisy, probably due to bug in interpolation code in envelope
+  processing (will look into that momentarily)
+
+* Still something wrong with BPM...module plays slightly out-of-sync,
+  this is maybe due to inaccuracy of the timer-irq..check the calculations
+
+* volume conversion from linear to logarithmic is incorrect
+
+* Figure out how to get ld to align the .o files properly. changing
+  the order of the module and player causes misaligned data with
+  a address-error as result (when trying to write to sound-ram). this
+  is annoying...
+
+* slow code. playing 32 channels is not working with full envelope
+  processing (maybe works at a lower BPM than 125 but still).
+  pan envelope can be turned off if necessary to speed things up
+  a bit...
+
+* Some (most?) modules just play incorrectly. I dont really know whats going
+  on...even if aica only handles 64k waveform doesnt mean that there should
+  be noise which is the most common symptom...others include playing of pattern
+  screwing up, erranously repeating part of the pattern etc...
+  hmm...could it be bugs in the converter? oh,well....

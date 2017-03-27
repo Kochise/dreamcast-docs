@@ -1,0 +1,142 @@
+# Process this file with autoconf to produce a configure script
+
+# initialize
+
+AC_INIT(main.c)
+# AM_INIT_AUTOMAKE(palenforcer, 1.0.0)
+# AM_CONFIG_HEADER(config.h)
+
+TRYPATH="$PATH:/usr/local/dc/bin:/usr/local/dcdev/bin:/usr/local/sh/bin:/usr/local/sh-elf/bin:/usr/local/sh-hitachi-elf/bin:/usr/local/dc/sh-elf/bin:/usr/local/dc/sh-hitachi-elf/bin"
+
+# search for an SH4 cross compiler
+
+if test -z "$DCC"; then
+  AC_PATH_PROG(DCC, dc-gcc,,$TRYPATH)
+fi
+if test -z "$DCC"; then
+  AC_PATH_PROG(DCC, dc-elf-gcc,,$TRYPATH)
+fi
+if test -z "$DCC"; then
+  AC_PATH_PROG(DCC, sh-gcc,,$TRYPATH)
+fi
+if test -z "$DCC"; then
+  AC_PATH_PROG(DCC, sh-elf-gcc,,$TRYPATH)
+fi
+if test -z "$DCC"; then
+  AC_PATH_PROG(DCC, sh-hitachi-elf-gcc,,$TRYPATH)
+fi
+if test -z "$DCC"; then
+  AC_ERROR([*** SH-4 cross-compiler not found.])
+fi
+
+CC=$DCC
+
+# check which arguments to include
+
+AC_CHECK_COMPILER_ARG($DCC, -ml, iv_ccc_ml)
+# -mhitachi is sometimes less effecient than GNU
+# AC_CHECK_COMPILER_ARG($DCC, -mhitachi, iv_ccc_mhitachi)
+AC_CHECK_COMPILER_ARG($DCC, -m4-single-only, iv_ccc_m4_single_only)
+# -fno-delayed-branch may fix a bug, but generates slower code
+# AC_CHECK_COMPILER_ARG($DCC, -fno-delayed-branch, iv_ccc_fno_delayed_branch)
+# causes gcc to crash for some reason
+# AC_CHECK_COMPILER_ARG($DCC, -mrelax, iv_ccc_mrelax)
+AC_CHECK_COMPILER_ARG($DCC, -O2, iv_ccc_optimize)
+AC_CHECK_COMPILER_ARG($DCC, -fomit-frame-pointer, iv_ccc_fomit_frame_pointer)
+AC_CHECK_COMPILER_ARG($DCC, -ffast-math, iv_ccc_ffast_math)
+AC_CHECK_COMPILER_ARG($DCC, -fno-builtin, iv_ccc_fno_builtin)
+AC_CHECK_COMPILER_ARG($DCC, -Wall, iv_ccc_wall)
+
+# construct compiler flags
+if test "x$iv_ccc_ml" = "xyes"; then
+  CFLAGS="$CFLAGS -ml"
+fi
+if test "x$iv_ccc_mhitachi" = "xyes"; then
+  CFLAGS="$CFLAGS -mhitachi"
+fi
+if test "x$iv_ccc_m4_single_only" = "xyes"; then
+  CFLAGS="$CFLAGS -m4-single-only"
+fi
+if test "x$iv_ccc_fno_delayed_branch" = "xyes"; then
+  CFLAGS="$CFLAGS -fno-delayed-branch"
+fi
+if test "x$iv_ccc_mrelax" = "xyes"; then
+  CFLAGS="$CFLAGS -mrelax"
+fi
+if test "x$iv_ccc_optimize" = "xyes"; then
+  CFLAGS="$CFLAGS -O2"
+fi
+if test "x$iv_ccc_fomit_frame_pointer" = "xyes"; then
+  CFLAGS="$CFLAGS -fomit-frame-pointer"
+fi
+if test "x$iv_ccc_ffast_math" = "xyes"; then
+  CFLAGS="$CFLAGS -ffast-math"
+fi
+if test "x$iv_ccc_fno_builtin" = "xyes"; then
+  CFLAGS="$CFLAGS -fno-builtin"
+fi
+if test "x$iv_ccc_wall" = "xyes"; then
+  CFLAGS="$CFLAGS -Wall"
+fi
+
+
+# Check for linker
+
+if test -z "$DLD"; then
+  AC_PATH_PROG(DLD, dc-ld,,$TRYPATH)
+fi
+if test -z "$DLD"; then
+  AC_PATH_PROG(DLD, dc-elf-ld,,$TRYPATH)
+fi
+if test -z "$DLD"; then
+  AC_PATH_PROG(DLD, sh-ld,,$TRYPATH)
+fi
+if test -z "$DLD"; then
+  AC_PATH_PROG(DLD, sh-elf-ld,,$TRYPATH)
+fi
+if test -z "$DLD"; then
+  AC_PATH_PROG(DLD, sh-hitachi-elf-ld,,$TRYPATH)
+fi
+if test -z "$DLD"; then
+  AC_ERROR([*** SH-4 cross-linker not found.])
+fi
+
+LD=$DLD
+
+# Check for objcopy
+
+if test -z "$DOBJCOPY"; then
+  AC_PATH_PROG(DOBJCOPY, dc-objcopy,,$TRYPATH)
+fi
+if test -z "$DOBJCOPY"; then
+  AC_PATH_PROG(DOBJCOPY, dc-elf-objcopy,,$TRYPATH)
+fi
+if test -z "$DOBJCOPY"; then
+  AC_PATH_PROG(DOBJCOPY, sh-objcopy,,$TRYPATH)
+fi
+if test -z "$DOBJCOPY"; then
+  AC_PATH_PROG(DOBJCOPY, sh-elf-objcopy,,$TRYPATH)
+fi
+if test -z "$DOBJCOPY"; then
+  AC_PATH_PROG(DOBJCOPY, sh-hitachi-elf-objcopy,,$TRYPATH)
+fi
+if test -z "$DOBJCOPY"; then
+  AC_ERROR([*** SH-4 cross-objcopy not found.])
+fi
+
+OBJCOPY=$DOBJCOPY
+
+# check for some other programs
+
+# AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+
+
+# make the substitutions in the Makefiles
+
+AC_SUBST(CC)
+AC_SUBST(CFLAGS)
+AC_SUBST(LD)
+AC_SUBST(OBJCOPY)
+
+AC_OUTPUT(Makefile)

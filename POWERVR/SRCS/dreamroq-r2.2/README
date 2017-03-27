@@ -1,0 +1,131 @@
+Dreamroq by Mike Melanson (mike -at- multimedia.cx)
+R2 update by Josh Pearson (ph3nom.dcmc@gmail.com)
+
+Introduction
+============
+Dreamroq is a RoQ playback library designed for the Sega Dreamcast video
+game console.
+
+RoQ is a relatively simple video file format developed for video-heavy
+CD-ROM games. Read more about the format here:
+
+http://wiki.multimedia.cx/index.php?title=RoQ
+
+The Dreamroq library includes a player component that is designed to run
+under the KallistiOS (KOS) open source operating system. Read more about
+KOS at:
+
+http://gamedev.allusion.net/softprj/kos/
+
+The library also includes a sample testing utility that can be built
+and executed on Unix systems. This utility is useful for debugging and
+validation.
+
+RoQ sample files can be found at:
+
+http://samples.mplayerhq.hu/game-formats/idroq/
+
+RoQ files can also be created using the Switchblade encoder:
+
+http://icculus.org/~riot/
+
+A version of Switchblade is also included in FFmpeg and many derivative
+programs:
+
+http://ffmpeg.org/
+
+
+License
+=======
+Dreamroq is meant to be license-compatible with the rest of the KallistiOS
+operating system, which is a BSD-style open source license. You can read
+the specific text in LICENSE.KOS.
+
+
+Building (Unix)
+===============
+To build and test on Linux/Mac OS X/Cygwin, simply type:
+
+  make
+
+in the source directory. This will build the executable test-dreamroq. This
+utility has the following usage:
+
+  ./test-dreamroq <file.roq>
+
+This will decode the RoQ file from the command line into a series of PNM
+files in the current working directory (watch out-- this could take up a
+lot of disk space).
+
+
+Building (KOS)
+==============
+There are 2 Makefiles included with Dreamroq. The first -- implicitly
+invoked when running a bare 'make' command as seen in the "Building (Unix)"
+section -- builds the test utility. The second Makefile is Makefile.KOS,
+invoked with:
+
+  make -f Makefile.KOS
+
+This is a standard KOS Makefile which assumes that a KOS build environment
+is available. This is covered in the KOS documentation. This step will
+build a file named dreamroq-player.elf which can be loaded onto a Dreamcast
+console via standard means (also outside the scope of this document).
+
+The file dreamcast-player.c contains a hardcoded RoQ file path in its
+main function. It is best if this points to a file burned on an optical
+disc. It is also viable to build a small RoQ file as a ROM disk into the
+ELF file (which is well supported in KOS) and load the file from the '/rd'
+mount point.
+
+
+Bugs, Issues, and Future Development
+====================================
+
+:R2 Release by PH3NOM:
+
+I have updated the dreamroq library to support decoding of DPCM
+audio samples encoded in the RoQ stream.  
+
+The KOS Dreamcast player has been updated to support streaming
+of the decoded samples, directly using the Dreamcast's AICA
+audio hardware, running in a seperate thread.
+
+DMA transfers to the PVR and rendering of the frame is executed
+in a seperate thread, so the decoder can continue to process the
+next frame while the current frame is being processed by the PVR.
+
+Furthermore, a frame-rate timer has been implemented, so the video
+should be played back at correct speed.  Also, the allocated PVR
+memory is now freed on exit of the player.
+
+====================================
+/* deprecated */
+The library only does video playback; no sound right now.
+
+The video decoder is not 100% correct yet. You will likely notice a few
+artifacts which need to be ironed out.
+
+Many of the video rendering modes could be optimized slightly by copying
+pairs of pixels as 32-bit units. This should work on any mode except motion
+compensated blocks; the latter could experience alignment issues which
+the DC's SH-4 can't handle.
+
+The library is a tad slow. Profiling indicates that the main bottleneck
+is loading data from disc; the video decoder itself is pretty fast. The
+player might benefit by moving data loading (I/O-bound operation) into a 
+separate thread. For that matter, the phase which sends the decoded
+texture to the graphics hardware via DMA and renders it should also be
+in a separate thread.
+
+The player is just a proof of concept at this point. It doesn't try to
+render frames with proper timing-- it just plays them as fast as possible
+(which often isn't very fast, mostly due to the I/O bottleneck).
+
+If the RoQ video is taller than it is wide, expect some odd rendering.
+
+The API between the library and the client app leaves a bit to be desired.
+Notably absent is some proper initialization and teardown mechanism.
+Currently, the first call to the render callback initializes the PVR buffers
+but they are never explicitly freed.
+

@@ -1,0 +1,192 @@
+# Process this file with autoconf to produce a configure script
+
+# initialize
+
+AC_INIT(src/main.c)
+# AM_INIT_AUTOMAKE(dxm, 1.0.0)
+# AM_CONFIG_HEADER(config.h)
+
+ARMPATH=$PATH:/usr/local/dc/bin:/usr/local/dcdev/bin:/usr/local/arm/bin:/usr/local/arm-elf/bin:/usr/local/dc/arm/bin:/usr/local/dc/arm-elf/bin:/usr/local/dcdev/arm/bin:/usr/local/dcdev/arm-elf/bin
+
+# look for ARM cross-compiler
+
+if test -z "$ACC"; then
+  AC_PATH_PROG(ACC, arm-gcc,,$ARMPATH)
+fi
+if test -z "$ACC"; then
+  AC_PATH_PROG(ACC, arm-elf-gcc,,$ARMPATH)
+fi
+if test -z "$ACC"; then
+  AC_MSG_ERROR([*** ARM cross-compiler not found. Check 'config.log' for more details.])
+fi
+
+# check which arguments to include
+
+AC_CHECK_COMPILER_ARG($ACC, -ml, iv_accc_ml)
+AC_CHECK_COMPILER_ARG($ACC, -mcpu=arm7, iv_accc_mcpu)
+AC_CHECK_COMPILER_ARG($ACC, -ffreestanding, iv_accc_freestanding)
+AC_CHECK_COMPILER_ARG($ACC, -O4, iv_accc_optimize)
+AC_CHECK_COMPILER_ARG($ACC, -fomit-frame-pointer, iv_accc_fomit_frame_pointer)
+AC_CHECK_COMPILER_ARG($ACC, -ffast-math, iv_accc_ffast_math)
+AC_CHECK_COMPILER_ARG($ACC, -fno-builtin, iv_accc_fno_builtin)
+AC_CHECK_COMPILER_ARG($ACC, -Wall, iv_accc_wall)
+
+# construct compiler flags
+if test "x$iv_accc_ml" = "xyes"; then
+  ACFLAGS="$ACFLAGS -ml"
+fi
+if test "x$iv_accc_mcpu" = "xyes"; then
+  ACFLAGS="$ACFLAGS -mcpu=arm7"
+fi
+if test "x$iv_accc_freestanding" = "xyes"; then
+  ACFLAGS="$ACFLAGS -ffreestanding"
+fi
+if test "x$iv_accc_optimize" = "xyes"; then
+  ACFLAGS="$ACFLAGS -O4"
+fi
+if test "x$iv_accc_fomit_frame_pointer" = "xyes"; then
+  ACFLAGS="$ACFLAGS -fomit-frame-pointer"
+fi
+if test "x$iv_accc_ffast_math" = "xyes"; then
+  ACFLAGS="$ACFLAGS -ffast-math"
+fi
+if test "x$iv_accc_fno_builtin" = "xyes"; then
+  ACFLAGS="$ACFLAGS -fno-builtin"
+fi
+if test "x$iv_accc_wall" = "xyes"; then
+  ACFLAGS="$ACFLAGS -Wall"
+fi
+
+
+# look for ARM objcopy
+
+if test -z "$AOBJCOPY"; then
+  AC_PATH_PROG(AOBJCOPY, arm-objcopy,,$ARMPATH)
+fi
+if test -z "$AOBJCOPY"; then
+  AC_PATH_PROG(AOBJCOPY, arm-elf-objcopy,,$ARMPATH)
+fi
+if test -z "$AOBJCOPY"; then
+  AC_MSG_WARN([*** ARM objcopy not found. Will not be able to convert to BINARY format.])
+  AOBJCOPY="arm-objcopy-not-found"
+fi
+
+
+SHPATH=$PATH:/usr/local/dc/bin:/usr/local/dcdev/bin:/usr/local/sh/bin:/usr/local/sh-elf/bin:/usr/local/sh-hitachi-elf/bin:/usr/local/dc/sh-elf/bin:/usr/local/dc/sh-hitachi-elf/bin
+
+# search for an SH4 cross compiler
+
+if test -z "$DCC"; then
+  AC_PATH_PROG(DCC, dc-gcc,,$SHPATH)
+fi
+if test -z "$DCC"; then
+  AC_PATH_PROG(DCC, dc-elf-gcc,,$SHPATH)
+fi
+if test -z "$DCC"; then
+  AC_PATH_PROG(DCC, sh-elf-gcc,,$SHPATH)
+fi
+if test -z "$DCC"; then
+  AC_PATH_PROG(DCC, sh-gcc,,$SHPATH)
+fi
+if test -z "$DCC"; then
+  AC_PATH_PROG(DCC, sh-hitachi-elf-gcc,,$SHPATH)
+fi
+if test -z "$DCC"; then
+  AC_MSG_WARN([*** SH-4 cross-compiler not found. Will not be able to build SH4 loader or test programs.])
+  DCC="echo sh-gcc-not-found"
+fi
+
+# check which arguments to include
+
+AC_CHECK_COMPILER_ARG($DCC, -ml, iv_dccc_ml)
+# -mhitachi is sometimes less effecient than GNU
+# AC_CHECK_COMPILER_ARG($DCC, -mhitachi, iv_dccc_mhitachi)
+AC_CHECK_COMPILER_ARG($DCC, -m4-single-only, iv_dccc_m4_single_only)
+# -fno-delayed-branch may fix a bug, but generates slower code
+# AC_CHECK_COMPILER_ARG($DCC, -fno-delayed-branch, iv_dccc_fno_delayed_branch)
+# causes gcc to crash for some reason
+# AC_CHECK_COMPILER_ARG($DCC, -mrelax, iv_dccc_mrelax)
+# AC_CHECK_COMPILER_ARG($DCC, -O2, iv_dccc_optimize)
+AC_CHECK_COMPILER_ARG($DCC, -O2, iv_dccc_optimize)
+AC_CHECK_COMPILER_ARG($DCC, -fomit-frame-pointer, iv_dccc_fomit_frame_pointer)
+AC_CHECK_COMPILER_ARG($DCC, -ffast-math, iv_dccc_ffast_math)
+AC_CHECK_COMPILER_ARG($DCC, -fno-builtin, iv_dccc_fno_builtin)
+AC_CHECK_COMPILER_ARG($DCC, -Wall, iv_dccc_wall)
+
+# construct compiler flags
+if test "x$iv_dccc_ml" = "xyes"; then
+  DCFLAGS="$DCFLAGS -ml"
+fi
+if test "x$iv_dccc_mhitachi" = "xyes"; then
+  DCFLAGS="$DCFLAGS -mhitachi"
+fi
+if test "x$iv_dccc_m4_single_only" = "xyes"; then
+  DCFLAGS="$DCFLAGS -m4-single-only"
+fi
+if test "x$iv_dccc_fno_delayed_branch" = "xyes"; then
+  DCFLAGS="$DCFLAGS -fno-delayed-branch"
+fi
+if test "x$iv_dccc_mrelax" = "xyes"; then
+  DCFLAGS="$DCFLAGS -mrelax"
+fi
+if test "x$iv_dccc_optimize" = "xyes"; then
+  DCFLAGS="$DCFLAGS -O2"
+fi
+if test "x$iv_dccc_fomit_frame_pointer" = "xyes"; then
+  DCFLAGS="$DCFLAGS -fomit-frame-pointer"
+fi
+if test "x$iv_dccc_ffast_math" = "xyes"; then
+  DCFLAGS="$DCFLAGS -ffast-math"
+fi
+if test "x$iv_dccc_fno_builtin" = "xyes"; then
+  DCFLAGS="$DCFLAGS -fno-builtin"
+fi
+if test "x$iv_dccc_wall" = "xyes"; then
+  DCFLAGS="$DCFLAGS -Wall"
+fi
+
+
+# search for an SH4 cross linker
+
+if test -z "$DLD"; then
+  AC_PATH_PROG(DLD, dc-ld,,$SHPATH)
+fi
+if test -z "$DLD"; then
+  AC_PATH_PROG(DLD, dc-elf-ld,,$SHPATH)
+fi
+if test -z "$DLD"; then
+  AC_PATH_PROG(DLD, sh-elf-ld,,$SHPATH)
+fi
+if test -z "$DLD"; then
+  AC_PATH_PROG(DLD, sh-ld,,$SHPATH)
+fi
+if test -z "$DLD"; then
+  AC_PATH_PROG(DLD, sh-hitachi-elf-ld,,$SHPATH)
+fi
+if test -z "$DLD"; then
+  AC_MSG_WARN([*** SH-4 cross-linker not found. Will not be able to build test programs.])
+  DCC="echo sh-ld-not-found"
+fi
+
+
+
+# check for some other programs
+
+# AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+
+
+# check endianness of host (only works for little-endian systems for now)
+
+#AC_C_BIGENDIAN
+
+# make the substitutions in the Makefiles
+
+AC_SUBST(ACC)
+AC_SUBST(AOBJCOPY)
+AC_SUBST(DCC)
+AC_SUBST(ACFLAGS)
+AC_SUBST(DCFLAGS)
+AC_SUBST(DLD)
+
+AC_OUTPUT(Makefile src/Makefile example/Makefile)
