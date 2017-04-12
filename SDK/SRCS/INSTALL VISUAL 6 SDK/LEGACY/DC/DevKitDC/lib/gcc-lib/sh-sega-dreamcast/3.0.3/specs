@@ -1,0 +1,94 @@
+*asm:
+-little %{mrelax:-relax}
+
+*asm_final:
+%|
+
+*asm_options:
+%a %Y %{c:%W{o*}%{!o*:-o %w%b%O}}%{!c:-o %d%w%u%O}
+
+*invoke_as:
+%{!S:-o %{|!pipe:%g.s} |
+ as %(asm_options) %{!pipe:%g.s} %A }
+
+*cpp:
+%{m4-single:-D__SH4_SINGLE__}     %{m4-single-only:-D__SH4_SINGLE_ONLY__}     %{msingle:-D__SH4_SINGLE_ONLY__}     %{m4-nofpu:-D__SH4__ -D__SH4_NOFPU__}     %{!m4-single-only:%{!m4-single:%{!msingle:%{!m4-nofpu:-D__SH4__}}}}     %{mnomacsave:-D__NOMACSAVE__}     %{mhitachi:-D__HITACHI__}     %{fPIC:-D__PIC__ -D__pic__}     %{fpic:-D__PIC__ -D__pic__}     %{mlinux:%{posix:-D_POSIX_SOURCE} %{pthread:-D_REENTRANT -D_PTHREADS}     -Dunix -Dlinux -D__linux__ -Asystem=posix}
+
+*cpp_options:
+%{C:%{!E:%eGNU C does not support -C without using -E}} %{std*} %{nostdinc*} %{C} %{v} %{I*} %{P} %{$} %I %{MD:-M -MF %W{!o: %b.d}%W{o*:%.d%*}} %{MMD:-MM -MF %W{!o: %b.d}%W{o*:%.d%*}} %{M} %{MM} %W{MF*} %{MG} %{MP} %{MQ*} %{MT*} %{M|MD|MM|MMD:%{o*:-MQ %*}} %{!no-gcc:-D__GNUC__=%v1 -D__GNUC_MINOR__=%v2 -D__GNUC_PATCHLEVEL__=%v3} %{!undef:%{!ansi:%{!std=*:%p}%{std=gnu*:%p}} %P} %{trigraphs} %c %{Os:-D__OPTIMIZE_SIZE__} %{O*:%{!O0:-D__OPTIMIZE__}} %{fno-inline|O0|!O*:-D__NO_INLINE__} %{ffast-math:-D__FAST_MATH__} %{fshort-wchar:-U__WCHAR_TYPE__ -D__WCHAR_TYPE__=short\ unsigned\ int} %{ffreestanding:-D__STDC_HOSTED__=0} %{fno-hosted:-D__STDC_HOSTED__=0} %{!ffreestanding:%{!fno-hosted:-D__STDC_HOSTED__=1}} %{fshow-column} %{fno-show-column} %{fleading-underscore} %{fno-leading-underscore} %{fno-operator-names} %{ftabstop=*} %{remap} %{g3:-dD} %{W*} %{w} %{pedantic*} %{H} %{d*} %C %{D*&U*&A*} %{i*} %Z %i %{E:%{!M*:%W{o*}}}
+
+*trad_capable_cpp:
+%{traditional|ftraditional|traditional-cpp:trad}cpp0
+
+*cc1:
+-ml %{mlinux:-musermode}    %{!m4-single-only:%{!msingle:%{!m4-nofpu:-m4}}}
+
+*cc1_options:
+%{pg:%{fomit-frame-pointer:%e-pg and -fomit-frame-pointer are incompatible}} %1 %{!Q:-quiet} -dumpbase %B %{d*} %{m*} %{a*} %{g*} %{O*} %{W*} %{w} %{pedantic*} %{std*} %{ansi} %{traditional} %{v:-version} %{pg:-p} %{p} %{f*} %{Qn:-fno-ident} %{--help:--help} %{--target-help:--target-help} %{!fsyntax-only:%{S:%W{o*}%{!o*:-o %b.s}}} %{fsyntax-only:-o %j} %{-param*}
+
+*cc1plus:
+-ml %{mlinux:-musermode}    %{!m4-single-only:%{!msingle:%{!m4-nofpu:-m4}}}
+
+*endfile:
+crtend.o%s crtn.o%s
+
+*link:
+%{mlinux:-m shlelf_linux}     %{!mlinux:-m shlelf_dc} %{mrelax:-relax}     %{shared:-shared}     %{mlinux:     %{!static:     %{rdynamic:-export-dynamic}     %{!dynamic-linker:-dynamic-linker /lib/ld.so.1}     %{!rpath:-rpath /lib}}}     %{static:-static}
+
+*lib:
+%{mlinux:      %{shared: -lc}      %{!shared: %{pthread:-lthread}        %{profile: -lc_p} %{!profile: -lc}}}     %{!mlinux:-lc}
+
+*libgcc:
+-lgcc
+
+*startfile:
+crt0.o%s crti.o%s crtbegin.o%s
+
+*switches_need_spaces:
+
+
+*signed_char:
+%{funsigned-char:-D__CHAR_UNSIGNED__}
+
+*predefines:
+-D__sh__ -D__ELF__ -D__LITTLE_ENDIAN__ -D_DREAMCAST -D__dreamcast__    -Acpu=sh -Amachine=sh
+
+*cross_compile:
+1
+
+*version:
+3.0.3
+
+*multilib:
+. !msingle;msingle msingle;
+
+*multilib_defaults:
+
+
+*multilib_extra:
+
+
+*multilib_matches:
+m4-single-only msingle;msingle msingle;
+
+*multilib_exclusions:
+
+
+*linker:
+collect2
+
+*link_libgcc:
+%D
+
+*md_exec_prefix:
+
+
+*md_startfile_prefix:
+
+
+*md_startfile_prefix_1:
+
+
+*link_command:
+%{!fsyntax-only:%{!c:%{!M:%{!MM:%{!E:%{!S:    %(linker) %l %X %{o*} %{A} %{d} %{e*} %{m} %{N} %{n} %{r} %{s} %{t}    %{u*} %{x} %{z} %{Z} %{!A:%{!nostdlib:%{!nostartfiles:%S}}}    %{static:} %{L*} %(link_libgcc) %o %{!nostdlib:%{!nodefaultlibs:%G %L %G}}    %{!A:%{!nostdlib:%{!nostartfiles:%E}}} %{T*} }}}}}}
+

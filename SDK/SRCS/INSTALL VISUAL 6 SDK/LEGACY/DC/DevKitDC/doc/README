@@ -1,0 +1,247 @@
+KallistiOS 1.1.6
+(c)2000-2001 Dan Potter and Jordan DeLong of Cryptic Allusion
+
+
+OVERVIEW
+--------
+KallistiOS is a pseudo-real-time pseudo-microkernel operating system for
+gaming consoles, licensed under the terms of the *new* BSD license (the one
+without the advertising clause). It has currently been ported to the 
+Dreamcast* and Gameboy Advance* platforms.
+
+Depending on whether you wish to see the fnords, you can pronounce it
+"kallisti-o's" (like a cereal) or "kallisti o s" (like an operating
+system). We like the former since it's silly to be so serious most of the
+time =). "Kallisti" means "to the fairest" in Greek. This was the word (so
+the story goes) that was inscribed on the golden apple that Eris threw
+into the banquet of the gods to start the Trojan war. This somehow landed
+her the title of matriarch of a silly religion called Discordianism, which
+is what the name pays homage to. If you want a short abbreviation, you can
+also refer to it as "KOS", which can be pronounced "k-os" (chaos) =).
+
+Note that this name is _not_ to be confused or associated with either the
+professional development company Kalisto Software* or the cracking group
+"Kalisto".
+
+Now that that is cleared up... =)
+
+Like most embedded kernels, KallistiOS has two major modes of operation. 
+In the first mode, it can be linked directly into a program. In this case
+you have very fine control over what gets included in the binary and how
+and when it is initialized. It is also by far the simplest way to make use
+of it (hearken back to the days of libdream...). This mode is now considered
+the default method of using KallistiOS and will be the best supported in the
+future.
+
+The second mode is potentially more versatile and fun. You can run the
+standalone KallistiOS binary and have it load programs and multitask like
+a regular OS. The virtualized file system is used in this loading process,
+so the first (and subsequent) loaded binaries can be sitting on a CD,
+embedded in the kernel, or even come across from a PC debugger host. 
+
+Note that although "os mode" encourages the use of threads and a file system,
+it may be taylored to fit your needs. Likewise, the library mode may use
+threads and the VFS.
+
+What KallistiOS is primarily:
+- Processor manager (threads, MMU, store queues, DMA, exceptions, etc)
+- Pseudo-POSIX layer (printf, files, threads, etc)
+- DC HAL (hardware abstraction layer)
+
+What KallistiOS provides optionally:
+- Process management (ELF binary loading, process spawning, etc)
+- Optional complex OS services (simple windowing system, etc)
+
+What KallistiOS is NOT:
+- UNIX (or even compatible)
+- Linux/BSD (those are their own ports! =)
+- Memory protected; programs can overwrite eachother at will
+- Pretty much anything else you can think of that's not in the above list
+
+If you're looking for all these features in a solid proven kernel, then
+look no further than Linux-SH or NetBSD/DC. On the other hand, if you want a
+simple kernel that you can grok in a few hours and use simply, use KallistiOS!
+
+As an aside, if you are interested in a skeleton version of KOS that uses
+the MMU and memory protection, a real process model, etc, check out
+KOS-MMU. It's not being worked on any more but it has some interesting
+code in it and is a very clean example of a simple OS.
+
+
+LICENSING
+---------
+Please read the file "LICENSE" for more information about this subject.
+This program is now distributed under a similar set of terms as earlier
+ones (libdream), and has changed since KallistiOS 0.7 (GPL). Even so,
+some of the software distributed with KOS (newlib math routines, Xing
+MP3 engine) are under different licenses. Please read "LICENSE" if in
+doubt!
+
+This software is based in part on the work of the Independent JPEG
+Group (see addons/libjpeg/README).
+
+I have also added a somewhat informative "licensing" section to the FAQ.
+
+If in doubt, please contact us. If you want to use KOS in a project, we'd
+love to hear from you anyway!
+
+
+BUILDING
+--------
+Building KallistiOS from source entirely requires two things:
+- GNU Binutils / GCC, cross-compile to the platform of your choice; for
+  DC this is a compiler targeted for "sh-elf", and for GBA this is
+  a compiler targeted for "arm-elf". See below about version notes.
+- GNU Binutils / GCC / GNU Make for your host platform
+
+If you don't have any of the above, please see "gnutools.txt" in the
+documents directory for more info on obtaining and/or building them.
+
+On the DC, you'll want GCC 3.0.3. It's far better than the 2.9x series at
+this point and even compiles nicely with -O2, unlike previous versions.
+The default optimization setting in the enclosed environ files is -O1,
+but if you have 3.0.3 you can safely crank this up to -O2 now.
+
+On the GBA, GCC 3.0.0 is also the build you want to use. It includes
+the new ARM-supplied backend for that CPU target. It also provides a
+compiler that works with both ARM and Thumb mode code, including
+interworking (though good luck getting that to work!).
+
+Building is actually quite simple, especially if you don't want to add
+new sections for yourself. If you are lucky and 'configure' works for
+you, then you will not have much work to do. Simply run './configure'
+when you are in the KOS install directory and it will compile any
+neccessary utils and lead you through the configuration process in a
+wizard-like manner. (NOTE: as of KOS 1.1.0, 'configure' is currently
+broken, so I haven't included it.)
+
+If that does not work for you for some reason, you may need to build
+genromfs yourself (if you are not running on Linux and have it
+available), and you will need to edit environ.sh or environ.tcsh to suit
+your setup. Please see environ.sh.sample and environ.tcsh.sample in the
+'doc' directory.
+
+You'll need both the SH-4 and ARM sets of tools to build the full OS from
+scratch, though this is not required. A precompiled binary is included for
+the ARM7 code used by default.
+
+After you have a working environ script, run it with 'source environ.sh'
+or 'source environ.tcsh' (depending on your shell) and run your make
+program. For BSD people this will be 'gmake', otherwise it will probably
+be just 'make'. It should be done after a few minutes. If something goes
+wrong, please check the FAQ; if that fails, email one of us and we'll see
+what we can do. I recommend putting the 'source' line above into your
+shell's .rc/.login.
+
+This process should work (and has been tested) under Linux, BSD, and
+Cygwin. It is very doubtful that it will work in any non-Unix
+environment.
+
+
+NEW VERSION CODES
+-----------------
+As I may or may not have mentioned, we are switching to a Linux-style
+versioning system with KOS. All KOS versions are now composed of three
+sections: major, minor, micro. Major revisions are generally something
+that changes the OS fundamentally, or when we run out of single-digit
+major version numbers =). For example, the change in 1.0.x -> 1.1.x
+where we moved from an OS style target to a library style target as the
+main goal will probably result in the next "stable" release being 2.0.0.
+The minor version number is used to denote a development series. Even
+numbered minor versions are considered stable, while odd-number versions
+are considered unstable, incomplete, etc. When we feel like significant
+progress has been made since the last stable release, we'll make a new
+stable release. Finally, the micro version denotes a sequence in the
+development series. 1.1.0 would be the first snapshot of the 1.1
+development series.
+
+As this is 1.1.x, it is an unstable "hacker-only" release. So please be
+prepared for things to break.
+
+
+OS MODE IS GONE FOR NOW
+-----------------------
+
+The standard KOS 1.0.x "os mode" is now integrated back into the source tree
+again, but it is not the default build mode. Instead, it is provided as an
+add-on library if you want to use that mode in your programs, and the old
+"kernel" tree is provided as a sample "os mode" program.
+
+It still needs some debugging work, and it's not ready for "primetime"
+again yet. If you want to build and experiment yourself, please feel
+free. Look in the "libos" directory under "addons". Note that OS mode is
+a legacy item from KOS 1.0.x, and as such is pretty Dreamcast* specific.
+
+In fact, all of the userland pieces have been removed in this version and
+will be put back in a later version. I mainly included as much of "os mode"
+as I did to support a few users that are using the OS this way. LwIP
+is also gone in this release because some other people have been working
+on porting a much newer version and apparently theirs is a lot better 
+than mine. ^_^; To be imported later...
+
+
+PLATFORM NOTES
+--------------
+Dreamcast*
+
+- The sample image with Kosh has been removed for now until the OS mode
+  can be brought back up fully. Instead, there are several library-based
+  example programs that come with KOS. Please check those out for examples.
+  You can also check out the newly added Kosh "example" =)
+- MPGLIB (LGPL MP3 library, which is also faster) is included, but does
+  not work. If you want to screw with it yourself, check the libmp3 Makefile
+  and look at sndmp3_mpglib.c in that dir.
+- I have done some work to bring fs_vmu back to a minimally working state,
+  but I realized after starting on it that this code probably hasn't been
+  touched since KOS 0.6! It is easily the grossest and most dangerous
+  code in the library (especially since it could destroy your saves for
+  real DC games) so I recommend extreme caution in either using it for 
+  your own projects or enabling support for it in release builds of your
+  projects. However, it IS good enough to go into KOSH and use 'cp' to
+  transfer save games between memory cards now.
+- C++ support is now in KOS, including ctors and dtors. However, you may
+  not put any KOS calls in ctors or dtors! This is very important because
+  they are run outside of a safely initialized KOS context. All you have is
+  basic memory management and libc support (strings, etc). If you want
+  STL, you'll need to use STLPort, which I may include in a later version.
+- I'm now compiling binary releases with GCC 3.0.3 and -O2.
+
+Gameboy Advance*
+
+- There is not a lot of hardware support yet. IRQs aren't even supported,
+  so don't even think about trying to use threads yet =). This port is
+  somewhat immature however, so I expect the support to improve over
+  time.
+- KOS is currently configured to run as Thumb code from the ROM. This can
+  be changed by editing the config script to set the compiler flags and
+  editing kernel/arch/gba/kernel/startup.s to remove the "bx" call and
+  make it a regular jump.
+- In future versions I hope to have a more elegant system to combine Thumb
+  and ARM mode code (including automated copying of your ARM code into RAM
+  with the data segment). You can see the beginnings of this in the linker
+  script.
+
+
+END
+---
+That's where we leave off here. Now that you have a build and ready copy,
+you're ready to get to the more fun things. Please read the other documents
+in the "doc" directory for more information. Also check the FAQ if there
+is something you were wondering.
+
+Also, please take note of our new web URL (below). We have moved hosting
+to SourceForge for all console-related things.
+
+
+					Dan Potter
+					Jordan DeLong
+					Cryptic Allusion
+					http://dcdev.allusion.net/
+
+
+* "Sega" and "Dreamcast" are registered trademarks of Sega Enterprises, Ltd. 
+  "Nintendo" and "Gameboy Advance" are registered trademarks of Nintendo of America
+  Kalisto Software is a registered trademark of Kalisto Software, Inc. 
+
+KOS Version Id: $Id: README,v 1.4 2002/01/14 06:06:32 bardtx Exp $
+
