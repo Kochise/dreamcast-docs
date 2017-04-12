@@ -1,0 +1,1171 @@
+// TYPE    DU SCRIPT : VISUAL
+// AUTEUR  DU SCRIPT : Kochise
+// VERSION DU SCRIPT : 2008/06/03
+
+#define USE_ALPHABLEND
+
+[Code]
+function GetDriveType( lpDisk: String ): Integer;
+external 'GetDriveTypeA@kernel32.dll stdcall';
+
+#ifdef USE_ALPHABLEND
+function GetWindowLong( hwnd : HWND; nIndex : Integer ): DWORD;
+external 'GetWindowLongA@user32.dll stdcall';
+
+function SetWindowLong( hwnd : HWND; nIndex : Integer; dwNewLong : DWORD ): DWORD;
+external 'SetWindowLongA@user32.dll stdcall';
+
+function SetLayeredWindowAttributes( hwnd : HWND; crKey : TColor; bAlpha : byte; dwFlags : DWORD ): Boolean;
+external 'SetLayeredWindowAttributes@user32.dll stdcall';
+#endif
+
+const
+  DRIVE_UNKNOWN     = 0; // The drive type cannot be determined.
+  DRIVE_NO_ROOT_DIR = 1; // The root path is invalid. For example, no volume is mounted at the path.
+  DRIVE_REMOVABLE   = 2; // The disk can be removed from the drive.
+  DRIVE_FIXED       = 3; // The disk cannot be removed from the drive.
+  DRIVE_REMOTE      = 4; // The drive is a remote (network) drive.
+  DRIVE_CDROM       = 5; // The drive is a CD-ROM drive.
+  DRIVE_RAMDISK     = 6; // The drive is a RAM disk.
+
+  // Modification method
+  pmAddToBeginning        = $1;  // Add dir to beginning of Path
+  pmAddToEnd              = $2;  // Add dir to end of Path
+  pmAddAlways             = $4;  // Add also if specified dir is already included in existing path
+  pmAddOnlyIfDirExists    = $8;  // Add only if specified dir actually exists
+  pmRemove                = $10; // Remove dir from path
+  pmRemoveSubdirsAlso     = $20; // Remove dir and all subdirs from path
+
+  // Scope
+  psCurrentUser           = 1;   // Modify path for current user
+  psAllUsers              = 2;   // Modify path for all users
+
+  // Error results
+  mpOK                    = 0;   // No errors
+  mpMissingRights         = -1;  // User has insufficient rights
+  mpAutoexecNoWriteacc    = -2;  // Autoexec can not be written (may be readonly)
+  mpBothAddAndRemove      = -3;  // User has specified that dir should both be removed from and added to path
+
+#ifdef USE_ALPHABLEND
+  GWL_WNDPROC             = -4;
+  GWL_HINSTANCE            = -6;
+  GWL_HWNDPARENT          = -8;
+  GWL_STYLE               = -16;
+  GWL_EXSTYLE              = -20;
+  GWL_USERDATA            = -21;
+  GWL_ID                  = -12;
+
+  WS_EX_LAYERED           = $00080000;
+
+  AC_SRC_OVER             = $00;
+  AC_SRC_ALPHA            = $01;
+  AC_SRC_NO_PREMULT_ALPHA = $01;
+  AC_SRC_NO_ALPHA         = $02;
+
+  AC_DST_NO_PREMULT_ALPHA = $10;
+  AC_DST_NO_ALPHA         = $20;
+
+  LWA_COLORKEY            = $01;
+  LWA_ALPHA               = $02;
+
+  ULW_COLORKEY            = $01;
+  ULW_ALPHA               = $02;
+  ULW_OPAQUE              = $04;
+
+  MAX_UI_ALPHA            = 90;
+#endif
+
+var
+  g_bSkipPage   : Boolean;
+  g_nAlpha      : Integer;
+
+#ifdef USE_MODIFYREPAIRDELETE
+function ComponentList(Default: String): String;
+begin
+  Result := WizardSelectedComponents(False);
+end;
+#endif
+
+{ . . CHECK DEPENDENCY . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . }
+
+function CheckIExplorerVersion(): Boolean;
+var
+  l_sMinVersion: String;
+  l_sVersion:    String;
+begin
+  Result := False;
+
+  l_sMinVersion := '5.5';
+
+  if RegQueryStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Microsoft\Internet Explorer', 'Version', l_sVersion) then begin
+    if CompareText(l_sMinVersion, l_sVersion) > 0 then begin
+      MsgBox(Format(ExpandConstant('{cm:CartoTxtMajIE}'),[l_sVersion,l_sMinVersion]), mbInformation, MB_OK);
+    end else begin
+      Result := True;
+    end;
+  end;
+end;
+
+function CheckNetFramework(): Boolean;
+begin
+  Result := not RegValueExists(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Installer\Products\D6461317C3DC4F04799BDCE9E42626FE', 'Version');
+end;
+
+{ . . INSTALL TOOLS . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . }
+
+procedure FindSubDir(const Dir, Wild: String; var List: TStringList);
+var
+  l_sFindRec : TFindRec;
+begin
+  if List.Count > 0 then begin
+    List.Clear();
+  end;
+  if FindFirst(Dir+Wild, l_sFindRec) then begin
+    try
+      repeat
+        if l_sFindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY = 0 then begin
+        end else begin
+          if (l_sFindRec.Name <> '.') and (l_sFindRec.Name <> '..') then begin
+            List.Add(l_sFindRec.Name);
+          end;
+        end;
+      until not FindNext(l_sFindRec);
+    finally
+      FindClose(l_sFindRec);
+    end;
+  end;
+end;
+
+function FindBestDir(const Dir, Wild: String): String;
+var
+  l_sFindDir : TStringList;
+  l_nLoop    : Integer;
+begin
+  Result := '';
+  l_sFindDir := TStringList.Create();
+  try
+    FindSubDir(Dir, Wild, l_sFindDir);
+    for l_nLoop := 0 to l_sFindDir.Count-1 do begin
+      if l_sFindDir[l_nLoop] > Result then begin
+        Result := l_sFindDir[l_nLoop];
+      end;
+    end;
+  finally
+    l_sFindDir.Free();
+  end;
+end;
+
+function SizeToStr(Taille: Longint): String;
+begin
+  if Taille >= 1073741824 then begin
+    Result := IntToStr(Taille / 107374182)+' Go';
+    Insert('.', Result, Pos(' Go', Result) - 1);
+  end else if Taille >= 1048576 then begin
+    Result := IntToStr(Taille / 104857)+' Mo';
+    Insert('.', Result, Pos(' Mo', Result) - 1);
+  end else if Taille >= 1024 then begin
+    Result := IntToStr(Taille / 102)+' Ko';
+    Insert('.', Result, Pos(' Ko', Result) - 1);
+  end else begin
+    Result := IntToStr(Taille)+' octets';
+  end;
+end;
+
+{ . . UPDATE DEPENDENCY . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . }
+
+procedure DecodeVersion(i_oStrVersion: String; var o_panVersion: array of Integer);
+var
+  l_nIndex   : Integer;
+  l_nPos     : Integer;
+  l_oStrTemp : String;
+begin
+  o_panVersion := [0,0,0,0];
+
+  l_nIndex := 0;
+  while ((Length(i_oStrVersion) > 0) and (l_nIndex < 4)) do begin
+    l_nPos := pos('.', i_oStrVersion);
+    if l_nPos > 0 then begin
+      if l_nPos = 1 then begin
+        l_oStrTemp := '0'
+      end else begin
+        l_oStrTemp := Copy(i_oStrVersion, 1, l_nPos - 1);
+      end;
+
+      o_panVersion[l_nIndex] := StrToInt(l_oStrTemp);
+      l_nIndex := l_nIndex + 1;
+
+      i_oStrVersion := Copy(i_oStrVersion, l_nPos+1, Length(i_oStrVersion));
+    end else begin
+      o_panVersion[l_nIndex] := StrToInt(i_oStrVersion);
+      i_oStrVersion := '';
+    end;
+  end;
+end;
+
+function CompareVersion(i_oStrVersionDest, i_oStrVersionFrom: String) : Integer;
+var
+  l_anVersionDest : array of Integer;
+  l_anVersionFrom : array of Integer;
+  l_nIndex        : Integer;
+begin
+  SetArrayLength(l_anVersionDest, 4);
+  DecodeVersion(i_oStrVersionDest, l_anVersionDest);
+
+  SetArrayLength(l_anVersionFrom, 4);
+  DecodeVersion(i_oStrVersionFrom, l_anVersionFrom);
+
+  Result := 0;
+
+  l_nIndex := 0;
+  while ((Result = 0) and (l_nIndex < 4)) do begin
+    if l_anVersionDest[l_nIndex] > l_anVersionFrom[l_nIndex] then begin
+      Result := 1    // i_oStrVersionDest > i_oStrVersionFrom
+    end else begin
+      if l_anVersionDest[l_nIndex] < l_anVersionFrom[l_nIndex] then begin
+        Result := -1 // i_oStrVersionDest < i_oStrVersionFrom
+      end else begin
+        Result := 0; // i_oStrVersionDest = i_oStrVersionFrom
+      end;
+    end;
+
+    l_nIndex := l_nIndex + 1;
+  end;
+end;
+
+{ . . REGISTRY . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . }
+
+function WildCompare(const i_StrSource, i_StrWild: String; i_bLowerCase: Boolean): Boolean;
+var
+  l_StrSourceBuffer : String;
+  l_StrWildBuffer   : String;
+
+  l_nSourcePointer  : Integer;
+  l_nSourceSaved    : Integer;
+  l_nWildPointer    : Integer;
+  l_nWildSaved      : Integer;
+
+  l_bFound          : Boolean;
+begin
+  Result := False;
+
+  if(i_bLowerCase = True) then begin
+    l_StrWildBuffer   := Lowercase(i_StrWild);
+    l_StrWildBuffer   := Lowercase(i_StrSource);
+  end else begin
+    l_StrWildBuffer   := i_StrWild;
+    l_StrSourceBuffer := i_StrSource;
+  end;
+
+  l_nSourcePointer := 1;
+  l_nSourceSaved   := 1;
+  l_nWildPointer   := 1;
+  l_nWildSaved     := 1;
+
+  l_bFound := False;
+
+  //
+
+  while (l_nSourcePointer <= Length(l_StrSourceBuffer))
+  and   (l_StrWildBuffer[l_nWildPointer] <> '*')
+  and   (l_bFound = false)
+  do begin
+    if  (l_StrWildBuffer[l_nWildPointer] <> l_StrSourceBuffer[l_nSourcePointer])
+    and (l_StrWildBuffer[l_nWildPointer] <> '?')
+    then begin
+      Result   := False;
+      l_bFound := True;
+    end else begin
+      l_nWildPointer   := l_nWildPointer   + 1;
+      l_nSourcePointer := l_nSourcePointer + 1;
+    end;
+  end;
+
+  while (l_nSourcePointer <= Length(l_StrSourceBuffer))
+  and   (l_bFound = False)
+  do begin
+    if (l_StrWildBuffer[l_nWildPointer] = '*') then begin
+      l_nWildPointer := l_nWildPointer + 1;
+
+      if (l_nWildPointer > Length(l_StrWildBuffer)) then begin
+        Result   := True;
+        l_bFound := True;
+      end else begin
+        l_nWildSaved   := l_nWildPointer;
+        l_nSourceSaved := l_nSourcePointer + 1;
+      end;
+    end else begin
+      if (l_StrWildBuffer[l_nWildPointer] = l_StrSourceBuffer[l_nSourcePointer])
+      or (l_StrWildBuffer[l_nWildPointer] = '?')
+      then begin
+        l_nWildPointer   := l_nWildPointer   + 1;
+        l_nSourcePointer := l_nSourcePointer + 1;
+      end else begin
+        l_nWildPointer   := l_nWildSaved;
+        l_nSourcePointer := l_nSourceSaved;
+
+        l_nSourceSaved   := l_nSourceSaved + 1;
+      end;
+    end;
+  end;
+
+  if (l_bFound = False) then begin
+    while (l_nWildPointer <= Length(l_StrWildBuffer))
+    and   (l_StrWildBuffer[l_nWildPointer] = '*')
+    do begin
+      l_nWildPointer := l_nWildPointer + 1;
+    end;
+
+    if (l_nWildPointer > Length(l_StrWildBuffer)) then begin
+      Result := True;
+    end else begin
+      Result := False;
+    end;
+  end;
+end;
+
+function RegDeleteValueIncludingSubkeys(const RootKey: Integer; const SubKeyName, ValueName: String): Boolean;
+var
+  l_aoStrValueNames : TArrayOfString;
+  l_aoStrSubkeys    : TArrayOfString;
+  l_nLoop           : Integer;
+begin
+  Result := RegGetValueNames(RootKey, SubKeyName, l_aoStrValueNames);
+
+  if Result = True then begin
+    // Scan Subkeys
+    if RegGetSubkeyNames(RootKey, SubKeyName, l_aoStrSubkeys) = True then begin
+      for l_nLoop := 0 to GetArrayLength(l_aoStrSubkeys)-1 do begin
+        Result := Result and RegDeleteValueIncludingSubkeys(RootKey, AddBackslash(SubKeyName)+l_aoStrSubkeys[l_nLoop], ValueName);
+      end;
+    end;
+
+    // Scan Values
+    for l_nLoop := 0 to GetArrayLength(l_aoStrValueNames)-1 do begin
+      if WildCompare(l_aoStrValueNames[l_nLoop], ValueName, False) = True then begin
+        Result := Result and RegDeleteValue(RootKey, SubKeyName, l_aoStrValueNames[l_nLoop]);
+      end;
+    end;
+  end;
+end;
+
+{ . . MODIFY PATH . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . }
+
+function ExtractSubString(const i_nSubIndex: Integer; const i_oStrFullString: String): String;
+var
+  l_oStrBuffer : String;
+  l_oStrTempo  : String;
+  l_nLoop      : Integer;
+  l_nSize      : Integer;
+begin
+  l_oStrBuffer := i_oStrFullString;
+  l_nLoop      := 0;
+
+  repeat
+    l_nSize := Pos(';', l_oStrBuffer);
+
+    if l_nSize > 0 then begin
+      Result       := Copy(l_oStrBuffer, 1, l_nSize-1);
+      l_oStrTempo  := Copy(l_oStrBuffer, l_nSize + 1, Length(l_oStrBuffer));
+      l_oStrBuffer := l_oStrTempo;
+    end else begin
+      Result       := l_oStrBuffer;
+      l_oStrBuffer := '';
+    end;
+
+    l_nLoop := l_nLoop + 1;
+  until l_nLoop > i_nSubIndex;
+end;
+
+procedure SplitPath(i_oStrPathToSplit: String; var o_roStrPathSplitted: TStringList);
+var
+  l_nLoop    : Integer;
+  l_oStrPath : String;
+begin
+  o_roStrPathSplitted.Clear;
+
+  l_nLoop    := 0;
+  l_oStrPath := ExtractSubString(l_nLoop, i_oStrPathToSplit);
+
+  while (l_oStrPath <> '') do begin
+    l_oStrPath := Trim(l_oStrPath);
+    l_oStrPath := RemoveQuotes(l_oStrPath);
+    l_oStrPath := Trim(l_oStrPath);
+    l_oStrPath := RemoveBackslash(l_oStrPath);
+
+    if (l_oStrPath <> '') then begin
+      o_roStrPathSplitted.Add(l_oStrPath);
+    end;
+
+    l_nLoop    := l_nLoop + 1;
+    l_oStrPath := ExtractSubString(l_nLoop, i_oStrPathToSplit);
+  end;
+end;
+
+procedure ConcatPath(i_aoStrPathToConcat: TStringList; i_bAddQuotesToPath: Boolean; var o_roStrPathConcated: String);
+var
+  l_nLoop    : Integer;
+  l_nSize    : Integer;
+  l_oStrPath : String;
+begin
+  o_roStrPathConcated := '';
+
+  l_nSize := i_aoStrPathToConcat.Count - 1;
+
+  for l_nLoop := 0 to l_nSize do begin
+    l_oStrPath := i_aoStrPathToConcat.Strings[l_nLoop];
+
+    if ((i_bAddQuotesToPath = True) and (Pos(' ', l_oStrPath) > 0)) then begin
+      l_oStrPath := AddQuotes(l_oStrPath);
+    end;
+
+    o_roStrPathConcated := o_roStrPathConcated + l_oStrPath;
+
+    if (l_nLoop < l_nSize) then begin
+      o_roStrPathConcated := o_roStrPathConcated + ';';
+    end;
+  end;
+end;
+
+procedure ModifyPathString(i_oStrPathToModify, i_oStrDirToApply: String; i_nModifyPathMethod: Integer; i_bAddQuotesToPath: Boolean; var o_roStrPathModified: String);
+var
+  l_aoStrDirList : TStringList;
+  l_bDirInPath   : Boolean;
+  l_nLoop        : Integer;
+begin
+  l_aoStrDirList   := TStringList.Create;
+  l_bDirInPath     := False;
+
+  i_oStrDirToApply := Trim(i_oStrDirToApply);
+  i_oStrDirToApply := RemoveQuotes(i_oStrDirToApply);
+  i_oStrDirToApply := Trim(i_oStrDirToApply);
+  i_oStrDirToApply := RemoveBackslash(i_oStrDirToApply);
+
+  SplitPath(i_oStrPathToModify, l_aoStrDirList);
+
+  if (i_nModifyPathMethod and (pmRemove or pmRemoveSubdirsAlso)) > 0 then begin
+    for l_nLoop := l_aoStrDirList.Count - 1 downto 0 do begin
+      if (((i_nModifyPathMethod and pmRemoveSubdirsAlso) > 0) and (Pos(Uppercase(i_oStrDirToApply), Uppercase(l_aoStrDirList.Strings[l_nLoop])) = 1))
+      or (((i_nModifyPathMethod and (pmRemove) or (pmRemoveSubdirsAlso)) > 0) and (Uppercase(i_oStrDirToApply) = Uppercase(l_aoStrDirList.Strings[l_nLoop])))
+      then begin
+        l_aoStrDirList.Delete(l_nLoop);
+      end;
+    end;
+  end;
+
+  for l_nLoop := l_aoStrDirList.Count - 1 downto 0 do begin
+    if Uppercase(l_aoStrDirList.Strings[l_nLoop]) = Uppercase(i_oStrDirToApply) then begin
+      l_bDirInPath := True;
+    end;
+  end;
+
+  if ((i_nModifyPathMethod and (pmAddToBeginning or pmAddToEnd)) > 0) then begin
+    if (((i_nModifyPathMethod and pmAddAlways) > 0) or (l_bDirInPath = False)) then begin
+      if (((i_nModifyPathMethod and pmAddOnlyIfDirExists) = 0) or (DirExists(i_oStrDirToApply) = True)) then begin
+        if ((i_nModifyPathMethod and pmAddToBeginning) > 0) then begin
+          l_aoStrDirList.Insert(0, i_oStrDirToApply)
+        end else begin
+          l_aoStrDirList.Append(i_oStrDirToApply);
+        end;
+      end;
+    end;
+  end;
+
+  ConcatPath(l_aoStrDirList, i_bAddQuotesToPath, o_roStrPathModified);
+
+  l_aoStrDirList.Free;
+end;
+
+function ModifyPath9x(i_oStrDirToApply: String; i_nModifyPathMethod: Integer): Integer;
+var
+  l_oaStrAutoexecFile : TArrayOfString;
+  l_oStrAutoexecBat   : String;
+  l_oStrPathToModify  : String;
+  l_oStrPathModified  : String;
+  l_nLoop             : Integer;
+  l_nSize             : Integer;
+  l_bPathExists       : Boolean;
+  l_nPathIndex        : Integer;
+begin
+  l_bPathExists     := False;
+  l_oStrAutoexecBat := ExpandConstant('{sd}\AUTOEXEC.BAT');
+
+  if LoadStringsFromFile(l_oStrAutoexecBat, l_oaStrAutoexecFile) = True then begin
+    l_nSize := GetArrayLength(l_oaStrAutoexecFile) - 1;
+
+    for l_nLoop := 0 to l_nSize do begin
+      if (Pos('PATH=', Uppercase(l_oaStrAutoexecFile[l_nLoop])) = 1) then begin
+        if ((i_nModifyPathMethod and pmAddToEnd) > 0)
+        or (((i_nModifyPathMethod and pmAddToBeginning) > 0) and (l_bPathExists = False))
+        then begin
+          l_nPathIndex  := l_nLoop;
+          l_bPathExists := True;
+        end;
+
+        // On commence par supprimer TOUTES les instances du chemin recherché (évite d'avoir des duplicatats)
+        l_oStrPathToModify := Copy(l_oaStrAutoexecFile[l_nLoop], 6, Length(l_oaStrAutoexecFile[l_nLoop]) - 6);
+        ModifyPathString(l_oStrPathToModify, i_oStrDirToApply, pmRemoveSubdirsAlso, True, l_oStrPathModified);
+        l_oaStrAutoexecFile[l_nLoop] := 'PATH='+l_oStrPathModified;
+      end;
+    end;
+
+    if (((i_nModifyPathMethod and (pmAddToBeginning or pmAddToEnd)) > 0) and (l_bPathExists = False)) then begin
+      // Si la variable d'environnement PATH n'existe pas, on en ajoute une !
+//      l_oaStrAutoexecFile.Add(ExpandConstant('PATH={win};{win}\COMMAND;'+i_oStrDirToApply));
+      SaveStringToFile(l_oStrAutoexecBat, #10#13 + ExpandConstant('PATH={win};{win}\COMMAND;')+i_oStrDirToApply + #10#13, True);
+    end else begin
+      // Si on a trouvé une variable PATH, on [ajoute à la première/dernière] ou [supprime]
+      l_oStrPathToModify := Copy(l_oaStrAutoexecFile[l_nPathIndex], 6, Length(l_oaStrAutoexecFile[l_nPathIndex]) - 6);
+      ModifyPathString(l_oStrPathToModify, i_oStrDirToApply, i_nModifyPathMethod, True, l_oStrPathModified);
+      l_oaStrAutoexecFile[l_nPathIndex] := 'PATH='+l_oStrPathModified;
+
+      // Ecrase le fichier modifié
+      SaveStringsToFile(l_oStrAutoexecBat, l_oaStrAutoexecFile, False);
+    end;
+
+    Result := mpOK;
+  end else begin
+    Result := mpAutoexecNoWriteAcc;
+  end;
+end;
+
+function ModifyPathNT(i_oStrDirToApply: String; i_nModifyPathMethod, i_nModifyPathScope: Integer): Integer;
+var
+  l_nRegRoot         : Integer;
+  l_oStrRegKey       : String;
+  l_oStrRegValue     : String;
+  l_oStrPathToModify : String;
+  l_oStrPathModified : String;
+begin
+  Result := mpOK;
+
+  case i_nModifyPathScope of
+    psCurrentUser :
+      begin
+        l_nRegRoot     := HKEY_CURRENT_USER;
+        l_oStrRegKey   := 'Environment';
+        l_oStrRegValue := 'Path';
+      end;
+    psAllUsers :
+      begin
+        l_nRegRoot     := HKEY_LOCAL_MACHINE;
+        l_oStrRegKey   := 'SYSTEM\CurrentControlSet\Control\Session Manager\Environment';
+        l_oStrRegValue := 'Path';
+      end;
+  end;
+
+  if not RegQueryStringValue(l_nRegRoot, l_oStrRegKey, l_oStrRegValue, l_oStrPathToModify) then begin
+    Result := mpMissingRights;
+  end else begin
+    ModifyPathString(l_oStrPathToModify, i_oStrDirToApply, i_nModifyPathMethod, False, l_oStrPathModified);
+
+    if not RegWriteStringValue(l_nRegRoot, l_oStrRegKey, l_oStrRegValue, l_oStrPathModified) then begin
+      Result := mpMissingRights;
+    end;
+  end;
+end;
+
+function ModifyPath(i_oStrDirToApply: String; i_nModifyPathMethod, i_nModifyPathScope: Integer): Integer;
+begin
+  if (i_nModifyPathMethod and (pmAddToBeginning or pmAddToEnd) and (pmRemove or pmRemoveSubdirsAlso)) > 0 then begin
+    Result := mpBothAddAndRemove;
+  end else begin
+    i_oStrDirToApply := ExpandConstantEx(i_oStrDirToApply, ' ', ' ');
+
+    // Win9x
+    if InstallOnThisVersion('4,0','0,0') = irInstall then begin
+      Result := ModifyPath9x(i_oStrDirToApply, i_nModifyPathMethod);
+    end;
+
+    // WinNT, 2000 or XP
+    if InstallOnThisVersion('0,4','0,0') = irInstall then begin
+      Result := ModifyPathNT(i_oStrDirToApply, i_nModifyPathMethod, i_nModifyPathScope);
+    end;
+  end;
+end;
+
+{ . . TRANSPARENCY . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . }
+
+#ifdef USE_ALPHABLEND
+function SetWindowTransparency(i_hWnd: HWND; i_nTransparency: Integer): Boolean;
+begin
+  try
+    SetWindowLong(i_hWnd, GWL_EXSTYLE, GetWindowLong(i_hWnd, GWL_EXSTYLE) or WS_EX_LAYERED);
+    SetLayeredWindowAttributes(i_hWnd, 0, i_nTransparency, LWA_ALPHA);
+  finally
+  end;
+end;
+#endif
+
+{ --- EXPANDPATHS --------------------------------------------------------------------------------------------------- }
+
+procedure ExpandPathInFile(i_oStrPathInFile: String);
+var
+  l_oaStrPathFile : TArrayOfString;
+  l_oStrPathBat   : String;
+  l_nLoop         : Integer;
+begin
+  l_oStrPathBat := ExpandConstant(i_oStrPathInFile);
+
+  if LoadStringsFromFile(l_oStrPathBat, l_oaStrPathFile) = True then begin
+    for l_nLoop := 0 to GetArrayLength(l_oaStrPathFile)-1 do begin
+      if Pos('{app}', l_oaStrPathFile[l_nLoop]) > 0 then begin
+        l_oaStrPathFile[l_nLoop] := ExpandConstant(l_oaStrPathFile[l_nLoop]);
+//        MsgBox('String expanded = '+l_oaStrPathFile[l_nLoop], mbInformation, MB_OK);
+      end;
+    end;
+
+    // Ecrase le fichier modifié
+    SaveStringsToFile(l_oStrPathBat, l_oaStrPathFile, False);
+  end;
+end;
+
+{ --- CREATEHHCOLREG ------------------------------------------------------------------------------------------------ }
+
+function FindFirstCdromDrive(i_oStrDefaultDrive: String): String;
+var
+  l_nType : Integer;
+  l_nDisk : Byte;
+begin
+  Result  := AddBackSlash(ExtractFileDrive(ExpandConstant(i_oStrDefaultDrive)));
+  l_nType := GetDriveType(Result);
+  l_nDisk := 0;
+  while (l_nType <> DRIVE_CDROM) and (l_nType <> DRIVE_UNKNOWN) and (l_nDisk < 27) do begin
+    // Tant que l'on à pas trouvé de CD (seulement de 'A' à 'Z'), on boucle...
+    Result  := AddBackSlash(Chr(l_nDisk + Ord('A'))+':');
+    l_nType := GetDriveType(Result);
+    l_nDisk := l_nDisk + 1;
+  end;
+end;
+
+function CheckChiFile(i_oStrChiFile: String; var o_rbChqFlag: Boolean; var o_rnChiVersion: Integer) : Boolean;
+var
+  l_oFileStream : TFileStream;
+  l_anBuffer    : String;
+  l_nLoop       : Integer;
+  l_nSize       : Integer;
+  l_nUpTo       : Integer;
+  l_oStrTempo   : String;
+begin
+  Result  := False;
+
+  SetLength(l_anBuffer, $2000);
+
+  l_oFileStream := TFileStream.Create(i_oStrChiFile, fmOpenRead or fmShareDenyWrite);
+
+  try
+    l_oFileStream.Seek($14, soFromBeginning);
+    l_oFileStream.ReadBuffer(l_anBuffer, $1500);
+
+    l_nLoop := Ord(l_anBuffer[3+1])*16777216 + Ord(l_anBuffer[2+1])*65536 + Ord(l_anBuffer[1+1])*256 + Ord(l_anBuffer[0+1]);
+
+    if (l_nLoop = 1033) then begin
+      o_rbChqFlag := True;
+    end else begin
+      o_rbChqFlag := False;
+    end;
+
+    l_nLoop := $1000;
+    l_nSize := Length('HHA Version');
+    l_nUpTo := $1500 - l_nSize - $32 - 4;
+
+    while ((Result = False) and (l_nLoop < l_nUpTo)) do begin
+      if (l_anBuffer[0+l_nLoop] = 'H') and (l_anBuffer[1+l_nLoop] = 'H') and (l_anBuffer[2+l_nLoop] = 'A') then begin
+        l_oStrTempo := Copy(l_anBuffer, l_nLoop, l_nSize);
+        Trim(l_oStrTempo);
+
+        if (l_oStrTempo <> '') and (CompareStr('HHA Version', l_oStrTempo) = 0) then begin
+          Result := True
+        end;
+      end;
+
+      l_nLoop := l_nLoop + 1;
+    end;
+
+    if (Result = True) then begin
+      l_nLoop := l_nLoop + $32 - 1;
+      o_rnChiVersion := Ord(l_anBuffer[3+l_nLoop])*16777216 + Ord(l_anBuffer[2+l_nLoop])*65536 + Ord(l_anBuffer[1+l_nLoop])*256 + Ord(l_anBuffer[0+l_nLoop]);
+    end else begin
+      o_rnChiVersion := 0;
+    end;
+  finally
+    l_oFileStream.Free;
+  end;
+end;
+
+function CreateHhcolreg(i_oStrPathsToCheck: String): Boolean;
+var
+  l_oStrPathDisk  : String;
+  l_oStrPathFile  : String;
+  l_oStrPathHelp  : String;
+  l_oStrBuffer    : String;
+  l_oStrTempo     : String;
+  l_nLoop         : Integer;
+  l_nSize         : Integer;
+  l_bFlag         : Boolean;
+  l_sFindRec      : TFindRec;
+  l_bFlagChq      : Boolean;
+  l_nChiVersion   : Integer;
+begin
+  Result         := True;
+
+  l_oStrPathDisk := FindFirstCdromDrive('{srcexe}');
+  l_oStrPathFile := ExpandConstant(i_oStrPathsToCheck);
+  l_oStrPathHelp := ExpandConstant('{win}\Help\hhcolreg.dat');
+  l_nSize        := 0;
+
+  // On calcule le nombre de sections 'Collection'
+  while (ExtractSubString(l_nSize, l_oStrPathFile) <> '') do begin
+    l_nSize := l_nSize + 1;
+  end;
+
+  SaveStringToFile(l_oStrPathHelp, '<XML>'+#13#10, False); // Création du fichier
+    SaveStringToFile(l_oStrPathHelp, '  <HTMLHelpDocInfo>'+#13#10, True);
+      SaveStringToFile(l_oStrPathHelp, Format('    <NextCollectionId value=%d/>', [l_nSize+1])+#13#10, True);
+      SaveStringToFile(l_oStrPathHelp, '    <Collections>'+#13#10, True);
+        for l_nLoop := 0 to l_nSize-1 do begin
+          SaveStringToFile(l_oStrPathHelp, '      <Collection>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, Format('        <ColNum value=%d/>', [l_nLoop+1])+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <ColName value="'+ExtractSubString(l_nLoop, l_oStrPathFile)+'"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '      </Collection>'+#13#10, True);
+        end;
+      SaveStringToFile(l_oStrPathHelp, '    </Collections>'+#13#10, True);
+
+      SaveStringToFile(l_oStrPathHelp, '    <Locations>'+#13#10, True);
+        if(IsComponentSelected('Msdn') = True) then begin
+          SaveStringToFile(l_oStrPathHelp, '      <Location>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocColNum value=1/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocName value="98VSa-1036-Local"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <TitleString value="MSDN VS 6.0 Local"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocPath value="{app}\MSDN98\98VSa\1036\"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <Volume value="YOURWIN"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '      </Location>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '      <Location>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocColNum value=1/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocName value="98VSa-1036-CD1"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <TitleString value="MSDN VS 6.0 CD1"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocPath value="'+l_oStrPathDisk+'MSDN\"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <Volume value="DISK2"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '      </Location>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '      <Location>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocColNum value=1/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocName value="98VSa-1036-CD2"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <TitleString value="MSDN VS 6.0 CD2"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocPath value="'+l_oStrPathDisk+'MSDN\"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <Volume value="DISK2"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '      </Location>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '      <Location>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocColNum value=1/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocName value="98VSa-1036-VC Samples"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <TitleString value="MSDN VS 6.0 CD1"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocPath value="'+l_oStrPathDisk+'Samples\"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <Volume value="DISK2"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '      </Location>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '      <Location>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocColNum value=1/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocName value="98VSa-1036-MSDN Samples"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <TitleString value="MSDN VS 6.0 CD1"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <LocPath value="'+l_oStrPathDisk+'Samples\"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '        <Volume value="DISK2"/>'+#13#10, True);
+          SaveStringToFile(l_oStrPathHelp, '      </Location>'+#13#10, True);
+        end;
+      SaveStringToFile(l_oStrPathHelp, '    </Locations>'+#13#10, True);
+
+      SaveStringToFile(l_oStrPathHelp, '    <DocCompilations>'+#13#10, True);
+        if(IsComponentSelected('VisualCpp\CeTools') = True) then begin
+          l_oStrTempo := ExpandConstant('{app}\Windows CE Tools\HTMLHELP\*.chi');
+          if FindFirst(l_oStrTempo, l_sFindRec) then begin
+            try
+              repeat
+                if l_sFindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY = 0 then begin
+                  l_oStrTempo := ExtractFileExt(l_sFindRec.Name);
+
+                  if l_oStrTempo <> '' then begin
+                    l_oStrTempo := Lowercase(Copy(l_sFindRec.Name, 1, Pos(ExtractFileExt(l_sFindRec.Name), l_sFindRec.Name) - 1));
+                  end else begin
+                    l_oStrTempo := Lowercase(l_sFindRec.Name);
+                  end;
+
+                  for l_nLoop := 0 to l_nSize-1 do begin
+                    l_oStrBuffer := ExtractFilePath(ExtractSubString(l_nLoop, l_oStrPathFile));
+                    CheckChiFile(l_oStrBuffer+l_sFindRec.Name, l_bFlagChq, l_nChiVersion);
+                  end;
+
+                  SaveStringToFile(l_oStrPathHelp, '      <DocCompilation>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '        <DocCompId value="{3C899B40-6AA8-11d2-BD6F-0060089A6894}"/>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '        <DocCompLanguage value=1033/>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '        <LocationHistory>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '          <ColNum value=1/>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '          <TitleLocation value="{app}\Windows CE Tools\HTMLHELP\'+l_oStrTempo+'.chm"/>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '          <IndexLocation value="{app}\Windows CE Tools\HTMLHELP\'+l_oStrTempo+'.chi"/>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '          <QueryLocation value=""/>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '          <LocationRef value=""/>'+#13#10, True);
+
+    	          if (l_nChiVersion <> 0) then begin
+                    SaveStringToFile(l_oStrPathHelp, '          <Version value='+IntToStr(l_nChiVersion)+'/>'+#13#10, True);
+                  end;
+
+                  SaveStringToFile(l_oStrPathHelp, '          <LastPromptedVersion value=0/>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '          <TitleSampleLocation value=""/>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '          <TitleQueryLocation value=""/>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '          <SupportsMerge value=0/>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '        </LocationHistory>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '      </DocCompilation>'+#13#10, True);
+                end;
+              until not FindNext(l_sFindRec);
+            finally
+              FindClose(l_sFindRec);
+            end;
+          end;
+        end;
+
+        l_oStrPathFile := ExpandConstant('{app}\MSDN98\98VSa\1036\');
+
+        if(IsComponentSelected('Msdn') = True) then begin
+          l_oStrTempo := l_oStrPathFile+'*.chi';
+          if FindFirst(l_oStrTempo, l_sFindRec) then begin
+            try
+              repeat
+                if l_sFindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY = 0 then begin
+                  l_oStrTempo := ExtractFileExt(l_sFindRec.Name);
+
+                  if l_oStrTempo <> '' then begin
+                    l_oStrTempo := Lowercase(Copy(l_sFindRec.Name, 1, Pos(ExtractFileExt(l_sFindRec.Name), l_sFindRec.Name) - 1));
+                  end else begin
+                    l_oStrTempo := Lowercase(l_sFindRec.Name);
+                  end;
+
+                  CheckChiFile(l_oStrPathFile+l_sFindRec.Name, l_bFlagChq, l_nChiVersion);
+                  l_bFlag := FileExists(l_oStrPathFile+l_oStrTempo+'.chm');
+
+                  SaveStringToFile(l_oStrPathHelp, '      <DocCompilation>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '        <DocCompId value="'+l_oStrTempo+'"/>'+#13#10, True);
+
+                  if (l_bFlagChq = True) then begin
+                    SaveStringToFile(l_oStrPathHelp, '        <DocCompLanguage value=1033/>'+#13#10, True); // -> msdnvs6a.chq
+                  end else begin
+                    SaveStringToFile(l_oStrPathHelp, '        <DocCompLanguage value=1036/>'+#13#10, True); // -> msdnlocl.chq
+                  end;
+
+                  SaveStringToFile(l_oStrPathHelp, '        <LocationHistory>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '          <ColNum value=1/>'+#13#10, True);
+
+                  if (l_bFlag = True) then begin
+                    SaveStringToFile(l_oStrPathHelp, '          <TitleLocation value="{app}\MSDN98\98VSa\1036\'+l_oStrTempo+'.chm"/>'+#13#10, True);
+                  end else begin
+                    SaveStringToFile(l_oStrPathHelp, '          <TitleLocation value="'+l_oStrPathDisk+'MSDN\'+l_oStrTempo+'.chm"/>'+#13#10, True);
+                  end;
+
+                    SaveStringToFile(l_oStrPathHelp, '          <IndexLocation value="{app}\MSDN98\98VSa\1036\'+l_oStrTempo+'.chi"/>'+#13#10, True);
+
+                  if (l_bFlagChq = True) then begin
+                    SaveStringToFile(l_oStrPathHelp, '          <QueryLocation value="{app}\MSDN98\98VSa\1036\msdnvs6a.chq"/>'+#13#10, True);
+                  end else begin
+                    SaveStringToFile(l_oStrPathHelp, '          <QueryLocation value="{app}\MSDN98\98VSa\1036\msdnlocl.chq"/>'+#13#10, True);
+                  end;
+
+                  if (l_bFlag = True) then begin
+                    SaveStringToFile(l_oStrPathHelp, '          <LocationRef value="98VSa-1036-Local"/>'+#13#10, True);
+                  end else begin
+                    SaveStringToFile(l_oStrPathHelp, '          <LocationRef value="98VSa-1036-CD2"/>'+#13#10, True);
+                  end;
+
+  		          if (l_nChiVersion <> 0) then begin
+                    SaveStringToFile(l_oStrPathHelp, '          <Version value='+IntToStr(l_nChiVersion)+'/>'+#13#10, True);
+                  end;
+
+                  SaveStringToFile(l_oStrPathHelp, '          <LastPromptedVersion value=0/>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '          <TitleSampleLocation value=""/>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '          <TitleQueryLocation value="98VSa-1036-Local"/>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '          <SupportsMerge value=0/>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '        </LocationHistory>'+#13#10, True);
+                  SaveStringToFile(l_oStrPathHelp, '      </DocCompilation>'+#13#10, True);
+                end;
+              until not FindNext(l_sFindRec);
+            finally
+              FindClose(l_sFindRec);
+            end;
+          end;
+        end;
+
+      SaveStringToFile(l_oStrPathHelp, '    </DocCompilations>'+#13#10, True);
+    SaveStringToFile(l_oStrPathHelp, '  </HTMLHelpDocInfo>'+#13#10, True);
+  SaveStringToFile(l_oStrPathHelp, '</XML>'+#13#10, True); // Cloture du fichier
+end;
+
+{ --- REGTREECOPYMOVE ----------------------------------------------------------------------------------------------- }
+
+procedure RegTreeCopy(const i_nRootKey: Integer; const i_oStrPathSrc, i_oStrPathDst: String);
+var
+  l_oStrData     : String;
+  l_aoStrSubkeys : TArrayOfString;
+  l_aoStrValues  : TArrayOfString;
+  l_nLoop        : Integer;
+  l_nData        : Cardinal;
+begin
+  if RegGetSubkeyNames(i_nRootKey, i_oStrPathSrc, l_aoStrSubkeys) then begin
+    for l_nLoop := 0 to GetArrayLength(l_aoStrSubkeys)-1 do begin
+      RegTreeCopy(i_nRootKey, i_oStrPathSrc+'\'+l_aoStrSubkeys[l_nLoop], i_oStrPathDst+'\'+l_aoStrSubkeys[l_nLoop]);
+    end;
+  end;
+
+  if RegGetValueNames(i_nRootKey, i_oStrPathSrc, l_aoStrValues) then begin
+    for l_nLoop := 0 to GetArrayLength(l_aoStrValues)-1 do begin
+      if RegQueryStringValue(i_nRootKey, i_oStrPathSrc, l_aoStrValues[l_nLoop], l_oStrData) = True then begin
+        RegWriteStringValue(i_nRootKey, i_oStrPathDst, l_aoStrValues[l_nLoop], l_oStrData);
+      end else if RegQueryMultiStringValue(i_nRootKey, i_oStrPathSrc, l_aoStrValues[l_nLoop], l_oStrData) = True then begin
+        RegWriteMultiStringValue(i_nRootKey, i_oStrPathDst, l_aoStrValues[l_nLoop], l_oStrData);
+      end else if RegQueryDWordValue(i_nRootKey, i_oStrPathSrc, l_aoStrValues[l_nLoop], l_nData) = True then begin
+        RegWriteDWordValue(i_nRootKey, i_oStrPathDst, l_aoStrValues[l_nLoop], l_nData);
+      end else if RegQueryBinaryValue(i_nRootKey, i_oStrPathSrc, l_aoStrValues[l_nLoop], l_oStrData) = True then begin
+        RegQueryBinaryValue(i_nRootKey, i_oStrPathDst, l_aoStrValues[l_nLoop], l_oStrData);
+      end else begin
+      end;
+    end;
+  end;
+end;
+
+procedure RegTreeMove(const i_nRootKey: Integer; const i_oStrPathSrc, i_oStrPathDst: String);
+begin
+  RegTreeCopy(i_nRootKey, i_oStrPathSrc, i_oStrPathDst);
+  RegDeleteKeyIncludingSubkeys(i_nRootKey, i_oStrPathSrc);
+end;
+
+{ --- RESTOREREGISTRY ----------------------------------------------------------------------------------------------- }
+
+function RestoreRegistryCommon(): Boolean;
+var
+  l_aoStrProfile  : TArrayOfString;
+  l_oStrHkeyUsers : String;
+  l_nLoop         : Integer;
+begin
+  Result := False;
+
+  // On ré-inscrit 'quelques' valeurs qui sont foireuses
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{1E9A88A1-2968-11D1-851D-00A0C911E8B0}', '', 'VMBrowser');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{1E9A88A3-2968-11D1-851D-00A0C911E8B0}', '', 'VMBrowser');
+
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{323E7DB6-C174-11D1-ABF9-006008C6167D}', '', 'ItemProperty');
+
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{4748524D-D317-11D1-AFB6-006097C9A8F0}', '', 'CDBDevice');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{4748524F-D317-11D1-AFB6-006097C9A8F0}', '', 'CDBDevices');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{47485251-D317-11D1-AFB6-006097C9A8F0}', '', 'CStatusContainer');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{4748525A-D317-11D1-AFB6-006097C9A8F0}', '', 'CNewDatabaseWizard');
+
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{9F65F6C4-06DA-11D2-8D70-00A0C98B28E2}', '', 'VisualModelHandler');
+
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{A8F8E828-06DA-11D2-8D70-00A0C98B28E2}', '', 'AxBrowser');
+
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{A8F8E82A-06DA-11D2-8D70-00A0C98B28E2}', '', 'AxBrowser');
+
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{AEB7F2FB-06DA-11D2-8D70-00A0C98B28E2}', '', 'IResource');
+
+  l_oStrHkeyUsers := '';
+
+//  if RegGetSubkeyNames(HKEY_LOCAL_MACHINE, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy', l_aoStrProfile) then begin
+  if RegGetSubkeyNames(HKEY_CURRENT_USER, 'Software\Microsoft\Protected Storage System Provider', l_aoStrProfile) then begin
+    for l_nLoop := 0 to GetArrayLength(l_aoStrProfile)-1 do begin
+      if l_oStrHkeyUsers < l_aoStrProfile[l_nLoop] then begin
+        l_oStrHkeyUsers := l_aoStrProfile[l_nLoop]
+      end;
+    end;
+
+    if l_oStrHkeyUsers <> '' then begin
+      RegTreeMove(HKEY_USERS, '.DEFAULT\Environment',  l_oStrHkeyUsers+'\Environment');
+
+      Result := True;
+    end;
+  end;
+end;
+
+function RestoreRegistryCeTools(): Boolean;
+begin
+  Result := True;
+
+  // On ré-inscrit 'quelques' valeurs qui sont foireuses
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42B8B-0000-11D2-991E-006097C99385}', '', 'CNavInfo');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42B8D-0000-11D2-991E-006097C99385}', '', 'CNavigation');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42B8F-0000-11D2-991E-006097C99385}', '', 'CHTMLStream');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42B91-0000-11D2-991E-006097C99385}', '', 'CHTMLStreams');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42B93-0000-11D2-991E-006097C99385}', '', 'CBitmap');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42B95-0000-11D2-991E-006097C99385}', '', 'CBitmaps');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42B97-0000-11D2-991E-006097C99385}', '', 'CGraphic');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42B99-0000-11D2-991E-006097C99385}', '', 'CGraphics');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42B9B-0000-11D2-991E-006097C99385}', '', 'CTheme');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42B9D-0000-11D2-991E-006097C99385}', '', 'CThemes');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42B9F-0000-11D2-991E-006097C99385}', '', 'CTemplate');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BA1-0000-11D2-991E-006097C99385}', '', 'CTemplates');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BA3-0000-11D2-991E-006097C99385}', '', 'CTemplateType');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BA5-0000-11D2-991E-006097C99385}', '', 'CTemplateTypes');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BA7-0000-11D2-991E-006097C99385}', '', 'CServerForms');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BA9-0000-11D2-991E-006097C99385}', '', 'CStdError');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BAB-0000-11D2-991E-006097C99385}', '', 'CStdErrors');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BAD-0000-11D2-991E-006097C99385}', '', 'CWizardApp');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BAF-0000-11D2-991E-006097C99385}', '', 'CString');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BB1-0000-11D2-991E-006097C99385}', '', 'CStrings');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BB3-0000-11D2-991E-006097C99385}', '', 'CReplacement');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BB5-0000-11D2-991E-006097C99385}', '', 'CTables');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BB7-0000-11D2-991E-006097C99385}', '', 'CError');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BB9-0000-11D2-991E-006097C99385}', '', 'CErrors');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BBB-0000-11D2-991E-006097C99385}', '', 'CDBManager');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BBD-0000-11D2-991E-006097C99385}', '', 'CFields');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BBF-0000-11D2-991E-006097C99385}', '', 'CTable');
+
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BC1-0000-11D2-991E-006097C99385}', '', 'CField');
+
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BC7-0000-11D2-991E-006097C99385}', '', 'CWebPage');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BC9-0000-11D2-991E-006097C99385}', '', 'CWebPages');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BCB-0000-11D2-991E-006097C99385}', '', 'CImage');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BCD-0000-11D2-991E-006097C99385}', '', 'CImages');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BCF-0000-11D2-991E-006097C99385}', '', 'CTreeview');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BD4-0000-11D2-991E-006097C99385}', '', 'CFPServer');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BDE-0000-11D2-991E-006097C99385}', '', 'CReplacements');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BE0-0000-11D2-991E-006097C99385}', '', 'CThemeManager');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BE2-0000-11D2-991E-006097C99385}', '', 'CLayoutManager');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BE8-0000-11D2-991E-006097C99385}', '', 'CMultiPick');
+  RegWriteStringValue(HKEY_LOCAL_MACHINE, 'SOFTWARE\Classes\Interface\{77B42BEA-0000-11D2-991E-006097C99385}', '', 'CODBCConnection');
+end;
+
+#ifdef INSTALL_WNDTABS
+function RestoreRegistryWndTabs(): Boolean;
+var
+  l_aoStrProfile  : TArrayOfString;
+  l_oStrHkeyUsers : String;
+  l_nLoop         : Integer;
+begin
+  Result          := False;
+  l_oStrHkeyUsers := '';
+
+//  if RegGetSubkeyNames(HKEY_LOCAL_MACHINE, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy', l_aoStrProfile) then begin
+  if RegGetSubkeyNames(HKEY_CURRENT_USER, 'Software\Microsoft\Protected Storage System Provider', l_aoStrProfile) then begin
+    for l_nLoop := 0 to GetArrayLength(l_aoStrProfile)-1 do begin
+      if l_oStrHkeyUsers < l_aoStrProfile[l_nLoop] then begin
+        l_oStrHkeyUsers := l_aoStrProfile[l_nLoop]
+      end;
+    end;
+
+    if l_oStrHkeyUsers <> '' then begin
+      RegTreeMove(HKEY_USERS, '.DEFAULT\Software\Microsoft\CEStudio',  l_oStrHkeyUsers+'\Software\Microsoft\CEStudio');
+      RegTreeMove(HKEY_USERS, '.DEFAULT\Software\Microsoft\DevStudio', l_oStrHkeyUsers+'\Software\Microsoft\DevStudio');
+      RegTreeMove(HKEY_USERS, '.DEFAULT\Software\WndTabs.com',         l_oStrHkeyUsers+'\Software\WndTabs.com');
+
+      Result := True;
+    end;
+  end;
+end;
+#endif
+
+function RestoreRegistryMsdn(): Boolean;
+var
+  l_aoStrProfile  : TArrayOfString;
+  l_oStrHkeyUsers : String;
+  l_nLoop         : Integer;
+begin
+  Result          := False;
+  l_oStrHkeyUsers := '';
+
+//  if RegGetSubkeyNames(HKEY_LOCAL_MACHINE, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy', l_aoStrProfile) then begin
+  if RegGetSubkeyNames(HKEY_CURRENT_USER, 'Software\Microsoft\Protected Storage System Provider', l_aoStrProfile) then begin
+    for l_nLoop := 0 to GetArrayLength(l_aoStrProfile)-1 do begin
+      if l_oStrHkeyUsers < l_aoStrProfile[l_nLoop] then begin
+        l_oStrHkeyUsers := l_aoStrProfile[l_nLoop]
+      end;
+    end;
+
+    if l_oStrHkeyUsers <> '' then begin
+      RegTreeMove(HKEY_USERS, '.DEFAULT\Software\Microsoft\MS Setup (ACME)',  l_oStrHkeyUsers+'\Software\Microsoft\MS Setup (ACME)');
+
+      Result := True;
+    end;
+  end;
+end;
+
+{ --- INSTALL ------------------------------------------------------------------------------------------------------- }
+
+procedure ISSI_InitializeWizard();
+begin
+  g_nAlpha := MAX_UI_ALPHA;
+
+#ifdef USE_ALPHABLEND
+//  for g_nAlpha := 0 to MAX_UI_ALPHA do begin
+    SetWindowTransparency(WizardForm.Handle, (g_nAlpha *255)/100);
+//    Sleep(5);
+//  end;
+#endif
+
+  g_bSkipPage := False;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  l_oStrBuffer : String;
+begin
+  if CurStep = ssPostInstall then begin
+    RestoreRegistryCommon();
+
+    l_oStrBuffer   := '';
+
+    if(IsComponentSelected('VisualCpp\CeTools') = True) then begin
+      RestoreRegistryCeTools();
+
+      ExpandPathInFile('{app}\Windows CE Tools\HTMLHELP\wince.col');
+
+      ExpandPathInFile('{app}\Windows CE Tools\WCE211\BIN\WCEARM.BAT');
+      ExpandPathInFile('{app}\Windows CE Tools\WCE211\BIN\WCEMIPS.BAT');
+      ExpandPathInFile('{app}\Windows CE Tools\WCE211\BIN\WCEMIPSFP.BAT');
+      ExpandPathInFile('{app}\Windows CE Tools\WCE211\BIN\WCEPPC.BAT');
+      ExpandPathInFile('{app}\Windows CE Tools\WCE211\BIN\WCESH3.BAT');
+      ExpandPathInFile('{app}\Windows CE Tools\WCE211\BIN\WCESH4.BAT');
+      ExpandPathInFile('{app}\Windows CE Tools\WCE211\BIN\WCEx86.BAT');
+
+      l_oStrBuffer := l_oStrBuffer + '{app}\Windows CE Tools\HTMLHELP\wince.col;';
+    end;
+
+#ifdef INSTALL_WNDTABS
+    if(IsComponentSelected('WndTabs') = True) then begin
+      RestoreRegistryWndTabs();
+    end;
+#endif
+
+    if(IsComponentSelected('VisualToolkit2003') = True) then begin
+      ExpandPathInFile('{app}\VCTK2003\vcvars32.bat');
+    end;
+
+    if(IsComponentSelected('Msdn') = True) then begin
+      RestoreRegistryMsdn();
+
+      l_oStrBuffer := l_oStrBuffer + '{app}\MSDN98\98VSa\1036\msdnvs6a.col;';
+    end;
+
+    // A la fin de l'installation, on essaye de modifier les fichiers de configuration des chemins
+    CreateHhcolreg(l_oStrBuffer);
+    ExpandPathInFile('{win}\Help\hhcolreg.dat');
+  end;
+end;
+
+function ShouldSkipPage(CurPage: Integer): Boolean;
+begin
+  if (g_bSkipPage = True) and (CurPage <> wpInstalling) then begin
+    Result := True;
+#ifdef USE_MODIFYREPAIRDELETE
+  end else begin
+    if Pos('/SP-', UpperCase(GetCmdTail)) > 0 then begin
+    case CurPage of
+      wpWelcome, wpLicense, wpPassword, wpInfoBefore, wpUserInfo, wpSelectDir, wpSelectProgramGroup, wpInfoAfter:
+      Result := True;
+    end;
+  end;
+#endif
+  end;
+end;
+
+procedure DeinitializeSetup();
+begin
+  if g_nAlpha > 0 then begin
+#ifdef USE_ALPHABLEND
+    for g_nAlpha := MAX_UI_ALPHA downto 0 do begin
+      SetWindowTransparency(WizardForm.Handle, (g_nAlpha *255)/100);
+//      Sleep(5);
+    end;
+#endif
+  end;
+end;
