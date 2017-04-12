@@ -1,0 +1,135 @@
+' AlignNext.dsm
+' Copyright © 2000 Scott Kirkwood
+' 
+' Permission to use, copy, modify, distribute and sell this code
+' and its documentation for any purpose is hereby granted without fee,
+' provided that the above copyright notice appear in all copies or
+' any derived copies.  Scott Kirkwood makes no representations
+' about the suitability of this software for any purpose.
+' It is provided "as is" without express or implied warranty.
+'///////////////////////////////////////////////////////////////////////////////
+
+Sub AlignNextLine()
+'DESCRIPTION: Goes to the next line and add spaces align it to the same position
+	AlignFunction(1)
+End Sub
+
+Sub AlignPrevLine()
+'DESCRIPTION: Goes to the previous line and add spaces align it to the same position
+	AlignFunction(-1)
+End Sub
+
+Function AlignFunction(nLineOffset)
+'DESCRIPTION: Function align next or previous line
+
+	' Short hand
+	Set Sel = ActiveDocument.Selection
+
+	nColumn = Sel.CurrentColumn
+	nLine = Sel.CurrentLine
+
+	' Look to the right
+	Sel.CharRight dsExtend
+	rChar = Sel.Text
+
+	' Back to our insert position
+	Sel.CharLeft
+
+	nPos = nColumn
+	curChar = " "
+	lChar = ""
+
+	while nCol > 0 AND lChar <> " "
+		Sel.CharLeft dsExtend
+		lChar = left(Sel.Text, 1)
+		nCol = nCol - 1
+	wend
+
+	' Next/Prev line
+	Sel.GotoLine nLine + nLineOffset 
+	
+	if (IsPunct(rChar)) then
+		' Use right char to align
+		nSpacesAt = FindClosest(rChar, nColumn)
+	else
+		' Use left char for aligning
+		nSpacesAt = FindClosest(lChar, nColumn)
+	end if
+
+	' Move to our new position
+	Sel.MoveTo nLine + nLineOffset, nSpacesAt 
+
+	' Use this handy method
+	Sel.DeleteWhiteSpace
+
+	' We may have moved
+	nSpacesAt = Sel.CurrentColumn
+
+	' Add the necessary white space to align us
+	if (nSpacesAt < nColumn) then 
+		' Build a string with spaces
+		strSpaces = ""
+		For i = 1 to nColumn - nSpacesAt
+			strSpaces = strSpaces + " "
+		Next
+
+		Sel.Text = strSpaces
+	End If
+
+	' User should have two things in the undo buffer 
+	' The DeleteWhiteSpace and the addition of text
+End Function
+
+Function FindClosest(ByVal cChar, nPos)
+'DESCRIPTION: Find the nearest instance of the character we're looking for on this line
+
+	' Get the whole line first
+	ActiveDocument.Selection.StartOfLine
+	ActiveDocument.Selection.EndOfLine dsExtend
+
+	' Detab it so that nPos (which is a column position) means something with respect to 
+	' strLine which is in characters
+
+	ActiveDocument.Selection.Untabify
+	strLine = ActiveDocument.Selection.Text
+
+	' Find the closest found position to nPos
+	nFoundPos = 0
+	
+	Do 
+		nSearchPos = InStr(nSearchPos + 1, strLine, cChar)
+		
+		leftChar = "`"
+		if (nSearchPos > 1) then
+			leftChar = mid(strLine, (nSearchPos - 1), 1)
+		End If
+
+		if (Abs(nSearchPos - nPos) < Abs(nFoundPos - nPos)) and _
+			(leftChar = " " or leftChar = ",") Then
+			nFoundPos = nSearchPos
+		End If
+
+	Loop Until (nSearchPos = 0)
+
+	FindClosest = nFoundPos
+
+	ActiveDocument.Undo ' Undo the tabify
+End Function
+
+Function IsPunct(ByVal MyStr)
+'DESCRIPTION: Is the first character a punctuation mark?
+
+	nChar = Asc(MyStr)
+
+	if (nChar >= Asc("!") And nChar <= Asc("/")) then
+		IsPunct = true
+	elseif (nChar >= Asc(":") and nChar <= Asc("@")) then
+		IsPunct = true
+	elseif (nChar >= Asc("[") and nChar <= Asc("^")) then
+		IsPunct = true
+	elseif (nChar >= Asc("{") and nChar <= Asc("~")) then
+		IsPunct = true
+	else
+		IsPunct = false
+	End If
+End Function

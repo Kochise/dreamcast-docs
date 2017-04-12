@@ -1,0 +1,766 @@
+'------------------------------------------------------------------------------
+'FILE DESCRIPTION: SAMPLE.DSM is a collection of sample editor macros.
+'------------------------------------------------------------------------------
+
+'This routine has many uses if you are trying to determine the type of source 
+'	file.
+'Return value:  0 Unknown file type
+'               1 C-related file, this includes .c, .cpp, .cxx, .h, .hpp, .hxx
+'               2 Java-related file, this includes .jav, .java
+'               3 ODL-style file, .odl, .idl
+'               4 Resource file, .rc, .rc2
+'               5 HTML-style file, this includes .html, and .htm
+'               6 VBS-style file, .dsm
+'               7 Def-style file, .def
+'USE: Pass this function the document that you wish to get information for.
+Function FileType (ByVal doc)
+	ext = doc.Name
+	FileType = 0
+	pos = Instr(ext, ".")
+	if pos > 0 then
+		Do While pos <> 1
+			ext = Mid(ext, pos, Len(ext) - pos + 1)
+			pos = Instr(ext, ".")
+		Loop
+		ext = LCase(ext)
+	end if
+	If ext = ".rc" Or ext = ".rc2" Then
+		FileType = 4
+	ElseIf doc.Language = dsCPP Then
+		FileType = 1
+	ElseIf doc.Language = dsJava Then
+		FileType = 2
+	ElseIf doc.Language = dsIDL Then
+		FileType = 3
+	ElseIf doc.Language = dsHTML_IE3 Or doc.Language = dsHTML_RFC1866 Then
+		FileType = 5  
+	ElseIf doc.Language = dsVBSMacro Then ' 
+		FileType = 6  
+	ElseIf ext = ".def" Then
+		FileType = 7
+	Else 
+		FileType = 0
+	End If 
+End Function
+
+
+'This routine has many uses if you are trying to determine if an identifier
+'  is a valid C identifier.
+'  These identifiers do not include qualification syntax, for example:
+'  foo.bar is not valid
+'  foo is valid
+'Parameters:    String to test for a valid C identifier.
+'Return value:  True: passed parameter is a valid C identifier.
+'               False: passed parameter is not a valid C identifier.
+Function ValidId(Id)
+	ValidId = True
+
+	'Don't permit an empty string
+	' (how can you identify nothing with something?)
+	if Id = "" then 
+	  ValidID = False
+	  Exit Function
+	End If
+
+	For i = 1 To Len(Id)
+	  if Mid(Id, i, 1) < "a" Or Mid(Id, i, 1) > "z" Then
+		if Mid(Id, i, 1) < "A" Or Mid(Id, i, 1) > "Z" Then
+			if Mid(Id, i, 1) < "0" Or Mid(Id, i, 1) > "9" Then
+				if Mid(Id, i, 1) <> "_" Then
+					ValidId = False
+				End if
+			End If
+		End If	
+	  End If
+	Next
+	If IsNumeric(Left(Id, 1)) = True Then
+		ValidId = False
+	End If
+End Function
+
+
+Dim ParamArr ()  ' Dynamic array to store function arguments.
+
+Sub AddFunctionDescription ( )
+'DESCRIPTION: Creates a comment block for the currently selected C/C++ function prototype
+
+	'Throughout this file, ActiveDocument.Selection is used in place 
+	'of ActiveDocument.Selection.Text.  The two are equivalent, and can 
+	'be used interchangeably. The reason for the equivalence is that
+	'Text is regarded as the default property to use. All uses of
+	'ActiveDocument.Selection without any other property default to the Text
+	'property.
+	if ActiveDocument.Language = dsCPP Then
+		Header = StripTabs(Trim(ActiveDocument.Selection))
+
+		'Get the function return type.
+		if Header <> "" then
+			Reti = InStr(Header, " ")
+			Loc = InStr(Header, "(")
+			if Reti < Loc Then
+			  RetTp = Left(Header, Reti)
+			  Header = Right(Header, Len(Header) - Reti)
+			End If
+
+			'Get the function name.
+			Loc = InStr(Header, "(") - 1
+			Loc2 = InStr(Header, ")")
+			if Loc > 0 And Loc2 > 0 then 'make sure there is a '(' and a ')'
+				fcName = Left(Header, Loc)
+				Header = Right(Header, Len(Header) - Len(fcName))
+
+				'Do we have storage type on the return type?
+				Trim (fcName)
+				If InStr(fcName," ") <> 0 Then
+					retTp = retTp + Left(fcName,InStr (fcName," "))
+					fcName = Right(fcName, Len(fcName) - InStr(fcName," "))
+				End If
+
+				'Get the function parameters.
+				iPrm = 0
+				iPrmA = 0
+				prms = Header 
+
+				'Count the number of parameters. 
+				Do While InStr(prms, ",") <> 0
+					iPrm = iPrm + 1
+					prms = Right(prms, Len(prms) - InStr(prms, ",")) 
+				Loop 
+				
+				'Store the parameter list in the array.
+				If iPrm > 0 Then  ' If multiple params.
+					iPrm = iPrm + 1
+					iPrmA = iPrm
+					Redim ParamArr(iPrm)
+					Do While InStr(header, ",") <> 0
+						ParamArr(iPrm) = Left(Header, InStr (Header, ",") - 1)
+						'Remove brace from first parameter.
+						If InStr(ParamArr(iPrm), " (") <> 0 Then
+							ParamArr(iPrm) = Right(ParamArr(iPrm), _
+									Len(ParamArr(iPrm))-InStr(ParamArr(iPrm)," ("))
+							Trim(ParamArr(iPrm))
+						End If
+						Header = Right(Header, Len(Header) - InStr(Header,","))
+						iPrm = iPrm - 1 
+						Loop 
+					ParamArr(iPrm) = Header 
+					'Remove trailing brace from last parameter.
+					If InStr(ParamArr(iPrm), ")") <> 0 Then
+						ParamArr(iPrm) = Left(ParamArr(iPrm), _
+								InStr(ParamArr(iPrm), ")") - 1)
+						Trim(ParamArr(iPrm))
+					End If
+				Else 'Possibly one param.
+					Redim ParamArr(1)
+					Header = Right(Header, Len(Header) - 1) ' Strip the first brace.
+					Trim(Header)
+					ParamArr(1) = StripTabs(Header)
+					If InStr(ParamArr(1), ")") <> 1 Then
+						ParamArr(1) = Left(ParamArr(1), InStr(ParamArr(1), ")") - 1)
+						Trim(ParamArr(1))
+						iPrmA = 1
+					End If
+				End If
+
+				'Position the cursor one line above the selected text.
+				ActiveDocument.Selection.LineUp
+				ActiveDocument.Selection.LineDown
+				ActiveDocument.Selection.StartOfLine
+				ActiveDocument.Selection = vbLf
+
+				Descr = "// Function name	: " + fcName + _
+						vbLf + "// Description	    : " + _ 
+						vbLf +  "// Return type		: " + RetTp + vbLf
+				
+				'Print the parameter list. 
+				Last = iPrmA
+				Do While iPrmA <> 0
+					'Remove a line feed from any of the arguments.
+					If InStr(ParamArr(iPrmA), vbLf) <> 0 Then
+						ParamArr(iPrmA) = Right(ParamArr(iPrmA), _
+								(Len(ParamArr(iPrmA)) - _
+								InStr(ParamArr(iPrmA), vbLf)))
+						Trim(ParamArr(iPrmA))
+					End If
+					ParamArr(iPrmA) = StripTabs(ParamArr(iPrmA))
+					'If there are 2+ parameters, the first parameter will 
+					'have a '(' prepended to it, remove it here:
+					if iPrmA = Last AND Last <> 1 then
+					  ParamArr(iPrmA) = Right(ParamArr(iPrmA), _
+							Len(ParamArr(iPrmA)) - 1)
+					End If
+					Descr = Descr + "// Argument         : " + _
+							ParamArr(iPrmA) + vbLf
+					iPrmA = iPrmA - 1
+				Loop
+				ActiveDocument.Selection = Descr
+			Else
+				MsgBox("It is possible that the function you are trying to"+_
+						" work with has a syntax error.")
+			End if
+		End If
+	Else
+		MsgBox("You need to have an active C/C++ document open"+ _
+				vbLF+"with the function prototype selected.")
+	End If
+End Sub
+
+'Strips the leading tab spaces. 
+Function StripTabs (ByVal MyStr)
+	Do While InStr(MyStr, vbTab) <> 0
+		MyStr = Right(MyStr, Len(MyStr) - InStr(MyStr, vbTab)) 
+	Loop 
+	StripTabs = Trim(MyStr)
+End Function
+
+Sub ToggleCommentStyle ( )
+'DESCRIPTION: Toggles between comment styles /* and //.
+
+	TmpBlock = ""
+	CmtBlock = ActiveDocument.Selection
+	TypeOfFile = FileType(ActiveDocument)
+	If TypeOfFile > 0 And TypeOfFile < 5 Then   'C/C++ style comment.
+		'Get the first two characters of the comment block.
+		Trim(CmtBlock)
+		If Instr(CmtBlock,"//") <> 0 Then 
+			Do While Instr (CmtBlock,"//") <> 0
+				TmpBlock = TmpBlock + Left (CmtBlock, Instr (CmtBlock,"//") - 1)
+				CmtBlock = Right(CmtBlock, (Len(CmtBlock) - (Instr(CmtBlock,_
+						"//") + 1)))
+			Loop
+			CmtBlock = "/*" + TmpBlock + CmtBlock + "*/"
+		ElseIf Instr(CmtBlock, "/*") <> 0 Then 
+			CmtBlock = Right(CmtBlock, Len(CmtBlock) - (Instr(CmtBlock,"/*")_
+					+ 1))
+			Do While Instr (CmtBlock, vbLf) <> 0
+				TmpBlock = TmpBlock + Left (CmtBlock, Instr(CmtBlock, vbLf))_
+						+ "//"
+				CmtBlock = Right(CmtBlock, (Len(CmtBlock) - (Instr(CmtBlock,_
+						vbLf))))
+			Loop
+			CmtBlock = "//" + TmpBlock + Trim(CmtBlock)
+			CmtBlock = Left(CmtBlock, Instr(CmtBlock,"*/")-1)
+		End If
+		ActiveDocument.Selection.Delete
+		ActiveDocument.Selection = CmtBlock
+	Else
+		MsgBox "This macro does not work on this type of file."
+	End If
+	
+End Sub
+
+
+
+Sub AddRevisionMarks ( )
+'DESCRIPTION: Adds comments to a file that describe the changes made.
+
+	'This routine adds a new comment block to the top of a file, where the 
+	' programmer can place revision marks to describe the changes made to the file.
+	'The rules this routine uses are as follows:
+	' 1) Start at the top of the file.
+	' 2) Scan through each line; if the current line starts with a comment,
+	'      advance to the next line..
+	' 3) If we are currently in a group comment block, keep advancing until
+	'     the end of the block is found.
+	' 4) If we are in a line item comment (e.g.: //, ', rem, etc), keep advancing
+	'     until a line that does not start with a comment is found.
+	'     By 'start with a comment', it is meant a line, where after
+	'     stripping off spaces and tabs from the beginning, the first set of
+	'     characters is not a comment delimiter.
+	' 5) Insert a blank line; this allows the next invocation of this macro
+	'     to place the newer revision mark before all others.
+	' 6) Insert the revision block.
+
+	'Change this to the programmer's name for a default.
+	DefaultUserName = "..."
+
+	'Because the user may not have closed a comment (e.g. a /* without a */),
+	' try to protect ourselves from an infinite loop...
+	BreakAfter = 10 'Max number of lines to look at scan before aborting
+	CurrentCount = 1
+
+	BeginComment = "" 'The token for the specified language for the beginning
+						' of a comment.
+	EndComment = ""   'Same, except for the end of a comment.
+	EveryLine = ""    'Does the comment mark need to be placed on every line
+						' (VBS, DEF types)?
+
+	'First, make sure the active document is a text window
+	' (Not really necessary, but good practice).
+	If ActiveDocument.Type = "Text" Then
+		TypeOfFile = FileType(ActiveDocument)
+    
+		'Set ourselves at the very top of the document.
+		'This also clears any selection made.
+		ActiveDocument.Selection.StartOfDocument
+		ActiveDocument.Selection.SelectLine
+		CurrText = ActiveDocument.Selection
+		CurrText = LTrim(CurrText)
+    
+		'All of the following do relatively the same thing, 
+		' except they look for different comment types.
+		If TypeOfFile > 0 And TypeOfFile < 5 Then       'C/C++ family of code
+			ContSearch = True
+			BeginComment = "/*"
+			EndComment = "*/"
+			EveryLine = " "
+
+			'In C/C++ style code, we need to look for a //;
+			'  if not found, then look for a /*.
+			Do
+				ActiveDocument.Selection = CurrText
+				If InStr(CurrText, "//") = 1 Then   'is a "//" available?
+					ActiveDocument.Selection.SelectLine
+					CurrText = LTrim(ActiveDocument.Selection) 'Remove whitespace.
+					ContSearch = False   ' Looking at // style comments, 
+											'don't look for a /* style.
+				Else
+					Exit Do
+				End If
+			Loop
+
+			If ContSearch = False Then
+				ActiveDocument.Selection.LineUp
+			End If
+
+			'When the method ActiveDocument.Selection.SelectLine is called,
+			'  it is the same as when you click the mouse in the margin; it
+			'  selects the whole line, including the carriage return.
+			'  Because of this, the cursor comes down to the next line, which
+			'  can really confuse this algorithm. So in a number of places, 
+			'  you will see a grouping of LineUp/LineDown commands. By executing
+			'  these commands, the cursor is moved down, which clears the current
+			'  selection (including getting us past the carriage return),
+			'  then moves us back up, thus putting us on the same line. This
+			'  removesthe danger of skipping a line (which is what will
+			'  happen without the LineUp/LineDown combination).
+			If ContSearch = True Then
+				ActiveDocument.Selection.StartOfDocument
+				'Prime the loop with the first line.
+				ActiveDocument.Selection.SelectLine
+				CurrText = ActiveDocument.Selection           
+				ActiveDocument.Selection.LineDown
+				ActiveDocument.Selection.LineUp
+				'Remove leading whitespace.
+				CurrText = LTrim(CurrText)      
+				'Does line start with a /*?              
+				If InStr(CurrText,"/*") = 1 Then
+					while (InStr(CurrText, "*/") = 0) And _
+					      (BreakAfter > CurrentCount)
+						ActiveDocument.Selection.SelectLine
+						CurrText = ActiveDocument.Selection
+						CurrText = LTrim(CurrText)                              
+						ActiveDocument.Selection.LineDown
+						ActiveDocument.Selection.LineUp    
+						CurrentCount = CurrentCount + 1
+					wend
+					If (BreakAfter > CurrentCount) Then
+						'Exit the loop because the search has gone on for an 
+						'  unreasonable number of lines.
+						MsgBox "Could not find a closing comment mark"
+					End If
+				End If
+			End If
+
+		'The code for these is really just a copy of that from the 
+		'  C/C++ section...
+		  
+		ElseIf TypeOfFile = 5 Then                      'HTML code
+			BeginComment = "<!--"
+			EndComment = "-->"
+			EveryLine = "    "
+			If InStr(CurrText,"<!--") = 1 Then
+				If InStr(CurrText,"-->") <> 0 Then
+					ActiveDocument.Selection.LineDown
+				Else
+					Do
+						ActiveDocument.Selection.SelectLine
+						CurrText = ActiveDocument.Selection
+						CurrText = Left(CurrText, Len(CurrText) - 2)
+						ActiveDocument.Selection = CurrText + vbLf
+						If InStr(CurrText, "-->") Then
+							Exit Do
+						End If
+					Loop
+				End If
+			End If 
+
+		ElseIf TypeOfFile = 6 Then                      'VBS code
+			BeginComment = "'"
+			EndComment = "'"
+			EveryLine = "'"
+			Do
+				ActiveDocument.Selection = CurrText
+				If InStr(CurrText, "'") = 1 Or _
+				   InStr(LCase(CurrText), "Rem") = 1 Then
+					ActiveDocument.Selection.SelectLine
+					CurrText = LTrim(ActiveDocument.Selection)
+					ContSearch = False
+				Else
+					Exit Do
+				End If
+			Loop
+			If ContSearch = False Then
+				ActiveDocument.Selection.LineUp
+			End If
+
+		ElseIf TypeOfFile = 7 Then                      'DEF code
+			BeginComment = ";"
+			EndComment = ""
+			EveryLine = ";"
+			Do
+				ActiveDocument.Selection = CurrText
+				If InStr(CurrText, ";") = 1 Then
+					ActiveDocument.Selection.SelectLine
+					CurrText = LTrim(ActiveDocument.Selection)
+					ContSearch = False
+				Else
+					Exit Do
+				End If
+			Loop
+			If ContSearch = False Then
+				ActiveDocument.Selection.LineUp
+			End If      
+		End If
+
+		If TypeOfFile = 0 Then                          'Unknown type of code.
+			MsgBox("Unable to add revision marks. Unrecgonized file type")
+		ElseIf (CurrentCount < BreakAfter) Then
+			'The BeginComment, EveryLine, and EndComment were set as
+			' avoid duplicating this section...
+			' just insert the generalized block, with the comment markers.
+			ActiveDocument.Selection.StartOfLine(True)
+			'This is added with one assignment statement, which enables the user
+			' to hit undo once, and remove the entire change.
+			ActiveDocument.Selection = vbLf + _
+			BeginComment + "***********************************" + vbLf + _
+			EveryLine    + " REVISION LOG ENTRY" + vbLf + _
+			EveryLine    + " Revision By: " + DefaultUserName + vbLf + _
+			EveryLine    + " Revised on " + CStr(Now) + vbLf + _
+			EveryLine    + " Comments: ..." + vbLf + _
+			EveryLine    + "***********************************" + _
+			EndComment + vbLf + vbLf
+		End If
+	End If
+End Sub
+
+
+Sub CloseExceptActive () 
+'DESCRIPTION: Closes all editor windows except the current one.
+
+	'Windows.Item(1) is always the currently active window. So to close all
+	' the windows except the active one, keep looping until there is no 
+	' longer a Windows.Item(2).
+	do while Windows.Count > 1
+		Windows.Item(2).Close(dsSaveChangesPrompt)
+	Loop
+End Sub
+
+
+Sub CommentOut ()
+'DESCRIPTION: Comments out a selected block of text.
+	Dim win
+	set win = ActiveWindow
+	if win.type <> "Text" Then
+	  MsgBox "This macro can only be run when a text editor window is active."
+	else
+		TypeOfFile = FileType(ActiveDocument)  
+		If TypeOfFile > 0 And TypeOfFile < 5 Then    'C & Java use the same 
+														'style of comments.
+			ActiveDocument.Selection = "/*" + ActiveDocument.Selection + "*/"
+		ElseIf TypeOfFile = 5 Then
+			ActiveDocument.Selection = "<!-- " + ActiveDocument.Selection + " -->"
+		ElseIf TypeOfFile = 6 Or TypeOfFile = 7 Then
+			'There is no group comment like there is in the other file types, 
+			'so we need to iterate through each line, and prepend a ' to the line.
+			'Also, because VBS/DEF does not have a 'end the comment at this 
+			'particular column' delimiter, entire lines of code must be 
+			'commented out, not sections.
+			If TypeOfFile = 6 Then 
+				CommentType = " ' "
+			Else
+				CommentType = " ; "
+			End If
+     
+			StartLine = ActiveDocument.Selection.TopLine
+			EndLine = ActiveDocument.Selection.BottomLine
+			If EndLine < StartLine Then
+				Temp = StartLine
+				StartLine = EndLine
+				EndLine = Temp
+			End If
+
+			If EndLine = StartLine Then
+				ActiveDocument.Selection = CommentType + ActiveDocument.Selection
+
+			Else 
+				For i = StartLine To EndLine
+					ActiveDocument.Selection.GoToLine i
+					ActiveDocument.Selection.SelectLine
+					ActiveDocument.Selection = CommentType + _
+						ActiveDocument.Selection
+				Next
+			End If
+		Else
+			MsgBox("Unable to comment out the highlighted text" + vbLf + _
+					"because the file type was unrecognized." + vbLf + _
+					"If the file has not yet been saved, " + vbLf + _
+					"please save it and try again.")
+		End If
+	End If
+End Sub
+
+
+Sub MultiplePaste () 
+'DESCRIPTION: Performs a paste of what is on the clipboard a multiple number of times.
+
+	NumPastes = InputBox("Number of pastes to make", "Multiple Paste Macro",_
+						 "1")
+	For i = 1 To CInt(NumPastes)
+		ActiveDocument.Selection.Paste
+		'Because the selection remains active, the following two lines
+		'clear the selection, while keeping the cursor in the same place.
+		ActiveDocument.Selection.LineUp
+		ActiveDocument.Selection.LineDown
+		ActiveDocument.Selection = vbLf    
+	Next
+End Sub
+
+
+Sub PrintAllOpenDocuments ()
+'DESCRIPTION: Prints all open, active documents.
+
+	'Small, quick macro, but it can be usefull.
+	for each doc in Application.Documents
+		Doc.PrintOut
+	next
+End Sub
+
+
+Sub PoundDefOut (ifndef)
+	If ifndef = true Then
+		PoundType = "#ifndef "
+	Else
+		PoundType = "#ifdef "
+	End If
+	
+	If FileType(ActiveDocument) <> 1 Then
+		MsgBox ("This macro only works on" + vbLf + _
+				".c, .cpp, .cxx, .h, .hpp, or .hxx files")
+	Else
+		ControlVarName = InputBox("What should the control variable be?" + _
+			vbLf + vbLf + "Example: #ifdef ControlVariable", PoundType + _
+			" out a section of code")
+		OK = True
+		If ValidId (ControlVarName) = False Then
+			Ok = False
+			MsgBox("""" + ControlVarName + """" + _ 
+				" is not a valid C identifier." + _
+				vbLf + "please re-run the macro with a valid C identifier")
+		End If
+		
+		
+		Sel = ActiveDocument.Selection
+		For i = 1 To Len(Sel) - 1
+			If Mid(Sel, i, 1) = vbLf Then
+				Sel = Left(Sel,i) + vbTab + Right(Sel, Len(Sel)-i)
+			End If
+		Next
+		If ControlVarName <> "" And Ok = True Then
+			Sel = vbLf + PoundType + ControlVarName + vbLf + vbTab + Sel + _
+				vbLf+ "#endif //" + ControlVarName
+			If Right(Sel,1) <> vbLf Then
+				Sel = Sel + vbLf
+			End If
+			ActiveDocument.Selection = Sel
+		End If
+	End If
+End Sub
+
+'The next two macros are exactly the same, except one uses ifndef and the
+'  other ifdef. We recycle the same code and just use a different 
+'  preprocessor directive.
+Sub ifdefOut ()
+'DESCRIPTION: #ifdef / #endif out a section of code.
+
+	PoundDefOut (False)
+End Sub
+
+Sub ifndefOut ()
+'DESCRIPTION: #ifndef / #endif out a section of code.
+
+	PoundDefOut (True)
+End Sub
+
+'Allows the user to make sure the current header file is included only once. 
+' There are two ways to do this, using the #pragma once directive or 
+' surrounding the entire file in a #ifndef/#endif structure. The first way
+' is much cleaner, but it is VC++ specific, and therefore not portable. If 
+' you plan on compiling your code with other compilers, use the 
+' #ifndef/#endif method, otherwise, the #pragma once option is preferrable.
+Sub OneTimeInclude ()
+'DESCRIPTION: Adds code to the current header file so it is included only once per c/cpp file.
+	
+	ext = ActiveDocument.Name
+	If ext = "" Then
+		If MsgBox("The file you are working with does not have a file extension." + _
+				vbLF + "Are you sure this is a C/C++ header file?", 4) = vbCancel Then
+			Exit Sub
+		End If
+		ext = "nofilenamegiven.h"
+	End If
+	DocName = UCase(ext)
+	pos = Instr(ext, ".")
+	Do While pos <> 1
+		ext = Mid(ext, pos, (Len(ext) - pos + 1))
+		pos = Instr(ext, ".")
+	Loop
+	ext = LCase(ext)
+	pos = Instr(DocName, ".")
+	If ext = ".h" Or ext = ".hpp" Then
+		'Warn user that this will not work with a compiler other than VC++.
+		If MsgBox("This macro uses the Visual C++ dependant #pragma once" + _
+				vbLf + "Is the source to be portable across compilers?", 4) _
+				= 6 Then
+			ActiveDocument.Selection.StartOfDocument (False)
+			Examp = "__" + Left(DocName, pos - 1) + "_" + _
+				UCase(Right(ext, len(ext) - 1)) + "__"
+			ControlVarName = InputBox("What should the control variable be?" _
+				+ vbLf + vbLf + "Example: #ifdef " + _
+				Examp, "One time header include protection", Examp)
+			If ValidId (ControlVarName) = True Then
+				ActiveDocument.Selection = "#ifndef " + ControlVarName + _
+					vbLf + "#define " + ControlVarName + vbLf
+				ActiveDocument.Selection.EndOfDocument(False)
+				ActiveDocument.Selection = vbLf + "#endif //" + _ 
+					ControlVarName
+			Else
+				MsgBox(ControlVarName + " is not a valid c identifier." + _
+				vbLf + "please re-run the macro with a valid C identifier")
+			End If
+		Else
+			ActiveDocument.Selection.StartOfDocument(False)
+			ActiveDocument.Selection = "#pragma once" + vbLf + vbLf
+		End If
+	Else
+		MsgBox("This macro can only be run on .h or .hpp files")
+	End If
+End Sub
+
+
+
+'Auto completion macro
+Dim previousSelection
+Dim completionWords
+Dim completionWordsIndex
+
+Sub AddToCompletionWords (word)
+	' If the word is already there, abort
+	if InStr(1, completionWords, " " & word & " ", 1) <> 0 Then
+		Exit Sub
+	End If
+
+	completionWords = completionWords & word & " "
+End Sub
+
+Function ExtractNextCompletionWord()
+	ExtractNextCompletionWord = ""
+
+	' If no words yet, go away
+	if Len(completionWords) <= 1 Then
+		Exit Function
+	End If
+	
+	' Wrap to beginning if necessary
+	if completionWordsIndex > Len(completionWords) Then
+		completionWordsIndex = 2
+	End If
+
+	' Find next <space>
+	Dim newIndex
+	newIndex = InStr (completionWordsIndex, completionWords, " ", 0)
+	if newIndex = 0 Then
+		Exit Function
+	End If
+
+	ExtractNextCompletionWord = Mid(completionWords, completionWordsIndex, _ 
+		newIndex-completionWordsIndex)
+	completionWordsIndex = newIndex+1		'Skip over <space>
+End Function
+
+Sub FillCompletionWords (word)
+	' Find all words in this file which match word, and
+	'  add them, space separated, into completionWords
+	previousSelection = word
+	completionWords = " "
+	completionWordsIndex = 2
+	dim sel
+	set sel = ActiveDocument.Selection
+
+	Dim searchString
+	searchString = "\{^\![^a-zA-Z0-9]\}" & word
+	Dim firstTime
+	firstTime = True
+	Dim firstLine, firstCol
+	Do while sel.FindText (searchString, dsMatchBackward + dsMatchRegExp)
+		if firstTime Then
+			firstLine = sel.TopLine
+			firstCol = sel.CurrentColumn
+			firstTime = False
+		ElseIf firstLine = sel.TopLine And firstCol = sel.CurrentColumn Then
+			Exit Do		' Jump out of loop before repeat
+		End If
+		sel.WordRight
+		sel.WordLeft dsExtend
+		AddToCompletionWords Trim(sel.text)
+		sel.Cancel
+	Loop
+End Sub
+
+Function SuggestNextCompletionWord()
+	SuggestNextCompletionWord = True
+	Dim word
+	word = ExtractNextCompletionWord()
+	if word <> "" then
+		ActiveDocument.Selection = word
+		previousSelection = word
+	end if
+End Function
+ 
+Sub AutoCompleteFromFile()
+'DESCRIPTION: Looks through the active file, searching for the rest of the word that you began to type.
+	Dim doc
+	set doc = ActiveDocument
+
+	' Be sure active document is a text document
+	if doc Is Nothing Then
+		Exit Sub
+	elseif doc.Type <> "Text" Then
+		Exit Sub
+	End If
+
+	' Get word to be completed
+	Dim sel
+	set sel = doc.Selection
+	sel.Cancel
+	dim origLine, origCol
+	origLine = sel.TopLine
+	origCol = sel.CurrentColumn
+	sel.WordLeft dsExtend
+
+	'If the cursor is sitting just to the right of a space, an infinite loop
+	'results. This bit of code protects from that:
+	if Right(sel, 1) = " " then
+		sel.CharRight
+		Exit Sub
+	end If
+
+	if sel <> previousSelection Or completionWords = "" Then
+		FillCompletionWords sel
+		sel.MoveTo origLine, origCol
+		sel.WordLeft dsExtend
+	End If
+
+	SuggestNextCompletionWord
+
+End Sub

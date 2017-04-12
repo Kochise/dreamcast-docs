@@ -1,0 +1,72 @@
+---------------------------------------------------------
+Microsoft(R) SQL Server OLE DB Provider 7.00.459 Readme File
+---------------------------------------------------------
+
+(c) 1998 Microsoft Corporation. All rights reserved.
+
+This document provides late-breaking or other information that supplements the Microsoft SQL Server OLE DB Provider documentation.
+
+--------
+CONTENTS
+--------
+
+1. PRODUCT DESCRIPTION
+   
+2. TECHNICAL NOTES
+
+----------------------
+1. PRODUCT DESCRIPTION
+----------------------
+SQLOLEDB, the Microsoft SQL Server OLE DB provider, exposes interfaces to consumers wanting access to data on one or more SQL Servers.
+
+------------------
+2. TECHNICAL NOTES
+------------------
+
+2.1 Changes to SQLOLEDB Properties
+
+Note the following changes in the SQLOLEDB properties:
+
+* The DBPROP_INIT_DATASOURCE property is now used to specify the
+name of a server running SQL Server. It is no longer used to
+specify a database name.
+
+* The DBPROP_INIT_CATALOG property is now used to specify the
+initial database.
+
+* The DBPROP_INIT_LOCATION property is no longer supported.
+
+* The DBPROP_AUTH_INTEGRATED property is now supported. If
+DBPROP_AUTH_INTEGRATED is set to ‘SSPI’, integrated security is used. If it is set to null BSTR pointer, SQL Server security will be used.
+
+* The SSPROP_AUTH_TRUSTEDCONNECTION property is no longer supported.
+
+* The DBPROP_INIT_MODE provider specific property is no longer supported.
+
+2.2
+If a command is attempted on a connection that already has a command outstanding, SQLOLEDB creates another connection to process the new command if the following conditions are true:
+
+*  DBPROP_MULTIPLECONNECTIONS is set to VARIANT_TRUE.
+*  The first command did not produce a rowset, or it is not using a server cursor.
+*  The connection has no active transaction.
+
+If there is an active transaction on the connection then the attempt to execute a second command returns E_FAIL. If there is no active transaction but DBPROP_MULTIPLECONNECTIONS is VARIANT_FALSE, the attempt to execute a second command returns DB_E_OBJECTOPEN.
+
+Transactions and locking are managed by SQL Server on a per connection basis.  If a second connection is generated, the commands on the separate connections do not share locks. Care must be taken to ensure one command does not block another by holding locks on rows requested by the other command.
+
+2.3
+To improve performance by reducing network traffic, SQLOLEDB does not automatically derive parameter information unless ICommandWithParameters::GetParameterInfo or ICommandPrepare::Prepare is called before executing a command. This means that SQLOLEDB will not automatically:
+
+* Verify the correctness of the datatype specified with ICommandWithParameters::SetParameterInfo.
+* Map from the DBTYPE specified in the accessor binding information to the correct SQL datatype for the parameter.
+
+Applications will recieve possible errors or loss of precision with either of these methods if they specify datatypes that are not compatible with the SQL datatype of the parameter.
+
+To ensure this does not happen, the application should:
+
+* If hard coding ICommandWithParameters::SetParameterInfo, ensure that pwszDataSourceType matches the SQL datatype for the parameter.
+* If hard coding an accessor, ensure that the DBTYPE being bound to the parameter is of the same type as the SQL datatype for the parameter.
+* Code the application to call ICommandWithParameters::GetParameterInfo so that the provider can dynamically obtain the SQL datatypes of the parameters. This will cause an extra network round-trip to the server.
+
+2.4
+DBPROP_CHANGEINSERTEDROWS can only be set to VARIANT_TRUE if the rowset is using a keyset-driven cursor.

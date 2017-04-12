@@ -1,0 +1,801 @@
+//==========================================================================;
+//
+//  THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY
+//  KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+//  IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR
+//  PURPOSE.
+//
+//  Copyright (c) 1992 - 1997  Microsoft Corporation.  All Rights Reserved.
+//
+//--------------------------------------------------------------------------;
+
+// 
+// DirectShow interfaces to control playback of a DVD filter graph.
+//
+
+// forward declarations - these are the interfaces declared in this file
+
+import "unknwn.idl";
+import "objidl.idl";
+
+
+interface IDvdControl;
+interface IDvdInfo;
+interface IDvdGraphBuilder ;
+
+
+//==========================================================================
+//==========================================================================
+//
+// typedefs used by IDvdControl and IDvdInfo interfaces.
+//
+//==========================================================================
+//==========================================================================
+
+typedef enum tagDVD_DOMAIN {
+    // The DVD_DOMAIN is used to indicate the stat of a DVD player.
+    DVD_DOMAIN_FirstPlay=1,         // doing default initialization of a dvd disc
+    DVD_DOMAIN_VideoManagerMenu,  // displaying menus for whole disc
+    DVD_DOMAIN_VideoTitleSetMenu, // displaying menus for current title set
+    DVD_DOMAIN_Title,             // displaying current title
+    DVD_DOMAIN_Stop               // player is in stopped state
+} DVD_DOMAIN;
+
+typedef enum tagDVD_MENU_ID {
+    DVD_MENU_Title = 2,     // to choose a title from any VTS in a DVD-Video volume
+    DVD_MENU_Root = 3,      // main menu for a specific VTS 
+    DVD_MENU_Subpicture =4, // to choose subpicture stream in a VTS
+    DVD_MENU_Audio = 5,     // to choose audio stream in a VTS
+    DVD_MENU_Angle = 6,     // to choose angle num in a VTS
+    DVD_MENU_Chapter = 7    // to choose a chapter in a VTS
+    // the Root menu always provides a means of getting to to Subpicture, Audio, 
+    // Angle and Chapter menus if they exist.
+} DVD_MENU_ID;
+
+typedef enum tagDVD_DISC_SIDE {
+    DVD_SIDE_A = 1,
+    DVD_SIDE_B = 2
+} DVD_DISC_SIDE;
+
+
+typedef enum tagDVD_PREFERRED_DISPLAY_MODE
+{
+    // DVD_PREFERRED_DISPLAY_MODE is used to indicate the user's
+    // preferred window aspect ratio and preferred method of converion of
+    // 16*9 content to a 4*3 window aspect ratio.  Pan-scan and letterboxing are
+    // the two conversion methods.  This enum is used to indicate only a preference of 
+    // conversion mechinism since some content can only be converted using one 
+    // of these methods.  4*3 content is converted to a 16*9 window always by using
+    // "reverse" letterboxing where black bars are added to the right and left 
+    // sides of the display instead of the top and bottom of the display as in the 16*9
+    // to 4*3 conversion useing letterboxing.
+    DISPLAY_CONTENT_DEFAULT = 0,    // default to content
+    DISPLAY_16x9 = 1,               // 16x9 display
+    DISPLAY_4x3_PANSCAN_PREFERRED = 2,   // 4x3 display with pan-scan preferrence
+    DISPLAY_4x3_LETTERBOX_PREFERRED = 3   // 4x3 display with letterbox preferrence
+
+} DVD_PREFERRED_DISPLAY_MODE;
+
+typedef WORD DVD_REGISTER;
+typedef DVD_REGISTER    GPRMARRAY[16]; // DVD-Video 1.0 has 16 16-bit General Parameter Registers
+typedef DVD_REGISTER    SPRMARRAY[24]; // DVD-Video 1.0 has 24 16-bit System Parameter Registers
+
+typedef struct tagDVD_ATR 
+{
+    //
+    // Refer to the DVD-Video 1.0 spec to parse these structures.
+    //
+    ULONG    ulCAT;     // VMG_CAT if this is for a volume; or VTS_CAT 
+			//      if this is for a Video Title Set (VTS)
+    BYTE    pbATRI[768];// All stream attributes for menu and title from bytes
+			//      256 to 1023 of VMGI or VTSI.
+} DVD_ATR;
+
+
+typedef BYTE DVD_VideoATR[2];   // video stream attributes.  See DVD-Video spec.
+typedef BYTE DVD_AudioATR[8];   // audio stream attributes.  See DVD-Video spec.
+typedef BYTE DVD_SubpictureATR[6]; // subpicture stream attributes.  See DVD-Video spec.
+
+
+// DVD Timecode is BCD encoded in this format: 0xHhMmSsFf, where
+//      H is tens of hours
+//      h is hours
+//      M is tens of minutes
+//      m is minutes
+//      S is tens of seconds
+//      s is seconds
+//      F is tens of frames
+//      f is frames
+// Note that you must know the frame rate to interperate the frame count as time.
+typedef enum tagDVD_FRAMERATE
+{
+    DVD_FPS_25 =1, // 25 frames per second
+    DVD_FPS_30NonDrop = 3 // exactly 30 frames per second
+} DVD_FRAMERATE;
+
+cpp_quote("typedef struct tagDVD_TIMECODE")
+cpp_quote("{")
+cpp_quote("   ULONG Hours1    :4; // Hours")
+cpp_quote("   ULONG Hours10  :4; // Tens of Hours ")
+cpp_quote("")
+cpp_quote("   ULONG Minutes1  :4; // Minutes ")
+cpp_quote("   ULONG Minutes10:4; // Tens of Minutes ")
+cpp_quote("")
+cpp_quote("   ULONG Seconds1  :4; // Seconds ")
+cpp_quote("   ULONG Seconds10:4; // Tens of Seconds ")
+cpp_quote("")
+cpp_quote("   ULONG Frames1   :4; // Frames ")
+cpp_quote("   ULONG Frames10 :2; // Tens of Frames ")
+cpp_quote("")
+cpp_quote("   ULONG FrameRateCode: 2; // use DVD_FRAMERATE to indicate frames/sec and drop/non-drop")
+cpp_quote("} DVD_TIMECODE;")
+
+
+typedef struct tagDVD_PLAYBACK_LOCATION 
+{
+    //
+    // TitleNum & ChapterNum or TitleNum & TimeCode are sufficient to save 
+    // playback location for Once_Sequential_PGC_Titles.
+    //
+    ULONG   TitleNum;   // title number for whole disc (TTN not VTS_TTN)
+    ULONG   ChapterNum; // part-of-title number with title. 0xffffffff if not Once_Sequential_PGC_Title
+    ULONG   TimeCode;   // use DVD_TIMECODE for current playback time. 0xffffffff if not Once_Sequential_PGC_Title
+
+} DVD_PLAYBACK_LOCATION;
+
+typedef DWORD VALID_UOP_SOMTHING_OR_OTHER;
+
+// Parental Level Information
+cpp_quote ("#define DVD_PARENTAL_LEVEL_8    0x8000")
+cpp_quote ("#define DVD_PARENTAL_LEVEL_7    0x4000")
+cpp_quote ("#define DVD_PARENTAL_LEVEL_6    0x2000")
+cpp_quote ("#define DVD_PARENTAL_LEVEL_5    0x1000")
+cpp_quote ("#define DVD_PARENTAL_LEVEL_4    0x0800")
+cpp_quote ("#define DVD_PARENTAL_LEVEL_3    0x0400")
+cpp_quote ("#define DVD_PARENTAL_LEVEL_2    0x0200")
+cpp_quote ("#define DVD_PARENTAL_LEVEL_1    0x0100")
+
+
+//==========================================================================
+//==========================================================================
+// IDvdControl interface -- Basic DVD-Video playback control.
+// This modeled after the app control of a player specified in Annex J 
+// of the DVD Video spec.  IDvdInfo can be used to get information useful
+// in using IDvdControl
+//==========================================================================
+//==========================================================================
+
+[
+object,
+uuid(A70EFE61-E2A3-11d0-A9BE-00AA0061BE93),
+pointer_default(unique)
+]
+
+interface IDvdControl : IUnknown {
+    import "unknwn.idl";
+    
+    // TitlePlay 
+    // Start playing the specified title number. 
+    // Title numbers range between 1 and 99.
+    HRESULT TitlePlay
+	( [in]  ULONG   uiTitle
+	);
+
+    // ChapterPlay
+    // Start playing at the specified chapter (or part-of-title) 
+    // within the specified title.  Chapters range from 1 to 999.
+    HRESULT ChapterPlay
+	( [in]  ULONG   uiTitle, 
+	  [in]  ULONG   uiChapter
+	);
+
+    // TimePlay
+    // Start playing at the specified time within the specified title.
+    // NOTE: the actual start time will be the closest sync point before
+    // or equal to the specified frame number.
+    HRESULT TimePlay
+	( [in]  ULONG   uiTitle,
+	  [in]  ULONG   bcdTime  // use DVD_TIMECODE.  Framerate code is ignored.
+	);
+
+    // StopForResume
+    // Stop playback after saving resume information.  DVD Navigator transfers to the DVD "Stop State" and 
+    // (same as DVD_DOMAIN_Stop), but filter graph remains in DirectShow's Run state.
+    HRESULT StopForResume();     
+
+    // GoUp
+    // Start playback of the program chain currently authored as the "GoUp_PGCN".
+    HRESULT GoUp();     
+
+    // TimeSearch
+    // Start playing at the specified time within the current title.
+    // NOTE: the actual start time will be the closest sync point before
+    // or equal to the specified frame number.
+    HRESULT TimeSearch
+	( [in]  ULONG   bcdTime  // use DVD_TIMECODE.  Framerate code is ignored.
+	);      
+
+    // ChapterSearch
+    // Start playing at the specified chapter (or part-of-title) within
+    // the current title.
+    HRESULT ChapterSearch
+	( [in]  ULONG   Chapter
+	);      
+
+    // PrevPGSearch
+    // Start playing at the beginning of the previous DVD "program".
+    // For One-Sequential_PGC_Titles (which includes most titles) a program 
+    // is equivalent to a chapter, otherwise a program is part of a chapter. 
+    HRESULT PrevPGSearch();     
+
+    // TopPGSearch
+    // Start playing from the beginning of they current program.
+    HRESULT TopPGSearch();      
+
+    // NextPGSearch
+    // Start playing from the beginning of the next program.
+    HRESULT NextPGSearch();     
+
+    // ForwardScan
+    // Set forward play at the specified speed.  
+    //      dwSpeed == 1 is normal play
+    //      dwSpeed  < 1 is slow play
+    //      dwSpeed  > 1 is fast play
+    // For dwSpeed != 1, audio and subpicture is muted.
+    HRESULT ForwardScan
+	( [in]  double  dwSpeed
+	);      
+
+    // BackwardScan
+    // Set reverse play at the specified speed.  
+    //      dwSpeed == 1 is normal play speed in reverse
+    //      dwSpeed  < 1 is slow play in reverse
+    //      dwSpeed  > 1 is fast play in reverse
+    // For reverse play, audio and subpicture are always muted.
+    HRESULT BackwardScan
+	( [in]  double  dwSpeed
+	);      
+
+    // MenuCall
+    // Start playback of the Menu specified by an enum DVD_MENU_ID.
+    HRESULT MenuCall
+	( [in]  DVD_MENU_ID   MenuID  
+	);      
+
+    // Resume
+    // Returns to title playback in DVD_DOMAIN_Title. This is typically
+    // done after MenuCall which puts the DVD Navigator in 
+    // DVD_DOMAIN_VideoTitleSetMenu or DVD_DOMAIN_VideoManagerMenu.
+    HRESULT Resume();       
+
+    // UpperButtonSelect
+    // Selects the button above the current button.
+    // "Selecting" a DVD button simply highlights the button but does
+    // not "Activate" the button.  Selecting is the Windows equivalent 
+    // to tabbing to a button but not pressing the space bar or enter key.
+    // Activating is the Windows equivalent of pressing the space bar or
+    // enter key after tabbing to a button.
+    HRESULT UpperButtonSelect();        
+
+    // LowerButtonSelect
+    // Selects the button below the current button.
+    HRESULT LowerButtonSelect();        
+
+    // LeftButtonSelect
+    // Selects the button to the left of the current button.
+    HRESULT LeftButtonSelect();     
+
+    // RightButtonSelect
+    // Selects the button to the right of the current button.
+    HRESULT RightButtonSelect();        
+
+    // ButtonActivate
+    // Activates current button.
+    HRESULT ButtonActivate();       
+
+    // ButtonSelectAndActivate
+    // Selects and then activates the button specified by the user.  
+    // uiButton is intended to be a number entered by a user corresponding
+    // to button numbers currently displayed on screen.  
+    // Button numbers range from 1 to 36.
+    HRESULT ButtonSelectAndActivate
+	( [in]  ULONG   uiButton
+	);      
+
+    // StillOff
+    // Releases any current still if there are no available buttons.
+    // This includes VOBU stills, Cell stills, and PGC stills, whether the 
+    // still is infinite.  When buttons are available, stills are released by
+    // activating a button.  Note this does not release a Pause.
+    HRESULT StillOff();     
+
+    // PauseOn
+    // Freezes playback and any internal timers. This is similar to
+    // IMediaControl::Pause()
+    HRESULT PauseOn();      
+
+    // PauseOff
+    // Releases a Pause.  
+    HRESULT PauseOff();     
+
+    // MenuLanguageSelect
+    // Selects the default language for menus.  Languages are specified with
+    // Windows standard LCIDs.  LCIDs can be created from ISO-639 codes with
+    // MAKELCID( MAKELANGID(wISO639LangID ,SUBLANG_DEFAULT ), SORT_DEFAULT )
+    // NOTE: MAKELANGID seems to have a bug so 'jp' may have to be used 
+    // instead of 'ja' for the ISO639 code for Japanese.
+    // MenuLanguageSelect may only called from the DVD Stop state (DVD_DOMAIN_Stop).
+    HRESULT MenuLanguageSelect
+	( [in]  LCID    Language
+	);      
+
+    // AudioStreamChange
+    // Changes the current audio stream.
+    HRESULT AudioStreamChange
+	( [in]  ULONG   nAudio
+	);      
+
+    // SubpictureStreamChange
+    // Changes the current subpicture stream number to nSubpic, and toggles 
+    // its display.
+    HRESULT SubpictureStreamChange
+	( [in]  ULONG   nSubPicture,
+	  [in]  BOOL    bDisplay
+	);      
+
+    // AngleChange
+    // Changes the current angle number.
+    HRESULT AngleChange
+	( [in]  ULONG   ulAngle
+	);      
+
+    // ParentalLevelSelect
+    // Selects the current player parental level between 1 and 8.  The
+    // defined parental levels are listed below :
+    //
+    //      Level   Rating  
+    //      -----   ------  
+    //
+    //      1       G       
+    //      3       PG      
+    //      4       PG13    
+    //      6       R       
+    //      7       NC17    
+    // Higher levels can play lower level content; lower levels cannot play 
+    // higher level content.  The DVD Navigator provides no restriction on
+    // setting the parental level.  DVD player application may enforce 
+    // restriction on parental level setting, such as password protection for 
+    // raising the current parental level.  Parental Management is disabled in
+    // the Navigator by default.
+	//
+	//      Note : To disable parental management, pass 0xffffffff for ulParentalLevel
+	//                 If parental management is disabled, then the player will play the
+	//                 first PGC in a parental block regardless of parental IDs.
+	//
+    HRESULT ParentalLevelSelect
+	( [in]  ULONG   ulParentalLevel  
+	);      
+
+    // ParentalCountrySelect
+    // Sets the country in which to interpret the the Parental Level.
+    // The country specified using the Alpha-2 code of the ISO-3166 standard,
+    // with the addition of 'ZZ' 
+    HRESULT ParentalCountrySelect
+	( [in]  WORD    wCountry
+	);      
+
+    // KaraokeAudioPresentationModeChange
+    // Sets the Karaoke audio mode.  
+    // NOTE: This and all other Karoke support is currently not implemented.
+    HRESULT KaraokeAudioPresentationModeChange
+	( [in] ULONG    ulMode
+	);      
+
+    // VideoModePreferrence
+    // The user can specify the preferred display mode that should
+    // be used to display content. The parameter is a ULONG that has
+    // one of the values defined in DVD_PREFERRED_DISPLAY_MODE
+    HRESULT VideoModePreferrence
+	( [in]  ULONG    ulPreferredDisplayMode
+	);
+    
+    // SetRoot
+    // Sets the root directory containing the DVD-Video volume. 
+    // Can only be called from the DVD Stop State (DVD_DOMAIN_Stop).
+    // If the root directory is not successfully set before 
+    // IMediaControl::Play is called, the first drive starting from c:
+    // containing a VIDEO_TS directory in the top level directory
+    // will be used as the root.
+    HRESULT SetRoot
+	( [in]  LPCWSTR     pszPath
+	);        
+
+    // MouseActivate
+    // This is typically called in response to a mouse click.
+    // The specified point within the display window is to see if it is
+    // within a current DVD button's highlight rect.  If it is, that 
+    // button is first selected, then activated.  
+    // NOTE: DVD Buttons do not all necessarily have highlight rects,
+    // button rects can overlap, and button rects do not always
+    // correspond to the visual representation of DVD buttons.
+    HRESULT MouseActivate       // typically called after a mouse click
+	( [in]  POINT       point
+	);
+
+    // MouseSelect
+    // This is typically called in response to a mouse move within the 
+    // display window.
+    // The specified point within the display window is to see if it is
+    // within a current DVD button's highlight rect.  If it is, that 
+    // button is selected.
+    // NOTE: DVD Buttons do not all necessarily have highlight rects,
+    // button rects can overlap, and button rects do not always
+    // correspond to the visual representation of DVD buttons.
+    HRESULT MouseSelect         // typically called after a mouse move
+	( [in]  POINT       point
+	);
+    
+    // ChapterPlayAutoStop
+    // Start playing at the specified chapter within the specified title
+    // and play the number of chapters specified by the third parameter.
+    // Chapters range from 1 to 999.
+    HRESULT ChapterPlayAutoStop
+	( [in] ULONG ulTitle,           // title number
+	  [in] ULONG ulChapter,         // chapter number to start playback
+	  [in] ULONG ulChaptersToPlay   // number of chapters to play from the start chapter
+	);
+}
+
+
+
+//==========================================================================
+//==========================================================================
+// IDvdInfo interface -- allow an app to query for attributes of available 
+// DVD titles and DVD player status.  Also allow for control of a DVD 
+// player beyond Annex J in the DVD spec.
+//==========================================================================
+//==========================================================================
+
+[
+object,
+uuid(A70EFE60-E2A3-11d0-A9BE-00AA0061BE93),
+pointer_default(unique)
+]
+
+interface IDvdInfo : IUnknown {
+    import "unknwn.idl";
+
+    // GetCurrentDomain
+    // Returns the current DVD Domain of the DVD player.
+    HRESULT GetCurrentDomain
+	( [out] DVD_DOMAIN *pDomain 
+	);
+
+    // GetCurrentLocation
+    // Returns information sufficient to restart playback of a video
+    // from the current playback location in titles that don't explicitly
+    // disable seeking to the current location.
+    HRESULT GetCurrentLocation
+	( [out] DVD_PLAYBACK_LOCATION *pLocation
+	);
+
+    // GetTotalTitleTime
+    // Return the total playback time for the current title.  Only works
+    // for One_Sequential_PGC_Titles.
+    HRESULT GetTotalTitleTime
+	( [out] ULONG * pTotalTime // use DVD_TIMECODE.
+	);
+
+    // GetCurrentButton
+    // Indicates the number of currently available buttons and the current
+    // selected button number. If buttons are not present it returns 0 for
+    // both pnButtonsAvailable and pnCurrentButton
+    HRESULT GetCurrentButton
+	( [out] ULONG *    pnButtonsAvailable,
+	  [out] ULONG *    pnCurrentButton
+	);
+
+    // GetCurrentAngle
+    // Indicates the number of currently available angles and the current
+    // selected angle number.  If *pnAnglesAvailable==1, then the current
+    // video is not multiangle.
+    HRESULT GetCurrentAngle
+	( [out] ULONG *    pnAnglesAvailable,
+	  [out] ULONG *    pnCurrentAngle
+	);
+
+    // GetCurrentAudio
+    // Indicates the number of currently available audio streams and 
+    // the current selected audio stream number.
+    // This only work when in DVD_DOMAIN_Title.
+    HRESULT GetCurrentAudio
+	( [out] ULONG *    pnStreamsAvailable,
+	  [out] ULONG *    pnCurrentStream
+	);
+
+    // GetCurrentSubpicture
+    // Indicates the number of currently available subpicture streams,
+    // the current selected subpicture stream number, and if the 
+    // subpicture display is currently disabled.  Subpicture streams 
+    // authored as Forcedly Activated stream will be displayed even if
+    // subpicture display has been disabled by the app with 
+    // IDVDControl::SubpictureChangeStream.
+    // This only work when in DVD_DOMAIN_Title.
+    HRESULT GetCurrentSubpicture
+	( [out] ULONG *    pnStreamsAvailable,
+	  [out] ULONG *    pnCurrentStream,
+	  [out] BOOL *     pIsDisabled
+	);
+
+    // GetCurrentUOPS
+    // Indicates which IDVDControl methods are currently valid.  DVD titles
+    // can enable or disable individual user operations at almost any point 
+    // during playback.
+    HRESULT GetCurrentUOPS  
+	( [out] VALID_UOP_SOMTHING_OR_OTHER *    pUOP
+	);
+
+    // GetAllSPRMs
+    // Returns the current contents of all System Parameter Registers.
+    // See DVD-Video spec for use of individual registers.
+    HRESULT GetAllSPRMs
+	( [out] SPRMARRAY * pRegisterArray
+	);
+
+    // GetAllGPRMs
+    // Returns the current contents of all General Parameter Registers.
+    // Use of GPRMs is title specific. 
+    HRESULT GetAllGPRMs
+	( [out] GPRMARRAY * pRegisterArray
+	);
+
+    // GetAudioLanguageString
+    // Returns the language of the specified stream within the current
+    // title.  Does not return languages for menus.  Sets *pLanguage=0 if
+    // if the stream does not include language.
+    // Use GetLocaleInfo(*pLanguage, LOCALE_SENGLANGUAGE, pszString, cbSize)
+    // to create a human readable string name from the result LCID.
+    HRESULT GetAudioLanguage
+	( [in]  ULONG        nStream, 
+	  [out] LCID *       pLanguage
+	);
+
+    // GetSubpictureLanguageString
+    // Returns the language of the specified stream within the current
+    // title.  Does not return languages for menus.  Sets *pLanguage=0 if
+    // if the stream does not include language.
+    // Use GetLocaleInfo(*pLanguage, LOCALE_SENGLANGUAGE, pszString, cbSize)
+    // to create a human readable string name from the result LCID.
+    HRESULT GetSubpictureLanguage
+	( [in]  ULONG        nStream, 
+	  [out] LCID *       pLanguage
+	);
+
+    // GetTitleAttributes
+    // Returns attributes of all video, audio, and subpicture 
+    // streams for the specified title including menus.  
+    // If nTitle == 0xffffffff, attributes for the current title are returned.
+    HRESULT GetTitleAttributes
+	( [in]  ULONG       nTitle, // requested title number
+	  [out] DVD_ATR *   pATR 
+	);
+
+    // GetVMGAttributes
+    // Returns attributes of all video, audio, and subpicture 
+    // streams for Video Manager Menus.  Some menus, such as the DVD_MENU_Title
+    // are in a separate group of streams called the VMG (Video Manager) and
+    // are not associated with any particular title number.
+    HRESULT GetVMGAttributes
+	( [out] DVD_ATR *   pATR 
+	);
+
+    // GetCurrentVideoAttributes
+    // Returns the video attributes for the current title or menu.
+    HRESULT GetCurrentVideoAttributes
+	( [out] DVD_VideoATR *pATR 
+	);
+
+    // GetCurrentAudioAttributes
+    // Returns the video attributes for the stream in the current 
+    // title or menu.
+    HRESULT GetCurrentAudioAttributes
+	( [out] DVD_AudioATR *pATR 
+	);
+
+    // GetCurrentSubpictureAttributes
+    // Returns the video attributes for the stream in the current 
+    // title or menu.
+    HRESULT GetCurrentSubpictureAttributes
+	( [out] DVD_SubpictureATR *pATR 
+	);
+
+
+    // GetCurrentVolumeInfo
+    // Returns current DVD volume info.
+    HRESULT GetCurrentVolumeInfo
+	( [out] ULONG *pNumOfVol,   // number of volumes (disc sides?) in a volume set
+	  [out] ULONG *pThisVolNum, // volume number for this root directory
+	  [out] DVD_DISC_SIDE *pSide, // current disc side
+	  [out] ULONG *pNumOfTitles // number of titles available in this volume
+	);
+
+
+    // GetDVDTextInfo
+    // Returns the TXTDT_MG structure, which can contain text descriptions for title
+    // name, volume name, producer name, vocalist name, etc. in various languages.
+    // refer to Section 4.1.6 and Annex A of the DVD-Video spec.
+    // If the buffer size passed in is insufficient (for example if cbBufSize==0),
+    // then E_OUTOFMEMORY is returned, and *pcbActualSize is set to the required size.
+    HRESULT GetDVDTextInfo
+	( [out, size_is(cbBufSize)] BYTE *pTextManager, 
+	  [in]  ULONG cbBufSize,        // buffer size passed in
+	  [out] ULONG *pcbActualSize    // amount of actual data return
+	);
+
+    //  GetPlayerParentalLevel
+    //  Returns the current parental level and the current country code
+    //  that has been set in the system registers in player. 
+    //  See Table 3.3.4-1 of the DVD-Video spec for the defined parental levels.
+    //  Valid Parental Levels = 1..8 if parental management is enabled
+    //  0xffffffff if parental management is disabled
+    //  See ISO3166 : Alpha-2 Code for the country codes.
+    HRESULT GetPlayerParentalLevel
+	( [out] ULONG *pParentalLevel,    // current parental level
+	  [out] ULONG *pCountryCode       // current country code
+	);
+    
+    //  GetNumberOfChapters
+    //  Returns the number of chapters that are defined for a
+    //  given title.
+    HRESULT GetNumberOfChapters
+	( [in]  ULONG ulTitle,              // Title for which number of chapters is requested
+	  [out] ULONG *pNumberOfChapters    // Number of chapters for the specified title
+	);
+
+    // GetTitleParentalLevels
+    // Returns the parental levels that are defined for a
+    // particular title. pParentalLevels will be combination
+    // of DVD_PARENTAL_LEVEL_8, DVD_PARENTAL_LEVEL_6, or 
+    // DVD_PARENTAL_LEVEL_1 "OR"ed together
+    HRESULT GetTitleParentalLevels
+	( [in] ULONG ulTitle,           // Title for which parental levels are requested
+	  [out] ULONG *pParentalLevels  // Parental levels defined for the title "OR"ed together
+	);
+
+    // GetRoot
+    // Returns the root directory that is set in the player. If a valid root
+    // has been found, it returns the root string. Otherwise, it returns 0 for
+    // pcbActualSize indicating that a valid root directory has not been found
+    // or initialized.
+    HRESULT GetRoot
+	( [out, size_is(cbBufSize)] LPTSTR pRoot,    // pointer to buffer to get root string
+	  [in]  ULONG cbBufSize,                    // size of buffer passed in
+	  [out] ULONG *pcbActualSize                // size of actual data returned
+	);
+}
+
+
+//==========================================================================
+//==========================================================================
+//
+// typedefs used by IDvdGraphBuilder interface.
+//
+//==========================================================================
+//==========================================================================
+
+typedef enum _AM_DVD_GRAPH_FLAGS {
+    AM_DVD_HWDEC_PREFER =  0x01,   // default 
+    AM_DVD_HWDEC_ONLY   =  0x02,
+    AM_DVD_SWDEC_PREFER =  0x04,
+    AM_DVD_SWDEC_ONLY   =  0x08,
+    AM_DVD_NOVPE        = 0x100
+} AM_DVD_GRAPH_FLAGS ;
+
+typedef enum _AM_DVD_STREAM_FLAGS {
+    AM_DVD_STREAM_VIDEO  = 0x01,
+    AM_DVD_STREAM_AUDIO  = 0x02,
+    AM_DVD_STREAM_SUBPIC = 0x04
+} AM_DVD_STREAM_FLAGS ;
+
+typedef struct {
+    HRESULT hrVPEStatus ;         // VPE mixing error code (0 => success)
+    BOOL    bDvdVolInvalid ;      // Is specified DVD volume invalid?
+    BOOL    bDvdVolUnknown ;      // Is DVD volume to be played not specified/not found?
+    BOOL    bNoLine21In ;         // video decoder doesn't produce line21 (CC) data
+    BOOL    bNoLine21Out ;        // can't show decoded line21 data as CC on video
+    int     iNumStreams ;         // number of DVD streams to render
+    int     iNumStreamsFailed ;   // number of streams failed to render
+    DWORD   dwFailedStreamsFlag ; // combination of flags to indicate failed streams
+} AM_DVD_RENDERSTATUS ;
+
+
+// 
+// IDvdGraphBuilder interface to build a filter graph for DVD-Video playback.
+//
+
+[
+    object,
+    local,
+    uuid(FCC152B6-F372-11d0-8E00-00C04FD7C08B),
+    pointer_default(unique)
+]
+interface IDvdGraphBuilder : IUnknown {
+
+    // Returns the IGraphBuilder interface for the filtergraph used by the
+    // CDvdGraphBuilder object.
+    // Remember to *ppGB->Release() when you're done with it
+    HRESULT GetFiltergraph
+	( [out] IGraphBuilder **ppGB
+	) ;
+
+    // Gets specific interface pointers in the DVD-Video playback graph to 
+    // make DVD-Video playback development easier.
+    // It helps get the following interfaces to control playback/show CC/
+    // position window/control volume etc:
+    // - IDvdControl, IDvdInfo
+    // - IAMLine21Decoder
+    // - IVideoWindow, IBasicVideo
+    // - IBasicAudio
+    // This method will return 
+    // a) E_INVALIDARG if ppvIF is invalid
+    // b) E_NOINTERFACE if riid is an IID we don't know about
+    // c) VFW_E_DVD_GRAPHNOTREADY if the graph has not been built through 
+    //    RenderDvdVideoVolume() yet.
+    // Remember to *ppvIF->Release() when you're done with it
+    HRESULT GetDvdInterface
+	( [in] REFIID riid,    // IID of the interface required
+	  [out] void **ppvIF   // returns pointer to the required interface
+	) ;
+
+    // Builds a filter graph according to user specs for playing back a
+    // DVD-Video volume.
+    // This method returns S_FALSE if
+    // 1.  the graph has been either built, but either
+    //     a) VPE mixing doesn't work (app didn't use AM_DVD_NOVPE flag)
+    //     b) video decoder doesn't produce line21 data
+    //     c) line21 data couldn't be rendered (decoding/mixing problem)
+    //     d) the call specified an invalid volume path or DVD Nav couldn't
+    //        locate any DVD-Video volume to be played.
+    // 2.  some streams didn't render (completely), but the others have
+    //     been rendered so that the volume can be partially played back.
+    // The status is indicated through the fields of the pStatus (out)
+    // parameter.
+    // About 1(a), the app will have enough info to tell the user that the
+    // video won't be visible unless a TV is connected to the NTSC out 
+    // port of the DVD decoder (presumably HW in this case).
+    // For case 1(b) & (c), the app "can" put up a warning/informative message
+    // that closed captioning is not available because of the decoder.
+    // 1(d) helps an app to ask the user to insert a DVD-Video disc if none 
+    // is specified/available in the drive when playback is started.
+    // This method builds the graph even if 
+    // - an invalid DVD-Video volume is specified
+    // - the caller uses lpwszPathName = NULL to make the DVD Nav to locate
+    //   the default volume to be played back, but DVD Nav doesn't find a 
+    //   default DVD-Video volume to be played back.
+    // An app can later specify the volume using IDvdControl::SetRoot() 
+    // method.
+    // #2 will help the app indicate to the user that some of the streams
+    // can't be played.
+    // 
+    // The graph is built using filters based on the dwFlags value (to use 
+    // HW decoders or SW decoders or a mix of them).
+    // The dwFlags value is one of the values in AM_DVD_GRAPH_FLAGS enum
+    // type.  The default value is AM_DVD_HWDEC_PREFER. None of the 
+    // AM_DVD_HWDEC_xxx or AM_DVD_SWDEC_xxx flags can be mixed. However
+    // AM_DVD_NOVPE can be OR-ed with any of the AM_DVD_HWDEC_xxx flags.
+    //
+    // The method returns S_OK if the playback graph is built successfully
+    // with all the streams completely rendered and a valid DVD-Video volume 
+    // is specified or a default one has been located.
+    //
+    // If the dwFlags specify conflicting options, E_INVALIDARG is returned.
+    // If the graph building fails, the method returns one of the following 
+    // error codes:
+    //    VFW_E_DVD_RENDERFAIL, VFW_E_DVD_DECNOTENOUGH
+    //
+    HRESULT RenderDvdVideoVolume
+	( [in] LPCWSTR lpcwszPathName,  // Can be NULL too
+	  [in] DWORD dwFlags,           // 0 is the default (use max HW)
+	  [out] AM_DVD_RENDERSTATUS *pStatus // returns indications of ANY failure
+	) ;
+}

@@ -1,0 +1,112 @@
+HKLM 
+{
+	NoRemove Software
+	{
+		NoRemove Microsoft
+		{
+			NoRemove MMC
+			{
+				NoRemove Snapins
+				{
+					ForceRemove {[!SnapInGUID]} =
+						s '[!ShortName]' 
+					{
+						val NameString = s '[!ShortName]'
+[!if=(ISnapinAbout, "TRUE")]
+						val About = s '{[!SnapInAboutGUID]}'
+[!endif]
+[!if=(EXTENSIONSNAPIN, "FALSE)]
+						NodeTypes
+						{
+							{[!SnapInNodeType]}
+						}
+						StandAlone
+[!endif]
+					}
+				}
+				NoRemove NodeTypes
+				{
+[!if=(EXTENSIONSNAPIN, "FALSE)]
+					ForceRemove {[!SnapInNodeType]}
+					{
+					}
+[!endif]
+[!if=(EXTENSIONSNAPIN, "TRUE)]
+					NoRemove {[!EXTENDSNODE]}
+					{
+						NoRemove Extensions
+						{
+[!if=(IComponentData, "TRUE")]
+							NoRemove NameSpace
+							{
+								val {[!SnapInGUID]} =
+								s '[!ShortName]'
+							}
+[!endif]
+[!if=(IExtendContextMenu, "TRUE")]
+							NoRemove ContextMenu
+							{
+								val {[!SnapInGUID]} =
+								s '[!ShortName]'
+							}
+[!endif]
+[!if=(IExtendPropertySheet, "TRUE")]
+							NoRemove PropertySheet
+							{
+								val {[!SnapInGUID]} =
+								s '[!ShortName]'
+							}
+[!endif]
+[!if=(IExtendControlBar, "TRUE")]
+							NoRemove ToolBar
+							{
+								val {[!SnapInGUID]} =
+								s '[!ShortName]'
+							}
+[!endif]
+						}
+					}
+[!endif]												
+				}
+			}
+		}
+	}
+}
+
+
+HKCR
+{
+	[!ProgID] = s '[!TypeName]'
+	{
+		CLSID = s '{[!SnapInGUID]}'
+	}
+	[!VersionIndependentProgID] = s '[!TypeName]'
+	{
+		CLSID = s '{[!SnapInGUID]}'
+		CurVer = s '[!ProgID]'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {[!SnapInGUID]} = s '[!TypeName]'
+		{
+			ProgID = s '[!ProgID]'
+			VersionIndependentProgID = s '[!VersionIndependentProgID]'
+[!if=(Dual, "TRUE")]
+			ForceRemove 'Programmable'
+[!endif]
+[!if=(ProjectType, "DLL")]
+			InprocServer32 = s '%MODULE%'
+			{
+[!if=(ThreadingModel, "Single")]
+[!else]
+				val ThreadingModel = s '[!ThreadingModel]'
+[!endif]
+			}
+[!else]
+			LocalServer32 = s '%MODULE%'
+			val AppID = s '{[!ProjectAppID]}'
+[!endif]
+			'TypeLib' = s '{[!LibGUID]}'
+		}
+	}
+}

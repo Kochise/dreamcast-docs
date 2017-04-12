@@ -1,0 +1,44 @@
+/******************************************************
+ * Linker script for sh-elf-ld v0.1 (w) Groepaz/Hitmen
+ * Target CPU: Hitachi/SH4  Machine: Sega Dreamcast
+ ******************************************************/
+
+MEMORY {
+    zeroram  : ORIGIN = 0x8c000000, LENGTH = 0x00010000   /*  64k */
+    workram  : ORIGIN = 0x8c010000, LENGTH = 0x00de0000   /* ~14M */
+    stacktop : ORIGIN = 0x8cdffffc, LENGTH = 4            
+    sysram   : ORIGIN = 0x8ce00000, LENGTH = 0x00200000   /*   2M */ 
+    bootrom  : ORIGIN = 0xa0000000, LENGTH = 2M
+    waveram  : ORIGIN = 0xa0800000, LENGTH = 2M
+    videoram : ORIGIN = 0xa5000000, LENGTH = 8M
+}
+
+SECTIONS { 
+  .text : { 
+    	*(.text)                           /* code */
+	    *(.gnu.linkonce.t*)
+    	_etext = ABSOLUTE(.) ;
+    } > workram
+  .data : { 
+    	*(.rodata) *(.data) *(COMMON)      /* initialized data */
+	    *(.gnu.linkonce.d*)
+   	. = ALIGN(4);
+    	__ctors = ABSOLUTE(.) ;
+   	*(.ctors)                          /* c++ constructors */
+   	__ctors_end = ABSOLUTE(.) ;
+   	. = ALIGN(4);
+    	__dtors = ABSOLUTE(.) ;
+   	*(.dtors)                          /* c++ destructors */
+   	__dtors_end = ABSOLUTE(.) ;
+    	_edata = ABSOLUTE(.) ;
+    } > workram
+  .bss (NOLOAD) : { 
+    	*(.bss)                            /* non-initialized data */
+    	_end = ABSOLUTE(.) ;
+    } > workram
+                                           /* the heap will be here */
+  .stack (NOLOAD) : { 
+    	*(.stack)                          /* cpu-stack */
+    	_stack = ABSOLUTE(.) ;
+    } > stacktop
+} 

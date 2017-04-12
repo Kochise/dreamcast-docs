@@ -1,0 +1,1 @@
+Microsoft Developer Studio add-ins that are copied to this location will automatically be registered and available for the user to load from the Customize dialog, Add-ins and Macro files tab, on the Tools menu.

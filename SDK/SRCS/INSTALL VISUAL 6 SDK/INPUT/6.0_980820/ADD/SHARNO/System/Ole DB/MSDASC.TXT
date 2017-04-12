@@ -1,0 +1,95 @@
+---------------------------------------------------------
+Microsoft(R) Data Link API version 2.0 Readme File
+---------------------------------------------------------
+
+(c) 1998 Microsoft Corporation. All rights reserved.
+
+This document provides late-breaking or other information that supplements the Microsoft Data Link API documentation.
+
+--------
+CONTENTS
+--------
+
+1. PRODUCT DESCRIPTION
+   
+2. NEW FEATURES
+   
+3. TECHNICAL NOTES
+
+4. KNOWN BUGS, LIMITATIONS, AND WORKAROUNDS
+
+----------------------
+1. PRODUCT DESCRIPTION
+----------------------
+Microsoft Data Link API provides a common user interface for defining and managing connections to OLE DB data sources. This user interface can also be called using an application programming interface, the data link API.
+
+You can save the connection information to a data link file (.udl).  Then you can modify these files through the Data Links Property page, and applications can use them in creating connections to various OLE DB data stores. The Data Link API provides applications the ability to select, load, or save .udl files. 
+
+The same user interface used to manage connection information in .udl files can be used by applications to gather connection information from users when doing ad-hoc connections to OLE DB data stores. The data links API allows applications to obtain a string version of the connection information from an existing OLE DB datasource object, create a datasource object from an existing connection string, or use the Data Links dialog to edit the connection properties of an uninitialized OLE DB data source object.
+
+---------------
+2. NEW FEATURES
+---------------
+Microsoft Data Link API is a new feature of the MDAC 2.0 Core Components.
+
+------------------
+3. TECHNICAL NOTES
+------------------
+
+Changes from Pre-release version
+--------------------------------
+Several things have changed since the pre-release version of Data Link API included in the Microsoft Visual Studio(TM) 98 beta 2 release. Be sure to uninstall (including unregistering) any pre-release versions of Data Link API before installing the release version.
+
+* File Extension Change From Pre-release version
+If you have used a pre-release version of the service components, the file extension of the file used to store data links has been changed to ".udl".
+
+* File format change from Pre-release version
+The file format of the data link file has been changed in the final release to support unicode. This change means that your existing pre-release data link files will not work with the final build. You will need to rebuild your data link files.  
+
+* Argument Change from Pre-release version
+The pre-release version of the IDBPromptInitialize interface supported by the data link component did not include a pointer to a controlling unknown as the first argument to PromptDataSource. Applications that call the IDBPromptInitialize::PromptInitialize method in the pre-release version of Data Link API will have to add this argument and recompile in order to work with the release version.
+
+*GetInitString and DBPROP_AUTH_PERSISTSENSITIVEAUTHINFO
+IDataInitialize::GetInitString returns a connection string containing the initialization properties set on the data source object. This method includes an argument, fIncludePassword, for specifying whether or not the password is returned as part of that initialization information. Note that, if DBPROP_AUTH_PERSISTSENSITIVEAUTHINFO is set to VARIANT_FALSE, the password is not returned as part of GetInitString, even if fIncludePassword is true. In order to include the password as part of the information returned from GetInitString, consumers should be sure that DBPROP_AUTH_PERSISTSENSITIVEAUTHINFO is set to VARIANT_TRUE.
+
+*Disabling Provider Selection in IDBPromptInitialize
+IDBPromptInitialize::PromptDataSource allows an application to prompt the user for connection information. The application can pass a default data source into PromptDataSource and can specify DBPROMPTOPTIONS_DISABLE_PROVIDER_SELECTION in order to prevent the user from changing the specified data source. This flag must be combined with DBPROMPTOPTIONS_WIZARDSHEET or DBPROMPTOPTIONS_PROPERTYSHEET; it is not valid to set only this flag. Setting this flag without specifying a valid data source in *ppDataSource on input returns an error, E_INVALIDARG.
+
+* Control panel icon removed from final release
+Pre-release versions of the service components added a Data Links icon to the control panel, which enabled the creation of data link files.  This icon has been removed from the final release.  To create new Microsoft data link files, simply right-click within a directory or on the desktop and select "Microsoft Data Link" from the "New" menu.
+
+-------------------------------------------
+4. KNOWN BUGS, LIMITATIONS, AND WORKAROUNDS
+-------------------------------------------
+The following is a list of Microsoft Data Link API 2.0 known issues.
+
+* Doc Bug: Under the section "Listing Keywords Multiple Times" the documentation states that the exception is that if the Provider keyword is listed multiple times it will use the first occurrence. This is incorrect. If the Provider keyword is listed multiple times, the last Provider keyword will be used.
+
+* Doc Bug: Under "OLE DB Initialization Properties: Quick Reference" these additional descriptions and short values can be added:
+
+	DBPROP_INIT_OLEDBSERVICES
+	Description: OLE DB Services
+	OLE DB Documented Value		Connection String Short Value
+	-----------------------		-----------------------------
+	DBPROPVAL_OS_RESOURCEPOOLING	ResourcePooling
+	DBPROPVAL_OS_TXNENLISTMENT	TxnEnlistment
+	DBPROPVAL_OS_ENABLEALL		EnableAll
+
+* Doc Bug: In the description of IDataInitialize::GetDatasource, the fourth paragraph under the description of the ppDatasource argument should read as follows:
+
+If *ppDataSource is non-null and no provider is specified in pwszInitializationString, then the data source specified by *ppDatasource will be used.
+
+The word "no" is missing from the documentation.
+
+* Doc Bug: The description of IDBPromptInitialize::PromptDatasource states that the method returns a connection string. In fact, the method returns a datasource object with the specified properties set.
+
+* Doc Bug: The documentation states that the cSourceTypeFilter, rgSourceTypeFilter, and pwszszzProviderFilter arguments of IDBPromptInitialize::PromptDataSource are reserved for future use.  These arguments are implemented as described in the OLE DB 2.0 release.
+
+* Doc Bug: The description of IDBPromptInitialize::PromptFileName suggests that the filename can be passed to IDataInitialze in order to get a data source object based on the connection string. This is not supported. In order to load a data source from a .udl file, the application must call IDataInitialize::LoadStringFromStorage to obtain the connection string from the file and then call IDataInitialize::GetDatasource with that string in order to obtain the data source object based on the connection string.
+
+* Doc Bug: The description of the dwPromptOptions argument in IDBPromptInitialize::PromptFilename suggests that specifying DBPROMPTOPTIONS_NODIRECTORYCHANGE prevents the user from changing directories. In fact, there is no way to prohibit the user from changing directories while in the dialog, but if this flag is set, the directory selected by the user is not set as the default directory the next time a Windows file dialog is presented.
+
+* Doc Bug: Under the section "Organizing Data Links," the procedures listed to create, edit, delete, and move a data link file should be modified so that references to "the Organize Data Links Files dialog box" be replaced with "the explorer window."
+
+
+2.0 Limitation: Note that the 2.0 release of Data Link API does not support creating remote providers. Calling IDataInitialize::CreateDBInstanceEx for anything other than a local provider will fail.

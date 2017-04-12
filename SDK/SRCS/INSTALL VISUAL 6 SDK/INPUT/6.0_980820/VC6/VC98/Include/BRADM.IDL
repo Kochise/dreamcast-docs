@@ -1,0 +1,207 @@
+// Currently, the interface constrains the total number of output subsystems
+// to a limit of 32.
+
+import "wtypes.idl";
+
+[
+version(0.1),
+uuid(A4916A26-1051-11d1-BFC4-00C04FBBDEC1),
+pointer_default(unique)
+]
+
+interface BridgeAdmin
+{
+	typedef enum BRIDGE_OUTPUT_STATE {
+		BRIDGE_OUTPUT_STATE_UNLOADED,
+		BRIDGE_OUTPUT_STATE_RUNNING
+	} BRIDGE_OUTPUT_STATE;
+
+	typedef enum BRIDGE_BANDWIDTH_POLICY {
+		BRIDGE_BANDWIDTH_POLICY_GUARANTEED,
+		BRIDGE_BANDWIDTH_POLICY_OPPORTUNISTIC,
+		BRIDGE_BANDWIDTH_POLICY_REGULATED
+	} BRIDGE_BANDWIDTH_POLICY;
+
+	typedef DWORD BRIDGE_IP4ADDR;
+
+	// global configuration parameters
+	typedef struct BRIDGE_CONFIG {
+		DWORD	WorkerThreads;
+	} BRIDGE_CONFIG;
+
+	typedef struct BRIDGE_STATISTICS {
+		DWORD	PacketsReceived;
+		DWORD	PacketsReceivedMulticast;
+		DWORD	PacketsReceivedTunnel;
+		DWORD	PacketsForwarded;
+	} BRIDGE_STATISTICS;
+
+	typedef struct BRIDGE_OUTPUT_STATISTICS {
+		DWORD		PacketsForwarded;
+		DWORDLONG	BytesForwarded;
+		DWORD		PacketOverflows;
+		DWORD		InterfaceFailures;
+		DWORD		LastBitsPerSecond;
+	} BRIDGE_OUTPUT_STATISTICS;
+
+	typedef struct BRIDGE_OUTPUT_CONFIG {
+		LPWSTR					DisplayName;
+		LPWSTR					DllFilename;
+		DWORD					MaxBandwidth;					// in bits/sec
+		DWORD					MinOpportunisticBandwidth;		// in bits/sec
+	} BRIDGE_OUTPUT_CONFIG;
+
+	typedef enum BRIDGE_OUTPUT_VALUE_TYPE {
+		BRIDGE_OUTPUT_VALUE_STRING,
+		BRIDGE_OUTPUT_VALUE_DWORD,
+		BRIDGE_OUTPUT_VALUE_IP4ADDR,
+		BRIDGE_OUTPUT_VALUE_BOOLEAN
+	} BRIDGE_OUTPUT_VALUE_TYPE;
+
+	typedef struct BRIDGE_OUTPUT_VALUE {
+		DWORD	Index;
+		LPWSTR	Name;
+		union BRIDGE_OUTPUT_VALUE_DATA
+		switch (BRIDGE_OUTPUT_VALUE_TYPE Type) {
+		case	BRIDGE_OUTPUT_VALUE_STRING:
+//			LPWSTR	String;
+			DWORD	StringIgnore;
+		case	BRIDGE_OUTPUT_VALUE_DWORD:
+			DWORD	Dword;
+		case	BRIDGE_OUTPUT_VALUE_IP4ADDR:
+			BRIDGE_IP4ADDR	IPAddress;
+		case	BRIDGE_OUTPUT_VALUE_BOOLEAN:
+			BOOL			Boolean;
+		}	Data;
+		LPWSTR	String;
+	} BRIDGE_OUTPUT_VALUE;
+
+	typedef struct BRIDGE_OUTPUT_INFO {
+		DWORD						OutputID;
+		BRIDGE_OUTPUT_STATISTICS	Statistics;
+		BRIDGE_OUTPUT_CONFIG		Config;
+		BRIDGE_OUTPUT_STATE			State;
+		HRESULT						Status;
+	} BRIDGE_OUTPUT_INFO;
+
+	typedef struct BRIDGE_ROUTE_RECORD {
+		BRIDGE_IP4ADDR		Address;
+		BRIDGE_IP4ADDR		Netmask;
+		DWORD				OutputMask;
+		DWORD				TotalMatches;
+		DWORD				ReservationID;
+		DWORD				LastBitRate;
+	} BRIDGE_ROUTE_RECORD, *PBRIDGE_ROUTE_RECORD;
+
+	typedef struct BRIDGE_RESERVATION {
+		DWORD						ReservationID;
+		DWORD						SubsystemID;
+		BRIDGE_BANDWIDTH_POLICY		BandwidthPolicy;
+		DWORD						BitsPerSecond;
+		LPWSTR						DisplayName;
+	} BRIDGE_RESERVATION;
+
+	typedef BRIDGE_ROUTE_RECORD * BRIDGE_ROUTE_RECORD_LIST;
+
+	// ------------------------------------------------------------------------------
+
+	// test to see if RPC server is listening
+	HRESULT	BridgePing	(void);
+
+	HRESULT	BridgeGetVersion (
+		[out]	DWORD *		version);
+
+	HRESULT BridgeGetConfig (
+		[out]	BRIDGE_CONFIG *);
+
+	HRESULT BridgeSetConfig (
+		[in]	BRIDGE_CONFIG *);
+
+	// output subsystem functions -----------------------------------------------------
+
+	HRESULT	BridgeOutputAdd (
+		[out]	DWORD *					output_id,
+		[in]	BRIDGE_OUTPUT_CONFIG *	config);
+	HRESULT BridgeOutputDelete (
+		[in]	DWORD					output_id);
+
+	HRESULT BridgeOutputModify (
+		[in]	DWORD					output_id,
+		[in]	BRIDGE_OUTPUT_CONFIG *	config);
+
+	HRESULT	BridgeOutputGetConfig (
+		[in]	DWORD					output_id,
+		[out]	BRIDGE_OUTPUT_CONFIG *	config);
+
+	HRESULT BridgeOutputGetInfo (
+		[in]	DWORD					output_id,
+		[out]	BRIDGE_OUTPUT_INFO *	info);
+
+	HRESULT	BridgeOutputSetState (
+		[in]	DWORD				output_id,
+		[in]	BRIDGE_OUTPUT_STATE	state);
+
+	HRESULT	BridgeOutputEnum (
+		[out]	DWORD *	length,
+		[out, size_is (,*length)]	BRIDGE_OUTPUT_INFO ** array);
+
+	HRESULT BridgeOutputGetValue (
+		[in]	DWORD	output_id,
+		[in]	DWORD	index,
+		[out]	BRIDGE_OUTPUT_VALUE *	value);
+
+	HRESULT BridgeOutputSetValue (
+		[in]	DWORD	output_id,
+		[in]	BRIDGE_OUTPUT_VALUE *	value);
+
+	HRESULT BridgeOutputEnumValue (
+		[in]	DWORD	output_id,
+		[out]	DWORD *	length,
+		[out, size_is (,*length)]	BRIDGE_OUTPUT_VALUE ** array);
+
+	// routing interface -------------------------------------------------------
+
+	HRESULT	BridgeRouteAdd (
+		[in]	BRIDGE_ROUTE_RECORD *	route);
+
+	HRESULT	BridgeRouteDelete (
+		[in]	BRIDGE_IP4ADDR		address,
+		[in]	BRIDGE_IP4ADDR		mask);
+
+	HRESULT	BridgeRouteModify (
+		[in]	BRIDGE_IP4ADDR		address,
+		[in]	BRIDGE_IP4ADDR		mask,
+		[in]	DWORD				subsystem_mask);
+
+	HRESULT BridgeRouteEnum (
+		[out]	DWORD * length,
+		[out, size_is (,*length)]	BRIDGE_ROUTE_RECORD ** array);
+
+	HRESULT BridgeRouteLookup (
+		[in]	BRIDGE_IP4ADDR		address,
+		[in]	BRIDGE_IP4ADDR		netmask,
+		[out]	BRIDGE_ROUTE_RECORD *	route);
+
+	HRESULT BridgeInterfaceEnum (
+		[out]	DWORD *	length,
+		[out, size_is (,*length)]	BRIDGE_IP4ADDR ** array);
+
+	// reservation functions ----------------------------------------------------
+
+	HRESULT	BridgeResvAdd (
+		[in]	BRIDGE_RESERVATION *	resv,
+		[out]	DWORD *					resv_id);
+
+	HRESULT	BridgeResvDelete (
+		[in]	DWORD					resv_id);
+
+	HRESULT	BridgeResvLookup (
+		[in]	DWORD					resv_id,
+		[out]	BRIDGE_RESERVATION *	resv);
+
+	HRESULT	BridgeResvEnum (
+		[out]	DWORD *					length,
+		[out, size_is(,*length)]	BRIDGE_RESERVATION ** array);
+
+}
+

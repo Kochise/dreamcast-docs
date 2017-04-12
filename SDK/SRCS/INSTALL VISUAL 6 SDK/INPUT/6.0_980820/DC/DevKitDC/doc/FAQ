@@ -1,0 +1,547 @@
+KallistiOS 1.1.6 FAQ
+(c)2001 Dan Potter
+
+Here you may find some answers to some common questions we hear
+regarding the usage of KOS. We will be adding more to this file over
+time, but perhaps these can help you get started.
+
+
+0 --- Licensing ---------------------------------------------------------
+
+0.0
+
+This section is NOT legal advice. It's just a help to people who are
+having trouble with the myriad free software / "open source" licenses.
+
+
+0.1
+
+Q) What is the new BSD/KOS license? What exactly do its terms mean?
+
+Q) Can I make a proprietary / "closed source" program using KOS?
+
+Q) Can I distribute "forked" versions of KOS?
+
+A) The BSD license is pretty well understood among the free software
+community, but I'll go ahead and give a layman's description of it here.
+Basically what it says is that you can use the code in any of your
+programs (proprietary, free/"open source", etc) as long as you don't try
+to remove or change the copyright notices, and you don't try to
+advertise your program as if it's endorsed by us. You may also
+distribute changed versions as long as they are clearly marked as such
+(often called a "fork"). This is a layman's description, it is not a
+replacement for reading and understanding the license itself. If you
+don't understand it, please find a lawyer friend to help you with it.
+
+Sorry for being so terse about this, I'm just sick of "intellectual
+property" battles. That and people somehow equate the BSD or X11 license
+with "I can rip and use this code with no credit". This is absolutely
+false. You may also not include the KOS code (or any other copyrighted
+code) in your program verbatim without credit and a copyright notice.
+Very small pieces are probably alright, but anything substantial must
+have something to the effect of "derived from blagh.c in KOS 1.1.x".
+
+
+0.2
+
+Q) What is the GPL license? What exactly do its terms mean?
+
+Q) Can I make a proprietary / "closed source" program using XingMP3?
+
+Q) Can I distributed "forked" versions of XingMP3?
+
+A) The GPL says (again, in layman's terms) that if you make a derivative
+work (e.g., use its code in your program), then your program must be
+distributed under the terms of the GPL. Note that this does not mean you
+must change your license, as some people would say (excellent example:
+the Linux kernel contains BSD-licensed code, and BSD's kernel contains
+_optional_ GPL'd kernel modules). It does, however, mean that you must
+follow the GPL's terms for distribution. Additionally, if you make
+significant changes to the XingMP3 library (a direct derivative) then
+you must make the result licensed under the GPL.
+
+I use XingMP3 as the example here because it is going to be the one
+people have the most encounters with in their own programs. Genromfs is
+distributed along with KOS (aggregated) but is not part of it. XingMP3,
+however, is also "aggregated" but becomes a part of your program if you
+link the MP3 playback library. So if you want to do this, pay attention.
+
+This example is most analogous to the BSD kernel situation. They have a
+GPL'd math library that may be linked with the BSD kernel, but the
+resulting binary must always be accompanied by all of its source code
+(i.e., distributed under the terms of the GPL). The same is true with
+your own programs. You may not use the MP3 library without following
+similar restrictions: you may license it under any GPL-compatible
+license, but you may not distribute any part of it as a proprietary
+application.
+
+You may distributed "forked" versions of XingMP3, following the same
+restrictions. They must be licensed under the GPL license. You may add
+entirely new files to the library, licensed under a different license,
+but they must be distributable under the GPL's terms.
+
+Now then, if you don't like those restrictions, you are free to replace
+the XingMP3 engine with something else. In fact I would be overjoyed if
+someone provided me with a BSD-licensed MP3 engine. But for now, those
+are the breaks. Sorry.
+
+Also, to keep you safe from accidentally linking GPL'd code into your
+program, 100% of this code is located inside the "xingmp3" tree in the
+"addons" tree. All headers in the global "headers" tree are either ours
+or otherwise BSD-style licensed.
+
+
+1 --- Kernel and Userland -----------------------------------------------
+
+1.1
+
+Q) What is the difference between linking libkallisti into my program,
+and linking libk for a userland program?
+
+Q) I am trying to link libkallisti into my userland program but some
+things don't work right.
+
+Q) What is the difference between kernel and userland anyway? What are
+the advantages of each?
+
+A) We've heard a lot of these types of questions. Most of the
+misunderstandings stem from the fact that both the kernel and the
+userland library and examples are distributed in the same package, and
+also that you can link the kernel itself into your program. Many people
+who are writing DC software have not really had much exposure to a true
+embedded environment before and so this confusion is understandable.
+Software like QNX Neutrino has worked this way for quite a while, and
+that's the model we're supporting with "OS mode".
+
+Basically what you need to do to understand the distinction here is to
+think back to whatever OS you are using right now for development, be
+this Windows, DOS, a *nix flavor, etc. I'm going to use Linux as an 
+example, but the same basic idea is true of any user OS. For Windows,
+you could replace "Linux kernel" with "Win32 kernel" and "init" with,
+say, "Explorer" (not entirely accurate, but close enough).
+
+There are two very distinct parts to this OS at the top level. Further
+down there are more parts, but at the top level there are only two: the
+kernel and the userland. The kernel is what is responsible for the
+hardware, multitasking, global memory allocation, and allowing programs
+to communicate effectively. Generally the kernel itself does not perform
+any more tasks than that. The actual functionality is delegated to the
+userland, which is generally isolated from the hardware and
+multitasking. In Linux, the kernel is what is really called "Linux" --
+it is a downloadable piece of code that you can recompile for many
+platforms, and it has no function besides managing the hardware and
+other global tasks that individual applications should not have to
+handle (file systems, networking, etc). This Linux kernel layer is what
+lets me do things like run a file manager on both a VFAT partition and
+an Ext2FS partition with no changes to the app itself. When Linux boots,
+it initializes its hardware and other subsystems, and loads a program
+called "init", which is a userland program. This program is isolated
+from the kernel, the hardware, and any other userland programs that may
+be loaded after it. It also handles the loading of other userland
+programs, but that is by OS design.
+
+Now what you can do with Linux is actually pull out its main init
+routine, and instead of loading the "init" userland program, you could
+make it do something like play MP3s. In this case you are coding
+directly at the kernel level, have full access to the machine and all
+pieces of the operating system, and are running at the fastest potential
+machine speed. You are also at risk of overwriting some important kernel
+structure (bringing down the machine unexpectedly) and your kernel has
+no other purpose than to play MP3s.
+
+This is a very uncommon practice with OS's like Linux that were designed
+as more of a desktop environment. It's a lot more practical with
+embedded systems that are designed to be used in things like ATM
+machines. In that case the added overhead of actually making a
+kernel/userland distinction (both processor time and memory usage) are
+not worth the advantages, which are almost nothing for such an embedded
+system.
+
+This is the dilemma you get to choose from when you develop a program
+using KallistiOS. You can choose to link the kernel directly like a
+library, and you will have full control over what happens inside that
+kernel. You can enable or disable threads at any time, you can tweak a
+lot of internal things in the TA module, etc.
+
+At this time we are not actually planning to produce a standalone
+distribution of KallistiOS that can be used like a standalone desktop
+system, because the demand just isn't there right now. However, if we
+actually did publish a standalone bootable version of KallistiOS, your
+program is off limits to all the users of the standalone KallistiOS who
+might use that version. They will have to exit and boot into your
+version, and that's all that can happen. Permanently, in a fashion,
+because you'd have to actually port your program from a kernel-space
+program to a userland program before it could cooperate with other tasks
+on the system. This is one advantage to using a userland program from
+the beginning: it's fairly easy to write a userland app and then port to
+a kernel-space one by pulling services like you'd normally do in a
+userland app, but it's fairly difficult to go the other way once you
+have started tapping into the internals of the kernel.
+
+There are other advantages to writing a userland app as well. For one,
+different people may be running different kernels. I could be running on
+a hacked up custom bus that includes a hard disk and an ethernet card
+like a 3c503, and Joe Schmoe could be running on just the official
+broadband adapter. If you are running as a userland program, you will be
+using the KOS exported API for network access, and thus it will run on
+both machines identically. If you do not, then one or the both of those
+people can not use their network access. This is the same problem that
+the official Sega software has, since they have basically decided to
+link a kernel into their apps. Older apps will never be able to use the
+ethernet because they simply don't contain the neccessary driver code.
+In an ideal world, there would be one networking API that would take a
+few settings (perhaps) and establish a TCP/IP connection without telling
+the game what it did. This is much more like the PSX model. Instead,
+there is a full stack inside each game, each stack with its own quirks
+and abilities.
+
+All isn't rosy: it's a bit of overhead to manage opening the userland
+ABI libraries and so on. They will run a bit slower because of the extra
+pointer redirection (though on the SH-4, due to the way the C compiler
+writes code anyway, this is somewhat negligible). Additionally, all
+these advantages I've been talking about with process protection simply
+don't exist in the simple world view of KOS right now (there is no MMU
+support to prevent apps from trampling on eachother). Writing userland
+apps is also not nearly as easy as writing straight kernel-linked
+software (again, more like libdream) because there is a paradigm shift
+to get around in your head.
+
+At this point, we are no longer recommending that you make userland
+apps, because the focus of KOS has shifted to standalone statically
+linked applications. However, you may decide later on that you want to
+use this feature for something (such as loadable drivers in your game).
+So start simple (statically linked mode) and then check out "OS mode"
+later if you are interested.
+
+The other thing that has perhaps been confusing people is that you can
+include userland binaries and other arbitrary data into the kernel image
+itself during compile time. All this does for you is make your files
+show up under /bi or /rd. Compiling a userland binary into the kernel in
+this way _does not_ imply that it is running as part of the kernel.
+
+
+1.2
+Q) How can I run a userland app that someone else has posted on the web
+somewhere?
+
+Q) How can I get my own userland apps to run?
+
+Q) How can I tell a KOS userland app from a Dreamcast raw ELF?
+
+A) KOS binaries, as of version 0.90, have the extension '.klf'. This is
+to distinguish the KOS ELF files from raw ELF files.
+
+If a standalone version of KOS is posted, this will be a LOT easier.
+However, until that time what you have to do is one of three things:
+
+  - Burn it on a CD with a custom KOS kernel image that loads your
+    program from the CD and runs it instead of /rd/init.klf
+  - Load your program into the kernel image in place of the default
+    /rd/init.klf
+  - Use KOS' init.klf, and create an rc.boot script that starts your
+    program.
+
+For #1, you just need to change the name of the loaded program from
+/bi/init.klf to /cd/yourprogram.klf in kernel/main.c and recompile. For
+#2, you'll need to replace kernel/romdisk_boot/init.klf, delete
+romdisk_boot.o, and let it recreate the image. #3 should be fairly
+self-explanatory. If you didn't understand that, then please hold off
+until there's a standalone version.
+
+
+1.3
+Q) How can I use kernel functionality that isn't exported (yet)?
+
+A) Right now the only thing you can do is write the program as a linked
+kernel or write a new ABI for yourself. If you want to do #2, let me
+know so that we can discuss it and we might include that ABI in the
+future release versions.
+
+Note that as of 1.1.0, the ABI support is no longer integrated with the
+kernel itself, so that "OS mode" libraries don't have to be linked into
+a program that won't use them. Instead, you should add a handler to the
+"OS mode" services setup.
+
+
+2 --- Memory Allocation ------------------------------------------------
+
+2.1
+
+Q) How can I determine how much RAM I have allocated / how much RAM my
+program is using? 
+
+A) This won't always be accurate, but in the kernel space you can call
+malloc_stats(). The output is sent to the kernel console.
+
+
+2.2
+
+Q) My malloc()'s are failing. Why?
+
+Q) I tried malloc_stats() and it claims I allocated like four billion
+bytes of RAM!
+
+A) You probably have a pointer overrun somewhere. Unfortunately these
+are rather difficult to debug for now in KOS since it has no MMU
+support. I recommend old school debugging (calling malloc_stats() every
+so often to see when it bombs and narrowing it down, or perhaps
+commenting out blocks until it works again). Eventually we'd like to
+have a Linux version of KOS. Yes, if that sounds weird, see below.
+
+If you are masochistic and want a project to play with, you might want
+to download KOS-MMU, which was supposed to become KOS 1.1.x, but turned
+out to be too slow, too difficult, and not what people want in general.
+Note that some of KOS-MMU's functionality and structure has been
+imported into KOS 1.1.x, and its MMU functionality may eventually be
+imported as a library for your own use (for mmap()'ing file data, etc).
+
+
+3 --- VFS ----------------------------------------------------------
+
+3.1
+
+Q) What exactly is this VFS thing? Why should I use it?
+
+A) VFS stands for "virtual file system". All it does is bring together
+several disparate name spaces into one convienent API. VFS is the
+hallmark of a *nix system: "everything's a file". In KOS that's not
+quite that true, but it is handy. For example, you can put a file on a
+CD and it shows up in /cd, or you can build it into the kernel and have
+it show up in /bi or /rd. In the case of /bi, you could even have dynamic
+"files" that change at runtime. Or perhaps it's coming over the network
+from your PC in /net. Either way, all your programs will use the same
+exact API calls to access the files.
+
+
+3.2
+
+Q) What VFS modules are available?
+
+A) Presently there are six:
+
+- Builtin -- mounts on /bi, and reads files from an internal array built
+into the kernel (thus the name). This lets you embed bootstrap userland
+code into the kernel, data files, etc. It's also non-permanent (like a
+CDR) so if you are uploading test images you can put test files here. A
+little known trick of /bi is that you can put an arbitrary pointer into
+the table and tweak both the pointer and the file size at runtime, thus
+providing proc-like functionality.
+
+- ISO9660 -- mounts on /cd, and is a decent implementation of the
+ISO9660 file system standard used on CDs. Note that because of the
+simple nature of KOS's block devices right now, ISO9660 is bound
+directly to the CD-Rom device. In the future this may change.
+
+- SerConsole -- mounts on /pc, connects to a PC-hosted program, called
+'konsole'. Note that recent versions of dc-load have a similar fs you
+can add to KOS that does about the same thing. All the files in the
+current directory of konsole will show up here. Note that this doesn't
+seem to work right now if you enable threading. This fs and its utility
+program are deprecated in KOS 0.90.
+
+- DC-Load Console -- mounts on /pc, connects to a PC-hosted program,
+called 'dc-load'. DC-Load is Andrew Kieschnick's BBA/Serial port loader
+program. If you use the DC-Load console, then you can read files
+directly from your in the /pc directory. The other major advantage (if
+you are using a BBA) is that DC-Load will redirect console messages over
+the ethernet for you. I haven't personally used it, so I can't tell you
+much more than that...
+
+- VMU -- mounts on /vmu, what it sounds like. This dynamic file system
+shows all detected VMU or memory cards on the maple bus and lets you
+browse and read/write them. Note that it's fairly primitive right now
+and has been known to corrupt cards on writing.
+
+- Romdisk -- mounts on /rd. This is an implementation of the Linux ROMFS
+file system. Right now it supports nested directories but no listings. As
+time goes on I will be working on this to make it more fully functional.
+
+
+3.3
+
+Q) How can I make images for the romdisk file system?
+
+Q) Where can I get this genromfs program to make ROMFS image for use
+with the romdisk file system?
+
+A) This is a Linux utility (it's a Linux-specific file system.. well
+it was until a few days ago anyway }-D) called genromfs that does
+this for you. Here is a URL:
+
+ftp://sunsite.unc.edu/pub/Linux/system/recovery/genromfs-0.3.tar.gz
+
+Additionally, I have provided a copy of this program for your convienence.
+You will need to edit your environ.sh/tcsh to change the paths if you want
+it to work "out of the box". If you are using Cygwin you will also need to
+make sure there's a /tmp path mount for bin2o's usage.
+
+
+4 --- Networking ---------------------------------------------------
+
+4.1
+
+Q) Does KOS have any kind of TCP/IP stack? Network support at all?
+
+A) Yes. There is a very primitive and rudimentary driver for the Sega
+broadband adapter (an RTL8193C based 10/100 card that doesn't seem to work
+all that well at 100); and for TCP/IP there is a port of Adam Dunkel's
+lwIP embedded stack. It doesn't work too well, it's more of a toy right
+now. I don't recommend trying anything serious with it in this version. It
+needs interrupt support and a more direct path to the TCP/IP stack before
+it will be usable.
+
+
+4.2
+
+Q) But, but, but...
+
+A) Ok, alright! =) I was pretty excited too so if you just want to play
+with things...
+
+You'll need to edit kernel/main.c and uncomment the lines that start up
+the ethernet driver and lwIP. You'll also need to uncomment the line that
+shuts down ethernet. Finally, you'll need to edit tcpip/init/kos/init.c
+and change the DC's IP address, gateway, and netmask. Recompile and run,
+and you should have a working HTTP server on port 80 on your DC. No
+guarantees though! And I haven't even tested outgoing connections so I
+don't know if they work at all.
+
+Like I said in warning above, not for the faint of heart..
+
+
+4.3
+
+Q) What about a BSD stack?
+
+A) That seems to be everyone's generic answer to wanting a TCP/IP
+stack. Have you actually _looked_ at the BSD stack? Not just glanced
+through it at the files and said "oh yep, it's all there!" but really
+studied what it would take to do a port? If you're still interested then I
+welcome you to attempt a port, but it's not a small task. The biggest
+problem would seem to be ripping it out of its BSD home and putting it in
+a foreign environment, but with the recent additions of semaphores and
+other thread primitives this might not be as hard.
+
+
+5 --- Building -----------------------------------------------------
+
+5.1 
+
+Q) I'm having an issue building KOS; it gives me errors about not
+finding Makefiles or not finding include files.
+
+A) Make sure you check the paths in environ.sh and/or environ.tcsh, and
+make sure you are running one of those with the 'source' command (see the
+README). If in doubt, use 'set' or 'setenv' to find the environment
+variables. You should have a KALLISTIBASE variable.
+
+
+5.2
+
+Q) I grok the userland thing above, now once the kernel is built, what
+do I do with it?
+
+A) You have two choices for running your program: either take the file
+kernel/kallistios.bin and upload it over your serial cable or ethernet
+card, or scramble it and burn it on a CD; or you can use the Makefile to
+do the steps for you if you're using dc-load/dc-tool. The way this works
+is to use the 'run' target in the top-level or kernel Makefiles. You
+can also modify your Makefile to use something like netcat to send
+to Marcus Comstedt's IPLOAD program. This version of KOS seems to work
+fine with it (and if you use IPLOAD 1.002, it exits back gracefully
+as long as your program didn't do anything weird).
+
+
+5.3
+
+Q) How can I run my statically linked program?
+
+A) Even easier: your Makefile should generate an ELF file and you can
+use one of the available loader programs to upload it directly.
+
+
+5.4
+
+Q) Where is the source to bin2o? All your other stuff has source...
+
+A) Examine the file more closely. It _is_ the source code =). bin2o is
+a bash shell script that runs from a real bash on a *nix, or under the
+Cygwin bash. There were some issues with it running under Cygwin 
+previously but those should now be fixed.
+
+
+6 --- Debugging ---------------------------------------------------------
+
+6.1
+
+Q) Is there ever going to be an easier way to develop KOS apps besides
+this tedious libdream-like method?
+
+A) Yes, there are two distinct possibilites coming up.
+
+First is developing using a network connection. The way this works is
+that we'll have a program like konsole and a VFS like fs_serconsole, but
+it uses TCP/IP. This is obviously a little ways off, but it will allow
+you to boot KOS itself (perhaps KOSH) and then run programs off your
+development machine at will. It will also completely eliminate the need
+for a serial cable because all console i/o can happen over ethernet
+packets, and the host program will provide NFS-like file sharing.
+
+Second is that we're thinking of implementing KOS under Linux-SH or
+NetBSD at some point. This sounds weird but it's one of the advantages
+of having a microkernel architecture that works like ours does
+(Amiga-style). Amiga themselves are actually doing this in their next
+generation AmigaOS. What this gives you is binary API compatability with
+KOS, but your program runs under the Linux kernel and gets all of its
+memory protection advantages, a debugger, etc. Note that this will
+probably only be an option if you are making a userland program.
+
+
+6.2
+
+Q) I don't have a serial cable so how can I see the debug output?
+
+Q) I want to use the serial line but the pesky kernel debug output is
+getting in my way.
+
+Q) I am writing a userland app / set of apps that will want a stdout but
+I don't want it to go to the serial port.
+
+A) There are two stdout redirection mechanisms in KOS, depending on
+whether you're working at the kernel or userland level.
+
+For the kernel level, you will want to use dbgio_set_printk() (defined
+in arch/dbgio.c). This function will return the old printk in case you
+just wanted to filter. For userland level, you can actually do something
+evil and tricky (which may eventually be banned ;-), and replace the
+printf pointer in the fundamental ABI. Make sure if you do this that you
+put it back normal when your program exits.
+
+We're working on a generic method for cleaning up resources such as
+these, but it's going to have to wait until there is real process
+support instead of just threads with loadable modules. Note that this
+process support is not high on the priority list right now.
+
+
+6.3
+
+Q) Can I trace through KOS using GDB or similar?
+
+A) Yes, in theory. It will run just like any other DC program (like a
+libdream app) but you will have to be aware that there are interrupts
+enabled and they are extremely relevant. They are used in things like
+PVR page flipping and rendering, threading, and will be used other
+places later on. Additionally, you can have things like the DC's boot
+ROM itself being multitasked in a thread during CD access! So be
+careful! If you are using userland programs it gets even trickier since
+GDB will have no symbols for the program (it will instead believe that
+you are just jumping into random data memory).
+
+There is an effort to make a GDB stub that will work with KOS, but
+nothing has materialized yet. Until then you might want to try one of
+the GDB stubs meant for raw DC programs and see what happens.
+
+
+--- End ------------------------------------------------------------
+
+KOS Version Id: $Id: FAQ,v 1.1.1.1 2001/09/26 07:05:00 bardtx Exp $

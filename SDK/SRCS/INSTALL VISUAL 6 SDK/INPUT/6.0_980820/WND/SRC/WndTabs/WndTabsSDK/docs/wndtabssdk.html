@@ -1,0 +1,491 @@
+<html>
+<head>
+<title>The WndTabs SDK</title>
+<LINK rel="stylesheet" href="docs.css">	
+</head>
+<body>
+
+<!-- -- start -- -->
+
+<h1>The WndTabs SDK</h1>
+
+<address>Version 3.0</address>
+
+<p>&nbsp;</p>
+
+&nbsp;<img border="1" src="AddonsMenu.gif" align="top" width="525" height="189" alt="The new WndTabs 'Addons' menu with one addon loaded">&nbsp;&nbsp;
+<img border="0" src="WTSDK_Samp.gif" width="354" height="332" alt="The WTSDK_Samp Addon"><br>
+<br>
+
+
+<h2><br>
+Introduction</h2>
+<p>The WndTabs SDK allows Visual C++ addins to interface with WndTabs, adding
+new capabilities to the WndTabs tabs.&nbsp; Through the SDK, you can add new
+commands to the tabs, and also alter the way the tabs look.&nbsp; Addins that
+enhance WndTabs through the SDK are called WndTabs <b>addons</b>.
+<p>The SDK is supported by version 3.0 of WndTabs (<a href="http://www.wndtabs.com">get
+it here</a>).&nbsp;&nbsp;
+<p> If you aren't familiar with the WndTabs addin, you can learn more
+about it <a href="http://www.wndtabs.com/wt/">here</a> and <a href="http://www.wndtabs.com/wt/tour/">here</a>.
+<h2><br>
+<a name="Creating">
+Creating a WndTabs Addon</a></h2>
+<p>WndTabs addons must be registered with the <a href="http://www.wndtabs.com/aic/">AddInComm
+library</a>, as WndTabs uses the AddInComm's dynamic discovery and messaging
+facilities to communicate with the addons.&nbsp; After registering with
+AddInComm, the <code>InitWndTabsIntegration</code>
+ function is used to initialize the SDK.&nbsp; Both procedures should be performed in your addin's <code>
+OnConnection</code> method:</p>
+<blockquote>
+<pre>STDMETHODIMP CDSAddIn::OnConnection(IApplication* pApp, VARIANT_BOOL bFirstTime, long dwCookie, VARIANT_BOOL* OnConnection)
+{
+...
+    // Register with AddInComm
+    m_hAddin = AICRegisterAddIn(&quot;MyAddon&quot;, 1, 0, 5, AddInCallback);
+
+    // Register with WndTabs
+    InitWndTabsIntegration(&quot;MyAddon&quot;, <a href="#OnTabUpdate">OnTabUpdate</a>, <a href="#OnWTCommand">OnWTCommand</a>, <a href="#OnWTCommandUpdateUI">OnWTCommandUpdateUI</a>, <a href="#Commands_For_WT">Commands_For_WT</a>, countof(Commands_For_WT), OnWTEvent, 
+        WndTabs_Ev_WindowChanged | WndTabs_Ev_TabClicked);
+...
+}</pre>
+</blockquote>
+<p>The <code> AICRegisterAddIn</code> call adds your addin to AddInComm's active addin
+database.&nbsp; In the above example, the add-in is registered with the name
+&quot;MyAddon&quot;, with the version number 1.0.5.&nbsp; The <code> AddInCallback</code>
+function is designated as the AddInComm message handler.</p>
+<p><code>InitWndTabsIntegration</code> initializes the WndTabs SDK.&nbsp; It must know the
+AddInComm name your addin is using, as well as other information regarding
+specific SDK functionality, such as which commands your addon supports.&nbsp;
+These parameters will be discussed in further detail below.</p>
+<p>To clean up resources, and properly unregister from WndTabs and AddInComm,
+the following code should appear in an Addon's <code>OnDisconnection</code> method:</p>
+<blockquote>
+<pre>STDMETHODIMP CDSAddIn::OnDisconnection(VARIANT_BOOL bLastTime)
+{
+...
+    EndWndTabsIntegration();      // Unregister from WndTabs
+    AICUnregisterAddIn(m_hAddin); // Unregister from AddInComm
+...
+}</pre>
+</blockquote>
+<p>We're almost there - just one thing left to do:&nbsp; The WndTabs SDK code
+has to be hooked into your AddInComm message handler, allowing it to
+intercept SDK related messages.&nbsp; In the <code> OnConnection</code> function, we specified
+<code>
+AddInCallback</code> as the callback function.&nbsp;&nbsp; A skeleton for this function
+would be:</p>
+<blockquote>
+<pre>// callback for AddInComm
+int AddInCallback(LPCTSTR pCmd)
+{
+    AFX_MANAGE_STATE(AfxGetStaticModuleState());
+
+    int iRetVal;    
+    if ((iRetVal = WndTabsInt_Callback(pCmd)) != -1)  // call the SDK  
+    {
+        return iRetVal;
+    }
+
+    // do any other processing here
+
+    return -1;  // -1 should be returned if you didn't handle the command
+}</pre>
+</blockquote>
+<p>It is an AddInComm convention to return -1 if you don't handle the specified
+command.&nbsp; For non-SDK commands, the <code> WndTabsInt_Callback</code> 
+function returns just that.&nbsp; This means that if your addin doesn't implement any AddInComm
+commands of its own, you can
+pass <code> WndTabsInt_Callback</code> directly to the <code> AICRegisterAddIn</code> 
+function to save
+yourself the trouble of writing a callback function.<br>
+<h2><a name="Commands">Adding New Commands To WndTabs</a></h2>
+<blockquote>
+<p><img border="1" src="SDK_Commands.gif" width="341" height="111" alt="Commands for the WTSDK_Samp addon, as displayed in a tab context menu"></p>
+</blockquote>
+<p>Up to this point, we've seen how to create a skeleton addon that doesn't
+actually do anything.&nbsp; It's time to add some functionality.</p>
+<p> One of the things that addons can do is to add new commands to
+WndTabs.&nbsp; These commands are displayed under the Addons sub-menu (which is
+available, by default, under both the tab context menu and the main WndTabs menu).</p>
+<h4>Declaring Your Commands And Command Handler</h4>
+<p>For each command you want to add, you must supply a <code> WTSDK_CommandDef</code>
+structure:</p>
+<blockquote>
+<pre>// from the SDK headers
+struct WTSDK_CommandDef
+{
+    int     iCmd;       // the identifier for your command
+    LPCSTR  pszName;    // the display name for your command
+    int     idBmpRes;   // the resource id for the menu bitmap (or -1)
+    WTSDK_UIUpadateFlags UIUpdateFlags;
+};
+
+// from WTSDK_Samp
+WTSDK_CommandDef <a name="Commands_For_WT">Commands_For_WT</a>[] =
+{
+    { idCmdShowDialog,  &quot;Show WTSDK_Samp Dialog&quot;, IDB_MAIN,     UI_AlwaysAvailable },
+    { idCmdEnable,      &quot;Enable Transforms&quot;,      -1,           UI_UseCallback     },
+    { idCmdShowContext, &quot;Show Command Context&quot;,   IDB_INFO,     UI_AlwaysAvailable },
+    { idCmdFileInfo,    &quot;Show File Information&quot;,  IDB_FILEINFO, UI_MustHaveFile    }
+};</pre>
+</blockquote>
+<p>The <code>pszName</code> and <code>idBmpRes</code>  fields are self explanatory.&nbsp;
+The <code> iCmd</code>  field should specify a unique identifier for each command.&nbsp;
+This identifier is passed back to your command handler, just as Windows passes message
+identifiers to your program's message handler.&nbsp; The <code>UIUpdateFlags</code>
+parameter specifies when the command should be enabled/disabled.&nbsp; But we'll
+get into that in just a bit.</p>
+<p>You also need to supply a command handler callback.&nbsp; The handler looks
+like this:</p>
+<blockquote>
+<pre>void <a name="OnWTCommand">OnWTCommand</a>(int iCmd, const WTSDK_CommandContext *pCmdContext)
+{
+    switch (iCmd)
+    {
+        case idCmdEnable :
+            cfg_bEnabled = !cfg_bEnabled;
+            ForceTabUpdate();
+            break;
+
+...
+        default:
+            // unknown command!
+            ASSERT(FALSE);
+    }
+}</pre>
+</blockquote>
+<h4><br>
+<a name="CommandContext">
+The Command Context</a></h4>
+<p>Before any WndTabs command (either internal or Addon supplied) is executed, WndTabs
+creates a <i>command context</i> object.&nbsp; This object includes invaluable
+information about the tab/file that is associated with the command.&nbsp; This is the
+tab that you right-clicked on (if you execute a command from the tab context
+menus), or the active tab (if you use a keyboard shortcut or a non-tab menu).&nbsp;
+Note that it is still legal to use a keyboard shortcut when there are no windows
+at all!&nbsp; The command will still be issued, but the command context will
+reflect the fact there is no associated tab/file.</p>
+<div align="center">
+  <center>
+<table border="0" width="90%" cellpadding="0">
+  <tr>
+    <td valign="top">
+      <pre>struct WTSDK_CommandContext
+{
+    UINT    cbSize;     /* set to size of this structure */
+    BOOL    bHasDoc;
+    BOOL    bHasFile;
+    BOOL    bIsTextWindow;
+    BOOL    bIsActiveWindow;
+    BOOL    bIsGroupOperation;
+    HWND    hWnd;
+    char    szFullPath[MAX_PATH];
+    CComPtr&lt;IGenericWindow&gt;    pWindow;  // DevStudio automation
+    CComPtr&lt;IGenericDocument&gt;  pDoc;
+};
+</pre>
+    </td>
+    <td>
+      <p align="center"><img border="0" src="SDK_CmdCtx.gif" width="348" height="340" alt="A WTSDK_Samp command context dialog for the AboutDlg.cpp file"></td>
+  </tr>
+</table>
+  </center>
+</div>
+<p>Again, most of the <code> WTSDK_CommandContext</code> fields are self explanatory.&nbsp;
+The following is a brief overview of a few of the contexts you can run into:<p>&nbsp;
+<div align="center">
+  <center>
+  <table border="1" cellspacing="0" cellpadding="2" bgcolor="#DDDDDD" width="95%">
+    <tr>
+      <td width="138" rowspan="2"><font face="Courier New" color="#000080"><b>bHasFile</b></font></td>
+      <td width="997"><b>True</b> - This is a normal file window</td>
+    </tr>
+    <tr>
+      <td width="997"><b>False</b> - This is a non file window (e.g. the
+        &quot;Disassembly&quot; window)/a window of a file that hasn't been
+        saved before/command issued with no open windows</td>
+    </tr>
+    <tr>
+      <td width="138" rowspan="2"><font face="Courier New" color="#000080"><b>bHasDoc</b></font></td>
+      <td width="997"><b>True</b> - This window has editable content (i.e. a
+        text file or resource file)</td>
+    </tr>
+    <tr>
+      <td width="997"><b>False</b> - This is a non editable window (e.g. the
+        &quot;Disassembly&quot; window)/command issued with no open windows</td>
+    </tr>
+    <tr>
+      <td width="138" rowspan="2"><font face="Courier New" color="#000080"><b>bIsTextWindow</b></font></td>
+      <td width="997"><b>True -</b> A text window</td>
+    </tr>
+    <tr>
+      <td width="997"><b>False</b> - A non text window, such as a resource file
+        or a docked DevStudio window (i.e. &quot;Disassembly&quot;,
+        &quot;Output&quot;, etc.)</td>
+    </tr>
+    <tr>
+      <td width="138" rowspan="2"><font face="Courier New" color="#000080"><b>bIsGroupOperation</b></font></td>
+      <td width="997"><b>True</b> - The user clicked on the shared part of a
+        group tab (WndTabsExt only)</td>
+    </tr>
+    <tr>
+      <td width="997"><b>False</b> - The user clicked on a non group tab or on a
+        specific file within a group tab</td>
+    </tr>
+  </table>
+  </center>
+</div>
+<h4><br>
+UI Updates</h4>
+<p>The last piece in the puzzle is the UI update.&nbsp; It is up to you to tell
+WndTabs when your command should be enabled or disabled.&nbsp; For your
+convenience, the WndTabs SDK defines the <code> WTSDK_UIUpadateFlags</code>
+enumeration, which is passed in the command's <code> WTSDK_CommandDef</code>
+ structure:
+<blockquote>
+<pre>enum WTSDK_UIUpadateFlags 
+{
+    UI_AlwaysAvailable     = 0,
+    UI_MustHaveFile        = 1,  // was already saved at least once, i.e. not a new text window 
+    UI_MustHaveDoc         = 2,  // any editable window - windows such as &quot;Disassembly&quot; don't have a doc 
+    UI_MustHaveTextDoc     = 4,  // same as above, but must be a text document (for instance, not a resource) 
+    UI_MustHaveOpenWindows = 8,  // at least one window must be open
+    UI_MustBeActiveWindow  = 16, // command applies only to active windows
+
+    UI_UseCallback         = 128 // call user-defined UI update callback
+};</pre>
+</blockquote>
+<p>You can pass any combination of flags:
+<blockquote>
+  <pre>(UI_MustHaveDoc | UI_MustBeActiveWindow)      // enable only if has a document and is the active window
+
+(UI_MustHaveFile | UI_UseCallback)            // enable/disable based on file availability, then call user callback</pre>
+</blockquote>
+<p> The <i>user callback</i> function for UI updates is an optional function
+that you can pass to the SDK while registering your addon.&nbsp; This function
+is very similar to a function that you would write to handle MFC's <code> <a href="http://msdn.microsoft.com/library/devprods/vs6/visualc/vcmfc/_mfc_on_update_command_ui.htm"> ON_UPDATE_COMMAND_UI</a></code>
+message.&nbsp; For example, this is the <a name="OnWTCommandUpdateUI">UI handler
+callback</a> implemented by SDK sample:
+<blockquote>
+<pre>// This is a sample of a custom UI handler (used only for the &quot;Enable Transformation&quot; command).
+// The handler sets a checkmark for the command based on the current configuration settings.
+void OnWTCommandUpdateUI(int iCmd, CCmdUI *pCmdUI, const WTSDK_CommandContext *pCmdContext)
+{
+    // only the idCmdEnable command requested UI notifications
+    ASSERT(iCmd == idCmdEnable); 
+
+    pCmdUI-&gt;Enable(TRUE);
+    pCmdUI-&gt;SetCheck(cfg_bEnabled);
+}</pre>
+</blockquote>
+<p>&nbsp;
+<h2>Tab Morphing</h2>
+<blockquote>
+<p><img border="1" src="Transforms.gif" width="288" height="59" alt="Example of tab transformations">&nbsp;&nbsp; <img border="1" src="Transforms2.gif" width="320" height="60" alt="Example of tab transformations">
+</blockquote>
+<p>The most interesting feature of the SDK, in my opinion, is the ability to
+transform the tabs themselves.&nbsp; An SDK addon has access to the following
+tab attributes:
+<ul>
+  <li><u>The Tab Text</u> - You can change the text as well as the text color.</li>
+  <li><u>The Tab Icon</u> - You can change/replace the icon.</li>
+  <li><u>The Tab Overlay Icon</u> - The overlay icon is merged with the regular
+    icon before the tab is drawn.&nbsp; For example, the tab numbers are
+    overlays. </li>
+</ul>
+<p><font color="#800000"><img border="0" src="small_exclamation.gif" alt="!" align="absmiddle" width="15" height="15">
+Note: </font>Tab transformations require that the
+WndTabsExt component be enabled.</p>
+<p>In the above pictures you can see a few of these transformations:</p>
+<div align="center">
+  <center>
+  <table border="1" cellspacing="0" cellpadding="2" bgcolor="#DDDDDD" width="95%">
+    <tr>
+      <td align="center">&nbsp;</td>
+      <td align="center"><font face="Courier New" color="#000080"><b>Text
+        Transform</b></font></td>
+      <td align="center"><font face="Courier New" color="#000080"><b>Icon
+        Transform</b></font></td>
+      <td align="center"><font face="Courier New" color="#000080"><b>Overlay
+        Icon Transform</b></font></td>
+    </tr>
+    <tr>
+      <td><font face="Courier New" color="#000080"><b>Left Picture</b></font></td>
+      <td>The .cpp extension was changed to .cxx<br>
+        The color was changed</td>
+      <td>A new icon for .cpp files<br>
+        A red border for read-only files</td>
+      <td>N/A</td>
+    </tr>
+    <tr>
+      <td><font face="Courier New" color="#000080"><b>Right Picture</b></font></td>
+      <td>The asterisk was removed<br>
+        The color was changed</td>
+      <td>A new icon for .cpp files</td>
+      <td>The asterisk was added as an overlay</td>
+    </tr>
+  </table>
+  </center>
+</div>
+<p>Note the use of an &quot;overlay&quot; for the asterisk icon (right
+picture).&nbsp; Although you can change the actual icon,
+overlaying is usually achieved by modifying the overlay icon (which usually holds the tab number
+image).&nbsp; Changing the overlay icon will ensure that the overlay is unaffected when other addons modify the actual icon.</p>
+<p>Transformation are preformed in two <a name="stages">stages</a>:</p>
+<ol>
+  <li>The <b>change</b> stage - In this stage, addons a expected to make any
+    destructive changes, such as totally replacing the text or icon.</li>
+  <li>The <b>modify</b> stage - In this stage, addons are expected to make <i>modifications</i>
+    to the current text/icons.</li>
+</ol>
+<p>Although the above guidelines cannot be enforced, all addons are expected to
+cooperate.</p>
+<h4><br>
+The Tab Modification Function</h4>
+<p>The tab modification callback (which was passed to the SDK during <code> InitWndTabsIntegration</code>
+call) looks like this:
+<blockquote>
+<pre>void <a name="OnTabUpdate">OnTabUpdate</a>(WTSDK_TabUpdateInfo *pTabUpdateInfo, const WTSDK_CommandContext *pCmdContext)
+{
+...
+    // find out some stuff about the tab's file
+    const char * const pLastDot = strrchr(pCmdContext-&gt;szFullPath, '.');
+    bool bIsCpp = (pLastDot  &amp;&amp;  (stricmp(pLastDot, &quot;.cpp&quot;) == 0));
+
+...
+
+    if (pTabUpdateInfo-&gt;stage == WTSDK_TabUpdateInfo::change)
+    {
+        // the &quot;change&quot; stage - perform any operation that totally replaces texts or icons
+    }
+    else
+    {
+        // the &quot;modify&quot; stage - perform any operation that makes alterations to existing texts or icons
+    }
+}</pre>
+</blockquote>
+<p>Like other callbacks, you have access to the <a href="#CommandContext">command
+context</a>.&nbsp; However, the actual information about the tab is passed in
+the <code> WTSDK_TabUpdateInfo</code> structure:
+<blockquote>
+<pre>struct WTSDK_TabUpdateInfo
+{
+    UINT cbSize; // Must be set to sizeof(WTSDK_TabUpdateInfo)
+
+    enum { change, modify } stage;  // see explanation <a href="#stages">here</a>
+
+    // == Text on Tab ==
+    int iTabNumber;     // the number (0 based index) of the tab - notice,
+                        //   however, that the text indexes shown to the
+                        //   user start at 1 (i.e. TextIdx==iTabNumber + 1)
+
+
+    char szPrefix[256]; // the text before the file name (i.e. tab number)  <font color="#800000"><u>see picture</u></font>
+    char szBase[512];   // the text that belongs to the tab's entire group (the file name)  <font color="#800000"><u>see picture</u></font>
+    char szSuffix[256]; // the text that is different for each tab in the group (the extension)  <font color="#800000"><u>see picture</u></font>
+
+    // These are the texts without alterations - DO NOT CHANGE
+    const char *pszOrigPrefix, *pszOrigBase, *pszOrigSuffix;
+
+    // == Colors ==
+    COLORREF    crTextColorSel;     // when tab is selected
+    COLORREF    crTextColorNotSel;  // when tabs isn't selected
+
+    // == Icons ==
+    wt_auto_icon  hIcon;
+    wt_auto_icon  hIconOverlay;
+};</pre>
+
+<p><img border="0" src="TabParts.gif" width="381" height="78" alt="The text parts of a tab">
+
+</blockquote>
+
+<p>In order to change the text, you may modify <code>szPrefix</code>, <code>szBase</code>
+and <code>szSuffix</code>.&nbsp; The text color is defined by <code>crTextColorSel</code>
+and <code>crTextColorNotSel</code>.&nbsp; The icons (regular and overlay) are
+accessed through the <code>hIcon</code> and <code>hIconOverlay</code> variables.<p>Keep
+in mind that the text in the tab info object might not correspond to the
+original file name.&nbsp; For instance, for .cpp files, <code>szSuffix</code>
+should be &quot;.cpp&quot;, however, any addon may change this text.&nbsp; Even
+the <code>pszOrigSuffix</code> variable that holds the original value might not
+have &quot;.cpp&quot; as it's value, because the user might choose not to
+display extensions on the tabs!&nbsp; If you need to access the file's name, use
+the command context object.
+
+<p>&nbsp;
+
+<h2>WndTabs Events</h2>
+
+<p>Another service provided by the SDK is WndTabs events.&nbsp; To get access to
+event, you may optionally pass an event handler to the SDK initialization
+function.&nbsp; This function will be called whenever one of the following
+events occurs:</p>
+<blockquote>
+  <table border="1" cellspacing="0" cellpadding="2" bgcolor="#DDDDDD" width="95%">
+    <tr>
+      <td><font face="Courier New" color="#000080"><b>WndTabs_Ev_WindowChanged</b></font></td>
+      <td>Called whenever the active window is changed (or if the last window is closed).&nbsp;
+        The extra parameter to this event is the HWND of the new window (or NULL if there are no                  open windows).<br>
+        <br>
+        NOTE: If the user changes/opens/closes windows very quickly (e.g. by using Close All Windows or opening many files at once), an event might
+        not be generated for every single window activation/deactivation!</td>
+    </tr>
+    <tr>
+      <td><font face="Courier New" color="#000080"><b>WndTabs_Ev_TabClicked</b></font></td>
+      <td>Called whenever a user left-clicks on a tab.  Note that this does not necessarily mean that a window change will occur.&nbsp;
+        The extra parameter to this event is the number of the tab that was clicked (or -1 if                 there are no open windows).</td>
+    </tr>
+  </table>
+</blockquote>
+
+<p><br>
+
+<h2>The SDK Sample Addon (WTSDK_Samp)</h2>
+<p>You know what they say: A sample's worth a thousand articles.&nbsp; And I say
+that they're right!
+<p>The SDK comes with a sample addon - WTSDK_Samp.&nbsp; The sample demonstrates
+everything you can do with an addon - text transformations, commands, and UI
+callbacks.&nbsp; It also demonstrates proper AddInComm registration.&nbsp; In
+short - it's a good place to start.
+<p>&nbsp;
+<h2>Tips For Writing Addons</h2>
+<p>If you're thinking about writing an addon, here are a few pointers to get
+you started:</p>
+<ul>
+  <li>The source code for WndTabs is available for download.&nbsp; You can
+    compile a debug build that will help you track bugs much more quickly.</li>
+  <li>Your addon is just another DevStudio addin.&nbsp; For tips on debugging
+    addins, check the WndTabs online help under the &quot;Compiling and
+    Debugging&quot; topic.</li>
+  <li>If you mix Debug builds of addons with a Release build of WndTabs (or visa
+    versa), your addon dialogs might not appear centered on the screen.&nbsp; <u>This
+    is normal</u>.&nbsp; The problem will go away when create a release build.</li>
+  <li>Support is just an <a href="mailto:support@wndtabs.com">e-mail</a>
+    away!&nbsp;</li>
+</ul>
+<h2>&nbsp;
+
+</h2>
+<h2>Conclusion
+
+</h2>
+<p>If you install and play around with the SDK and its sample, you will quickly
+realize that the sky is the limit!&nbsp; Everything from unique icons to <a href="http://www.wndtabs.com/images/cvsin_addon.jpg">hooking
+the tabs into your favorite version control system</a> is now possible...&nbsp;
+Just write a WndTabs addon!</p>
+
+<p>&nbsp;</p>
+<hr>
+<font color="#626262" style="font-size:8pt">
+WndTabs is Copyright © 1997-2002 and the WndTabs SDK is Copyright © 2000-2001 by <a href="mailto:osolo@wndtabs.com">Oz
+Solomonovich<br>
+</a>For more information, questions, or support, visit the WndTabs site at <a href="http://www.wndtabs.com">http://www.wndtabs.com</a><a href="mailto:osolo@wndtabs.com"><br>
+</a></font>
+<br><br>
+
+<!-- -- end -- -->
+
+</body>
+
+</html>

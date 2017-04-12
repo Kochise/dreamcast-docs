@@ -1,0 +1,2137 @@
+#LyX 1.1 created this file. For more info see http://www.lyx.org/
+\lyxformat 218
+\textclass book
+\language english
+\inputencoding default
+\fontscheme default
+\graphics default
+\paperfontsize default
+\spacing single 
+\papersize Default
+\paperpackage a4
+\use_geometry 0
+\use_amsmath 0
+\paperorientation portrait
+\secnumdepth 2
+\tocdepth 2
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\quotes_times 2
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+
+\layout Title
+
+Cryptic Allusion KallistiOS / Programmer's Manual
+\layout Author
+
+(c)2000-2001 Dan Potter
+\layout Standard
+
+
+\begin_inset LatexCommand \tableofcontents{}
+
+\end_inset 
+
+
+\layout Chapter*
+
+Legal
+\layout Standard
+
+
+\begin_inset Quotes eld
+\end_inset 
+
+Sega
+\begin_inset Quotes erd
+\end_inset 
+
+ and 
+\begin_inset Quotes eld
+\end_inset 
+
+Dreamcast
+\begin_inset Quotes erd
+\end_inset 
+
+ are registered trademarks of Sega Enterprises, Ltd.
+ This package has no association with Sega or any of its affiliates, besides
+ working on their hardware.
+\layout Standard
+
+
+\begin_inset Quotes eld
+\end_inset 
+
+Gameboy Advance
+\begin_inset Quotes erd
+\end_inset 
+
+ is a registered trademark of Nintendo, Inc.
+ This package has no association with Nintendo or any of its affiliates,
+ besides working on some of their hardware.
+\layout Standard
+
+All other trademarks are owned by their respective trademark holders.
+\layout Standard
+
+KallistiOS (c)2000-2001 Dan Potter, Jordan DeLong, and others.
+ Other portions (c) their individual authors; please contact the authors
+ for information on using and/or distriburing their code.
+\layout Standard
+
+Redistribution and use in source and binary forms, with or without modification,
+ are permitted provided that the following conditions are met:
+\layout Enumerate
+
+Redistributions of source code must retain the above copyright notice, this
+ list of conditions and the following disclaimer.
+ 
+\layout Enumerate
+
+Redistributions in binary form must reproduce the above copyright notice,
+ this list of conditions and the following disclaimer in the documentation
+ and/or other materials provided with the distribution.
+ 
+\layout Enumerate
+
+Neither the name of Cryptic Allusion nor the names of its contributors may
+ be used to endorse or promote products derived from this software without
+ specific prior written permission.
+\layout Standard
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHORS AND CONTRIBUTORS ``AS IS'' AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED.
+ IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+ USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+\layout Chapter
+
+Overview
+\layout Standard
+
+Welcome to KallistiOS! If this documentation looks familiar to users of
+ libdream, that's because it is -- this is basically a 
+\begin_inset Quotes eld
+\end_inset 
+
+port
+\begin_inset Quotes erd
+\end_inset 
+
+ of the documentation, with new sections added as neccessary, and other
+ sections modified.
+\layout Standard
+
+The following is copied from the README file:
+\layout Standard
+
+KallistiOS is a pseudo-real-time pseudo-microkernel operating system for
+ gaming consoles, licensed under the terms of the *new* BSD license (the
+ one without the advertising clause).
+ It has currently been ported to the Dreamcast(tm) and Gameboy Advance(tm)
+ platforms.
+\layout Standard
+
+Depending on whether you wish to see the fnords, you can pronounce it "kallisti-
+o's" (like a cereal) or "kallisti o s" (like an operating system).
+ We like the former since it's silly to be so serious most of the time =).
+ "Kallisti" means "to the fairest" in Greek.
+ This was the word (so the story goes) that was inscribed on the golden
+ apple that Eris threw into the banquet of the gods to start the Trojan
+ war.
+ This somehow landed her the title of matriarch of a silly religion called
+ Discordianism, which is what the name pays homage to.
+ If you want a short abbreviation, you can also refer to it as "KOS", which
+ can be pronounced "k-os" (chaos =) or just plain old 
+\begin_inset Quotes eld
+\end_inset 
+
+k-o-s
+\begin_inset Quotes erd
+\end_inset 
+
+.
+\layout Standard
+
+Note that this name is _not_ to be confused or associated with either the
+ professional development company Kalisto Software* or the cracking group
+ "Kalisto".
+\layout Standard
+
+Now that that is cleared up...
+ =)
+\layout Standard
+
+Like most embedded kernels, KallistiOS has two major modes of operation.
+ In the first mode, it can be linked directly into a program.
+ In this case you have very fine control over what gets included in the
+ binary and how and when it is initialized.
+ It is also by far the simplest way to make use of it (hearken back to the
+ days of libdream...).
+ This mode is now considered the default method of using KallistiOS and
+ will be the best supported in the future.
+\layout Standard
+
+The second mode is potentially more versatile and fun.
+ You can run the standalone KallistiOS binary and have it load programs
+ and multitask like a regular OS.
+ The virtualized file system is used in this loading process, so the first
+ (and subsequent) loaded binaries can be sitting on a CD, embedded in the
+ kernel, or even come across from a PC debugger host.
+\layout Standard
+
+Note that although "os mode" encourages the use of threads and a file system,
+ it may be taylored to fit your needs.
+ Likewise, the library mode may use threads and the VFS.
+\layout Chapter
+
+Getting Started
+\layout Standard
+
+We assume that you have gotten a working compiler set up.
+ The compiler you need depends entirely on the platform you wish to use
+ KOS with.
+ At the moment, only the DC platform is very well supported.
+ The others may or may not compile at this time.
+ So this document will focus on that aspect of KOS.
+\layout Standard
+
+The first thing you'll want to do is get a working binary image of the KOS
+ libraries.
+ You may download KOS in binary or source form.
+\layout Standard
+
+If you downloaded KOS in binary form, then you'll still need a binary for
+ 
+\series bold 
+genromfs
+\series default 
+ if you want to use the ROMFS file system (which will probably come in quite
+ handy for development).
+ Linux tends to come with this binary, BSD users can compile one using the
+ copy included with the KOS sources, and Cygwin users will likewise need
+ to compile it or obtain a binary from the same place you got the KOS package.
+\layout Standard
+
+The first thing you'll want to do in either case is to customize an 
+\begin_inset Quotes eld
+\end_inset 
+
+environ
+\begin_inset Quotes erd
+\end_inset 
+
+ script.
+ This script is run inside your shell to set various environment variables
+ so that the KOS build scripts and tools know where to find KOS and the
+ compiler toolchains (for DC, an SH-4 compiler, and optionally, an ARM7
+ compiler).
+ Look in the 
+\emph on 
+doc
+\emph default 
+ tree for samples.
+ If
+\emph on 
+ 
+\emph default 
+you are using 
+\series bold 
+bash
+\series default 
+ (the default for Cygwin) then you should start with one ending in 
+\begin_inset Quotes eld
+\end_inset 
+
+.sh
+\begin_inset Quotes erd
+\end_inset 
+
+ and if you are using 
+\series bold 
+tcsh
+\series default 
+ then you should start with one ending in 
+\begin_inset Quotes eld
+\end_inset 
+
+.tcsh
+\begin_inset Quotes erd
+\end_inset 
+
+.
+ Generally it shouldn't take more than changing a few base directory variables
+ at the top of the file, and the environ script will be ready to go.
+ You then need to either execute this script before working (
+\begin_inset Quotes eld
+\end_inset 
+
+source environ.sh
+\begin_inset Quotes erd
+\end_inset 
+
+ or 
+\begin_inset Quotes eld
+\end_inset 
+
+source environ.tcsh
+\begin_inset Quotes erd
+\end_inset 
+
+), or put the appropriate command in your shell's startup script.
+ The instructions on how to do basic shell things like that is beyond the
+ scope of this document, so look to Cygwin and/or *nix help groups if you
+ want to find it.
+\layout Standard
+
+Now that you think you've got your environ script setup correctly, type
+ 
+\series bold 
+set
+\series default 
+ (under 
+\series bold 
+bash
+\series default 
+) or 
+\series bold 
+setenv
+\series default 
+ (under 
+\series bold 
+tcsh
+\series default 
+) and look at the environment variables.
+ You should see a whole bunch of them starting with 
+\begin_inset Quotes eld
+\end_inset 
+
+KOS
+\begin_inset Quotes erd
+\end_inset 
+
+.
+ If that's true then this step is probably complete.
+\layout Standard
+
+If you downloaded the source package for KOS, then you'll want to compile
+ it now.
+ Just change the directory to the root of the KOS tree (e.g., inside 
+\begin_inset Quotes eld
+\end_inset 
+
+kos-1.1.5
+\begin_inset Quotes erd
+\end_inset 
+
+) and type 
+\series bold 
+make
+\series default 
+.
+ After a few minutes everything should have completed successfully.
+ If not, then you might need to recheck the above steps and make sure everything
+ is set up properly.
+ If all else fails, try asking on the 
+\emph on 
+dcdev
+\emph default 
+ or 
+\emph on 
+cadcdev-kallistios
+\emph default 
+ mailing lists.
+\layout Standard
+
+Well, now that that is (hopefully) out of the way, we'll proceed on to writing
+ a KallistiOS program.
+\layout Chapter
+
+A Basic KOS Program
+\layout Standard
+
+A KOS program is pretty simple and straightforward.
+ Each C module should include 
+\emph on 
+kos.h
+\emph default 
+ as a system header (e.g.
+ 
+\begin_inset Quotes eld
+\end_inset 
+
+
+\family typewriter 
+#include <kos.h>
+\family default 
+
+\begin_inset Quotes erd
+\end_inset 
+
+).
+ You
+\emph on 
+ 
+\emph default 
+should have a C-standard 
+\begin_inset Quotes eld
+\end_inset 
+
+main
+\begin_inset Quotes erd
+\end_inset 
+
+, which is called 
+\emph on 
+main
+\emph default 
+.
+ Inside this main routine you'll do one of two things: initialize only a
+ few subsystems of KOS and use those, or do a full initialization with 
+\emph on 
+kos_init_all
+\emph default 
+ and go from there.
+ It should be instructive to follow along in one of the Hello World examples
+ for your platform to see how a basic KOS program should look.
+\layout Standard
+
+The major advantage of initializing only a small portion of the subsystems
+ is if you have a very simple program that will only use a few of them.
+ This might be useful if you are writing some kind of loader, for example.
+ This isn't really a significant advantage though, since including all of
+ the base KOS library generally costs about 80k and manually initializaing
+ is error prone, but caveat emptor; do it however you like.
+\layout Standard
+
+For the rest of the documentation, I'm going to assume that you are doing
+ the full initialization.
+ Now the full initialization can still selectively initialize subsystems
+ if you don't want them to be active during your program.
+ For example, you might want to use the raw frame buffer, so enabling a
+ 3D system doesn't make a whole lot of sense.
+ On the other hand, you might just want to get everything ready to go.
+ The basic setup call looks like this:
+\layout LyX-Code
+
+kos_init_all(ALL_ENABLE, romdisk);
+\layout Standard
+
+The first parameter is a bitmask describing what you want to be initialized
+ by default.
+ The constant 
+\family typewriter 
+ALL_ENABLE
+\family default 
+ is available on every platform as a generic way to initialize as much of
+ KOS at once as is feasible.
+ For example, on the DC, this constant enables IRQs, threads, and 3D support
+ using the TA.
+ Another constant available on all platforms is 
+\family typewriter 
+BASIC_ENABLE
+\family default 
+.
+ This constant only enables the basic OS features and doesn't initialize
+ any extra platform-specific features.
+ On the DC, this enables IRQs and threads only.
+\layout Standard
+
+The second parameter is a pointer to a ROMFS image created by 
+\series bold 
+genromfs
+\series default 
+.
+ ROMFS was taken from Linux (the specification, not any code) and the Linux
+ and KOS implementations are 100% compatible, except that KOS doesn't implement
+ a few ROMFS features such as hard links and soft links.
+ You can, for example, mount the same ROMFS image in KOS and under a loopback
+ device in Linux.
+ If you don't want a ROMFS, then you should use the constant 
+\family typewriter 
+ROMDISK_NONE
+\family default 
+.
+ ROMFS images are generally included in the binary by using the KOS utility
+ 
+\series bold 
+bin2o
+\series default 
+, which is included in the 
+\begin_inset Quotes eld
+\end_inset 
+
+utils
+\begin_inset Quotes erd
+\end_inset 
+
+ tree.
+ The Hello World Makefiles show how to do this.
+\layout Standard
+
+Once 
+\family typewriter 
+kos_init_all
+\family default 
+ is called, the basic KOS systems should be ready to go! If you want to
+ use any of the extra / add-on libraries that come aggregated with KOS,
+ then you will need to initialize them seperately.
+ These might include an MP3 playback library, KGL, etc.
+\layout Standard
+
+Once your program is complete, it should call 
+\family typewriter 
+kos_shutdown_all
+\family default 
+, but in most cases this is not neccessary.
+\layout Standard
+
+For more info on the different subsystems, please see the chapter devoted
+ to that system.
+ For examples, see the 
+\begin_inset Quotes eld
+\end_inset 
+
+examples
+\begin_inset Quotes erd
+\end_inset 
+
+ directory off the KOS root.
+\layout Standard
+
+Now that you know what a basic KOS program looks like, you'll probably want
+ to start figuring out how to use the various parts of the library.
+ The following chapters are more in the way of a reference manual than a
+ tutorial.
+ The next chapter describes the portable parts of KOS which are present
+ on every platform (though in some cases there are minor differences).
+ The chapters after that describe the various platform-specific parts of
+ KOS, and the final chapters describe the add-on libraries which are aggregated
+ with the KOS distribution.
+\layout Section
+
+A Note on C++ Compatibility
+\layout Standard
+
+KOS currently does not support compiling with C++ support 
+\begin_inset Quotes eld
+\end_inset 
+
+out of the box
+\begin_inset Quotes erd
+\end_inset 
+
+.
+ We are examining the various issues involved with making it compatible
+ and expect to have a resolution fairly soon.
+ For now, we're assuming that you are using C for your development work.
+\layout Chapter
+
+The Portable Subsystems
+\layout Section
+
+Data Types
+\layout Standard
+
+Before we get started on the individual systems, I figured a small word
+ about data types is in order.
+ Almost everything in KOS uses the following conventions for data types.
+ KOS' architecture specific type header (arch/type.h) defines types int8,
+ int16, int32, and int64 to match signed integers of the appropriate number
+ of bits.
+ uint8, uint16, uint32, and uint64 are the same, but unsigned.
+ All of those types have corresponding volatile versions with a 'v' preview
+ (vint8, vuint8, etc).
+ Booleans or counts are often stored as 
+\begin_inset Quotes eld
+\end_inset 
+
+int
+\begin_inset Quotes erd
+\end_inset 
+
+, but counts are also often 
+\begin_inset Quotes eld
+\end_inset 
+
+uint32
+\begin_inset Quotes erd
+\end_inset 
+
+, depending on the circumstance.
+ Functions that can return errors generally return them as a negative int,
+ and success as a zero int.
+ Strings are passed around as 
+\begin_inset Quotes eld
+\end_inset 
+
+const char *
+\begin_inset Quotes erd
+\end_inset 
+
+.
+ Individual characters are generally 
+\begin_inset Quotes eld
+\end_inset 
+
+int
+\begin_inset Quotes erd
+\end_inset 
+
+.
+ Several other misc types are defined, including some ANSI C compatibility
+ types (u_short, etc) but those are the main ones.
+\layout Section
+
+ANSI C library
+\layout Standard
+
+KOS' built-in 
+\emph on 
+libc
+\emph default 
+ supports the following functions, which are mostly ported from BSD: 
+\family typewriter 
+abort
+\family default 
+, 
+\family typewriter 
+byteorder
+\family default 
+, 
+\family typewriter 
+labs
+\family default 
+, 
+\family typewriter 
+rindex
+\family default 
+, 
+\family typewriter 
+strcpy
+\family default 
+, 
+\family typewriter 
+strncat
+\family default 
+, 
+\family typewriter 
+strnlen
+\family default 
+, 
+\family typewriter 
+strspn
+\family default 
+, 
+\family typewriter 
+abs
+\family default 
+, 
+\family typewriter 
+bzero
+\family default 
+, 
+\family typewriter 
+memchr
+\family default 
+, 
+\family typewriter 
+strcat
+\family default 
+, 
+\family typewriter 
+strdup
+\family default 
+, 
+\family typewriter 
+strncmp
+\family default 
+, 
+\family typewriter 
+strpbrk
+\family default 
+, 
+\family typewriter 
+strstr
+\family default 
+, 
+\family typewriter 
+atoi
+\family default 
+, 
+\family typewriter 
+dtoa
+\family default 
+, 
+\family typewriter 
+memcmp
+\family default 
+, 
+\family typewriter 
+memmove
+\family default 
+, 
+\family typewriter 
+printf
+\family default 
+, 
+\family typewriter 
+strchr
+\family default 
+, 
+\family typewriter 
+stricmp
+\family default 
+ (aka 
+\family typewriter 
+strcasecmp
+\family default 
+), 
+\family typewriter 
+strncpy
+\family default 
+, 
+\family typewriter 
+strrchr
+\family default 
+, 
+\family typewriter 
+strtok
+\family default 
+, 
+\family typewriter 
+bcopy
+\family default 
+, 
+\family typewriter 
+index
+\family default 
+, 
+\family typewriter 
+memcpy
+\family default 
+, 
+\family typewriter 
+memset
+\family default 
+, 
+\family typewriter 
+qsort
+\family default 
+, 
+\family typewriter 
+strcmp
+\family default 
+, 
+\family typewriter 
+strlen
+\family default 
+, 
+\family typewriter 
+strnicmp
+\family default 
+ (aka, 
+\family typewriter 
+strncasecmp
+\family default 
+), 
+\family typewriter 
+strsep
+\family default 
+, 
+\family typewriter 
+vsprintf
+\family default 
+, 
+\family typewriter 
+malloc
+\family default 
+, 
+\family typewriter 
+calloc
+\family default 
+, 
+\family typewriter 
+realloc
+\family default 
+, and 
+\family typewriter 
+free
+\family default 
+.
+ Also supported are these ctype functions: 
+\family typewriter 
+isprint
+\family default 
+, 
+\family typewriter 
+isascii
+\family default 
+, 
+\family typewriter 
+islower
+\family default 
+, 
+\family typewriter 
+isupper
+\family default 
+, 
+\family typewriter 
+isdigit
+\family default 
+, 
+\family typewriter 
+tolower
+\family default 
+, 
+\family typewriter 
+toupper
+\family default 
+.
+\layout Standard
+
+
+\family typewriter 
+memcpy2
+\family default 
+, 
+\family typewriter 
+memset2
+\family default 
+, 
+\family typewriter 
+memcpy4
+\family default 
+ and 
+\family typewriter 
+memset4
+\family default 
+ are hardware helper functions which work like 
+\family typewriter 
+memset
+\family default 
+ and 
+\family typewriter 
+memcpy
+\family default 
+, but they copy the specified number of bits at a time.
+ 
+\family typewriter 
+memalign
+\family default 
+ is a memory helper function which assures alignment on a certain byte boundary
+ for hardware buffers.
+\layout Standard
+
+Many people have commented that KOS' libc is somewhat spartan compared to
+ many modern libc's such as glibc, BSD, and newlib.
+ However, we feel like the KOS libc is probably more than sufficient for
+ most console efforts (games, demos, etc).
+ If you want a more complete portability layer then you might be looking
+ in the wrong place -- perhaps DC Linux or NetBSD would be better suited
+ to your application.
+ KOS makes no bones about being pretty bare when it comes to standard POSIX
+ style functionality.
+ Still, there's more than enough here to drive the console-intensive parts
+ of your application as long as you're willing to do a bit of porting work.
+\layout Section
+
+VFS (Virtual File System)
+\layout Standard
+
+KOS contains a reasonably capable VFS (virtual file system), much like a
+ *nix.
+ It provides the basic file operations which you have come to expect as
+ a programmer: 
+\family typewriter 
+open
+\family default 
+ (with path translation, thus the 
+\begin_inset Quotes eld
+\end_inset 
+
+virtual
+\begin_inset Quotes erd
+\end_inset 
+
+ part of VFS), 
+\family typewriter 
+read
+\family default 
+, 
+\family typewriter 
+write
+\family default 
+, 
+\family typewriter 
+seek
+\family default 
+, 
+\family typewriter 
+tell
+\family default 
+, 
+\family typewriter 
+readdir
+\family default 
+, 
+\family typewriter 
+ioctl
+\family default 
+, 
+\family typewriter 
+rename
+\family default 
+, 
+\family typewriter 
+unlink
+\family default 
+, 
+\family typewriter 
+mmap
+\family default 
+.
+ VFS also provides an unconventional but very helpful function, 
+\family typewriter 
+total
+\family default 
+, which returns the total file size if possible.
+ Some of these functions may not work on all file systems.
+ For example, you cannot 
+\family typewriter 
+write
+\family default 
+ to a CD or a ROMFS image.
+ But you can 
+\family typewriter 
+write
+\family default 
+ to a VMU on a DC.
+ Failure in these functions is indicated (as mentioned above) by a negative
+ return value, except in the case of 
+\family typewriter 
+open
+\family default 
+, which may eventually be changed to conform anyway.
+\layout Subsection
+
+file_t fs_open(const char *fn, int mode)
+\layout Subsection
+
+void fs_close(file_t hnd)
+\layout Subsection
+
+ssize_t fs_read(file_t hnd, void *buffer, size_t cnt)
+\layout Subsection
+
+ssize_t fs_write(file_t hnd, const void *buffer, size_t cnt)
+\layout Subsection
+
+off_t fs_seek(file_t hnd, off_t offset, int whence)
+\layout Subsection
+
+off_t fs_tell(file_t hnd)
+\layout Subsection
+
+size_t fs_total(file_t hnd)
+\layout Subsection
+
+dirent_t* fs_readdir(file_t hnd)
+\layout Subsection
+
+int fs_ioctl(file_t hnd, void *data, size_t size)
+\layout Subsection
+
+int fs_rename(const char *fn1, const char *fn2)
+\layout Subsection
+
+int fs_unlink(const char *fn)
+\layout Subsection
+
+int fs_chdir(const char *fn)
+\layout Subsection
+
+void* fs_mmap(file_t hnd)
+\layout Subsection
+
+const char *fs_getwd()
+\layout Subsection
+
+int fs_handler_add(const char *prefix, vfs_handler *hnd)
+\layout Subsection
+
+int fs_handler_remove(const vfs_handler *hnd)
+\layout Section
+
+File System: fs_builtin
+\layout Section
+
+File System: fs_romdisk
+\layout Section
+
+Debug Output
+\layout Standard
+
+Every architecture supported by KOS supports the concept of a debug output
+ console.
+ Sometimes this may not be connected to anything (especially in the really
+ embedded ports like GBA) but this is where all debug and printf output
+ goes by default.
+\layout Standard
+
+
+\series bold 
+\emph on 
+-----KOS/LIBDREAM BARRIER-----
+\layout Subsection
+
+void serial_disable()
+\layout Standard
+
+Disables serial access through the serial module; all serial output will
+ be discarded and serial input will always return 
+\begin_inset Quotes eld
+\end_inset 
+
+no character available
+\begin_inset Quotes erd
+\end_inset 
+
+.
+ This is generally used before burning the program to a CDR so that it won't
+ hang on a non-development machine waiting for serial output to complete.
+\layout Subsection
+
+void serial_init(int baud)
+\layout Standard
+
+Initialize the SCIF interface with the given baud rate.
+ Interrupts will be turned off and flow control through the FIFOs will be
+ enabled.
+\layout Subsection
+
+void serial_write(int c)
+\layout Standard
+
+Write a single character to the SCIF output.
+ Note that the character may or may not be transmitted depending on the
+ state of the transmit FIFO.
+ If you wish instant output, you will need to call serial_flush().
+\layout Subsection
+
+void serial_flush()
+\layout Standard
+
+Flushes all data remaining in the transmit FIFO.
+ Use this to ensure that all queued serial output is actually sent.
+\layout Subsection
+
+void serial_write_buffer(uint8 *data, int len)
+\layout Standard
+
+Writes an entire buffer of (potentially) binary data to the SCIF output.
+ This function automatically executes a serial_flush().
+\layout Subsection
+
+void serial_write_str(char *str)
+\layout Standard
+
+Writes a null-terminated string of data to the SCIF.
+ Uses serial_write_buffer(), so all output is flushed immidiately.
+\layout Subsection
+
+int serial_read()
+\layout Standard
+
+Reads one character from the SCIF input FIFO if one is waiting, otherwise
+ returns -1.
+\layout Subsection
+
+int serial_printf(char *fmt, ...)
+\layout Standard
+
+Uses vsprintf() from libc to process format args, then sends the data to
+ the SCIF using serial_write_str().
+ In dream.h, printf() is an alias for this function.
+\layout Section
+
+Basic Video (video.c)
+\layout Standard
+
+The basic video subsystem of libdream is designed to facilitate frame buffer
+ setup and access.
+ It does not handle 3D acceleration, that is handled in the 
+\begin_inset Quotes eld
+\end_inset 
+
+TA
+\begin_inset Quotes erd
+\end_inset 
+
+ module.
+ The basic usage of the video system is to call vid_init with the desired
+ parameters, and then use one of the 
+\begin_inset Quotes eld
+\end_inset 
+
+vram
+\begin_inset Quotes erd
+\end_inset 
+
+ pointers to access video memory.
+\layout Standard
+
+The following variables and functions are available in basic video:
+\layout Subsection
+
+uint32 *vram_l
+\layout Standard
+
+Pointer to video memory (0xa5000000) as a 32-bit unsigned integer array.
+ Use this to access video memory when in RGB888 mode, or when copying large
+ regions (not recommended =).
+\layout Subsection
+
+uint32 *vram_s
+\layout Standard
+
+Similar to vram_l, but accesses as a 16-bit unsigned integer array.
+ Use this to access video memory when in RGB555 or RGB565 mode.
+\layout Subsection
+
+int vram_config
+\layout Standard
+
+Stores the first parameter to vid_init, which is the pixel format.
+\layout Subsection
+
+int vram_size
+\layout Standard
+
+Stores the total size (in pixels) of one page of video frame buffer.
+\layout Subsection
+
+int vid_cable_type
+\layout Standard
+
+Stores the cable_type parameter to the video init function below.
+\layout Subsection
+
+int vid_check_cable()
+\layout Standard
+
+Checks and returns the attached video cable type; the three constants matching
+ the return values are CT_VGA, CT_RGB, and CT_COMPOSITE.
+\layout Subsection
+
+int vid_init(int cable_type, int disp_mode, int pixel_mode)
+\layout Standard
+
+Does full frame buffer initialization with the requested cable type, display
+ mode, and pixel mode.
+ You should pass the return value from vid_check_cable() as the first parameter.
+ dc_setup() does this for you.
+ disp_mode constants are DM_320x240, DM_640x480 and DM_800x608.
+ pixel_mode constants are PM_RGB555, PM_RGB565, and PM_RGB888.
+\layout Subsection
+
+void vid_set_start(uint32 start)
+\layout Standard
+
+Set the 
+\begin_inset Quotes eld
+\end_inset 
+
+start address
+\begin_inset Quotes erd
+\end_inset 
+
+ register, which governs where in the frame buffer the output picture comes
+ from.
+ This can be used for 
+\begin_inset Quotes eld
+\end_inset 
+
+double buffering
+\begin_inset Quotes erd
+\end_inset 
+
+, but it will most commonly be used during 3D acceleration.
+\layout Subsection
+
+void vid_border_color(int r, int g, int b)
+\layout Standard
+
+Set the border color.
+ The border is the area outside the standard viewing area.
+ On NTSC this is mostly above and below the picture.
+ I'm not sure what it is on PAL.
+ Generally unless you're doing some odd debugging you'll want to set this
+ to black (vid_init does this for you).
+\layout Subsection
+
+void vid_clear(int r, int g, int b)
+\layout Standard
+
+Clears the first page of frame buffer based on the current video mode, with
+ the given color.
+ This is most useful when using frame buffer access, not 3D access.
+\layout Subsection
+
+void vid_empty()
+\layout Standard
+
+Clear the entirety of video memory using zeros.
+ This is done using longwords so it's fairly quick.
+ Once again, mainly used with 3D setup.
+\layout Subsection
+
+void vid_waitvbl()
+\layout Standard
+
+Wait for a vertical blank period.
+ Vertical blank is the period between the time that the scan beam reaches
+ the bottom of the screen and the time that it reaches the top and starts
+ drawing again.
+ This is relevant because this is the best time to draw to the frame buffer
+ without causing 
+\begin_inset Quotes eld
+\end_inset 
+
+tearing
+\begin_inset Quotes erd
+\end_inset 
+
+ or other artifacts.
+ It's also generally when you want to switch start addresses.
+\layout Section
+
+BIOS Fonts (biosfont.c)
+\layout Standard
+
+BIOS fonts are the ones you see in the boot manager on the Dreamcast.
+ These are stored in ROM and so are available to any program.
+ You will probably recognize them immidiately since they are used all over
+ the place in official productions.
+ The BIOS font contains European Latin-1 characters (which we support) and
+ Kanji (which we don't support yet but will eventually).
+ The Latin-1 characters are bit masks of size 12x24, so each character uses
+ 36 bytes.
+ I suspect that the Kanji characters are 24x24, but I haven't tested this
+ yet.
+ These functions are frame-buffer agnostic except that they expect a 16-bit
+ pixel size.
+\layout Standard
+
+The following functions are available:
+\layout Subsection
+
+void* bfont_find_char(int ch)
+\layout Standard
+
+Returns the address in ROM of the given character, after being mapped to
+ the BIOS font.
+ 
+\layout Subsection
+
+void bfont_draw(uint16 *buffer, int bufwidth, int c)
+\layout Standard
+
+Draws Latin-1 character 'c' at the given location in 'buffer', and assumes
+ that 'buffer' is 'bufwidth' pixels wide.
+ For example, to draw an 'a' at 20,20 in a 640x480 framebuffer, you'd use
+ bfont_draw(vram_s+20*640+20, 640, 'a').
+\layout Subsection
+
+void bfont_draw_str(uint16 *buffer, int bufwidth, char *str)
+\layout Standard
+
+Exactly like bfont_draw, but it takes a string and draws each character
+ in turn.
+\layout Section
+
+PC Fonts (font.c)
+\layout Standard
+
+The PC font system handles bitmapped fonts that are 8 pixels wide, and any
+ number of pixels tall.
+ The module is being deprecated in favor of the BIOS font module, so I won't
+ describe it here.
+ If you want more information, please reference font.c itself.
+\layout Section
+
+Sound Processor Unit (spu.c)
+\layout Standard
+
+The sound processor unit (as mentioned in the README) is a Yamaha(tm) AICA
+ sound system.
+ To use the processor you will need to write a seperate program that runs
+ on the ARM7 RISC core and uses the AICA's own registers.
+ This isn't covered in this document (or anywhere, to my knowledge).
+ For some decent examples, though, take a look at 
+\begin_inset Quotes eld
+\end_inset 
+
+s3mplay
+\begin_inset Quotes erd
+\end_inset 
+
+ on the Cryptic Allusion DCDev site (see README).
+\layout Standard
+
+The following defines and functions are available to assist in using the
+ sound processor:
+\layout Subsection
+
+SMP_BASE
+\layout Standard
+
+All samples loaded to the AICA should proceed from this location relative
+ to sound RAM (which maps to 0xa0810000 in the SH-4).
+ This is mainly used in the S3M player but it's a good guideline to follow
+ in general since it gives you 64k of space for the sound program (which
+ is generally plenty).
+\layout Subsection
+
+void snd_ram_write_wait()
+\layout Standard
+
+The AICA's RAM is attached to the chip itself rather than the SH-4, and
+ so access proceeds through an ASIC.
+ You must call this function every 8 long-words of written sound memory
+ so that the ASIC's FIFO can catch up.
+ If you don't, the data won't be written accurately.
+\layout Subsection
+
+void snd_load_arm(void *src, int size)
+\layout Standard
+
+Loads an ARM7 program and starts it executing.
+ The program will be loaded at offset 0, so it needs to begin with reset/excepti
+on vectors.
+\layout Subsection
+
+void snd_stop_arm()
+\layout Standard
+
+Stops execution in the ARM7, and disables all AICA synthesizer channels.
+ This insures that whatever was going on in the SPU is stopped completely.
+\layout Subsection
+
+void snd_init()
+\layout Standard
+
+Initialize the SPU: disable the ARM7 and clear sound memory.
+\layout Subsection
+
+void snd_load(void *src, int dest, int len)
+\layout Standard
+
+Load miscellaneous data into the SPU's RAM.
+ 'src' is where to load from, and 'dest' is relative to the SPU based (so
+ you could pass, e.g., SMP_BASE here).
+ 'len' is in bytes but will be rounded up to long-words.
+\layout Section
+
+CD-Rom Access (cdfs.c)
+\layout Standard
+
+Libdream provides the capability to use CD and CDR discs in the GD-Rom drive
+ using this module.
+\layout Standard
+
+Note that this file has been specifically crippled (or rather, we just never
+ wrote it in) so that it can't access Sega's GD discs.
+ This means that you can't access the data on any commercial game.
+ There are really only a few legitimate reasons for doing this so we've
+ disabled the feature to avoid coming under fire for assisting with copyright
+ infringement.
+ If you really want to know how, I'm sure you can figure it out =).
+\layout Standard
+
+The following functions are available:
+\layout Subsection
+
+uint32 iso_open(const char *path, int oflag)
+\layout Standard
+
+Open a file on the CD, using absolute path 
+\begin_inset Quotes eld
+\end_inset 
+
+path
+\begin_inset Quotes erd
+\end_inset 
+
+, with open flags 
+\begin_inset Quotes eld
+\end_inset 
+
+oflag
+\begin_inset Quotes erd
+\end_inset 
+
+.
+ Note that in the current system, 
+\begin_inset Quotes eld
+\end_inset 
+
+path
+\begin_inset Quotes erd
+\end_inset 
+
+ must use forward slashes for path seperators (but can mix upper and lower
+ case freely with no troubles), and 
+\begin_inset Quotes eld
+\end_inset 
+
+oflag
+\begin_inset Quotes erd
+\end_inset 
+
+ must be O_RDONLY or (O_RDONLY | O_DIR).
+ A file descriptor will be returned, or a zero on error.
+\layout Subsection
+
+void iso_close(uint32 fd)
+\layout Standard
+
+Close the file referenced by the given file descriptor.
+\layout Subsection
+
+int iso_read(uint32 fd, void *buf, int count)
+\layout Standard
+
+Read 
+\begin_inset Quotes eld
+\end_inset 
+
+nbyte
+\begin_inset Quotes erd
+\end_inset 
+
+ bytes from the file referenced by 
+\begin_inset Quotes eld
+\end_inset 
+
+fd
+\begin_inset Quotes erd
+\end_inset 
+
+, into buffer 
+\begin_inset Quotes eld
+\end_inset 
+
+buf
+\begin_inset Quotes erd
+\end_inset 
+
+.
+ Note that this function will always read the surrounding 2048 byte sector
+ before extracting the parts you want, so you should never read less than
+ 2048 bytes unless that's all you want.
+ Reading more than 2048 does work.
+ The number of bytes read will be returned.
+\layout Subsection
+
+long iso_lseek(uint32 fd, long offset, int whence)
+\layout Standard
+
+Seek in file 
+\begin_inset Quotes eld
+\end_inset 
+
+fd
+\begin_inset Quotes erd
+\end_inset 
+
+ by 
+\begin_inset Quotes eld
+\end_inset 
+
+offset
+\begin_inset Quotes erd
+\end_inset 
+
+ bytes, relative to 
+\begin_inset Quotes eld
+\end_inset 
+
+whence
+\begin_inset Quotes erd
+\end_inset 
+
+.
+ 
+\begin_inset Quotes eld
+\end_inset 
+
+whence
+\begin_inset Quotes erd
+\end_inset 
+
+ is one of the standard STDIO constants: SEEK_SET, SEEK_CUR, SEEK_END.
+ 
+\begin_inset Quotes eld
+\end_inset 
+
+offset
+\begin_inset Quotes erd
+\end_inset 
+
+ may be positive or negative depending on the usage.
+ The new file location will be returned.
+\layout Subsection
+
+long iso_tell(uint32 fd)
+\layout Standard
+
+Returns the current file pointer within 
+\begin_inset Quotes eld
+\end_inset 
+
+fd
+\begin_inset Quotes erd
+\end_inset 
+
+.
+\layout Subsection
+
+dirent_t *iso_readdir(uint32 dirfd)
+\layout Standard
+
+Read the next entry (if any) from the opened directory.
+ Returns a pointer to a dirent_t on success (see fs_iso9660.h for more info
+ on dirent_t) or NULL if nothing is left.
+\layout Subsection
+
+int cdrom_init() int iso_init()
+\layout Standard
+
+Initialize the GD-Rom drive for reading CD/CDR media, and initialize the
+ file system driver.
+\layout Section
+
+Timer Counters (timer.c)
+\layout Standard
+
+This module supports the SH-4's internal timer perhipherals.
+ Support is provided for TMU0 through TMU2.
+ WDT (watchdog) is defined but not supported yet.
+ TMU0 through TMU2 may all be used independently and count at different
+ rates.
+\layout Standard
+
+The following defines and functions are available:
+\layout Subsection
+
+TMU0, TMU1, TMU2, WDT
+\layout Standard
+
+These are constants used to identify which timer you wish to operate on.
+\layout Subsection
+
+int timer_prime(int which, uint32 speed)
+\layout Standard
+
+Primes a timer, but does not start it.
+ 
+\begin_inset Quotes eld
+\end_inset 
+
+which
+\begin_inset Quotes erd
+\end_inset 
+
+ is one of the timer constants, and 
+\begin_inset Quotes eld
+\end_inset 
+
+speed
+\begin_inset Quotes erd
+\end_inset 
+
+ is a times per second rate which the counter will bottom out.
+ So if you set speed to 
+\begin_inset Quotes eld
+\end_inset 
+
+1
+\begin_inset Quotes erd
+\end_inset 
+
+, then the timer will hit bottom after one second, and start counting again.
+ Returns 0 for success.
+\layout Subsection
+
+int timer_start(int which)
+\layout Standard
+
+Starts the requested timer counting (after priming it).
+\layout Subsection
+
+int timer_stop(int which)
+\layout Standard
+
+Stops the requested timer.
+\layout Subsection
+
+uint32 timer_count(int which)
+\layout Standard
+
+Returns the current timer count.
+ The only way you can really make use of this externally is to get the timer
+ count after priming but before starting, and scale the real-time results.
+\layout Subsection
+
+int timer_clear(int which)
+\layout Standard
+
+Clears the timer underflow bit and returns what its value was.
+ Underflow is set when the timer counts down.
+ So for example, you could start a timer on a 1HZ cycle and poll this function
+ until it returns true.
+ At that point you'd have waited for a second, and the timer is already
+ counting down again.
+\layout Subsection
+
+void timer_sleep(int ms)
+\layout Standard
+
+Uses TMU0 to sleep for the given number of milliseconds.
+\layout Subsection
+
+int timer_init()
+\layout Standard
+
+Setup timers (enable and stop all).
+\layout Section
+
+Maple Access (maple.c)
+\layout Standard
+
+Libdream 0.7 includes Jordan DeLong's rewritten maple access code.
+ This is a lot more modular and it is setup for future expansion with queueing
+ multiple frames and DMA completion interrupts.
+ For now it basically does the same as Marcus' old maple routines but with
+ cleaner code.
+\layout Standard
+
+In general using the maple bus consists of finding your peripheral (using
+ DEVINFO queries), and storing this address; when you want to use the peripheral
+, you send it a condition query message and get a frame back describing
+ the state of the peripheral.
+ Most of the exported functions in maple.c won't be useful to mere mortals
+ =) but that's a good thing since there are specific support modules for
+ each of the major peripherals we have had access to.
+\layout Standard
+
+The following functions are available:
+\layout Subsection
+
+void maple_init(int quiet)
+\layout Standard
+
+Initialize the maple bus; if 
+\begin_inset Quotes eld
+\end_inset 
+
+quiet
+\begin_inset Quotes erd
+\end_inset 
+
+ is non-zero, then the bus scan will not produce any output.
+\layout Subsection
+
+void maple_shutdown()
+\layout Standard
+
+Shut down all maple bus operations.
+\layout Subsection
+
+uint8 maple_create_addr(uint8 port, uint8 unit)
+\layout Standard
+
+Create a maple address for the given port and unit.
+\layout Subsection
+
+int maple_docmd_block(...)
+\layout Standard
+
+Parameters omitted for topic brevity: int8 cmd, uint8 addr, uint8 datalen,
+ void *data, maple_frame_t retframe.
+ This is the main 
+\begin_inset Quotes eld
+\end_inset 
+
+work horse
+\begin_inset Quotes erd
+\end_inset 
+
+ of the maple system.
+ 
+\begin_inset Quotes eld
+\end_inset 
+
+cmd
+\begin_inset Quotes erd
+\end_inset 
+
+ should be one of the maple command constants in maple.h; 
+\begin_inset Quotes eld
+\end_inset 
+
+addr
+\begin_inset Quotes erd
+\end_inset 
+
+ should be created with maple_create_addr (or one of the maple_*_addr functions
+ below); 
+\begin_inset Quotes eld
+\end_inset 
+
+datalen
+\begin_inset Quotes erd
+\end_inset 
+
+ is the length of the extra data (beyond what's in the frame header), 
+\begin_inset Quotes eld
+\end_inset 
+
+data
+\begin_inset Quotes erd
+\end_inset 
+
+ is a pointer to extra data (if any) that goes after the frame header; and
+ 
+\begin_inset Quotes eld
+\end_inset 
+
+retframe
+\begin_inset Quotes erd
+\end_inset 
+
+ is a maple_frame_t that you should pass in to be filled in with return
+ data.
+ Zero is returned on success, and -1 returned on error.
+ For some examples of using docmd_block directly, please check one of the
+ maple peripheral modules.
+\layout Subsection
+
+int maple_rescan_bus(int quiet)
+\layout Standard
+
+Rescans the maple bus.
+ This will be neccessary if the user swaps out any controllers or memory
+ cards.
+ It also determines what is where and stores that info for later usage.
+ If 
+\begin_inset Quotes eld
+\end_inset 
+
+quiet
+\begin_inset Quotes erd
+\end_inset 
+
+ is non-zero, it produces no output.
+\layout Subsection
+
+uint8 maple_device_addr(int code)
+\layout Standard
+
+Pass a maple function code, and it returns the address of the first one
+ that matches it.
+ 
+\layout Subsection
+
+uint8 maple_*_addr()
+\layout Standard
+
+These include controller, mouse, kb, lcd, and vmu currently.
+ Each one searches the maple bus to find the first matching type of peripheral
+ and returns an address.
+\layout Section
+
+Maple Peripheral Support Modules
+\layout Standard
+
+Support modules are included for standard controllers, keyboards, VMUs,
+ and mice.
+ Most peripherals fit into these molds.
+ Eventually we'll probably add support for more things like the purupuru
+ pack (force feedback) but we don't have one yet, so we can't.
+ =) Notable among this list is the mouse since it just came out.
+ Wow your friends by writing software that uses it before Sega gets a chance!
+ =)
+\layout Standard
+
+Since these are mostly the same (except for names and structure values)
+ I won't go over them in detail.
+ Each module generally contains a poll function that checks the state of
+ the peripheral and fills in a device-specific structure.
+ See the header files for the specific structure information.
+ I'll list out the poll functions here for convienence though.
+\layout Subsection
+
+int cont_get_cond(uint8 addr, cont_cond_t *cond)
+\layout Standard
+
+Check controller status.
+ Returns which buttons are pressed and the state of the various analog controls.
+\layout Subsection
+
+int kbd_get_cond(uint8 addr, kbd_cond_t *cond)
+\layout Standard
+
+Check keyboard status.
+ Returns up to six keys being pressed at once.
+ There are other support functions for the keyboard that you should look
+ up in keyboard.h if you want to use it seriously.
+ These do queueing and buffering for you.
+ If you want this functionality, you should use kbd_poll(uint8 addr) and
+ then kbd_get_key() to get key presses.
+\layout Subsection
+
+int vmu_draw_lcd(uint8 addr, void *bitmap)
+\layout Standard
+
+Draws the given bitmap to the LCD screen.
+ Generally these are on VMUs (which is why it's part of vmu.c) but it's not
+ required.
+ The bitmap should be a 48x32 bit array.
+ The picture will show up right side up on the VMU itself, so when it's
+ inserted in a controller you'll need to flip it in each direction.
+\layout Subsection
+
+int vmu_block_read(uint8 addr, uint16 blocknum, uint8 *buffer)
+\layout Standard
+
+Read the requested block of the VMU's flash ram and put it in 
+\begin_inset Quotes eld
+\end_inset 
+
+buffer
+\begin_inset Quotes erd
+\end_inset 
+
+.
+\layout Subsection
+
+int vmu_block_write(uint8 addr, uint16 blocknum, uint8 *buffer)
+\layout Standard
+
+Take what's in 
+\begin_inset Quotes eld
+\end_inset 
+
+buffer
+\begin_inset Quotes erd
+\end_inset 
+
+ and write it to the requested block of the VMU's flash ram.
+\layout Subsection
+
+int mouse_get_cond(uint8 addr, mouse_cond_t *cond)
+\layout Standard
+
+Gets the condition of the mouse peripheral specified.
+ Returns button states and delta x, y, and z (roller).
+\layout Section
+
+Tile Accelerator (ta.c)
+\layout Standard
+
+The Tile Accelerator (3D acceleration) really deserves its own book, but
+ for completeness (and my hands are getting tired =) I'm just going to go
+ over the basics of setting it up and the functions you use to do so.
+ For more specific information, look around on the web for various documents
+ describing the TA, and look in the examples.
+ Hopefully this section can be more fleshed out in future versions.
+\layout Standard
+
+The TA is exactly what it says: the screen in the PVR 3D chip is broken
+ up into 32x32 pixel tiles.
+ So in 640x480, you'd really have a 20x15 tile field, not a 640x480 pixel
+ field.
+ The PVR's 3D magic happens by taking each of these tiles along with a 
+\begin_inset Quotes eld
+\end_inset 
+
+display list
+\begin_inset Quotes erd
+\end_inset 
+
+ describing what is to be displayed on the screen, and doing internal z-bufferin
+g.
+ This means that each polygon is drawn only once, so even though there is
+ not a standard z-buffer present, the end result looks like there is one.
+ Opaque polygons, opaque volume modifiers (fog, etc), translucent polygons,
+ translucent modifiers, and punch-through polygons (which can 
+\begin_inset Quotes eld
+\end_inset 
+
+cut
+\begin_inset Quotes erd
+\end_inset 
+
+ pieces of other polygons out, I think) must be sent to the TA, in that
+ order.
+ Each list is rendered in that order as well, for each tile, and so the
+ more lists you send, the slower the rendering process gets.
+ Opaque polygons are the fastest obviously, followed by punch-throughs,
+ translucent polygons, and then the volume modifiers.
+ 
+\layout Standard
+
+Because of the tile system, there is no user clipping neccessary: the TA
+ works backwards by intersecting polygons and volumes with each tile before
+ rendering.
+ The end result of all of this is that all you have to do as a user is cull
+ out the completely useless polygons (if you feel like it), arrange things
+ in polygon 
+\begin_inset Quotes eld
+\end_inset 
+
+strips
+\begin_inset Quotes erd
+\end_inset 
+
+ as much as possible, and then throw the various lists to the TA.
+ Then sit back and wait for it to do its work.
+\layout Standard
+
+The PVR chip is not magic: it is powerful and can accelerate the drawing
+ process to an amazing degree, but it still draws in terms of screen coordinates.
+ So it is really a fancy 2D accelerator with perspective correction support
+ for textures, and z-buffering.
+\layout Standard
+
+Coordinates in the PVR start at 0,0 (all coordinates are floating point
+ numbers) and go to 640,480, in the normal mode.
+ Any coordinates outside this will work but will be clipped.
+ Z coordinates start at 0 and move out of the screen towards the viewer.
+ As far as I can tell, in normal mode, it wants Z and not 1/Z (W).
+ I may be wrong of course.
+ I'm no 3D hardware expert.
+\layout Standard
+
+All that being said, the basic operation goes something like this:
+\layout Enumerate
+
+Setup the TA (ta_init); initialize the background plane structure
+\layout Enumerate
+
+Load any textures you may want to use
+\layout Enumerate
+
+For each frame:
+\layout Itemize
+
+Call ta_begin_render to initialize the rendering process.
+\layout Itemize
+
+Construct and send one or more polygon headers for opaque polygons, each
+ followed by zero or more verteces; each vertex strip must end with an 
+\begin_inset Quotes eld
+\end_inset 
+
+end of list
+\begin_inset Quotes erd
+\end_inset 
+
+ marker.
+\layout Itemize
+
+Call ta_commit_eol to finish the opaque list.
+\layout Itemize
+
+Construct and send one or more polygon headers for translucent polygons
+ (same process as above).
+\layout Itemize
+
+Call ta_commit_eol to finish the translucent list.
+\layout Itemize
+
+Call ta_finish_frame to finish the rendering process and wait for a vertical
+ blank to flip pages.
+\layout Standard
+
+Here are the structures and functions needed to do these things:
+\layout Subsection
+
+struct pv_str ta_page_values[2]
+\layout Standard
+
+Holds all the internal rendering data for the page flipper and renderer.
+ This is useful mainly if you want to do something like take a screen shot
+ (you can find the current frame buffer).
+\layout Subsection
+
+bkg_poly ta_bkg
+\layout Standard
+
+The background plane polygon.
+ The background plane is currently automatically a 640x480, three-point
+ opaque polygon.
+ I'm not even sure if you can change this.
+ For the values to load into this, take a look at one of the 3D example
+ programs.
+ If you want to do color shifting you can change this on the fly.
+\layout Subsection
+
+poly_hdr_t
+\layout Standard
+
+A polygon header; this is always four flag long-words and four dummy words.
+ The four dummy words are actually used with different types of shading
+ and volume modifiers, but these are not supported yet in libdream.
+ You should fill this structure directly (if you know what you're doing)
+ or use ta_build_poly_hdr.
+\layout Subsection
+
+vertex_oc_t
+\layout Standard
+
+Represents a single opaque/colored vertex with floating point coordinates
+ and ARGB values.
+ Actually it works fine for translucent polygons also but the naming convention
+ stuck.
+\layout Subsection
+
+vertex_ot_t
+\layout Standard
+
+Represents a single opaque/textured vertex with floating point coordinates
+ and ARGB values.
+ Actually it works fine for translucent polygons also.
+\layout Subsection
+
+int ta_curpage
+\layout Standard
+
+The current working page (out of ta_page_values above).
+\layout Subsection
+
+void ta_init()
+\layout Standard
+
+Initializes the TA and prepares for page flipped 3D.
+\layout Subsection
+
+void ta_send_queue(void *sql, int size)
+\layout Standard
+
+Sends one (or two) store queue(s) full of data to the TA.
+\layout Subsection
+
+void ta_begin_render()
+\layout Standard
+
+Call before you start drawing a frame.
+\layout Subsection
+
+void ta_commit_poly_hdr(poly_hdr_t *polyhdr)
+\layout Standard
+
+Sends one polygon header to the TA.
+ This needs to be done when you want to change drawing modes; e.g., opaque
+ color, opaque textured, translucent color, translucent textured.
+\layout Subsection
+
+void ta_commit_vertex(void *vertex, int size)
+\layout Standard
+
+Sends one vertex to the TA; this can be a vertex_oc_t or vertex_ot_t.
+ Pass along the result of sizeof() on the vertex.
+\layout Subsection
+
+void ta_commit_eol()
+\layout Standard
+
+Sends the 
+\begin_inset Quotes eld
+\end_inset 
+
+end of list
+\begin_inset Quotes erd
+\end_inset 
+
+ marker to the TA.
+ This ought to be used after all opaque polygons are sent, and again after
+ all translucent polygons are sent.
+\layout Subsection
+
+void ta_finish_frame()
+\layout Standard
+
+Call after you've finished sending all data.
+ This completes the rendering process in the alternate screen buffer and
+ then waits for a vertical blank to switch to the new page.
+\layout Subsection
+
+void ta_build_poly_hdr(poly_hdr_t *target, ...)
+\layout Standard
+
+Parameters omitted for brevity: int translucent, int textureformat, int
+ tw, int th, uint32 textureaddr, int filtering.
+ This builds a polygon header for you so you don't have to diddle with bitfields.
+ Translucent should be one of TA_OPAQUE or TA_TRANSLUCENT.
+ Textureformat needs to be one of the texture format constants or TA_NO_TEXTURE.
+ This includes whether it's twiddled or not (for info on twiddled textures,
+ look for the PVR E3 presentation online).
+ The rest of the parameters are only relevant if textureformat is not TA_NO_TEXT
+URE.
+ tw and th are the texture width and height, and must be powers of two between
+ 8 and 1024.
+ Textureaddr is the address within the PVR RAM that you loaded the texture,
+ and it must be aligned on an 8-byte boundary.
+ Filtering should be TA_NO_FILTER or TA_BILINEAR_FILTER.
+ Note that bi-linear filtering is a fairly expensive operation unless you
+ store your textures in the PVR RAM in twiddled format, in which case it's
+ free.
+\layout Subsection
+
+void ta_load_texture(uint32 dest, void *src, int size)
+\layout Standard
+
+Loads a texture into PVR ram at the given offset.
+ 
+\begin_inset Quotes eld
+\end_inset 
+
+size
+\begin_inset Quotes erd
+\end_inset 
+
+ must be a multiple of 4 and will be rounded up if it's not already.
+ A seperate function is required because the PVR requires you to send all
+ texture data to 0xa4000000, not 0xa5000000.
+ This must also be done after ta_init.
+\layout Subsection
+
+void *ta_texture_map(uint32 loc)
+\layout Standard
+
+Maps a given PVR offset to a texture space.
+ You should use this if you want to write directly into texture ram.
+ Once again, it must be done after ta_init.
+\layout Chapter
+
+About this document
+\layout Standard
+
+This document was written in a stock LyX 1.1.3fix6 distribution, using no
+ fancy add-ons (so it ought to load ok for you if you want to try it).
+ The PostScript, PDF, HTML, and text versions were generated using the export
+ options in LyX.
+\the_end

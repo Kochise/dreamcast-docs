@@ -1,0 +1,269 @@
+****************************************************************
+                      MICROSOFT(R) SQL SERVER
+                MICROSOFT SQL SERVER ODBC DRIVER
+                    SETUP README, VERSION 3.6
+****************************************************************
+
+(c) 1998 Microsoft Corporation. All rights reserved.
+
+This file describes using the version 3.6 Microsoft SQL Server
+ODBC driver with version 6.5 or earlier Microsoft SQL Servers.
+
+The topics covered are:
+
+1. Overview
+2. Installing Instcat.sql on the server
+3. Obtaining the SQL Server Client Net-Libraries
+4. Documentation sources regarding using ODBC with SQL Server
+5. Using the driver in a development environment
+6. Compatability issues
+
+****************************************************************
+1. Overview
+
+The version 3.6 Microsoft SQL Server ODBC driver is a Win32(R)
+ODBC version 3.6 driver.  It can be used with applications
+written to either the ODBC 2.X or ODBC 3.X APIs.  The driver
+works with Microsoft SQL Server version 4.21a or later.  The
+driver runs on  either Windows 95 or Windows NT (version 4.0
+or later).
+
+A new version of the Win32 SQL Server Client Configuration
+utility is also installed with the version 3.6 SQL Server ODBC
+driver.  This SQL Server Client Configuration utility can be
+used with Microsoft SQL Server version 4.21a or later and the
+Client Net-Libraries that come with those versions of SQL
+Server.
+
+****************************************************************
+2. Installing Instcat.sql on the server
+
+The SQL Server ODBC driver uses a set of system stored
+procedures, known as catalog stored procedures, to obtain
+information from the SQL Server system catalog.  Each version
+of the Microsoft SQL Server ODBC driver is developed to work
+with a specific version of the catalog stored procedures.  The
+Instcat.sql file included with the version 3.6 SQL Server ODBC
+driver includes minor updates to the catalog stored procedures
+that upgrade the procedures to the versions used by this
+driver.  The SQL Server system administrator must use the
+Instcat.sql script to upgrade the catalog stored procedures
+to ensure the proper operation of the driver.  Upgrading the
+catalog stored procedures does not affect the operation of
+older SQL Server clients.  This must be done for all
+versions of Microsoft SQL Server from 4.21a to 6.5.
+
+To upgrade the catalog stored procedures, the system
+administrator runs a script using the isql utility. (See the
+instructions below.)  Before making any changes to the master
+database, the system administrator should back it up.  To run
+isql, your computer must be installed as a client workstation
+for Microsoft SQL Server.
+
+At a command prompt, use the isql utility to run the Instcat.sql
+script.  For example:
+
+C:> ISQL /Usa /Psa_password /Sserver_name /ilocation\Instcat.Sql
+
+where
+sa_password 
+	Is the system administrator's password.
+server_name 
+	Is the name of the server on which SQL Server resides.
+location 
+	Is the full path of the location of Instcat.Sql.
+
+The Instcat.sql script generates many messages.  Most of these
+indicate how many rows were affected by the Transact-SQL
+statements issued by the script.  Most of these messages can be
+ignored, although the output should be scanned for messages that
+indicate an execution error.  When Instcat.sql is run against a
+version 6.0 SQL Server, the message that says the object
+sp_MS_upd_sysobj_category does not exist can be ignored.  The
+last message should indicate that Instcat.sql completed
+successfully.  The Instcat.sql script fails when there is not
+enough space available in the master database to store the
+catalog stored procedures or to log the changes to existing
+procedures.
+
+****************************************************************
+3. Obtaining the SQL Server Client Net-Libraries
+
+The Microsoft SQL Server ODBC driver uses the Microsoft SQL
+Server Client Net-Libraries to communicate with the server.
+The version 3.6 SQL Server ODBC driver also uses the SQL Server
+Client Configuration utility to manage the Net-Library
+associated with an ODBC data source.
+
+The version 3.6 SQL Server ODBC driver installs only one
+Net-Library, the Win32 named pipe Net-Library Dbnmpntw.dll.
+
+You can use the version 3.6 SQL Server ODBC driver with older
+Win32 Net-Libraries.  If a Net-Library other than the named pipe
+Net-Library is needed to connect to SQL Server, you can use
+the Net-Library that came with your version of Microsoft SQL
+Server.  You can get the SQL Server Net-Libraries by installing
+the Win32 SQL Server Client utilities for your version of
+Microsoft SQL Server.
+
+The version of the SQL Server Client Configuration utility
+installed with the version 3.6 SQL Server ODBC driver can be
+used with the Client Net-Libraries from SQL Server 4.21a or
+later.
+
+****************************************************************
+4. Documentation sources regarding using ODBC with SQL Server
+
+The version 3.6 Microsoft SQL Server ODBC driver complies with
+existing SQL Server 6.5 documentation for driver-specific
+information.  For documentation of driver-specific features, 
+see SQL Server manuals and Books Online.
+
+The version 3.6 Microsoft SQL Server ODBC driver also complies
+with additional driver-specific information in the technical
+note "Using ODBC with Microsoft SQL Server," which is available
+on the Microsoft Web site at:
+
+http://www.microsoft.com/sql/reskit.htm
+
+The Sqlsodbc.hlp file that ships with the version 3.6 SQL Server
+ODBC driver contains only context-sensitive help for the
+SQL Server ODBC Data Source wizard.  The Drvssrvr.hlp file that
+shipped with earlier versions of the Microsoft SQL Server ODBC
+driver contained driver-specific information for older versions 
+of the driver.  The information contained in the older versions 
+of Drvssrvr.hlp is duplicated in the SQL Server 6.5 manual 
+"Programming ODBC for Microsoft SQL Server."
+
+****************************************************************
+5. Using the driver in a development environment
+
+The Microsoft SQL Server ODBC driver uses driver-specific
+parameters for several ODBC function calls.  #defines for these
+driver-specific parameters and driver-specific C and C++
+programming structures are contained in the include file
+Odbcss.h.
+
+The version 3.6 SQL Server ODBC driver works with the
+Odbss.h file provided in the following sources:
+
+SQL Server Service Pack 2 (SP2) or later.
+	The service pack can be downloaded from the Microsoft
+	Web site at http://www.microsoft.com/sql/ServicePak.htm.
+
+ODBC 3.0 SDK.
+	The ODBC 3.0 SDK is part of the Microsoft Developer
+	Network Professional edition.  The SDK can be
+	downloaded from the Microsoft Web site at
+	http://www.microsoft.com/odbc.  The SDK is also
+	available from Microsoft Press(R) in the "Microsoft ODBC
+	3.0 Software Development Kit and Programmer's
+	Reference."
+
+****************************************************************
+6. Compatability issues
+
+The version 3.6 SQL Server ODBC driver displays a new wizard
+when adding or configuring data sources in either the ODBC
+Administrator utility or when an application calls
+SQLConfigDataSource and asks the driver to prompt the user for
+information.  Click the Help button in the wizard to access the
+wizard documentation.
+
+In the version 2.65 SQL Server ODBC driver that shipped with
+SQL Server 6.5, the SQL_COPT_SS_PERF_QUERY_INTERVAL
+worked in seconds instead of the milliseconds it was documented
+to use (see Knowledge Base article Q157753).  In the version 3.6
+SQL Server ODBC driver, SQL_COPT_SS_PERF_QUERY_INTERVAL has 
+been changed to work in milliseconds as documented.
+
+The following changes affect only applications written using
+the ODBC 3.X API.  They do not affect applications written
+using the ODBC 2.X API.  These changes should not impact
+the result set processing in most ODBC applications.
+
+In prior versions of the SQL Server ODBC driver, contiguous
+PRINT or RAISERROR statements in a batch or stored procedure
+return their messages together, in one result set.  In the
+version 3.6 SQL Server ODBC driver, the messages for each
+SQL statement are returned as separate result sets.  You must
+call SQLMoreResults in between each message to be positioned
+on the message for the next SQL statement.  The messages from
+a single SQL statement, such as a DBCC statement, are all
+returned in a single result set, and there is no need to call
+SQLMoreResults in between each message.
+
+In prior versions of the SQL Server ODBC driver, a run-time
+error or a RAISERROR with a severity of 11 or higher on the
+first statement in a batch or stored procedure always caused
+either SQLExecute, SQLExecDirect, or SQLParamData to return
+SQL_ERROR.  In the version 3.6 SQL Server ODBC driver,
+SQLExecute, SQLExecDirect, or SQLParamData returns SQL_ERROR
+only if no other statements are executed after the first
+statement.  If any other statements are executed after the
+first, even a simple RETURN statement with no return value, 
+SQLExecute or SQLExecDirect returns SQL_SUCCESS_WITH_INFO.  After
+processing the SQL_SUCCESS_WITH_INFO messages using 
+SQLGetDiagRec, call SQLMoreResults to be positioned on the 
+next result set.
+
+When prior versions of the driver encountered an error on the
+first statement of a batch or stored procedure, the statement
+handle was available for use with another SQL statement after
+SQLExecute or SQLExecDirect returned SQL_ERROR.  When the 3.6
+driver returns SQL_SUCCESS_WITH_INFO, the statement is not free
+to process another SQL statement until SQLMoreResults returns
+SQL_NO_DATA or until all result sets following the RAISERROR 
+have been closed.  If no result set follows the error message,
+then SQLCloseCursor cannot be called; SQLFreeStmt(SQL_CLOSE)
+or SQLMoreResults must be called to free the statement handle
+to process another SQL statement:
+
+CREATE PROCEDURE TestPrc @Parm1 as
+IF (@Parm1 IS NULL)
+BEGIN
+	RAISERROR ('Parm1 cannot be NULL', 11, 1)
+	RETURN
+END
+SELECT * FROM sysusers WHERE suid = @Parm1
+GO
+
+Execute the following:
+
+SQLExecDirect(hstmt, "{ call TestPrc (NULL) }", SQL_NTS);
+
+When using an older version of the SQL Server ODBC driver or
+if the application uses the ODBC 2.X API, SQLExecDirect
+returns SQL_ERROR.  After SQLGetDiagRec returns SQL_NO_DATA or
+SQLError returns SQL_NO_DATA_FOUND, the statement handle is
+free to execute another SQL statement.
+
+When using the version 3.6 SQL Server ODBC driver from an
+application written to the ODBC 3.X API, SQLExecDirect
+returns SQL_SUCCESS_WITH_INFO.  After SQLGetDiagRec returns
+SQL_NO_DATA, the statement handle cannot be used to process
+another SQL statement until SQLMoreResults returns
+SQL_NO_DATA or SQLFreeStmt(SQL_CLOSE) is called.
+
+In prior versions of the SQL Server ODBC driver, SQLExecute,
+SQLExecDirect, or SQLParamData returns SQL_SUCCESS when an
+application executes a searched UPDATE or DELETE statement
+that affects no rows.  For this case, the version 3.6 driver
+still returns SQL_SUCCESS to applications written with the
+ODBC 2.X API, but it returns SQL_NO_DATA to applications
+written with the ODBC 3.X API.  If either the ODBC 2.X
+application that receives SQL_SUCCESS or the ODBC 3.X
+application that receives SQL_NO_DATA then calls SQLRowCount,
+SQLRowCount returns a count of zero.
+
+ODBC 3.X more clearly defines the way results are returned
+than ODBC 2.X. Earlier versions of the SQL Server ODBC driver
+returned the values of output parameters and return codes when
+the ODBC 2.X functions SQLFetch or SQLExtendedFetch returned
+SQL_NO_DATA on the last result set returned by a stored
+procedure. The version 3.6 driver retains this behavior when
+called by ODBC 2.X applications.  When the version 3.6 driver
+is called by ODBC 3.X applications, however, the driver does not
+return output parameters or return codes until SQLMoreResults
+returns SQL_NO_DATA.
+****************************************************************

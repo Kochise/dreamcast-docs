@@ -1,0 +1,239 @@
+//+------------------------------------------------------------------------
+//
+//  Microsoft Forms
+//  Copyright 1996 - 1998 Microsoft Corporation.
+//
+//  File:       mshtmhst.idl
+//
+//  Contents:   MSHTML advanced host interfaces
+//
+//-------------------------------------------------------------------------
+
+cpp_quote("//=--------------------------------------------------------------------------=")
+cpp_quote("// mshtmhst.h")
+cpp_quote("//=--------------------------------------------------------------------------=")
+cpp_quote("// (C) Copyright 1995 - 1998 Microsoft Corporation.  All Rights Reserved.")
+cpp_quote("//")
+cpp_quote("// THIS CODE AND INFORMATION IS PROVIDED \"AS IS\" WITHOUT WARRANTY OF")
+cpp_quote("// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO")
+cpp_quote("// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A")
+cpp_quote("// PARTICULAR PURPOSE.")
+cpp_quote("//=--------------------------------------------------------------------------=")
+cpp_quote("")
+cpp_quote("#pragma comment(lib,\"uuid.lib\")")
+cpp_quote("")
+cpp_quote("//--------------------------------------------------------------------------")
+cpp_quote("// MSTHML Advanced Host Interfaces.")
+cpp_quote("")
+cpp_quote("#ifndef MSHTMHST_H")
+cpp_quote("#define MSHTMHST_H")
+
+cpp_quote("#define CONTEXT_MENU_DEFAULT        0")
+cpp_quote("#define CONTEXT_MENU_IMAGE          1")
+cpp_quote("#define CONTEXT_MENU_CONTROL        2")
+cpp_quote("#define CONTEXT_MENU_TABLE          3")
+cpp_quote("// in browse mode")
+cpp_quote("#define CONTEXT_MENU_TEXTSELECT     4")
+cpp_quote("#define CONTEXT_MENU_ANCHOR         5")
+cpp_quote("#define CONTEXT_MENU_UNKNOWN        6")
+cpp_quote("//;begin_internal")
+cpp_quote("// These 2 are mapped to IMAGE for the public")
+cpp_quote("#define CONTEXT_MENU_IMGDYNSRC      7")
+cpp_quote("#define CONTEXT_MENU_IMGART         8")
+cpp_quote("#define CONTEXT_MENU_DEBUG          9")
+cpp_quote("//;end_internal")
+
+cpp_quote("#define MENUEXT_SHOWDIALOG           0x1")
+
+cpp_quote("#define DOCHOSTUIFLAG_BROWSER       DOCHOSTUIFLAG_DISABLE_HELP_MENU | DOCHOSTUIFLAG_DISABLE_SCRIPT_INACTIVE ")
+
+import "ocidl.idl";
+import "objidl.idl";
+import "oleidl.idl";
+import "oaidl.idl";
+import "docobj.idl";
+import "mshtml.idl";
+
+cpp_quote("EXTERN_C const GUID CGID_MSHTML;")
+cpp_quote("#define CMDSETID_Forms3 CGID_MSHTML")
+cpp_quote("#define SZ_HTML_CLIENTSITE_OBJECTPARAM L\"{d4db6850-5385-11d0-89e9-00a0c90a90ac}\"")
+
+#pragma midl_echo("typedef HRESULT STDAPICALLTYPE SHOWHTMLDIALOGFN (HWND hwndParent, IMoniker *pmk, VARIANT *pvarArgIn, TCHAR* pchOptions, VARIANT *pvArgOut);")
+
+cpp_quote("//;begin_internal")
+#pragma midl_echo("STDAPI ShowHTMLDialog(                   ")
+#pragma midl_echo("    HWND        hwndParent,              ")    
+#pragma midl_echo("    IMoniker *  pMk,                     ")
+#pragma midl_echo("    VARIANT *   pvarArgIn,               ")
+#pragma midl_echo("    TCHAR *     pchOptions,              ")
+#pragma midl_echo("    VARIANT *   pvarArgOut               ")
+#pragma midl_echo("    );                                   ")
+cpp_quote("//;end_internal")
+
+//-------------------------------------------------------------------------
+//  IDocHostUIHandler
+//
+//-------------------------------------------------------------------------
+
+cpp_quote("//;begin_internal")
+typedef 
+enum tagDOCHOSTUITYPE {
+        DOCHOSTUITYPE_BROWSE    = 0,
+        DOCHOSTUITYPE_AUTHOR    = 1,
+} DOCHOSTUITYPE;
+cpp_quote("//;end_internal")
+
+typedef enum tagDOCHOSTUIDBLCLK {
+        DOCHOSTUIDBLCLK_DEFAULT         = 0,
+        DOCHOSTUIDBLCLK_SHOWPROPERTIES  = 1,
+        DOCHOSTUIDBLCLK_SHOWCODE        = 2,
+} DOCHOSTUIDBLCLK ;
+
+typedef enum tagDOCHOSTUIFLAG {
+        DOCHOSTUIFLAG_DIALOG            = 1,
+        DOCHOSTUIFLAG_DISABLE_HELP_MENU = 2,
+        DOCHOSTUIFLAG_NO3DBORDER        = 4,
+        DOCHOSTUIFLAG_SCROLL_NO         = 8,
+        DOCHOSTUIFLAG_DISABLE_SCRIPT_INACTIVE = 16,
+        DOCHOSTUIFLAG_OPENNEWWIN        = 32,
+        DOCHOSTUIFLAG_DISABLE_OFFSCREEN = 64,
+        DOCHOSTUIFLAG_FLAT_SCROLLBAR = 128,
+        DOCHOSTUIFLAG_DIV_BLOCKDEFAULT = 256,
+        DOCHOSTUIFLAG_ACTIVATE_CLIENTHIT_ONLY = 512,
+        DOCHOSTUIFLAG_DISABLE_COOKIE = 1024,
+} DOCHOSTUIFLAG ;
+
+
+[
+        object,
+        uuid(bd3f23c0-d43e-11cf-893b-00aa00bdce1a),
+        pointer_default(unique),
+        local
+]
+interface IDocHostUIHandler : IUnknown
+{
+
+    typedef struct _DOCHOSTUIINFO
+    {
+        ULONG cbSize;
+        DWORD dwFlags;
+        DWORD dwDoubleClick;
+    } DOCHOSTUIINFO;
+
+    HRESULT ShowContextMenu(
+            [in] DWORD dwID, 
+            [in] POINT* ppt, 
+            [in] IUnknown* pcmdtReserved,  
+            [in] IDispatch* pdispReserved);
+    HRESULT GetHostInfo([in, out] DOCHOSTUIINFO * pInfo);
+    HRESULT ShowUI(
+            [in] DWORD dwID,
+            [in] IOleInPlaceActiveObject * pActiveObject,
+            [in] IOleCommandTarget * pCommandTarget,
+            [in] IOleInPlaceFrame * pFrame,
+            [in] IOleInPlaceUIWindow * pDoc);
+    HRESULT HideUI();
+    HRESULT UpdateUI();
+    HRESULT EnableModeless([in] BOOL fEnable);
+    HRESULT OnDocWindowActivate([in] BOOL fActivate);
+    HRESULT OnFrameWindowActivate([in] BOOL fActivate);
+    HRESULT ResizeBorder(
+            [in] LPCRECT prcBorder,
+            [in] IOleInPlaceUIWindow * pUIWindow,
+            [in] BOOL fRameWindow);
+    HRESULT TranslateAccelerator(
+            [in] LPMSG lpMsg,
+            [in] const GUID * pguidCmdGroup, 
+            [in] DWORD nCmdID);
+    HRESULT GetOptionKeyPath([out] LPOLESTR * pchKey, [in] DWORD dw);
+    HRESULT GetDropTarget(
+            [in] IDropTarget * pDropTarget, 
+            [out] IDropTarget ** ppDropTarget);
+    HRESULT GetExternal([out] IDispatch **ppDispatch);
+    HRESULT TranslateUrl([in]DWORD dwTranslate, [in]OLECHAR *pchURLIn, [out]OLECHAR **ppchURLOut);
+    HRESULT FilterDataObject([in]IDataObject *pDO, [out]IDataObject **ppDORet);
+}
+
+
+//-------------------------------------------------------------------------
+//  ICustomDoc
+//
+//-------------------------------------------------------------------------
+
+[
+        object,
+        uuid(3050f3f0-98b5-11cf-bb82-00aa00bdce0b),
+        pointer_default(unique),
+        local
+]
+interface ICustomDoc : IUnknown
+{
+    HRESULT SetUIHandler(
+            [in] IDocHostUIHandler * pUIHandler); 
+}
+
+//-------------------------------------------------------------------------
+//  IDocHostShowUI
+//
+//-------------------------------------------------------------------------
+
+[
+        object,
+        uuid(c4d244b0-d43e-11cf-893b-00aa00bdce1a),
+        pointer_default(unique), 
+        local
+]
+interface IDocHostShowUI : IUnknown
+{
+    HRESULT ShowMessage(
+            [in] HWND hwnd,
+            [in] LPOLESTR lpstrText,
+            [in] LPOLESTR lpstrCaption,
+            [in] DWORD dwType,
+            [in] LPOLESTR lpstrHelpFile,
+            [in] DWORD dwHelpContext,
+            [out] LRESULT * plResult);
+    HRESULT ShowHelp(
+            [in] HWND hwnd,
+            [in] LPOLESTR pszHelpFile,
+            [in] UINT uCommand,
+            [in] DWORD dwData,
+            [in] POINT ptMouse,
+            [out] IDispatch * pDispatchObjectHit);
+}
+
+
+//-------------------------------------------------------------------------
+//  ICSSFilterSite
+//
+//-------------------------------------------------------------------------
+[
+	odl,
+	oleautomation,
+	dual,
+	uuid(3050f3ed-98b5-11cf-bb82-00aa00bdce0b)
+]
+interface ICSSFilterSite : IUnknown
+{
+	[] HRESULT GetElement([retval, out] IHTMLElement** ppElem);
+	[] HRESULT FireOnFilterChangeEvent();
+};
+
+
+//-------------------------------------------------------------------------
+//  ICSSFilter
+//
+//-------------------------------------------------------------------------
+[
+	odl,
+	oleautomation,
+	dual,
+	uuid(3050f3ec-98b5-11cf-bb82-00aa00bdce0b)
+]
+interface ICSSFilter : IUnknown
+{
+	[] HRESULT SetSite([in] ICSSFilterSite* pSink);
+	[] HRESULT OnAmbientPropertyChange([in] LONG dispid);
+};
+
+cpp_quote("#endif")

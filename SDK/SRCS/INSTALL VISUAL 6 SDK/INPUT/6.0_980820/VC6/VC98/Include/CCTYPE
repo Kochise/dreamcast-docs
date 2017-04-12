@@ -1,0 +1,21 @@
+// cctype standard header
+
+#if     _MSC_VER > 1000
+#pragma once
+#endif
+
+#ifndef _CCTYPE_
+#define _CCTYPE_
+#ifdef _STD_USING
+ #undef _STD_USING
+ #include <ctype.h>
+ #define _STD_USING
+#else
+ #include <ctype.h>
+#endif /* _STD_USING */
+#endif /* _CCTYPE_ */
+
+/*
+ * Copyright (c) 1994 by P.J. Plauger.  ALL RIGHTS RESERVED. 
+ * Consult your license regarding permissions and restrictions.
+ */

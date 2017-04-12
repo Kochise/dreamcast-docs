@@ -1,0 +1,193 @@
+//+-------------------------------------------------------------------------
+//
+//  Microsoft Windows
+//  Copyright 1995 - 1998 Microsoft Corporation. All Rights Reserved.
+//
+//--------------------------------------------------------------------------
+
+cpp_quote("//=--------------------------------------------------------------------------=")
+cpp_quote("// subsmgr.h")
+cpp_quote("//=--------------------------------------------------------------------------=")
+cpp_quote("// (C) Copyright 1995 - 1998 Microsoft Corporation.  All Rights Reserved.")
+cpp_quote("//")
+cpp_quote("// THIS CODE AND INFORMATION IS PROVIDED \"AS IS\" WITHOUT WARRANTY OF")
+cpp_quote("// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO")
+cpp_quote("// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A")
+cpp_quote("// PARTICULAR PURPOSE.")
+cpp_quote("//=--------------------------------------------------------------------------=")
+cpp_quote("")
+cpp_quote("#pragma comment(lib,\"uuid.lib\")")
+cpp_quote("")
+cpp_quote("//---------------------------------------------------------------------------=")
+cpp_quote("// Channel Manager Interfaces.")
+cpp_quote("")
+
+#ifndef DO_NO_IMPORTS
+import "unknwn.idl";
+#endif
+
+//---------------------------------------------------------------
+//          Subscription Manager
+//---------------------------------------------------------------
+[
+    uuid(C54FD88A-FFA1-11d0-BC5E-00C04FD929DB),     // LIBID_SubscriptionMgr
+    helpstring("Microsoft Subscription Manager 1.0"),
+    lcid(0x0000),
+    version(1.0)
+]
+library SubscriptionMgr
+{
+
+//---------------------------------------------------------------
+//                  Subscription Manager
+//---------------------------------------------------------------
+
+    [
+        uuid(085FB2C0-0DF8-11d1-8F4B-00A0C905413F), // IID_ISubscriptionMgr
+        helpstring("Subscription Manager interface"),
+        odl
+    ]
+    interface ISubscriptionMgr : IUnknown
+    {
+        typedef enum SUBSCRIPTIONTYPE {
+            SUBSTYPE_URL = 0,
+            SUBSTYPE_CHANNEL = 1,
+            SUBSTYPE_DESKTOPURL = 2,
+            SUBSTYPE_EXTERNAL = 3,
+            SUBSTYPE_DESKTOPCHANNEL = 4
+        } SUBSCRIPTIONTYPE;
+
+        typedef enum SUBSCRIPTIONINFOFLAGS {
+            SUBSINFO_SCHEDULE       = 0x0001,
+            SUBSINFO_RECURSE        = 0x0002,
+            SUBSINFO_WEBCRAWL       = 0x0004,
+            SUBSINFO_MAILNOT        = 0x0008,
+            SUBSINFO_MAXSIZEKB      = 0x0010,
+            SUBSINFO_USER           = 0x0020,
+            SUBSINFO_PASSWORD       = 0x0040,
+            SUBSINFO_TASKFLAGS      = 0x0100,
+            SUBSINFO_GLEAM          = 0x0200,
+            SUBSINFO_CHANGESONLY    = 0x0400,
+            SUBSINFO_CHANNELFLAGS   = 0x0800,
+            SUBSINFO_FRIENDLYNAME   = 0x2000,
+            SUBSINFO_NEEDPASSWORD   = 0x4000,
+            SUBSINFO_TYPE           = 0x8000
+        } SUBSCRIPTIONINFOFLAGS;
+
+cpp_quote("#define SUBSINFO_ALLFLAGS      0x0000EF7F")
+
+        typedef enum CREATESUBSCRIPTIONFLAGS {
+            CREATESUBS_ADDTOFAVORITES       = 0x0001,
+            CREATESUBS_FROMFAVORITES        = 0x0002,
+            CREATESUBS_NOUI                 = 0x0004,
+            CREATESUBS_NOSAVE               = 0x0008,
+            CREATESUBS_SOFTWAREUPDATE       = 0x0010,
+        } CREATESUBSCRIPTIONFLAGS;
+
+        typedef enum  SUBSCRIPTIONSCHEDULE {
+            SUBSSCHED_AUTO       = 0,
+            SUBSSCHED_DAILY      = 1,
+            SUBSSCHED_WEEKLY     = 2,
+            SUBSSCHED_CUSTOM     = 3,
+            SUBSSCHED_MANUAL     = 4
+        } SUBSCRIPTIONSCHEDULE;
+
+        typedef struct _tagSubscriptionInfo {
+            DWORD                cbSize;
+            DWORD                fUpdateFlags;
+            SUBSCRIPTIONSCHEDULE schedule;
+            CLSID                customGroupCookie;
+            LPVOID               pTrigger;
+            DWORD                dwRecurseLevels;
+            DWORD                fWebcrawlerFlags;
+            BOOL                 bMailNotification;
+            BOOL                 bGleam;
+            BOOL                 bChangesOnly;
+            BOOL                 bNeedPassword;
+            DWORD                fChannelFlags;
+            BSTR                 bstrUserName;
+            BSTR                 bstrPassword;
+            BSTR                 bstrFriendlyName;
+            DWORD                dwMaxSizeKB;
+            SUBSCRIPTIONTYPE     subType;
+            DWORD                fTaskFlags;
+            DWORD                dwReserved;
+        } SUBSCRIPTIONINFO, *LPSUBSCRIPTIONINFO, *PSUBSCRIPTIONINFO;
+
+        HRESULT DeleteSubscription([in] LPCWSTR pwszURL, [in] HWND hwnd);
+        HRESULT UpdateSubscription([in] LPCWSTR pwszURL);
+        HRESULT UpdateAll();
+        HRESULT IsSubscribed([in] LPCWSTR pwszURL, [out] BOOL *pfSubscribed);
+        HRESULT GetSubscriptionInfo( 
+                    [in] LPCWSTR pwszURL,
+                    [out] SUBSCRIPTIONINFO *pInfo);
+        HRESULT GetDefaultInfo([in] SUBSCRIPTIONTYPE subType, 
+                    [out] SUBSCRIPTIONINFO *pInfo);
+        HRESULT ShowSubscriptionProperties([in] LPCWSTR pwszURL, [in] HWND hwnd);
+        HRESULT CreateSubscription([in] HWND hwnd, [in] LPCWSTR pwszURL,
+                    [in] LPCWSTR pwszFriendlyName, [in] DWORD dwFlags,
+                    [in] SUBSCRIPTIONTYPE subsType, [in,out] SUBSCRIPTIONINFO *pInfo);
+    }
+
+    // Subscription Manager object
+    [
+        uuid(abbe31d0-6dae-11d0-beca-00c04fd940be), // CLSID_SubscriptionMgr
+        helpstring("SubscriptionMgr object")
+    ]
+    coclass SubscriptionMgr
+    {
+        [default] interface ISubscriptionMgr;
+    }
+}
+
+cpp_quote("")
+cpp_quote("")
+cpp_quote("////////////////////////////////////////////////////////////////////////////")
+cpp_quote("// Information Delivery Agent definitions")
+
+cpp_quote("EXTERN_C const CLSID CLSID_WebCrawlerAgent;      ")
+cpp_quote("EXTERN_C const CLSID CLSID_ChannelAgent;         ")
+cpp_quote("EXTERN_C const CLSID CLSID_DialAgent;            ")
+cpp_quote("EXTERN_C const CLSID CLSID_CDLAgent;            ")
+
+cpp_quote("")
+cpp_quote("// RecurseFlags property for web crawler")
+typedef enum WEBCRAWL_RECURSEFLAGS {
+    WEBCRAWL_DONT_MAKE_STICKY   = 0x0001,
+    WEBCRAWL_GET_IMAGES         = 0x0002,
+    WEBCRAWL_GET_VIDEOS         = 0x0004,
+    WEBCRAWL_GET_BGSOUNDS       = 0x0008,
+    WEBCRAWL_GET_CONTROLS       = 0x0010,
+    WEBCRAWL_LINKS_ELSEWHERE    = 0x0020,
+    WEBCRAWL_IGNORE_ROBOTSTXT   = 0x0080,
+} WEBCRAWL_RECURSEFLAGS;
+
+cpp_quote("")
+cpp_quote("// ChannelFlags property for channel agent")
+typedef enum CHANNEL_AGENT_FLAGS {
+    CHANNEL_AGENT_DYNAMIC_SCHEDULE  = 0x0001,
+    CHANNEL_AGENT_PRECACHE_SOME     = 0x0002,   // Download Only Precache=Yes
+    CHANNEL_AGENT_PRECACHE_ALL      = 0x0004,   // Download All except Precache=No
+    CHANNEL_AGENT_PRECACHE_SCRNSAVER= 0x0008,
+} CHANNEL_AGENT_FLAGS;
+
+cpp_quote("")
+cpp_quote("// Status codes for completed delivery agents")
+cpp_quote("")
+cpp_quote("// Maximum specified subscription size limit reached")
+cpp_quote("#define INET_E_AGENT_MAX_SIZE_EXCEEDED       _HRESULT_TYPEDEF_(0x800C0F80L)      ")
+cpp_quote("")
+cpp_quote("// Maximum cache limit reached")
+cpp_quote("#define INET_E_AGENT_CACHE_SIZE_EXCEEDED     _HRESULT_TYPEDEF_(0x800C0F82L)      ")
+cpp_quote("")
+cpp_quote("// Connection to Internet failed")
+cpp_quote("#define INET_E_AGENT_CONNECTION_FAILED       _HRESULT_TYPEDEF_(0x800C0F83L)      ")
+cpp_quote("")
+cpp_quote("// A few URLs failed but the base url and most sub-urls succeeded")
+cpp_quote("#define INET_S_AGENT_PART_FAIL               _HRESULT_TYPEDEF_(0x000C0F81L)      ")
+
+cpp_quote("")
+cpp_quote("// End Information Delivery Agent definitions")
+cpp_quote("////////////////////////////////////////////////////////////////////////////")
+cpp_quote("")
+cpp_quote("")

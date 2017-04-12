@@ -1,0 +1,91 @@
+// TSSAdmin.odl : type library source for TSSAdmin.dll
+
+// This file will be processed by the Make Type Library (mktyplib) tool to
+// produce the type library (TSSAdmin.tlb).
+
+[ uuid(5D0F9B81-500B-11CF-BEBC-00AA00B8C32E), version(1.0),
+  helpstring("Microsoft Television System Services") ]
+library BPC_Television_Services
+{
+	importlib("stdole32.tlb");
+    importlib("..\\common\\bin\\dao350.dll");
+
+#define DISPID_NEWENUM -4
+#define DISPID_VALUE 0
+
+	[ uuid(8236d590-18b4-11d0-bd2e-00aa006156ad), hidden, dual, oleautomation, odl]
+	interface IScheduledItems : IDispatch
+	{
+		[id(DISPID_VALUE), helpstring("Returns an ITask object, inaccessable to VB")] 
+			HRESULT Item([in] BSTR Index, [out] BSTR* User, [out] BSTR* ShowReference, [out] BSTR* Application, [out] BSTR* Directory, [out] unsigned long* AdvanceMinutes, [out] BSTR *Parameters, [out, retval] VARIANT *Task);
+		[id(1), propget] 
+			HRESULT Count([out, retval] long *plRetVal);
+		[id(2), helpstring("Returns an array of strings of the indices of added items")] 
+			HRESULT Add([in] BSTR Workspace, [in] BSTR ShowReference, [in] BSTR Application, [in] BSTR Directory, [in] unsigned long AdvanceMinutes, [in] BSTR Parameters, [retval, out] VARIANT *pSafeArray);
+		[id(3), helpstring("Returns an array of strings of the indices of added items")] 
+			HRESULT AddFromQuery([in] BSTR Workspace, [in] BSTR QueryName, [in] BSTR Application, [in] BSTR Directory, [in] unsigned long AdvanceMinutes, [in] BSTR Parameters, [retval, out] VARIANT *pSafeArray);
+		[id(4)] 
+			HRESULT Remove([in] BSTR Index);
+		[id(DISPID_NEWENUM), restricted] 
+			HRESULT _NewEnum([out, retval] IUnknown **ppUnk);
+	};
+
+	[uuid(e66dd600-18b5-11d0-bd2e-00aa006156ad)]
+	coclass ScheduledItems
+	{
+		[default] interface IScheduledItems;
+	};
+
+
+	//  Primary interface for CMSTVSERVICES
+	
+const DWORD LE_LOUD = 			0x00000001;
+const DWORD LE_DONTOVERWRITE = 	0x00000002;
+
+	[ uuid(5D0F9B84-500B-11CF-BEBC-00AA00B8C32E), hidden, dual, oleautomation, odl]
+	interface ITelevisionServices : IDispatch
+	{
+		[id(1), propget] HRESULT SystemFile([out, retval] BSTR *pbstrRetVal);
+		[id(2), propget] HRESULT DatabaseFile([out, retval] BSTR *pbstrRetVal);
+		[id(3), propget] HRESULT ScheduledItems([out, retval] IScheduledItems **ppScheduledRet);
+		[id(4)] HRESULT RestrictionQueryName([in] BSTR UserName, [out, retval] BSTR *pbstrRetVal);
+		[id(5)] HRESULT CreateUser([in] Workspace * Workspace, [in] BSTR UserName, [in] BSTR PID, [in] BSTR Password, [in] BSTR RestrictWhere, [in] VARIANT_BOOL Adult);
+		[id(6)] HRESULT DeleteUser([in] Workspace * Workspace, [in] BSTR UserName);
+		[id(7)] HRESULT ResolveBroadcast([in] BSTR Workspace, [in] BSTR QueryName, [in] BSTR ShowReference);
+		[id(8)] HRESULT SplitBroadcastSchedule([in] BSTR ShowReference, [out] BSTR* EpisodeTitle, [out] short* Channel, [out] BSTR* Network, [out] BSTR* Station, [out] long* TuningSpace, [out] IUnknown **TaskTrigger);
+		[id(9)] HRESULT SplitSimpleBroadcastSchedule([in] BSTR ShowReference, [out] BSTR* EpisodeTitle, [out] short* Channel, [out] BSTR* Network, [out] BSTR* Station, [out] long* TuningSpace, [out] DATE *Time);
+		[id(10)] HRESULT MakeLocalBroadcastSchedule([in] BSTR EpisodeTitle, [in] short Channel, [in] BSTR Network, [in] BSTR Station, [in] long TuningSpace, [in] VARIANT Time, [out, retval] BSTR *pbstrRetVal);
+		[id(11)] HRESULT MakeRemoteBroadcastSchedule([in] BSTR EpisodeTitle, [in] BSTR Network, [in] VARIANT Time, [out, retval] BSTR *pbstrRetVal);
+		[id(12)] HRESULT TuningSpaceNameFromNumber([in] long TuningID, [out, retval] BSTR *pbstrRetVal);
+		[id(13)] HRESULT TuningSpaceNumberFromName([in] BSTR Name, [out, retval] long *plRetVal);
+		[id(14)] HRESULT ResolveScheduledReminders([in] BSTR Workspace, [in] BSTR QueryName, [in] BSTR UserName);
+		[id(15)] HRESULT LoadEnhancement([in] Workspace *piDAOWorkspace, [in] BSTR bstrEnhancementID, [in] BSTR bstrShowReference, [in] BSTR bstrTitle,
+											[in] BSTR bstrPreloadURL, [in] BSTR bstrAddress, [in] DATE dateExpire, [in] DWORD dwFlags);
+		[id(16)] HRESULT LoadEnhancementsFromFile([in] Workspace *piDAOWorkspace, [in] BSTR bstrEnhancementsFile);
+		[id(17)] HRESULT DeleteEnhancementFromID([in] Workspace *piDAOWorkspace, [in] BSTR bstrEnhancementsID);
+		[id(18)] HRESULT DeleteOldEnhancements([in] Workspace *piDAOWorkspace);
+		[id(19)] HRESULT RemapEnhancements([in] Workspace *piDAOWorkspace);
+		[id(20), propget] HRESULT ClipboardFormat([out, retval] long *plRetVal);
+		[id(21), propget] HRESULT ClipboardFormatName([out, retval] BSTR *pbstrName);
+		[id(22)] HRESULT ResolveBroadcastInclusively([in] BSTR Workspace, [in] BSTR QueryName, [in] BSTR ShowReference);
+	};
+
+
+	[ uuid(5D0F9B85-500B-11CF-BEBC-00AA00B8C32E) ]
+	coclass TelevisionServices
+	{
+		[default] interface ITelevisionServices;
+	};
+
+
+	// CoCreatable ITaskTrigger interface for invalid _TASK_TIME structures.
+	[ uuid(f1c70270-b1d1-11d0-bd4e-00aa006156ad) ]
+	coclass TaskTrigger
+	{
+		[default] interface IUnknown;
+	};
+
+
+	//{{AFX_APPEND_ODL}}
+};
+

@@ -1,0 +1,531 @@
+[Identification]
+    OptionType = NetService
+[Options]
+    NETMON
+    NETMONTOOLS
+[FileConstants]
+UtilityInf      = "UTILITY.INF"
+subroutineinf   = "SUBROUTN.INF"
+SoftwareType    = "service"
+Exit_Code       = 0
+NetEventDLL     = "%SystemRoot%\System32\netevent.dll"
+Manufacturer    = "Microsoft"
+ProductMajorVersion     = "4"
+ProductMinorVersion     = "0"
+ProductVersion  = $(ProductMajorVersion)"."$(ProductMinorVersion)
+ProductSoftwareName     = "bh"
+ProductSoftwareImagePath = "\SystemRoot\System32\drivers\bhnt.sys"
+NetRuleSoftwareType     = "bloodhound ndisTransport bhService"
+NetRuleSoftwareClass    = {"bhService ndisTransport"}
+NetRuleSoftwareUse      = "transport yes yes"
+NetRuleSoftwareBindForm = """bh"" yes yes simple"
+ProductNMAgentName	= "nmagent"
+ProductNMAgentImagePath	= "%SystemRoot%\System32\nmagent.exe"
+ProductNMAgentSvcType	= "service"
+ProductKeyName  = $(!NTN_SoftwareBase)"\"$(Manufacturer)"\"$(ProductSoftwareName)"\CurrentVersion"
+ParamKeyName    = $(!NTN_ServiceBase)"\"$(ProductSoftwareName)"\Parameters"
+ServiceKeyName    = $(!NTN_ServiceBase)"\"$(ProductSoftwareName)
+NMAgentKeyName    = $(!NTN_ServiceBase)"\"$(ProductNMAgentName)
+[GeneralConstants]
+from      = ""
+to        = ""
+ExitCodeOk     = 0
+ExitCodeCancel = 1
+ExitCodeFatal  = 2
+KeyNull         = ""
+MAXIMUM_ALLOWED   = 33554432
+RegistryErrorIndex = NO_ERROR
+KeyProduct      = ""
+KeyParameters   = ""
+TRUE            = 1
+FALSE           = 0
+NoTitle            = 0
+ExitState   = "Active"
+OldVersionExisted = $(FALSE)
+DriverPath      = $(!STF_NTPATH)\drivers
+[date]
+    Now = {} ? $(!LIBHANDLE) GetSystemDate
+[Identify]
+    read-syms Identification
+    set Status     = STATUS_SUCCESSFUL
+    set Identifier = $(OptionType)
+    set Media      = #("Source Media Descriptions", 1, 1)
+    Return $(Status) $(Identifier) $(Media)
+[ReturnOptions]
+    set Status        = STATUS_FAILED
+    set OptionList     = {}
+    set OptionTextList = {}
+    set LanguageList = ^(LanguagesSupported, 1)
+    Ifcontains(i) $($0) in $(LanguageList)
+        goto returnoptions
+    else
+        set Status = STATUS_NOLANGUAGE
+        goto finish_ReturnOptions
+    endif
+returnoptions = +
+    set AllOptionsList     = ^(Options, 1)
+    set AllOptionsTextList = ^(OptionsText$($0), 1)
+    ifstr(i) $(!STF_PRODUCT) == "WINNT"
+        set OptionList = >({}, *($(AllOptionsList),1))
+        set OptionTextList = >({}, *($(AllOptionsTextList), 1))
+    else
+        set OptionList = $(AllOptionsList)
+        set OptionTextList = $(AllOptionsTextList)
+    endif
+    set Status         = STATUS_SUCCESSFUL
+finish_ReturnOptions = +
+    Return $(Status) $(OptionList) $(OptionTextList)
+[InstallOption]
+    set Option   = $($1)
+    set AddCopy  = $($3)
+    set DoCopy   = "NO"
+    set DoConfig = $($5)
+    Split-String $($2), "\", lSrcDirParts
+    QueryListSize cSrcDirParts $(lSrcDirParts)
+    ifstr(i) *($(lSrcDirParts),$(cSrcDirParts)) != "\"
+        Set SrcDir = $($2)"\"
+    else
+        Set SrcDir = $($2)
+    Endif
+    set LanguageList = ^(LanguagesSupported, 1)
+    Ifcontains(i) $($0) NOT-IN $(LanguageList)
+        Return STATUS_NOLANGUAGE
+    endif
+    Debug-Output "OEMNSVBH.INF: STF_CWDDIR is: "$(!STF_CWDDIR)
+    Debug-Output "OEMNSVBH.INF: STF_LANGUAGE is: "$(!STF_LANGUAGE)
+    set-subst LF = "\n"
+    read-syms GeneralConstants
+    read-syms FileConstants
+    read-syms DialogConstants$(!STF_LANGUAGE)
+    ifstr(i) $(!NTN_Origination) == "NCPA"
+        set Continue = $(OK)
+    endif
+    read-syms FileConstants$(!STF_LANGUAGE)
+    read-syms $(Option)Constants$(!STF_LANGUAGE)
+    detect date
+    set-title  $(FunctionTitle)
+    set to   = Begin
+    set from = Begin
+    set CommonStatus = STATUS_SUCCESSFUL
+    EndWait
+Begin = +
+    Ifstr(i) $(!NTN_InstallMode) == deinstall
+        set StartLabel = removeadapter
+    else-Ifstr(i) $(!NTN_InstallMode) == Update
+        set StartLabel = UpgradeSoftware
+    else-Ifstr(i) $(!NTN_InstallMode) == bind
+        set StartLabel = bindingadapter
+    else-Ifstr(i) $(!NTN_InstallMode) == configure
+        Shell $(UtilityInf),RegistryErrorString,CANNOT_CONFIGURE_SOFTWARE
+        ifint $($ShellCode) != $(!SHELL_CODE_OK)
+            Debug-Output "OEMNSVBH.INF: ShellCode error: cannot get an error string."
+            goto ShellCodeError
+        endif
+        set Error = $($R0)
+        set from = end
+        set to = end
+        goto nonfatalinfo
+    else
+        set StartLabel = installadapter
+    endif
+    set RadioDefault = 2
+    set RadioIn = {$(RadioDefault)}
+    set from = $(fatal)
+    set to = $(fatal)
+    goto $(StartLabel)
+installadapter = +
+    OpenRegKey $(!REG_H_LOCAL) "" $(ProductKeyName) $(MAXIMUM_ALLOWED) KeyProduct
+    Ifstr $(KeyProduct) != $(KeyNull)
+        CloseRegKey $(KeyProduct)
+        Shell $(UtilityInf), VerExistedDlg, $(ProductSoftwareTitle),+
+            $(ProductVersion)
+        ifint $($ShellCode) != $(!SHELL_CODE_OK)
+            Debug-Output "ShellCode error: cannot get an error string."
+            goto ShellCodeError
+        endif
+        goto end
+    endif
+    CloseRegKey $(KeyProduct)
+    goto installproduct
+installproduct = +
+    StartWait
+    ifint $(OldVersionExisted) == $(FALSE)
+        Ifstr(i) $(DoCopy) == "YES"
+           Shell $(UtilityInf), DoAskSource, $(!STF_CWDDIR), $(SrcDir) YES
+           Ifint $($ShellCode) != $(!SHELL_CODE_OK)
+               Goto ShellCodeError
+           Else-Ifstr(i) $($R0) == STATUS_FAILED
+               Shell $(UtilityInf) RegistryErrorString "ASK_SOURCE_FAIL"
+               ifint $($ShellCode) != $(!SHELL_CODE_OK)
+                   goto ShellCodeError
+               endif
+               set Error = $($R0)
+               Goto fatal
+           Else-Ifstr(i) $($R0) == STATUS_USERCANCEL
+               Goto successful
+           Endif
+           Split-String $($R1), "\", lSrcDirParts
+           QueryListSize cSrcDirParts $(lSrcDirParts)
+           ifstr(i) *($(lSrcDirParts),$(cSrcDirParts)) != "\"
+               Set SrcDir = $($R1)"\"
+           else
+               Set SrcDir = $($R1)
+           Endif
+        Endif
+        install "Install-Option"
+        ifstr(i) $(STF_INSTALL_OUTCOME) != STF_SUCCESS
+           Shell $(UtilityInf) RegistryErrorString "UNABLE_COPY_FILE"
+           ifint $($ShellCode) != $(!SHELL_CODE_OK)
+               goto ShellCodeError
+           endif
+           set Error = $($R0)
+           goto fatal
+        endif
+        set OEM_ABANDON_ON = TRUE
+        Shell $(UtilityInf), AddSoftwareComponent, $(Manufacturer), +
+            $(ProductSoftwareName), +
+            $(ProductSoftwareName), +
+            $(ProductSoftwareDisplayName), $(STF_CONTEXTINFNAME), +
+            $(ProductSoftwareImagePath), "kernel", "", {}, "",+
+            $(NetEventDLL)
+        set RegistryErrorIndex = $($R0)
+        Ifstr(i) $(RegistryErrorIndex) !=  NO_ERROR
+            EndWait
+            CloseRegKey $($R1)
+            CloseRegKey $($R2)
+            CloseRegKey $($R3)
+            CloseRegKey $($R4)
+            CloseRegKey $($R5)
+            goto fatalRegistry
+        endif
+        Set SoftProductKey      = $($R1)
+        Set SoftNetRuleKey      = $($R2)
+        Set BhServiceKey        = $($R3)
+        set KeyParameters       = $($R4)
+        Set SoftLinkageKey      = $($R5)
+        set NewValueList = {{SoftwareType,$(NoTitle),$(!REG_VT_SZ),$(SoftwareType)},+
+                           {MajorVersion,$(NoTitle),$(!REG_VT_DWORD),$(ProductMajorVersion)},+
+                           {MinorVersion,$(NoTitle),$(!REG_VT_DWORD),$(ProductMinorVersion)},+
+                           {Title,$(NoTitle),$(!REG_VT_SZ),$(ProductSoftwareTitle)},+
+                           {Description,$(NoTitle),$(!REG_VT_SZ),$(ProductSoftwareDescription)},+
+                           {ServiceName,$(NoTitle),$(!REG_VT_SZ),$(ProductSoftwareName)},+
+                           {InstallDate,$(NoTitle),$(!REG_VT_DWORD),*($(Now),1)}}
+        Shell  $(UtilityInf), AddValueList, $(SoftProductKey), $(NewValueList)
+        set RegistryErrorIndex = $($R0)
+        Ifstr $(RegistryErrorIndex) != NO_ERROR
+            CloseRegKey $(SoftProductKey)
+            CloseRegKey $(SoftNetRuleKey)
+            CloseRegKey $(BhServiceKey)
+            CloseRegKey $(SoftLinkageKey)
+            CloseRegKey $(KeyParameters)
+            goto fatalRegistry
+        endif
+        set NewValueList = {{type    ,$(NoTitle),$(!REG_VT_SZ),$(NetRuleSoftwareType)}, +
+                            {use     ,$(NoTitle),$(!REG_VT_SZ),$(NetRuleSoftwareUse)}, +
+                            {class,$(NoTitle),$(!REG_VT_MULTI_SZ),$(NetRuleSoftwareClass)}, +
+                            {bindform,$(NoTitle),$(!REG_VT_SZ),$(NetRuleSoftwareBindForm)}, +
+                            {InfOption,$(NoTitle),$(!REG_VT_SZ),$(Option)}}
+        Shell  $(UtilityInf), AddValueList, $(SoftNetRuleKey), $(NewValueList)
+        set RegistryErrorIndex = $($R0)
+        Ifstr $(RegistryErrorIndex) != NO_ERROR
+            CloseRegKey $(SoftProductKey)
+            CloseRegKey $(SoftNetRuleKey)
+            CloseRegKey $(BhServiceKey)
+            CloseRegKey $(SoftLinkageKey)
+            CloseRegKey $(KeyParameters)
+            goto fatalRegistry
+        endif
+        CloseRegKey $(SoftProductKey)
+        CloseRegKey $(SoftNetRuleKey)
+        CloseRegKey $(SoftLinkageKey)
+        set NewValueList = {{Nal,$(NoTitle),$(!REG_VT_MULTI_SZ),{"NDIS30","RNAL"}}}
+        Shell  $(UtilityInf), AddValueList, $(KeyParameters), $(NewValueList)
+        set RegistryErrorIndex = $($R0)
+        Ifstr $(RegistryErrorIndex) != NO_ERROR
+            CloseRegKey $(BhServiceKey)
+            goto fatalRegistry
+        endif
+        CloseRegKey $(KeyParameters)
+        CreateRegKey $(BhServiceKey) {"Performance",$(NoTitle),GenericClass} "" +
+                $(MAXIMUM_ALLOWED) "" KeyPerformance
+        set NewValueList = {{Library,$(NoTitle),$(!REG_VT_SZ),bhmon.dll}, +
+                            {Open,$(NoTitle),$(!REG_VT_SZ),"BhOpenPerformanceData"}, +
+                            {Close,$(NoTitle),$(!REG_VT_SZ),"BhClosePerformanceData"}, +
+                            {Collect,$(NoTitle),$(!REG_VT_SZ),"BhCollectPerformanceData"}}
+        Shell  $(UtilityInf), AddValueList, $(KeyPerformance), $(NewValueList)
+        set RegistryErrorIndex = $($R0)
+        Ifstr $(RegistryErrorIndex) != NO_ERROR
+            CloseRegKey $(KeyPerformance)
+            CloseRegKey $(BhServiceKey)
+            goto fatalRegistry
+        endif
+        CloseRegKey $(KeyPerformance)
+        Shell $(UtilityInf), CreateService, $(ProductNMAgentName),+
+            $(ProductNMAgentDisplayName),+
+            $(ProductNMAgentImagePath),+
+            $(ProductNMAgentSvcType), "",+
+            {"bh"}, ""
+        ifint $($ShellCode) != $(!SHELL_CODE_OK)
+            Debug-Output "OEMNSVBH.INF: ShellCode error"
+            goto ShellCodeError
+        endif
+        set RegistryErrorIndex = $($R0)
+        CloseRegKey $($R1)
+        CloseRegKey $($R2)
+        CloseRegKey $($R3)
+        Ifstr(i) $(RegistryErrorIndex) != NO_ERROR
+            EndWait
+            Debug-Output "OEMNSVBH.INF: Registry error creating Network Monitor Agent service"
+            goto fatalregistry
+        endif
+    endif
+    ifstr(i) $(Option) == "NETMONTOOLS"
+        read-syms IconInfo$(!STF_LANGUAGE)
+        Install Install-Shortcuts
+    endif
+    goto successful
+bindingadapter =+
+    set Error = "Binding: Sorry, not yet implemented."
+    goto fatal
+removeadapter = +
+    ifstr(i) $(Option) == "NETMONTOOLS"
+        read-syms IconInfo$(!STF_LANGUAGE)
+        Install Remove-Shortcuts
+        LibraryProcedure ResultList, $(!LIBHANDLE), Delnode, $(!STF_WINDOWSSYSPATH)"\netmon"
+    endif
+    AddfileToDeleteList $(!STF_WINDOWSSYSPATH)"\BHCTRL.CPL"
+    Shell $(UtilityInf), RemoveSoftwareComponent, $(Manufacturer), +
+        $(ProductSoftwareName)
+    ifint $($ShellCode) != $(!SHELL_CODE_OK)
+        Debug-Output "ShellCode error"
+        goto ShellCodeError
+    endif
+    set RegistryErrorIndex = $($R0)
+    Ifstr(i) $(RegistryErrorIndex) != NO_ERROR
+        goto fatalregistry
+    endif
+    Shell $(UtilityInf), RemoveService,  $(ProductNMAgentName), "YES"
+    ifint $($ShellCode) != $(!SHELL_CODE_OK)
+        Debug-Output "ShellCode error"
+        goto ShellCodeError
+    endif
+    set RegistryErrorIndex = $($R0)
+    Ifstr(i) $(RegistryErrorIndex) != NO_ERROR
+        goto fatalregistry
+    endif
+    goto end
+UpgradeSoftware = +
+    OpenRegKey $(!REG_H_LOCAL) "" $(ProductKeyName) $(MAXIMUM_ALLOWED) KeyProduct
+    Ifstr $(KeyProduct) != $(KeyNull)
+        install "Install-Update"
+        ifstr(i) $(STF_INSTALL_OUTCOME) != STF_SUCCESS
+            goto fatal
+        endif
+        SetRegValue $(KeyProduct) {MajorVersion,$(NoTitle),$(!REG_VT_SZ),$(ProductMajorVersion)}
+        SetRegValue $(KeyProduct) {MinorVersion,$(NoTitle),$(!REG_VT_SZ),$(ProductMinorVersion)}
+        SetRegValue $(KeyProduct) {"Description",$(NoTitle),$(!REG_VT_SZ),$(ProductSoftwareDescription)}
+        SetRegValue $(KeyProduct) {"Title",$(NoTitle),$(!REG_VT_SZ),$(ProductSoftwareTitle)}
+        SetRegValue $(KeyProduct) {"SoftwareType",$(NoTitle),$(!REG_VT_SZ),$(SoftwareType)}
+        CloseRegKey $(KeyProduct)
+        OpenRegKey $(!REG_H_LOCAL) "" $(ServiceKeyName) $(MAXIMUM_ALLOWED) ServiceKey
+        ifstr(i) $(ServiceKey) != ""
+            SetRegValue $(ServiceKey) {"DisplayName",$(NoTitle),$(!REG_VT_SZ),$(ProductSoftwareDisplayName)}
+            CloseRegKey $(ServiceKey)
+        endif
+        OpenRegKey $(!REG_H_LOCAL) "" $(NMAgentKeyName) $(MAXIMUM_ALLOWED) NMAgentKey
+        ifstr(i) $(NMAgentKey) != ""
+            SetRegValue $(NMAgentKey) {"DisplayName",$(NoTitle),$(!REG_VT_SZ),$(ProductNMAgentDisplayName)}
+            CloseRegKey $(NMAgentKey)
+        endif
+    else
+        goto fatalregistry
+    endif
+    goto end
+successful = +
+    goto end
+warning = +
+    Shell $(subroutineinf) SetupMessage, $(!STF_LANGUAGE), "WARNING", $(Error)
+    ifint $($ShellCode) != $(!SHELL_CODE_OK)
+        goto ShellCodeError
+    endif
+    ifstr(i) $($R1) == "OK"
+        goto $(to)
+    else-ifstr(i) $($R1) == "CANCEL"
+        goto $(from)
+    else
+        goto "end"
+    endif
+nonfatalinfo = +
+    Set CommonStatus = STATUS_USERCANCEL
+    Set Severity = STATUS
+    goto nonfatalmsg
+nonfatal = +
+    Set Severity = NONFATAL
+    goto nonfatalmsg
+nonfatalmsg = +
+    ifstr(i) $(Error) == ""
+        Shell $(UtilityInf) RegistryErrorString "SETUP_FAIL"
+        ifint $($ShellCode) != $(!SHELL_CODE_OK)
+            goto ShellCodeError
+        endif
+        set Error = $($R0)
+    endif
+    Shell $(subroutineinf) SetupMessage, $(!STF_LANGUAGE), $(Severity), $(Error)
+    ifint $($ShellCode) != $(!SHELL_CODE_OK)
+        goto ShellCodeError
+    endif
+    ifstr(i) $($R1) == "OK"
+        goto $(from)
+    else
+        goto "end"
+    endif
+fatalregistry = +
+    Shell $(UtilityInf) RegistryErrorString $(RegistryErrorIndex)
+    ifint $($ShellCode) != $(!SHELL_CODE_OK)
+        goto ShellCodeError
+    endif
+    set Error = $($R0)
+    goto fatal
+fatal = +
+    ifstr(i) $(Error) == ""
+        Shell $(UtilityInf) RegistryErrorString "SETUP_FAIL"
+        ifint $($ShellCode) != $(!SHELL_CODE_OK)
+            goto ShellCodeError
+        endif
+        set Error = $($R0)
+    endif
+    Shell $(subroutineinf) SetupMessage, $(!STF_LANGUAGE), "FATAL", $(Error)
+    ifint $($ShellCode) != $(!SHELL_CODE_OK)
+        goto ShellCodeError
+    endif
+    goto setfailed
+ShellCodeError = +
+    set DlgType      = "MessageBox"
+    set STF_MB_TITLE = $(ShellCodeErrorTitle)
+    set STF_MB_TEXT  = $(ShellCodeErrorText) 
+    set STF_MB_TYPE  = 1
+    set STF_MB_ICON  = 3
+    set STF_MB_DEF   = 1
+    ui start "Error Message"
+    goto setfailed
+setfailed = +
+    set CommonStatus = STATUS_FAILED
+    ifstr(i) $(OEM_ABANDON_ON) == TRUE
+        set OEM_ABANDON_ON = FALSE
+        goto removeadapter
+    endif
+    goto end
+end = +
+    goto term
+term = +
+    Return $(CommonStatus)
+[Install-Shortcuts]
+    ShowCommonProgManGroup $(NetAdminGroupName), 1
+    RemoveCommonProgManItem $(NetAdminGroupName), $(NetMonitor)
+    CreateCommonProgManItem $(NetAdminGroupName), $(NetMonitor), "netmon\netmon.exe" ""  0
+    ShowCommonProgManGroup $(NetAdminGroupName), 6
+    exit
+[Remove-Shortcuts]
+    ShowCommonProgManGroup $(NetAdminGroupName), 1
+    RemoveCommonProgManItem $(NetAdminGroupName), $(NetMonitor)
+    ShowCommonProgManGroup $(NetAdminGroupName), 6
+    exit
+[Install-Option]
+    set STF_VITAL = ""
+    ifstr(i) $(AddCopy) == "YES"
+        ifstr(i) $(Option) == "NETMONTOOLS"
+            CreateDir $(!STF_WINDOWSSYSPATH)\Netmon
+            CreateDir $(!STF_WINDOWSSYSPATH)\Netmon\Parsers
+            CreateDir $(!STF_WINDOWSSYSPATH)\Netmon\Captures
+            AddSectionFilesToCopyList Files-TOOLS $(SrcDir)"netmon" $(!STF_WINDOWSSYSPATH)\Netmon
+            AddSectionFilesToCopyList Files-PARSERS $(SrcDir)"netmon" $(!STF_WINDOWSSYSPATH)\Netmon\Parsers
+            AddSectionFilesToCopyList Files-CAPTURES $(SrcDir)"netmon" $(!STF_WINDOWSSYSPATH)\Netmon\Captures
+        endif
+        AddSectionFilesToCopyList Files-NETMON $(SrcDir) $(!STF_WINDOWSSYSPATH)
+        AddSectionFilesToCopyList Files-DRIVERS $(SrcDir) $(!STF_WINDOWSSYSPATH)\drivers
+    endif
+    ifstr(i) $(DoCopy) == "YES"
+       set !STF_NCPA_FLUSH_COPYLIST = TRUE
+       CopyFilesInCopyList
+    else
+        ifstr(i) $(Option) == "NETMONTOOLS"
+            LibraryProcedure STATUS,$(!LIBHANDLE), CopySingleFile $(SrcDir)netmon\netmon.exe $(!STF_WINDOWSSYSPATH)\Netmon\netmon.exe
+        endif
+    endif
+    ifstr(i) $(DoConfig) == "YES"
+    endif
+    Exit
+[Install-Update]
+   set STF_VITAL        = ""
+   set STF_OVERWRITE    = "VERIFYSOURCEOLDER"
+    ifstr(i) $(Option) == "NETMONTOOLS"
+        AddSectionFilesToCopyList Files-TOOLS $(SrcDir)"netmon" $(!STF_WINDOWSSYSPATH)\Netmon
+        AddSectionFilesToCopyList Files-PARSERS $(SrcDir)"netmon" $(!STF_WINDOWSSYSPATH)\Netmon\Parsers
+        AddSectionFilesToCopyList Files-CAPTURES $(SrcDir)"netmon" $(!STF_WINDOWSSYSPATH)\Netmon\Captures
+    endif
+   AddSectionFilesToCopyList Files-NETMON $(SrcDir) $(!STF_WINDOWSSYSPATH)
+   AddSectionFilesToCopyList Files-DRIVERS $(SrcDir) $(!STF_WINDOWSSYSPATH)\drivers
+   exit
+[Source Media Descriptions]
+    1 = "Windows NT Workstation CD-ROM" , TAGFILE = cdrom.w
+[Signature]
+    FileType = MICROSOFT_FILE
+[GetSignature]
+    read-syms Signature
+    return $(FileType)
+[ProductType]
+STF_PRODUCT  = Winnt
+STF_PLATFORM = I386
+[Files-Inf]
+2,	oemsetup.inf,	 SIZE=1000,	RENAME=$(!UG_Filename)
+[Files-DRIVERS]
+1,BHNT.SYS , SIZE=999
+[Files-NETMON]
+1,BHCTRL.CPL , SIZE=999
+1,BHMON.DLL , SIZE=999
+1,BHNETB.DLL , SIZE=999
+1,BHSUPP.DLL , SIZE=999
+1,NAL.DLL , SIZE=999
+1,NDIS30.DLL , SIZE=999
+1,NMAGENT.EXE , SIZE=999
+1,RNAL.DLL , SIZE=999
+[LanguagesSupported]
+    ENG
+[OptionsTextENG]
+    NETMON      = "Network Monitor Agent"
+    NETMONTOOLS = "Network Monitor Tools and Agent"
+[FileConstantsENG]
+ProCaption   = "Windows NT Setup"
+ProCancel    = "Cancel"
+ProCancelMsg = "Windows NT Networking is not correctly installed.  "+
+               "Are you sure you want to cancel copying files?"
+ProCancelCap = "Network Setup Message"
+ProText1     = "Copying:"
+ProText2     = "To:"
+ProductNMAgentDisplayName  = "Network Monitor Agent"
+NETMONTOOLSSoftwareTitle  = "Network Monitor Tools and Agent"
+NETMONSoftwareTitle       = "Network Monitor Agent"
+[NETMONConstantsENG]
+ProductSoftwareTitle       = $(NETMONSoftwareTitle)
+ProductSoftwareDescription = "Microsoft "$(ProductSoftwareTitle)
+ProductSoftwareDisplayName = $(ProductSoftwareTitle)" Driver"
+FunctionTitle   =  $(ProductSoftwareTitle)
+ShellCodeErrorTitle     = "Error: "$(FunctionTitle)
+ShellCodeErrorText      = "Shell Code Error."
+[NETMONTOOLSConstantsENG]
+ProductSoftwareTitle       = $(NETMONTOOLSSoftwareTitle)
+ProductSoftwareDescription = "Microsoft "$(ProductSoftwareTitle)
+ProductSoftwareDisplayName = $(ProductSoftwareTitle)" Drivers"
+FunctionTitle   = $(ProductSoftwareTitle)
+ShellCodeErrorTitle     = "Error: "$(FunctionTitle)
+ShellCodeErrorText      = "Shell Code Error."
+[DialogConstantsENG]
+Help        = "&Help"
+Exit        = "Cancel"
+OK          = "OK"
+HelpContext = ""
+Continue    = "Continue"
+Cancel      = "Cancel"
+[IconInfoENG]
+    NetAdminGroupName = "Network Administration"
+    NetMonitor = "Network Monitor"

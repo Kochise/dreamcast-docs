@@ -1,0 +1,2165 @@
+####
+# makefile - Makefile for Microsoft Visual C++ Run-Time Libraries
+#
+#   Copyright (c) 1993-1997, Microsoft Corporation. All rights reserved.
+#
+# Purpose:
+#   This makefile builds the Visual C++ run-time release libraries.
+#   Just type NMAKE in the \MSDEV\CRT\SRC directory to build all target
+#   libraries.
+#
+###############################################################################
+
+#
+# The name of the user-generated C/C++ Run-Time Library DLL and
+# imports library can be set here.  Names beginning with MSVC*
+# may not be used as these are reserved for use by Microsoft.
+# The names shown here are samples and are for information only.
+#
+RETAIL_DLL_NAME=_sample_
+RETAIL_LIB_NAME=_sample_
+RETAIL_DLLCPP_NAME=sample_p
+RETAIL_LIBCPP_NAME=sample_p
+RETAIL_DLLIOS_NAME=sample_i
+RETAIL_LIBIOS_NAME=sample_i
+DEBUG_DLL_NAME=_sampld_
+DEBUG_LIB_NAME=_sampld_
+DEBUG_DLLCPP_NAME=sampld_p
+DEBUG_LIBCPP_NAME=sampld_p
+DEBUG_DLLIOS_NAME=sampld_i
+DEBUG_LIBIOS_NAME=sampld_i
+#
+POST_BLD=1
+
+# If your MSVC++ 6.0 installation is not in \MSDEV on the current drive,
+# set the environment variable V6TOOLS to point to the main directory
+# of your installation.  (For example, "set V6TOOLS=C:\MSDEV".)
+
+!if "$(V6TOOLS)"==""
+V6TOOLS=\MSDEV
+!endif
+
+
+#
+# Directories, Tools and Misc Definitions:
+#
+###############################################################################
+
+#
+# Determine target CPU, defaulting to same as host CPU.
+#
+###############################################################################
+
+!if "$(PROCESSOR_ARCHITECTURE)"=="x86"
+TARGET_CPU = i386
+CPUDIR = intel
+PREFIX=_
+!elseif "$(PROCESSOR_ARCHITECTURE)"=="ALPHA"
+TARGET_CPU = ALPHA
+CPUDIR = alpha
+PREFIX=
+!elseif "$(PROCESSOR_ARCHITECTURE)"=="MIPS"
+TARGET_CPU = mips
+CPUDIR = mips
+PREFIX=
+!elseif "$(PROCESSOR_ARCHITECTURE)"=="PPC"
+TARGET_CPU = PPC
+CPUDIR = ppc
+PREFIX=
+!elseif "$(PROCESSOR_ARCHITECTURE)"=="PMAC"
+TARGET_CPU = PMAC
+CPUDIR = mppc
+PREFIX=_
+OS=MAC
+!else
+!error makefile: unknown host CPU
+!endif
+
+# Build WINHEAP version of heap manager, except for MAC targets
+
+!if "$(TARGET_CPU)" != "PMAC"
+WINHEAP = YES
+!else
+WINHEAP = NO
+!endif
+
+SOURCE_OBJS = $(SOURCE_OBJS_RAW:*=*_obj)
+CPPSRC_OBJS = $(CPPSRC_OBJS_RAW:*=*_obj)
+IOSSRC_OBJS = $(IOSSRC_OBJS_RAW:*=*_obj)
+SOURCE_OBJS_DLL = $(SOURCE_OBJS_RAW_DLL:*=*_obj)
+CPPSRC_OBJS_DLL = $(CPPSRC_OBJS_RAW_DLL:*=*_obj)
+IOSSRC_OBJS_DLL = $(IOSSRC_OBJS_RAW_DLL:*=*_obj)
+
+# Source directories:
+#
+# These are the directories in which to run NMAKE to update the source
+# objects and libraries they provide.  Note that there are slight
+# differences between the ST/MT models and the DLL model.
+#
+# The dependencies directory list DEP_DIRS is the union of the MAKE_DIRS
+# and MAKE_DIRS_DLL lists.
+#
+# In order to allow for auto source library calculation, each directory
+# name must be preceded by a tilde (~) and followed by an asterisk (*).
+
+!if "$(BLD_LIB)"==""
+BLD_LIB=0
+!endif
+!if "$(BLD_OBJ)"==""
+BLD_OBJ=0
+!endif
+
+PRE_BLD=0
+
+MAKE_DIRS = .
+
+MAKE_DIRSP = .
+
+MAKE_DIRSI = .
+
+MAKE_DIRS_DLL = .
+
+MAKE_DIRSP_DLL = .
+
+MAKE_DIRSI_DLL = .
+
+DEP_DIRS = .
+
+TCMAPLIB_DIR = $(CPUDIR)
+
+TCMAPDLLLIB_DIR = $(CPUDIR)
+
+SDKNAMESLIB_DIR = $(CPUDIR)
+
+
+# Source Objects: These are the objects and/or libraries which constitute
+# the statically linked library flavors (LIBC.LIB and LIBCMT.LIB).
+
+SOURCE_OBJS_RAW = \
+ build\$(CPUDIR)\*\convert.lib \
+!if "$(TARGET_CPU)"!="PMAC"
+ build\$(CPUDIR)\*\direct.lib \
+!endif
+ build\$(CPUDIR)\*\dos.lib \
+ build\$(CPUDIR)\*\eh.lib \
+ build\$(CPUDIR)\*\exec.lib \
+ build\$(CPUDIR)\*\heap.lib \
+ build\$(CPUDIR)\*\helper.lib \
+ build\$(CPUDIR)\*\lowio.lib \
+ build\$(CPUDIR)\*\mbstring.lib \
+ build\$(CPUDIR)\*\misc.lib \
+ build\$(CPUDIR)\*\startup.lib \
+ build\$(CPUDIR)\*\stdio.lib \
+ build\$(CPUDIR)\*\string.lib \
+ $(TCMAPLIB_DIR)\tcmap.lib \
+ build\$(CPUDIR)\*\time.lib \
+ build\$(CPUDIR)\*\conv.lib \
+ build\$(CPUDIR)\*\tran.lib
+
+CPPSRC_OBJS_RAW = build\$(CPUDIR)\*\stdcpp.lib
+
+IOSSRC_OBJS_RAW = build\$(CPUDIR)\*\iostream.lib
+
+# Source Objects: These are the objects and/or libraries which constitute
+# the dynamically linked library flavor (MSVCRTx0.DLL).
+
+SOURCE_OBJS_RAW_DLL = \
+!if "$(TARGET_CPU)"!="PMAC"
+ build\$(CPUDIR)\*\_setargv.obj \
+ build\$(CPUDIR)\*\_wstargv.obj \
+ build\$(CPUDIR)\*\chkstk.obj \
+ build\$(CPUDIR)\*\crt0dat.obj \
+ build\$(CPUDIR)\*\crt0fp.obj \
+ build\$(CPUDIR)\*\crt0init.obj \
+ build\$(CPUDIR)\*\crt0msg.obj \
+ build\$(CPUDIR)\*\crtlib.obj \
+ build\$(CPUDIR)\*\mlock.obj \
+ build\$(CPUDIR)\*\stdargv.obj \
+ build\$(CPUDIR)\*\stdenvp.obj \
+ build\$(CPUDIR)\*\thread.obj \
+ build\$(CPUDIR)\*\threadex.obj \
+ build\$(CPUDIR)\*\tidtable.obj \
+ build\$(CPUDIR)\*\wild.obj \
+ build\$(CPUDIR)\*\wstdargv.obj \
+ build\$(CPUDIR)\*\wstdenvp.obj \
+ build\$(CPUDIR)\*\wwild.obj \
+!endif
+!if "$(TARGET_CPU)"=="i386"
+ build\$(CPUDIR)\*\fp8.obj \
+!endif
+ build\$(CPUDIR)\*\convert.lib \
+!if "$(TARGET_CPU)"!="PMAC"
+ build\$(CPUDIR)\*\direct.lib \
+!endif
+ build\$(CPUDIR)\*\dos.lib \
+ build\$(CPUDIR)\*\eh.lib \
+ build\$(CPUDIR)\*\exec.lib \
+ build\$(CPUDIR)\*\heap.lib \
+ build\$(CPUDIR)\*\helper.lib \
+ build\$(CPUDIR)\*\lowio.lib \
+ build\$(CPUDIR)\*\mbstring.lib \
+ build\$(CPUDIR)\*\misc.lib \
+!if "$(TARGET_CPU)"=="PMAC"
+ build\$(CPUDIR)\*\amsg.obj \
+ build\$(CPUDIR)\*\chkstk.obj \
+ build\$(CPUDIR)\*\crt0dat.obj \
+ build\$(CPUDIR)\*\crt0fp.obj \
+ build\$(CPUDIR)\*\crt0msg.obj \
+ build\$(CPUDIR)\*\crtexit.obj \
+ build\$(CPUDIR)\*\dllcrt0.obj \
+ build\$(CPUDIR)\*\dllmain.obj \
+ build\$(CPUDIR)\*\dllexit.obj \
+ build\$(CPUDIR)\*\init.obj \
+ build\$(CPUDIR)\*\libcinfo.obj \
+ build\$(CPUDIR)\*\qd.obj \
+ build\$(CPUDIR)\*\shellrtn.obj \
+ build\$(CPUDIR)\*\sp.obj \
+!endif
+ build\$(CPUDIR)\*\stdio.lib \
+ build\$(CPUDIR)\*\string.lib \
+ build\$(CPUDIR)\*\time.lib \
+ build\$(CPUDIR)\*\conv.lib \
+ build\$(CPUDIR)\*\tran.lib
+
+CPPSRC_OBJS_RAW_DLL = build\$(CPUDIR)\*\stdcpp.lib
+
+IOSSRC_OBJS_RAW_DLL = build\$(CPUDIR)\*\iostream.lib
+
+UPDATE_MSG = *** Updating Component Objects ***
+
+#
+# Define names for the primary targets of this makefile.
+#
+###############################################################################
+
+!if "$(IFLAG)"==""
+IFLAG=-i
+!else
+IFLAG=
+!endif
+
+!if "$(CRT_RELDIR)"==""
+CRT_RELDIR = build
+!endif
+RELDIR_CPU=$(CRT_RELDIR)\$(CPUDIR)
+DEFFILE_DIR=$(CPUDIR)
+DEFFILE2_DIR=.
+
+#
+# Tools:
+#
+
+!if "$(VERBOSE)"!="1"
+LINKER=link -nologo
+LINKLIB=link -lib -nologo
+!else
+LINKER=link
+LINKLIB=link -lib
+!endif
+
+!if "$(TARGET_CPU)"=="i386"
+LINKER=$(LINKER) -filealign:4096
+!endif
+
+!if "$(TARGET_CPU)"!="PMAC"
+COMMON_DEFS=-D_MBCS -D_MB_MAP_DIRECT -D_CRTBLD
+!if "$(WINHEAP)" == "YES"
+COMMON_DEFS=$(COMMON_DEFS) -DWINHEAP
+!endif
+!endif
+
+!if "$(TARGET_CPU)"=="mips"
+#
+# NT headers require _MIPS_ to be defined for mips
+#
+COMMON_DEFS=$(COMMON_DEFS) -D_MIPS_
+!endif
+
+!if "$(TARGET_CPU)"=="PPC"
+#
+# NT headers require _PPC_ to be defined for PowerPC
+#
+COMMON_DEFS=$(COMMON_DEFS) -D_PPC_
+!endif
+
+!if "$(TARGET_CPU)"!="PMAC"
+WINDOWS_H_DEFS=-DWIN32_LEAN_AND_MEAN -DNOSERVICE
+
+CC_OPTS_BASE=-c -nologo -Zelp8 -W3 -WX -GFy -DWIN32
+
+!if "$(TARGET_CPU)"=="ALPHA"
+CC_OPTS_BASE=$(CC_OPTS_BASE) -Gy -Gi-
+AS_OPTS=-nologo -Gy -D_WIN32 -DWIN32
+!elseif "$(TARGET_CPU)"=="i386"
+CC_OPTS_BASE=$(CC_OPTS_BASE) -GB -Gi-
+AS_OPTS=-c -nologo -coff -Cx -Zm -DQUIET -D?QUIET -Di386 -D_WIN32 -DWIN32
+!elseif "$(TARGET_CPU)"=="PPC"
+AS_OPTS=
+!else
+CC_OPTS_BASE=$(CC_OPTS_BASE) -Gi-
+AS_OPTS=-c -nologo -D_WIN32 -DWIN32
+!endif
+
+CC_OPTS=$(CC_OPTS_BASE) $(WINDOWS_H_DEFS)
+!endif
+
+!if "$(TARGET_CPU)"=="PMAC"
+COMMON_DEFS=-D_MBCS -D_MB_MAP_DIRECT -D_CRTBLD
+CC_OPTS_BASE=-c -nologo -W3 -WX -Zl
+!if "$(TARGET_CPU)"=="PMAC"
+CC_OPTS_BASE=$(CC_OPTS_BASE) -Zp2
+AS_OPTS=-c -nologo
+!else
+AS_OPTS=
+!endif
+CC_OPTS=$(CC_OPTS_BASE)
+
+!endif
+
+
+ST_DEFINES=$(COMMON_DEFS)
+STIOS_DEFINES=$(ST_DEFINES) -D_OLD_IOSTREAMS
+MT_DEFINES=$(ST_DEFINES) -D_MT
+MTIOS_DEFINES=$(MT_DEFINES) -D_OLD_IOSTREAMS
+DLL_DEFINES=$(MT_DEFINES) -DCRTDLL
+DLLCPP_DEFINES=$(MT_DEFINES) -D_DLL -DCRTDLL2
+DLLIOS_DEFINES=$(MTIOS_DEFINES) -D_DLL -DCRTDLL1
+
+
+RC_OPTS=-l 409 -r
+RC_DEFS=$(COMMON_DEFS) $(WINDOWS_H_DEFS)
+RC_INCS=-I$(V6TOOLS)\include
+PDBDIR_CPU              = $(RELDIR_CPU)
+
+RELEASE_LIBCST          = $(RELDIR_CPU)\libc.lib
+RELEASE_LIBCPPST        = $(RELDIR_CPU)\libcp.lib
+RELEASE_LIBIOSST        = $(RELDIR_CPU)\libci.lib
+RELEASE_LIBCMT          = $(RELDIR_CPU)\libcmt.lib
+RELEASE_LIBCPPMT        = $(RELDIR_CPU)\libcpmt.lib
+RELEASE_LIBIOSMT        = $(RELDIR_CPU)\libcimt.lib
+RELEASE_DLL             = $(RELDIR_CPU)\$(RETAIL_DLL_NAME).dll
+RELEASE_DLLCPP          = $(RELDIR_CPU)\$(RETAIL_DLLCPP_NAME).dll
+RELEASE_DLLIOS          = $(RELDIR_CPU)\$(RETAIL_DLLIOS_NAME).dll
+RELEASE_IMPLIB_DLL      = $(RELDIR_CPU)\$(RETAIL_LIB_NAME).lib
+RELEASE_IMPLIB_DLLCPP   = $(RELDIR_CPU)\$(RETAIL_LIBCPP_NAME).lib
+RELEASE_IMPLIB_DLLIOS   = $(RELDIR_CPU)\$(RETAIL_LIBIOS_NAME).lib
+RELEASE_OLDNAMES        = $(RELDIR_CPU)\oldnames.lib
+
+RELEASE_LIBCST_PDB      = $(PDBDIR_CPU)\libc.pdb
+RELEASE_LIBCPPST_PDB    = $(PDBDIR_CPU)\libcp.pdb
+RELEASE_LIBIOSST_PDB    = $(PDBDIR_CPU)\libci.pdb
+RELEASE_LIBCMT_PDB      = $(PDBDIR_CPU)\libcmt.pdb
+RELEASE_LIBCPPMT_PDB    = $(PDBDIR_CPU)\libcpmt.pdb
+RELEASE_LIBIOSMT_PDB    = $(PDBDIR_CPU)\libcimt.pdb
+RELEASE_DLL_PDB         = $(PDBDIR_CPU)\$(RETAIL_LIB_NAME).pdb
+RELEASE_DLLCPP_PDB      = $(PDBDIR_CPU)\$(RETAIL_LIBCPP_NAME).pdb
+RELEASE_DLLIOS_PDB      = $(PDBDIR_CPU)\$(RETAIL_LIBIOS_NAME).pdb
+
+
+RELEASE_LIBCST_DBG      = $(RELDIR_CPU)\libcd.lib
+RELEASE_LIBCPPST_DBG    = $(RELDIR_CPU)\libcpd.lib
+RELEASE_LIBIOSST_DBG    = $(RELDIR_CPU)\libcid.lib
+RELEASE_LIBCMT_DBG      = $(RELDIR_CPU)\libcmtd.lib
+RELEASE_LIBCPPMT_DBG    = $(RELDIR_CPU)\libcpmtd.lib
+RELEASE_LIBIOSMT_DBG    = $(RELDIR_CPU)\libcimtd.lib
+RELEASE_DLL_DBG         = $(RELDIR_CPU)\$(DEBUG_DLL_NAME).dll
+RELEASE_DLLCPP_DBG      = $(RELDIR_CPU)\$(DEBUG_DLLCPP_NAME).dll
+RELEASE_DLLIOS_DBG      = $(RELDIR_CPU)\$(DEBUG_DLLIOS_NAME).dll
+RELEASE_IMPLIB_DLL_DBG  = $(RELDIR_CPU)\$(DEBUG_LIB_NAME).lib
+RELEASE_IMPLIB_DLLCPP_DBG = $(RELDIR_CPU)\$(DEBUG_LIBCPP_NAME).lib
+RELEASE_IMPLIB_DLLIOS_DBG = $(RELDIR_CPU)\$(DEBUG_LIBIOS_NAME).lib
+
+RELEASE_LIBCST_DBG_PDB  = $(PDBDIR_CPU)\libcd.pdb
+RELEASE_LIBCPPST_DBG_PDB = $(PDBDIR_CPU)\libcpd.pdb
+RELEASE_LIBIOSST_DBG_PDB = $(PDBDIR_CPU)\libcid.pdb
+RELEASE_LIBCMT_DBG_PDB  = $(PDBDIR_CPU)\libcmtd.pdb
+RELEASE_LIBCPPMT_DBG_PDB = $(PDBDIR_CPU)\libcpmtd.pdb
+RELEASE_LIBIOSMT_DBG_PDB = $(PDBDIR_CPU)\libcimtd.pdb
+RELEASE_IMPLIB_DBG_PDB     = $(PDBDIR_CPU)\$(DEBUG_LIB_NAME).pdb
+RELEASE_IMPLIBCPP_DBG_PDB  = $(PDBDIR_CPU)\$(DEBUG_LIBCPP_NAME).pdb
+RELEASE_IMPLIBIOS_DBG_PDB  = $(PDBDIR_CPU)\$(DEBUG_LIBIOS_NAME).pdb
+RELEASE_DLL_DBG_PDB     = $(PDBDIR_CPU_DLL)\$(DEBUG_DLL_NAME).pdb
+RELEASE_DLLCPP_DBG_PDB  = $(PDBDIR_CPU_DLL)\$(DEBUG_DLLCPP_NAME).pdb
+RELEASE_DLLIOS_DBG_PDB  = $(PDBDIR_CPU_DLL)\$(DEBUG_DLLIOS_NAME).pdb
+
+FD_REL_ST=-Fd$(RELEASE_LIBCST_PDB)
+FD_REL_STP=-Fd$(RELEASE_LIBCPPST_PDB)
+FD_REL_STI=-Fd$(RELEASE_LIBIOSST_PDB)
+FD_REL_MT=-Fd$(RELEASE_LIBCMT_PDB)
+FD_REL_MTP=-Fd$(RELEASE_LIBCPPMT_PDB)
+FD_REL_MTI=-Fd$(RELEASE_LIBIOSMT_PDB)
+FD_REL_DLL=-Fd$(RELEASE_DLL_PDB)
+FD_REL_DLLP=-Fd$(RELEASE_DLLCPP_PDB)
+FD_REL_DLLI=-Fd$(RELEASE_DLLIOS_PDB)
+
+
+FD_REL_ST_DBG=-Fd$(RELEASE_LIBCST_DBG_PDB)
+FD_REL_STP_DBG=-Fd$(RELEASE_LIBCPPST_DBG_PDB)
+FD_REL_STI_DBG=-Fd$(RELEASE_LIBIOSST_DBG_PDB)
+FD_REL_MT_DBG=-Fd$(RELEASE_LIBCMT_DBG_PDB)
+FD_REL_MTP_DBG=-Fd$(RELEASE_LIBCPPMT_DBG_PDB)
+FD_REL_MTI_DBG=-Fd$(RELEASE_LIBIOSMT_DBG_PDB)
+FD_REL_DLL_DBG=-Fd$(RELEASE_IMPLIB_DBG_PDB)
+FD_REL_DLLP_DBG=-Fd$(RELEASE_IMPLIBCPP_DBG_PDB)
+FD_REL_DLLI_DBG=-Fd$(RELEASE_IMPLIBIOS_DBG_PDB)
+
+#
+# Locate the scratch location for object files of various flavors.
+#
+###############################################################################
+
+OBJROOT = build
+OBJDIR_PREFIX =  #
+OBJCPUDIR = $(OBJROOT)\$(CPUDIR)
+
+OBJDIR_ST  = $(OBJCPUDIR)\st_obj
+!if "$(TARGET_CPU)"!="PMAC"
+OBJDIR_MT  = $(OBJCPUDIR)\mt_obj
+!endif
+OBJDIR_DLL = $(OBJCPUDIR)\dll_obj
+
+OBJDIR_OLDNAMES = $(OBJDIR_ST)\oldnames
+OBJDIR_TCMAP = $(OBJDIR_ST)\tcmap
+OBJDIR_TCMAPDLL = $(OBJDIR_DLL)\tcmap
+!if "$(TARGET_CPU)"!="PMAC"
+OBJDIR_SDKNAMES = $(OBJDIR_DLL)\sdknames
+!endif
+
+OBJDIR_DLL_RAW = $(OBJCPUDIR)\*_obj
+
+
+OBJDIR_ST_DBG  = $(OBJCPUDIR)\xst_obj
+!if "$(TARGET_CPU)"!="PMAC"
+OBJDIR_MT_DBG  = $(OBJCPUDIR)\xmt_obj
+!endif
+OBJDIR_DLL_DBG = $(OBJCPUDIR)\xdll_obj
+
+
+
+all : release debug
+
+!if "$(TARGET_CPU)"=="PMAC"
+
+release: st dll oldnames relobjs
+
+!else
+
+release : st mt dll oldnames relobjs
+
+!endif
+
+!if "$(TARGET_CPU)"=="PMAC"
+
+debug: xst xdll
+
+
+!else
+
+debug : xst xmt xdll
+
+
+!endif
+
+
+
+####
+#
+# Directory Targets
+#
+####
+
+$(OBJDIR_ST) $(OBJDIR_MT) $(OBJDIR_DLL) \
+$(OBJDIR_OLDNAMES) $(OBJDIR_TCMAP) $(OBJDIR_TCMAPDLL) $(OBJDIR_SDKNAMES) \
+$(OBJDIR_ST_DBG) $(OBJDIR_MT_DBG) $(OBJDIR_DLL_DBG) \
+$(CRT_RELDIR) $(RELDIR_CPU) $(PDBDIR_CPU_DLL) $(PDBDIR_CPU_BBT_DLL) :
+    if not exist $@\* mkdir $@
+
+####
+#
+# Define the path to return to the main directory where nmake is revoked
+#
+####
+
+CD_ROOT=.
+
+
+####
+#
+# Pseudo-target user interface:
+#
+####
+
+!if "$(TARGET_CPU)"!="PMAC"
+
+st_env :
+!if "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the ST model (LIBC.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_ST) \ \
+    & echo # $(ST_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(ST_DEFINES) \
+    & echo.
+!endif
+
+stp_env :
+!if "$(PRE_BLD)"!="1" && "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the ST model (LIBCP.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_STP) \ \
+    & echo # $(ST_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(ST_DEFINES) \
+    & echo.
+!endif
+
+sti_env :
+!if "$(PRE_BLD)"!="1" && "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the ST model (LIBCI.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_STI) \ \
+    & echo # $(STIOS_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(STIOS_DEFINES) \
+    & echo.
+!endif
+
+st : $(OBJROOT) $(OBJCPUDIR) $(OBJDIR_ST) $(RELDIR_CPU) \
+	st_env st_ stp_env st_p sti_env st_i
+
+!if "$(BLD_LIB)"!="1"
+st_ :: $(MAKE_DIRS)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(ST_DEFINES) $(FD_REL_ST) \
+    & set ML=$(AS_OPTS) $(ST_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=st OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_ST) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) \
+    & cd $(CD_ROOT)
+
+!if "$(PRE_BLD)"!="1"
+st_p :: $(MAKE_DIRSP)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(ST_DEFINES) $(FD_REL_STP) \
+    & set ML=$(AS_OPTS) $(ST_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=st OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_ST) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _stdcpp_ \
+    & cd $(CD_ROOT)
+
+st_i :: $(MAKE_DIRSI)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(STIOS_DEFINES) $(FD_REL_STI) \
+    & set ML=$(AS_OPTS) $(STIOS_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=st OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_ST) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _iostream_ \
+    & cd $(CD_ROOT)
+!endif
+!endif # BLD_LIB != 1
+
+!if "$(PRE_BLD)"!="1" && "$(BLD_OBJ)"!="1"
+st_ :: $(RELEASE_LIBCST)
+
+st_p :: $(RELEASE_LIBCPPST)
+
+st_i :: $(RELEASE_LIBIOSST)
+!else
+st_ ::
+
+st_p ::
+
+st_i ::
+!endif
+
+mt_env :
+!if "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the MT model (LIBCMT.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_MT) \ \
+    & echo # $(MT_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(MT_DEFINES) \
+    & echo.
+!endif
+
+mtp_env :
+!if "$(PRE_BLD)"!="1" && "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the MT model (LIBCPMT.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_MTP) \ \
+    & echo # $(MT_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(MT_DEFINES) \
+    & echo.
+!endif
+
+mti_env :
+!if "$(PRE_BLD)"!="1" && "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the MT model (LIBCIMT.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_MTI) \ \
+    & echo # $(MTIOS_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(MTIOS_DEFINES) \
+    & echo.
+!endif
+
+mt : $(OBJROOT) $(OBJCPUDIR) $(OBJDIR_MT) $(RELDIR_CPU) \
+	mt_env mt_ mtp_env mt_p mti_env mt_i
+
+!if "$(BLD_LIB)"!="1"
+mt_ :: $(MAKE_DIRS)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(MT_DEFINES) $(FD_REL_MT) \
+    & set ML=$(AS_OPTS) $(MT_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=mt OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_MT) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) \
+    & cd $(CD_ROOT)
+
+!if "$(PRE_BLD)"!="1"
+mt_p :: $(MAKE_DIRSP)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(MT_DEFINES) $(FD_REL_MTP) \
+    & set ML=$(AS_OPTS) $(MT_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=mt OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_MT) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _stdcpp_ \
+    & cd $(CD_ROOT)
+
+mt_i :: $(MAKE_DIRSI)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(MTIOS_DEFINES) $(FD_REL_MTI) \
+    & set ML=$(AS_OPTS) $(MTIOS_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=mt OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_MT) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _iostream_ \
+    & cd $(CD_ROOT)
+!endif
+!endif # BLD_LIB != 1
+
+!if "$(PRE_BLD)"!="1" && "$(BLD_OBJ)"!="1"
+mt_ :: $(RELEASE_LIBCMT)
+
+mt_p :: $(RELEASE_LIBCPPMT)
+
+mt_i :: $(RELEASE_LIBIOSMT)
+!else
+mt_ ::
+
+mt_p ::
+
+mt_i ::
+!endif
+
+dll_env :
+!if "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the DLL model (MSVCRT.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_DLL) \ \
+    & echo # $(DLL_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(DLL_DEFINES) \
+    & echo.
+!endif
+
+dllp_env :
+!if "$(PRE_BLD)"!="1" && "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the DLL model (MSVCPRT.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_DLLP) \ \
+    & echo # $(DLLCPP_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(DLLCPP_DEFINES) \
+    & echo.
+!endif
+
+dlli_env :
+!if "$(PRE_BLD)"!="1" && "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the DLL model (MSVCIRT.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_DLLI) \ \
+    & echo # $(DLLIOS_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(DLLIOS_DEFINES) \
+    & echo.
+!endif
+
+dll : $(OBJROOT) $(OBJCPUDIR) $(OBJDIR_DLL) $(RELDIR_CPU) others \
+	dll_env dll_ dllp_env dll_p dlli_env dll_i
+
+!if "$(BLD_LIB)"!="1"
+dll_ :: $(MAKE_DIRS_DLL)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(DLL_DEFINES) $(FD_REL_DLL) \
+    & set ML=$(AS_OPTS) $(DLL_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=dll BLD_DLL=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_DLL) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) \
+    & cd $(CD_ROOT)
+
+!if "$(PRE_BLD)"!="1"
+dll_p :: $(MAKE_DIRSP_DLL)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(DLLCPP_DEFINES) $(FD_REL_DLLP) \
+    & set ML=$(AS_OPTS) $(DLLCPP_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=dll BLD_DLL=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_DLL) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _stdcpp_ \
+    & cd $(CD_ROOT)
+
+dll_i :: $(MAKE_DIRSI_DLL)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(DLLIOS_DEFINES) $(FD_REL_DLLI) \
+    & set ML=$(AS_OPTS) $(DLLIOS_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=dll BLD_DLL=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_DLL) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _iostream_ \
+    & cd $(CD_ROOT)
+!endif
+!endif # BLD_LIB != 1
+
+!if "$(PRE_BLD)"!="1" && "$(BLD_OBJ)"!="1"
+dll_ :: $(RELEASE_DLL)
+
+dll_p :: $(RELEASE_DLLCPP)
+
+dll_i :: $(RELEASE_DLLIOS)
+!else
+dll_ ::
+
+dll_p ::
+
+dll_i ::
+!endif
+
+
+xst_env :
+!if "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the XST model (LIBCD.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_ST_DBG) \ \
+    & echo # $(ST_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(ST_DEFINES) \
+    & echo.
+!endif
+
+xstp_env :
+!if "$(PRE_BLD)"!="1" && "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the XST model (LIBCPD.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_STP_DBG) \ \
+    & echo # $(ST_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(ST_DEFINES) \
+    & echo.
+!endif
+
+xsti_env :
+!if "$(PRE_BLD)"!="1" && "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the XST model (LIBCID.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_STI_DBG) \ \
+    & echo # $(STIOS_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(STIOS_DEFINES) \
+    & echo.
+!endif
+
+xst : $(OBJROOT) $(OBJCPUDIR) $(OBJDIR_ST_DBG) $(RELDIR_CPU) \
+	xst_env xst_ xstp_env xst_p xsti_env xst_i
+
+!if "$(BLD_LIB)"!="1"
+xst_ :: $(MAKE_DIRS)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(ST_DEFINES) $(FD_REL_ST_DBG) \
+    & set ML=$(AS_OPTS) $(ST_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=xst BLD_DBG=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_ST_DBG) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) \
+    & cd $(CD_ROOT)
+
+!if "$(PRE_BLD)"!="1"
+xst_p :: $(MAKE_DIRSP)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(ST_DEFINES) $(FD_REL_STP_DBG) \
+    & set ML=$(AS_OPTS) $(ST_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=xst BLD_DBG=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_ST_DBG) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _stdcpp_ \
+    & cd $(CD_ROOT)
+
+xst_i :: $(MAKE_DIRSI)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(STIOS_DEFINES) $(FD_REL_STI_DBG) \
+    & set ML=$(AS_OPTS) $(STIOS_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=xst BLD_DBG=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_ST_DBG) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _iostream_ \
+    & cd $(CD_ROOT)
+!endif
+!endif # BLD_LIB != 1
+
+!if "$(PRE_BLD)"!="1" && "$(BLD_OBJ)"!="1"
+xst_ :: $(RELEASE_LIBCST_DBG)
+
+xst_p :: $(RELEASE_LIBCPPST_DBG)
+
+xst_i :: $(RELEASE_LIBIOSST_DBG)
+!else
+xst_ ::
+
+xst_p ::
+
+xst_i ::
+!endif
+
+xmt_env :
+!if "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the XMT model (LIBCMTD.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_MT_DBG) \ \
+    & echo # $(MT_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(MT_DEFINES) \
+    & echo.
+!endif
+
+xmtp_env :
+!if "$(PRE_BLD)"!="1" && "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the XMT model (LIBCPMTD.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_MTP_DBG) \ \
+    & echo # $(MT_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(MT_DEFINES) \
+    & echo.
+!endif
+
+xmti_env :
+!if "$(PRE_BLD)"!="1" && "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the XMT model (LIBCIMTD.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_MTI_DBG) \ \
+    & echo # $(MTIOS_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(MTIOS_DEFINES) \
+    & echo.
+!endif
+
+xmt : $(OBJROOT) $(OBJCPUDIR) $(OBJDIR_MT_DBG) $(RELDIR_CPU) \
+	xmt_env xmt_ xmtp_env xmt_p xmti_env xmt_i
+
+!if "$(BLD_LIB)"!="1"
+xmt_ :: $(MAKE_DIRS)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(MT_DEFINES) $(FD_REL_MT_DBG) \
+    & set ML=$(AS_OPTS) $(MT_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=xmt BLD_DBG=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_MT_DBG) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) \
+    & cd $(CD_ROOT)
+
+!if "$(PRE_BLD)"!="1"
+xmt_p :: $(MAKE_DIRSP)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(MT_DEFINES) $(FD_REL_MTP_DBG) \
+    & set ML=$(AS_OPTS) $(MT_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=xmt BLD_DBG=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_MT_DBG) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _stdcpp_ \
+    & cd $(CD_ROOT)
+
+xmt_i :: $(MAKE_DIRSI)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(MTIOS_DEFINES) $(FD_REL_MTI_DBG) \
+    & set ML=$(AS_OPTS) $(MTIOS_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=xmt BLD_DBG=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_MT_DBG) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _iostream_ \
+    & cd $(CD_ROOT)
+!endif
+!endif # BLD_LIB != 1
+
+!if "$(PRE_BLD)"!="1" && "$(BLD_OBJ)"!="1"
+xmt_ :: $(RELEASE_LIBCMT_DBG)
+
+xmt_p :: $(RELEASE_LIBCPPMT_DBG)
+
+xmt_i :: $(RELEASE_LIBIOSMT_DBG)
+!else
+xmt_ ::
+
+xmt_p ::
+
+xmt_i ::
+!endif
+
+xdll_env :
+!if "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the XDLL model (MSVCRTD.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_DLL_DBG) \ \
+    & echo # $(DLL_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(DLL_DEFINES) \
+    & echo.
+!endif
+
+xdllp_env :
+!if "$(PRE_BLD)"!="1" && "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the XDLL model (MSVCPRTD.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_DLLP_DBG) \ \
+    & echo # $(DLLCPP_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(DLLCPP_DEFINES) \
+    & echo.
+!endif
+
+xdlli_env :
+!if "$(PRE_BLD)"!="1" && "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the XDLL model (MSVCIRTD.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS_BASE) \ \
+    & echo # $(WINDOWS_H_DEFS) $(FD_REL_DLLI_DBG) \ \
+    & echo # $(DLLIOS_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) \ \
+    & echo # $(DLLIOS_DEFINES) \
+    & echo.
+!endif
+
+xdll : $(OBJROOT) $(OBJCPUDIR) $(OBJDIR_DLL_DBG) $(RELDIR_CPU) $(PDBDIR_CPU_DLL) xothers \
+	xdll_env xdll_ xdllp_env xdll_p xdlli_env xdll_i
+
+!if "$(BLD_LIB)"!="1"
+xdll_ :: $(MAKE_DIRS_DLL)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(DLL_DEFINES) $(FD_REL_DLL_DBG) \
+    & set ML=$(AS_OPTS) $(DLL_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=xdll BLD_DLL=1 BLD_DBG=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_DLL_DBG) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) \
+    & cd $(CD_ROOT)
+
+!if "$(PRE_BLD)"!="1"
+xdll_p :: $(MAKE_DIRSP_DLL)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(DLLCPP_DEFINES) $(FD_REL_DLLP_DBG) \
+    & set ML=$(AS_OPTS) $(DLLCPP_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=xdll BLD_DLL=1 BLD_DBG=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_DLL_DBG) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _stdcpp_ \
+    & cd $(CD_ROOT)
+
+xdll_i :: $(MAKE_DIRSI_DLL)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(DLLIOS_DEFINES) $(FD_REL_DLLI_DBG) \
+    & set ML=$(AS_OPTS) $(DLLIOS_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=xdll BLD_DLL=1 BLD_DBG=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_DLL_DBG) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _iostream_ \
+    & cd $(CD_ROOT)
+!endif
+!endif # BLD_LIB != 1
+
+!if "$(PRE_BLD)"!="1" && "$(BLD_OBJ)"!="1"
+xdll_ :: $(RELEASE_DLL_DBG)
+
+xdll_p :: $(RELEASE_DLLCPP_DBG)
+
+xdll_i :: $(RELEASE_DLLIOS_DBG)
+!else
+xdll_ ::
+
+xdll_p ::
+
+xdll_i ::
+!endif
+
+
+all_link: st_link mt_link dll_link
+
+st_link: $(RELEASE_LIBCST) $(RELEASE_LIBCPPST)
+
+mt_link: $(RELEASE_LIBCMT) $(RELEASE_LIBCPPMT)
+
+dll_link: $(RELEASE_DLL) $(RELEASE_DLLCPP)
+
+
+
+oldnames :
+
+others :
+
+xothers :
+
+
+!elseif "$(TARGET_CPU)"=="PMAC"
+
+ST_DEFINES=$(COMMON_DEFS)
+DLL_DEFINES=$(ST_DEFINES) -DCRTDLL
+
+
+st_env :
+!if "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the ST model (LIBC.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS) $(FD_REL_ST) \ \
+    & echo # $(ST_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) $(ST_DEFINES) \
+    & echo.
+!endif
+
+stp_env :
+!if "$(PRE_BLD)"!="1" && "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the ST model (LIBCP.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS) $(FD_REL_STP) \ \
+    & echo # $(ST_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) $(ST_DEFINES) \
+    & echo.
+!endif
+
+sti_env :
+!if "$(PRE_BLD)"!="1" && "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # *** These are the compiler switches for the ST model (LIBCI.LIB): \
+    & echo # \
+    & echo # CL = $(CC_OPTS) $(FD_REL_STI) \ \
+    & echo # $(ST_DEFINES) $(STIOS_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) $(ST_DEFINES) $(STIOS_DEFINES) \
+    & echo.
+!endif
+
+st : $(OBJROOT) $(OBJCPUDIR) $(OBJDIR_ST) $(RELDIR_CPU) \
+	st_env st_ sti_env st_i
+
+#	st_env st_ stp_env st_p sti_env st_i
+
+!if "$(BLD_LIB)"!="1"
+st_ :: $(MAKE_DIRS)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(ST_DEFINES) $(FD_REL_ST) \
+    & set ML=$(AS_OPTS) $(ST_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=st OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_ST) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) \
+    & cd $(CD_ROOT)
+
+!if "$(PRE_BLD)"!="1"
+st_p :: $(MAKE_DIRSP)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(ST_DEFINES) $(FD_REL_STP) \
+    & set ML=$(AS_OPTS) $(ST_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=st OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_ST) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _stdcpp_ \
+    & cd $(CD_ROOT)
+
+st_i :: $(MAKE_DIRSI)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(ST_DEFINES) $(FD_REL_STI) $(STIOS_DEFINES) \
+    & set ML=$(AS_OPTS) $(ST_DEFINES) $(STIOS_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=st OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_ST) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _iostream_ \
+    & cd $(CD_ROOT)
+!endif
+!endif # BLD_LIB != 1
+
+!if "$(PRE_BLD)"!="1" && "$(BLD_OBJ)"!="1"
+st_ :: $(RELEASE_LIBCST)
+
+st_p :: $(RELEASE_LIBCPPST)
+
+st_i ::
+
+# st_i :: $(RELEASE_LIBIOSST)
+!else
+st_ ::
+
+st_p ::
+
+st_i ::
+!endif
+
+dll_env :
+!if "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # CL = $(CC_OPTS) $(FD_REL_DLL) \ \
+    & echo # $(DLL_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) $(DLL_DEFINES) \
+    & echo.
+!endif
+
+dlli_env :
+!if "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # CL = $(CC_OPTS) $(FD_REL_DLLI) \ \
+    & echo # $(DLL_DEFINES) $(STIOS_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) $(DLL_DEFINES) $(STIOS_DEFINES) \
+    & echo.
+!endif
+
+dll : $(OBJROOT) $(OBJCPUDIR) $(OBJDIR_DLL) $(RELDIR_CPU) \
+	others dll_env dll_ dlli_env dll_i
+
+#	others dll_env dll_ dlli_env dll_i dllp_env dll_p
+
+!if "$(BLD_LIB)"!="1"
+dll_ :: $(MAKE_DIRS_DLL)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(DLL_DEFINES) $(FD_REL_DLL) \
+    & set ML=$(AS_OPTS) $(DLL_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=dll BLD_DLL=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_DLL) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) \
+    & cd $(CD_ROOT)
+
+!if "$(PRE_BLD)"!="1"
+dll_i :: $(MAKE_DIRSI_DLL)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(DLLIOS_DEFINES) $(FD_REL_DLLI) \
+    & set ML=$(AS_OPTS) $(DLLIOS_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=dll BLD_DLL=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_DLL) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) _iostream_ \
+    & cd $(CD_ROOT)
+!endif
+!endif # BLD_LIB != 1
+
+!if "$(PRE_BLD)"!="1" && "$(BLD_OBJ)"!="1"
+dll_ :: $(RELEASE_DLL)
+
+dll_i ::
+
+# dll_i :: $(RELEASE_DLLIOS)
+!else
+dll_ ::
+
+dll_i ::
+!endif
+
+
+xst_env :
+!if "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # CL = $(CC_OPTS) $(FD_REL_ST_DBG) \ \
+    & echo # $(ST_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) $(ST_DEFINES) \
+    & echo.
+!endif
+
+xst : xst_env $(OBJROOT) $(OBJCPUDIR) $(OBJDIR_ST_DBG) $(RELDIR_CPU) xst_
+
+!if "$(BLD_LIB)"!="1"
+xst_ :: $(MAKE_DIRS)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(ST_DEFINES) $(FD_REL_ST_DBG) \
+    & set ML=$(AS_OPTS) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=xst BLD_DBG=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_ST_DBG) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) \
+    & cd $(CD_ROOT)
+!endif # BLD_LIB != 1
+
+!if "$(PRE_BLD)"!="1" && "$(BLD_OBJ)"!="1"
+xst_ :: $(RELEASE_LIBCST_DBG)
+!else
+xst_ ::
+!endif
+
+xdll_env :
+!if "$(BLD_LIB)"!="1"
+    !@-echo. \
+    & echo # CL = $(CC_OPTS) $(FD_REL_DLL_DBG) \ \
+    & echo # $(DLL_DEFINES) \
+    & echo # \
+    & echo # ML = $(AS_OPTS) $(DLL_DEFINES) \
+    & echo.
+!endif
+
+xdll : xdll_env $(OBJROOT) $(OBJCPUDIR) $(OBJDIR_DLL_DBG) $(RELDIR_CPU) xothers xdll_
+
+!if "$(BLD_LIB)"!="1"
+xdll_ :: $(MAKE_DIRS_DLL)
+    !@-cd $** \
+    & set CL=$(CC_OPTS) $(DLL_DEFINES) $(FD_REL_DLL_DBG) \
+    & set ML=$(AS_OPTS) $(DLL_DEFINES) \
+    & $(MAKE) -nologo $(IFLAG) -f makefile.sub DIR=$** CPUDIR=$(CPUDIR) WINHEAP=$(WINHEAP) \
+        BLD_MODEL=xdll BLD_DLL=1 BLD_DBG=1 OBJDIR=$(OBJDIR_PREFIX)$(OBJDIR_DLL_DBG) \
+        TARGET_CPU=$(TARGET_CPU) PRE_BLD=$(PRE_BLD) POST_BLD=$(POST_BLD) \
+    & cd $(CD_ROOT)
+!endif # BLD_LIB != 1
+
+!if "$(PRE_BLD)"!="1" && "$(BLD_OBJ)"!="1"
+xdll_ :: $(RELEASE_DLL_DBG)
+!else
+xdll_ ::
+!endif
+
+
+all_link: st_link dll_link
+
+st_link: $(RELEASE_LIBCST)
+
+dll_link: $(RELEASE_DLL)
+
+
+!if "$(POST_BLD)"=="1"
+
+oldnames :
+
+others :
+
+xothers :
+
+!else
+
+oldnames : $(RELEASE_OLDNAMES)
+
+!if "$(PRE_BLD)"=="1"
+
+others xothers: \
+	$(TCMAPLIB_DIR)\tcmap.lib \
+	$(TCMAPDLLLIB_DIR)\tcmapdll.lib
+
+others : \
+!if "$(PROCESSOR_ARCHITECTURE)"!="PMAC"
+	$(DEFFILE2_DIR)\$(RETAIL_DLLIOS_NAME).def \
+	$(DEFFILE2_DIR)\$(RETAIL_DLLCPP_NAME).def \
+!endif
+	$(DEFFILE_DIR)\$(RETAIL_DLL_NAME).def
+
+xothers : \
+!if "$(PROCESSOR_ARCHITECTURE)"!="PMAC"
+	$(DEFFILE2_DIR)\$(DEBUG_DLLIOS_NAME).def \
+	$(DEFFILE2_DIR)\$(DEBUG_DLLCPP_NAME).def \
+!endif
+	$(DEFFILE_DIR)\$(DEBUG_DLL_NAME).def
+
+!else
+
+others :
+
+xothers :
+
+!endif
+
+!endif
+
+!endif
+
+#
+# Make Process for Static Libraries
+#
+###############################################################################
+
+$(RELEASE_LIBCST): $(RELDIR_CPU) $(SOURCE_OBJS:*=st) \
+ $(OBJDIR_ST)\link.rsp
+	$(LINKLIB) -out:$@ @$(OBJDIR_ST)\link.rsp
+
+$(RELEASE_LIBCPPST): $(RELDIR_CPU) $(CPPSRC_OBJS:*=st) \
+ $(OBJDIR_ST)\linkcpp.rsp
+	$(LINKLIB) -out:$@ @$(OBJDIR_ST)\linkcpp.rsp
+
+$(RELEASE_LIBIOSST): $(RELDIR_CPU) $(IOSSRC_OBJS:*=st) \
+ $(OBJDIR_ST)\linkios.rsp
+	$(LINKLIB) -out:$@ @$(OBJDIR_ST)\linkios.rsp
+
+!if "$(BLD_OBJ)"!="1"
+$(OBJDIR_ST)\link.rsp: makefile
+	@echo *** Creating linker response file <<$@
+$(SOURCE_OBJS:*=st)
+<<keep
+
+$(OBJDIR_ST)\linkcpp.rsp: makefile
+	@echo *** Creating linker response file <<$@
+$(CPPSRC_OBJS:*=st)
+<<keep
+
+$(OBJDIR_ST)\linkios.rsp: makefile
+	@echo *** Creating linker response file <<$@
+$(IOSSRC_OBJS:*=st)
+<<keep
+!endif
+
+
+$(RELEASE_LIBCST_DBG): $(RELDIR_CPU) $(SOURCE_OBJS:*=xst) \
+ $(OBJDIR_ST_DBG)\link.rsp
+	$(LINKLIB) -out:$@ @$(OBJDIR_ST_DBG)\link.rsp
+
+$(RELEASE_LIBCPPST_DBG): $(RELDIR_CPU) $(CPPSRC_OBJS:*=xst) \
+ $(OBJDIR_ST_DBG)\linkcpp.rsp
+	$(LINKLIB) -out:$@ @$(OBJDIR_ST_DBG)\linkcpp.rsp
+
+$(RELEASE_LIBIOSST_DBG): $(RELDIR_CPU) $(IOSSRC_OBJS:*=xst) \
+ $(OBJDIR_ST_DBG)\linkios.rsp
+	$(LINKLIB) -out:$@ @$(OBJDIR_ST_DBG)\linkios.rsp
+
+!if "$(BLD_OBJ)"!="1"
+$(OBJDIR_ST_DBG)\link.rsp: makefile
+	@echo *** Creating linker response file <<$@
+$(SOURCE_OBJS:*=xst)
+<<keep
+
+$(OBJDIR_ST_DBG)\linkcpp.rsp: makefile
+	@echo *** Creating linker response file <<$@
+$(CPPSRC_OBJS:*=xst)
+<<keep
+
+$(OBJDIR_ST_DBG)\linkios.rsp: makefile
+	@echo *** Creating linker response file <<$@
+$(IOSSRC_OBJS:*=xst)
+<<keep
+!endif
+
+!if "$(TARGET_CPU)"!="PMAC"
+
+$(RELEASE_LIBCMT): $(RELDIR_CPU) $(SOURCE_OBJS:*=mt) \
+ $(OBJDIR_MT)\link.rsp
+	$(LINKLIB) -out:$@ @$(OBJDIR_MT)\link.rsp
+
+$(RELEASE_LIBCPPMT): $(RELDIR_CPU) $(CPPSRC_OBJS:*=mt) \
+ $(OBJDIR_MT)\linkcpp.rsp
+	$(LINKLIB) -out:$@ @$(OBJDIR_MT)\linkcpp.rsp
+
+$(RELEASE_LIBIOSMT): $(RELDIR_CPU) $(IOSSRC_OBJS:*=mt) \
+ $(OBJDIR_MT)\linkios.rsp
+	$(LINKLIB) -out:$@ @$(OBJDIR_MT)\linkios.rsp
+
+!if "$(BLD_OBJ)"!="1"
+$(OBJDIR_MT)\link.rsp: makefile
+	@echo *** Creating linker response file <<$@
+$(SOURCE_OBJS:*=mt)
+<<keep
+
+$(OBJDIR_MT)\linkcpp.rsp: makefile
+	@echo *** Creating linker response file <<$@
+$(CPPSRC_OBJS:*=mt)
+<<keep
+
+$(OBJDIR_MT)\linkios.rsp: makefile
+	@echo *** Creating linker response file <<$@
+$(IOSSRC_OBJS:*=mt)
+<<keep
+!endif
+
+
+$(RELEASE_LIBCMT_DBG): $(RELDIR_CPU) $(SOURCE_OBJS:*=xmt) \
+ $(OBJDIR_MT_DBG)\link.rsp
+	$(LINKLIB) -out:$@ @$(OBJDIR_MT_DBG)\link.rsp
+
+$(RELEASE_LIBCPPMT_DBG): $(RELDIR_CPU) $(CPPSRC_OBJS:*=xmt) \
+ $(OBJDIR_MT_DBG)\linkcpp.rsp
+	$(LINKLIB) -out:$@ @$(OBJDIR_MT_DBG)\linkcpp.rsp
+
+$(RELEASE_LIBIOSMT_DBG): $(RELDIR_CPU) $(IOSSRC_OBJS:*=xmt) \
+ $(OBJDIR_MT_DBG)\linkios.rsp
+	$(LINKLIB) -out:$@ @$(OBJDIR_MT_DBG)\linkios.rsp
+
+!if "$(BLD_OBJ)"!="1"
+$(OBJDIR_MT_DBG)\link.rsp: makefile
+	@echo *** Creating linker response file <<$@
+$(SOURCE_OBJS:*=xmt)
+<<keep
+
+$(OBJDIR_MT_DBG)\linkcpp.rsp: makefile
+	@echo *** Creating linker response file <<$@
+$(CPPSRC_OBJS:*=xmt)
+<<keep
+
+$(OBJDIR_MT_DBG)\linkios.rsp: makefile
+	@echo *** Creating linker response file <<$@
+$(IOSSRC_OBJS:*=xmt)
+<<keep
+!endif
+
+!endif
+
+#
+# Make Process for C Run-Time DLL
+#
+###############################################################################
+
+# todo ... preprocess a single source .def file into machine-specific version
+
+OBJS_WITH_EXPORTS_DLL_RAW= \
+        $(OBJDIR_DLL_RAW)\handler.obj \
+        $(OBJDIR_DLL_RAW)\setnewh.obj \
+        $(OBJDIR_DLL_RAW)\new_mode.obj \
+        $(OBJDIR_DLL_RAW)\undname.obj \
+        $(OBJDIR_DLL_RAW)\frame.obj \
+        $(OBJDIR_DLL_RAW)\hooks.obj \
+        $(OBJDIR_DLL_RAW)\throw.obj \
+        $(OBJDIR_DLL_RAW)\trnsctrl.obj \
+        $(OBJDIR_DLL_RAW)\typinfo.obj \
+        $(OBJDIR_DLL_RAW)\typname.obj \
+        $(OBJDIR_DLL_RAW)\user.obj \
+        $(OBJDIR_DLL_RAW)\validate.obj \
+!IF "$(TARGET_CPU)"=="mips"
+        $(OBJDIR_DLL_RAW)\ehstate.obj \
+!ELSEIF "$(TARGET_CPU)"=="PMAC"
+        $(OBJDIR_DLL_RAW)\ehstate.obj \
+        $(OBJDIR_DLL_RAW)\exdsptch.obj \
+        $(OBJDIR_DLL_RAW)\handlers.obj \
+        $(OBJDIR_DLL_RAW)\lowhelpr.obj \
+        $(OBJDIR_DLL_RAW)\unwind.obj \
+        $(OBJDIR_DLL_RAW)\vunwind.obj \
+        $(OBJDIR_DLL_RAW)\ehvecctr.obj \
+        $(OBJDIR_DLL_RAW)\ehveccvb.obj \
+        $(OBJDIR_DLL_RAW)\ehvecdtr.obj \
+        $(OBJDIR_DLL_RAW)\rtti.obj \
+        $(OBJDIR_DLL_RAW)\stdexcpt.obj \
+!ELSEIF "$(TARGET_CPU)"=="PPC"
+        $(OBJDIR_DLL_RAW)\ehstate.obj \
+        $(OBJDIR_DLL_RAW)\handlers.obj \
+        $(OBJDIR_DLL_RAW)\unwind.obj \
+!ENDIF
+!IF "$(TARGET_CPU)"!="PMAC"
+        $(OBJDIR_DLL_RAW)\unhandld.obj \
+        $(OBJDIR_DLL_RAW)\errmode.obj \
+        $(OBJDIR_DLL_RAW)\matherr.obj \
+!ENDIF
+
+
+OBJS_WITH_EXPORTS_DLL=$(OBJS_WITH_EXPORTS_DLL_RAW:*=dll)
+
+
+OBJS_WITH_EXPORTS_DLL_DBG=$(OBJS_WITH_EXPORTS_DLL_RAW:*=xdll) $(OBJDIR_DLL_RAW:*=xdll)\dbgnew.obj
+
+
+# These are the C++ objects in MSVCIRT{,D}.DLL which have exports
+
+OBJS_WITH_EXPORTS_DLLIOS_RAW= \
+        $(OBJDIR_DLL_RAW)\cerrinit.obj \
+        $(OBJDIR_DLL_RAW)\cininit.obj \
+        $(OBJDIR_DLL_RAW)\cloginit.obj \
+        $(OBJDIR_DLL_RAW)\filebuf.obj \
+        $(OBJDIR_DLL_RAW)\filebuf1.obj \
+        $(OBJDIR_DLL_RAW)\fstream.obj \
+        $(OBJDIR_DLL_RAW)\ifstream.obj \
+        $(OBJDIR_DLL_RAW)\_ios.obj \
+        $(OBJDIR_DLL_RAW)\_iostrea.obj \
+        $(OBJDIR_DLL_RAW)\iostrini.obj \
+        $(OBJDIR_DLL_RAW)\istrchar.obj \
+        $(OBJDIR_DLL_RAW)\istrdbl.obj \
+        $(OBJDIR_DLL_RAW)\istream.obj \
+        $(OBJDIR_DLL_RAW)\istream1.obj \
+        $(OBJDIR_DLL_RAW)\istrflt.obj \
+        $(OBJDIR_DLL_RAW)\istrgdbl.obj \
+        $(OBJDIR_DLL_RAW)\istrget.obj \
+        $(OBJDIR_DLL_RAW)\istrgetl.obj \
+        $(OBJDIR_DLL_RAW)\istrgint.obj \
+        $(OBJDIR_DLL_RAW)\istrint.obj \
+        $(OBJDIR_DLL_RAW)\istrldbl.obj \
+        $(OBJDIR_DLL_RAW)\istrlong.obj \
+        $(OBJDIR_DLL_RAW)\istrshrt.obj \
+        $(OBJDIR_DLL_RAW)\istruint.obj \
+        $(OBJDIR_DLL_RAW)\istrulng.obj \
+        $(OBJDIR_DLL_RAW)\istrusht.obj \
+!IF "$(TARGET_CPU)"!="PMAC"
+        $(OBJDIR_DLL_RAW)\mtlock.obj \
+!ENDIF
+        $(OBJDIR_DLL_RAW)\oldexcpt.obj \
+        $(OBJDIR_DLL_RAW)\ofstream.obj \
+        $(OBJDIR_DLL_RAW)\ostrchar.obj \
+        $(OBJDIR_DLL_RAW)\ostrdbl.obj \
+        $(OBJDIR_DLL_RAW)\ostream.obj \
+        $(OBJDIR_DLL_RAW)\ostream1.obj \
+        $(OBJDIR_DLL_RAW)\ostrint.obj \
+        $(OBJDIR_DLL_RAW)\ostrldbl.obj \
+        $(OBJDIR_DLL_RAW)\ostrlong.obj \
+        $(OBJDIR_DLL_RAW)\ostrptr.obj \
+        $(OBJDIR_DLL_RAW)\ostrput.obj \
+        $(OBJDIR_DLL_RAW)\ostrshrt.obj \
+        $(OBJDIR_DLL_RAW)\ostruint.obj \
+        $(OBJDIR_DLL_RAW)\ostrulng.obj \
+        $(OBJDIR_DLL_RAW)\ostrusht.obj \
+        $(OBJDIR_DLL_RAW)\stdiostr.obj \
+        $(OBJDIR_DLL_RAW)\streamb.obj \
+        $(OBJDIR_DLL_RAW)\streamb1.obj \
+        $(OBJDIR_DLL_RAW)\strmbdbp.obj \
+        $(OBJDIR_DLL_RAW)\_strstre.obj
+
+OBJS_WITH_EXPORTS_DLLIOS=$(OBJS_WITH_EXPORTS_DLLIOS_RAW:*=dll)
+
+
+OBJS_WITH_EXPORTS_DLLIOS_DBG=$(OBJS_WITH_EXPORTS_DLLIOS_RAW:*=xdll)
+
+
+# These are the C++ objects in MSVCPRT{,D}.LIB
+
+DLLCPP_STATIC_OBJS_RAW= \
+	$(OBJDIR_DLL_RAW)\newop_s.obj \
+	$(OBJDIR_DLL_RAW)\newop2_s.obj \
+	$(OBJDIR_DLL_RAW)\delop_s.obj
+
+DLLCPP_STATIC_OBJS=$(DLLCPP_STATIC_OBJS_RAW:*=dll)
+
+
+DLLCPP_STATIC_OBJS_DBG=$(DLLCPP_STATIC_OBJS_RAW:*=xdll)
+
+# These are the C++ objects in msvcp60{,D}.DLL which have exports
+
+OBJS_WITH_EXPORTS_DLLCPP_RAW= \
+	$(OBJDIR_DLL_RAW)\dlldef.obj \
+	$(OBJDIR_DLL_RAW)\fiopen.obj \
+	$(OBJDIR_DLL_RAW)\iomanip.obj \
+	$(OBJDIR_DLL_RAW)\iostream.obj \
+	$(OBJDIR_DLL_RAW)\locale.obj \
+	$(OBJDIR_DLL_RAW)\nomemory.obj \
+	$(OBJDIR_DLL_RAW)\string.obj \
+	$(OBJDIR_DLL_RAW)\strstrea.obj \
+	$(OBJDIR_DLL_RAW)\uncaught.obj \
+	$(OBJDIR_DLL_RAW)\wiostrea.obj \
+	$(OBJDIR_DLL_RAW)\xstrcoll.obj \
+	$(OBJDIR_DLL_RAW)\xstrxfrm.obj \
+	$(OBJDIR_DLL_RAW)\xwctomb.obj \
+	$(OBJDIR_DLL_RAW)\wctrans.obj \
+	$(OBJDIR_DLL_RAW)\wctype.obj
+
+OBJS_WITH_EXPORTS_DLLCPP=$(OBJS_WITH_EXPORTS_DLLCPP_RAW:*=dll)
+
+
+OBJS_WITH_EXPORTS_DLLCPP_DBG=$(OBJS_WITH_EXPORTS_DLLCPP_RAW:*=xdll)
+
+
+#
+
+!if "$(TARGET_CPU)"!="PMAC"
+
+DLL_MT_OBJS_RAW= \
+        $(OBJDIR_DLL_RAW)\_newmode.obj \
+!if "$(TARGET_CPU)"=="i386"
+        $(OBJDIR_DLL_RAW)\atlssup.obj \
+!endif
+        $(OBJDIR_DLL_RAW)\charmax.obj \
+        $(OBJDIR_DLL_RAW)\chkstk.obj \
+        $(OBJDIR_DLL_RAW)\xncommod.obj \
+        $(OBJDIR_DLL_RAW)\tlssup.obj \
+        $(OBJDIR_DLL_RAW)\xtxtmode.obj
+
+
+DLL_STATIC_OBJS_RAW= \
+        $(OBJDIR_DLL_RAW)\atonexit.obj \
+        $(OBJDIR_DLL_RAW)\cinitexe.obj \
+        $(OBJDIR_DLL_RAW)\crtdll.obj \
+        $(OBJDIR_DLL_RAW)\crtexe.obj \
+        $(OBJDIR_DLL_RAW)\crtexew.obj \
+        $(OBJDIR_DLL_RAW)\dll_argv.obj \
+        $(OBJDIR_DLL_RAW)\dllargv.obj \
+        $(OBJDIR_DLL_RAW)\dllmain.obj \
+        $(OBJDIR_DLL_RAW)\ehvecctr.obj \
+        $(OBJDIR_DLL_RAW)\ehveccvb.obj \
+        $(OBJDIR_DLL_RAW)\ehvecdtr.obj \
+        $(OBJDIR_DLL_RAW)\merr.obj \
+        $(OBJDIR_DLL_RAW)\ti_inst.obj \
+        $(OBJDIR_DLL_RAW)\wcrtexe.obj \
+        $(OBJDIR_DLL_RAW)\wcrtexew.obj \
+        $(OBJDIR_DLL_RAW)\wdllargv.obj \
+        $(OBJDIR_DLL_RAW)\wildcard.obj \
+!if "$(TARGET_CPU)"=="i386"
+        $(OBJDIR_DLL_RAW)\dllsupp.obj \
+        $(OBJDIR_DLL_RAW)\adjustfd.obj \
+        $(OBJDIR_DLL_RAW)\fp8.obj \
+        $(OBJDIR_DLL_RAW)\lldiv.obj \
+        $(OBJDIR_DLL_RAW)\llmul.obj \
+        $(OBJDIR_DLL_RAW)\llrem.obj \
+        $(OBJDIR_DLL_RAW)\llshl.obj \
+        $(OBJDIR_DLL_RAW)\llshr.obj \
+        $(OBJDIR_DLL_RAW)\ulldiv.obj \
+        $(OBJDIR_DLL_RAW)\ullrem.obj \
+        $(OBJDIR_DLL_RAW)\ullshr.obj \
+!elseif "$(TARGET_CPU)"=="mips"
+        $(OBJDIR_DLL_RAW)\llabsdiv.obj \
+        $(OBJDIR_DLL_RAW)\llbit.obj \
+        $(OBJDIR_DLL_RAW)\llcvt.obj \
+        $(OBJDIR_DLL_RAW)\lldiv.obj \
+        $(OBJDIR_DLL_RAW)\lldivrem.obj \
+        $(OBJDIR_DLL_RAW)\llmul.obj \
+        $(OBJDIR_DLL_RAW)\llshift.obj \
+!elseif "$(TARGET_CPU)"=="PPC"
+        $(OBJDIR_DLL_RAW)\dtoi.obj    \
+        $(OBJDIR_DLL_RAW)\dtoi64.obj  \
+        $(OBJDIR_DLL_RAW)\dtou.obj    \
+        $(OBJDIR_DLL_RAW)\dtou64.obj  \
+        $(OBJDIR_DLL_RAW)\i64div.obj  \
+        $(OBJDIR_DLL_RAW)\i64rem.obj  \
+        $(OBJDIR_DLL_RAW)\i64rsh.obj  \
+        $(OBJDIR_DLL_RAW)\i64tod.obj  \
+        $(OBJDIR_DLL_RAW)\icall.obj   \
+        $(OBJDIR_DLL_RAW)\itod.obj    \
+        $(OBJDIR_DLL_RAW)\itof.obj    \
+        $(OBJDIR_DLL_RAW)\memcpy_.obj \
+        $(OBJDIR_DLL_RAW)\memset_.obj \
+        $(OBJDIR_DLL_RAW)\restfpr.obj \
+        $(OBJDIR_DLL_RAW)\restgpr.obj \
+        $(OBJDIR_DLL_RAW)\savefpr.obj \
+        $(OBJDIR_DLL_RAW)\savegpr.obj \
+        $(OBJDIR_DLL_RAW)\u64div.obj  \
+        $(OBJDIR_DLL_RAW)\u64rem.obj  \
+        $(OBJDIR_DLL_RAW)\u64tod.obj  \
+        $(OBJDIR_DLL_RAW)\utod.obj    \
+        $(OBJDIR_DLL_RAW)\utof.obj
+!endif
+
+DLL_STATIC_OBJS=$(DLL_MT_OBJS_RAW:*=dll) $(DLL_STATIC_OBJS_RAW:*=dll)
+
+
+DLL_STATIC_OBJS_DBG=$(DLL_MT_OBJS_RAW:*=xdll) $(DLL_STATIC_OBJS_RAW:*=xdll)
+
+
+!if "$(POST_BLD)"!="1"
+
+$(DEFFILE_DIR)\$(RETAIL_DLL_NAME).def : libw32\$(RETAIL_LIB_NAME).src
+	@echo.
+	@echo *** Creating file $@ from $**
+        $(CC) -nologo -DLIBRARYNAME=$(RETAIL_DLL_NAME_UC) -EP -Tclibw32\$(RETAIL_LIB_NAME).src | sed "/^[ 	]*$$/d" > $@
+
+$(DEFFILE_DIR)\$(DEBUG_DLL_NAME).def : libw32\$(RETAIL_LIB_NAME).src
+	@echo.
+	@echo *** Creating file $@ from $**
+        $(CC) -nologo -DLIBRARYNAME=$(DEBUG_DLL_NAME_UC) -D_DEBUG -EP -Tclibw32\$(RETAIL_LIB_NAME).src | sed "/^[ 	]*$$/d" > $@
+
+$(DEFFILE_DIR)\$(RETAIL_FWDRDLL_NAME).def : $(RETAIL_FWDRDLL_NAME).src
+	@echo.
+	@echo *** Creating file $@ from $**
+        $(CC) -nologo -EP -Tc$(RETAIL_FWDRDLL_NAME).src | sed "/^[ 	]*$$/d" > $@
+
+$(DEFFILE_DIR)\$(DEBUG_FWDRDLL_NAME).def : $(RETAIL_FWDRDLL_NAME).src
+	@echo.
+	@echo *** Creating file $@ from $**
+        $(CC) -nologo -D_DEBUG -EP -Tc$(RETAIL_FWDRDLL_NAME).src | sed "/^[ 	]*$$/d" > $@
+
+$(DEFFILE2_DIR)\$(RETAIL_DLLCPP_NAME).def : libw32\$(RETAIL_LIBCPP_NAME).src
+	@echo.
+	@echo *** Creating file $@ from $**
+        $(CC) -nologo -DLIBRARYNAME=$(RETAIL_DLLCPP_NAME_UC) -EP -Tclibw32\$(RETAIL_LIBCPP_NAME).src | sed "/^[ 	]*$$/d" > $@
+
+$(DEFFILE2_DIR)\$(DEBUG_DLLCPP_NAME).def : libw32\$(RETAIL_LIBCPP_NAME).src
+	@echo.
+	@echo *** Creating file $@ from $**
+        $(CC) -nologo -DLIBRARYNAME=$(DEBUG_DLLCPP_NAME_UC) -D_DEBUG -EP -Tclibw32\$(RETAIL_LIBCPP_NAME).src | sed "/^[ 	]*$$/d" > $@
+
+$(DEFFILE2_DIR)\$(RETAIL_DLLIOS_NAME).def : libw32\$(RETAIL_LIBIOS_NAME).src
+	@echo.
+	@echo *** Creating file $@ from $**
+        $(CC) -nologo -DLIBRARYNAME=$(RETAIL_DLLIOS_NAME_UC) -EP -Tclibw32\$(RETAIL_LIBIOS_NAME).src | sed "/^[ 	]*$$/d" > $@
+
+$(DEFFILE2_DIR)\$(DEBUG_DLLIOS_NAME).def : libw32\$(RETAIL_LIBIOS_NAME).src
+	@echo.
+	@echo *** Creating file $@ from $**
+        $(CC) -nologo -DLIBRARYNAME=$(DEBUG_DLLIOS_NAME_UC) -D_DEBUG -EP -Tclibw32\$(RETAIL_LIBIOS_NAME).src | sed "/^[ 	]*$$/d" > $@
+
+!endif
+
+
+# MSVCRT.DLL / MSVCRT.LIB
+
+$(RELEASE_DLL) : $(RELDIR_CPU) $(RETAIL_DLL_NAME).rc \
+ $(DEFFILE_DIR)\$(RETAIL_DLL_NAME).def $(SOURCE_OBJS_DLL:*=dll) \
+ $(DLL_STATIC_OBJS) $(SDKNAMESLIB_DIR)\sdknames.lib \
+ $(TCMAPLIB_DIR)\tcmap.lib $(TCMAPDLLLIB_DIR)\tcmapdll.lib \
+ $(V6TOOLS)\include\winver.h \
+ $(OBJDIR_DLL)\link.rsp $(OBJDIR_DLL)\implib.rsp
+	rc $(RC_OPTS) -Fo $(@R).res $(RC_DEFS) $(RC_INCS) $(RETAIL_DLL_NAME).rc
+	$(LINKER) @$(OBJDIR_DLL)\link.rsp
+	$(LINKLIB) @$(OBJDIR_DLL)\implib.rsp
+
+!if "$(BLD_OBJ)"!="1"
+$(OBJDIR_DLL)\link.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-base:0x78000000
+-def:$(DEFFILE_DIR)\$(RETAIL_DLL_NAME).def
+-dll
+-entry:_CRTDLL_INIT
+-force:multiple
+-implib:$(OBJDIR_DLL)\tmp.lib
+-incremental:no
+-map
+-out:$(RELEASE_DLL)
+-release
+$(OBJS_WITH_EXPORTS_DLL)
+$(RELEASE_DLL:.dll=.res)
+$(SOURCE_OBJS_DLL:*=dll)
+kernel32.lib
+<<keep
+
+$(OBJDIR_DLL)\implib.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-out:$(RELEASE_IMPLIB_DLL)
+$(OBJDIR_DLL)\tmp.lib
+$(DLL_STATIC_OBJS)
+$(SDKNAMESLIB_DIR)\sdknames.lib
+$(TCMAPLIB_DIR)\tcmap.lib
+$(TCMAPDLLLIB_DIR)\tcmapdll.lib
+<<keep
+!endif
+
+
+# msvcp60.DLL / MSVCPRT.LIB
+
+$(RELEASE_DLLCPP) : $(RELDIR_CPU) $(RETAIL_DLLCPP_NAME).rc \
+ $(DEFFILE2_DIR)\$(RETAIL_DLLCPP_NAME).def $(CPPSRC_OBJS_DLL:*=dll) \
+ $(DLLCPP_STATIC_OBJS) \
+ $(V6TOOLS)\include\winver.h \
+ $(RELEASE_IMPLIB_DLL) \
+ $(OBJDIR_DLL)\linkp.rsp $(OBJDIR_DLL)\implibp.rsp
+	rc $(RC_OPTS) -Fo $(@R).res $(RC_DEFS) $(RC_INCS) $(RETAIL_DLLCPP_NAME).rc
+	$(LINKER) @$(OBJDIR_DLL)\linkp.rsp
+	$(LINKLIB) @$(OBJDIR_DLL)\implibp.rsp
+
+!if "$(BLD_OBJ)"!="1"
+$(OBJDIR_DLL)\linkp.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-base:0x780C0000
+-def:$(DEFFILE2_DIR)\$(RETAIL_DLLCPP_NAME).def
+-dll
+-force:multiple
+-implib:$(OBJDIR_DLL)\tmpp.lib
+-incremental:no
+-map
+-out:$(RELEASE_DLLCPP)
+-release
+-nodefaultlib:$(RETAIL_LIBCPP_NAME).lib
+$(OBJS_WITH_EXPORTS_DLLCPP)
+$(RELEASE_DLLCPP:.dll=.res)
+$(CPPSRC_OBJS_DLL:*=dll)
+$(RELEASE_IMPLIB_DLL)
+kernel32.lib
+<<keep
+
+$(OBJDIR_DLL)\implibp.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-out:$(RELEASE_IMPLIB_DLLCPP)
+$(OBJDIR_DLL)\tmpp.lib
+$(DLLCPP_STATIC_OBJS)
+<<keep
+!endif
+
+
+# MSVCIRT.DLL / MSVCIRT.LIB
+
+$(RELEASE_DLLIOS) : $(RELDIR_CPU) $(RETAIL_DLLIOS_NAME).rc \
+ $(DEFFILE2_DIR)\$(RETAIL_DLLIOS_NAME).def $(IOSSRC_OBJS_DLL:*=dll) \
+ $(V6TOOLS)\include\winver.h \
+ $(RELEASE_IMPLIB_DLL) $(OBJDIR_DLL)\ios_dll.obj \
+ $(OBJDIR_DLL)\linki.rsp $(OBJDIR_DLL)\implibi.rsp
+	rc $(RC_OPTS) -Fo $(@R).res $(RC_DEFS) $(RC_INCS) $(RETAIL_DLLIOS_NAME).rc
+	$(LINKER) @$(OBJDIR_DLL)\linki.rsp
+	$(LINKLIB) @$(OBJDIR_DLL)\implibi.rsp
+
+!if "$(BLD_OBJ)"!="1"
+$(OBJDIR_DLL)\linki.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-base:0x780A0000
+-def:$(DEFFILE2_DIR)\$(RETAIL_DLLIOS_NAME).def
+-dll
+-force:multiple
+-implib:$(OBJDIR_DLL)\tmpi.lib
+-incremental:no
+-map
+-out:$(RELEASE_DLLIOS)
+-release
+-nodefaultlib:msvcirt.lib
+$(OBJDIR_DLL)\ios_dll.obj
+$(OBJS_WITH_EXPORTS_DLLIOS)
+$(RELEASE_DLLIOS:.dll=.res)
+$(IOSSRC_OBJS_DLL:*=dll)
+$(RELEASE_IMPLIB_DLL)
+kernel32.lib
+<<keep
+
+
+$(OBJDIR_DLL)\implibi.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-out:$(RELEASE_IMPLIB_DLLIOS)
+$(OBJDIR_DLL)\tmpi.lib
+<<keep
+!endif
+
+
+# MSVCRTD.DLL / MSVCRTD.LIB
+
+$(RELEASE_DLL_DBG) : $(RELDIR_CPU) $(RETAIL_DLL_NAME).rc \
+ $(DEFFILE_DIR)\$(DEBUG_DLL_NAME).def $(SOURCE_OBJS_DLL:*=xdll) \
+ $(DLL_STATIC_OBJS_DBG) $(SDKNAMESLIB_DIR)\sdknames.lib \
+ $(TCMAPLIB_DIR)\tcmap.lib $(TCMAPDLLLIB_DIR)\tcmapdll.lib \
+ $(V6TOOLS)\include\winver.h \
+ $(OBJDIR_DLL_DBG)\link.rsp $(OBJDIR_DLL_DBG)\implib.rsp
+	rc $(RC_OPTS) -Fo $(@R).res -D_DEBUG $(RC_DEFS) $(RC_INCS) $(RETAIL_DLL_NAME).rc
+	$(LINKER) @$(OBJDIR_DLL_DBG)\link.rsp
+	$(LINKLIB) @$(OBJDIR_DLL_DBG)\implib.rsp
+
+!if "$(BLD_OBJ)"!="1"
+$(OBJDIR_DLL_DBG)\link.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-base:0x10200000
+-dbgimplib
+-debug
+-def:$(DEFFILE_DIR)\$(DEBUG_DLL_NAME).def
+-dll
+-entry:_CRTDLL_INIT
+-force:multiple
+-implib:$(OBJDIR_DLL_DBG)\tmp.lib
+-incremental:no
+-map
+-out:$(RELEASE_DLL_DBG)
+-release
+-pdb:$(RELEASE_DLL_DBG_PDB)
+$(OBJS_WITH_EXPORTS_DLL_DBG)
+$(RELEASE_DLL_DBG:.dll=.res)
+$(SOURCE_OBJS_DLL:*=xdll)
+kernel32.lib
+<<keep
+
+$(OBJDIR_DLL_DBG)\implib.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-out:$(RELEASE_IMPLIB_DLL_DBG)
+$(OBJDIR_DLL_DBG)\tmp.lib
+$(DLL_STATIC_OBJS_DBG)
+$(SDKNAMESLIB_DIR)\sdknames.lib
+$(TCMAPLIB_DIR)\tcmap.lib
+$(TCMAPDLLLIB_DIR)\tcmapdll.lib
+<<keep
+!endif
+
+
+# msvcp60D.DLL / MSVCPRTD.LIB
+
+$(RELEASE_DLLCPP_DBG) : $(RELDIR_CPU) $(RETAIL_DLLCPP_NAME).rc \
+ $(DEFFILE2_DIR)\$(DEBUG_DLLCPP_NAME).def $(CPPSRC_OBJS_DLL:*=xdll) \
+ $(DLLCPP_STATIC_OBJS_DBG) \
+ $(V6TOOLS)\include\winver.h \
+ $(RELEASE_IMPLIB_DLL_DBG) \
+ $(OBJDIR_DLL_DBG)\linkp.rsp $(OBJDIR_DLL_DBG)\implibp.rsp
+	rc $(RC_OPTS) -Fo $(@R).res -D_DEBUG $(RC_DEFS) $(RC_INCS) $(RETAIL_DLLCPP_NAME).rc
+	$(LINKER) @$(OBJDIR_DLL_DBG)\linkp.rsp
+	$(LINKLIB) @$(OBJDIR_DLL_DBG)\implibp.rsp
+
+!if "$(BLD_OBJ)"!="1"
+$(OBJDIR_DLL_DBG)\linkp.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-base:0x10480000
+-dbgimplib
+-debug
+-def:$(DEFFILE2_DIR)\$(DEBUG_DLLCPP_NAME).def
+-dll
+-force:multiple
+-implib:$(OBJDIR_DLL_DBG)\tmpp.lib
+-incremental:no
+-map
+-out:$(RELEASE_DLLCPP_DBG)
+-release
+-nodefaultlib:$(DEBUG_LIBCPP_NAME).lib
+-pdb:$(RELEASE_DLLCPP_DBG_PDB)
+$(OBJS_WITH_EXPORTS_DLLCPP_DBG)
+$(RELEASE_DLLCPP_DBG:.dll=.res)
+$(CPPSRC_OBJS_DLL:*=xdll)
+$(RELEASE_IMPLIB_DLL_DBG)
+kernel32.lib
+<<keep
+
+$(OBJDIR_DLL_DBG)\implibp.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-out:$(RELEASE_IMPLIB_DLLCPP_DBG)
+$(DLLCPP_STATIC_OBJS_DBG)
+$(OBJDIR_DLL_DBG)\tmpp.lib
+<<keep
+!endif
+
+
+# MSVCIRTD.DLL / MSVCIRTD.LIB
+
+$(RELEASE_DLLIOS_DBG) : $(RELDIR_CPU_DBG) $(RETAIL_DLLIOS_NAME).rc \
+ $(DEFFILE2_DIR)\$(DEBUG_DLLIOS_NAME).def $(IOSSRC_OBJS_DLL:*=xdll) \
+ $(V6TOOLS)\include\winver.h \
+ $(RELEASE_IMPLIB_DLL_DBG) $(OBJDIR_DLL_DBG)\ios_dll.obj \
+ $(OBJDIR_DLL_DBG)\linki.rsp $(OBJDIR_DLL_DBG)\implibi.rsp
+	rc $(RC_OPTS) -Fo $(@R).res -D_DEBUG $(RC_DEFS) $(RC_INCS) $(RETAIL_DLLIOS_NAME).rc
+	$(LINKER) @$(OBJDIR_DLL_DBG)\linki.rsp
+	$(LINKLIB) @$(OBJDIR_DLL_DBG)\implibi.rsp
+
+!if "$(BLD_OBJ)"!="1"
+$(OBJDIR_DLL_DBG)\linki.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-base:0x102A0000
+-dbgimplib
+-debug
+-def:$(DEFFILE2_DIR)\$(DEBUG_DLLIOS_NAME).def
+-dll
+-force:multiple
+-implib:$(OBJDIR_DLL_DBG)\tmpi.lib
+-incremental:no
+-map
+-out:$(RELEASE_DLLIOS_DBG)
+-release
+-nodefaultlib:msvcirtd.lib
+-pdb:$(RELEASE_DLLIOS_DBG_PDB)
+$(OBJDIR_DLL_DBG)\ios_dll.obj
+$(OBJS_WITH_EXPORTS_DLLIOS_DBG)
+$(RELEASE_DLLIOS_DBG:.dll=.res)
+$(IOSSRC_OBJS_DLL:*=xdll)
+$(RELEASE_IMPLIB_DLL_DBG)
+kernel32.lib
+<<keep
+
+
+$(OBJDIR_DLL_DBG)\implibi.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-out:$(RELEASE_IMPLIB_DLLIOS_DBG)
+$(OBJDIR_DLL_DBG)\tmpi.lib
+<<keep
+!endif
+
+
+# {{ End of block TARGET_CPU != PMAC }}
+
+!endif
+
+
+!if "$(TARGET_CPU)" == "PMAC"
+
+# {{ Beginning of block TARGET_CPU == PMAC }}
+
+# PMAC DLL build
+
+DLL_DEF_DIR=mppc
+
+DLL_STATIC_OBJS=\
+        $(OBJDIR_DLL_RAW)\_newmode.obj \
+        $(OBJDIR_DLL_RAW)\atonexit.obj \
+        $(OBJDIR_DLL_RAW)\crtexe.obj \
+        $(OBJDIR_DLL_RAW)\cinitexe.obj \
+        $(OBJDIR_DLL_RAW)\crtdllex.obj \
+        $(OBJDIR_DLL_RAW)\crtdll.obj \
+        $(OBJDIR_DLL_RAW)\dllmain.obj \
+        $(OBJDIR_DLL_RAW)\dllexit.obj \
+        $(OBJDIR_DLL_RAW)\lowhelpr.obj \
+        $(OBJDIR_DLL_RAW)\rfpr.obj \
+        $(OBJDIR_DLL_RAW)\rgpr.obj \
+        $(OBJDIR_DLL_RAW)\sfpr.obj \
+        $(OBJDIR_DLL_RAW)\sgpr.obj \
+        $(OBJDIR_DLL_RAW)\testexit.obj \
+        $(OBJDIR_DLL_RAW)\ti_inst.obj \
+
+
+$(RELEASE_DLL) : $(RELDIR_CPU) $(DLL_DEF_DIR)\$(RETAIL_DLL_NAME).r \
+ $(DLL_DEF_DIR)\$(RETAIL_DLL_NAME).def $(SOURCE_OBJS_DLL:*=dll) \
+ $(DLL_STATIC_OBJS:*=dll) \
+ $(TCMAPLIB_DIR)\tcmap.lib $(TCMAPDLLLIB_DIR)\tcmapdll.lib \
+ $(OBJDIR_DLL)\link.rsp $(OBJDIR_DLL)\implib.rsp
+	$(CC) -nologo -EP -Tc$(DLL_DEF_DIR)\$(RETAIL_DLL_NAME).r > $(OBJDIR_DLL)\$(RETAIL_DLL_NAME).tmp
+	mrc -o $(@R).rsc $(RC_INCS) $(OBJDIR_DLL)\$(RETAIL_DLL_NAME).tmp
+	$(LINKER) @$(OBJDIR_DLL)\link.rsp
+	makepef $(@R).dll $(@R).pef
+	forkize /d $(@R).pef /r $(@R).rsc /o $(@R).ppc /t shlb /c cfmg
+	$(LINKLIB) @$(OBJDIR_DLL)\implib.rsp
+
+!if "$(BLD_OBJ)"!="1"
+$(OBJDIR_DLL)\link.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-def:$(DLL_DEF_DIR)\$(RETAIL_DLL_NAME).def
+-dll
+-machine:mppc
+-implib:$(OBJDIR_DLL)\tmp.lib
+-import:currentver=67141632,oldcodever=67141632,oldapiver=67141632
+-incremental:no
+-map
+-mac:init=__cinit
+-mac:term=_DllExit
+-mac:creator=cfmg
+-mac:type=shlb
+-mac:nobundle
+-out:$(RELEASE_DLL)
+-release
+$(OBJS_WITH_EXPORTS_DLL)
+$(RELEASE_DLL:.dll=.rsc)
+$(SOURCE_OBJS_DLL:*=dll)
+interfac.lib
+<<keep
+
+$(OBJDIR_DLL)\implib.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-out:$(RELEASE_IMPLIB_DLL)
+$(OBJDIR_DLL)\tmp.lib
+$(DLL_STATIC_OBJS:*=dll)
+$(TCMAPLIB_DIR)\tcmap.lib
+$(TCMAPDLLLIB_DIR)\tcmapdll.lib
+<<keep
+!endif
+
+
+$(RELEASE_DLL_DBG) : $(RELDIR_CPU) $(DLL_DEF_DIR)\$(RETAIL_DLL_NAME).r \
+ $(DLL_DEF_DIR)\$(DEBUG_DLL_NAME).def $(SOURCE_OBJS_DLL:*=xdll) \
+ $(DLL_STATIC_OBJS:*=dll) \
+ $(TCMAPLIB_DIR)\tcmap.lib $(TCMAPDLLLIB_DIR)\tcmapdll.lib \
+ $(OBJDIR_DLL_DBG)\link.rsp $(OBJDIR_DLL_DBG)\implib.rsp
+	$(CC) -nologo -D_DEBUG -EP -Tc$(DLL_DEF_DIR)\$(RETAIL_DLL_NAME).r > $(OBJDIR_DLL_DBG)\$(DEBUG_DLL_NAME).tmp
+	mrc -o $(@R).rsc $(RC_INCS) $(OBJDIR_DLL_DBG)\$(DEBUG_DLL_NAME).tmp
+	$(LINKER) @$(OBJDIR_DLL_DBG)\link.rsp
+	makepef $(@R).dll $(@R).pef
+	forkize /d $(@R).pef /r $(@R).rsc /o $(@R).ppc /t shlb /c cfmg
+	$(LINKLIB) @$(OBJDIR_DLL_DBG)\implib.rsp
+
+!if "$(BLD_OBJ)"!="1"
+$(OBJDIR_DLL_DBG)\link.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-dbgimplib
+-debug
+-def:$(DLL_DEF_DIR)\$(DEBUG_DLL_NAME).def
+-dll
+-machine:mppc
+-implib:$(OBJDIR_DLL_DBG)\tmp.lib
+-import:currentver=67141632,oldcodever=67141632,oldapiver=67141632
+-incremental:no
+-map
+-mac:init=__cinit
+-mac:term=_DllExit
+-mac:creator=cfmg
+-mac:type=shlb
+-mac:nobundle
+-out:$(RELEASE_DLL_DBG)
+-release
+$(OBJS_WITH_EXPORTS_DLL_DBG)
+$(RELEASE_DLL_DBG:.dll=.rsc)
+$(SOURCE_OBJS_DLL:*=xdll)
+interfac.lib
+<<keep
+
+$(OBJDIR_DLL_DBG)\implib.rsp: makefile
+	@echo *** Creating linker response file <<$@
+-out:$(RELEASE_IMPLIB_DLL_DBG)
+$(OBJDIR_DLL_DBG)\tmp.lib
+$(DLL_STATIC_OBJS:*=xdll)
+$(TCMAPLIB_DIR)\tcmap.lib
+$(TCMAPDLLLIB_DIR)\tcmapdll.lib
+<<keep
+!endif
+
+# {{ End of block TARGET_CPU == PMAC }}
+
+!endif
+
+
+####
+#
+# Release objects
+#
+####
+
+!if "$(POST_BLD)"=="1" && "$(BLD_OBJ)"=="1"
+
+relobjs:
+
+
+!else
+
+relobjs: \
+!if "$(TARGET_CPU)"=="i386"
+	$(RELDIR_CPU)\fp10.obj \
+!endif
+!if "$(TARGET_CPU)"!="PMAC"
+	$(RELDIR_CPU)\binmode.obj  \
+	$(RELDIR_CPU)\chkstk.obj   \
+	$(RELDIR_CPU)\newmode.obj  \
+	$(RELDIR_CPU)\setargv.obj  \
+	$(RELDIR_CPU)\wsetargv.obj \
+!endif
+	$(RELDIR_CPU)\commode.obj
+
+
+!endif
+
+
+$(RELDIR_CPU)\binmode.obj: $(OBJDIR_ST)\binmode.obj
+	copy $** $@  >NUL
+
+$(RELDIR_CPU)\chkstk.obj: $(OBJDIR_ST)\chkstk.obj
+	copy $** $@ >NUL
+
+$(RELDIR_CPU)\commode.obj: $(OBJDIR_ST)\commode.obj
+	copy $** $@ >NUL
+
+$(RELDIR_CPU)\newmode.obj: $(OBJDIR_ST)\newmode.obj
+	copy $** $@ >NUL
+
+
+$(RELDIR_CPU)\setargv.obj: $(OBJDIR_ST)\setargv.obj
+	copy $** $@ >NUL
+
+
+$(RELDIR_CPU)\wsetargv.obj: $(OBJDIR_ST)\wsetargv.obj
+	copy $** $@ >NUL
+
+!if "$(TARGET_CPU)"=="i386"
+$(RELDIR_CPU)\fp10.obj: $(OBJDIR_ST)\fp10.obj
+	copy $** $@ >NUL
+!endif
+
+#<eof>

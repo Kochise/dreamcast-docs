@@ -1,0 +1,949 @@
+//
+// Copyright (C) Microsoft Corporation, 1997.  All rights reserved.
+//
+
+// msclus.idl : IDL source for msclus.dll
+// ~~~~~~~~~~
+//
+// History
+// ?? Mar 1997    - Original creation.
+// 12 May 1997    - Changed the collections to use Add/Remove/Create/Delete
+// 14 May 1997    - Changed interface names per code review
+// 22 July 1997   - Added new interfaces Domains and ClusterDomain.
+// 20 Aug 1997    - Created new interfaces ClusNetwork and ClusNetInterface.
+//                - Added new base interfaces ClusObj and ClusObjCollection for all collections and 
+//                - cluster objects respectively.
+//                - Added the following new collections.
+//                - ClusNetworks,ClusNetInterfaces,ClusResDependencies, ClusResTypeResources,
+//                - ClusGroupOwners and ClusResOwners.
+//  27 Aug 1997   - New comments. 
+//                - New methods to ICluster.
+// This file will be processed by the MIDL tool to
+// produce the type library (msclus.tlb) and marshalling code.
+
+
+
+// f2e606ea-2631-11d1-89f1-00a0c90d061e -- interface ClusResTypes
+// f2e606eb-2631-11d1-89f1-00a0c90d061e -- interface ClusProperty
+// f2e606ec-2631-11d1-89f1-00a0c90d061e -- interface ClusProperties
+// f2e606ed-2631-11d1-89f1-00a0c90d061e -- interface DomainNames
+// f2e606ee-2631-11d1-89f1-00a0c90d061e -- interface ClusObjCollection
+// f2e606ef-2631-11d1-89f1-00a0c90d061e -- interface ClusObj
+// f2e606f0-2631-11d1-89f1-00a0c90d061e -- library MSClusterLib
+// f2e606f1-2631-11d1-89f1-00a0c90d061e -- coclass Application
+// f2e606f2-2631-11d1-89f1-00a0c90d061e -- coclass Cluster
+// f2e606f3-2631-11d1-89f1-00a0c90d061e -- interface ClusNetwork
+// f2e606f4-2631-11d1-89f1-00a0c90d061e -- interface ClusNetInterface
+// f2e606f5-2631-11d1-89f1-00a0c90d061e -- interface ClusResDependencies
+// f2e606f6-2631-11d1-89f1-00a0c90d061e -- interface ClusGroupResources
+// f2e606f7-2631-11d1-89f1-00a0c90d061e -- interface ClusResTypeResources
+// f2e606f8-2631-11d1-89f1-00a0c90d061e -- interface ClusGroupOwners
+// f2e606f9-2631-11d1-89f1-00a0c90d061e -- interface ClusResOwners
+// f2e606fa-2631-11d1-89f1-00a0c90d061e -- interface ClusNetworks
+// f2e606fb-2631-11d1-89f1-00a0c90d061e -- interface ClusNetInterfaces
+// f2e606fc-2631-11d1-89f1-00a0c90d061e -- interface ClusNetworkNetInterfaces
+// f2e606fd-2631-11d1-89f1-00a0c90d061e -- interface ClusNodeNetInterfaces
+// f2e606fe-2631-11d1-89f1-00a0c90d061e -- interface ClusRefObject
+// f2e606ff-2631-11d1-89f1-00a0c90d061e
+// f2e60700-2631-11d1-89f1-00a0c90d061e
+// f2e60701-2631-11d1-89f1-00a0c90d061e
+// f2e60702-2631-11d1-89f1-00a0c90d061e
+// f2e60703-2631-11d1-89f1-00a0c90d061e
+// f2e60704-2631-11d1-89f1-00a0c90d061e
+// f2e60705-2631-11d1-89f1-00a0c90d061e
+// f2e60706-2631-11d1-89f1-00a0c90d061e
+// f2e60707-2631-11d1-89f1-00a0c90d061e
+
+// UUIDS for MSCLUS
+// f2e606e0-2631-11d1-89f1-00a0c90d061e -- interface IClusterApplication;
+// f2e606e1-2631-11d1-89f1-00a0c90d061e -- interface ClusterNames
+// f2e606e2-2631-11d1-89f1-00a0c90d061e -- interface ICluster
+// f2e606e3-2631-11d1-89f1-00a0c90d061e -- interface ClusNode
+// f2e606e4-2631-11d1-89f1-00a0c90d061e -- interface ClusNodes
+// f2e606e5-2631-11d1-89f1-00a0c90d061e -- interface ClusResGroup
+// f2e606e6-2631-11d1-89f1-00a0c90d061e -- interface ClusResGroups
+// f2e606e7-2631-11d1-89f1-00a0c90d061e -- interface ClusResource
+// f2e606e8-2631-11d1-89f1-00a0c90d061e -- interface ClusResources
+// f2e606e9-2631-11d1-89f1-00a0c90d061e -- interface ClusResType
+
+
+import "oaidl.idl";
+cpp_quote("#ifndef _CLUSTER_API_TYPES_")
+#include "clusapi.h"
+cpp_quote("#define _CLUSTER_API_TYPES_")
+cpp_quote("#endif // _CLUSTER_API_TYPES_")
+
+///////////////////////////////////////
+// definitions
+interface IClusterApplication;
+interface ICluster;
+// A reference Object that reference Counts the Cluster Handle.
+// This wouldn't close the Cluster, till the reference count becomes
+// zero. Every interface is passed this object instead of the Cluster 
+// Handle. The interfaces increment the reference count as they are passed
+// this object and decrements on removal. This eliminates the Circular
+// reference problem. 
+
+interface ClusRefObject; 
+interface ClusObjCollection; // Base Class for all collections.
+interface DomainNames;
+interface ClusterNames;
+interface ClusObj;  // Base Class for all the Cluster Objects viz. ClusNode, ClusResGroup, 
+        // ClusNetwork, ClusNetInterface and ClusResource.
+
+//old interface ClusterNode;
+interface ClusNode;
+//old interface ClusterNodes;
+interface ClusNodes;
+
+//old interface ResourceGroup;
+interface ClusResGroup;
+//old interface ResourceGroups;
+interface ClusResGroups;
+
+//old interface Resource;
+interface ClusResource;
+//old interface Resources;
+// resource collection in ICluster.
+interface ClusResources; 
+
+//old interface ResourceType;
+interface ClusResType;
+//old interface ResourceTypes;
+interface ClusResTypes;
+
+//old interface ClusterProperty;
+interface ClusProperty;
+//old interface ClusterProperties;
+interface ClusProperties;
+
+// New ClusObj derived interfaces.
+interface ClusNetwork;
+interface ClusNetInterface;
+
+// New Collections.
+// resouce collection in ClusResource.            
+interface ClusResDependencies;
+// resource collection in ClusResGroup.
+interface ClusGroupResources;
+// resource collection in ClusResourceType.
+interface ClusResTypeResources;
+// Nodes collection in ClusResGroup.
+interface ClusGroupOwners;
+// Nodes collection in ClusResource.
+interface ClusResOwners;
+// Networks collection in ICluster.
+interface ClusNetworks;
+// Netinterface collection in ICluster.
+interface ClusNetInterfaces;
+// Netinterface collection in ClusNetwork.
+interface ClusNodeNetInterfaces;
+// Netinterface collection in ICluster.
+interface ClusNetworkNetInterfaces;
+//
+///////////////////////////////////////
+
+
+/////////////////////////////////////////////////
+// Application
+[
+    object,
+    uuid(f2e606e0-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Application Interface"),
+    hidden,
+    pointer_default(unique)
+]
+interface IClusterApplication : IDispatch
+{
+    [propget]
+    HRESULT DomainNames( [out, retval] DomainNames ** ppDomains );
+
+    [propget]
+    HRESULT ClusterNames( [in] BSTR bstrDomainName, [out, retval] ClusterNames ** ppClusters );
+
+    HRESULT OpenCluster( [in] BSTR bstrClusterName, [out, retval] ICluster ** pCluster );
+};
+
+/////////////////////////////////////////////////
+// ClusObjCollection
+[
+    object,
+    uuid(f2e606ee-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("collections Base Class"),
+    pointer_default(unique)
+]
+interface ClusObjCollection : IDispatch
+{
+    [propget]
+    HRESULT Count( [out, retval] LONG * pnCount );
+    [propget, restricted, id(DISPID_NEWENUM),
+        helpstring("returns an enumerator for the collection.")]    // Must be propget. 
+    HRESULT _NewEnum([out, retval] IUnknown** retval);    
+
+    [helpstring("Refresh data in collection")]
+    HRESULT Refresh();
+};
+
+
+
+/////////////////////////////////////////////////
+// DomainNames
+[
+    object,
+    uuid(f2e606ed-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Domain Names collection"),
+    pointer_default(unique)
+]
+interface DomainNames : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+    HRESULT Item([in] LONG nIndex , [out, retval] BSTR* pbstrDomainName);
+};
+
+
+/////////////////////////////////////////////////
+// ClusterNames
+[
+    object,
+    uuid(f2e606e1-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("ClusterNames collection"),
+    pointer_default(unique)
+]
+interface ClusterNames : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+    HRESULT Item([in] LONG nIndex , [out, retval] BSTR* pbstrClusterName);
+    [propget]
+    HRESULT DomainName( [out, retval] BSTR * pbstrDomainName );
+};
+
+
+/////////////////////////////////////////////////
+// ClusRefObject
+[
+    object,
+    uuid(f2e606fe-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster Reference Object Interface"),
+    hidden,
+    pointer_default(unique)
+]
+interface ClusRefObject : IDispatch
+{
+    [propget]
+    HRESULT Handle( [out, retval] LONG * phandle );
+};
+
+
+
+/////////////////////////////////////////////////
+// ClusObj
+[
+    object,
+    uuid(f2e606ef-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster Object Base Class"),
+    pointer_default(unique)
+]
+interface ClusObj : IDispatch
+{
+    [propget]
+    HRESULT Name( [out, retval] BSTR * pbstrName );
+
+    [propget]
+    HRESULT CommonProperties( [out, retval] ClusProperties ** ppProperties );
+
+    [propget]
+    HRESULT PrivateProperties( [out, retval] ClusProperties ** ppProperties );
+
+    [propget]
+    HRESULT CommonROProperties( [out, retval] ClusProperties ** ppProperties );
+
+    [propget]
+    HRESULT PrivateROProperties( [out, retval] ClusProperties ** ppProperties );
+};
+
+
+/////////////////////////////////////////////////
+// ICluster
+[
+    object,
+    uuid(f2e606e2-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("ICluster Interface"),
+    hidden,
+    pointer_default(unique)
+]
+interface ICluster : ClusObj
+{    
+    /////////////////////////////////
+    // Cluster 
+    [propget, hidden]
+    HRESULT Handle( [out, retval] LONG * phandle );
+
+    HRESULT Open( [in] BSTR bstrClusterName );
+
+//    HRESULT Close();
+
+    [propput]
+    HRESULT Name( [in] BSTR bstrClusterName );  
+
+    HRESULT GetVersion( 
+        [out] BSTR * pbstrClusterName,
+        [out] SHORT * MajorVersion,
+        [out] SHORT * MinorVersion,
+        [out] SHORT * BuildNumber,
+        [out] BSTR * pbstrVendorId,
+        [out] BSTR * pbstrCSDVersion );
+
+
+    /////////////////////////////////
+    // Quorum Resource
+    [propput]
+    HRESULT QuorumResource( [in] ClusResource * pClusterResource );
+
+    [propget]
+    HRESULT QuorumResource( [out, retval] ClusResource ** pClusterResource );
+    /////////////////////////////////
+    // Quorum Info
+    HRESULT SetQuorumInfo([in] BSTR DevicePath, [in] LONG nLogSize);
+
+    HRESULT GetQuorumInfo([out] BSTR* DevicePath, [out] LONG* pLogSize);
+
+    /////////////////////////////////
+    // Cluster Nodes
+
+    [propget]
+    HRESULT Nodes( [out, retval] ClusNodes ** ppClusterNodes );
+
+
+    /////////////////////////////////
+    // Cluster Resource Groups
+
+
+    [propget]
+    HRESULT ResourceGroups( [out, retval] ClusResGroups ** ppClusterResourceGroups );
+
+
+    /////////////////////////////////
+    // Cluster Resources
+
+    [propget]
+    HRESULT Resources( [out, retval] ClusResources ** ppClusterResources );
+
+
+    /////////////////////////////////
+    // Cluster Resource Types
+
+    [propget]
+    HRESULT ResourceTypes( [out, retval] ClusResTypes ** ppResourceTypes );
+
+    /////////////////////////////////
+    // Cluster Networks
+    [propget]
+    HRESULT Networks( [out, retval] ClusNetworks ** ppNetworks );
+
+    /////////////////////////////////
+    // Cluster NetInterfaces
+    [propget]
+    HRESULT NetInterfaces( [out, retval] ClusNetInterfaces ** ppNetInterfaces );
+};
+
+
+
+
+
+/////////////////////////////////////////////////
+// ClusNode
+[
+    object,
+    uuid(f2e606e3-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster Node Interface"),
+    pointer_default(unique)
+]
+interface ClusNode : ClusObj
+{
+    [propget, hidden]
+    HRESULT Handle( [out, retval] LONG * phandle );
+
+    [propget]
+    HRESULT NodeID( [out, retval] BSTR * pbstrNodeID );
+
+    [propget]
+    HRESULT State( [out,retval] CLUSTER_NODE_STATE* dwState );
+
+    HRESULT Pause();
+
+    HRESULT Resume();
+
+    HRESULT Evict();
+
+    [propget]
+    HRESULT ResourceGroups( [out, retval] ClusResGroups ** ppResourceGroups );
+
+    [propget]
+    HRESULT Cluster( [out,retval] ICluster ** ppCluster );
+
+    [propget]
+    HRESULT NetInterfaces( [out,retval] ClusNodeNetInterfaces ** ppClusNetInterfaces );
+
+};
+
+
+
+/////////////////////////////////////////////////
+// ClusNodes
+[
+    object,
+    uuid(f2e606e4-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster Nodes Interface"),
+    pointer_default(unique)
+]
+interface ClusNodes : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+   HRESULT Item([in] VARIANT varIndex , [out, retval] ClusNode ** ppClusNode);
+};
+
+
+
+/////////////////////////////////////////////////
+// ClusNetwork
+[
+    object,
+    uuid(f2e606f3-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster Network Interface"),
+    pointer_default(unique)
+]
+interface ClusNetwork : ClusObj
+{
+    [propget, hidden]
+    HRESULT Handle( [out, retval] LONG * phandle );
+
+    [propput]
+    HRESULT Name( [in] BSTR bstrNetworkName );
+    [propget]
+    HRESULT NetworkID( [out, retval] BSTR * pbstrNetworkID );
+
+    [propget]
+    HRESULT State( [out,retval] CLUSTER_NETWORK_STATE* dwState );
+
+    [propget]
+    HRESULT NetInterfaces([out, retval] ClusNetworkNetInterfaces ** ppClusNetInterfaces); 
+
+    [propget]
+    HRESULT Cluster( [out,retval] ICluster ** ppCluster );
+};
+
+
+/////////////////////////////////////////////////
+// ClusNetworks
+[
+    object,
+    uuid(f2e606fa-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster Network Collection Interface"),
+    pointer_default(unique)
+]
+interface ClusNetworks : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+   HRESULT Item([in] VARIANT varIndex , [out, retval] ClusNetwork ** ppClusNetwork);
+};
+
+/////////////////////////////////////////////////
+// ClusNetInterface
+[
+    object,
+    uuid(f2e606f4-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster NetInterface Interface"),
+    pointer_default(unique)
+]
+interface ClusNetInterface : ClusObj
+{
+    [propget, hidden]
+    HRESULT Handle( [out, retval] LONG * phandle );
+
+    [propget]
+    HRESULT State( [out,retval] CLUSTER_NETINTERFACE_STATE * dwState );
+
+    [propget]
+    HRESULT Cluster( [out,retval] ICluster ** ppCluster );
+};
+
+
+/////////////////////////////////////////////////
+// ClusNetInterfaces
+[
+    object,
+    uuid(f2e606fb-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster NetInterface Collection Interface in ICluster"),
+    pointer_default(unique)
+]
+interface ClusNetInterfaces : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+   HRESULT Item([in] VARIANT varIndex , [out, retval] ClusNetInterface ** ppClusNetInterface);
+};
+
+/////////////////////////////////////////////////
+// ClusNodeNetInterfaces
+[
+    object,
+    uuid(f2e606fd-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster NetInterface Collection Interface in Node"),
+    pointer_default(unique)
+]
+interface ClusNodeNetInterfaces : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+   HRESULT Item([in] VARIANT varIndex , [out, retval] ClusNetInterface ** ppClusNetInterface);
+};
+
+
+/////////////////////////////////////////////////
+// ClusNetworkNetInterfaces
+[
+    object,
+    uuid(f2e606fc-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster NetInterface Collection Interface in ClusNetwork"),
+    pointer_default(unique)
+]
+interface ClusNetworkNetInterfaces : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+   HRESULT Item([in] VARIANT varIndex , [out, retval] ClusNetInterface ** ppClusNetInterface);
+};
+
+/////////////////////////////////////////////////
+// ClusResGroup
+[
+    object,
+    uuid(f2e606e5-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster Resource Group Interface"),
+    pointer_default(unique)
+]
+interface ClusResGroup : ClusObj
+{
+    [propget, hidden]
+    HRESULT Handle( [out, retval] LONG * phandle );
+
+    [propput]
+    HRESULT Name( [in] BSTR bstrGroupName );
+
+    [propget]
+    HRESULT State( [out,retval] CLUSTER_GROUP_STATE * dwState );
+
+    [propget]
+    HRESULT OwnerNode( [out,retval] ClusNode ** ppOwnerNode );
+
+    [propget]
+    HRESULT Resources( [out, retval] ClusGroupResources ** ppClusterGroupResources );
+
+    [propget]
+    HRESULT PreferredOwnerNodes( [out, retval] ClusGroupOwners ** ppOwnerNodes );
+
+    HRESULT SetPreferredOwnerNodes();
+
+    HRESULT Delete();
+
+    HRESULT Online( [in] LONG nTimeout, [in, optional] ClusNode * pDestinationNode,[out,retval] LONG*  bPending );
+
+    HRESULT Move( [in] LONG nTimeout, [in, optional] ClusNode * pDestinationNode,[out,retval] LONG*  bPending );
+
+    HRESULT Offline([in] LONG nTimeout, [out,retval] LONG*  bPending);
+
+    [propget]
+    HRESULT Cluster( [out,retval] ICluster ** ppCluster );
+};
+
+
+/////////////////////////////////////////////////
+// ClusResGroups
+[
+    object,
+    uuid(f2e606e6-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster Resource Groups Interface"),
+    pointer_default(unique)
+]
+interface ClusResGroups : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+    HRESULT Item([in] VARIANT varIndex , [out, retval] ClusResGroup ** ppClusResGroup);
+
+   [helpstring("Create a new resource group")]
+    HRESULT CreateItem( [in] BSTR bstrResourceGroupName, [out, retval] ClusResGroup ** ppResourceGroup );
+
+    [helpstring("Delete a resource group")]
+    HRESULT DeleteItem( [in] VARIANT varIndex );
+
+};
+
+
+/////////////////////////////////////////////////
+// ClusResource
+[
+    object,
+    uuid(f2e606e7-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster Resource Interface"),
+    pointer_default(unique)
+]
+interface ClusResource : ClusObj
+{
+    [propget, hidden]
+    HRESULT Handle( [out, retval] LONG * phandle );
+
+    [propput]
+    HRESULT Name( [in] BSTR bstrResourceName );
+
+    [propget]
+    HRESULT State( [out,retval] CLUSTER_RESOURCE_STATE* dwState );
+
+    HRESULT BecomeQuorumResource( [in] BSTR bstrDevicePath, [in] LONG lMaxLogSize );
+
+    HRESULT Delete();
+
+    HRESULT Fail();
+    HRESULT Online(LONG nTimeout,LONG*  bPending);
+    HRESULT Offline(LONG nTimeout, LONG*  bPending);
+
+    HRESULT ChangeResourceGroup( [in] ClusResGroup * pResourceGroup );
+
+    HRESULT AddResourceNode( [in] ClusNode * pNode );
+    HRESULT RemoveResourceNode( [in] ClusNode * pNode );
+
+//    HRESULT AddResourceDependency( [in] ClusResource * pResource );
+//    HRESULT RemoveResourceDependency( [in] ClusResource * pResource );
+    HRESULT CanResourceBeDependent( [in] ClusResource * pResource, [out, retval] BOOL * bDependent );
+
+    [propget]
+    HRESULT PossibleOwnerNodes( [out, retval] ClusResOwners ** ppNodes );
+
+    [propget]
+    HRESULT Dependencies( [out, retval] ClusResDependencies ** ppResDependencies );
+
+    [propget]
+    HRESULT Group( [out, retval] ClusResGroup ** ppResGroup );
+
+    [propget]
+    HRESULT OwnerNode( [out, retval] ClusNode ** ppNode );
+
+    [propget]
+    HRESULT Cluster( [out, retval] ICluster ** ppCluster );
+};
+
+/////////////////////////////////////////////////
+// ClusResDependencies
+[
+    object,
+    uuid(f2e606f5-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Resource Dependencies for a resource"),
+    pointer_default(unique)
+]
+interface ClusResDependencies : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+    HRESULT Item([in] VARIANT varIndex , [out, retval] ClusResource ** ppClusResource);
+
+    [helpstring("Create a new resource.and add it to the dependency list")]
+    HRESULT CreateItem( 
+        [in] BSTR bstrResourceName,
+        [in] BSTR bstrResourceType,
+        [in] BSTR bstrGroupName,
+        [in] CLUSTER_RESOURCE_CREATE_FLAGS dwFlags,
+        [out, retval] ClusResource ** ppClusterResource );
+
+    [helpstring("Delete a resource by name or index.")]
+    HRESULT DeleteItem( [in] VARIANT varIndex );
+
+    [helpstring("Add a resource to the list.")]
+    HRESULT AddItem( [in] ClusResource* pResource );
+
+    [helpstring("Remove a resource from the list by name or index.")]
+    HRESULT RemoveItem( [in] VARIANT varIndex );
+
+};
+
+
+/////////////////////////////////////////////////
+// ClusGroupResources
+[
+    object,
+    uuid(f2e606f6-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Resources Collection in a group"),
+    pointer_default(unique)
+]
+interface ClusGroupResources : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+    HRESULT Item([in] VARIANT varIndex , [out, retval] ClusResource ** ppClusResource);
+
+    [helpstring("Create a new resource.")]
+    HRESULT CreateItem( 
+        [in] BSTR bstrResourceName,
+        [in] BSTR bstrResourceType,
+        [in] CLUSTER_RESOURCE_CREATE_FLAGS dwFlags,
+        [out, retval] ClusResource ** ppClusterResource );
+
+    [helpstring("Delete a resource by name or index.")]
+    HRESULT DeleteItem( [in] VARIANT varIndex );
+
+};
+
+/////////////////////////////////////////////////
+// ClusResTypeResources
+[
+    object,
+    uuid(f2e606f7-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("ClusResTypeResources Collection"),
+    pointer_default(unique)
+]
+interface ClusResTypeResources : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+    HRESULT Item([in] VARIANT varIndex , [out, retval] ClusResource ** ppClusResource);
+
+    [helpstring("Create a new resource.")]
+    HRESULT CreateItem( 
+        [in] BSTR bstrResourceName, 
+        [in] BSTR bstrGroupName, 
+        [in] CLUSTER_RESOURCE_CREATE_FLAGS dwFlags,
+        [out, retval] ClusResource ** ppClusterResource );
+
+    [helpstring("Delete a resource by name or index.")]
+    HRESULT DeleteItem( [in] VARIANT varIndex );
+};
+
+
+// A Resource Collection in the ICluster Object.
+
+/////////////////////////////////////////////////
+// ClusResources
+[
+    object,
+    uuid(f2e606e8-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster Resources Collection"),
+    pointer_default(unique)
+]
+interface ClusResources : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+    HRESULT Item([in] VARIANT varIndex , [out, retval] ClusResource ** ppClusResource);
+
+    [helpstring("Create a new resource and add it to the Resource list in the Cluster Object")]
+    HRESULT CreateItem( 
+        [in] BSTR bstrResourceName,
+        [in] BSTR bstrResourceType,
+        [in] BSTR bstrGroupName,
+        [in] CLUSTER_RESOURCE_CREATE_FLAGS dwFlags,
+        [out, retval] ClusResource ** ppClusterResource );
+    [helpstring("Delete a resource by name or index.")]
+    HRESULT DeleteItem( [in] VARIANT varIndex );
+};
+
+/////////////////////////////////////////////////
+// ClusGroupOwners
+[
+    object,
+    uuid(f2e606f8-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Owner Nodes Collection"),
+    pointer_default(unique)
+]
+interface ClusGroupOwners : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+    HRESULT Item([in] VARIANT varIndex , [out, retval] ClusNode ** ppClusNode);
+
+    [helpstring("Insert a Node into the collection")]
+    HRESULT InsertItem([in] ClusNode *pClusNode, [in,optional] LONG nPosition );
+    
+    [helpstring("Delete a Node by name or index.")]
+    HRESULT RemoveItem( [in] VARIANT varIndex );
+    
+    [propget]
+    HRESULT Modified([out,retval] boolean * flag);
+
+
+};
+
+/////////////////////////////////////////////////
+// ClusResOwners
+[
+    object,
+    uuid(f2e606f9-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Owner Nodes Collection"),
+    pointer_default(unique)
+]
+interface ClusResOwners : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+    HRESULT Item([in] VARIANT varIndex , [out, retval] ClusNode ** ppClusNode);
+
+    [helpstring("Add OwnerNode  to the Possible Owner List of the Resource.")]
+    HRESULT AddItem( [in] ClusNode* pNode );
+    
+    [helpstring("Remove a OwnerNode from the list by name or index.")]
+    HRESULT RemoveItem( [in] VARIANT varIndex );
+    [propget]
+    HRESULT Modified([out,retval] boolean * pbflag);
+};
+
+
+/////////////////////////////////////////////////
+// ClusResType
+[
+    object,
+    uuid(f2e606e9-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster Resource Type"),
+    pointer_default(unique)
+]
+interface ClusResType : ClusObj
+{
+
+    HRESULT Delete();
+
+    [propget]
+    HRESULT Cluster( [out,retval] ICluster ** ppCluster );
+
+    /////////////////////////////////
+    // Cluster Resources
+    [propget]
+    HRESULT Resources( [out, retval] ClusResTypeResources ** ppClusterResTypeResources );
+};
+
+
+/////////////////////////////////////////////////
+// ClusResTypes
+[
+    object,
+    uuid(f2e606ea-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Cluster Resource Types Collection"),
+    pointer_default(unique)
+]
+interface ClusResTypes : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+    HRESULT Item([in] VARIANT varIndex , [out, retval] ClusResType ** ppClusResType);
+
+    [helpstring("Create a resource type")]
+    HRESULT CreateItem(
+        [in] BSTR bstrResourceTypeName,
+        [in] BSTR bstrDisplayName,
+        [in] BSTR bstrResourceTypeDll,
+        [in] LONG dwLooksAlivePollInterval,
+        [in] LONG dwIsAlivePollInterval,
+        [out, retval] ClusResType ** ppResourceType );
+    [helpstring("Delete a resource type")]
+    HRESULT DeleteItem( [in] VARIANT varIndex );
+
+};
+
+
+
+
+
+/////////////////////////////////////////////////
+// ClusProperty
+[
+    object,
+    uuid(f2e606eb-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("Property of an object in the cluster"),
+    pointer_default(unique)
+]
+interface ClusProperty : IDispatch
+{
+    [propget]
+    HRESULT Name( [out, retval] BSTR * pbstrName );
+
+    [propget]
+    HRESULT Value( [out, retval] VARIANT * pvarValue );
+
+    [propput, id(DISPID_VALUE)]
+    HRESULT Value( [in] VARIANT varValue );
+};
+
+
+
+/////////////////////////////////////////////////
+// ClusProperties
+[
+    object,
+    uuid(f2e606ec-2631-11d1-89f1-00a0c90d061e),
+    dual,
+    helpstring("ClusProperty collection"),
+    pointer_default(unique)
+]
+interface ClusProperties : ClusObjCollection
+{
+	[propget, id(DISPID_VALUE), helpstring("Given an index, returns an item in the collection.")]
+    HRESULT Item([in] VARIANT varIndex , [out, retval] ClusProperty ** ppClusProperty);
+
+    [helpstring("Add an object")]
+    HRESULT Add( [in] BSTR bstrName, [in] VARIANT varValue, [out, retval] ClusProperty ** pProperty );
+
+    [helpstring("Remove an object")]
+    HRESULT Remove( [in] VARIANT varIndex );
+
+    [helpstring("Save all property changes")]
+    HRESULT SaveChanges();
+};
+
+
+
+/////////////////////////////////////////////////////////
+// MSClusterLib
+[
+    uuid(f2e606f0-2631-11d1-89f1-00a0c90d061e),
+    version(1.0),
+    helpstring("MS Cluster 1.0 Type Library")
+]
+library MSClusterLib
+{
+    importlib("stdole32.tlb");
+
+    // Temporary include file for CLUSAPI constants.
+    //    #include "cluconst.idl"
+
+
+    [
+        uuid(f2e606f1-2631-11d1-89f1-00a0c90d061e),
+        helpstring("Application Class")
+    ]
+    coclass Application
+    {
+        [default] interface IClusterApplication;
+    };
+
+    [
+        uuid(f2e606f2-2631-11d1-89f1-00a0c90d061e),
+        helpstring("Cluster Class")
+    ]
+    coclass Cluster
+    {
+        [default] interface ICluster;
+    };
+
+};
