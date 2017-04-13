@@ -1,0 +1,287 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>IOverlay Interface</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0162.htm','/dssd0000.htm','/dssd0088.htm','/index.htm','/dssd0164.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="If_000106014b000000">IOverlay Interface</A></H2>
+<BR CLEAR=ALL>
+<P>The <B>IOverlay</B> interface provides information so that a filter can write
+directly to video memory while placing the video in the correct window position.
+It is implemented on the input pin of the video renderer and communicates with an
+upstream filter (typically a video decompressor) by calling that filter's
+<A HREF="dssd0164.htm" TARGET="TEXT">IOverlayNotify</A> methods to notify it of changes to the video window.
+
+<P>This interface has no relationship to the DirectDraw&#174; overlay capability.
+The Microsoft video renderer draws data it receives through the <A HREF="dssd0161.htm" TARGET="TEXT">IMemInputPin</A>
+interface, using DirectDraw overlays when available.
+This interface, used in place of <B>IMemInputPin</B>,
+is intended to provide notification support for any upstream filter that bypasses
+the renderer's drawing capabilities, but needs notifications of other display properties.
+
+<P>See the <A HREF="dssd0164.htm" TARGET="TEXT">IOverlayNotify</A> interface for more information on how the
+<B>IOverlay</B> and <B>IOverlayNotify</B> interfaces work together.
+
+<A NAME="If_000106014b010000"></A><P><B>When to Implement</B>
+<P>This interface is implemented on the Microsoft&#174; DirectShow&#153; video renderer filter. It
+can also be implemented on replacement video renderer filters if desired.
+If doing so, implement this interface so that filters writing directly to the
+frame buffer or trying to position an overlay know where to display their video.
+To implement this interface, the renderer must be prepared to use methods on
+the <A HREF="dssd0164.htm" TARGET="TEXT">IOverlayNotify</A> interface of the filter doing the drawing, with notifications
+of video property changes.
+
+<P>The window-based renderer in DirectShow supports both <A HREF="dssd0161.htm" TARGET="TEXT">IMemInputPin</A> and
+<A HREF="dssd0163.htm" TARGET="TEXT">IOverlay</A> interfaces. These two interfaces are mutually exclusive. A filter chooses to use
+the <B>IOverlay</B> transport interface by providing a media type during connection
+that has a subtype of MEDIASUBTYPE_Overlay. After connection, it will be able
+to get and use successfully the <B>IOverlay</B> interface. If it connects with any
+other video formats (such as MEDIASUBTYPE_RGB8), trying to call through
+<B>IOverlay</B> returns <A HREF="dssd0293.htm#errcodes_0001060a01000043" TARGET="TEXT">VFW_E_NOT_OVERLAY_CONNECTION</A>.
+
+<A NAME="If_000106014b020000"></A><P><B>When to Use</B>
+<P>Use the methods on this function from an upstream filter that must
+control video overlay properties and intends to handle the displaying of the
+video data itself. This typically is used by hardware video decoders that have
+an alternate connection to the video hardware.
+
+<A NAME="If_000106014b030000"></A><P><B>Methods in Vtable Order</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IUnknown methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns pointers to supported interfaces.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">AddRef</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Increments the reference count.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Decrements the reference count.
+</FONT></TD></TR></TABLE>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IOverlay methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0163.htm#If_000106014b030500" TARGET="TEXT">GetPalette</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current palette.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0163.htm#If_000106014b030900" TARGET="TEXT">SetPalette</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the palette.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0163.htm#If_000106014b030400" TARGET="TEXT">GetDefaultColorKey</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the default color key.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0163.htm#If_000106014b030300" TARGET="TEXT">GetColorKey</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the identifier of the currently active color key.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0163.htm#If_000106014b030800" TARGET="TEXT">SetColorKey</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Changes the color key.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0163.htm#If_000106014b030700" TARGET="TEXT">GetWindowHandle</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the window handle.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0163.htm#If_000106014b030200" TARGET="TEXT">GetClipList</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the clipping list.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0163.htm#If_000106014b030600" TARGET="TEXT">GetVideoPosition</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current video source and destination rectangles.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0163.htm#If_000106014b030100" TARGET="TEXT">Advise</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets up an advise link for the overlay events.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0163.htm#If_000106014b030a00" TARGET="TEXT">Unadvise</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Terminates the advise link.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="If_000106014b030100">IOverlay::Advise</A></H3>
+<A HREF="dssd0163.htm" TARGET="TEXT">IOverlay Interface</A>
+<P>Sets up an advise link for the overlay events specified by
+the <I>dwInterests</I> parameter.
+
+<P><B>HRESULT</B> <B>Advise</B><B>(</B><BR>&nbsp;&nbsp;<B>IOverlayNotify</B> <B>*</B> <I>pOverlayNotify</I><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>dwInterests</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pOverlayNotify</I>
+ </DT><DD>[in] Notification interface.
+</DD><DT><I>dwInterests</I>
+ </DT><DD>[in] Callbacks of interest, which can be any subset of the following events.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Event </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ADVISE_NONE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">No changes.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ADVISE_CLIPPING </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Change in clipping region (synchronized with the window).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ADVISE_PALETTE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Change in palette.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ADVISE_COLORKEY </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Change of chroma key value.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ADVISE_POSITION </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Change in position of video window (not synchronized with the window).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ADVISE_ALL </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">All of the above.
+</FONT></TD></TR></TABLE>
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This method sets up an advise link for the <A HREF="dssd0164.htm" TARGET="TEXT">IOverlayNotify</A>
+interface to receive notifications. If one of these events occurs, the appropriate
+entry point in the <I>pOverlayNotify</I> parameter passed in is called
+(<A HREF="dssd0164.htm#If_000106014c030100" TARGET="TEXT">IOverlayNotify::OnClipChange</A>,
+<A HREF="dssd0164.htm#If_000106014c030200" TARGET="TEXT">IOverlayNotify::OnColorKeyChange</A>,
+<A HREF="dssd0164.htm#If_000106014c030300" TARGET="TEXT">IOverlayNotify::OnPaletteChange</A>, or
+<A HREF="dssd0164.htm#If_000106014c030400" TARGET="TEXT">IOverlayNotify::OnPositionChange</A>).
+
+<P>Only one advise link can be set on any given <A HREF="dssd0163.htm" TARGET="TEXT">IOverlay</A> interface.
+Trying to set another notification interface on second and subsequent calls
+returns <A HREF="dssd0293.htm#errcodes_0001060a0100005f" TARGET="TEXT">VFW_E_ADVISE_ALREADY_SET</A>. You can cancel an advise link by using
+<A HREF="dssd0163.htm#If_000106014b030a00" TARGET="TEXT">IOverlay::Unadvise</A>.
+<H3><HR COLOR=#0000FF><A NAME="If_000106014b030200">IOverlay::GetClipList</A></H3>
+<A HREF="dssd0163.htm" TARGET="TEXT">IOverlay Interface</A>
+<P>Retrieves the clipping list.
+
+<P><B>HRESULT</B> <B>GetClipList</B><B>(</B><BR>&nbsp;&nbsp;<B>RECT</B> <B>*</B> <I>pSourceRect</I><B>,</B><BR>&nbsp;&nbsp;<B>RECT</B> <B>*</B> <I>pDestinationRect</I><B>,</B><BR>&nbsp;&nbsp;<B>RGNDATA</B> <B>**</B> <I>ppRgnData</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSourceRect</I>
+</DT><DD>[out] Bounding client rectangle.
+</DD><DT><I>pDestinationRect</I>
+</DT><DD>[in] Destination rectangle.
+</DD><DT><I>ppRgnData</I>
+</DT><DD>[out] Header and data describing clipping. If successful,
+the Microsoft&#174; Win32&#174; <A HREF="dssd0389.htm#external_00010a0109000011" TARGET="TEXT">CoTaskMemFree</A> function should free memory.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The <A HREF="dssd0163.htm" TARGET="TEXT">IOverlay</A> implementation allocates the memory for the
+clipping rectangles, because it can vary in length. The filter calling this method
+should free the memory (using <A HREF="dssd0389.htm#external_00010a0109000011" TARGET="TEXT">CoTaskMemFree</A>) when it is finished with it.
+<H3><HR COLOR=#0000FF><A NAME="If_000106014b030300">IOverlay::GetColorKey</A></H3>
+<A HREF="dssd0163.htm" TARGET="TEXT">IOverlay Interface</A>
+<P>Retrieves the current color key used for chroma keying.
+
+<P><B>HRESULT</B> <B>GetColorKey</B><B>(</B><BR>&nbsp;&nbsp;<B>COLORKEY</B> <B>*</B> <I>pColorKey</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pColorKey</I>
+</DT><DD>[out] Pointer to where the current color key for chroma keying is copied.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>If you change the color key by using the <A HREF="dssd0163.htm#If_000106014b030800" TARGET="TEXT">IOverlay::SetColorKey</A> method,
+all the advise links receive an <A HREF="dssd0164.htm#If_000106014c030200" TARGET="TEXT">IOverlayNotify::OnColorKeyChange</A> callback method
+with the new color.
+
+<P>If no color key is currently being used, this method returns <A HREF="dssd0293.htm#errcodes_0001060a01000042" TARGET="TEXT">VFW_E_NO_COLOR_KEY_SET</A>.
+<H3><HR COLOR=#0000FF><A NAME="If_000106014b030400">IOverlay::GetDefaultColorKey</A></H3>
+<A HREF="dssd0163.htm" TARGET="TEXT">IOverlay Interface</A>
+<P>Retrieves the default color key used for a chroma key overlay.
+
+<P><B>HRESULT</B> <B>GetDefaultColorKey</B><B>(</B><BR>&nbsp;&nbsp;<B>COLORKEY</B> <B>*</B> <I>pColorKey</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pColorKey</I>
+</DT><DD>[out] Pointer to where the default color key is copied.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>A filter using color keys can get a default color from the video renderer.
+The default color key can then be installed into the window using
+<A HREF="dssd0163.htm#If_000106014b030800" TARGET="TEXT">IOverlay::SetColorKey</A>. The colors returned through this method vary depending
+on the current display mode. If the colors are 8-bit palettized, they will be
+bright system colors (such as magenta). If the display is in a true-color mode,
+they will be shades of black.
+
+<P>The <A HREF="dssd0163.htm" TARGET="TEXT">IOverlay</A> interface ensures that separate instances of the
+renderer on the same computer get different color keys so that
+overlays do not conflict.
+<H3><HR COLOR=#0000FF><A NAME="If_000106014b030500">IOverlay::GetPalette</A></H3>
+<A HREF="dssd0163.htm" TARGET="TEXT">IOverlay Interface</A>
+<P>Retrieves the current system palette.
+
+<P><B>HRESULT</B> <B>GetPalette</B><B>(</B><BR>&nbsp;&nbsp;<B>DWORD</B> <B>*</B> <I>pdwColors</I><B>,</B><BR>&nbsp;&nbsp;<B>PALETTEENTRY</B> <B>**</B> <I>ppPalette</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pdwColors</I>
+</DT><DD>[out] Number of colors present.
+</DD><DT><I>ppPalette</I>
+</DT><DD>[out] Retrieved palette structure.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106014b030600">IOverlay::GetVideoPosition</A></H3>
+<A HREF="dssd0163.htm" TARGET="TEXT">IOverlay Interface</A>
+<P>Retrieves the current video source and destination rectangles.
+
+<P><B>HRESULT</B> <B>GetVideoPosition</B><B>(</B><BR>&nbsp;&nbsp;<B>[out]</B> <B>RECT</B> <I>*pSourceRect</I><B>,</B><BR>&nbsp;&nbsp;<B>[out]</B> <B>RECT</B> <I>*pDestinationRect</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSourceRect</I>
+</DT><DD>[out] Bounding video client rectangle.
+</DD><DT><I>pDestinationRect</I>
+</DT><DD>[in] Destination video rectangle.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106014b030700">IOverlay::GetWindowHandle</A></H3>
+<A HREF="dssd0163.htm" TARGET="TEXT">IOverlay Interface</A>
+<P>Retrieves the current window handle.
+
+<P><B>HRESULT</B> <B>GetWindowHandle</B><B>(</B><BR>&nbsp;&nbsp;<B>HWND</B> <I>*pHwnd</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pHwnd</I>
+</DT><DD>[out] Window handle.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns a pointer to the window handle.
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106014b030800">IOverlay::SetColorKey</A></H3>
+<A HREF="dssd0163.htm" TARGET="TEXT">IOverlay Interface</A>
+<P>Changes the color key.
+
+<P><B>HRESULT</B> <B>SetColorKey</B><B>(</B><BR>&nbsp;&nbsp;<B>COLORKEY</B> <B>*</B> <I>pColorKey</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pColorKey</I>
+</DT><DD>[out] Pointer to the color key value to be set. If successful, the actual
+color key value selected is copied to this parameter.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>If you change the color key by using the <B>IOverlay::SetColorKey</B> method,
+all the advise links will receive an <A HREF="dssd0164.htm#If_000106014c030200" TARGET="TEXT">IOverlayNotify::OnColorKeyChange</A> callback
+method with the new color.
+
+<P>When using <A HREF="dssd0163.htm" TARGET="TEXT">IOverlay</A> on a palettized display, a filter can either install a
+color key (using <B>IOverlay::SetColorKey</B>) or install a palette
+(using <A HREF="dssd0163.htm#If_000106014b030900" TARGET="TEXT">IOverlay::SetPalette</A>), but not both.
+This is because color keys in this mode require a palette to be realized that
+would conflict with <A HREF="dssd0163.htm#If_000106014b030900" TARGET="TEXT">SetPalette</A>. Color keys can be uninstalled by
+requesting a color key with the CK_NOCOLORKEY flag. Likewise, any palette installed
+through <B>SetPalette</B> can be uninstalled by calling
+<B>SetPalette</B> and passing in null parameters
+(that is, SetPalette(0,NULL)).
+
+<P>Trying to set a palette when a color key is installed returns a <A HREF="dssd0293.htm#errcodes_0001060a01000045" TARGET="TEXT">VFW_E_PALETTE_SET</A> error. Trying to set a color key when a palette is installed returns <A HREF="dssd0293.htm#errcodes_0001060a01000046" TARGET="TEXT">VFW_E_COLOR_KEY_SET</A>.
+<H3><HR COLOR=#0000FF><A NAME="If_000106014b030900">IOverlay::SetPalette</A></H3>
+<A HREF="dssd0163.htm" TARGET="TEXT">IOverlay Interface</A>
+<P>Sets the palette.
+
+<P><B>HRESULT</B> <B>SetPalette</B><B>(</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>dwColors</I><B>,</B><BR>&nbsp;&nbsp;<B>PALETTEENTRY</B> <B>*</B> <I>pPalette</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>dwColors</I>
+</DT><DD>[in] Number of colors present.
+</DD><DT><I>pPalette</I>
+</DT><DD>[in] Colors to use for the palette.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This method sets a logical palette for the window. The window is not guaranteed to
+always have the colors requested in the actual system device palette.
+The Microsoft&#174; Windows&#174; operating system only guarantees those colors when the window is the
+foreground active window. The current device palette can be obtained by calling
+<A HREF="dssd0163.htm#If_000106014b030500" TARGET="TEXT">IOverlay::GetPalette</A>.
+
+<P>If the device does not have a palette, it returns <A HREF="dssd0293.htm#errcodes_0001060a01000049" TARGET="TEXT">VFW_E_NO_DISPLAY_PALETTE</A>.
+<H3><HR COLOR=#0000FF><A NAME="If_000106014b030a00">IOverlay::Unadvise</A></H3>
+<A HREF="dssd0163.htm" TARGET="TEXT">IOverlay Interface</A>
+<P>Terminates the advise link established with the <A HREF="dssd0164.htm" TARGET="TEXT">IOverlayNotify</A> interface.
+
+<P><B>HRESULT</B> <B>Unadvise</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>This method terminates the advise link established by using the <A HREF="dssd0163.htm#If_000106014b030100" TARGET="TEXT">IOverlay::Advise</A>
+method. Only one advise link can be maintained at any one time.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

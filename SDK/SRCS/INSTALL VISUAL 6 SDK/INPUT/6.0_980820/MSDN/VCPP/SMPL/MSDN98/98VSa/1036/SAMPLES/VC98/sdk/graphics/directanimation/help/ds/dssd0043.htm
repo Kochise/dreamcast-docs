@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>About WDM Video Capture</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0042.htm','/dssd0000.htm','/dssd0030.htm','/index.htm','/dssd0044.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="wdmover_000103010d000000">About WDM Video Capture</A></H2>
+<BR CLEAR=ALL>
+<P>This article provides an overview of video capture using the Microsoft&#174; Windows&#174; 98 and Windows NT&#174; Win32&#174; Driver Model (WDM) and Microsoft DirectShow&#174;. 
+
+
+<P>This article assumes that you have a basic understanding of WDM and CSA.
+
+
+ For background information, see Hardware Development at <A HREF="http://www.microsoft.com/" TARGET="_top">http://www.microsoft.com</A>.
+
+<P><B>Contents of this article:</B>
+<UL><LI><A HREF="dssd0043.htm#wdmover_000103010d010000" TARGET="TEXT">A Brief History of Windows Video Capture</A>
+ <LI><A HREF="dssd0043.htm#wdmover_000103010d020000" TARGET="TEXT">WDM Overview</A>
+ <LI><A HREF="dssd0043.htm#wdmover_000103010d030000" TARGET="TEXT">WDM Video Capture Architecture</A>
+ <LI><A HREF="dssd0043.htm#wdmover_000103010d040000" TARGET="TEXT">Filter Graph Configuration</A>
+ <LI><A HREF="dssd0043.htm#wdmover_000103010d050000" TARGET="TEXT">Conclusion</A>
+ <LI><A HREF="dssd0043.htm#wdmover_000103010d060000" TARGET="TEXT">New WDM Capture Interfaces and Filters</A>
+</UL>
+<A NAME="wdmover_000103010d010000"></A><P><B>A Brief History of Windows Video Capture</B>
+<P>Video for Windows 1.<I>x</I>
+
+
+ was released in November 1992 for Windows 3.1 and was optimized for capturing movies to disk.
+
+
+ Since then, video capture rates have risen dramatically due to use of the PCI bus, bus mastering controllers, NT striped sets, fast wide SCSI, and direct transfer of captured video from adapter memory to disk without data copies. Despite capture rates that now exceed 20 MB per second and a large number of clients for Video for Windows, deficiencies in the Video for Windows architecture exposed by the emergence of video conferencing required that a new video capture technology be developed.
+
+<P>The Video for Windows architecture lacks features important to video conferencing, television viewing, capture of video fields, and additional data streams such as Vertical
+
+
+ blanking interval (VBI). Vendors have extended Video for Windows by implementing proprietary extensions, which are product specific, to circumvent these limitations. However, without standardized interfaces, applications that use these features must include hardware-dependent code. The tight coupling between Video for Windows capture drivers and display drivers means that changes made to capture drivers require changes to display drivers as well. 
+
+<P>In addition, the Video for Windows interface, <A HREF="dssd0389.htm#external_00010a0109000002" TARGET="TEXT">AVICap</A>, does not work well with DirectShow because <B>AVICap</B> allocates buffers. If a DirectShow layer is put on top
+
+
+ of <B>AVICap</B>, the buffers must be copied at that transition point, which is very inefficient.
+With the integration of digital versatile disc (DVD), MPEG decoders, video decoders and tuners, video port extensions (<A HREF="dssd0410.htm#gloss_00010b0115000003" TARGET="TEXT">VPE</A>), and audio codecs on single adapters, a unified driver model that supports all of these devices and handles resource contention is needed. 
+
+
+<A NAME="wdmover_000103010d020000"></A><P><B>WDM Overview</B>
+<P>DirectShow supplies backward compatibility for Video for Windows applications without the shortcomings of Video for Windows. WDM video capture aims to provide additional support for the following: USB conferencing cameras, 1394 DV devices, desktop cameras, TV viewing, multiple video streams support and <A HREF="dssd0410.htm#gloss_00010b0115000003" TARGET="TEXT">VPE</A> capture support. This support is provided through kernel-based streaming.
+
+<P>WDM-based streaming extends the nonkernel streaming semantics of Microsoft DirectShow by providing a kernel connection. 
+
+Streaming services are processed by the WDM Streaming Class Driver and other cross-process system software components. The WDM Streaming Class Driver is also responsible for calling a <A HREF="dssd0401.htm#gloss_00010b010c000006" TARGET="TEXT">minidriver</A>, which is a hardware-specific dynamic-link library (DLL) that provides device-specific controls. The <A HREF="dssd0401.htm#gloss_00010b010c000006" TARGET="TEXT">minidriver</A> and the Microsoft-provided WDM Streaming Class Driver
+
+
+ work together to provide low-level services for the lowest latency streaming, and DirectShow provides the higher-level features specific for your application. Because the Stream class
+
+
+ supports a uniform streaming model for standard and custom data types, and supports data transfer between kernel drivers without requiring a transition to user mode, it is a highly efficient mode to use.
+
+<P>Previously, DirectShow filters transmitted data to and from the kernel whenever necessary to achieve things like decompression or rendering. Unfortunately, each of these transitions of the data stream from user mode to kernel mode was time-consuming because of the transition itself, and because of parameter validation, security validation, and possibly data copying, that must occur. 
+
+
+<P>Through kernel streaming, a stream makes fewer transitions between user and the kernel mode. It can be either partially or entirely produced and consumed in <A HREF="dssd0399.htm#gloss_00010b010a000001" TARGET="TEXT">kernel mode</A>. When streams are processed in kernel mode, the DirectShow filters merely expose control mechanisms to direct the streams. This greatly reduces the overhead associated with numerous transitions between modes. 
+
+<P>Kernel streams can pass data up to the filter graph at appropriate points, depending on the application.
+
+
+ The following diagram illustrates the transition to user mode.
+
+<P><IMG SRC="art/wdmimg1.gif" WIDTH="462" HEIGHT="230" ALT="Kernel Streams" ><P> In video capture scenario,
+
+
+ uncompressed video data would be passed back up to the video capture filter for writing or rendering.
+
+
+ Also, because kernel streaming supports multiple streams, other types of data contained in the stream, such as timecode or closed captioning, could be passed up simultaneously.
+
+
+<A NAME="wdmover_000103010d030000"></A><P><B>WDM Video Capture Architecture</B>
+<P>The following diagram shows the three basic components of the WDM capture architecture.
+
+<P><IMG SRC="art/wdmimg2.gif" WIDTH="246" HEIGHT="97" ALT="WDM Capture Architecture" ><P>Because the WDM capture architecture was designed to integrate smoothly with DirectShow, it is easy
+
+
+ to build capture graphs in DirectShow by using WDM capture filters that send control messages from DirectShow into the streaming class. The Ksproxy.ax, Kstune.ax, and Ksxbar.ax filters that ship in the Windows 98 DDK
+
+
+ enable WDM streaming data, such as data from USB
+
+
+ conferencing cameras, 1394 DV devices, TV viewing, and desktop cameras, to be easily controlled and sent to the DirectShow capture graph. 
+
+
+The following diagram demonstrates how these components are integrated into the basic architecture.
+
+<P><IMG SRC="art/wdmimg3.gif" WIDTH="337" HEIGHT="273" ALT="Components of WDM Capture Architecture" ><P>In this diagram, the Ksproxy.ax, Kstune.ax, Ksxbar.ax, and other DirectShow filters communicate directly with the Stream class. The Microsoft WDM Stream class, through its participation in CSA, transports high-bandwidth, time-stamped, latency-sensitive data streams between <A HREF="dssd0399.htm#gloss_00010b010a000001" TARGET="TEXT">kernel mode</A> components or between <A HREF="dssd0399.htm#gloss_00010b010a000001" TARGET="TEXT">kernel mode</A> drivers and user-mode components. Through CSA, the Stream class works well with DirectShow in that it shares media types, has similar streaming states (Stop, Pause, and Run), and shares the same concept of pins and connections. This provides an easy transition of data from the Stream class to the filters in the filter graph.
+
+<P>The Ksproxy.ax, Kstune.ax, and Ksxbar.ax filters also have supporting <A HREF="dssd0401.htm#gloss_00010b010c000006" TARGET="TEXT">minidriver</A>s (or one minidriver that supports all three). Video capture minidrivers are clients of the Stream class and control hardware devices that produce streams of video images and related data. These minidrivers provide the following functionality:
+<UL><LI>Capture of compressed and uncompressed video streams, vertical blanking interval data, timecode, and ancillary data streams.
+<LI>Control of devices associated with video streams such as TV tuners, video routing devices, TV audio control, and video compressors.
+<LI>Compatibility with WDM-CSA.
+</UL>
+<P>Stream class video capture drivers can support multiple, simultaneous streams of compressed and uncompressed video, timecode, closed caption, raw and decoded VBI data, as well as custom data formats. For each data type that can be produced
+
+
+ simultaneously with other data types, the driver should create a new stream. The Stream class exposes each stream as a separate WDM-CSA pin. Each stream can be connected to another WDM-CSA kernel filter, or it can make the transition to user mode and flow on an output pin of a DirectShow user-mode filter. Each stream (or pin) can support a variety of different formats. For example, a single pin can provide RGB16, RGB24, YVU9, and JPEG digital video. For more information on minidrivers, see the Windows 98 DDK.
+
+
+
+<A NAME="wdmover_000103010d040000"></A><P><B>Filter Graph Configuration</B>
+<P>The association between DirectShow filters and CSA makes DirectShow filters a powerful and relatively safe method for manipulating data from a <A HREF="dssd0399.htm#gloss_00010b010a000001" TARGET="TEXT">kernel mode</A> Stream class driver. The flexibility of DirectShow makes numerous configurations of filters possible. One possible configuration of user-mode DirectShow filters for simultaneous preview and capture of video to disk is shown in the following diagram.
+
+<P><IMG SRC="art/wdmimg4.gif" WIDTH="548" HEIGHT="285" ALT="Configuration of user-mode DirectShow filters" ><P>In this diagram, an incoming TV signal can be tuned in with the Tuner filter and routed with the Crossbar filter.
+
+
+ The data in various streams is sent
+
+
+ to the video or audio capture filters to be saved on disk. This includes audio streams, video streams, and any other ancillary data in various streams such as SMPTE <A HREF="dssd0408.htm#gloss_00010b0113000002" TARGET="TEXT">timecode</A> or closed captioning data.
+
+
+<A NAME="wdmover_000103010d050000"></A><P><B>Conclusion</B>
+<P>WDM video capture was designed to resolve the problems inherent in the Video for Windows architecture. The main advantages of WDM video capture are: 
+<UL><LI>32 bit drivers.
+ <LI>Synergy between DirectShow and CSA.
+ <LI>Single class driver architecture for hardware (such as video ports and chip sets) that is shared between video capture devices and DVD/MPEG devices.
+ <LI>Television tuner, input selection, and support for fields, VBI, and Video port extensions (<A HREF="dssd0410.htm#gloss_00010b0115000003" TARGET="TEXT">VPE</A>).
+ <LI>One driver works on both Windows 98 and NT platforms.
+
+</UL>
+<P>Because of the large installed base of Video for Windows applications, it is anticipated that Video for Windows drivers will continue to flourish for devices that are primarily used for capturing movies. Version 1.1e of Video for Windows currently ships in Windows 98 to provide operating system support for these devices. However, the WDM video capture architecture provides optimal support for capture devices used primarily for TV viewing and video conferencing.
+
+
+<A NAME="wdmover_000103010d060000"></A><P><B>New WDM Capture Interfaces and Filters</B>
+<P>Some of the new WDM capture interfaces in DirectShow are <A HREF="dssd0110.htm#If_0001060116000000" TARGET="TEXT">IAMTVTuner</A>, <A HREF="dssd0095.htm#If_0001060107000000" TARGET="TEXT">IAMCrossbar</A>, <I>IAMAnalogVideoEncoder</I>, <I>IAMAnalogVideoDecoder</I>, <I>IAMVideoProcAmp</I>, and <I>IAMCameraControl</I>.
+
+
+<P>Some of the new Windows 98 video capture filters for WDM are Ksproxy.ax, Kstune.ax, Ksxbar.ax. See the Windows 98 DDK for more information on these filters.
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

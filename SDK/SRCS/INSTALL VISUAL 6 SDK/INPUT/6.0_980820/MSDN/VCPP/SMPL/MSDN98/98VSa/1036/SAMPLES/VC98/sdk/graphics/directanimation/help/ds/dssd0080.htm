@@ -1,0 +1,168 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Connecting Transform Filters</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0079.htm','/dssd0000.htm','/dssd0077.htm','/index.htm','/dssd0081.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="transon_0001050603000000">Connecting Transform Filters</A></H2>
+<BR CLEAR=ALL>
+<P>This article describes some of the connection issues faced when creating a transform filter. Connecting any two filters requires negotiating which media types to use and deciding on a common allocator for passing samples. Since transform filters are connected on both sides, and since some transform filters use the media types and allocators of other filters in the graph, it is important to understand the concepts involved in transform filter connections. 
+
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0080.htm#transon_0001050603010000" TARGET="TEXT">How Allocator Negotiation Works</A>
+<LI><A HREF="dssd0080.htm#transon_0001050603020000" TARGET="TEXT">Establishing Media Type Connections</A>
+</UL>
+<A NAME="transon_0001050603010000"></A><P><B>How Allocator Negotiation Works</B>
+<P>For information about the connection process, including media type and allocator negotiation, 
+see <A HREF="dssd0070.htm" TARGET="TEXT">Connection Model</A>. When you are determining your 
+transform filter characteristics, it might help for you to understand the model of allocator negotiation for 
+transform filters.
+
+<P>If your transform filter requires copying, then it will copy media samples from a buffer established 
+by its input pin to a buffer established by its output pin. These buffers are provided by allocators that might actually be located in other filters, perhaps even several filters removed if the filters in between do not 
+copy the data. 
+
+<P>A copying transform filter typically tries to use the allocator of the upstream filter for its 
+input pin, and the allocator of the downstream filter for its output pin. During the connection process, 
+the output pin of the upstream filter determines which allocator to use for the upstream 
+transport, so the input pin of the copy transform must be prepared to create an allocator for 
+the upstream transport if its <A HREF="dssd0161.htm#If_0001060149030100" TARGET="TEXT">IMemInputPin::GetAllocator</A> method is called by the 
+connecting output pin. The base classes provide a way to create a new allocator from 
+the input pin of any connection. 
+
+<P>On the other hand, transform-inplace filters do not make copies, but rather modify the data 
+in an existing buffer. These filters should always offer the allocator from the downstream filter to 
+the upstream filter. This requires a reconnection, because the filter does not know about the 
+downstream filter when its input pin is first connected. Also, because inplace-transforms do not 
+change the media type, the media type from the downstream filter should be offered to the upstream 
+filter upon reconnection. 
+
+<A NAME="transon_0001050603010100"></A><P><B>Connecting Filter Graphs: An Example</B>
+<P>To better understand the allocation model for a transform-inplace
+filter, the following illustration shows a simple and common example of a filter graph.
+
+<P><IMG SRC="art/tfiltr04.gif" WIDTH="533" HEIGHT="44" ALT="Filter graph example" >
+
+
+<P>This simple example demonstrates the model of the transform-inplace filter offering its 
+downstream allocator to its upstream filter. Consider what happens when InPlace E is 
+connected to VidRen F.
+
+<P>Upon connection, the video renderer filter (VidRen F) offers its allocator 
+for use by the upstream inplace filter (InPlace E). Because it is a transform-inplace filter, 
+InPlace E offers the allocator to the next filter upstream, InPlace D, and so on. 
+This reconnection and renegotiation occurs until it encounters either the source filter 
+or a copy transform filter. In this case
+
+ it meets a decompressor, CopyDec C. 
+(The copy transform filter cannot offer its allocator upstream, because it must perform a 
+copy operation.) So the decompressor will be writing
+ 
+directly to the video renderer's buffer, which might be a DirectDraw&#174; surface. 
+This demonstrates why it is a good practice to write a transform filter as a transform-inplace
+filter and pass allocators from the renderer upstream, if possible.
+
+
+
+
+<P>On the other hand, consider filters InPlace B and CopyDec C. 
+What if the downstream filter from a transform-inplace filter 
+is a copy transform filter instead of a renderer? In this case, the copy transform 
+filter will offer to create its own allocator on its input pin 
+(the base classes handle this), and the transform-inplace filter can then offer that allocator downstream upon reconnection (the same as if it were connected to a renderer filter). 
+
+
+<P>However, even though CopyDec C can create its own 
+allocator (from its <A HREF="dssd0161.htm#If_0001060149030100" TARGET="TEXT">IMemInputPin::GetAllocator</A> method), the source filter, 
+Source A, uses its own buffer&#151;say, a file. So when InPlace B connects to CopyDec C, 
+InPlace B will have accepted the source filter's allocator already and will force that 
+allocator to be used for the transport between itself and the decompressor filter. 
+InPlace B can then provide the upstream filter, Source A, with the option of using 
+the allocator offered by CopyDec C, but the source filter will refuse this allocator so that an extra copy does not have to be made from the file buffer to the decompressor's input buffer.
+
+<P>Therefore, any upstream filter can force the use of its allocator downstream but should 
+have good reason to do so (such as if it already has a buffer). In this example, 
+only one copy is being made (by the decompression filter) between the 
+file buffer and the video memory. 
+
+
+<A NAME="transon_0001050603020000"></A><P><B>Establishing Media Type Connections</B>
+<P>When pins from different filters are connected, they must both agree on a common media type 
+for the samples they will exchange. A quick review of the connection mechanism might help highlight 
+how transform filters handle media type negotiations. 
+
+<P>This section contains the following topics.
+<UL><LI><A HREF="dssd0080.htm#transon_0001050603020100" TARGET="TEXT">The Connection Process: A Summary</A>
+<LI><A HREF="dssd0080.htm#transon_0001050603020200" TARGET="TEXT">When Reconnections Occur</A>
+</UL>
+<A NAME="transon_0001050603020100"></A><P><B>The Connection Process: A Summary</B>
+<P>When one filter's output pin is called by the filter graph manager to connect to an input 
+pin of a second filter, the <A HREF="dssd0165.htm#If_000106014d030200" TARGET="TEXT">IPin::Connect</A> method is called. This, in turn, calls 
+<A HREF="dssd0199.htm#Lib_0001060213040500" TARGET="TEXT">CBaseOutputPin::CheckConnect</A> to obtain interfaces 
+from the connected pin and <A HREF="dssd0200.htm#Lib_0001060214060200" TARGET="TEXT">CBasePin::AgreeMediaType</A> to find a common media type. 
+
+<P><A HREF="dssd0200.htm#Lib_0001060214060200" TARGET="TEXT">AgreeMediaType</A> calls 
+<A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">CBasePin::TryMediaTypes</A>, which uses media type enumerators to 
+query the pins for preferred media types. <A HREF="dssd0132.htm#If_000106012c000000" TARGET="TEXT">IEnumMediaTypes</A> is an interface on the connected 
+input pin that <A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">TryMediaTypes</A> uses first. The base classes use <B>IEnumMediaTypes</B> to repeatedly call a <A HREF="dssd0200.htm#Lib_0001060214000000" TARGET="TEXT">CBasePin</A> member function called 
+<A HREF="dssd0200.htm#Lib_0001060214061500" TARGET="TEXT">GetMediaType</A> for each media type in the list. 
+You use this member function in your input and output pin classes
+to return the media types that your pin prefers. 
+
+<P><A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">TryMediaTypes</A> calls the output pin's <A HREF="dssd0200.htm#Lib_0001060214060700" TARGET="TEXT">CheckMediaType</A> 
+member function with each input type returned. You must use 
+<B>CheckMediaType</B> to verify whether this 
+type is acceptable. If no media types are found (for example 
+<A HREF="dssd0200.htm#Lib_0001060214061500" TARGET="TEXT">GetMediaType</A> may not even be used on the connected input pin, or may return an unacceptable media type), then 
+<A HREF="dssd0200.htm#Lib_0001060214060200" TARGET="TEXT">AgreeMediaType</A> obtains a media type 
+enumerator for the output pin and tries each of these in turn. Again, the 
+<B>GetMediaType</B> member function of the derived output pin 
+is called for each type. In this case, it can determine media types by inquiring about any existing connection established by the filter's input pin.
+
+<A NAME="transon_0001050603020200"></A><P><B>When Reconnections Occur</B>
+<P>For transform filters that do not modify the media type from input pin to output pin 
+(such as most in-place transforms and many copy transforms), a reconnection scheme must be in place for offering the downstream filter's media type to the upstream filter. To understand this, consider the media type negotiation of the transform-inplace Filter B in the following illustration.
+
+<P><IMG SRC="art/tfiltr05.gif" WIDTH="544" HEIGHT="44" ALT="Diagram showing arrangement of filters and pins" >
+
+
+<P>The input pin of Filter B is connected first and establishes a media type with the upstream 
+output pin (AOutPin). When the output pin of Filter B is connected next, it must 
+use the enumerator from the output pin of the connected upstream filter (AOutPin), because it does 
+not have one of its own. 
+
+<P>If the pin of the downstream filter, CInPin, can accept this, then the connection is 
+complete. However, assume that Filter C does not agree to this media type but proposes 
+a media type that Filter B can handle. 
+
+<P>Before deciding that it can handle the media type, Filter B calls the 
+<A HREF="dssd0165.htm#If_000106014d030a00" TARGET="TEXT">IPin::QueryAccept</A> method on AOutPin to ensure that it is acceptable. If no media type can be found that is acceptable for all the filters, then the BOutPin to CInPin connection will fail. 
+(It is possible to find that a transform-inplace filter will connect to either its upstream or its downstream neighbors, but not both simultaneously.) 
+
+<P>If a suitable type is found, BOutPin must force a reconnection on the entire filter, 
+and pass the established media type (the media type of CInPin) to AOutPin, when AOutPin and BInPin are 
+connected again. 
+
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

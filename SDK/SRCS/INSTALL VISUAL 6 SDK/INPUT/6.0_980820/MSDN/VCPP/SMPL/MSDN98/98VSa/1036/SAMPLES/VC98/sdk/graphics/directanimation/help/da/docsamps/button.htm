@@ -1,0 +1,128 @@
+<HTML> 
+<HEAD>
+<TITLE>DirectAnimation SDK, JScript sample</TITLE>
+</HEAD>	 
+
+<BODY BGCOLOR=WHITE TOPMARGIN=15 LEFTMARGIN=10>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2> 
+          
+
+<DIV ID=controlDiv>
+<OBJECT ID="DAViewer"
+        STYLE="position:absolute; left:10; top:50;width:800;height:800;z-index: -1"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D">
+</OBJECT>
+</DIV>
+<FORM NAME="form1" ACTION="">
+<CENTER>
+<H2>Button</H2>
+<INPUT TYPE=BUTTON VALUE="" NAME=StartBtn OnClick="start()"> 
+</CENTER>
+
+
+
+<SCRIPT LANGUAGE="JAVASCRIPT">
+<!--
+
+  var m_frm = document.form1;
+  m_frm.StartBtn.value = "Show";
+  var FlagNotStarted = true;
+  
+
+ 
+  function start()
+  {
+ 
+    if (FlagNotStarted)
+    {
+     m_frm.StartBtn.value = "         ";
+     button();
+     FlagNotStarted = false;
+    }
+  }
+
+
+   function button ()
+    {
+
+    // This example demonstrates how to make a button. The first step is to 
+  // make an image pickable, so that the event (in this case, a jump to an URL)
+  // occurs only when the mouse is within the button's borders.
+
+  // In this example, the square turns red when the mouse is within
+  // the button's borders. When the button is within the borders AND when the left mouse button is down
+  // you are transferred to the Microsoft home page.
+
+
+  // First, select the meter library 
+  m = DAViewer.MeterLibrary;
+
+
+  // Create a detectable empty image. We need this because we can only make 
+  // images and geometries pickable and we have to define our pickable events. 
+
+  myImage = m.DetectableEmptyImage;
+
+  // We need to crop it, so set the minimum and maximum points equal to those of the square
+  // we're going to draw later on.
+  minPt = m.Point2(-.01,-.01)
+  maxPt = m.Point2(.01,.01);
+
+  // Now crop the detectable empty image to the right size
+  myImage = myImage.Crop(minPt, maxPt);
+
+  // Make the image pickable
+  pickImg = myImage.Pickable();
+
+  // Construct an event. In this case, something will happen only when the mouse
+  // is within the pickable region AND when the mouse's left button is down. 
+  myEvent = m.AndEvent(m.LeftButtonDown, pickImg.PickEvent);
+  
+
+   // This will set the color to blue when the mouse is not within the square,
+  // and to red when it is within the square.
+  
+  colcyc = new ActiveXObject("DirectAnimation.DAColor");
+  colcyc.Init(m.Until(m.Cyan, pickImg.PickEvent, 
+                m.Until(m.Red, m.NotEvent(pickImg.PickEvent), colcyc)));
+  
+  // This will be the color fill for the square
+  myFill = m.SolidColorImage(colcyc);
+
+  // Now draw a square (a rectangle with equal width and height, and fill it in
+  // with our cycling colors
+  sqImg = m.Rect(.04,.04).Fill(m.DefaultLineStyle, myFill);
+  // And some text for the button
+  sqString = "To Microsoft";
+  sqTextIm = m.StringImage(sqString, m.DefaultFont);
+  // Combine the square with the text
+  sqImg = m.Overlay(sqTextIm, sqImg); 
+
+  // Now put our pickable, empty image on top of the rectangle
+  // and move it up
+  finalImg = m.Overlay(pickImg.Image, sqImg).Transform(m.Translate2(0,.04));
+
+  // Finally, define the callback. In this case, we are saying that we are using JScript 
+  // and that when myEvent occurs, call the function "goToMS()"
+  // Notice that, when using JScript, we must include the parentheses with the function
+  // even though there are no arguments 
+  goURL = m.ScriptCallback("goToMS()", myEvent, "JScript");
+   
+  // The image that will be displayed is the square until the callback occurs.
+  // The second "finalImg" is really just a placeholder  
+  DAViewer.Image = m.Until(finalImg,goURL,finalImg);
+
+  DAViewer.Start(); 
+
+  }
+
+  function goToMS()
+  {window.location = "http://www.microsoft.com";}
+
+//-->
+</script>
+
+</FORM>
+</FONT>
+</BODY>
+</HTML>

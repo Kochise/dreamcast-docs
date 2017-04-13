@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Register DirectShow Objects</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0052.htm','/dssd0000.htm','/dssd0045.htm','/index.htm','/dssd0054.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="register_0001040108000000">Register DirectShow Objects</A></H2>
+<BR CLEAR=ALL>
+<P>This section describes the steps you must take to make your Microsoft&#174; DirectShow&#153; objects self-registering. It describes the relationships between the registry entry points called by OLE, the globally-defined <A HREF="dssd0217.htm#Lib_0001060225000000" TARGET="TEXT">CFactoryTemplate</A> array elements, and the <A HREF="dssd0287.htm#structs_0001060501000600" TARGET="TEXT">AMOVIESETUP_MEDIATYPE</A>, <A HREF="dssd0287.htm#structs_0001060501000700" TARGET="TEXT">AMOVIESETUP_PIN</A>, and <A HREF="dssd0287.htm#structs_0001060501000500" TARGET="TEXT">AMOVIESETUP_FILTER</A> structures.
+
+<P>To enable objects in a dynamic-link library (DLL) to register themselves, two OLE-defined entry points must be provided in the DLL and exported:
+
+<UL><LI><A HREF="dssd0389.htm#external_00010a0109000028" TARGET="TEXT">DllRegisterServer</A>
+<LI><A HREF="dssd0389.htm#external_00010a0109000029" TARGET="TEXT">DllUnregisterServer</A>
+</UL>
+<P>With these entry points in your DLL, you can use the Regsvr32.exe tool to register and unregister your DLL or setup tools, or applications can register the filter programmatically.
+
+
+<A NAME="register_0001040108010000"></A><P><B>Implementing Self-Registration</B>
+<P>To implement a self-registering filter, carry out the following steps.
+
+<OL><LI>Add <A HREF="dssd0389.htm#external_00010a0109000028" TARGET="TEXT">DllRegisterServer</A> and <A HREF="dssd0389.htm#external_00010a0109000029" TARGET="TEXT">DllUnregisterServer</A> to the export list
+in your filter's DEF file.
+
+<LI>Provide implementations for these functions, which call the DirectShow <A HREF="dssd0262.htm#fmutil_0001060306000300" TARGET="TEXT">AMovieDllRegisterServer2</A> function with parameters of TRUE and FALSE, respectively. For example:
+
+<PRE><FONT FACE="Courier" SIZE="2">
+  STDAPI DllRegisterServer()
+  {
+    return AMovieDllRegisterServer2(TRUE); 
+  }
+
+  HRESULT DllUnregisterServer()
+  {
+    return AMovieDllRegisterServer2(FALSE); 
+  }
+</FONT></PRE>
+<P>You can add code to these functions to set up custom registry entries. 
+
+<LI>Define the setup data structures for each filter based on the <A HREF="dssd0287.htm#structs_0001060501000600" TARGET="TEXT">AMOVIESETUP_MEDIATYPE</A>, <A HREF="dssd0287.htm#structs_0001060501000700" TARGET="TEXT">AMOVIESETUP_PIN</A>, and <A HREF="dssd0287.htm#structs_0001060501000500" TARGET="TEXT">AMOVIESETUP_FILTER</A> structures.
+
+<P>For example, here are the structures for the Ball.ax sample filter:
+
+<PRE><FONT FACE="Courier" SIZE="2">
+   // Setup data
+
+  const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
+  { &amp;MEDIATYPE_Video
+  , &amp;MEDIASUBTYPE_NULL };
+
+  const AMOVIESETUP_PIN sudOpPin =
+  { L"Output"
+  , FALSE
+  , TRUE
+  , FALSE
+  , FALSE
+  , &amp;CLSID_NULL
+  , NULL
+  , 1
+  , &amp;sudOpPinTypes };
+
+  const AMOVIESETUP_FILTER sudBallax =
+  { &amp;CLSID_BouncingBall
+  , L"Bouncing Ball"
+  , MERIT_UNLIKELY
+  , 1
+  , &amp;sudOpPin };
+</FONT></PRE>
+<LI>In the <A HREF="dssd0217.htm#Lib_0001060225000000" TARGET="TEXT">CFactoryTemplate</A> g_Templates array that instantiates your class, ensure that the first parameter has the name of the filter, (for example, "Bouncing Ball") and that the last parameter has the address of the <A HREF="dssd0287.htm#structs_0001060501000500" TARGET="TEXT">AMOVIESETUP_FILTER</A> structure you defined. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+  CFactoryTemplate gTemplates[]={
+   L"Bouncing Ball",                // Name of the filter
+   &amp;CLSID_BouncingBall,             // CLSID of the filter
+   CBouncingBall::CreateInstance,   // Static function to be called by class factory
+   NULL,                            //
+   &amp;sudBallax}                      // Address of the AMOVIESETUP_FILTER structure 
+  };
+</FONT></PRE>
+<LI>Tag the DLL file as self-registering by adding the string "OLESelfRegistering" to its resource (defining AMOVIE_SELF_REGISTER in your resource file does this automatically if you are using Activex.rcv and Activex.ver). This string enables applications to determine whether the object is self-registering without loading the DLL.
+</OL>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

@@ -1,0 +1,162 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Use the DSound Audio Renderer</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0066.htm','/dssd0000.htm','/dssd0063.htm','/index.htm','/dssd0068.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="dsrender_0001050104000000">Use the DSound Audio Renderer</A></H2>
+<BR CLEAR=ALL>
+<P>This section describes and demonstrates how to support DirectSound&#174;, the audio component of Microsoft&#174; DirectX&#153;, in Microsoft DirectShow&#153; applications. DirectSound interfaces and classes support application control of a sound's origin relative to the user, 
+
+
+
+ which enables the programmer to simulate a three-dimensional audio environment. The <A HREF="dssd0308.htm#filteref_000107010e000000" TARGET="TEXT">DSound Audio Renderer</A> filter supports the <A HREF="dssd0098.htm#If_000106010a000000" TARGET="TEXT">IAMDirectSound</A> interface; use this interface to retrieve the filter's <A HREF="dssd0389.htm#external_00010a010900007b" TARGET="TEXT">IDirectSound</A> interface and sound buffers.
+
+<P>This section contains the following topics.
+<UL><LI><A HREF="dssd0067.htm#dsrender_0001050104010000" TARGET="TEXT">Using the DSound Audio Renderer in an Application</A>
+ <LI><A HREF="dssd0067.htm#dsrender_0001050104020000" TARGET="TEXT">Configuring the Primary Sound Buffer</A>
+</UL>
+<P>Programmers who want to use DirectSound objects and the <A HREF="dssd0308.htm#filteref_000107010e000000" TARGET="TEXT">DSound Audio Renderer</A> filter in their applications should be familiar with how to initialize and create 
+
+
+
+DirectShow objects, as well as the DirectSound objects and interfaces. You should also be familiar with the basics of DirectShow and know how to create filter graphs and add filters to a filter graph. For more information about DirectShow, see the Getting Started section of the DirectShow SDK. The Microsoft DirectX SDK documentation has information and documentation for DirectSound and its associated objects.
+
+
+<A NAME="dsrender_0001050104010000"></A><P><B>Using the DSound Audio Renderer in an Application</B>
+<P>To support DirectSound, you first must instantiate the <A HREF="dssd0308.htm#filteref_000107010e000000" TARGET="TEXT">DSound Audio Renderer</A> filter and add it to an existing filter graph. When you add a File Source (<A HREF="dssd0314.htm#filteref_0001070114000000" TARGET="TEXT">async</A> or <A HREF="dssd0315.htm#filteref_0001070115000000" TARGET="TEXT">URL</A>) filter to the graph and call the <A HREF="dssd0146.htm#If_000106013a030400" TARGET="TEXT">IGraphBuilder::RenderFile</A> method on its output pin, it will automatically use the <A HREF="dssd0308.htm#filteref_000107010e000000" TARGET="TEXT">DirectSound Audio Renderer</A> for sound playback, except on Windows NT. On Windows NT, you will not get the DirectSound Audio Renderer filter unless you ask for it explicitly. When the filter graph is complete, you can use the <A HREF="dssd0098.htm#If_000106010a000000" TARGET="TEXT">IAMDirectSound</A> interface methods to retrieve the DSound Audio Renderer filter's <A HREF="dssd0389.htm#external_00010a010900007b" TARGET="TEXT">IDirectSound</A> pointer and its primary and secondary sound buffers. The sound buffers must be in stereo to simulate three-dimensional playback; a monaural signal can not produce this kind of sound placement.
+
+
+
+
+
+
+<P>To provide access to DirectSound correctly, you must follow these guidelines:
+
+<UL><LI>Don't call any <A HREF="dssd0098.htm#If_000106010a000000" TARGET="TEXT">IAMDirectSound</A> methods until you instantiate and connect the renderer to the filter graph.
+
+
+
+ <LI>Call the <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">IUnknown::Release</A> method on each pointer when you are done using it. 
+ <LI>Release your objects before disconnecting the filter from the graph. Destroying the filter graph disconnects the filter, so make sure you release these objects first.
+
+
+
+ If you try to access the <A HREF="dssd0389.htm#external_00010a010900007b" TARGET="TEXT">IDirectSound</A> interface or sound buffer pointers after you disconnect the filter's input pin, your code will not work as expected.
+</UL>
+<P>The following steps and code fragments demonstrate how to add the <A HREF="dssd0308.htm#filteref_000107010e000000" TARGET="TEXT">DSound Audio Renderer</A> filter to a filter graph and retrieve its DirectSound interface and sound buffers. Your application doesn't have to use implementation identical to this example; this example is meant to be as succinct and straightforward as possible. For the sake of brevity, this example has no error checking.
+
+<P>1) Include the amaudio.h header file; it contains the <A HREF="dssd0098.htm#If_000106010a000000" TARGET="TEXT">IAMDirectSound</A> interface definition.
+<PRE><FONT FACE="Courier" SIZE="2">#include &lt;amaudio.h&gt;
+</FONT></PRE>
+<P>2) Declare your function. This example function takes three pointers: a pointer to the primary and secondary sound buffers and a pointer to a DirectSound object.
+
+
+
+<PRE><FONT FACE="Courier" SIZE="2">HRESULT Setup(LPDIRECTSOUND *pDSound,
+&#009;LPDIRECTSOUNDBUFFER *pDSoundPrimary,
+&#009;LPDIRECTSOUNDBUFFER *pDSoundSecondary)
+</FONT></PRE>
+<P>3) Create pointers for the filter graph, filter, and <A HREF="dssd0098.htm#If_000106010a000000" TARGET="TEXT">IAMDirectSound</A> interface. Create the filter graph and the <A HREF="dssd0308.htm#filteref_000107010e000000" TARGET="TEXT">DSound Audio Renderer</A> filter.
+<PRE><FONT FACE="Courier" SIZE="2">
+{
+&#009;IGraphBuilder&#009;*Fg;
+&#009;HRESULT&#009;&#009;hr;
+&#009;IBaseFilter&#009;&#009;*pDSWaveRender;
+&#009;IAMDirectSound&#009;*pAMDirectSound;
+
+&#009;// Create the filter graph
+&#009;CoInitialize(NULL);
+&#009;hr = CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC,
+&#009;&#009;&#009;IID_IGraphBuilder, (LPVOID *)&amp;Fg);
+
+&#009;// Create a DSound Audio Renderer filter
+    &#009;hr = CoCreateInstance((REFCLSID)CLSID_DSoundRender, NULL, CLSCTX_INPROC,
+&#009;&#009;&#009;(REFIID)IID_IBaseFilter, (void **)&amp;pDSWaveRender);
+</FONT></PRE>
+<P>4) Add the filter to the filter graph. Once you do, you no longer need the local pointer, so you can release it.
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;hr = Fg-&gt;AddFilter( pDSWaveRender, NULL );
+
+&#009;pDSWaveRender-&gt;Release();  // Filter graph has a reference to it now
+</FONT></PRE>
+<P>5) Retrieve the filter's <A HREF="dssd0098.htm#If_000106010a000000" TARGET="TEXT">IAMDirectSound</A> interface.
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;hr = pDSWaveRender-&gt;QueryInterface( IID_IAMDirectSound,
+&#009;&#009;&#009;&#009;&#009;&#009;(void **)&amp;pAMDirectSound );
+</FONT></PRE>
+<P>6) Add the source filter and render its output pin. As long as the source file has audio data, the <A HREF="dssd0308.htm#filteref_000107010e000000" TARGET="TEXT">DSound Audio Renderer</A> will automatically connect to the graph as the audio renderer. For the sake of brevity, this code is omitted.
+
+
+
+<P>7) Retrieve the <A HREF="dssd0389.htm#external_00010a010900007b" TARGET="TEXT">IDirectSound</A> interface and the filter's primary and secondary sound buffers.
+<PRE><FONT FACE="Courier" SIZE="2">  &#009;     
+&#009;hr = pAMDirectSound-&gt;GetDirectSoundInterface(pDSound);
+&#009;hr = pAMDirectSound-&gt;GetPrimaryBufferInterface(pDSoundPrimary);
+&#009;hr = pAMDirectSound-&gt;GetSecondaryBufferInterface(pDSoundSecondary);
+</FONT></PRE>
+<P>8) Now that you have the interface pointers, you can use them as desired in your application.
+
+
+
+ When your application no longer needs the interface pointers, make sure to release them in the correct order, as demonstrated in the following code fragment.
+
+
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;pDSound-&gt;Release();
+&#009;pDSoundPrimary-&gt;Release();
+&#009;pDSoundSecondary-&gt;Release();
+&#009;pAMDirectSound-&gt;Release();  // MUST BE SECOND TO LAST
+&#009;Fg-&gt;Release();&#009;&#009;    // MUST BE LAST
+
+&#009;return NOERROR;
+}
+</FONT></PRE>
+<P>The preceding steps detail only how to retrieve the applicable DirectSound interfaces; they do not address positioning the sound itself. For documentation on these interfaces, their functionality, and how to use them in your programs, consult the DirectX documentation.
+
+<A NAME="dsrender_0001050104020000"></A><P><B>Configuring the Primary Sound Buffer</B>
+<P>The format of the primary sound buffer determines whether you can use DirectSound three-dimensional audio effects; to do so, it must be stereo-capable. The following code fragment shows how to obtain a pointer to a DirectSound primary sound buffer and configure it correctly.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;WAVEFORMATEX  wfx;
+&#009;DWORD dw;
+&#009;IDirectSoundBuffer *pDSBPrimary;
+
+&#009;// Get the primary sound buffer interface
+&#009;HRESULT hr = pAMDirectSound-&gt;GetPrimaryBufferInterface(pDSBPrimary);
+
+&#009;// Retrieve the buffer's format
+&#009;pDSBPrimary-&gt;GetFormat(&amp;wfx, sizeof(wfx), &amp;dw);
+
+&#009;// If the current signal is monaural (1 channel), you need to change it to stereo
+&#009;if (wfx.nChannels == 1) {
+&#009;&#009;  wfx.nChannels = 2;
+&#009;&#009;  wfx.nBlockAlign *= 2;
+&#009;&#009;  wfx.nAvgBytesPerSec *= 2;
+&#009;&#009;  pDSBPrimary-&gt;SetFormat(&amp;wfx);
+&#009;}
+</FONT></PRE>
+<P>You can now control the buffer and manipulate the sound playback as desired. For additional information on DirectSound, sound buffers, and creating three-dimensional sound effects, consult the DirectX SDK documentation.
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

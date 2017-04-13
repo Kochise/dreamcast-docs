@@ -1,0 +1,114 @@
+<HTML> 
+<HEAD>
+<TITLE>DirectAnimation SDK, JScript sample</TITLE>
+</HEAD>	 
+
+<BODY BGCOLOR=WHITE TOPMARGIN=15 LEFTMARGIN=10>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2> 
+          
+
+<DIV ID=controlDiv>
+<OBJECT ID="DAViewer"
+        STYLE="position:absolute; left:10; top:50;width:800;height:800;z-index: -1"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D">
+</OBJECT>
+</DIV>
+<FORM NAME="form1" ACTION="">
+<CENTER>
+<H2>Matte</H2>
+<INPUT TYPE=BUTTON VALUE="" NAME=StartBtn OnClick="start()"> 
+</CENTER>
+
+
+
+<SCRIPT LANGUAGE="JAVASCRIPT">
+<!--
+
+  var m_frm = document.form1;
+  m_frm.StartBtn.value = "Show";
+  var FlagNotStarted = true;
+  
+
+ 
+  function start()
+  {
+ 
+    if (FlagNotStarted)
+    {
+     m_frm.StartBtn.value = "         ";
+     matte();
+     FlagNotStarted = false;
+    }
+  }
+
+
+   function matte ()
+    {
+  // This example shows how to make a matte from a line of text.
+  // A matte works like a stencil overlaying an image. The visible part of the
+  // image corresponds to the cutouts of the stencil, which, in this case, is the
+  // text.
+
+  // This matte is animated. It undergoes various transformations (such as translation 
+  // and shearing) over time.
+
+  m = DAViewer.MeterLibrary;
+
+  // This is the font style of the text. The color will be ignored because the text
+  // acts as the cutout, revealing the underlying image. We're making the font bold to 
+  // make it thicker
+  matteFs = m.Font("Garamond", 72, m.Black).Bold();
+
+  // This is the text string that will be the matte
+  textString1 = "Matte";
+
+  // Show the matte
+  matteImage = m.StringImage(textString1, matteFs).Transform(m.Translate2(0,.06));
+  // Label
+  labelText = "This will be the matte";
+  labelImage = m.StringImage(labelText, m.DefaultFont).Transform(m.Translate2(0,.05));
+  // Combine the matte example and the explanatory text
+  basicMatte = m.Overlay(matteImage, labelImage);
+
+ 
+  // Give the underlying image a time-varying color
+  col = m.ColorHslAnim(m.LocalTime, m.DANumber(.5), m.DANumber(.5));
+
+  // Make a solid color image
+  im = m.SolidColorImage(col);  
+
+  // Create a matte from the text
+  textMatte1 = m.TextMatte(m.DAString(textString1), matteFs);
+
+  // These are a variety of transformations used on the matte
+  // This is used to translate the matte along the x-axis
+  dx = m.Mul(m.DANumber(.01), m.Sin(m.Div(m.LocalTime,m.DANumber(2))));
+  // This scales the matte
+  dxy = m.Add(m.Mul(m.DANumber(.5), m.Sin(m.LocalTime)), m.DANumber(1));
+  // Scale the matte uniformly along the x and y axes
+  xfScale = m.Scale2UniformAnim(dxy);
+  // Translate the matte along the x-axis
+  xfTrans = m.Translate2Anim(dx,m.DANumber(0));
+  // Rotate the matte
+  xfRotate = m.Rotate2Anim(m.Div(m.LocalTime,m.DANumber(3)));
+  // Shear the matte
+  xfShear = m.XShear2Anim(m.Sin(m.LocalTime));
+  // Apply all the transformations
+  textMatte2 = textMatte1.Transform(xfScale).Transform(xfShear).Transform(xfRotate).Transform(xfTrans);
+  
+  // Clip the image with the matte
+  clippedImage2 = im.Clip(textMatte2);
+
+  // Set the image
+  DAViewer.Image = m.Overlay(basicMatte, clippedImage2);
+  DAViewer.Start();
+
+  }
+
+//-->
+</script>
+
+</FORM>
+</FONT>
+</BODY>
+</HTML>

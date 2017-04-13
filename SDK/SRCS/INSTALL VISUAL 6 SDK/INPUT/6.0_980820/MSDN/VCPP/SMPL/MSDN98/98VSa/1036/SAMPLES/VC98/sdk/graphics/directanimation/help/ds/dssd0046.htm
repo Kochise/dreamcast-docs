@@ -1,0 +1,214 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Play a Movie from C++</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0045.htm','/dssd0000.htm','/dssd0045.htm','/index.htm','/dssd0047.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Play_ContC_0001040101000000">Play a Movie from C++</A></H2>
+<BR CLEAR=ALL>
+<P>This article walks through a simple C++ program designed to demonstrate one way to play movies. It is based on the PlayFile function code, taken from the Playfile.cpp file, which you can find in the Playfile sample in the Samples\ds\player directory. 
+
+<P>The PlayFile function has no control over the filters selected by the filter graph manager to play the input media file or over the playback window created. This article contains the following sections.
+<UL><LI><A HREF="dssd0046.htm#Play_ContC_0001040101010000" TARGET="TEXT">Playing a Media File</A> &#151; the basic code to play back a media file.
+<LI><A HREF="dssd0046.htm#Play_ContC_0001040101020000" TARGET="TEXT">Adding Media Seeking</A> &#151; shows the code needed to seek to a particular location in the media file.
+</UL>
+<P>See these related sections to add a particular feature to your playback code:
+<UL><LI><A HREF="dssd0047.htm" TARGET="TEXT">Control the Video Playback Window from C++</A> &#151; demonstrates how to set the playback window's style and position. 
+<LI><A HREF="dssd0048.htm" TARGET="TEXT">Display a Filter's Property Page from C++</A> &#151; demonstrates how to display a filter's property page, so that the user can change how media files are played back.
+</UL>
+<A NAME="Play_ContC_0001040101010000"></A><P><B>Playing a Media File</B>
+<P>This section explains the code needed to play a media file from within C/C++. The Playfile sample contains Playfile.cpp and demonstrates how to create an application window, display a menu to open a media file, and call the PlayFile function to play the media file. You can examine the Playfile application in the Samples\ds\player\Playfile directory to see how to use the PlayFile function. To learn how to build the Playfile sample from Visual C++ 5.<I>x</I>, see <A HREF="dssd0051.htm#bldvc_0001040106020100" TARGET="TEXT">Setting the Visual Studio Include and Lib Directories</A>.
+
+<P>The PlayFile function plays a specified file in a playback window. This function uses the filter graph manager to automatically render the media clip. The filter graph manager selects the appropriate filters and constructs the filter graph. 
+
+<P>PlayFile function code demonstrates:
+<UL><LI>Basic interfaces needed to play and control a media file.
+<LI>Instantiating the filter graph manager.
+<LI>Calling the filter graph manager to build the filter graph that renders the media file.
+<LI>Playing the media file.
+<LI>Accessing events to tell when the playback is finished (media file ended).
+</UL>
+<P>After any function call that retrieves an interface pointer (<A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A>, <A HREF="dssd0146.htm#If_000106013a030400" TARGET="TEXT">RenderFile</A>, and <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A>), you should insert error-checking code to make sure the interface pointer was successfully obtained; if it wasn't, release any interfaces pointers already obtained. An example of error-checking code is:
+<PRE><FONT FACE="Courier" SIZE="2">
+        if (FAILED(hr)) {
+            goto ObjectRelease; // go to the clean-up section
+        }
+</FONT></PRE>
+<P>You can call the PlayFile function from an application with code such as the following:
+<PRE><FONT FACE="Courier" SIZE="2">
+  TCHAR *szFilename = "c:\\dxmedia\\movie\\movie.avi";
+  PlayFile(szFilename);
+</FONT></PRE>
+<P>Perform the following steps to play a media file from within C/C++. You don't necessarily have to perform the steps in the order presented. 
+<OL><LI>Include the necessary headers.
+<PRE><FONT FACE="Courier" SIZE="2">
+  #include &lt;windows.h&gt;
+  #include &lt;mmsystem.h&gt;
+  #include &lt;streams.h&gt;
+  #include "playfile.h"
+</FONT></PRE>
+<LI>Define a windows message constant and the HELPER_RELEASE macro, which will be used to release the interfaces from the WndMainProc callback (see the Playfile code for generic window code).
+<PRE><FONT FACE="Courier" SIZE="2">
+ #define WM_GRAPHNOTIFY  WM_USER+13
+ #define HELPER_RELEASE(x) { if (x) x-&gt;Release(); x = NULL; }
+</FONT></PRE>
+<LI>Declare variables. 
+<PRE><FONT FACE="Courier" SIZE="2">
+ HWND      ghApp;
+ HINSTANCE ghInst;
+ HRESULT   hr;
+ LONG      evCode;
+ LONG      evParam1;
+ LONG      evParam2;
+</FONT></PRE>
+<P>The <I>ghApp</I> variable is the handle of window to notify when the graph signals an event. The <I>ghInst</I> variable is the HINSTANCE of the window. The <I>evCode</I> variable will hold the event code, and the <I>evParam1</I> and <I>evParam2</I> variables will hold the event parameters.
+
+<LI>Declare and initialize the necessary interfaces. The reference count of the interfaces is automatically incremented on initialization, so you don't need to call the <A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">IUnknown::AddRef</A> method on them. For this example, you need only the four interfaces shown in the following code. For more information, see the documentation for the <A HREF="dssd0151.htm#If_000106013f000000" TARGET="TEXT">IMediaEventEx</A>, <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A>, <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A>, and <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> interfaces. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+  IGraphBuilder *pigb  = NULL;
+  IMediaControl *pimc  = NULL;
+  IMediaEventEx *pimex = NULL;
+  IVideoWindow  *pivw  = NULL;
+</FONT></PRE>
+<LI>Define the function. The <I>szFile</I> parameter is the name of the media file that will be played.
+<PRE><FONT FACE="Courier" SIZE="2">
+    void PlayFile (LPSTR szFile)
+    {   
+        HRESULT hr;
+</FONT></PRE>
+<LI>Create a Unicode (wide character) string from the input file name.
+<PRE><FONT FACE="Courier" SIZE="2">
+        WCHAR wFile[MAX_PATH];
+        MultiByteToWideChar( CP_ACP, 0, szFile, -1, wFile, MAX_PATH );
+</FONT></PRE>
+<LI>Instantiate the filter graph manager, asking for the <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A> interface.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+        hr = CoCreateInstance(CLSID_FilterGraph,
+        NULL,
+        CLSCTX_INPROC_SERVER,
+        IID_IGraphBuilder,
+        (void **)&amp;pigb);
+</FONT></PRE>
+<LI>Query for the <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A> interface (provides the methods to run, pause, and stop the playback), the <A HREF="dssd0151.htm#If_000106013f000000" TARGET="TEXT">IMediaEventEx</A> interface (so you can receive event notifications), and the <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> interface to hide the window when the movie is finished playing.
+<PRE><FONT FACE="Courier" SIZE="2">
+   pigb-&gt;QueryInterface(IID_IMediaControl, (void **)&amp;pimc);
+   pigb-&gt;QueryInterface(IID_IMediaEventEx, (void **)&amp;pimex);
+   pigb-&gt;QueryInterface(IID_IVideoWindow, (void **)&amp;pivw);
+</FONT></PRE>
+<LI>Ask the filter graph manager to build the filter graph that renders the input file. This does not play the media file. (When you play the file with <B>Run</B>, the filter graph will automatically render the input file's media type. You do not have to specify a renderer filter.) 
+<PRE><FONT FACE="Courier" SIZE="2">
+   hr = pigb-&gt;RenderFile(wFile, NULL);
+</FONT></PRE>
+<LI>Use a window to capture graph signal events. This not only improves performance, but allows your application to run in any threading model. 
+<PRE><FONT FACE="Courier" SIZE="2">
+   pimex-&gt;SetNotifyWindow((OAHWND)ghApp, WM_GRAPHNOTIFY, 0);
+</FONT></PRE>
+<P>The window specified by <I>ghApp</I> will handle messages in response to all events from the graph. If an event occurs, DirectShow posts a WM_GRAPHNOTIFY message to the window. 
+<LI>Start playing the media file.
+<PRE><FONT FACE="Courier" SIZE="2">
+   hr = pimc-&gt;Run();
+</FONT></PRE>
+<P>Alternatively, if your playback had a pause or stop button (see, for example, the CPlay sample or <A HREF="dssd0058.htm#cdemo_0001040301000000" TARGET="TEXT">Controlling Filter Graphs Using C</A>), you can pause or stop the playback on the button event with the <A HREF="dssd0149.htm#If_000106013d030500" TARGET="TEXT">IMediaControl::Pause</A> or <A HREF="dssd0149.htm#If_000106013d030800" TARGET="TEXT">IMediaControl::Stop</A> method, as shown in the following code.
+<PRE><FONT FACE="Courier" SIZE="2">
+        hr = pimc-&gt;Pause();
+        hr = pimc-&gt;Stop();
+</FONT></PRE>
+</OL>
+<P>The WndMainProc callback function in Playfile handles the filter graph messages and releases the interfaces when necessary, using the HELPER_RELEASE macro. The GetClipFileName function gets the movie to be played, while the WinMain function creates the window. These are all generic windows functions.
+
+
+<P>This section showed how to play a media file from the beginning. The next section shows how to control where within a media file to start and stop playing.
+
+
+<A NAME="Play_ContC_0001040101020000"></A><P><B>Adding Media Seeking</B>
+<P>You can use the <A HREF="dssd0154.htm#If_0001060142000000" TARGET="TEXT">IMediaPosition</A> or <A HREF="dssd0158.htm#If_0001060146000000" TARGET="TEXT">IMediaSeeking</A> interface to seek to a particular place in your media file. The <A HREF="dssd0154.htm#If_0001060142030800" TARGET="TEXT">IMediaPosition::put_CurrentPosition</A> method enables you to specify a start time within the media file. For example, you can use the following code to rewind to the media file's beginning.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+  IMediaPosition *pimp;
+  hr = pigb-&gt;QueryInterface(&amp;IID_IMediaPosition, (void **)&amp;pimp);
+  hr = pimp-&gt;put_CurrentPosition(0);
+</FONT></PRE>
+<P>Time is specified in 100-nanosecond units. The following code seeks into the media file 1 second:
+<PRE><FONT FACE="Courier" SIZE="2">
+    hr = pimp-&gt;put_CurrentPosition(10000000);
+</FONT></PRE>
+<P>You can use the <A HREF="dssd0154.htm#If_0001060142030b00" TARGET="TEXT">IMediaPosition::put_StopTime</A> method to set the time within the media file to stop playback.
+
+<P>However, with <A HREF="dssd0154.htm#If_0001060142000000" TARGET="TEXT">IMediaPosition</A> you can seek only to times within a media file. With the <A HREF="dssd0158.htm#If_0001060146000000" TARGET="TEXT">IMediaSeeking</A> interface, you can set your seeking time format to 100-nanosecond time units, frames, bytes of data, media samples, or interlaced video fields. You set the format you want to use with the <A HREF="dssd0158.htm#If_0001060146031100" TARGET="TEXT">IMediaSeeking::SetTimeFormat</A> method. Make sure your media file is not playing when you the set the format.
+
+<P>The term <I>media time</I> refers to positions within a seekable medium. Media time can be expressed in a variety of units, and indicates a position within the data in the file. The following table shows the possible media time formats.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_MEDIA_TIME </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Seeks to the specified time in the media file, in 100-nanosecond units. This is the default. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_BYTE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Seeks to the specified byte in the stream. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_FIELD </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Seeks to the specified interlaced video field. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_FRAME </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Seeks to the specified video frame. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_SAMPLE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Seeks to the specified sample in the stream. 
+</FONT></TD></TR></TABLE>
+<P>For example, the following code sets the format so that the application seeks for sample numbers.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+   IMediaSeeking *pims; 
+   hr = pigb-&gt;QueryInterface(IID_IMediaSeeking, (void **)&amp;pims);
+   hr = pims-&gt;SetTimeFormat(&amp;TIME_FORMAT_SAMPLE);
+</FONT></PRE>
+<P>An application can use the various seeking modes to seek in a stream to a particular video frame or audio sample without doing time/rate conversions itself. This is useful for editing, which requires sample-accurate playback. The frame or sample number that the application specifies is passed through to the AVI or MPEG parser without the risk of rounding errors.
+
+<P>The following steps show how to set which frame in a media file to start playing at and which frame to stop playing at; for example, to start playing a movie at the fifth frame after its beginning. You can insert this code into the PlayFile function anywhere after the <A HREF="dssd0146.htm#If_000106013a030400" TARGET="TEXT">RenderFile</A> function has built the filter graph.
+
+<OL><LI>Access the <A HREF="dssd0158.htm#If_0001060146000000" TARGET="TEXT">IMediaSeeking</A> interface. 
+<PRE><FONT FACE="Courier" SIZE="2">
+   IMediaSeeking *pims; 
+   hr = pigb-&gt;QueryInterface(IID_IMediaSeeking, (void **)&amp;pims);
+</FONT></PRE>
+<LI>Set the time format. In the following example, the time format is set to seek to frames.
+<PRE><FONT FACE="Courier" SIZE="2">
+   hr = pims-&gt;SetTimeFormat(&amp;TIME_FORMAT_FRAME);
+</FONT></PRE>
+<LI>Declare and initialize the media-seeking variables. In this case, they are frames within the media file to start and stop playback. The following values set the start frame to 5 and the stop frame to 15.
+<PRE><FONT FACE="Courier" SIZE="2">
+   LONGLONG start = 5L;
+   LONGLONG stop = 15L;
+</FONT></PRE>
+<LI>Set the start and stop media time with the <A HREF="dssd0158.htm#If_0001060146030f00" TARGET="TEXT">IMediaSeeking::SetPositions</A> method. The AM_SEEKING_AbsolutePositioning flag means that the start and stop frames are absolute positions within the media file (not relative to the present position in the media file). In this example, the media file will start playing at frame 5 into the file and stop at frame 15, for a duration of 10 frames. The length of playing time depends on the video's frame rate.
+<PRE><FONT FACE="Courier" SIZE="2">
+   pims-&gt;SetPositions(&amp;start, AM_SEEKING_AbsolutePositioning, &amp;stop,
+               AM_SEEKING_AbsolutePositioning);
+</FONT></PRE>
+<LI>Release the <A HREF="dssd0158.htm#If_0001060146000000" TARGET="TEXT">IMediaSeeking</A> interface.
+<PRE><FONT FACE="Courier" SIZE="2">
+   pims-&gt;Release();
+</FONT></PRE>
+</OL>
+<P>By removing the <A HREF="dssd0158.htm#If_0001060146031100" TARGET="TEXT">SetTimeFormat</A> call and setting the values of start and stop as follows, you can set the media file to start playing 5 seconds into the file and stop 7 seconds into the file, for a duration of 2 seconds.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+   LONGLONG start = 50000000L;
+   LONGLONG stop = 70000000L;
+</FONT></PRE>
+<P> By setting other formats in the <A HREF="dssd0158.htm#If_0001060146031100" TARGET="TEXT">SetTimeFormat</A> call, you can seek to frames, sample numbers, byte, and so on.
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

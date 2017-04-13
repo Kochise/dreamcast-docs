@@ -1,0 +1,923 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>CBasePin Class</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0199.htm','/dssd0000.htm','/dssd0180.htm','/index.htm','/dssd0201.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Lib_0001060214000000">CBasePin Class</A></H2>
+<BR CLEAR=ALL>
+<P><IMG SRC="art/filter02.gif" WIDTH="277" HEIGHT="169" ALT="CBasePin class hierarchy" >
+
+<P><B>CBasePin</B> is an abstract base class from which all pins are derived. <B>CBasePin</B> 
+supports the <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> interface.
+You can derive from this if your pin does not supply or use the <A HREF="dssd0161.htm" TARGET="TEXT">IMemInputPin</A> interface;
+otherwise, derive from the <A HREF="dssd0195.htm" TARGET="TEXT">CBaseInputPin</A> class or the 
+<A HREF="dssd0199.htm" TARGET="TEXT">CBaseOutputPin</A> class.
+
+<P>The connection process is crucial to the success of creating filter graphs. The filter graph finds 
+two filters (and subsequently two pins) to connect. It calls the <A HREF="dssd0165.htm#If_000106014d030200" TARGET="TEXT">IPin::Connect</A> method on
+the output pin (it can also call <A HREF="dssd0165.htm#If_000106014d030200" TARGET="TEXT">Connect</A> on the input pin at the same time). 
+The output pin then calls the virtual pin member function <A HREF="dssd0200.htm#Lib_0001060214060600" TARGET="TEXT">CBasePin::CheckConnect</A>. 
+Derived classes should override this member function to use
+<A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> to return any interfaces required. The base class implementation of
+<A HREF="dssd0200.htm#Lib_0001060214060600" TARGET="TEXT">CheckConnect</A>
+queries the <A HREF="dssd0161.htm" TARGET="TEXT">IMemInputPin</A> interface to establish the default transport protocol.
+
+<P>After calling <A HREF="dssd0200.htm#Lib_0001060214060600" TARGET="TEXT">CheckConnect</A>, the output pin calls
+<A HREF="dssd0200.htm#Lib_0001060214060200" TARGET="TEXT">CBasePin::AgreeMediaType</A>; this is a worker member function not intended for overriding 
+in derived classes. This gets the input pin's enumerator and calls 
+<A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">CBasePin::TryMediaTypes</A> with it. <A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">TryMediaTypes</A> 
+is another base pin 
+worker member function that is not intended for derivation. It cycles through each media type 
+provided by an enumerator to determine if a connection can be made with that type.
+
+<P>If that process fails, <A HREF="dssd0200.htm#Lib_0001060214060200" TARGET="TEXT">AgreeMediaType</A> retrieves 
+the output pin's media type enumerator and calls <A HREF="dssd0200.htm#Lib_0001060214061500" TARGET="TEXT">CBasePin::GetMediaType</A>, which cycles 
+through the media types to agree on a connection type. If there is agreement, a media type with 
+the input and output pins becomes the type used in the connection.
+
+<P>If no media type can be agreed on, the connection between the pins cannot be made.
+The base pin calls <A HREF="dssd0200.htm#Lib_0001060214062800" TARGET="TEXT">CBasePin::SetMediaType</A> to broadcast the format. The
+<A HREF="dssd0200.htm#Lib_0001060214010003" TARGET="TEXT">m_mt</A> base pin variable is set during this process.
+
+<P>The <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> interface provides a method called <A HREF="dssd0200.htm#Lib_0001060214062100" TARGET="TEXT">QueryAccept</A>. This method allows 
+a connected filter to query whether the pin will accept a specified media type. The method is 
+asynchronous so that a filter can call it at any time&#151;even when another filter is calling it. For this 
+reason, its implementation in any override of the base class should not lock the filter. The base class 
+implementation of <A HREF="dssd0165.htm#If_000106014d030a00" TARGET="TEXT">IPin::QueryAccept</A> calls the overridden 
+<A HREF="dssd0200.htm#Lib_0001060214060700" TARGET="TEXT">CBasePin::CheckMediaType</A> member function on the derived pin class.
+
+<P>All member functions in this class that return <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> and accept a pointer as a 
+parameter return E_POINTER when passed a null pointer. 
+
+<A NAME="Lib_0001060214010000"></A><P><B>Protected Data Members</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060214010001">m_pName</A></B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Name of the pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060214010002">m_Connected</A></B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Pin to which this pin is connected.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060214010003">m_mt</A></B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Media type that this pin is using. This is established during the connection process.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060214010004">m_dir</A></B> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Direction of this pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060214010005">m_pLock</A></B> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Object used for locking.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060214010006">m_bRunTimeError</A></B> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Run-time error generated.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060214010007">m_pFilter</A></B> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter that created the pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060214010008">m_TypeVersion</A></B> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Current media type version (see <A HREF="dssd0200.htm#Lib_0001060214061600" TARGET="TEXT">CBasePin::GetMediaTypeVersion</A>).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060214010009">m_pQSink</A></B> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Target for quality messages.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106021401000a">m_tStart</A></B> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Start time from the <A HREF="dssd0200.htm#Lib_0001060214061c00" TARGET="TEXT">CBasePin::NewSegment</A> call.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106021401000b">m_tStop</A></B> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Stop time from the <A HREF="dssd0200.htm#Lib_0001060214061c00" TARGET="TEXT">CBasePin::NewSegment</A> call.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106021401000c">m_dRate</A></B> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Rate from the <A HREF="dssd0200.htm#Lib_0001060214061c00" TARGET="TEXT">CBasePin::NewSegment</A> call.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060214020000"></A><P><B>Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060300" TARGET="TEXT">AttemptConnection</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Attempts to make a connection to another pin using a specified media type.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060500" TARGET="TEXT">CBasePin</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Constructs a <A HREF="dssd0200.htm" TARGET="TEXT">CBasePin</A> object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060c00" TARGET="TEXT">CurrentRate</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the segment rate set by the <A HREF="dssd0200.htm#Lib_0001060214061c00" TARGET="TEXT">CBasePin::NewSegment</A> member function.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060d00" TARGET="TEXT">CurrentStartTime</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the segment start time set by the <A HREF="dssd0200.htm#Lib_0001060214061c00" TARGET="TEXT">CBasePin::NewSegment</A> member function.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060e00" TARGET="TEXT">CurrentStopTime</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the segment stop time set by the <A HREF="dssd0200.htm#Lib_0001060214061c00" TARGET="TEXT">CBasePin::NewSegment</A> member function.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061000" TARGET="TEXT">DisplayPinInfo</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Displays pin information on the debugging monitor.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061100" TARGET="TEXT">DisplayTypeInfo</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Displays media type information on the debugging monitor.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061400" TARGET="TEXT">GetConnected</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the pin that is connected to this pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061800" TARGET="TEXT">IncrementTypeVersion</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Adds 1 to the current media type version. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061900" TARGET="TEXT">IsConnected</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines whether the pin is connected.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061a00" TARGET="TEXT">IsStopped</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines whether the filter owning this pin is in the State_Stopped state.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061b00" TARGET="TEXT">Name</A> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the <A HREF="dssd0200.htm#Lib_0001060214010001" TARGET="TEXT">m_pName</A> name of the pin.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060214030000"></A><P><B>Overridable Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060100" TARGET="TEXT">Active</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Switches the pin to the active (running) mode.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060200" TARGET="TEXT">AgreeMediaType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Agrees on the media type to be used by the pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060400" TARGET="TEXT">BreakConnect</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Adds custom code when the connection quits.
+This is also called when a stage in the connection process fails, so this member 
+function should also clean up partial connection states.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060600" TARGET="TEXT">CheckConnect</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Adds custom code when the connection is being made.
+This is called at the start of the connection process.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060700" TARGET="TEXT">CheckMediaType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if the pin can support a specific media type.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060800" TARGET="TEXT">CompleteConnect</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Completes the connection.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061500" TARGET="TEXT">GetMediaType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the media type used by the pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061600" TARGET="TEXT">GetMediaTypeVersion</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the version of the pins that were created dynamically.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061700" TARGET="TEXT">Inactive</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Switches the pin to the inactive (stopped) mode.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214062800" TARGET="TEXT">SetMediaType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the <A HREF="dssd0200.htm#Lib_0001060214010003" TARGET="TEXT">m_mt</A> data member to the established media type.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">TryMediaTypes</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Tries to find an acceptable media type for a connection from the list 
+returned by a media type enumerator.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060214040000"></A><P><B>Implemented IPin Methods</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060900" TARGET="TEXT">Connect</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Initiates a connection to another pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060a00" TARGET="TEXT">ConnectedTo</A> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns a pointer to the connecting pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060b00" TARGET="TEXT">ConnectionMediaType</A> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the media type of this pin's connection.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214060f00" TARGET="TEXT">Disconnect</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Breaks a connection. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061200" TARGET="TEXT">EndOfStream</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Informs the input pin that no additional data is expected until a new run command is issued.
+ (returns S_FALSE by default).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061300" TARGET="TEXT">EnumMediaTypes</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns an enumerator for this pin's preferred media types.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061c00" TARGET="TEXT">NewSegment</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies that samples following this call are grouped as a segment with a given start time, 
+stop time, and rate.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214062100" TARGET="TEXT">QueryAccept</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines whether this pin accepts the media type.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214062200" TARGET="TEXT">QueryDirection</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the pin direction of the pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214062300" TARGET="TEXT">QueryId</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves an identifier for the pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214062400" TARGET="TEXT">QueryInternalConnections</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns an array of the pins to which this pin connects internally.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214062500" TARGET="TEXT">QueryPinInfo</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves information about the pin itself (the name, owning filter, or direction).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214062600" TARGET="TEXT">ReceiveConnection</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Called by a connecting pin to make a connection to this pin.
+ Usually this does not need to be overridden, because the default implementation 
+ calls <A HREF="dssd0200.htm#Lib_0001060214060600" TARGET="TEXT">CBasePin::CheckConnect</A>, <A HREF="dssd0200.htm#Lib_0001060214060700" TARGET="TEXT">CBasePin::CheckMediaType</A>, and <A HREF="dssd0200.htm#Lib_0001060214060400" TARGET="TEXT">CBasePin::BreakConnect</A>.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214062700" TARGET="TEXT">Run</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Notifies the pin that the filter has changed state from paused to running.
+
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060214050000"></A><P><B>Implemented IQualityControl Methods</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214062000" TARGET="TEXT">Notify</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Notifies the recipient that a quality change is requested.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214062900" TARGET="TEXT">SetSink</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the <A HREF="dssd0167.htm" TARGET="TEXT">IQualityControl</A> object that will receive quality messages.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060214060000"></A><P><B>Implemented INonDelegatingUnknown Methods</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061d00" TARGET="TEXT">NonDelegatingAddRef</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Increments the owning filter's reference count.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061e00" TARGET="TEXT">NonDelegatingQueryInterface</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves <A HREF="dssd0200.htm" TARGET="TEXT">CBasePin</A> interfaces. Override this member function to pass out 
+pointers to any interfaces added by the derived pin class.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0200.htm#Lib_0001060214061f00" TARGET="TEXT">NonDelegatingRelease</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Decrements the owning filter's reference count.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060100">CBasePin::Active</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Called by the <A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A> implementation when the state changes from stopped
+to either paused or running.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>Active</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>Any class that requires notification of a change of state should override this member function.
+This is called when the filter owning the pin exits the State_Stopped state.
+
+<P>Note that the filter graph manager's internal state variable is not updated until after this
+member function returns, so testing the filter graph manager's state (directly or 
+indirectly) from within this member function should be avoided. 
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060200">CBasePin::AgreeMediaType</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Searches for a media type for the pin connection. 
+
+<P><B>virtual</B> <B>HRESULT</B> <B>AgreeMediaType</B><B>(</B><BR>&nbsp;&nbsp;<B>IPin</B> <I>*pReceivePin</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>CMediaType</B> <I>*pmt</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pReceivePin</I>
+</DT><DD>Pointer to the receiving pin.
+</DD><DT><I>pmt</I>
+</DT><DD>Pointer to a media type object to be returned.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value, which can include one of the following values.
+
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">NOERROR
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">A media type was found.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0293.htm#errcodes_0001060a0100002f" TARGET="TEXT">VFW_E_NO_ACCEPTABLE_TYPES</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">No agreement upon a media type was reached.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>This member function is called during the connection process. It calls <A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">CBasePin::TryMediaTypes</A> on both the owning pin
+and the pin connected to the owning pin; it enumerates the preferred data types on the pin.
+If one is found, <A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">TryMediaTypes</A> tries the media type with the
+pin in a call to the <A HREF="dssd0200.htm#Lib_0001060214062600" TARGET="TEXT">CBasePin::ReceiveConnection</A> member function. If this pin proposes 
+a media type, its support is still verified by calling <A HREF="dssd0200.htm#Lib_0001060214060700" TARGET="TEXT">CBasePin::CheckMediaType</A>. The 
+enumerator can list all the media types, even if some of them are not currently available.
+
+<P>This member function is protected.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060300">CBasePin::AttemptConnection</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Attempts to make a connection to another pin using a specified media type.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>AttemptConnection</B><B>(</B><BR>&nbsp;&nbsp;<B>IPin</B> <B>*</B> <I>pReceivePin</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>CMediaType</B> <I>*pmt</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pReceivePin</I>
+</DT><DD>Pointer to the receiving pin.
+</DD><DT><I>pmt</I>
+</DT><DD>Pointer to a media type object containing the preferred media type for the connection.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>This member function is used to attempt to connect with a given media
+type. Its main purpose is to call the <A HREF="dssd0165.htm#If_000106014d030f00" TARGET="TEXT">IPin::ReceiveConnection</A> method of the 
+pin passed in the <I>pReceivePin</I> parameter. This member function is protected.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060400">CBasePin::BreakConnect</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Called when a connection is broken to allow for customization (intended for overriding).
+
+<P><B>virtual</B> <B>HRESULT</B> <B>BreakConnect</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value. The default implementation returns
+NOERROR.
+
+
+<H5>Remarks</H5>
+<P>This member function is called when a connection to the pin cannot be made or
+when <A HREF="dssd0200.htm#Lib_0001060214060f00" TARGET="TEXT">CBasePin::Disconnect</A> is called. In this case, it is necessary
+to undo anything performed during the connection process.
+You can override this member function to release any references to interfaces that were
+made during the connection.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060500">CBasePin::CBasePin</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Constructs a <A HREF="dssd0200.htm" TARGET="TEXT">CBasePin</A> object.
+
+<P><B>CBasePin</B><B>(</B><BR>&nbsp;&nbsp;<B>TCHAR</B> <I>*pObjectName</I><B>,</B><BR>&nbsp;&nbsp;<B>CBaseFilter</B> <I>*pFilter</I><B>,</B><BR>&nbsp;&nbsp;<B>CCritSec</B> <I>*pLock</I><B>,</B><BR>&nbsp;&nbsp;<B>HRESULT</B> <I>*phr</I><B>,</B><BR>&nbsp;&nbsp;<B>LPCWSTR</B> <I>pName</I><B>,</B><BR>&nbsp;&nbsp;<B>PIN_DIRECTION</B> <I>dir</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pObjectName</I>
+</DT><DD>Description of the object.
+</DD><DT><I>pFilter</I>
+</DT><DD>Owning filter that knows about pins.
+</DD><DT><I>pLock</I>
+</DT><DD>Object that implements the lock.
+</DD><DT><I>phr</I>
+</DT><DD>Pointer to a general OLE return value. This value is changed only if this function fails.
+</DD><DT><I>pName</I>
+</DT><DD>Pin name.
+</DD><DT><I>dir</I>
+</DT><DD>Either PINDIR_INPUT or PINDIR_OUTPUT.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This is a standard class constructor.
+
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060600">CBasePin::CheckConnect</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Allows for customization when the connection is first made (intended for overriding, if required).
+
+<P><B>virtual</B> <B>HRESULT</B> <B>CheckConnect</B><B>(</B><BR>&nbsp;&nbsp;<B>IPin</B> <B>*</B> <I>pPin</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pPin</I>
+</DT><DD>Pointer to the connecting pin.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns one of the following arguments by default; if overridden, should return standard
+<A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> values, including the following values.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">E_INVALIDARG
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Pin directions do not match between pins.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">NOERROR
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Connection verified successfully.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>This member function is called during a call to the <A HREF="dssd0165.htm#If_000106014d030200" TARGET="TEXT">IPin::Connect</A> method to provide 
+a virtual method that can do any specific check required for a connection, such as calling
+<A HREF="dssd0200.htm#Lib_0001060214061e00" TARGET="TEXT">CBasePin::NonDelegatingQueryInterface</A>. This base class method determines if the pin 
+directions match.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060700">CBasePin::CheckMediaType</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Determines if the pin can support a specific media type.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>CheckMediaType</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>CMediaType</B> <B>*</B> <I>pmt</I><BR>&nbsp;&nbsp;<B>)</B><BR><B>PURE;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pmt</I>
+</DT><DD>Pointer to a media type object containing the proposed media type.
+</DD></DL>
+<H5>Return Values</H5>
+<P>The overriding member function should return S_OK if the proposed media type is accepted; otherwise, it should return an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> failure value, such as S_FALSE.
+
+<H5>Remarks</H5>
+<P>This member function is typically called before calling the <A HREF="dssd0200.htm#Lib_0001060214062800" TARGET="TEXT">CBasePin::SetMediaType</A> member function. It is also called from several other member functions, including <A HREF="dssd0200.htm#Lib_0001060214062600" TARGET="TEXT">CBasePin::ReceiveConnection</A> and <A HREF="dssd0200.htm#Lib_0001060214062100" TARGET="TEXT">CBasePin::QueryAccept</A>.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060800">CBasePin::CompleteConnect</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Completes a connection to another filter (intended for overriding).
+
+<P><B>virtual</B> <B>HRESULT</B> <B>CompleteConnect</B><B>(</B><BR>&nbsp;&nbsp;<B>IPin</B> <I>*pReceivePin</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pReceivePin</I>
+ </DT><DD>Pointer to the connected (receiving) pin.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value. The default implementation returns
+NOERROR.
+
+
+<H5>Remarks</H5>
+<P>Override this member function to check for required connection interfaces
+on the <I>pReceivePin</I> parameter or its filter.
+Failing this member function fails the connection and disconnects the other pin.
+The <A HREF="dssd0199.htm" TARGET="TEXT">CBaseOutputPin</A> class overrides this member function to establish a local 
+memory transport.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060900">CBasePin::Connect</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Initiates a connection from this pin to the other pin.
+
+<P><B>HRESULT</B> <B>Connect</B><B>(</B><BR>&nbsp;&nbsp;<B>IPin</B> <B>*</B> <I>pReceivePin</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>AM_MEDIA_TYPE</B> <I>*pmt</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pReceivePin</I>
+ </DT><DD>Input pin to connect to.
+</DD><DT><I>pmt</I>
+ </DT><DD>Optional media type parameter.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns one of the following arguments by default; if overridden, should return standard <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> values.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0293.htm#errcodes_0001060a0100002c" TARGET="TEXT">VFW_E_ALREADY_CONNECTED</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">This output pin is already connected to another pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0293.htm#errcodes_0001060a0100004c" TARGET="TEXT">VFW_E_NOT_STOPPED</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The filter graph is not in a stopped state and connection can't be performed.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Other error value
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returned from <A HREF="dssd0200.htm#Lib_0001060214060200" TARGET="TEXT">CBasePin::AgreeMediaType</A> or <A HREF="dssd0200.htm#Lib_0001060214060600" TARGET="TEXT">CBasePin::CheckConnect</A> or overridden versions of these member functions.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0165.htm#If_000106014d030200" TARGET="TEXT">IPin::Connect</A> method.
+<B>IPin::Connect</B> is implemented on the output pin and calls the
+<A HREF="dssd0165.htm#If_000106014d030f00" TARGET="TEXT">IPin::ReceiveConnection</A> method for the connected input pin (implemented
+in the base classes as <A HREF="dssd0200.htm#Lib_0001060214062600" TARGET="TEXT">CBasePin::ReceiveConnection</A>). This member
+function calls the virtual <A HREF="dssd0200.htm#Lib_0001060214060600" TARGET="TEXT">CBasePin::CheckConnect</A> member function,
+which can be overridden to verify that the connection is possible.
+<B>CBasePin::CheckConnect</B> then calls <A HREF="dssd0200.htm#Lib_0001060214060200" TARGET="TEXT">CBasePin::AgreeMediaType</A>
+to negotiate a common media type with the connected pin.
+
+<P><A HREF="dssd0200.htm#Lib_0001060214060200" TARGET="TEXT">CBasePin::AgreeMediaType</A> calls <A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">CBasePin::TryMediaTypes</A> twice; once for
+this pin's media type enumerator and once for the receiving pin's 
+media type enumerator. For each media type found, <A HREF="dssd0200.htm#Lib_0001060214060300" TARGET="TEXT">CBasePin::AttemptConnection</A>
+is called, which in turn calls the receiving pin's <A HREF="dssd0165.htm#If_000106014d030f00" TARGET="TEXT">IPin::ReceiveConnection</A>
+method, and finally <A HREF="dssd0200.htm#Lib_0001060214060800" TARGET="TEXT">CBasePin::CompleteConnect</A> if successful.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060a00">CBasePin::ConnectedTo</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Retrieves a pointer to the connected pin, if there is one.
+
+<P><B>HRESULT</B> <B>ConnectedTo</B><B>(</B><BR>&nbsp;&nbsp;<B>IPin</B> <B>**</B> <I>ppPin</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>ppPin</I>
+ </DT><DD><A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> interface of the other pin (if any) to
+which this pin is connected.
+</DD></DL>
+<H5>Return Values</H5>
+<P>The base class returns S_OK if connected; otherwise, returns <A HREF="dssd0293.htm#errcodes_0001060a01000031" TARGET="TEXT">VFW_E_NOT_CONNECTED</A>.
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0165.htm#If_000106014d030300" TARGET="TEXT">IPin::ConnectedTo</A> method.
+It adds a reference to the connected <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> interface
+by calling the <A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">IUnknown::AddRef</A> method, because each copy of
+an interface pointer has its reference incremented. The calling application
+is responsible for calling <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">IUnknown::Release</A> on this interface
+when done with it.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060b00">CBasePin::ConnectionMediaType</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Retrieves the media type associated with the current connection of the pin. 
+
+<P><B>HRESULT</B> <B>ConnectionMediaType</B><B>(</B><BR>&nbsp;&nbsp;<B>AM_MEDIA_TYPE</B> <I>*pmt</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pmt</I>
+ </DT><DD>Pointer to an <A HREF="dssd0287.htm#structs_0001060501000300" TARGET="TEXT">AM_MEDIA_TYPE</A> structure. If the pin isn't connected,
+this structure is initialized to zero. Otherwise, the media type is returned in this parameter.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0165.htm#If_000106014d030400" TARGET="TEXT">IPin::ConnectionMediaType</A> method. It
+returns a copy of the <A HREF="dssd0287.htm#structs_0001060501000300" TARGET="TEXT">AM_MEDIA_TYPE</A> structure that was negotiated for the pin connection 
+when the pin was connected. 
+
+<P>This method fails if the pin is unconnected. The task allocator allocates the media type's format block. Use the task
+allocator to free the format block, for example by calling the Microsoft Win32 
+<A HREF="dssd0389.htm#external_00010a0109000011" TARGET="TEXT">CoTaskMemFree</A> function.
+
+
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060c00">CBasePin::CurrentRate</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Retrieves the segment rate set by the <A HREF="dssd0200.htm#Lib_0001060214061c00" TARGET="TEXT">CBasePin::NewSegment</A> member function.
+
+<P><B>double</B> <B>CurrentRate</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns the value of <A HREF="dssd0200.htm#Lib_000106021401000c" TARGET="TEXT">m_dRate</A>.
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060d00">CBasePin::CurrentStartTime</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Retrieves the segment start time set by the <A HREF="dssd0200.htm#Lib_0001060214061c00" TARGET="TEXT">CBasePin::NewSegment</A> member function.
+
+<P><B>REFERENCE_TIME</B> <B>CurrentStartTime</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns the value of <A HREF="dssd0200.htm#Lib_000106021401000a" TARGET="TEXT">m_tStart</A>.
+
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060e00">CBasePin::CurrentStopTime</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Retrieves the segment stop time set by the <A HREF="dssd0200.htm#Lib_0001060214061c00" TARGET="TEXT">CBasePin::NewSegment</A> member function.
+
+<P><B>REFERENCE_TIME</B> <B>CurrentStopTime</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns the value of <A HREF="dssd0200.htm#Lib_000106021401000b" TARGET="TEXT">m_tStop</A>.
+
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214060f00">CBasePin::Disconnect</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Breaks a connection.
+
+<P><B>HRESULT</B> <B>Disconnect</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns NOERROR if there is no connection.
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0165.htm#If_000106014d030500" TARGET="TEXT">IPin::Disconnect</A> method.
+It calls the <A HREF="dssd0200.htm#Lib_0001060214060400" TARGET="TEXT">CBasePin::BreakConnect</A> member function and releases the 
+<A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> interface of the connected pin (held by <A HREF="dssd0200.htm#Lib_0001060214010002" TARGET="TEXT">m_Connected</A>). 
+There are no parameters because there is only one possible connection on this pin.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061000">CBasePin::DisplayPinInfo</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Displays pin information during debugging.
+
+<P><B>void</B> <B>DisplayPinInfo</B><B>(</B><BR>&nbsp;&nbsp;<B>IPin</B> <I>*pReceivePin</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pReceivePin</I>
+</DT><DD>Pointer to the receiving pin.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061100">CBasePin::DisplayTypeInfo</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Displays media type information during debugging.
+
+<P><B>void</B> <B>DisplayTypeInfo</B><B>(</B><BR>&nbsp;&nbsp;<B>IPin</B> <I>*pPin</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>CMediaType</B> <I>*pmt</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pPin</I>
+</DT><DD>Pointer to the pin's <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> interface.
+
+
+
+ 
+
+
+</DD><DT><I>pmt</I>
+</DT><DD>Pointer to the media type object.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This member function displays the major and minor media types of the specified media type object.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061200">CBasePin::EndOfStream</A></H3>
+<A HREF="dssd0165.htm" TARGET="TEXT">IPin Interface</A>
+<P>Informs the input pin that no additional data is expected until a new run command is issued.
+
+<P><B>HRESULT</B> <B>EndOfStream</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns S_FALSE.
+
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0165.htm#If_000106014d030700" TARGET="TEXT">IPin::EndOfStream</A> method.
+This is intended for input pins only.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061300">CBasePin::EnumMediaTypes</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Provides an enumerator for this pin's preferred media types.
+
+<P><B>HRESULT</B> <B>EnumMediaTypes</B><B>(</B><BR>&nbsp;&nbsp;<B>IEnumMediaTypes</B> <B>**</B> <I>ppEnum</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>ppEnum</I>
+</DT><DD>Pointer to an enumerator for the media types.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0165.htm#If_000106014d030800" TARGET="TEXT">IPin::EnumMediaTypes</A> method. It returns an enumerator object implemented by the <A HREF="dssd0215.htm" TARGET="TEXT">CEnumMediaTypes</A> class and 
+obtains the <A HREF="dssd0132.htm" TARGET="TEXT">IEnumMediaTypes</A> interface, which adds a reference count to this enumerator. If an application receives an enumerator, the application must release this
+when done with it by calling <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">IUnknown::Release</A> on the enumerator.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061400">CBasePin::GetConnected</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Retrieves the pin that is connected to this pin.
+
+<P><B>IPin</B> <B>*</B> <B>GetConnected</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns a pointer to an <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> interface.
+
+
+<H5>Remarks</H5>
+<P>The caller should call the <A HREF="dssd0200.htm#Lib_0001060214061900" TARGET="TEXT">CBasePin::IsConnected</A> member function
+before calling <B>CBasePin::GetConnected</B>.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061500">CBasePin::GetMediaType</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Retrieves the current type version, which is used by enumerators.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>GetMediaType</B><B>(</B><BR>&nbsp;&nbsp;<B>int</B> <I>iPosition</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>CMediaType</B> <I>*pMediaType</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>iPosition</I>
+ </DT><DD>Position in the media type list.
+</DD><DT><I>pMediaType</I>
+ </DT><DD>Returned pointer to the media type at this position.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns E_UNEXPECTED by default implementation; the overriding member function 
+should return one of the following values, or an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> error value if the value could not be
+set.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">S_FALSE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Media type exists but is not currently usable.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">S_OK </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Media type was set.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0293.htm#errcodes_0001060a0100001a" TARGET="TEXT">VFW_S_NO_MORE_ITEMS</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">End of the list of media types has been reached.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>This is a virtual member function that returns a media type corresponding to
+the position in the list specified by the <I>iPosition</I> parameter. This base class simply returns 
+an error because no media types are supported by default. Derived classes should override this 
+member function.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061600">CBasePin::GetMediaTypeVersion</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Retrieves the current type version, which is used by enumerators.
+
+<P><B>virtual</B> <B>LONG</B> <B>GetMediaTypeVersion</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns the value of <A HREF="dssd0200.htm#Lib_0001060214010008" TARGET="TEXT">m_TypeVersion</A> by default. To return new media types, 
+override this member function.
+
+<H5>Remarks</H5>
+<P>This is a virtual member function that returns the current media type version.
+The base class initializes the media type enumerators to 1. A derived class can change the list
+of available media types. Each time it does, it should increment
+the version in the overriding member function. The media type enumerators
+call this member function when they are called to determine if they are out of date.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061700">CBasePin::Inactive</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Switches the pin to an inactive state.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>Inactive</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns NOERROR for a base class implementation. The overriding member function
+returns a standard <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value and should not fail if the pin is already set as inactive.
+
+<H5>Remarks</H5>
+<P>This member function is called by the <A HREF="dssd0153.htm" TARGET="TEXT">IMediaFilter</A> implementation when the state 
+changes to inactive. This member function should be overridden to decommit allocators and free 
+any hardware resources that were obtained in the <A HREF="dssd0200.htm#Lib_0001060214060100" TARGET="TEXT">CBasePin::Active</A> call. The default 
+implementation of the base class member function does nothing.
+
+<P>Note that the filter graph manager's internal state variable is not updated until after this
+member function returns, so testing the filter graph manager's state (directly or 
+indirectly) from within this member function should be avoided. 
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061800">CBasePin::IncrementTypeVersion</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Adds 1 to the current media type version.
+
+<P><B>void</B> <B>IncrementTypeVersion</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The media type version is used to ensure that the filter has not changed the media type. If it changes the media type, the filter should call this member function. 
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061900">CBasePin::IsConnected</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Determines if the pin is connected to another pin.
+
+<P><B>BOOL</B> <B>IsConnected</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns TRUE if the pin is connected; otherwise, returns FALSE.
+
+
+<H5>Remarks</H5>
+<P>This member function checks the value of the <A HREF="dssd0200.htm#Lib_0001060214010002" TARGET="TEXT">m_Connected</A> protected data member.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061a00">CBasePin::IsStopped</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Determines if the filter is stopped.
+
+<P><B>BOOL</B> <B>IsStopped</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns TRUE if the filter is stopped; otherwise, returns FALSE.
+
+
+<H5>Remarks</H5>
+<P>Note that this member function must not be used in the constructor of the pin, because the 
+filter that is passed is often not initialized properly at that time (due to the convention of using a 
+<B>this</B> pointer during the construction of data members).
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061b00">CBasePin::Name</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Retrieves the name of the pin.
+
+<P><B>LPWSTR</B> <B>Name</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns the value of the <A HREF="dssd0200.htm#Lib_0001060214010001" TARGET="TEXT">m_pName</A> data member.
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061c00">CBasePin::NewSegment</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Specifies that samples following this call are grouped as a segment with a
+given start time, stop time, and rate.
+
+<P><B>HRESULT</B> <B>NewSegment</B><B>(</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <I>tStart</I><B>,</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <I>tStop</I><B>,</B><BR>&nbsp;&nbsp;<B>double</B> <I>dRate</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>tStart</I>
+</DT><DD>Start time of the segment.
+</DD><DT><I>tStop</I>
+</DT><DD>Stop time of the segment.
+</DD><DT><I>dRate</I>
+</DT><DD>Rate of the segment.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value (S_OK by default).
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0165.htm#If_000106014d030900" TARGET="TEXT">IPin::NewSegment</A> method.
+The default implementation sets the <A HREF="dssd0200.htm#Lib_000106021401000a" TARGET="TEXT">m_tStart</A>, <A HREF="dssd0200.htm#Lib_000106021401000b" TARGET="TEXT">m_tStop</A>, and 
+<A HREF="dssd0200.htm#Lib_000106021401000c" TARGET="TEXT">m_dRate</A> data members to the values passed in as parameters. Overriding
+member functions should pass this notification downstream. 
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061d00">CBasePin::NonDelegatingAddRef</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Increments the reference count for an interface.
+
+<P><B>ULONG</B> <B>NonDelegatingAddRef</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns the reference count of the object.
+
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0265.htm#fmutil_0001060309000002" TARGET="TEXT">INonDelegatingUnknown::NonDelegatingAddRef</A>
+method. It increments the reference count of the owning filter. 
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061e00">CBasePin::NonDelegatingQueryInterface</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Retrieves an interface and increments the reference count.
+
+<P><B>HRESULT</B> <B>NonDelegatingQueryInterface</B><B>(</B><BR>&nbsp;&nbsp;<B>REFIID</B> <I>riid</I><B>,</B><BR>&nbsp;&nbsp;<B>void</B> <B>**</B> <I>ppv</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>riid</I>
+ </DT><DD>Reference identifier.
+</DD><DT><I>ppv</I>
+ </DT><DD>Pointer to the interface.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns a pointer to the interface.
+
+
+<H5>Remarks</H5>
+<P>This member function implements the 
+<A HREF="dssd0265.htm#fmutil_0001060309000001" TARGET="TEXT">INonDelegatingUnknown::NonDelegatingQueryInterface</A> method and passes out 
+references to the <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A>, <A HREF="dssd0167.htm" TARGET="TEXT">IQualityControl</A>, and <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> interfaces. 
+Override this class to return other interfaces on the object in the derived class.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214061f00">CBasePin::NonDelegatingRelease</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Decrements the reference count for an interface.
+
+<P><B>ULONG</B> <B>NonDelegatingRelease</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns the reference count.
+
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0265.htm#fmutil_0001060309000003" TARGET="TEXT">INonDelegatingUnknown::NonDelegatingRelease</A>
+method. It releases a reference to the owning filter. 
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214062000">CBasePin::Notify</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Notifies the recipient that a quality change is requested.
+
+<P><B>HRESULT</B> <B>Notify</B><B>(</B><BR>&nbsp;&nbsp;<B>IBaseFilter</B> <B>*</B> <I>pSelf</I><B>,</B><BR>&nbsp;&nbsp;<B>Quality</B> <I>q</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSelf</I>
+ </DT><DD>Pointer to the filter that is sending the quality notification.
+</DD><DT><I>q</I>
+ </DT><DD>Quality notification structure.
+</DD></DL>
+<H5>Return Values</H5>
+<P>The default base class implementation returns E_FAIL.
+
+<H5>Remarks</H5>
+<P>This member function must be overridden to accept notifications. It is
+typically overridden to implement this method on the output pin
+because quality-control messages are passed upstream. The
+<A HREF="dssd0249.htm#Lib_0001060245070a00" TARGET="TEXT">CTransformOutputPin::Notify</A> member function is one example of
+how this member function is overridden to pass quality-control messages to the
+next filter upstream.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214062100">CBasePin::QueryAccept</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Determines whether the pin accepts the format type.
+
+<P><B>HRESULT</B> <B>QueryAccept</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>AM_MEDIA_TYPE*</B> <I>pmt</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pmt</I>
+</DT><DD>Pointer to a proposed media type.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns S_TRUE if the format is accepted; otherwise, returns S_FALSE.
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0165.htm#If_000106014d030a00" TARGET="TEXT">IPin::QueryAccept</A> method. It simply calls the pure virtual <A HREF="dssd0200.htm#Lib_0001060214060700" TARGET="TEXT">CBasePin::CheckMediaType</A> member function, which the derived class must implement, and maps any returned codes from <A HREF="dssd0200.htm#Lib_0001060214060700" TARGET="TEXT">CheckMediaType</A> other than S_OK to S_FALSE. 
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214062200">CBasePin::QueryDirection</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Retrieves the direction of the pin.
+
+<P><B>HRESULT</B> <B>QueryDirection</B><B>(</B><BR>&nbsp;&nbsp;<B>PIN_DIRECTION*</B> <I>pPinDir</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pPinDir</I>
+</DT><DD>Pointer to a <A HREF="dssd0288.htm#dtypes_0001060601001c00" TARGET="TEXT">PIN_DIRECTION</A> structure to be filled in with the direction.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0165.htm#If_000106014d030b00" TARGET="TEXT">IPin::QueryDirection</A> method. <I>pPinDir</I> will contain PINDIR_INPUT or PINDIR_OUTPUT. The same information is available through the <A HREF="dssd0200.htm#Lib_0001060214062500" TARGET="TEXT">CBasePin::QueryPinInfo</A> member function, but this member function is more efficient.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214062300">CBasePin::QueryId</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Retrieves an identifier for the pin.
+
+<P><B>HRESULT</B> <B>QueryId</B><B>(</B><BR>&nbsp;&nbsp;<B>LPWSTR</B> <B>*</B> <I>Id</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Id</I>
+</DT><DD>Pin identifier.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0165.htm#If_000106014d030c00" TARGET="TEXT">IPin::QueryId</A> method. By default, this member function uses the pin name in the <A HREF="dssd0200.htm#Lib_0001060214010001" TARGET="TEXT">CBasePin::m_pName</A> data 
+member, so implementing this member function in your derived filter class is not normally required.
+
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214062400">CBasePin::QueryInternalConnections</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Provides an array of pointers to <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> objects. These are the pins to which this pin internally connects.
+
+<P><B>HRESULT</B> <B>QueryInternalConnections</B><B>(</B><BR>&nbsp;&nbsp;<B>IPin</B> <B>**</B> <I>apPin</I><B>,</B><BR>&nbsp;&nbsp;<B>ULONG</B> <B>*</B> <I>nPin</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>apPin</I>
+</DT><DD>Array of <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> pointers.
+</DD><DT><I>nPin</I>
+</DT><DD>Upon input, indicates the number of channels; upon output, indicates the number of pins.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns one of the following <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> values.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">E_FAIL 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Undetermined failure.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">E_NOTIMPL 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The filter graph manager interprets E_NOTIMPL as meaning all input pins connect to all output pins.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">S_FALSE 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Insufficient number of channels; returns no pins in <I>apPin</I>.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0165.htm#If_000106014d030d00" TARGET="TEXT">IPin::QueryInternalConnections</A> method but only to return E_NOTIMPL. Override this if you want to provide mapping between specific input and output pins.
+
+<P>The default implementation to return E_NOTIMPL implies that the caller can assume that all input pins feed all output pins. Overriding this member function allows a filter to specify when it is a renderer for some of its input pins and not for others.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214062500">CBasePin::QueryPinInfo</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Retrieves information about the pin.
+
+<P><B>HRESULT</B> <B>QueryPinInfo</B><B>(</B><BR>&nbsp;&nbsp;<B>PIN_INFO</B> <B>*</B> <I>pInfo</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pInfo</I>
+</DT><DD>Pointer to a <A HREF="dssd0287.htm#structs_0001060501001500" TARGET="TEXT">PIN_INFO</A> structure.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0165.htm#If_000106014d030e00" TARGET="TEXT">IPin::QueryPinInfo</A> method. By default, the member function fills in the <A HREF="dssd0287.htm#structs_0001060501001500" TARGET="TEXT">PIN_INFO</A> structure with the
+<A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A> interface of its owning filter, the pin name from <A HREF="dssd0200.htm#Lib_0001060214010001" TARGET="TEXT">m_pName</A>, and the pin direction from <A HREF="dssd0200.htm#Lib_0001060214010004" TARGET="TEXT">m_dir</A>.
+
+<P>The <A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A> interface passed out by this member function is reference counted, and so must be released when the caller has finished with it. 
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214062600">CBasePin::ReceiveConnection</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Makes a connection to the calling output pin.
+
+<P><B>HRESULT</B> <B>ReceiveConnection</B><B>(</B><BR>&nbsp;&nbsp;<B>IPin</B> <B>*</B> <I>pConnector</I><B>,</B><BR>&nbsp;&nbsp;<B>AM_MEDIA_TYPE</B> <I>*pmt</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pConnector</I>
+ </DT><DD>Connecting pin.
+</DD><DT><I>pmt</I>
+ </DT><DD>Media type of the samples to be streamed.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0165.htm#If_000106014d030f00" TARGET="TEXT">IPin::ReceiveConnection</A> method. It calls 
+<A HREF="dssd0200.htm#Lib_0001060214060600" TARGET="TEXT">CheckConnect</A> and, if successful, then calls 
+<A HREF="dssd0200.htm#Lib_0001060214060700" TARGET="TEXT">CheckMediaType</A> to verify if the media type is acceptable. If either of these calls fails, it calls 
+<A HREF="dssd0200.htm#Lib_0001060214060400" TARGET="TEXT">BreakConnect</A> and exits. To finish the connection process, it calls 
+<A HREF="dssd0200.htm#Lib_0001060214060800" TARGET="TEXT">CompleteConnect</A>, which is implemented in <A HREF="dssd0200.htm" TARGET="TEXT">CBasePin</A> to return NOERROR, but can be overridden in the derived class.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214062700">CBasePin::Run</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Notifies the pin that the filter has changed state from paused to running.
+
+<P><B>HRESULT</B> <B>Run</B><B>(</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <I>tStart</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>tStart</I>
+</DT><DD>Start time as passed to the filter's <A HREF="dssd0153.htm#If_0001060141030400" TARGET="TEXT">Run</A> method. 
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value (NOERROR_OK by default).
+
+
+<H5>Remarks</H5>
+<P>This member function can be overridden in the derived class to perform 
+activities such as committing memory or obtaining resources. For an overriding implementation
+of this member function, see the <A HREF="dssd0240.htm#Lib_000106023c030500" TARGET="TEXT">CRenderedInputPin::Run</A> member function. 
+
+<P>Note that the filter graph manager's internal state variable is not updated until after this
+member function returns, so testing the filter graph manager's state (directly or 
+indirectly) from within this member function should be avoided. 
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214062800">CBasePin::SetMediaType</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Sets the <A HREF="dssd0200.htm#Lib_0001060214010003" TARGET="TEXT">m_mt</A> data member to the established media type. 
+
+<P><B>virtual</B> <B>HRESULT</B> <B>SetMediaType</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>CMediaType</B> <B>*</B> <I>pmt</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pmt</I>
+</DT><DD>Pointer to a media type object that was previously agreed on.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns NOERROR by default implementation. The overriding member functions return
+an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>This member function is called to establish the format for a pin connection. The
+<A HREF="dssd0200.htm#Lib_0001060214060700" TARGET="TEXT">CBasePin::CheckMediaType</A> member function
+will have been called to check the connection format and, if it did not return an error value,
+this virtual member function will be called. The default implementation sets the <A HREF="dssd0200.htm#Lib_0001060214010003" TARGET="TEXT">m_mt</A> 
+protected data member to the value passed to this member function. Override to inform the derived class when the media type is set.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214062900">CBasePin::SetSink</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Sets the object containing the <A HREF="dssd0167.htm" TARGET="TEXT">IQualityControl</A> interface that will receive quality-control messages.
+
+<P><B>HRESULT</B> <B>SetSink</B><B>(</B><BR>&nbsp;&nbsp;<B>IQualityControl</B> <I>*piqc</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>piqc</I>
+</DT><DD>Pointer to the <A HREF="dssd0167.htm" TARGET="TEXT">IQualityControl</A> interface to which the notifications should be sent.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Base class returns NOERROR by default. The overriding member function should return an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0167.htm#If_000106014f030200" TARGET="TEXT">IQualityControl::SetSink</A> method. The default implementation sets the 
+<A HREF="dssd0200.htm#Lib_0001060214010009" TARGET="TEXT">m_pQSink</A> data member to the <I>piqc</I> parameter passed in. 
+
+<P>The <A HREF="dssd0167.htm#If_000106014f030200" TARGET="TEXT">IQualityControl::SetSink</A> method tells a filter where to send quality-control messages it receives. When no sink has been explicitly set or if the last call to <B>CBasePin::SetSink</B> set the sink to NULL, the message should go upstream. The derived output pin class typically overrides <A HREF="dssd0200.htm#Lib_0001060214062000" TARGET="TEXT">CBasePin::Notify</A> to enable this. 
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060214062a00">CBasePin::TryMediaTypes</A></H3>
+<A HREF="dssd0200.htm" TARGET="TEXT">CBasePin Class</A>
+<P>Determines a media type for a pin connection.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>TryMediaTypes</B><B>(</B><BR>&nbsp;&nbsp;<B>IPin</B> <I>*pReceivePin</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>CMediaType</B> <I>*pmt</I><B>,</B><BR>&nbsp;&nbsp;<B>IEnumMediaTypes</B> <I>*pEnum</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pReceivePin</I>
+</DT><DD>Pointer to the <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> interface of the receiving pin.
+</DD><DT><I>pmt</I>
+</DT><DD>Pointer to a returned media type.
+</DD><DT><I>pEnum</I>
+</DT><DD>Pointer to an <A HREF="dssd0132.htm" TARGET="TEXT">IEnumMediaTypes</A> enumerator interface.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value, which can include the following.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">FAILED
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Resetting of the enumerator failed.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">NOERROR
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Media type found.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0293.htm#errcodes_0001060a0100002f" TARGET="TEXT">VFW_E_NO_ACCEPTABLE_TYPES</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">No acceptable media types were found.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>Given an enumerator, this member function cycles through all the media types proposed 
+by the enumerator. Each type is suggested to the derived pin class and, if acceptable, is tried with the 
+connected pin in a call to the <A HREF="dssd0165.htm#If_000106014d030f00" TARGET="TEXT">IPin::ReceiveConnection</A> method. This means that if the 
+owning pin proposes a media type, it is still checked to determine whether it is supported. This is 
+deliberate so that, in simple cases, the enumerator can
+hold all the media types, even if some of them are not currently available.
+
+<P>This member function is protected.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

@@ -1,0 +1,111 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>About the Multimedia Streaming Architecture</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0357.htm','/dssd0000.htm','/dssd0357.htm','/index.htm','/dssd0359.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="mms_arch_0001080101000000">About the Multimedia Streaming Architecture</A></H2>
+<BR CLEAR=ALL>
+<P>This article describes the architecture of multimedia streaming and how software developers typically use streams in their tools and applications. It also covers the advantages of streaming as a base for data transfer and how to address multimedia programming issues, such as data transfer, performance optimization, and time stamping in streaming applications. Programmers who want to use multimedia streaming should be familiar with COM programming concepts.
+
+<P><B>Contents of this article:</B>
+
+<UL><LI><A HREF="dssd0358.htm#mms_arch_0001080101010000" TARGET="TEXT">Advantages of Multimedia Streaming</A>
+ <LI><A HREF="dssd0358.htm#mms_arch_0001080101020000" TARGET="TEXT">The Object Hierarchy</A>
+ <LI><A HREF="dssd0358.htm#mms_arch_0001080101030000" TARGET="TEXT">Creating Multimedia Stream Objects and Stream Samples</A>
+ <LI><A HREF="dssd0358.htm#mms_arch_0001080101040000" TARGET="TEXT">Using Multimedia Streams in Applications</A>
+ <LI><A HREF="dssd0358.htm#mms_arch_0001080101050000" TARGET="TEXT">Sharing Data Between Streams</A>
+</UL>
+<A NAME="mms_arch_0001080101010000"></A><P><B>Advantages of Multimedia Streaming</B>
+<P>When developers use multimedia streaming in their applications, it greatly reduces the amount of format-specific programming needed. Typically, an application that must obtain media data from a file or hardware source must know everything about the data format and the hardware device. The application must handle the connection, transfer of data, any necessary data conversion, and the actual data rendering or file storage. Because each format and device is slightly different, this process is often complex and cumbersome. Multimedia streaming, on the other hand, automatically negotiates the transfer and conversion of data from the source to the application. The streaming interfaces provide a uniform and predictable method of data access and control, which makes it easy for an application to play back the data, regardless of its original source or format. 
+
+<P>The following steps show how to implement streaming, from hardware device to rendered playback.
+
+<OL><LI>A source of video data, such as DirectShow, exposes the streaming interfaces.
+ <LI>The application developer uses the Multimedia Streaming interfaces to handle data format conversion. 
+
+
+ <LI>The application developer uses the Microsoft&#174; DirectDraw&#174; interfaces to render the resulting data.
+</OL>
+<P>The specification for multimedia streams comprises several interfaces; each interface includes methods that control a certain aspect of the streaming process or handle a certain type of data. See <A HREF="dssd0359.htm#ms_iface_0001080201000000" TARGET="TEXT">List of Multimedia Streaming Interfaces</A> for additional information.
+
+<A NAME="mms_arch_0001080101020000"></A><P><B>The Object Hierarchy</B>
+<P>The following diagram shows the basic object hierarchy used in multimedia streaming.
+
+<P><IMG SRC="art/mmarch1.gif" WIDTH="265" HEIGHT="179" ALT="Object hierarchy" >
+
+<P>There are three basic object types defined in the multimedia streaming architecture:
+
+<OL><LI>A multimedia stream, which supports the <A HREF="dssd0361.htm#mms_face_0001080301000000" TARGET="TEXT">IMultiMediaStream</A> interface.
+<LI>Media streams support the <A HREF="dssd0362.htm#mms_face_0001080302000000" TARGET="TEXT">IMediaStream</A> interface and are data specific. Every multimedia stream contains one or more of these media streams.
+<LI>Stream samples support the <A HREF="dssd0363.htm#mms_face_0001080303000000" TARGET="TEXT">IStreamSample</A> interface and are created by a media stream. These objects represent a basic unit of work for the stream.
+</OL>
+<A NAME="mms_arch_0001080101030000"></A><P><B>Creating Multimedia Stream Objects and Stream Samples</B>
+<P>Objects that support the <A HREF="dssd0361.htm#mms_face_0001080301000000" TARGET="TEXT">IMultiMediaStream</A>
+
+
+ interface are the basic containers for multimedia data streams. The <B>IMultiMediaStream</B> interface includes methods that enumerate the object's data streams; these streams are typically video and audio data, but can include data of any format, such as closed-captioning, plain text, or SMTPE timecode. The <B>IMultiMediaStream</B> interface is a generic container, however; developers can create other versions of the interface that support specific data formats. Objects that implement the <A HREF="dssd0370.htm#mms_face_000108030a000000" TARGET="TEXT">IAMMultiMediaStream</A> interface, for example, can enumerate and control streams of any Microsoft&#174; DirectShow&#153; data format. Because individual data streams are format specific, they support at least two different interfaces: one generic and one data-specific. Every stream supports the <A HREF="dssd0362.htm#mms_face_0001080302000000" TARGET="TEXT">IMediaStream</A> interface, which provides methods to retrieve its format and a pointer to the stream itself. The <A HREF="dssd0364.htm#mms_face_0001080304000000" TARGET="TEXT">IDirectDrawMediaStream</A> interface, on the other hand, has methods that deal specifically with rendering video data. Any interface derived from <B>IMultiMediaStream</B> also supports the creation of stream samples, the basic units of streaming data. 
+
+<P>A multimedia sample is a reference to an object containing the media data. For a video image this is a DirectDraw surface. The sample's exact content varies, depending on the type of media (sound, text, and so on). Because a sample is only a reference to the data object, any number of stream samples can refer to the same object. The <A HREF="dssd0363.htm#mms_face_0001080303000000" TARGET="TEXT">IStreamSample</A> interface provides methods that get and set a sample's characteristics, such as its start and stop time, status, and stream association. The <A HREF="dssd0363.htm#mms_face_0001080303030500" TARGET="TEXT">IStreamSample::Update</A> method refreshes the sample's data in the case of readable streams. For writable streams, it will write the sample's data to the stream. Typically, you use the <A HREF="dssd0363.htm#mms_face_0001080303030500" TARGET="TEXT">Update</A> method in a loop that renders, transfers, or stores streaming data. See <A HREF="dssd0050.htm" TARGET="TEXT">Use Multimedia Streaming in DirectShow Applications</A> for a practical example of this method in source code.
+
+
+
+<A NAME="mms_arch_0001080101040000"></A><P><B>Using Multimedia Streams in Applications</B>
+<P>The Multimedia Streaming interfaces greatly simplify the process of manipulating multimedia data by removing the dependency on specific characteristics of the hardware or software source and providing support for all DirectX media formats. Streams abstract the data to a very high level; applications can even move data from one stream to another without knowing anything about the data's format.
+
+<P>The process of creating a multimedia stream and linking it to a media source is:
+
+
+<OL><LI>Create the multimedia stream. The method of creation and initialization of the stream is architecture specific. DirectShow supports the <A HREF="dssd0370.htm#mms_face_000108030a000000" TARGET="TEXT">IAMMultiMediaStream</A> interface which is used to initialize the stream. Other inproc
+
+
+ server implementations of <A HREF="dssd0361.htm#mms_face_0001080301000000" TARGET="TEXT">IMultiMediaStream</A> will be created and initialized using different mechanisms. 
+ <LI>After the multimedia stream object is initialized, the application will use <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> to retrieve the <A HREF="dssd0361.htm#mms_face_0001080301000000" TARGET="TEXT">IMultiMediaStream</A> interface for the object. Use this interface to determine the stream's properties and enumerate the streams themselves. You can retrieve a specific stream by calling the <A HREF="dssd0361.htm#mms_face_0001080301030500" TARGET="TEXT">IMultiMediaStream::GetMediaStream</A> method with a specific purpose ID. MSPID_PrimaryVideo and MSPID_PrimaryAudio, which represent the primary video and audio streams, are the most commonly used purpose IDs.
+ <LI>Call <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">IUnknown::QueryInterface</A> for an interface specific to the stream's media type. If you want to render a video stream, for example, retrieve its <A HREF="dssd0364.htm#mms_face_0001080304000000" TARGET="TEXT">IDirectDrawMediaStream</A> interface. Media-specific interfaces define additional methods necessary for taking full advantage of a format's capabilities.
+ <LI>Create one or more samples from the stream data. Every media stream supports the <A HREF="dssd0362.htm#mms_face_0001080302030200" TARGET="TEXT">IMediaStream::CreateSharedSample</A> method for sample creation. The resulting sample supports the <A HREF="dssd0363.htm#mms_face_0001080303000000" TARGET="TEXT">IStreamSample</A> interface, which provides control over the sample and its characteristics. Typically, the media stream supports a format-specific method of sample creation that is more powerful than the aforementioned <B>IStreamSample</B> methods. <A HREF="dssd0364.htm#mms_face_0001080304000000" TARGET="TEXT">IDirectDrawMediaStream</A>, for example, can create samples attached to a desired DirectDraw surface and clipping rectangle. In some situations, however, you must handle data without knowing about its data format, such as when constructing a cutlist.
+
+
+
+ If you want to stream data independent of its format, use the <B>IMediaStream::CreateSharedSample</B> method to create the data samples.
+
+ <LI>After creating all desired stream samples, start the stream by calling the <A HREF="dssd0361.htm#mms_face_0001080301030900" TARGET="TEXT">IMultiMediaStream::SetState</A> method and pass in the STREAMSTATE_RUN flag as its parameter.
+ <LI>Call <A HREF="dssd0363.htm#mms_face_0001080303030500" TARGET="TEXT">IStreamSample::Update</A> to update the stream sample. When the <B>IStreamSample::Update</B> method exits, you can access the sample's data. The code sample in <A HREF="dssd0050.htm" TARGET="TEXT">Use Multimedia Streaming in DirectShow Applications</A> uses the <B>IStreamSample::Update</B> method in a loop to render a stream of video data. If you want a trigger a specific event or function call when the update returns, pass the appropriate pointers to the <B>IStreamSample::Update</B> method.
+</OL>
+<P>For more information on the Multimedia Streaming interfaces, see the reference documentation included with the DirectX media SDK.
+
+<A NAME="mms_arch_0001080101050000"></A><P><B>Sharing Data Between Streams</B>
+<P>Processing multimedia data typically requires a great deal of system resources; therefore, you should avoid copying data whenever possible. The streaming architecture supports shared stream samples, a mechanism that moves data from one stream to another without copying it. This buffer allows the efficient transportation of data between two streams even if the destination stream doesn't specifically support the underlying data format.
+
+<P>For example, assume that you have a multimedia stream with three data streams: video and audio, and URL data time-stamped to match the video content. You want to write an application that adds a copyright notice on every video frame and writes the data to another stream for storage, but your application doesn't understand any data formats except the video stream. For the video stream, you create a sample attached to the desired DirectDraw surface. You can then create an output stream by calling either the <A HREF="dssd0364.htm#mms_face_0001080304030100" TARGET="TEXT">IDirectDrawMediaStream::CreateSample</A> method with that pointer to the same surface, or <A HREF="dssd0362.htm#mms_face_0001080302030200" TARGET="TEXT">IMediaStream::CreateSharedSample</A>. In both cases, the input and output streams share the DirectDraw surface. Because you understand the video format, you can access this surface as needed.
+
+<P>To retrieve the other source stream pointers (audio and URL), enumerate the source container stream and grab pointers to the nonvideo streams. Each of these source streams has an associated output stream in the output stream container. Retrieve these output pointers by calling the <A HREF="dssd0361.htm#mms_face_0001080301030500" TARGET="TEXT">IMultiMediaStream::GetMediaStream</A> method on the output container with each of the source stream pointers. The following steps describe this process.
+
+<OL><LI>Call <A HREF="dssd0361.htm#mms_face_0001080301030100" TARGET="TEXT">IMultiMediaStream::EnumMediaStreams</A> to retrieve a pointer to a source stream. Make sure that it's not the video stream, because your application already understands its format.
+ <LI>Call <A HREF="dssd0361.htm#mms_face_0001080301030500" TARGET="TEXT">IMultiMediaStream::GetMediaStream</A> on the output container stream with the pointer from step 1. This returns a pointer to the desired output stream.
+ <LI>Call <A HREF="dssd0362.htm#mms_face_0001080302030100" TARGET="TEXT">AllocateSample</A> on the source stream.
+ <LI>Call <A HREF="dssd0362.htm#mms_face_0001080302030200" TARGET="TEXT">CreateSharedSample</A> on the output stream.
+ <LI>Call <A HREF="dssd0363.htm#mms_face_0001080303030500" TARGET="TEXT">Update</A> on the source stream to read the data.
+ <LI>Call <A HREF="dssd0363.htm#mms_face_0001080303030500" TARGET="TEXT">Update</A> on the output stream to write the data.
+</OL>
+<P>Repeat these steps for each stream whose format you don't support. When both samples finish updating, the output stream has all data from the source stream and you are done.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

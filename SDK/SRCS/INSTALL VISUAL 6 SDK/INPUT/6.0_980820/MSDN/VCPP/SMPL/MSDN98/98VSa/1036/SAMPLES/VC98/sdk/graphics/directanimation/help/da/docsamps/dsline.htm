@@ -1,0 +1,76 @@
+<HTML>
+<HEAD>
+<TITLE>DrawingSurface Drawing Methods (Text)</TITLE>
+</HEAD>
+
+<BODY BGCOLOR=WHITE TOPMARGIN=15 LEFTMARGIN=20>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2> 
+
+
+<DIV ID=controlDiv>
+<OBJECT ID="DAViewer"
+        STYLE="position:absolute; left:10; top:10;width:450;height:450"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D">
+</OBJECT>
+</DIV>
+
+<SCRIPT LANGUAGE="JScript">
+  var FlagNotStarted = true;
+  function start ()
+  {
+     if (FlagNotStarted)
+    {
+      drawsurf();
+     FlagNotStarted = false;
+    }
+  }
+ function drawsurf()
+  {
+  s  = DAViewer.MeterLibrary;
+  ds = s.NewDrawingSurface();
+
+
+  // Here is how to draw a line, using x,y coordinates
+ 
+  ds.Text("A line, drawn using its starting and ending x,y coordinates", -.07,.045);
+  ds.Line(-0.1,.04, 0.01,.04);
+
+  // Here is a red line, drawn using points instead of coordinates
+
+  ds.Text("A red line, drawn using points", -.06,.02);
+  ds.LineColor(s.Red);
+  ds.LinePoints(s.Point2(-.05,-.01), s.Point2(0,.02));
+
+  // An animated line that rotates about a fixed point (0,0)
+   
+  // The line is going to move in a circle the same way a second hand sweeps around a clock face
+  // Any line, even one that's moving (or animated) has a starting point and an ending point
+  // Our line has a fixed starting point so we can create it the same way as in the previous example.
+  // The endpoint, however, needs to be animated, which means we will need to use Point2Anim rather than Point2
+  
+  // Our circle is a unit circle, which means it has a radius of 1
+  // The x-coordinate of a point moving about a circle with radius 1 is x=cos(t)
+  // The y-coordinate of a point moving about a circle with radius 1 is y=sin(t)
+  // For t, use the built-in behavior LocalTime, which changes at the rate of 1 unit/second
+  // We'll also scale down the size of the line to .02 meters
+
+  myXCoord = s.Mul(s.DANumber(.02), s.Cos(s.LocalTime));
+  myYCoord = s.Mul(s.DANumber(.02), s.Sin(s.LocalTime));
+  endPt = s.Point2Anim(myXCoord, myYCoord);
+  ds.Text("A line with an animated endpoint", 0,-.01);
+  ds.LineColor(s.Red);
+  ds.LinePoints(s.Point2(0,0), endPt);
+
+
+  DAViewer.Image = ds.Image;
+  DAViewer.Start();
+}
+
+</SCRIPT>
+<CENTER>
+<H2>Drawing Surface Sample</H2>
+<INPUT TYPE=BUTTON VALUE="Show" NAME="StartBtn" OnClick="start()">
+</CENTER>
+</FONT>
+</BODY>
+</HTML>

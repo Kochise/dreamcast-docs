@@ -1,0 +1,300 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>CBaseReferenceClock Class</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0201.htm','/dssd0000.htm','/dssd0180.htm','/index.htm','/dssd0203.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Lib_0001060216000000">CBaseReferenceClock Class</A></H2>
+<BR CLEAR=ALL>
+<P><IMG SRC="art/rclock01.gif" WIDTH="283" HEIGHT="169" ALT="CBaseReferenceClock class hierarchy" >
+
+<P>This base class implements the <A HREF="dssd0170.htm" TARGET="TEXT">IReferenceClock</A> interface.
+
+<P>The <B>CBaseReferenceClock</B> class provides a full implementation of 
+<A HREF="dssd0170.htm" TARGET="TEXT">IReferenceClock</A>. It uses <A HREF="dssd0210.htm" TARGET="TEXT">CCritSec</A> locking support 
+and <A HREF="dssd0186.htm" TARGET="TEXT">CAMSchedule</A> scheduler support.
+
+<P>Each <I>advise</I> call defines a point in time when the caller
+wants to be notified. A <I>periodic advise</I> is a regular series
+of such events. A list of these advise requests is maintained
+by the reference clock. The clock calculates the delay until the
+first requested advise, and signals an event at the due time.
+
+<P>Clients are not advised through callbacks. One-shot clients have an
+event set, while periodic clients have a semaphore released for each
+event notification. A semaphore allows a client to know exactly how
+many events were actually triggered, because multiple time periods might
+
+
+ elapse before the client code executes.
+
+<P>During class construction, a worker thread is created. This thread
+executes a series of Microsoft&#174; Win32&#174; <A HREF="dssd0389.htm#external_00010a01090000da" TARGET="TEXT">WaitForSingleObject</A> calls,
+waking up when a command is given to the thread or the next wake-up
+point is reached. The wake-up points are determined by clients making
+advise calls.
+
+<A NAME="Lib_0001060216010000"></A><P><B>Protected Data Members</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060216010001">m_pSchedule</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Pointer to the <A HREF="dssd0186.htm" TARGET="TEXT">CAMSchedule</A> object associated with this <A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock</A> object.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060216020000"></A><P><B>Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0202.htm#Lib_0001060216050300" TARGET="TEXT">CBaseReferenceClock</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Constructs a <A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock</A> object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0202.htm#Lib_0001060216050500" TARGET="TEXT">GetSchedule</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the <A HREF="dssd0186.htm" TARGET="TEXT">CAMSchedule</A> pointer stored in the <A HREF="dssd0202.htm#Lib_0001060216010001" TARGET="TEXT">CBaseReferenceClock::m_pSchedule</A> data member.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0202.htm#Lib_0001060216050800" TARGET="TEXT">SetTimeDelta</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Adjusts the values returned from <A HREF="dssd0202.htm#Lib_0001060216050400" TARGET="TEXT">CBaseReferenceClock::GetPrivateTime</A>
+by the amount specified in this member function.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0202.htm#Lib_0001060216050900" TARGET="TEXT">TriggerThread</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Triggers the advise thread's event. If you override <A HREF="dssd0202.htm#Lib_0001060216050400" TARGET="TEXT">CBaseReferenceClock::GetPrivateTime</A>, you should either reuse or abandon this method.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060216030000"></A><P><B>Implemented IReferenceClock Methods</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0202.htm#Lib_0001060216050100" TARGET="TEXT">AdvisePeriodic</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Requests an asynchronous periodic notification that a time has elapsed.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0202.htm#Lib_0001060216050200" TARGET="TEXT">AdviseTime</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Requests an asynchronous notification that a time has elapsed.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0202.htm#Lib_0001060216050600" TARGET="TEXT">GetTime</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns a reference time.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0202.htm#Lib_0001060216050a00" TARGET="TEXT">Unadvise</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Removes a previously established advise link.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060216040000"></A><P><B>Overridable Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0202.htm#Lib_0001060216050400" TARGET="TEXT">GetPrivateTime</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Gets the current time from the real clock.
+Override this member function to implement your own clock.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060216050000"></A><P><B>Implemented INonDelegatingUnknown Methods</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0202.htm#Lib_0001060216050700" TARGET="TEXT">NonDelegatingQueryInterface</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns a pointer to interfaces supported, that is, <A HREF="dssd0170.htm" TARGET="TEXT">IReferenceClock</A>.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060216050100">CBaseReferenceClock::AdvisePeriodic</A></H3>
+<A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock Class</A>
+<P>Sets up a recurring advise with the reference clock.
+
+<P><B>HRESULT</B> <B>AdvisePeriodic</B><B>(</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <I>StartTime</I><B>,</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <I>PeriodTime</I><B>,</B><BR>&nbsp;&nbsp;<B>HSEMAPHORE</B> <I>hSemaphore</I><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>*pdwAdviseToken</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>StartTime</I>
+ </DT><DD>Start at this time.
+</DD><DT><I>PeriodTime</I>
+ </DT><DD>Time between notifications.
+</DD><DT><I>hSemaphore</I>
+ </DT><DD>Advise through a semaphore.
+</DD><DT><I>pdwAdviseToken</I>
+ </DT><DD>Advise token that identifies the link with the clock.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns one of the following <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> values:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">E_OUTOFMEMORY </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Failure.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">E_INVALIDARG </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Invalid argument.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">NOERROR </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">No error.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0170.htm#If_0001060152030100" TARGET="TEXT">IReferenceClock::AdvisePeriodic</A> method.
+A semaphore is used, rather than an event, to ensure that multiple notifications can be seen by the
+user. Each time an amount of time specified in the <I>PeriodTime</I> parameter elapses, the
+semaphore will be released.
+
+<P>When no further notifications are required, call <A HREF="dssd0202.htm#Lib_0001060216050a00" TARGET="TEXT">CBaseReferenceClock::Unadvise</A>
+and pass the <I>pdwAdviseToken</I> value returned from this call.
+
+<P>For example, the following code extract sets up an advise link that fires its first advise five
+seconds from now and then signals every second until <A HREF="dssd0202.htm#Lib_0001060216050a00" TARGET="TEXT">Unadvise</A> is called. By using a
+semaphore with a count of 10, the clock is effectively able to cache 10 events.
+
+<PRE><FONT FACE="Courier" SIZE="2">HANDLE hSemaphore = CreateSemaphore(NULL, 0, 10, NULL);
+    // assume pRefClock is an IReferenceClock* variable
+
+    REFERENCE_TIME rtPeriodTime = 1000 * (UNITS / MILLISECONDS);
+        // a one-second interval
+    REFERENCE_TIME rtNow;
+    DWORD    dwAdviseToken;
+    pRefClock-&gt;GetTime(&amp;rtNow);
+
+    pRefClock-&gt;AdvisePeriodic(rtNow+(5*rtPeriodTime),
+        PeriodTime, hSemaphore, &amp;dwAdviseToken);
+</FONT></PRE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060216050200">CBaseReferenceClock::AdviseTime</A></H3>
+<A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock Class</A>
+<P>Sets up a one-shot notification with the clock.
+
+<P><B>HRESULT</B> <B>AdviseTime</B><B>(</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <I>baseTime</I><B>,</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <I>streamTime</I><B>,</B><BR>&nbsp;&nbsp;<B>HEVENT</B> <I>hEvent</I><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>*pdwAdviseToken</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>baseTime</I>
+ </DT><DD>Base reference time.
+</DD><DT><I>streamTime</I>
+ </DT><DD>Stream offset time.
+</DD><DT><I>hEvent</I>
+ </DT><DD>Advise through this event.
+</DD><DT><I>pdwAdviseToken</I>
+ </DT><DD>Where the advise token goes.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns one of the following <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> values:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">E_OUTOFMEMORY </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Failure.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">E_INVALIDARG </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Invalid argument.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">NOERROR </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">No error.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0170.htm#If_0001060152030200" TARGET="TEXT">IReferenceClock::AdviseTime</A> method.
+At the time specified in the <I>baseTime</I> plus the <I>streamTime</I> parameters, the
+event specified in <I>hEvent</I> will be set. It is correct to call
+<A HREF="dssd0202.htm#Lib_0001060216050a00" TARGET="TEXT">CBaseReferenceClock::Unadvise</A> to remove the link after the event has occurred,
+but it is not necessary. One-shot notifications are automatically cleared by the clock
+once they have signaled.
+
+<P>To cancel a one-shot notification before the time is reached, call 
+<A HREF="dssd0202.htm#Lib_0001060216050a00" TARGET="TEXT">Unadvise</A>
+and pass the <I>pdwAdviseToken</I> value returned from this call.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060216050300">CBaseReferenceClock::CBaseReferenceClock</A></H3>
+<A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock Class</A>
+<P>Constructs a <A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock</A> object.
+
+<P><B>CBaseReferenceClock</B><B>(</B><BR>&nbsp;&nbsp;<B>TCHAR</B> <I>*pName</I><B>,</B><BR>&nbsp;&nbsp;<B>LPUNKNOWN</B> <I>pUnk</I><B>,</B><BR>&nbsp;&nbsp;<B>HRESULT</B> <I>*phr</I><B>,</B><BR>&nbsp;&nbsp;<B>CAMSchedule</B> <B>*</B> <I>pSched</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pName</I>
+ </DT><DD>Name of the <A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock</A> object.
+</DD><DT><I>pUnk</I>
+ </DT><DD><A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> interface of the delegating object.
+</DD><DT><I>phr</I>
+ </DT><DD>Address of an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+</DD><DT><I>pSched</I>
+ </DT><DD>Address of a <A HREF="dssd0186.htm" TARGET="TEXT">CAMSchedule</A> object that will be associated with this <A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock</A> object. If <I>pSched</I> is NULL, the constructor creates a new <B>CAMSchedule</B> object and associates it with this <B>CBaseReferenceClock</B> object.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060216050400">CBaseReferenceClock::GetPrivateTime</A></H3>
+<A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock Class</A>
+<P>Retrieves the current reference time.
+<P><B>virtual</B> <B>REFERENCE_TIME</B> <B>GetPrivateTime</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns the current reference time, in 100-nanosecond units.
+
+<H5>Remarks</H5>
+<P><B>GetPrivateTime</B> represents the actual clock.
+<A HREF="dssd0202.htm#Lib_0001060216050600" TARGET="TEXT">GetTime</A> is the externally used member function.
+Derived classes will probably override this method,
+but not <B>GetTime</B> itself.
+The important point about <B>GetPrivateTime</B>
+is that it is allowed to go backward.
+This class's <B>GetTime</B> member function will keep 
+returning the last time returned by <B>GetTime</B>
+until <B>GetPrivateTime</B> catches up.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060216050500">CBaseReferenceClock::GetSchedule</A></H3>
+<A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock Class</A>
+<P>Retrieves the <A HREF="dssd0186.htm" TARGET="TEXT">CAMSchedule</A> pointer stored in the <A HREF="dssd0202.htm#Lib_0001060216010001" TARGET="TEXT">CBaseReferenceClock::m_pSchedule</A> data member.
+<P><B>CAMSchedule</B> <B>*</B> <B>GetSchedule</B><B>(</B> <B>)</B><B>;</B><BR><H3><HR COLOR=#0000FF><A NAME="Lib_0001060216050600">CBaseReferenceClock::GetTime</A></H3>
+<A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock Class</A>
+<P>Retrieves the current reference time, in 100-nanosecond units.
+
+<P><B>HRESULT</B> <B>GetTime</B><B>(</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <I>*pTime</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pTime</I>
+ </DT><DD>Where the current time is returned.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns one of the following <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> values:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">E_POINTER </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">NULL pointer argument.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">S_FALSE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Failure.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">S_OK</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Success.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0170.htm#If_0001060152030300" TARGET="TEXT">IReferenceClock::GetTime</A> method.
+It reads the time from the implemented clock and returns the current time.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060216050700">CBaseReferenceClock::NonDelegatingQueryInterface</A></H3>
+<A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock Class</A>
+<P>Accesses supported interfaces.
+
+<P><B>HRESULT</B> <B>NonDelegatingQueryInterface</B><B>(</B><BR>&nbsp;&nbsp;<B>REFIID</B> <I>riid</I><B>,</B><BR>&nbsp;&nbsp;<B>void</B> <B>**</B> <I>ppv</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>riid</I>
+ </DT><DD>IID of the interface being requested. Only IID_IReferenceClock
+is supported by the clock interface.
+</DD><DT><I>ppv</I>
+ </DT><DD>Where the <A HREF="dssd0170.htm" TARGET="TEXT">IReferenceClock</A> pointer is returned.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns S_OK if the interface is supported, S_FALSE if not.
+
+<H5>Remarks</H5>
+<P>This member function implements the
+<A HREF="dssd0265.htm#fmutil_0001060309000001" TARGET="TEXT">INonDelegatingUnknown::NonDelegatingQueryInterface</A> method.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060216050800">CBaseReferenceClock::SetTimeDelta</A></H3>
+<A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock Class</A>
+<P>Sets a delta on the time that <A HREF="dssd0202.htm#Lib_0001060216050400" TARGET="TEXT">CBaseReferenceClock::GetPrivateTime</A> will return.
+
+<P><B>HRESULT</B> <B>SetTimeDelta</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>REFERENCE_TIME&amp;</B> <I>TimeDelta</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>TimeDelta</I>
+ </DT><DD>REFERENCE_TIME delta to be added.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns NOERROR.
+
+
+<H5>Remarks</H5>
+<P>Note that <A HREF="dssd0202.htm#Lib_0001060216050600" TARGET="TEXT">CBaseReferenceClock::GetTime</A> will never
+return a time earlier than a previously returned time.
+Thus, if you set the clock to a time in the past, successive calls
+to <B>CBaseReferenceClock::GetTime</B>
+will return the current value until this new time is reached, and the clock will start to increment
+again.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060216050900">CBaseReferenceClock::TriggerThread</A></H3>
+<A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock Class</A>
+<P>Triggers the advise thread's event.
+
+<P><B>void</B> <B>TriggerThread</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The clock uses a worker thread that should wake up and call <A HREF="dssd0186.htm#Lib_0001060206010200" TARGET="TEXT">CAMSchedule::Advise</A> at the appropriate time. If the clock adds an event that should be fired earlier than any currently outstanding event, the worker thread needs to be awoken in order to reevaluate its wait time. The <B>TriggerThread</B> member function will wake up the worker thread so this can take place. If a derived clock causes time to jump forward for some reason, <B>TriggerThread</B> should be called so that the wait time can be reevaluated; otherwise, the events will fire late.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060216050a00">CBaseReferenceClock::Unadvise</A></H3>
+<A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock Class</A>
+<P>Removes a previously established advise link.
+
+<P><B>HRESULT</B> <B>Unadvise</B><B>(</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>dwAdviseToken</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>dwAdviseToken</I>
+ </DT><DD>Identifier (token) of the link that is being reset. This is the same value
+that was returned on <A HREF="dssd0202.htm#Lib_0001060216050200" TARGET="TEXT">CBaseReferenceClock::AdviseTime</A> or
+<A HREF="dssd0202.htm#Lib_0001060216050100" TARGET="TEXT">CBaseReferenceClock::AdvisePeriodic</A>.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns S_OK if the successful, S_FALSE if not.
+
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0170.htm#If_0001060152030400" TARGET="TEXT">IReferenceClock::Unadvise</A> method.
+Call <B>Unadvise</B> to remove the previously established clock advise links. It is mandatory
+to call <B>Unadvise</B> on periodic advises in order to stop further calls. It is recommended to
+call <B>Unadvise</B> for single-shot advise links.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

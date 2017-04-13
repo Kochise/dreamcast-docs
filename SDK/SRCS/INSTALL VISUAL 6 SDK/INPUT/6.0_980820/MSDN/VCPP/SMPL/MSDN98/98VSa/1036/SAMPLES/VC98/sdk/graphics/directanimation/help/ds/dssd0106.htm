@@ -1,0 +1,256 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>IAMStreamControl Interface</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0105.htm','/dssd0000.htm','/dssd0088.htm','/index.htm','/dssd0107.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="If_0001060112000000">IAMStreamControl Interface</A></H2>
+<BR CLEAR=ALL>
+<P>The <B>IAMStreamControl</B> interface is exposed on input and output pins on any filter in a filter graph. This interface exposes methods that allows applications to control individual stream components in a filter graph.
+
+
+
+ You can turn various streams on or off
+
+
+
+ without affecting the rest of the graph. For example, you can turn off an audio stream
+
+
+
+ while a video stream continues, for muting. Or a capture stream can be turned off while preview continues to flow. This interface also assists in frame accuracy when exact capture start or stop times are important.
+
+<P>Currently, the <A HREF="dssd0204.htm#Lib_0001060218000000" TARGET="TEXT">CBaseStreamControl</A> base class implements <B>IAMStreamControl</B>. <B>CBaseStreamControl</B> enables the user to specify start and stop times in the <A HREF="dssd0204.htm#Lib_0001060218010800" TARGET="TEXT">CBaseStreamControl::StartAt</A> and <A HREF="dssd0204.htm#Lib_0001060218010900" TARGET="TEXT">CBaseStreamControl::StopAt</A> member functions
+
+
+
+ and provides stream information in the <A HREF="dssd0204.htm#Lib_0001060218010400" TARGET="TEXT">CBaseStreamControl::GetInfo</A>
+
+
+
+ member function. <B>CBaseStreamControl</B> uses the <A HREF="dssd0288.htm#dtypes_0001060601001f00" TARGET="TEXT">StreamControlState</A> enumerated data type to describe the various states a stream is in. A flowing stream is indicated by the STREAM_FLOWING setting; otherwise it is in a discarding state indicated by the STREAM_DISCARDING setting. See <B>StreamControlState</B> for more details on stream states.
+
+<P>If you wish to implement this interface on your own your class should
+
+
+
+ typically inherit from <A HREF="dssd0204.htm#Lib_0001060218000000" TARGET="TEXT">CBaseStreamControl</A> to obtain an implementation of the <A HREF="dssd0204.htm#Lib_0001060218010800" TARGET="TEXT">CBaseStreamControl::StartAt</A>, <A HREF="dssd0204.htm#Lib_0001060218010900" TARGET="TEXT">CBaseStreamControl::StopAt</A>, and <A HREF="dssd0204.htm#Lib_0001060218010400" TARGET="TEXT">CBaseStreamControl::GetInfo</A> methods.
+
+
+
+ The <B>CBaseStreamControl</B> class is also maintains
+
+
+
+ state information and makes decisions about what to do with the sample. Developers implementing their own filters with pins that support <B>IAMStreamControl</B> through the <B>CBaseStreamControl</B> base class must follow certain guidelines outlined in the <B>CBaseStreamControl</B> documentation.
+
+<A NAME="If_0001060112010000"></A><P><B>When to Implement
+</B>
+<P>Implement on input or output pins of filters when you want precise control of the data stream. This interface enables you to turn off portions of the filter graph's streams
+
+
+
+ at specific times without affecting the rest of the graph. Although this interface can be used throughout the graph, the output pins of audio and video capture filters and input pins of multiplexers primarily use it.
+
+
+
+<P>If you are writing a filter that will implement <A HREF="dssd0106.htm" TARGET="TEXT">IAMStreamControl</A> on one of its pins, you should implement the STREAM_DISCARDING state so that the pin 
+
+
+
+ discards media samples in a timely fashion,
+
+
+
+
+ rather than as soon as they are received. This means that if your pin is discarding samples as soon as it determines they are outside the time that the pin is supposed to be on, it will discard samples as fast as possible and the whole file could potentially be pushed into your filter and discarded in mere moments. This causes problems if the pin tries to call <A HREF="dssd0106.htm#If_0001060112030100" TARGET="TEXT">IAMStreamControl::StartAt</A>
+
+
+
+ at a later point in time because the entire file will have already been discarded. To avoid pins from dumping media samples as fast possible, your code should check
+
+
+
+ the media sample's timestamp
+
+
+
+
+
+
+ and wait until the reference clock verifies that the end of the sample's time has actually occurred before discarding (see <A HREF="dssd0204.htm#Lib_0001060218000000" TARGET="TEXT">CBaseStreamControl</A> for an implementation that does this).
+ 
+<A NAME="If_0001060112020000"></A><P><B>When to Use
+</B>
+<P>Use this interface to turn on or off certain portions of the filter graph's streams while other portions continue to process data. For example, your application can tell a video capture filter's output pin precisely
+
+
+
+ when to start or stop capturing, independent of what is happening in the rest of the graph. This assists in frame accuracy when exact capture start or stop times are important.
+
+
+<A NAME="If_0001060112030000"></A><P><B>Methods in Vtable Order
+
+</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IUnknown methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+ </B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves pointers to supported interfaces.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">AddRef</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Increments the reference count.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Decrements the reference count.
+</FONT></TD></TR></TABLE>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IAMStreamControl methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+ </B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0106.htm#If_0001060112030100" TARGET="TEXT">StartAt</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Informs the pin when to start sending streaming data.
+
+
+
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0106.htm#If_0001060112030200" TARGET="TEXT">StopAt</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Informs the pin when to suspend processing and supplying data.
+
+
+
+
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0106.htm#If_0001060112030300" TARGET="TEXT">GetInfo</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves information about the current streaming settings.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="If_0001060112030100">IAMStreamControl::StartAt</A></H3>
+<A HREF="dssd0106.htm" TARGET="TEXT">IAMStreamControl Interface</A>
+<P>Informs the pin when to start sending streaming data.
+<P><B>HRESULT</B> <B>StartAt</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>REFERENCE_TIME</B> <B>*</B> <I>ptStart</I><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>dwCookie</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>ptStart</I>
+ </DT><DD>[in] The time at which to start streaming as specified in the <A HREF="dssd0170.htm#If_0001060152030301" TARGET="TEXT">REFERENCE_TIME</A> structure.
+
+
+
+ If NULL, start immediately (no notification); if MAX_TIME, start canceled and will have no effect.
+
+
+
+</DD><DT><I>dwCookie</I>
+ </DT><DD>[in] Specifies a particular value to be sent with the notification when the start occurs. (Only used if <I>ptStart</I> is non-NULL or MAX_TIME).
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>Remarks</H5>
+<P>Streams are enabled by default, so this method will have no effect unless a previous <A HREF="dssd0106.htm#If_0001060112030200" TARGET="TEXT">StopAt</A> member function has been called. 
+
+<P>If the pointer
+
+
+
+ is not NULL or MAX_TIME, then pins should signal <I>EC_STREAM_CONTROL_STARTED</I> with an <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> pointer and the cookie specified in the <I>dwCookie</I> parameter.
+
+
+
+ This allows applications to tie the events back to their requests. If the <I>ptStart</I> pointer
+
+
+
+ is NULL or MAX_TIME, then no event is sent by the filter graph.
+
+
+
+
+<P>If start and stop are scheduled for a single point in time, the effect is as if the start occurred an infinitesimal time before the stop. You can use this to capture a single frame.
+<H3><HR COLOR=#0000FF><A NAME="If_0001060112030200">IAMStreamControl::StopAt</A></H3>
+<A HREF="dssd0106.htm" TARGET="TEXT">IAMStreamControl Interface</A>
+<P>Informs the pin when to suspend processing and supplying data.
+<P><B>HRESULT</B> <B>StopAt</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>REFERENCE_TIME</B> <B>*</B> <I>ptStop</I><B>,</B><BR>&nbsp;&nbsp;<B>BOOL</B> <I>bSendExtra</I><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>dwCookie</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>ptStop</I>
+ </DT><DD>[in] The time at which to stop streaming as specified in the <A HREF="dssd0170.htm#If_0001060152030301" TARGET="TEXT">REFERENCE_TIME</A> structure.
+
+
+
+ If you specify NULL for <I>ptStop</I>, it will stop immediately (no notification); if MAX_TIME, cancels stop.
+
+
+
+
+</DD><DT><I>bSendExtra</I>
+ </DT><DD>[in] Indicates whether to send an extra sample after scheduled <I>ptStop</I> time.
+</DD><DT><I>dwCookie</I>
+ </DT><DD>[in] Specifies a particular value to send with the notification when the stop occurs (used only if <I>ptStart</I> if not NULL or MAX_TIME).
+
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>Remarks</H5>
+<P>This method is exposed by pins that support
+
+
+
+ the stopping of streams. It sets the <A HREF="dssd0288.htm#dtypes_0001060601001f00" TARGET="TEXT">StreamControlState</A> enumeration type to STREAM_DISCARDING.
+
+<P>In video capture, you would typically call <B>StopAt</B>
+
+
+
+ on both the output pin of a capture filter and the input pin of a multiplexer, and pay attention only to the notification from the multiplexer. This ensures that the capture filter doesn't needlessly capture extra frames, while guaranteeing that the multiplexer has, in fact, saved the last frame to a file.
+
+
+
+<P>In addition, you should specify TRUE for the <I>bSendExtra</I> parameter on 
+
+
+
+ the capture pin, and specify FALSE
+
+
+
+ to the multiplexer pin. If an extra frame is not sent, the multiplexer will wait for the stop time indefinitely and not realize it already has received all the capture information. The multiplexer will discard the extra sample sent by the capture pin, so it will not get written to the file. Do not use <I>bSendExtra</I>=TRUE unless you also use <A HREF="dssd0106.htm" TARGET="TEXT">IAMStreamControl</A> on another downstream pin too, like in the case above.
+
+
+<P>If you call <B>StopAt</B> with a time that is in the middle of a packet,
+
+
+
+ the filter will deliver the whole packet before going into a discarding state. Also, if start and stop are scheduled for a single point in time, the effect is as if the start occurred an infinitesimal time before the stop. You can use this effect to capture a single frame (see <A HREF="dssd0204.htm#Lib_0001060218000000" TARGET="TEXT">CBaseStreamControl</A> for an implementation example). 
+
+
+
+<H3><HR COLOR=#0000FF><A NAME="If_0001060112030300">IAMStreamControl::GetInfo</A></H3>
+<A HREF="dssd0106.htm" TARGET="TEXT">IAMStreamControl Interface</A>
+<P>Retrieves information about the current streaming settings.
+<P><B>HRESULT</B> <B>GetInfo</B><B>(</B><BR>&nbsp;&nbsp;<B>AM_STREAM_INFO</B> <I>*pInfo</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pInfo</I>
+ </DT><DD>[out] Pointer to an <A HREF="dssd0287.htm#structs_0001060501000800" TARGET="TEXT">AM_STREAM_INFO</A> structure that contains current stream settings.
+
+
+
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>Remarks</H5>
+<P>Call this method to discover the state of the <A HREF="dssd0288.htm#dtypes_0001060601001f00" TARGET="TEXT">StreamControlState</A> enumerated data type which indicates the stream's state.
+
+
+
+ Other values in the <A HREF="dssd0287.htm#structs_0001060501000800" TARGET="TEXT">AM_STREAM_INFO</A> structure include start time, stop time, start cookie, and stop cookie.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

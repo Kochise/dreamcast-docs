@@ -1,0 +1,201 @@
+<!-- ---<< Video in a Web Page >>--- -->
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<!-- Vid_Test.htm:  
+     HTML document that contains the text, input elements,
+     the Video control, and code written in VBScript 
+     that manipulates Vid.ocx. 
+
+   Copyright (C) 1997 Microsoft Corporation
+   All rights reserved.
+
+   This source code is only intended as a supplement to the
+   Broadcast Architecture Programmer's Reference.
+   For detailed information regarding Broadcast
+   Architecture, see the reference.
+
+-->
+
+<html>
+
+<head>
+<title>Testing a Video Control in a Web Browser</title>
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<BODY leftmargin=0 topmargin=0>
+
+<!-- ---<< Embedding the Video Control  >>--- -->
+<!-- The following lines make a Video control show up on the page. -->
+<OBJECT 
+    id="MyVid" WIDTH=50% HEIGHT=50% 
+        classid="clsid:31263ec0-2957-11cf-a1e5-00aa9ec79700"
+    >
+        <PARAM NAME="Volume" VALUE=0>
+        <PARAM NAME="Balance" VALUE=0>
+</OBJECT>
+
+<br>Clicking video fills the window and then double-clicking reduces the video space.<br><br>
+
+<!-- ---<< Web Page UI Elements to Receive Video  >>--- -->
+<!-- The following lines place a text box and command buttons
+       on the page and reference onClick functions that are called
+       when the user clicks the command buttons. -->
+<table cellpadding=0 cellspacing=0 width=580>
+<caption align=top><font size=3><b>
+This page demonstrates using a Video control in a Web browser.
+</b></font></caption>
+<tr><td width=15></td><td width=215>
+<font size=2>Enter channel number or file name</font> </td>
+<td width=150></td><td width=150></td><td width=150></td></tr>
+<tr><td></td>
+<td><input type=text name="txtFilename" language="VBScript"></td> 
+<td><input type=button value="Set Chan" name="cmdChan" language="VBScript" onClick="ChanPressed"></td>
+<td><input type=button value="Set File" name="cmdFile" language="VBScript" onClick="FilePressed"></td>
+<td><input type=button value="Stop File" name="cmdStop" language="VBScript" onClick="StopPressed"></td></tr>
+<tr><td colspan=4 HEIGHT="16"><!--- Empty row for spacing---> </td></tr>
+</table>
+
+
+<font size=3>
+
+<!-- ---<< Web Page Programming to Receive Video  >>--- -->
+<!-- For more information see, `` About the Video Control ``, `` Using the Video Control ``, `` Video Control Reference ``, and `` Displaying Video ``  in the Broadcast Architecture Programmer's Reference. -->
+<SCRIPT LANGUAGE="VBScript">
+<!--
+    Dim FileRunStatus
+    Dim doc_height
+    Dim doc_width
+
+    Sub ChanPressed
+        Call TuneDevices
+    End Sub
+
+    Sub FilePressed
+        FileRunStatus = 1
+        Call StreamFileSource
+    End Sub
+
+    Sub StopPressed
+        FileRunStatus = 0
+        Call StreamFileSource
+    End Sub
+        
+' ---<< Getting Names of Video Devices  >>--- 
+    ' The next line calls a function that lists all the devices on the 
+    ' user's system that can be used to input data to the video control.
+    Call GetDeviceNames
+
+    Sub GetDeviceNames
+        Dim Dev ' As BPCDeviceBase
+        Dim devs ' As BPCDevices
+        Set devs = MyVid.Devices
+        For Each Dev In devs
+            Document.writeln "You can use a " & Dev.Name
+            Document.writeln "as the input for your video control."
+            Document.writeln ""
+        Next
+
+' ---<< Tuning Analog Cable TV Channels  >>--- 
+        ' You can get the tuning space number for Analog Cable TV 
+        ' from the following registry key: 
+        ' [HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\TV Services\Tuning Spaces].
+        ' To obtain the description of a tuning space to determine if it is 
+        ' the one you want to use, click the tuning space number to select  
+        ' it, and then view details about the tuning space in the right 
+        ' section of the dialog box.
+
+        ' Print the number of cards that support the Analog Cable TV 
+        ' tuning space.
+        ' Don't execute the following statements if the number of cards 
+        ' is zero.
+        If (MyVid.TSDeviceCount(3)) Then  
+            Document.writeln "There is " & MyVid.TSDeviceCount(3) & " card(s) that can receive "
+            Document.writeln "video from the tuning space for "
+            Document.writeln "Analog Cable TV."
+            Document.writeln ""
+
+            ' Initially tune to a channel in the Analog Cable TV tuning space.
+            ' Specifying -1 for the VideoSubchannel and AudioSubChannel parameters
+            ' enables the video control to select the default values for those properties.
+            Call MyVid.Tune(3,11,-1,-1)
+            MyVid.VideoOn = False 'Turn off video
+            MyVid.VideoOn = True  'Turn video back on
+        End If
+    End Sub
+
+' ---<< Tuning by Setting a Channel  >>--- 
+    ' The next function tunes a device 
+    ' that has channels, that is a tuning device.
+    ' The function tunes to the channel specified in the text box.
+    Sub TuneDevices
+        Dim Dev 
+        For Each Dev In MyVid.Devices
+            MyVid.Input = Dev
+            If MyVid.Input.HasChannel Then
+                MyVid.Input.Channel = CInt(txtFilename.value)
+                Exit For
+             End If
+        Next
+    End Sub
+
+' ---<< Setting and Playing a File  >>--- 
+    ' The next function sets a particular file to 
+    ' stream data from the file to the video control.
+    ' The file will stream data if its status is true (1),
+    ' otherwise the file will stop streaming data.
+    Sub StreamFileSource
+        Dim Dev 
+        For Each Dev In MyVid.Devices
+            MyVid.Input = Dev
+            If MyVid.Input.HasFilename Then
+                MyVid.Input.Filename = txtFilename.value
+                If FileRunStatus Then 
+                    Call MyVid.Run
+                    Call MyVid.Pause
+                    Call MyVid.Run
+                Else
+                    Call MyVid.Stop
+                End If
+                Exit For
+            End If
+        Next
+    End Sub
+
+' ---<< Setting Video Control Size  >>--- 
+    ' The next two functions set the size of the Video control to 
+    ' either the size of the document space on a click event or half 
+    ' the size of the the document space on a double-click event.
+    ' 
+    Private Sub MyVid_Click
+        doc_height = document.body.offsetHeight
+        doc_width = document.body.offsetWidth
+        MyVid.WIDTH = doc_width
+        MyVid.HEIGHT = doc_height
+        Call MyVid.Refresh
+    End Sub
+
+    Private Sub MyVid_DblClick
+        doc_height = document.body.offsetHeight
+        doc_width = document.body.offsetWidth
+        MyVid.WIDTH = doc_width / 2
+        MyVid.HEIGHT = doc_height / 2
+        Call MyVid.Refresh
+    End Sub
+
+' ---<< Setting Video Input to NULL  >>--- 
+    ' When IE closes or the page unloads, the following function
+    ' should set the video input to NULL.
+    ' 
+    Sub window_onunload()
+        Dim msg
+        msg = "Before exiting, should set video input to null because " + MyVid.Input.Name + " is still connected."
+        msgbox(msg)
+    End Sub
+
+-->
+</SCRIPT>
+</font>
+</BODY>
+
+</html>

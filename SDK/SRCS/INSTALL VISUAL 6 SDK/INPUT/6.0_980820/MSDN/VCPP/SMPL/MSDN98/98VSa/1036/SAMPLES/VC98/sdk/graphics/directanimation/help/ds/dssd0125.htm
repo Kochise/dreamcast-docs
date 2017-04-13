@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>IDeferredCommand Interface</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0124.htm','/dssd0000.htm','/dssd0088.htm','/index.htm','/dssd0126.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="If_0001060125000000">IDeferredCommand Interface</A></H2>
+<BR CLEAR=ALL>
+<P>The deferred command mechanism allows filters themselves to handle deferred commands.
+Where they do not, the filter graph manager queues the command until the requested time
+and then calls the method on the filter (this would result in coarse rather than accurate
+synchronization). Note that a filter that does handle deferred commands must make them apply
+to data appearing at that time. Thus a contrast filter asked to change the contrast at time <I>x</I>
+must ensure that it applies the change when processing data time-stamped to be rendered at time
+<I>x</I>; these samples will be processed by the filter somewhat before time <I>x</I>.
+
+<P>The <A HREF="dssd0169.htm" TARGET="TEXT">IQueueCommand</A> interface provides two methods,
+<A HREF="dssd0169.htm#If_0001060151030200" TARGET="TEXT">InvokeAtStreamTime</A>, which queues commands at stream time, and
+<A HREF="dssd0169.htm#If_0001060151030100" TARGET="TEXT">InvokeAtPresentationTime</A>, which queues commands at presentation time. Both
+return an <B>IDeferredCommand</B> interface to the queued command, by which the
+application can cancel the command, set a new presentation time for it, or get back an estimate
+of the likelihood of the filter graph manager being able to run the command on time
+(implementation of this last method is likely to be highly simplistic in the first release of
+Microsoft&#174; DirectShow&#153;).
+
+<P>Both the queue and the application will hold a reference count on the object
+(represented to the application by the <B>IDeferredCommand</B> interface), and the object
+will not be destroyed until both are released. Similarly, calling Release on the
+<B>IDeferredCommand</B> interface is not sufficient to cancel the command
+because the queue also holds a reference count.
+
+<A NAME="If_0001060125010000"></A><P><B>When to Implement</B>
+<P>This method is implemented by the filter graph manager to allow deferred
+processing of commands. It is implemented through a plug-in distributor
+to pass deferred commands from the application to the filters
+(through the plug-in distributor for the command that has been queued). You can implement it
+within your filter if your filter supports queued commands; in this case, applications
+will need to obtain an <A HREF="dssd0169.htm" TARGET="TEXT">IQueueCommand</A> interface directly from your filter.
+You can use the <A HREF="dssd0211.htm#Lib_000106021f000000" TARGET="TEXT">CDeferredCommand</A> class to help implement this interface.
+
+
+<A NAME="If_0001060125020000"></A><P><B>When to Use</B>
+<P>Applications can use this interface to cancel, postpone, get return values from, or determine a
+confidence level for commands that have been queued for deferred execution by using the
+<A HREF="dssd0169.htm" TARGET="TEXT">IQueueCommand</A> interface.
+
+<A NAME="If_0001060125030000"></A><P><B>Methods in Vtable Order</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IUnknown methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns pointers to supported interfaces.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">AddRef</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Increments the reference count.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Decrements the reference count.
+</FONT></TD></TR></TABLE>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IDeferredCommand methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0125.htm#If_0001060125030100" TARGET="TEXT">Cancel</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Cancels a previously queued <A HREF="dssd0169.htm#If_0001060151030200" TARGET="TEXT">IQueueCommand::InvokeAtStreamTime</A> or
+<A HREF="dssd0169.htm#If_0001060151030100" TARGET="TEXT">IQueueCommand::InvokeAtPresentationTime</A> request.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0125.htm#If_0001060125030200" TARGET="TEXT">Confidence</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns a confidence value that describes the probability of the deferred command being
+run on time.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0125.htm#If_0001060125030400" TARGET="TEXT">Postpone</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies a new invocation time for a previously queued command.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0125.htm#If_0001060125030300" TARGET="TEXT">GetHResult</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the return value from the invoked command.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="If_0001060125030100">IDeferredCommand::Cancel</A></H3>
+<A HREF="dssd0125.htm" TARGET="TEXT">IDeferredCommand Interface</A>
+<P>Cancels a previously queued <A HREF="dssd0169.htm#If_0001060151030200" TARGET="TEXT">IQueueCommand::InvokeAtStreamTime</A> or
+<A HREF="dssd0169.htm#If_0001060151030100" TARGET="TEXT">IQueueCommand::InvokeAtPresentationTime</A> request.
+
+<P><B>HRESULT</B> <B>Cancel</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H3><HR COLOR=#0000FF><A NAME="If_0001060125030200">IDeferredCommand::Confidence</A></H3>
+<A HREF="dssd0125.htm" TARGET="TEXT">IDeferredCommand Interface</A>
+<P>Returns a confidence value on a scale of 0 to 100 that describes the probability that
+the deferred command will be run on time.
+
+<P><B>HRESULT</B> <B>Confidence</B><B>(</B><BR>&nbsp;&nbsp;<B>LONG</B> <I>*pConfidence</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pConfidence</I>
+</DT><DD>Confidence level.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>Higher confidence values indicate a greater probability of timely execution.
+For example, a command queued at a presentation time that has already passed will return
+a value of 0. A value of 100 would indicate, with absolute certainty, that the command
+can be run on time. Commands that are not directly supported by the filter but are
+queued by the filter graph manager will return a lower confidence value than commands
+queued directly by the filters that run them. Commands that are queued with times too close
+to other commands are likely to return lower confidence values.
+The initial implementation of this method relies mostly on the reporting of the
+individual filter commands rather than an attempt to estimate resource availability
+on a filter graph-wide basis.
+<H3><HR COLOR=#0000FF><A NAME="If_0001060125030300">IDeferredCommand::GetHResult</A></H3>
+<A HREF="dssd0125.htm" TARGET="TEXT">IDeferredCommand Interface</A>
+<P>Retrieves the return value from the invoked command.
+
+<P><B>HRESULT</B> <B>GetHResult</B><B>(</B><BR>&nbsp;&nbsp;<B>HRESULT*</B> <I>phrResult</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>phrResult</I>
+</DT><DD>Retrieved <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+</DD></DL>
+<H3><HR COLOR=#0000FF><A NAME="If_0001060125030400">IDeferredCommand::Postpone</A></H3>
+<A HREF="dssd0125.htm" TARGET="TEXT">IDeferredCommand Interface</A>
+<P>Specifies a new presentation time for a previously queued command.
+
+<P><B>HRESULT</B> <B>Postpone</B><B>(</B><BR>&nbsp;&nbsp;<B>REFTIME</B> <I>newtime</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>newtime</I>
+</DT><DD>New presentation time.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Return value is S_OK if completed. Also, if completed, the
+<I>phrResult</I> parameter is set to the result of the deferred command.
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

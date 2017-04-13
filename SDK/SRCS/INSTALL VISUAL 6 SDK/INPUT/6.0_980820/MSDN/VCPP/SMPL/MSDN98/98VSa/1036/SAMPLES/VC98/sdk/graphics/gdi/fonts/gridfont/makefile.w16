@@ -1,0 +1,66 @@
+PROJ	= GRID
+
+CC	=cl 
+RC	=rc
+        
+CFLAGS_G_WEXE	=/AS /W3 /Ze /D_UNICODE /Gw /Zp 
+CFLAGS_D_WEXE	=/Zi  /Od 
+CFLAGS_R_WEXE	=/O /Os /Gs /DNDEBUG
+
+CFLAGS	=$(CFLAGS_G_WEXE) $(CFLAGS_D_WEXE)
+
+LFLAGS_G_WEXE	=/ST:8192 /A:16
+LFLAGS_D_WEXE	=/CO
+LFLAGS_R_WEXE	=
+
+LFLAGS	 =$(LFLAGS_G_WEXE) $(LFLAGS_D_WEXE)
+
+RCFLAGS	 =
+
+RESFLAGS =-t
+RUNFLAGS =
+DEFFILE  = 	app.def
+OBJS_EXT = 	
+LIBS_EXT = 	c:\WINDEV\LIB\COMMDLG.LIB
+
+.rc.res: ; $(RC) $(RCFLAGS) -r $*.rc
+
+.cxx.obj: ; $(CC) $(CFLAGS) -c $*.cxx
+
+all:	$(PROJ).exe
+
+app.res:	app.rc $(RESFILES) $(H)
+
+app.obj:	app.cxx $(H)
+
+hyper.obj:	hyper.cxx $(H)
+
+font.obj:	font.cxx $(H)
+
+grid.obj:	grid.cxx $(H)
+
+box.obj:	box.cxx $(H)
+
+$(PROJ).exe:	app.res app.obj view.obj box.obj grid.obj font.obj $(OBJS_EXT) $(DEFFILE)
+	echo >NUL @<<$(PROJ).CRF
+app.obj +
+view.obj +
+grid.obj +
+font.obj +
+$(OBJS_EXT)
+$(PROJ).exe
+
+C:\Windev\lib\+
+/NOD slibcew oldnames  libw+
+$(LIBS_EXT)
+$(DEFFILE);
+<<
+	link $(LFLAGS) @$(PROJ).CRF
+	rc $(RESFLAGS) app.res $(PROJ).exe
+
+#$(PROJ).exe:	app.res
+#	rc $(RESFLAGS) app.res $(PROJ).exe
+
+run: $(PROJ).exe
+	$(PROJ) $(RUNFLAGS)
+

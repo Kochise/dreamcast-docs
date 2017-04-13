@@ -1,0 +1,387 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>COutputQueue Class</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0233.htm','/dssd0000.htm','/dssd0180.htm','/index.htm','/dssd0235.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Lib_0001060236000000">COutputQueue Class</A></H2>
+<BR CLEAR=ALL>
+<P><IMG SRC="art/oput01.gif" WIDTH="205" HEIGHT="56" ALT="COutputQueue class hierarchy" >
+
+<P>Output pins use the <B>COutputQueue</B> to send samples to another filter by using the local memory-based transport (that is, to input pins that support the <A HREF="dssd0161.htm" TARGET="TEXT">IMemInputPin</A> interface). <B>COutputQueue</B> uses <A HREF="dssd0161.htm#If_0001060149030500" TARGET="TEXT">IMemInputPin::ReceiveCanBlock</A> to determine if the connected input pin has a blocking implementation of <A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">IMemInputPin::Receive</A>. If so, all samples are queued in <B>COutputQueue</B> and a thread is created to pass samples from the queue to the connected input pin. If the input pin's <B>IMemInputPin::Receive</B> method does
+not block, samples are passed directly to <B>IMemInputPin::Receive</B>. <B>COutputQueue</B> can also batch samples to reduce the number of calls to the downstream pin.
+
+<P><B>COutputQueue</B> is useful when the filter has other work to do while samples that it has already completed are being processed downstream. This occurs, for example, in a filter that can read more data off disk while data is being processed, or when it has more than one output pin and does not want to starve an output pin because
+<A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">IMemInputPin::Receive</A> has no optional batching of samples.
+
+<P>To use this class, create one <B>COutputQueue</B> object for every output pin for which it will be used. This can either be created when the pin is created and deleted when the pin is disconnected, or it can be created when the pin goes active and deleted when the pin goes inactive.
+
+<P>The samples sent to this object by calling its <A HREF="dssd0234.htm#Lib_0001060236020d00" TARGET="TEXT">COutputQueue::Receive</A> or <A HREF="dssd0234.htm#Lib_0001060236020e00" TARGET="TEXT">COutputQueue::ReceiveMultiple</A> member function should have references added by means of <A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">IUnknown::AddRef</A> (as they usually are if they were obtained directly from an allocator). This object then calls <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">IUnknown::Release</A> on all samples it receives,
+whether they were processed successfully or not. Note that <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A> is not called for special (control) samples.
+
+<P>Some control information, such as end of stream, needs to be queued with the data and processed once all the data has been delivered. This information is queued in the form of special control packets.
+
+<B>COutputQueue</B> implements a sticky
+
+ <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> so it will not send any more data after it 
+gets a return code that is not S_OK from the downstream <A HREF="dssd0234.htm#Lib_0001060236020e00" TARGET="TEXT">ReceiveMultiple</A> call. (A sticky state setting is one that persists even after execution of operations that would normally reset the setting.)
+This sticky state is reset by the <A HREF="dssd0234.htm#Lib_0001060236020300" TARGET="TEXT">EndFlush</A> and <A HREF="dssd0234.htm#Lib_0001060236020400" TARGET="TEXT">EOS</A> calls. However, if the sticky 
+<B>HRESULT</B> is not S_OK, <B>EOS</B> itself is not sent downstream; the <B>HRESULT</B> 
+is just reset. Because of this, if this object is not deleted when the pin goes inactive, 
+<A HREF="dssd0234.htm#Lib_0001060236020200" TARGET="TEXT">BeginFlush</A> and <B>EndFlush</B> should be called at that time to free the state.
+
+<P>In many ways this object acts as a proxy for the connected input pin, supporting a similar set of methods for stream control.
+
+
+<A NAME="Lib_0001060236010000"></A><P><B>Protected Data Members</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060236010001">m_pPin</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Pointer to the output pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060236010002">m_pInputPin</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Pointer to the connected input pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060236010003">m_bBatchExact</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TRUE if commands are batched; FALSE if commands are sent singly.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060236010004">m_lBatchSize</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Work in batches of this batch size. Ignored if <A HREF="dssd0234.htm#Lib_0001060236010003" TARGET="TEXT">m_bBatchExact</A> is not TRUE.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060236010005">m_List</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Pointer to a <B>CSampleList</B> object. The class <B>CSampleList</B> is a generic list (<A HREF="dssd0218.htm" TARGET="TEXT">CGenericList</A>) of objects of <A HREF="dssd0156.htm" TARGET="TEXT">IMediaSample</A> type. It is defined as follows:
+<PRE><FONT FACE="Courier" SIZE="2">typedef CGenericList&lt;IMediaSample&gt; CSampleList;
+</FONT></PRE>
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060236010006">m_hSem</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Handle used for signaling.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060236010007">m_evFlushComplete</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Event signaling that flushing has finished.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060236010008">m_hThread</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Worker thread handle.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060236010009">m_ppSamples</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Pointer to an array of batched samples.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106023601000a">m_nBatched</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Number of samples currently batched awaiting processing.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106023601000b">m_lWaiting</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Variable set to nonzero value when waiting for a free element.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106023601000c">m_bFlushing</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Flag for flushing state.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106023601000d">m_bFlushed</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Flag to signify if samples have been flushed.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106023601000e">m_bTerminate</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Termination flag.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106023601000f">m_bSendAnyway</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Flag to override batch processing.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060236010010">m_hr</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> structure for return values; used to implement a sticky return value (one that persists even after operations that would normally change the value).
+
+
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060236020000"></A><P><B>Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020100" TARGET="TEXT">COutputQueue</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Constructs a <A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue</A> object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020200" TARGET="TEXT">BeginFlush</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Causes all unsent samples to be discarded and sets flushing state.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020300" TARGET="TEXT">EndFlush</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Finalizes flush of batched or queued samples and resets flushing state.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020400" TARGET="TEXT">EOS</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Queues an end-of-stream call to the connected input pin after all batched and queued samples have been passed to the input pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020500" TARGET="TEXT">FreeSamples</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Removes and releases batched and queued samples.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020600" TARGET="TEXT">InitialThreadProc</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Executed by the thread on thread creation.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020700" TARGET="TEXT">IsIdle</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines if the output queue is idle.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020800" TARGET="TEXT">IsQueued</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines if samples are being queued or being sent directly.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020900" TARGET="TEXT">IsSpecialSample</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines if the sample is a control sample. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020b00" TARGET="TEXT">NotifyThread</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Notifies the thread that there is something to do.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020a00" TARGET="TEXT">NewSegment</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Queues an <A HREF="dssd0165.htm#If_000106014d030900" TARGET="TEXT">IPin::NewSegment</A> call to the connected input pin after all queued samples have been passed to the input pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020c00" TARGET="TEXT">QueueSample</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Queues the prepared sample.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020d00" TARGET="TEXT">Receive</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Passes in a single sample to send to the input pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020e00" TARGET="TEXT">ReceiveMultiple</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Passes a set of samples to send to the input pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236020f00" TARGET="TEXT">Reset</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Resets the deferred return code <A HREF="dssd0234.htm#Lib_0001060236010010" TARGET="TEXT">m_hr</A> to allow the output queue to be ready for more data.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236021000" TARGET="TEXT">SendAnyway</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Frees any batches samples to be sent to the input pin.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm#Lib_0001060236021100" TARGET="TEXT">ThreadProc</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implements the thread that sends samples downstream.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020100">COutputQueue::COutputQueue</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Constructs a <A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue</A> object.
+
+<P><B>COutputQueue</B><B>(</B><BR>&nbsp;&nbsp;<B>IPin</B> <I>*pInputPin</I><B>,</B><BR>&nbsp;&nbsp;<B>HRESULT</B> <I>*phr</I><B>,</B><BR>&nbsp;&nbsp;<B>BOOL</B> <I>bAuto</I> <B>=</B> <B>TRUE</B><B>,</B><BR>&nbsp;&nbsp;<B>BOOL</B> <I>bQueue</I> <B>=</B> <B>TRUE</B><B>,</B><BR>&nbsp;&nbsp;<B>LONG</B> <I>lBatchSize</I><B>,</B><BR>&nbsp;&nbsp;<B>BOOL</B> <I>bBatchExact</I><B>,</B><BR>&nbsp;&nbsp;<B>LONG</B> <I>lListSize</I><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>dwPriority</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pInputPin</I>
+ </DT><DD>Connected pin to which to send data.
+</DD><DT><I>phr</I>
+ </DT><DD><A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> return code.
+</DD><DT><I>bAuto</I>
+ </DT><DD>If TRUE, the queuing mode is determined by asking the connected
+input pin if the pin can block (by calling <A HREF="dssd0161.htm#If_0001060149030500" TARGET="TEXT">IMemInputPin::ReceiveCanBlock</A>). If FALSE, 
+queued or direct mode is set by the <I>bQueue</I> parameter.
+</DD><DT><I>bQueue</I>
+ </DT><DD>Determines if samples are queued for delivery by a worker thread or are being
+sent directly. Ignored if <I>bAuto</I> is TRUE.
+</DD><DT><I>lBatchSize</I>
+ </DT><DD>Size of the batch (1 for no batching).
+</DD><DT><I>bBatchExact</I>
+ </DT><DD>Batch exactly to <I>lBatchSize</I> (but use <A HREF="dssd0234.htm#Lib_0001060236021000" TARGET="TEXT">SendAnyway</A> to override batching).
+</DD><DT><I>lListSize</I>
+ </DT><DD>Likely number in the list.
+</DD><DT><I>dwPriority</I>
+ </DT><DD>Priority given to the created thread. 
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The <I>phr</I> parameter should be updated only to report errors. Usually <I>bAuto</I> will be TRUE. In that case, the constructor calls <A HREF="dssd0161.htm#If_0001060149030500" TARGET="TEXT">IMemInputPin::ReceiveCanBlock</A> on the downstream pin to determine whether to
+create a thread, and so to send samples asynchronously. If <I>bAuto</I> is FALSE, a thread is created if, and only if,
+<I>bQueue</I> is TRUE.
+
+<P>If the batch size is not 1, data is not sent until <I>lBatchSize</I> samples have been received by the object. The exceptions are that, if fewer than <I>lBatchSize</I> samples are passed to <A HREF="dssd0234.htm#Lib_0001060236020d00" TARGET="TEXT">COutputQueue::Receive</A> or 
+<A HREF="dssd0234.htm#Lib_0001060236020e00" TARGET="TEXT">COutputQueue::ReceiveMultiple</A> in this object and <I>bBatchExact</I> is FALSE, the samples will be sent anyway.
+
+<P>If <I>bBatchExact</I> is TRUE, the <A HREF="dssd0234.htm#Lib_0001060236021000" TARGET="TEXT">COutputQueue::SendAnyway</A> member function will cause the
+samples to be sent to the thread (if the thread is created).
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020200">COutputQueue::BeginFlush</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Causes all unsent samples to be discarded and sets the flushing state.
+
+<P><B>void</B> <B>BeginFlush</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This member function calls <B>BeginFlush</B> on the connected input pin.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020300">COutputQueue::EndFlush</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Finalizes flush of batched or queued samples and resets the flushing state.
+
+<P><B>void</B> <B>EndFlush</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The downstream pin is guaranteed not to block at this stage.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020400">COutputQueue::EOS</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Queues an end-of-stream call to the connected input pin after all batched and
+queued samples have been passed to the input pin. 
+
+<P><B>void</B> <B>EOS</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P> The end-of-stream call is queued as a special control packet when in a queued mode. This member function does not actually send an end-of-stream packet if the <A HREF="dssd0234.htm#Lib_0001060236010010" TARGET="TEXT">m_hr</A> <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value is not S_OK when it is time to make the call.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020500">COutputQueue::FreeSamples</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Removes and releases batched and queued samples.
+
+<P><B>void</B> <B>FreeSamples</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020600">COutputQueue::InitialThreadProc</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Implements the static member function that the thread executes on thread creation.
+
+<P><B>static</B> <B>DWORD</B> <B>WINAPI</B> <B>InitialThreadProc</B><B>(</B><BR>&nbsp;&nbsp;<B>LPVOID</B> <I>pv</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pv</I>
+ </DT><DD>The <B>this</B> pointer for the <A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue</A> object.
+</DD></DL>
+<H5>Return Values</H5>
+<P>The derived class defines the meaning of the return value.
+
+
+<H5>Remarks</H5>
+<P>On thread creation, the worker thread executes this static function with a pointer to the <A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue</A> object as the parameter. This function simply calls the <A HREF="dssd0234.htm#Lib_0001060236021100" TARGET="TEXT">COutputQueue::ThreadProc</A> member function of that object 
+(that is, the function pointed to by <I>pv</I>).
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020700">COutputQueue::IsIdle</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Determines if the output pin is idle.
+
+<P><B>BOOL</B> <B>IsIdle</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns TRUE if no threads are in the queue, all data has been sent, and nothing is in the batch. Returns FALSE otherwise.
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020800">COutputQueue::IsQueued</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Determines if the <A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue</A> object is in queued or direct mode.
+
+<P><B>BOOL</B> <B>IsQueued</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns one of the following values.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TRUE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">In queued mode. Samples are delivered asynchronously by a worker thread.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">FALSE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">In direct mode. Receive calls are passed synchronously to the input pin.
+</FONT></TD></TR></TABLE>
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020900">COutputQueue::IsSpecialSample</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Determines if a sample is one of the special control samples (containing no data).
+
+<P><B>BOOL</B> <B>IsSpecialSample</B><B>(</B><BR>&nbsp;&nbsp;<B>IMediaSample</B> <I>*pSample</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSample</I>
+</DT><DD>Pointer to the sample to be passed to the connected input pin.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns one of the following values.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TRUE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><I>pSample</I> is a special control sample.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">FALSE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><I>pSample</I> is an <A HREF="dssd0156.htm" TARGET="TEXT">IMediaSample</A> interface.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>Special control samples are queued in line with the data by methods (such as <A HREF="dssd0234.htm#Lib_0001060236020400" TARGET="TEXT">COutputQueue::EOS</A>) that 
+require processing once all queued data has been delivered. The <A HREF="dssd0234.htm#Lib_0001060236021100" TARGET="TEXT">COutputQueue::ThreadProc</A> member function detects these special samples on the queue by using <B>IsSpecialSample</B> and processes them appropriately.
+
+<P>A special sample is one of following types and contains no media data.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">EOS_PACKET
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">NEW_SEGMENT
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">RESET_PACKET
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">SEND_PACKET
+</FONT></TD></TABLE>
+<P>Special control samples are relevant only if you plan to change or extend the default base class implementation of <A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue</A> in a derived class. Normal use of the <B>COutputQueue</B> class does not require the use of control samples.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020a00">COutputQueue::NewSegment</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Queues an <A HREF="dssd0165.htm#If_000106014d030900" TARGET="TEXT">IPin::NewSegment</A> call to the connected input pin after all queued samples have been passed to the input pin.
+
+<P><B>HRESULT</B> <B>NewSegment</B><B>(</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <I>tStart</I><B>,</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <I>tStop</I><B>,</B><BR>&nbsp;&nbsp;<B>double</B> <I>dRate</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>tStart</I>
+</DT><DD>[in] Start time of the segment.
+</DD><DT><I>tStop</I>
+</DT><DD>[in] Stop time of the segment.
+</DD><DT><I>dRate</I>
+</DT><DD>[in] Rate of the segment.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function calls the <A HREF="dssd0165.htm#If_000106014d030900" TARGET="TEXT">IPin::NewSegment</A> method on the output pin once all previous data has been delivered. Like <A HREF="dssd0234.htm#Lib_0001060236020400" TARGET="TEXT">COutputQueue::EOS</A>, the <B>COutputQueue::NewSegment</B> call and its parameters are queued as a special control sample if the <A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue</A> object is in queued mode, and the <B>IPin::NewSegment</B> method is called from the worker thread in <A HREF="dssd0234.htm#Lib_0001060236021100" TARGET="TEXT">COutputQueue::ThreadProc</A>.
+
+<P>Special control samples, as implemented by this member function, are only relevant if you plan to change or extend the default base class implementation of <A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue</A> in a derived class. Normal use of the <B>COutputQueue</B> class does not require the use of control samples. 
+
+<P>This member function allows filters that process buffers containing more than one sample to delineate the rendering of the samples between start and stop time, as indicated by the <I>tStart</I> and <I>tStop</I> parameters.
+
+<P><B>COutputQueue::NewSegment</B> is intended to be implemented on an input pin. A connected output pin on the upstream filter calls this member function after completing delivery of previous data and before calling <A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">IMemInputPin::Receive</A> with any new data. It indicates that all data arriving after this call is part of a segment delineated by the parameters.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020b00">COutputQueue::NotifyThread</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Notifies the thread that there is data on the queue to process.
+
+<P><B>void</B> <B>NotifyThread</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The critical section must be held when this is called.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020c00">COutputQueue::QueueSample</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Queues a sample.
+
+<P><B>void</B> <B>QueueSample</B><B>(</B><BR>&nbsp;&nbsp;<B>IMediaSample</B> <I>*pSample</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSample</I>
+ </DT><DD>Pointer to the sample to be passed to the connected input pin.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The critical section must be held when this is called.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020d00">COutputQueue::Receive</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Passes in a single sample to send to the input pin.
+
+<P><B>HRESULT</B> <B>Receive</B><B>(</B><BR>&nbsp;&nbsp;<B>IMediaSample</B> <I>*pSample</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSample</I>
+ </DT><DD>Pointer to the sample to be passed to the connected input pin.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value, which can include the following values, or others.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">S_FALSE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">End of stream detected before or while processing sample;
+any further samples will be discarded and this value returned.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Other </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">An error occurred before or while processing sample;
+any further samples will be discarded and this value returned.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">S_OK </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Queued successfully or passed to the connected input pin if there is no queue.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>If the sticky
+
+ return code (<A HREF="dssd0234.htm#Lib_0001060236010010" TARGET="TEXT">m_hr</A>) is not S_OK, the sample is not sent and the
+sticky return code is returned. (A sticky return code is one that persists even after operations that would normally change its value.) The samples are all released (by means of <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A>) after
+processing, regardless of whether the processing was successful.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020e00">COutputQueue::ReceiveMultiple</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Passes a set of samples to send to the input pin.
+
+<P><B>HRESULT</B> <B>ReceiveMultiple</B> <B>(</B><BR>&nbsp;&nbsp;<B>IMediaSample</B> <I>**ppSamples</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>nSamples</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*nSamplesProcessed</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>ppSamples</I>
+ </DT><DD>Pointer to the set of samples to be passed to the connected input pin.
+</DD><DT><I>nSamples</I>
+ </DT><DD>Number of samples pointed to by <I>ppSamples</I>.
+</DD><DT><I>nSamplesProcessed</I>
+ </DT><DD>Updated to be the number of samples processed.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value, which can include the following values, or others.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Other </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">An error occurred before or while processing sample;
+any further samples will be discarded and this value returned.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">S_FALSE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">End of stream detected before or while processing sample;
+any further samples will be discarded and this value returned.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">S_OK </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Queued successfully or passed to the connected input
+pin if there is no queue.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>If the sticky return code is not S_OK, the sample is not sent and the sticky return code is returned. (A sticky return code is one that persists even after operations that would normally change its value.) The samples are all released (by means of <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A>) after processing, regardless of whether the processing was successful.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236020f00">COutputQueue::Reset</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Resets the deferred return code <A HREF="dssd0234.htm#Lib_0001060236010010" TARGET="TEXT">m_hr</A> to ready the output queue for more data.
+
+<P><B>void</B> <B>Reset</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The sticky return code <A HREF="dssd0234.htm#Lib_0001060236010010" TARGET="TEXT">m_hr</A> is set to S_OK if data is queued; otherwise, this function
+queues the sample and notifies the thread. (A sticky return code is one that persists even after operations that would normally change its value.) 
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236021000">COutputQueue::SendAnyway</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>If <I>bBatchExact</I> was specified on construction, frees batched samples so they can be sent to the input pin.
+
+
+<P><B>void</B> <B>SendAnyway</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060236021100">COutputQueue::ThreadProc</A></H3>
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue Class</A>
+<P>Implements the thread that sends samples downstream.
+
+<P><B>DWORD</B> <B>ThreadProc</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns zero when DirectShow terminates the thread.
+
+
+<H5>Remarks</H5>
+<P>This is the main thread procedure for the class, which is called from <A HREF="dssd0234.htm#Lib_0001060236020600" TARGET="TEXT">COutputQueue::InitialThreadProc</A>. It sends a sample or a batch of samples to the connected input pin (depending on the <A HREF="dssd0234.htm#Lib_0001060236010003" TARGET="TEXT">m_bBatchExact</A>, <A HREF="dssd0234.htm#Lib_000106023601000a" TARGET="TEXT">m_nBatched</A>, and <A HREF="dssd0234.htm#Lib_0001060236010004" TARGET="TEXT">m_lBatchSize</A> data members) when conditions are met. Otherwise, it increments the 
+<A HREF="dssd0234.htm#Lib_000106023601000b" TARGET="TEXT">m_lWaiting</A> data member, while holding the critical section and waits for 
+<A HREF="dssd0234.htm#Lib_0001060236010006" TARGET="TEXT">m_hSem</A> to be set (not holding the critical section) to continue.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

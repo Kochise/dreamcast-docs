@@ -1,0 +1,81 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Wait Debugging</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0284.htm','/dssd0000.htm','/dssd0275.htm','/index.htm','/dssd0286.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="fmdebug_000106040a000000">Wait Debugging</A></H2>
+<BR CLEAR=ALL>
+<P>DirectShow provides facilities for wait debugging.
+
+ These facilities build on the Microsoft&#174; Win32&#174; <A HREF="dssd0389.htm#external_00010a0109000036" TARGET="TEXT">HANDLE</A>-based wait facilities, but you can expand them 
+ 
+to debug specific wait conditions.
+
+<P>In the debug build, you can update 
+
+the global <I>current time-out</I> with calls to <A HREF="dssd0285.htm#fmdebug_000106040a000100" TARGET="TEXT">DbgSetWaitTimeout</A>. Updating the current time-out does not affect debug wait calls that are already waiting. If this is a debug build and a value named TIMEOUT exists in the registry under the HKEY_LOCAL_MACHINE\SOFTWARE\Debug\GLOBAL key, the TIMEOUT value is used as the initial current time-out. TIMEOUT must be a REG_DWORD value and is measured in milliseconds. If not, the initial time-out defaults to INFINITE.
+
+<P>Call the following functions to perform debuggable waiting.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0285.htm#fmdebug_000106040a000100" TARGET="TEXT">DbgSetWaitTimeout</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Updates the current time-out value.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0285.htm#fmdebug_000106040a000200" TARGET="TEXT">DbgWaitForMultipleObjects</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Waits for an array of handles to be signaled, or for the current time-out to expire.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0285.htm#fmdebug_000106040a000300" TARGET="TEXT">DbgWaitForSingleObject</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Waits for a handle to be signaled, or for the current time-out to expire.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_000106040a000100">DbgSetWaitTimeout</A></H3>
+<P>Updates the global current time-out value.
+(This update does not apply to debug wait calls that are already waiting.)
+
+<P><B>void</B> <B>WINAPI</B> <B>DbgSetWaitTimeout</B><B>(</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>dwTimeout</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>dwTimeout</I>
+ </DT><DD>New time-out value in milliseconds, or INFINITE.
+</DD></DL>
+<H5>Remarks</H5>
+<P><B>DbgSetWaitTimeout</B> is ignored unless <A HREF="dssd0388.htm#reserved_00010a0108000001" TARGET="TEXT">DEBUG</A>
+is defined when the Microsoft&#174; DirectShow&#153; headers are included.
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_000106040a000200">DbgWaitForMultipleObjects</A></H3>
+<P>In a debug build, waits for the current time-out, or the array of handles to become signaled, whichever comes first. In other builds, this is treated as a call to the Microsoft Win32&#174; <A HREF="dssd0389.htm#external_00010a01090000d9" TARGET="TEXT">WaitForMultipleObjects</A> function, with an INFINITE time-out.
+
+<P><B>DWORD</B> <B>WINAPI</B> <B>DbgWaitForMultipleObjects</B><B>(</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>nCount</I><B>,</B><BR>&nbsp;&nbsp;<B>CONST</B> <B>HANDLE</B> <I>*lpHandles</I><B>,</B><BR>&nbsp;&nbsp;<B>BOOL</B> <I>bWaitAll</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>nCount</I>
+ </DT><DD>Number of entries in the <I>lpHandles</I> array.
+</DD><DT><I>lpHandles</I>
+ </DT><DD>Array of HANDLE values.
+</DD><DT><I>bWaitAll</I>
+ </DT><DD>TRUE if all handles in the array must become signaled to satisfy the
+ wait. FALSE if any one handle can satisfy the wait.
+</DD></DL>
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_000106040a000300">DbgWaitForSingleObject</A></H3>
+<P>In a debug build, waits for the current time-out, or the given handle to become signaled. 
+In other builds, this is treated as a call to the Microsoft Win32 <A HREF="dssd0389.htm#external_00010a01090000da" TARGET="TEXT">WaitForSingleObject</A> function, with an INFINITE time-out.
+
+<P><B>DWORD</B> <B>WINAPI</B> <B>DbgWaitForSingleObject</B><B>(</B><BR>&nbsp;&nbsp;<B>HANDLE</B> <I>h</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>h</I>
+ </DT><DD>HANDLE value.
+</DD></DL>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

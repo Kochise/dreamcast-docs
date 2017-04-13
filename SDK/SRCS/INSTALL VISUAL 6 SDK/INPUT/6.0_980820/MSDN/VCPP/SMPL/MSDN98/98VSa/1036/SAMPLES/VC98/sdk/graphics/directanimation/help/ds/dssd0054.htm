@@ -1,0 +1,306 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Enumerate and Access Hardware Devices in DirectShow Applications</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0053.htm','/dssd0000.htm','/dssd0045.htm','/index.htm','/dssd0055.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="dev_enum_0001040109000000">Enumerate and Access Hardware Devices in DirectShow Applications</A></H2>
+<BR CLEAR=ALL>
+<P>This article explains and demonstrates how to initialize and access system hardware devices by using interfaces and classes provided by Microsoft&#174; DirectShow. Developers need this functionality to support many types of hardware in their applications. Typically, DirectShow applications use the following types of hardware.
+
+<UL><LI>Audio and video capture cards
+ <LI>Audio or video playback cards
+ <LI>Audio or video compressors or decompressors (such as an MPEG decoder)
+
+
+</UL>
+<P>Because developers support these devices in a similar manner (and for the sake of brevity), they will be referred to as AV devices for the remainder of this article; they will be distinguished only if a topic applies to a specific type of device. 
+
+<P>Three interfaces apply to hardware device support: <A HREF="dssd0122.htm#If_0001060122000000" TARGET="TEXT">ICreateDevEnum</A> (documented in the DirectShow SDK), and <B>IPropertyBag</B> and <B>IPersistPropertyBag</B> (both Microsoft Win32&#174; interfaces). These interfaces handle hardware device enumeration and the loading and storage of AV device properties.
+
+<P><B>Contents of this article:</B>
+
+<UL><LI><A HREF="dssd0054.htm#dev_enum_0001040109010000" TARGET="TEXT">How to Enumerate Hardware Devices</A>
+ <LI><A HREF="dssd0054.htm#dev_enum_0001040109020000" TARGET="TEXT">Device Enumeration in the AMCap Sample</A>
+ <LI><A HREF="dssd0054.htm#dev_enum_0001040109030000" TARGET="TEXT">How to Store DirectShow Filter Properties Persistently</A>
+</UL>
+<P>Application developers who want to control hardware devices should be familiar with the COM-based concepts of monikers, enumerators, and the initialization and creation of DirectShow objects.
+
+
+<A NAME="dev_enum_0001040109010000"></A><P><B>How to Enumerate Hardware Devices</B>
+<P>Microsoft
+
+
+ provides audio and video capture and playback functionality through interfaces, classes, and samples included in the DirectShow SDK. Because the File Source filters and the <A HREF="dssd0396.htm#gloss_00010b0107000005" TARGET="TEXT">filter graph manager</A> handle the internal work of passing information from component to component, adding capture capabilities to an application requires a relatively small amount of additional code. The required additional code enumerates the system's hardware devices and compiles a list of the devices that can perform a specific task (a list of all video capture cards, for example). You can use the same enumeration process for any hardware device, past or present; DirectShow automatically instantiates filters for both Win32 and Video for Windows devices.
+
+<P>To work with AV devices, you must first detect what devices exist on the current system. The <A HREF="dssd0122.htm#If_0001060122000000" TARGET="TEXT">ICreateDevEnum</A> interface, which creates enumerators for any specified type of object, provides the functionality you need to detect and set up the hardware. Accessing a specific device is a three-step process, detailed by the following instructions and code fragments.
+
+<OL><LI>Create a system hardware device enumerator.
+
+<P>First, set aside a pointer for the enumerator, and then create it
+
+
+ by using the <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A> function; CLSID_SystemDeviceEnum is the type of object you want to create (a system hardware device enumerator, in this case) and IID_ICreateDevEnum is its interface GUID.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    ICreateDevEnum  *pCreateDevEnum ;
+    CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER,
+&#009;&#009;&#009;  IID_ICreateDevEnum, (void**)&amp;pCreateDevEnum) ;
+</FONT></PRE>
+<LI>Create an enumerator for a specific type of hardware device (such as a video capture card).
+
+<P>Declare an <A HREF="dssd0389.htm#external_00010a0109000082" TARGET="TEXT">IEnumMoniker</A> interface pointer and pass it to the <A HREF="dssd0122.htm#If_0001060122030100" TARGET="TEXT">ICreateDevEnum::CreateClassEnumerator</A> method, called
+
+
+ on the system device enumerator. You can then use the <B>IEnumMoniker</B> interface pointer to access the newly created enumerator.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    IEnumMoniker *pEnumMon ;
+    pCreateDevEnum-&gt;CreateClassEnumerator(
+&#009;&#009;&#009;&#009;[specify device GUID here]
+&#009;&#009;&#009;&#009;&amp;pEnumMon, 0);
+</FONT></PRE>
+<LI>Enumerate the list itself until you locate the desired device.
+
+<P>If the previous call to <A HREF="dssd0122.htm#If_0001060122030100" TARGET="TEXT">CreateClassEnumerator</A> succeeded, you can call the <A HREF="dssd0389.htm#external_00010a0109000082" TARGET="TEXT">IEnumMoniker::Next</A> method to step through the list of devices. To retrieve the device itself, call the <A HREF="dssd0389.htm#external_00010a0109000085" TARGET="TEXT">IMoniker::BindToObject</A> method on an enumerated device. <A HREF="dssd0389.htm#external_00010a0109000085" TARGET="TEXT">BindToObject</A> creates the filter associated with the selected device and loads the filter's properties (CLSID, FriendlyName, and DevicePath)
+
+
+ from the registry. Don't be confused by the (1 == cFetched) portion of the <B>if</B> condition; the <A HREF="dssd0389.htm#external_00010a0109000082" TARGET="TEXT">Next</A> method will set it to the number of returned objects (1, if successful) before testing the statement's validity.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    ULONG cFetched = 0;
+    IMoniker *pMon ;
+
+    if (S_OK == (pEnumMon-&gt;Next(1, &amp;pMon, &amp;cFetched))  &amp;&amp;  (1 == cFetched))
+    {
+        pMon-&gt;BindToObject(0, 0, IID_IBaseFilter, (void **)&amp;[desired interface here]) ;
+</FONT></PRE>
+<P>Now that you have the <A HREF="dssd0389.htm#external_00010a0109000085" TARGET="TEXT">IMoniker</A> pointer, you can add the device's filter to the filter graph. Once you've added the filter, you don't need the <B>IMoniker</B> pointer, device enumerator, or system device enumerator.
+
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;    pGraph-&gt;AddFilter([desired interface here], L"[filter name here]") ;
+&#009;    pMon-&gt;Release() ;  // Release moniker
+&#009;}
+&#009;pEnumMon-&gt;Release() ;&#009;// Release the class enumerator
+    }
+    pCreateDevEnum-&gt;Release();
+</FONT></PRE>
+</OL>
+<A NAME="dev_enum_0001040109020000"></A><P><B>Device Enumeration in the AMCap Sample</B>
+<P>The DirectShow SDK includes an audio and video capture sample application called AMCap,
+
+
+ as well as the sample's source code. Internally, AMCap uses the <A HREF="dssd0122.htm#If_0001060122000000" TARGET="TEXT">ICreateDevEnum</A> interface to construct a list of a system's capture devices. In the application itself, you can access the list of devices from the Devices menu.
+
+
+
+
+
+<P>The code that builds AMCap's enumerated list of devices is its InitCapFilters function.
+
+
+ This function demonstrates a typical way to enumerate filters, for both former and current hardware devices. For the sake of brevity, the following code walk-through contains no error-checking code; for the complete version, see the Amcap.cpp file in the \Samples\DS\Capture directory of the SDK. The AMCap sample uses a global variable, gcap, which is a structure from the Amcap.cpp file that stores a variety of information used by the filter graph. While you generally want to avoid using global variables,
+
+
+ this structure does show the amount of information that the filter graph manager handles.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+struct _capstuff {
+    char szCaptureFile[_MAX_PATH];
+    WORD wCapFileSize;
+    ICaptureGraphBuilder *pBuilder;
+    IVideoWindow *pVW;
+    IMediaEventEx *pME;
+    IAMDroppedFrames *pDF;
+    IAMVideoCompression *pVC;
+    IAMVfwCaptureDialogs *pDlg;
+    IAMAudioStreamConfig *pASC;
+    IAMVideoStreamConfig *pVSC;
+    IBaseFilter *pRender;
+    IBaseFilter *pVCap, *pACap;
+    IGraphBuilder *pFg;
+    IFileSinkFilter *pSink;
+    BOOL fCaptureGraphBuilt;
+    BOOL fPreviewGraphBuilt;
+    BOOL fCaptureGraphRunning;
+    BOOL fPreviewGraphRunning;
+    BOOL fCapAudio;
+    int  iVideoDevice;
+    int  iAudioDevice;
+    double FrameRate;
+    BOOL fWantPreview;
+    long lCapStartTime;
+    long lCapStopTime;
+} gcap;
+</FONT></PRE>
+<P>InitCapFilters starts by defining some basic return and error-checking variables. AMCap uses the uIndex value to loop through the system's hardware devices later.
+
+
+
+<PRE><FONT FACE="Courier" SIZE="2">BOOL InitCapFilters()
+{
+    HRESULT hr;
+    BOOL f;
+    UINT uIndex = 0;
+</FONT></PRE>
+<P>The MakeBuilder function call creates a filter graph builder. 
+
+
+
+You can find the MakeBuilder function in Amcap.cpp.
+
+<PRE><FONT FACE="Courier" SIZE="2">    f = MakeBuilder();
+</FONT></PRE>
+<P>The next section handles the video capture device enumeration; this code is very similar to the code description from the <A HREF="dssd0054.htm#dev_enum_0001040109010000" TARGET="TEXT">How to Enumerate Hardware Devices</A> section. It first declares an <A HREF="dssd0122.htm#If_0001060122000000" TARGET="TEXT">ICreateDevEnum</A> pointer, then uses <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A> to create an enumerator for system hardware devices.
+
+<PRE><FONT FACE="Courier" SIZE="2">    ICreateDevEnum *pCreateDevEnum;
+    hr = CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER,
+                          IID_ICreateDevEnum, (void**)&amp;pCreateDevEnum);
+</FONT></PRE>
+<P>After it has a device enumerator, AMCap creates an enumerator specifically for video capture devices by passing the CLSID_VideoInputDeviceCategory class identifier to <A HREF="dssd0122.htm#If_0001060122030100" TARGET="TEXT">ICreateDevEnum::CreateClassEnumerator</A>. It can now use the <A HREF="dssd0389.htm#external_00010a0109000082" TARGET="TEXT">IEnumMoniker</A> pointer to access the enumerated list of capture devices.
+
+<PRE><FONT FACE="Courier" SIZE="2">    IEnumMoniker *pEm;
+    hr = pCreateDevEnum-&gt;CreateClassEnumerator(CLSID_VideoInputDeviceCategory, &amp;pEm, 0);
+    pCreateDevEnum-&gt;Release();&#009;&#009;&#009;// We don't need the device enumerator anymore
+    pEm-&gt;Reset();&#009;&#009;&#009;&#009;&#009;&#009;// Go to the start of the enumerated list
+</FONT></PRE>
+<P>Now AMCap needs the actual device; it calls <A HREF="dssd0389.htm#external_00010a0109000082" TARGET="TEXT">IEnumMoniker::Next</A> to move through the device list, and then points pM
+
+
+ to each device by calling <A HREF="dssd0389.htm#external_00010a0109000085" TARGET="TEXT">IMoniker::BindToObject</A>, which also loads the device's properties (CLSID, FriendlyName, and DevicePath) from the registry. If you do not want to automatically create the filter associated with the device, use <A HREF="dssd0389.htm#external_00010a0109000085" TARGET="TEXT">IMoniker::BindToStorage</A> instead of <A HREF="dssd0389.htm#external_00010a0109000085" TARGET="TEXT">BindToObject</A>. 
+
+<PRE><FONT FACE="Courier" SIZE="2">    ULONG cFetched;
+    IMoniker *pM;&#009;&#009;&#009;&#009;&#009;// This will access the actual devices
+    gcap.pVCap = NULL;
+    while(hr = pEm-&gt;Next(1, &amp;pM, &amp;cFetched), hr==S_OK)
+    {
+if ((int)uIndex == gcap.iVideoDevice) {&#009;// This is the one we want.  Instantiate it.
+&#009;    hr = pM-&gt;BindToObject(0, 0, IID_IBaseFilter, (void**)&amp;gcap.pVCap);
+                    pM-&gt;Release();&#009;&#009;&#009;// We don't need the moniker pointer anymore
+&#009;    break;
+&#009;}
+                pM-&gt;Release();
+&#009;uIndex++;
+    }
+    pEm-&gt;Release();&#009;&#009;&#009;&#009;// We've got the device; don't need the enumerator anymore
+</FONT></PRE>
+<P>After AMCap has a device, it retrieves the interface pointers to measure frames, get the driver name, and get the capture size. AMCap stores each pointer in the gcap global structure.
+
+<PRE><FONT FACE="Courier" SIZE="2">    // We use this interface to get the number of captured and dropped frames
+    gcap.pBuilder-&gt;FindCaptureInterface(gcap.pVCap,
+&#009;&#009;&#009;&#009;IID_IAMDroppedFrames, (void **)&amp;gcap.pDF);
+
+    // We use this interface to get the name of the driver
+    gcap.pBuilder-&gt;FindCaptureInterface(gcap.pVCap,
+&#009;&#009;&#009;&#009;IID_IAMVideoCompression, (void **)&amp;gcap.pVC);
+
+    // We use this interface to set the frame rate and get the capture size
+    gcap.pBuilder-&gt;FindCaptureInterface(gcap.pVCap,
+&#009;&#009;&#009;&#009;IID_IAMVideoStreamConfig, (void **)&amp;gcap.pVSC);
+</FONT></PRE>
+<P>AMCap then gets the media type and sizes the display window to match the size of the video format.
+
+<PRE><FONT FACE="Courier" SIZE="2">  AM_MEDIA_TYPE *pmt;
+    gcap.pVSC-&gt;GetFormat(&amp;pmt);&#009;&#009;&#009;// Current capture format
+
+    ResizeWindow(HEADER(pmt-&gt;pbFormat)-&gt;biWidth,
+&#009;&#009;&#009;&#009;HEADER(pmt-&gt;pbFormat)-&gt;biHeight);
+    DeleteMediaType(pmt);
+</FONT></PRE>
+<P>This section applies only to earlier Video for Windows devices. Video for Windows devices support a specific set of dialog boxes, which set
+
+
+ the video source, format, and display type. For additional information on these dialog boxes, see the <A HREF="dssd0111.htm#If_0001060117000000" TARGET="TEXT">IAMVfwCaptureDialogs</A> interface documentation.
+
+<PRE><FONT FACE="Courier" SIZE="2">    hr = gcap.pBuilder-&gt;FindCaptureInterface(gcap.pVCap,
+&#009;&#009;&#009;&#009;IID_IAMVfwCaptureDialogs, (void **)&amp;gcap.pDlg);
+    if (hr != NOERROR) {
+&#009;ErrMsg("Error %x: Cannot find VCapture:IAMVfwCaptureDialogs", hr);
+    }
+</FONT></PRE>
+<P>Now that AMCap has the video capture device and its relevant information, it repeats the process with the audio devices and stores the information in the global structure. Note that it calls <A HREF="dssd0122.htm#If_0001060122030100" TARGET="TEXT">ICreateDevEnum::CreateClassEnumerator</A> with the CLSID_AudioInputDeviceCategory CLSID to enumerate audio hardware devices.
+
+<PRE><FONT FACE="Courier" SIZE="2">    hr = CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER,
+                          IID_ICreateDevEnum, (void**)&amp;pCreateDevEnum);
+    uIndex = 0;
+    hr = pCreateDevEnum-&gt;CreateClassEnumerator(CLSID_AudioInputDeviceCategory,
+&#009;&#009;&#009;&#009;&#009;&#009;&#009;&#009;&amp;pEm, 0);
+    pCreateDevEnum-&gt;Release();
+
+    pEm-&gt;Reset();
+    gcap.pACap = NULL;
+    while(hr = pEm-&gt;Next(1, &amp;pM, &amp;cFetched), hr==S_OK)
+    {
+&#009;if ((int)uIndex == gcap.iAudioDevice) {&#009;&#009;        // this is the one we want
+&#009;    hr = pM-&gt;BindToObject(0, 0, IID_IBaseFilter, (void**)&amp;gcap.pACap);
+                    pM-&gt;Release();
+&#009;    break;
+&#009;}
+                pM-&gt;Release();
+&#009;uIndex++;
+    }
+    pEm-&gt;Release();
+</FONT></PRE>
+<P>AMCap also repeats the process of retrieving the format interface, this time for the audio device.
+
+<PRE><FONT FACE="Courier" SIZE="2">    hr = gcap.pBuilder-&gt;FindCaptureInterface(gcap.pACap,
+&#009;&#009;&#009;&#009;IID_IAMAudioStreamConfig, (void **)&amp;gcap.pASC);
+}
+</FONT></PRE>
+<A NAME="dev_enum_0001040109030000"></A><P><B>How to Store DirectShow Filter Properties Persistently</B>
+<P>The Win32 <A HREF="dssd0389.htm#external_00010a0109000094" TARGET="TEXT">IPropertyBag</A> and <A HREF="dssd0389.htm#external_00010a010900008c" TARGET="TEXT">IPersistPropertyBag</A> interfaces store and retrieve groups ("bags") of properties for developer-specified objects. Properties stored by these interfaces are persistent; that is, they remain consistent between different instantiations of the same object. Filters can store their properties (CLSID, FriendlyName, and DevicePath) persistently. After a filter stores its properties, DirectShow automatically retrieves them whenever it instantiates the filter. To add this functionality to your filter, implement the <B>IPersistPropertyBag</B> interface and its <A HREF="dssd0389.htm#external_00010a010900008d" TARGET="TEXT">Load</A> method.
+
+
+ Your implementation of the <B>Load</B> method should call the <A HREF="dssd0389.htm#external_00010a0109000094" TARGET="TEXT">IPropertyBag::Read</A> method to load the filter's properties into a Win32 VARIANT variable,
+
+
+ and then initialize its input and output pins.
+
+<P>The following code sample demonstrates how the DirectShow VfWCapture filter
+
+
+ implements the <A HREF="dssd0389.htm#external_00010a010900008d" TARGET="TEXT">IPersistPropertyBag::Load</A> method. Remember that your filter must supply a valid <A HREF="dssd0389.htm#external_00010a0109000094" TARGET="TEXT">IPropertyBag</A> pointer to hold the filter's properties during execution. You can specify an error log to trap errors generated by the filter's properties, although you can pass in a null value to ignore error reporting.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+STDMETHODIMP CVfwCapture::Load(LPPROPERTYBAG pPropBag, LPERRORLOG pErrorLog)
+{
+    HRESULT hr;
+    CAutoLock cObjectLock(m_pLock);&#009;&#009;// Locks the object; automatically unlocks it in the destructor.
+
+    if (m_pStream)&#009;&#009;&#009;&#009;// If the filter already exists for this stream
+&#009;return E_UNEXPECTED;
+
+    VARIANT var;&#009;&#009;&#009;&#009;// VARIANT from Platform SDK
+    var.vt = VT_I4;&#009;&#009;&#009;&#009;// four-byte integer (long)
+    hr = pPropBag-&gt;Read(L"VFWIndex", &amp;var, 0);&#009;// VFWIndex is the private name used by the Vidcap Class Manager to refer to the VFW Capture filter
+    if(SUCCEEDED(hr))&#009;&#009;&#009;&#009;// If it read the properties successfully
+    {
+        hr = S_OK;&#009;&#009;&#009;&#009;// Defaults return value to S_OK
+        m_iVideoId = var.lVal;&#009;&#009;&#009;// Stores the specified hardware device number
+        CreatePins(&amp;hr);&#009;&#009;&#009;&#009;// Inits the pins, replacing the return value if necessary
+    }
+    return hr;&#009;&#009;&#009;&#009;&#009;// Returns S_OK or an error value, if CreatePins failed
+}
+</FONT></PRE>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

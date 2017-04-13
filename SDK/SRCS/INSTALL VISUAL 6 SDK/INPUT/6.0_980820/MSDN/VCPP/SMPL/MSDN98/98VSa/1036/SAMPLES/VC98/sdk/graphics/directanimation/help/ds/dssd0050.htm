@@ -1,0 +1,270 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Use Multimedia Streaming in DirectShow Applications</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0049.htm','/dssd0000.htm','/dssd0045.htm','/index.htm','/dssd0051.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="dsstream_0001040105000000">Use Multimedia Streaming in DirectShow Applications</A></H2>
+<BR CLEAR=ALL>
+<P>This section describes and demonstrates how to support multimedia streaming in Microsoft&#174; DirectShow&#153; applications. DirectShow applications typically use multimedia streaming to send audio and video data directly to a Microsoft DirectDraw&#174; surface for rendering, instead of attaching playback to a specific window. This section has short conceptual explanations of windowless playback and multimedia streams, as well as additional detail on the multimedia streaming architecture and a minimal code demonstration of using streams to perform windowless playback of DirectShow-supported media files.
+
+<P>This section contains the following topics.
+<UL><LI><A HREF="dssd0050.htm#dsstream_0001040105010000" TARGET="TEXT">Windowless Playback</A><LI><A HREF="dssd0050.htm#dsstream_0001040105020000" TARGET="TEXT">Multimedia Streams</A><LI><A HREF="dssd0050.htm#dsstream_0001040105030000" TARGET="TEXT">Code Walk-through of a Simple Application</A></UL>
+<P>Programmers who want to use multimedia streaming in their applications should be familiar with COM programming concepts, DirectDraw and its associated objects, and DirectShow media playback. For information on DirectDraw, consult the Microsoft DirectX SDK documentation. The DirectShow SDK documentation includes many examples of media file playback using C/C++; see <A HREF="dssd0031.htm" TARGET="TEXT">About DirectShow</A> and the included samples for more information. If you need information on programming with COM and OLE, consult reference materials such as <I>Inside OLE</I> by Kraig Brockschmidt or <I>Understanding ActiveX and OLE</I> by David Chappell.
+
+
+<A NAME="dsstream_0001040105010000"></A><P><B>Windowless Playback</B>
+<P>Typically, applications display their video output in a clearly bounded rectangle, &#151; the window. Each window has certain properties in common with other windows, such as menus, close buttons, and so forth. This shared behavior is helpful because it provides a measure of consistency and reliability to programming procedures and the user interface. DirectShow typically uses windows for media playback, because of the low programming overhead and consistent interface. However, there are a number of situations where an application developer wants to divorce media playback from the window and gain complete control over its appearance. For example, if you were creating a three-dimensional computer model of a museum tour, complete with moving exhibits and an animated tour guide, it would not be appropriate (or lifelike) to show each element of the tour in a separate window; you would need to integrate all of the elements together into a single presentation. By attaching the media playback to a DirectDraw surface instead of a window, you gain complete control over its appearance and behavior.
+
+<P>DirectDraw surfaces represent a portion of a system's video memory. Once you designate a surface as the destination of a movie's video data, you can blit the data to the surface in the same way you would normally blit color and texture information. Because it is a normal DirectDraw surface, you can manipulate it in any manner supported by the DirectDraw interfaces; you can play it back as the background of a game, texture map it into a three-dimensional environment, and so forth. While this level of control adds some programming overhead to your application, these effects would be impossible to do in a normal window.
+
+<A NAME="dsstream_0001040105020000"></A><P><B>Multimedia Streams</B>
+<P>Audio and video data is, at its most basic, a sequence of information that specifies characteristics like color, resolution, frequency, and volume. Because there are a large number of devices and data formats related to media, moving data from its origin to its destination is a very convoluted process; you must know exactly how the original device formats its information, what characteristics the display format has, and how to convert the device information from its original format to a format suitable for rendering or storage. Because the exact steps in this process are different for every device, it is often difficult to handle multiple devices (such as a video camera, movie data file, and Internet URL) in a single application. Applications can, however, avoid much of this difficulty by using multimedia streaming as the data source. The streaming architecture automatically handles the process of data conversion and formatting, producing a consistently formatted data source ready for rendering or file storage. Thus, applications only need to handle the presentation of the data and not the data conversion.
+
+
+
+<A NAME="dsstream_0001040105030000"></A><P><B>Code Walk-through of a Simple Application</B>
+<P>Using multimedia streams in a DirectShow application is fairly straightforward; the following steps describe the process.
+
+
+
+<OL><LI>Open a media file that DirectShow supports.
+ <LI>Create a multimedia stream for each of the file's media types; typically, this will be one video and one audio stream.
+ <LI>Create a DirectDraw surface and associate it with the video stream.
+ <LI>Render the stream data, which will then play back on the surface.
+</OL>
+<P>The following code sample, which you can find in its entirety in the \Streams\Simple\Main.cpp file included with the DirectShow SDK, demonstrates these steps. The complete file comprises three functions: <A HREF="dssd0050.htm#dsstream_0001040105030100" TARGET="TEXT">OpenMMStream</A>, <A HREF="dssd0050.htm#dsstream_0001040105030200" TARGET="TEXT">RenderStreamToSurface</A>, and <A HREF="dssd0050.htm#dsstream_0001040105030300" TARGET="TEXT">main</A>. OpenMMStream creates the audio and video multimedia streams from the media file, RenderStreamToSurface does the actual surface rendering, and main calls the other two functions appropriately. Because this example is a command-line application, you must supply the name of the media file as a parameter when you run the program. In Main.cpp, the following macro handles error checking.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+#define CHECK_ERROR(x)     \
+   if (FAILED(hr = (x))) { \
+       printf(#x "  failed with HRESULT(0x%8.8X)\n", hr); \
+       goto Exit;          \
+   }
+</FONT></PRE>
+<P>Each application that uses multimedia streaming must include the correct header files. The following list contains the stream-related header files from Main.cpp; the DirectShow SDK includes all of these header files.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+#include "ddraw.h"&#009;// DirectDraw interfaces
+#include "mmstream.h"&#009;// Multimedia stream interfaces
+#include "amstream.h"&#009;// DirectShow multimedia stream interfaces
+#include "ddstream.h"&#009;// DirectDraw multimedia stream interfaces
+</FONT></PRE>
+<P>The code in Main.cpp is intended to be the minimum amount of programming necessary to implement multimedia streams, so it is appropriate to read it as a series of required steps. The following instructions illustrate all of the important concepts from Main.cpp, but don't necessarily include every line of code. For the complete code, refer to Main.cpp. 
+
+
+<A NAME="dsstream_0001040105030100"></A><P><B>Creating a Multimedia Stream Linked to a DirectShow File</B>
+<P>To create a multimedia stream and link it to a media file, perform the following steps. You do not necessarily need to perform the steps in the given order.
+
+
+
+<P>1) The OpenMMStream function creates a multimedia stream and attaches the stream to a valid input media file. The <I>pszFileName</I> parameter specifies the name of the media file, whose type DirectShow must support. The <I>pDD</I> parameter specifies an <A HREF="dssd0389.htm#external_00010a0109000041" TARGET="TEXT">IDirectDraw</A> interface that points to the destination DirectDraw object. When this function creates the multimedia stream, it attaches the stream's video portion to the object by using this pointer.
+
+
+
+ The <I>ppMMStream</I> parameter represents a global stream pointer. Once this function creates a valid local stream, it points this parameter
+
+
+
+ to the stream so other functions can use the stream as needed.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+HRESULT OpenMMStream(const char * pszFileName, IDirectDraw *pDD,
+&#009;&#009;&#009;   IMultiMediaStream **ppMMStream) {
+</FONT></PRE>
+<P>2) Declare a local <A HREF="dssd0370.htm#mms_face_000108030a000000" TARGET="TEXT">IAMMultiMediaStream</A>
+
+
+
+ pointer, create a stream object, and initialize it. You should use the local <I>pAMStream</I> pointer during the stream's creation; don't use the global <I>ppMMStream</I> pointer until you are sure the stream and its media file are valid.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    *ppMMStream = NULL;&#009;// Initialize global stream pointer to null
+    IAMMultiMediaStream *pAMStream;
+    HRESULT hr;&#009;&#009;// Function's return value
+
+    CHECK_ERROR(CoCreateInstance(CLSID_AMMultiMediaStream, NULL,
+&#009;&#009;&#009;&#009;&#009;   CLSCTX_INPROC_SERVER, IID_IAMMultiMediaStream,
+&#009;&#009;&#009;&#009;&#009;   (void **)&amp;pAMStream));
+    CHECK_ERROR(pAMStream-&gt;Initialize(STREAMTYPE_READ,
+&#009;&#009;&#009;&#009;&#009;   AMMSF_NOGRAPHTHREAD, NULL));
+</FONT></PRE>
+<P>3) Now that you have a stream object, add a single audio and video stream to it; typically, you need only these two streams for media file playback. When the <A HREF="dssd0370.htm#mms_face_000108030a030100" TARGET="TEXT">IAMMultiMediaStream::AddMediaStream</A> method
+
+
+ receives the MSPID_PrimaryVideo flag as its second parameter, it uses the pointer in the first parameter as the destination surface for video playback. The audio stream needs no such surface, however, so you pass NULL as the first parameter when you add audio streams. The AMMSF_ADDDEFAULTRENDERER flag automatically adds the default sound renderer to the current filter graph.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    CHECK_ERROR(pAMStream-&gt;AddMediaStream(pDD, MSPID_PrimaryVideo, 0, NULL));
+    CHECK_ERROR(pAMStream-&gt;AddMediaStream(NULL, MSPID_PrimaryAudio,
+&#009;&#009;&#009;&#009;&#009;&#009;&#009;AMMSF_ADDDEFAULTRENDERER, NULL));
+</FONT></PRE>
+<P>4) Convert the provided file name to a wide (Unicode) string and open the file. If the file name specifies a valid media file, DirectShow attaches the audio and video tracks to the streams you created earlier in the function. Point the <I>ppMMStream</I> parameter to the stream and increment the pointer's reference count.
+
+
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    WCHAR&#009;wPath[MAX_PATH];&#009;&#009;// Wide (32-bit) string name
+    MultiByteToWideChar(CP_ACP, 0, pszFileName, -1, wPath,
+&#009;&#009;&#009;&#009;sizeof(wPath)/sizeof(wPath[0]));
+
+    CHECK_ERROR(pAMStream-&gt;OpenFile(wPath, 0));
+    *ppMMStream = pAMStream;&#009;&#009;// Set global pointer to local pointer
+    pAMStream-&gt;AddRef();&#009;&#009;// Add a reference to the file
+</FONT></PRE>
+<P>Now that you have valid streams and a pointer to them, this function is complete.
+
+<A NAME="dsstream_0001040105030200"></A><P><B>Render the Video Data to a DirectDraw Surface</B>
+<P>To render the video portion of a multimedia stream to a DirectDraw surface, perform the following steps. You do not necessarily need to perform the steps in the given order.
+
+<P>1) The RenderStreamToSurface function
+
+
+
+ handles the actual rendering; it creates and initializes the required DirectDraw surface, and blits the video stream's data to the surface. The <I>pDD</I> parameter
+
+
+
+ points to a global DirectDraw object, which you later use to create the surface. The <I>pPrimary</I> parameter is the primary rendering surface; it sends all blitted video data from the video stream, which the <I>pMMStream</I> parameter points to.
+<PRE><FONT FACE="Courier" SIZE="2">
+HRESULT RenderStreamToSurface(IDirectDraw *pDD, IDirectDrawSurface *pPrimary,
+                              IMultiMediaStream *pMMStream) {
+</FONT></PRE>
+<P>2) Create local variables for the surface, media streams, and video sample. When you blit data to the DirectDraw surface, you will use these local variables to store the individual frame and video sample information.
+<PRE><FONT FACE="Courier" SIZE="2">
+    IMediaStream *pPrimaryVidStream = NULL;
+    IDirectDrawMediaStream *pDDStream = NULL;
+    IDirectDrawSurface *pSurface = NULL;
+    IDirectDrawStreamSample *pSample = NULL;
+</FONT></PRE>
+<P>3) Retrieve the video stream from the global stream, which the <I>pMMStream</I> pointer specifies; the <A HREF="dssd0361.htm#mms_face_0001080301030500" TARGET="TEXT">IMultiMediaStream::GetMediaStream</A>
+
+
+
+ method associates the local <A HREF="dssd0362.htm#mms_face_0001080302000000" TARGET="TEXT">IMediaStream</A>
+
+
+ pointer with the retrieved stream. You can then use that pointer to obtain a DirectDraw media stream pointer, which you will need to retrieve the video format.
+<PRE><FONT FACE="Courier" SIZE="2">
+    CHECK_ERROR(pMMStream-&gt;GetMediaStream(MSPID_PrimaryVideo,
+&#009;&#009;    &amp;pPrimaryVidStream));
+    CHECK_ERROR(pPrimaryVidStream-&gt;QueryInterface(
+&#009;&#009;    IID_IDirectDrawMediaStream, (void **)&amp;pDDStream));
+</FONT></PRE>
+<P>4) Create a DirectDraw surface and a bounding rectangle to use for playback. Call <A HREF="dssd0364.htm#mms_face_0001080304030300" TARGET="TEXT">IDirectDrawMediaStream::GetFormat</A>
+
+
+
+ to retrieve the video format and set the dimensions of the rectangle to match the format dimensions.
+<PRE><FONT FACE="Courier" SIZE="2">
+    DDSURFACEDESC ddsd;&#009;&#009;&#009;// Surface characteristics
+    ddsd.dwSize = sizeof(ddsd);
+
+    CHECK_ERROR(pDDStream-&gt;GetFormat(&amp;ddsd, NULL, NULL));
+    RECT rect;&#009;&#009;&#009;&#009;// Playback rectangle
+    rect.top = rect.left = 0;
+    rect.bottom = ddsd.dwHeight;
+    rect.right = ddsd.dwWidth;
+
+    CHECK_ERROR(pDD-&gt;CreateSurface(&amp;ddsd, &amp;pSurface, NULL));
+</FONT></PRE>
+<P>5) Create the first video sample and attach it to the desired playback surface. You can then blit all samples from the video stream directly to the surface by calling the DIrectDraw Surface's Update
+
+
+ method in a loop. Each loop iteration throws out the previous video image and grabs the next image from the stream. The loop breaks once there is no remaining renderable video data.
+<PRE><FONT FACE="Courier" SIZE="2">
+    CHECK_ERROR(pDDStream-&gt;CreateSample(pSurface, NULL, 0, &amp;pSample));
+
+    while (true) {
+        if (pSample-&gt;Update(0, NULL, NULL, 0) != S_OK) {
+            break;
+        }
+        pPrimary-&gt;Blt(&amp;rect, pSurface, &amp;rect, DDBLT_WAIT, NULL);
+    }
+</FONT></PRE>
+<P>6) Release all local pointers.
+<PRE><FONT FACE="Courier" SIZE="2">
+    RELEASE(pPrimaryVidStream);
+    RELEASE(pDDStream);
+    RELEASE(pSample);
+    RELEASE(pSurface);
+
+    return hr;
+}
+</FONT></PRE>
+<P>Once DirectShow finishes rendering all available data, the function is complete.
+
+<A NAME="dsstream_0001040105030300"></A><P><B>Run the Program</B>
+<P>To obtain a valid media filename and run the program, perform the following steps. You do not necessarily need to perform the steps in the given order.
+
+<P>1) Create a main function to obtain the file name and run the rendering process. The following example takes the media file name as a command-line parameter.
+<PRE><FONT FACE="Courier" SIZE="2">
+int main(int argc, char *argv[]) {
+</FONT></PRE>
+<P>2) Create a global DirectDraw object; once you have a valid object, create a surface that you will later use for video playback. This example calls the Win32 <B>GetDesktopWindow</B> function
+
+
+
+ to associate the surface with the desktop, reducing the amount of required configuration code.
+<PRE><FONT FACE="Courier" SIZE="2">
+    CoInitialize(NULL);&#009;&#009;// Initialize the COM objects
+
+    // Create the DirectDraw object and its interface pointer
+    IDirectDraw *pDD;
+    HRESULT hr = DirectDrawCreate(NULL, &amp;pDD, NULL);
+
+    if (SUCCEEDED(hr)) {&#009;// The object is valid
+    &#009;DDSURFACEDESC ddsd;&#009;// Surface characteristics
+    &#009;IDirectDrawSurface *pPrimarySurface;
+
+    &#009;pDD-&gt;SetCooperativeLevel(GetDesktopWindow(), DDSCL_NORMAL);
+    &#009;ddsd.dwSize = sizeof(ddsd);
+    &#009;ddsd.dwFlags = DDSD_CAPS;
+    &#009;ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+    &#009;hr = pDD-&gt;CreateSurface(&amp;ddsd, &amp;pPrimarySurface, NULL);
+</FONT></PRE>
+<P>3) Create the multimedia stream and call the previously defined functions. Once the functions finish execution, make sure to release all pointers at the correct times. Once playback is complete, call the Win32 <B>CoUninitialize</B> function
+
+
+ and return. Once DirectShow finishes playback of the file, it returns control to the command line.
+<PRE><FONT FACE="Courier" SIZE="2">
+    &#009;if (SUCCEEDED(hr)) {
+            IMultiMediaStream *pMMStream;
+            hr = OpenMMStream(argv[1], pDD, &amp;pMMStream);
+            if (SUCCEEDED(hr)) {
+                RenderStreamToSurface(pDD, pPrimarySurface, pMMStream);
+                pMMStream-&gt;Release();
+            }
+    &#009;    pPrimarySurface-&gt;Release();
+    }
+    CoUninitialize();&#009;// Release COM objects
+    return 0;&#009;&#009;// Success
+}
+</FONT></PRE>
+<P>Now that you know how to direct streamed video data to a DirectDraw surface, you can use this functionality any way you would normally use DirectDraw surfaces. A typical use would be to texture map the playback surface onto a Direct3D
+
+
+
+ primitive object and incorporate it as part of a three-dimensional environment. For information on controlling any part of DirectDraw, consult the DirectX SDK documentation.
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

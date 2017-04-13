@@ -1,0 +1,90 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Filters and Pins</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0032.htm','/dssd0000.htm','/dssd0030.htm','/index.htm','/dssd0034.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="filgraf_0001030103000000">Filters and Pins</A></H2>
+<BR CLEAR=ALL>
+<P>The two basic components used in the stream architecture are filters and pins. A <I>filter</I> is 
+a COM object that performs a specific task, such as reading data from a disk. For each stream it 
+handles, it exposes at least one pin. 
+A <I>pin</I> is a COM object created by the filter, that represents a point of connection for a 
+unidirectional data stream on the filter, as shown in the following illustration.
+
+<P><IMG SRC="art/arch3.gif" WIDTH="544" HEIGHT="44" ALT="Pin illustration" >
+
+<P><I>Input pins</I> accept data into the filter, and <I>output pins</I> provide data to other filters. 
+A source filter provides one output pin for each stream of data in the file. A typical transform 
+filter, such as a compression/decompression (codec) filter, provides one input pin and one output 
+pin, while an audio output filter typically exposes only one input pin. More complex arrangements 
+are also possible.
+
+<P>At a minimum, a filter exposes the <A HREF="dssd0116.htm#If_000106011c000000" TARGET="TEXT">IBaseFilter</A> interface. This interface provides methods that allow the enumeration of the pins on the filter and return 
+filter information. It also provides the inherited methods from <A HREF="dssd0153.htm#If_0001060141000000" TARGET="TEXT">IMediaFilter</A>; these methods 
+allow control of state processing (for example running, pausing, and stopping) and
+synchronization, and are called primarily by the filter graph manager.
+
+<P>In addition, a filter might expose several other interfaces, depending on the media types 
+supported and tasks performed. For example, a filter can expose the <A HREF="dssd0389.htm#external_00010a01090000a2" TARGET="TEXT">ISpecifyPropertyPages</A> 
+interface to support a property page.
+
+<P>Pins are responsible for providing interfaces to connect with other pins and for transporting 
+the data. The pin interfaces support the following:
+
+<UL><LI>The transfer of time-stamped data using shared memory or other resource.
+<LI>Negotiation of data formats at each pin-to-pin connection.
+<LI>Buffer management and buffer allocation negotiation designed to minimize data copying and 
+maximize throughput.
+</UL>
+<P>Pin interfaces differ slightly, depending on whether they are output pins or input pins.
+
+<P>An output pin typically exposes the following interfaces.
+
+<UL><LI><A HREF="dssd0165.htm#If_000106014d000000" TARGET="TEXT">IPin</A> methods are called to allow the pin to be queried for pin, connection, and 
+data type information, and to send flush notifications downstream when the filter graph stops.
+<LI><A HREF="dssd0158.htm#If_0001060146000000" TARGET="TEXT">IMediaSeeking</A> allows information about the stream's duration, start time, and stop 
+time to be relayed from the renderer.
+The renderer passes the media position information upstream to the filter (typically the source filter) responsible for queuing the stream to the appropriate position.
+<LI><A HREF="dssd0167.htm#If_000106014f000000" TARGET="TEXT">IQualityControl</A> passes quality-control messages upstream from the renderer 
+to the filter that is responsible for increasing or decreasing the media supply.
+</UL>
+<P>An input pin typically exposes the following interfaces.
+
+<UL><LI><A HREF="dssd0165.htm#If_000106014d000000" TARGET="TEXT">IPin</A> allows the pin to connect to an output pin and provides information about 
+the pin and its internal connections.
+<LI><A HREF="dssd0161.htm#If_0001060149000000" TARGET="TEXT">IMemInputPin</A> allows the pin to propose its own transport memory allocator, to 
+be notified of the allocator that an output pin is supplying, to receive media samples through the 
+established allocator, and to flush the buffer. This interface can create a shared memory 
+allocator object if the connected pin does not supply a transport memory allocator.
+
+</UL>
+<P>The standard transport interface, <A HREF="dssd0161.htm#If_0001060149000000" TARGET="TEXT">IMemInputPin</A>, provides data transfer through shared 
+memory buffers, although other transport interfaces can be used. For example, where two 
+components are connected directly in hardware, they can connect to each other by using the 
+<A HREF="dssd0165.htm#If_000106014d000000" TARGET="TEXT">IPin</A> interface, and then seek a private interface that can manage the transfer of data 
+directly between the two components. 
+
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

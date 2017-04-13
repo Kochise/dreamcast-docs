@@ -1,0 +1,317 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Understanding Time and Clocks in DirectShow</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0056.htm','/dssd0000.htm','/dssd0055.htm','/index.htm','/dssd0058.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="clocks_0001040202000000">Understanding Time and Clocks in DirectShow</A></H2>
+<BR CLEAR=ALL>
+<P>This article describes the basic concepts of time used in the filter graph and then goes on to describe what a reference clock is, how it is implemented by a filter or as a stand-alone clock, how the filter graph manager decides which clock to use as the master reference clock, and how to ensure that a reference clock implemented by a filter is used as the master reference clock. 
+
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0057.htm#clocks_0001040202010000" TARGET="TEXT">About Time</A>
+<LI><A HREF="dssd0057.htm#clocks_0001040202020000" TARGET="TEXT">About Reference Clocks</A>
+<UL><LI><A HREF="dssd0057.htm#clocks_0001040202020100" TARGET="TEXT">Characteristics of a Reference Clock</A>
+<LI><A HREF="dssd0057.htm#clocks_0001040202020200" TARGET="TEXT">Using a Reference Clock</A>
+<LI><A HREF="dssd0057.htm#clocks_0001040202020300" TARGET="TEXT">DirectShow Clock Classes</A>
+<LI><A HREF="dssd0057.htm#clocks_0001040202020400" TARGET="TEXT">Multiple Clocks in a Filter Graph</A>
+</UL>
+</UL>
+<A NAME="clocks_0001040202010000"></A><P><B>About Time</B>
+<P>A few concepts of time come up often in discussions about DirectShow streams, 
+synchronization to a common clock, and seeking to different places in the stream. 
+Four terms are defined here:
+<UL><LI>Media time
+<LI>Reference time
+<LI>Stream time
+<LI>Presentation time
+</UL>
+<P>In DirectShow, the term <I>media time</I> is used to refer to positions within a 
+seekable medium such as a file on disk. Media time can be expressed in a variety of 
+units, such as frames, seconds, bytes, or 100-nanosecond intervals, and indicates a position within 
+the data in the file. 
+
+<P><I>Reference time</I> is an absolute time (sometimes called wall-clock time) 
+that is established by a reference clock in the filter graph. It is a reference
+to some time value outside the filter graph (for example, perhaps the number of 
+milliseconds since Windows was started). 
+
+<P><I>Stream time</I> is relevant only within a running filter graph, and represents the
+time since the graph was last started. 
+When a filter graph is run, each filter is passed a notional start time (tStart) 
+according to the reference clock, and the packets of data that a filter receives 
+will normally be time-stamped with the stream time at which they should be presented. 
+This is known as the <I>presentation time</I>.
+Stream time is often called "relative reference time" since, by definition,
+stream time is equivalent to reference time minus start time when the graph is running. 
+ 
+<P>Since a filter graph can start playing a file at an arbitrary position and rate, 
+file source filters and/or parsers must take these two factors into account 
+when time-stamping the samples that they pass downstream to renderers. 
+Such filters will calculate the presentation time and will place that value in the 
+sample. The presentation time is calculated by 
+subtracting the starting media time (the last time that was seeked to) from 
+the media time of the sample, and dividing this by the playback rate. Expressed
+as a formula, this would be: 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+Presentation Time = (Media Time - Starting Media Time)  / playback rate.
+</FONT></PRE>
+<P>For example, consider a media stream with a duration of six seconds that is
+set to be played at double speed. What happens when the filter graph is seeked 
+to a sample with a media time of two seconds and then run? 
+Each media sample read from the disk gets stamped with a presentation time equivalent 
+to half of the difference of its media time and the start time (two seconds). 
+Here is how the time stamps would appear at one-second media sample intervals:
+
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Media time (sec) </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Presentation time stamp (sec)
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">3 </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">0.5
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">4 </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">1.0 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">5 </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">1.5
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">6 </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">2.0 
+</FONT></TD></TR></TABLE>
+<P>When finally presented in the renderer, the difference between the actual time the 
+sample is rendered and the stamped presentation time that was expected can be calculated. 
+In a perfect graph, this would always be zero. In reality, there is a margin of acceptable 
+tolerance. If this difference is out of tolerance, then quality-control management will be 
+initiated by the renderer.
+
+
+
+<A NAME="clocks_0001040202020000"></A><P><B>About Reference Clocks</B>
+<P>A <I>reference clock</I> 
+
+is an object that implements the <A HREF="dssd0170.htm#If_0001060152000000" TARGET="TEXT">IReferenceClock</A> interface. This interface supports querying for the current time and scheduling events according to time as counted by that
+clock. Event scheduling is achieved by submitting advise requests to
+the clock. These requests can be for single-shot or periodic events.
+
+<P>Many pieces of hardware can provide time signals. These time
+signals can be of particularly high accuracy, or might represent some 
+clock signal significant only to the resolution of a particular application, 
+such as sound playback. 
+
+<P>Filters can expose a hardware time signal to other filters by implementing
+a reference clock in the filter graph. A filter graph manager will choose 
+(or be assigned) one of these reference clocks to be the <I>filter graph 
+reference clock</I>. (By definition, there is only one reference clock allowed 
+in a filter graph.) If no such reference clocks exist, the filter graph manager 
+can create a suitable reference clock and use that one instead. A reference clock
+can be appointed by calling the filter graph manager's <A HREF="dssd0153.htm#If_0001060141030500" TARGET="TEXT">IMediaFilter::SetSyncSource</A> 
+method. The reference clock is also called the <I>sync source</I>.
+A filter graph manager propagates this selection to the filters in its graph by calling their individual <B>IMediaFilter::SetSyncSource</B> methods.
+
+<P>Developers can provide a reference clock on a filter for purely altruistic reasons; the filter might simply be in a position to provide a high-accuracy clock. Alternatively, the overall performance of a filter graph might be determined by which reference clock, of all the possible reference clocks in the
+graph, is selected to provide its services to the filter graph. Because audio hardware cannot easily adjust the rate at which it delivers data, it is often the most appropriate source of time signals. Therefore, the reference clock of the audio renderer is often selected to be the filter graph's reference clock.
+
+<P>All clocks in DirectShow report a reference time; that is, a time which would be suitable to use for the filter graph reference time. The filter graph reference time for the filter graph is the time of the clock that has been selected as the current sync source. 
+
+
+
+<A NAME="clocks_0001040202020100"></A><P><B>Characteristics of a Reference Clock</B>
+<P>Any reference clock must support the <A HREF="dssd0170.htm#If_0001060152000000" TARGET="TEXT">IReferenceClock</A> interface. The
+time of the clock can be obtained by calling the <A HREF="dssd0170.htm#If_0001060152030300" TARGET="TEXT">IReferenceClock::GetTime</A> method.
+The time returned by <A HREF="dssd0170.htm#If_0001060152030300" TARGET="TEXT">GetTime</A> is defined as a 
+<A HREF="dssd0170.htm#If_0001060152030301" TARGET="TEXT">REFERENCE_TIME</A> type (<A HREF="dssd0389.htm#external_00010a01090000ab" TARGET="TEXT">LONGLONG</A>) and loosely represents the number of 
+100-nanosecond units that have elapsed since some fixed start time. This is just a
+guideline. Specifically, <B>IReferenceClock::GetTime</B> must adhere to some conditions
+as follows.
+
+<P>A reference clock must return values that are monotonically increasing. That is, successive
+calls to <A HREF="dssd0170.htm#If_0001060152030300" TARGET="TEXT">GetTime</A> must result in values 
+that are greater than or equal to the previous value. 
+
+<P>Also, the return value should generally increase at a rate of approximately 
+one per 100 nanoseconds. 
+
+<P>In exceptional circumstances, it is allowable for the clock to stop
+for a time. (This will effectively suspend any filter that was using
+the clock as a sync source.) Furthermore, it is allowable for the clock to jump
+forward in exceptional circumstances. 
+
+<P>Finally, the reference clock must continue to count time even if its containing filter
+graph is stopped, and should normally continue to count time if it is
+paused. (A filter's reference clock implementation can optionally 
+use a system-supplied clock to fill in during such times, but that is an
+implementation decision.) 
+
+
+
+<P>The reference clock 
+does not have to bear any permanent 
+relationship to any real time. It is allowed to drift, it can 
+drift at a changing rate, and it
+need not correct for such drift. In particular, it does not have to
+represent a count of the number of 100 nanoseconds that have passed since some
+arbitrary time in the past. It is important to remember that this 
+loose description of a reference clock, though it can 
+be helpful, is just a guideline. In some cases, a strict adherence to the guideline
+might actually result in a poorer overall look and feel when the filter
+graph is running. If you want your clock to adhere strictly to the guideline, you need to set the clock yourself.
+
+
+
+
+<A NAME="clocks_0001040202020200"></A><P><B>Using a Reference Clock</B>
+<P>A filter will always be told to use a specific clock (or, possibly,
+to use none) by a call to its <A HREF="dssd0153.htm#If_0001060141030500" TARGET="TEXT">IMediaFilter::SetSyncSource</A> method. 
+Filters that require timing information should use the clock that they are told to
+use. All filters in a particular filter graph should use the same
+reference clock. An application can 
+use a reference clock by
+calling <A HREF="dssd0153.htm#If_0001060141030200" TARGET="TEXT">IMediaFilter::GetSyncSource</A> on the filter graph manager to
+obtain a pointer to an <A HREF="dssd0170.htm#If_0001060152000000" TARGET="TEXT">IReferenceClock</A>, and then invoke methods on that
+interface. If a null pointer is passed to 
+<A HREF="dssd0153.htm#If_0001060141030500" TARGET="TEXT">SetSyncSource</A>, it implies
+that the filter should not use any clock and should just run as quickly
+as possible without discarding any data. If no clock has been set as the reference clock for the
+filter graph, then when the filter graph manager's 
+<A HREF="dssd0153.htm#If_0001060141030200" TARGET="TEXT">GetSyncSource</A> 
+is called, the filter graph manager chooses a clock in the filter graph
+or creates and appoints a clock of its own. This is the same logic 
+that applies when the filter graph is first run.
+
+<P>If a new reference clock is appointed, the time as tracked by the old reference clock and the time as tracked by the new reference clock need bear no relation to each other. As a consequence, functions that call <A HREF="dssd0170.htm#If_0001060152030300" TARGET="TEXT">IReferenceClock::GetTime</A> on the current sync source should not be surprised to see 
+the reported time jump forward or backward. Reference clocks can be switched only if the filter graph is paused or stopped. When the filter graph next starts to run, the filters in the filter graph will be
+given their start times in terms of the new clock. (See <A HREF="dssd0153.htm#If_0001060141030400" TARGET="TEXT">IMediaFilter::Run</A> for details.) Typically, only filters that use advise requests from the reference clock (that is, use its scheduling facilities) must specifically handle clock differences when then the filter graph is switched to an alternative sync source.
+ 
+<P>If a filter (or application) uses a reference clock's scheduling facilities, it is important to recognize that the advise requests are scheduled against that specific clock in the absolute time used by that clock. If a filter has set up advise requests against its sync source, and is then notified of a new sync source, then 
+the filter is normally expected to cancel the advise requests on the first clock and set them up again on the new one. Applications that use advise requests should monitor for <A HREF="dssd0291.htm#events_0001060801000300" TARGET="TEXT">EC_CLOCK_CHANGED</A> events. If an <B>EC_CLOCK_CHANGED</B> event notification is received, then the application should cancel any outstanding
+advise requests, call <A HREF="dssd0153.htm#If_0001060141030200" TARGET="TEXT">GetSyncSource</A> on the filter graph manager to obtain an interface pointer to the new clock, and reschedule the advise requests on the new clock (also taking into account that the time on the old and new clock might be different).
+
+<P>Similarly, when a filter sets up advise requests in stream time (for example, 135 milliseconds into the media stream), then it is expected that the filter will set up an advise when it is told to run, cancel the advise if it is told to pause or stop, and recalculate and resubmit the advise request when it is told to run again.
+
+
+<A NAME="clocks_0001040202020300"></A><P><B>DirectShow Clock Classes</B>
+<P>DirectShow provides three class that are used to implement clocks:
+<UL><LI><A HREF="dssd0202.htm#Lib_0001060216000000" TARGET="TEXT">CBaseReferenceClock</A>, the main clock class that implements <A HREF="dssd0170.htm#If_0001060152000000" TARGET="TEXT">IReferenceClock</A>.
+<LI><A HREF="dssd0186.htm#Lib_0001060206000000" TARGET="TEXT">CAMSchedule</A>, which handles the mechanics of advise list processing and is 
+inherited by <A HREF="dssd0202.htm#Lib_0001060216000000" TARGET="TEXT">CBaseReferenceClock</A>.
+<LI><A HREF="dssd0246.htm#Lib_0001060242000000" TARGET="TEXT">CSystemClock</A>, a stand-alone minimal clock class derived from <A HREF="dssd0202.htm#Lib_0001060216000000" TARGET="TEXT">CBaseReferenceClock</A>.
+</UL>
+<P><A HREF="dssd0202.htm#Lib_0001060216000000" TARGET="TEXT">CBaseReferenceClock</A> provides the event notification functionality
+(mainly via <A HREF="dssd0186.htm#Lib_0001060206000000" TARGET="TEXT">CAMSchedule</A>) and a rudimentary clock based on the 
+Win32 <A HREF="dssd0389.htm#external_00010a01090000d4" TARGET="TEXT">timeGetTime</A> function.
+
+
+<P>The most important aspect of <A HREF="dssd0202.htm#Lib_0001060216000000" TARGET="TEXT">CBaseReferenceClock</A> is a virtual
+<A HREF="dssd0202.htm#Lib_0001060216050400" TARGET="TEXT">GetPrivateTime</A> method. This method can be overridden in derived classes to return a time. 
+
+The <A HREF="dssd0202.htm#Lib_0001060216050600" TARGET="TEXT">CBaseReferenceClock::GetTime</A> 
+method calls <B>GetPrivateTime</B>,
+caches the result, and ensures that
+the time it returns to its caller does not go backward. Thus,
+implementers of <B>GetPrivateTime</B> 
+can code that method so that it returns a
+best estimate, and not worry about time going backward.
+<B>CBaseReferenceClock::GetTime</B> locks the clock before calling
+<A HREF="dssd0202.htm#Lib_0001060216050400" TARGET="TEXT">GetPrivateTime</A>;
+therefore, implementations of <B>GetPrivateTime</B> need not
+worry about locking the clock. If methods in derived classes call
+<B>GetPrivateTime</B>, they should ensure that the clock is locked first and
+released afterward.
+
+<P>A derived clock can basically be implemented in one of two ways:
+
+<UL><LI>It can override <A HREF="dssd0202.htm#Lib_0001060216050400" TARGET="TEXT">GetPrivateTime</A> 
+(and <A HREF="dssd0202.htm#Lib_0001060216050800" TARGET="TEXT">SetTimeDelta</A> if desired)
+and provide its own clock. 
+This effectively abandons the clock in
+<A HREF="dssd0202.htm#Lib_0001060216000000" TARGET="TEXT">CBaseReferenceClock</A>.
+
+<LI>It can call <A HREF="dssd0202.htm#Lib_0001060216050800" TARGET="TEXT">SetTimeDelta</A> from the 
+derived clock to minimally adjust the
+time of the clock in <A HREF="dssd0202.htm#Lib_0001060216000000" TARGET="TEXT">CBaseReferenceClock</A>.
+
+</UL>
+<P><A HREF="dssd0246.htm#Lib_0001060242000000" TARGET="TEXT">CSystemClock</A> is derived from <A HREF="dssd0202.htm#Lib_0001060216000000" TARGET="TEXT">CBaseReferenceClock</A>
+and implements a stand-alone clock (not attached to a filter), which can be saved
+as part of a stored filter graph and used as the filter graph reference clock when
+the filter is restored. <B>CSystemClock</B> generates the default time base generated by 
+<B>CBaseReferenceClock</B> (using the Win32 <A HREF="dssd0389.htm#external_00010a01090000d4" TARGET="TEXT">timeGetTime</A> function). 
+
+
+
+
+
+
+<A NAME="clocks_0001040202020400"></A><P><B>Multiple Clocks in a Filter Graph</B>
+<P>It sometimes happens that a filter graph will be built with more than one
+clock. Several filters in the graph might implement clocks or there might even
+be an independent system clock in the filter graph. Since only one clock 
+can be the master clock, it is assumed that all other clocks, when notified
+of the sync source, will synchronize with it. 
+
+<P>The filter graph manager has a default algorithm for choosing the master reference clock,
+and a filter uses this to ensure that its own reference clock becomes the
+master clock. Why would a filter want to insist on its own reference clock rather
+than letting the filter graph manager make the decision? There are several reasons to use
+a filter's own reference clock. For example, the filter's clock might:
+
+<UL><LI>Be tied to some external source that the filter graph must be synchronized with.
+
+<LI>Be the most accurate.
+
+<LI>Incur the lowest system overhead while being used.
+
+<LI>Be the only clock that cannot be adjusted to be in sync with the other(s). 
+(Although, it could be argued that this constitutes a badly designed clock.)
+</UL>
+<P>Here are the steps used by the filter graph manager for choosing the master reference clock 
+in a filter graph:
+
+<OL><LI>If a call to the filter graph manager's <A HREF="dssd0153.htm#If_0001060141030500" TARGET="TEXT">IMediaFilter::SetSyncSource</A> method has been made,
+then that reference clock will be used (or no reference clock will be used 
+if a null pointer was passed to <B>IMediaFilter::SetSyncSource</B>).
+
+<LI>If <A HREF="dssd0153.htm#If_0001060141030500" TARGET="TEXT">IMediaFilter::SetSyncSource</A> has never been called for this graph,
+the sync source is provided by the first connected filter that 
+exposes the <A HREF="dssd0170.htm#If_0001060152000000" TARGET="TEXT">IReferenceClock</A> interface.
+In this case, the search for the first connected filter goes in roughly upstream order,
+starting with the renderers. Connected means the filter has an input pin connected to another filter.
+There is no check to see if that stream would actually be active.
+If more than one clock is found at the same level in this search,
+and both are connected, it is undefined which one will be used as the sync source
+for this filter graph. The filter graph manager will choose one of them.
+
+<LI>If neither of those steps result in a sync source being set,
+the filter graph manager will create a freestanding reference clock
+and use that as the sync source.
+
+</OL>
+<P>A filter can explicitly indicate which reference clock is to be
+the sync source by having the filter's <A HREF="dssd0116.htm#If_000106011c030300" TARGET="TEXT">IBaseFilter::JoinFilterGraph</A> method
+call <A HREF="dssd0153.htm#If_0001060141030500" TARGET="TEXT">IMediaFilter::SetSyncSource</A> on the filter graph manager 
+when it joins the filter graph to set the desired clock.
+In fact, if the filter really needs its clock to be the reference clock,
+to the extent that the filter won't function properly if it isn't,
+then it should additionally fail the <B>IBaseFilter::JoinFilterGraph</B> 
+call if the <B>IMediaFilter::SetSyncSource</B> call fails.
+
+<P>Having described how to force a filter's clock to be the system clock, it should
+be emphasized that this is not normally required.
+
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

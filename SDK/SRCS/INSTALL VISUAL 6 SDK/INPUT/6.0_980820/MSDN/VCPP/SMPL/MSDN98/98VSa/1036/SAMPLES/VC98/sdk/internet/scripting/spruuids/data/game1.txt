@@ -1,0 +1,98 @@
+$OBJECT=ShipClass
+$OBJECT=BubbleClass
+$OBJECT=AmmoClass
+
+Option Explicit
+
+'----------------------------------------------------------------------------
+' Game1.txt
+'----------------------------------------------------------------------------
+' Use path to this file as parameter to Sprite.exe.  E.g.:
+'    Sprite C:\Tmp\Game2.txt
+' See "Game.Pix" for list of images available, numbered 0-n.
+'----------------------------------------------------------------------------
+
+Dim sShip               'Player's ship
+
+
+'----------------------------------------------------------------------------
+' GAME events
+'
+Sub Game_NewGame()
+'   ------------
+    'Bullets and ammo can collide (note: bit 1 is reserved)
+    BubbleClass.Collide = 2
+    AmmoClass.Collide   = 2
+
+    ShipClass.Image   = 32	'Ship
+    BubbleClass.Image = 60	'Small bubble
+    AmmoClass.Image   = 34	'Bullet
+
+    'Create player's ship centered on screen:
+    Set sShip = ShipClass.CreateSprite(Game.Width / 2, Game.Height / 2, 0)
+
+    'Create a bubble for player to fire at
+    BubbleClass.CreateSprite 0, 0, 0
+End Sub
+
+
+Sub Game_KeyPress(ByVal ch)
+'   ------------
+    Dim sT
+
+    'Fire if Space hit
+    If ch = 32 Then
+        Set sT = AmmoClass.CreateSprite(sShip.Left, sShip.Top, 0)
+        sT.Vx = 0 : sT.Vy = -5
+        Set sT = AmmoClass.CreateSprite(sShip.Left, sShip.Top, 0)
+        sT.Vx = 0 : sT.Vy = 5
+        Set sT = AmmoClass.CreateSprite(sShip.Left, sShip.Top, 0)
+        sT.Vx = -5 : sT.Vy = 0
+        Set sT = AmmoClass.CreateSprite(sShip.Left, sShip.Top, 0)
+        sT.Vx = 5 : sT.Vy = 0
+    End If
+End Sub
+
+
+Sub Game_Collide(ByVal sLowId, ByVal sHighId, ByVal coll)
+'   ------------
+    Dim bubble
+    Dim ammo
+
+    If coll = 2 Then
+        Set bubble = sLowId
+        Set ammo   = sHighId
+        ammo.Remove
+        If bubble.Image <= 57 Then
+            Game.AddScore 50
+            bubble.Remove
+            BubbleClass.CreateSprite bubble.Left, bubble.Top, 0
+        Else
+            bubble.Image = bubble.Image - 1
+            Game.AddScore 5
+        End If
+    End If
+End Sub
+
+
+'----------------------------------------------------------------------------
+' BubbleClass events
+'
+Sub BubbleClass_Init(ByVal s, ByVal u)
+    Game.StdInitEdge s, u
+    s.Vx = 6 : s.Vy = 6
+End Sub
+
+Sub BubbleClass_Border(ByVal s, ByVal brd)
+    Game.StdBorderBounce s, brd             'Bubbles bounce on edge of screen
+End Sub
+
+
+'----------------------------------------------------------------------------
+' AmmoClass events
+'
+Sub AmmoClass_Border(ByVal s, ByVal brd)
+    s.Remove                                'Ammo destroys itself on edge of screen
+End Sub
+
+'--- EOF ---

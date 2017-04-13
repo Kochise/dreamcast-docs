@@ -1,0 +1,253 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Exposing Capture and Compression Formats through IAMStreamConfig</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0085.htm','/dssd0000.htm','/dssd0062.htm','/index.htm','/dssd0087.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="strmcap_0001050901000000">Exposing Capture and Compression Formats through IAMStreamConfig</A></H2>
+<BR CLEAR=ALL>
+<P>This article describes how to return capture and compression formats with the <A HREF="dssd0105.htm#If_0001060111030300" TARGET="TEXT">IAMStreamConfig::GetStreamCaps</A> method. This method can get more information about accepted media types than the traditional way of enumerating a pin's media types, so it should typically be used instead. It can return information about the kinds of formats allowed for audio or video. Additionally this article provides some sample code that demonstrates how to reconnect the input pin of a transform filter to ensure your filter can produce a certain output.
+
+<P>The <A HREF="dssd0105.htm#If_0001060111030300" TARGET="TEXT">IAMStreamConfig::GetStreamCaps</A> method returns a whole array of MediaType and Capabilities pairs where MediaType is an <A HREF="dssd0287.htm#structs_0001060501000300" TARGET="TEXT">AM_MEDIA_TYPE</A> structure and Capabilities is either an <A HREF="dssd0287.htm#structs_0001060501000d00" TARGET="TEXT">AUDIO_STREAM_CONFIG_CAPS</A> structure or a <A HREF="dssd0287.htm#structs_0001060501001c00" TARGET="TEXT">VIDEO_STREAM_CONFIG_CAPS</A> structure. The first topic in this article presents a video example and the second presents an audio example.
+
+
+<P><B>Contents of this article:</B>
+<UL><LI><A HREF="dssd0086.htm#strmcap_0001050901010000" TARGET="TEXT">Video Capabilities</A>
+<LI><A HREF="dssd0086.htm#strmcap_0001050901020000" TARGET="TEXT">Audio Capabilities</A>
+<LI><A HREF="dssd0086.htm#strmcap_0001050901030000" TARGET="TEXT">Reconnecting your Input to Ensure Specific Output Types</A>
+</UL>
+<A NAME="strmcap_0001050901010000"></A><P><B>Video Capabilities</B>
+<P><A HREF="dssd0105.htm#If_0001060111030300" TARGET="TEXT">IAMStreamConfig::GetStreamCaps</A> presents video capabilities in an array of pairs of <A HREF="dssd0287.htm#structs_0001060501000300" TARGET="TEXT">AM_MEDIA_TYPE</A> and <A HREF="dssd0287.htm#structs_0001060501001c00" TARGET="TEXT">VIDEO_STREAM_CONFIG_CAPS</A> structures. You can use this to expose all kinds of capabilities on the pin.
+
+<P>Suppose your capture card supports JPEG format at resolutions anywhere between 160 &#215; 120 pixels and 320 &#215; 240 pixels, and it also supports the size 640 &#215; 480 as shown in the following illustration. 
+
+<P><IMG SRC="art/strmcap1.gif" WIDTH="284" HEIGHT="178" ALT="Illustration of JPEG support at sizes between 160 &#215; 120 pixels and 320 &#215; 240 pixels" >
+
+<P><IMG SRC="art/strmcap2.gif" WIDTH="233" HEIGHT="186" ALT="Illustration of JPEG support at size 640 &#215; 480" >
+
+<P>Also, suppose it supports 24-bit color RGB format at resolutions between 160 &#215; 120 and 320 &#215; 240, but only in multiples of 8 as shown in the following illustration. 
+
+<P><IMG SRC="art/strmcap3.gif" WIDTH="312" HEIGHT="200" ALT="Illustration of RGB support at sizes between 160 &#215; 120 and 320 &#215; 240 in multiples of 8" >
+
+<P>Use <A HREF="dssd0105.htm#If_0001060111000000" TARGET="TEXT">GetStreamCaps</A> to expose these color format and dimension capabilities by offering a media type of 320 &#215; 240 JPEG (if that is your default or preferred size) coupled with minimum capabilities of 160 &#215; 120, maximum capabilities of 320 &#215; 240, and a granularity of 1. The next pair you expose by using <B>GetStreamCaps</B> is a media type of 640 &#215; 480 JPEG coupled with a minimum of 640 &#215; 480 and a maximum of 640 &#215; 480. The third pair includes a media type of 320 &#215; 240, 24-bit RGB with minimum capabilities of 160 &#215; 120, maximum capabilities of 320 &#215; 240, and a granularity of 8. In this way you can publish almost every format and capability your card might support. An application that must know what compression formats you provide can get all the pairs and make a list of all the unique subtypes of the media types.
+
+<P>A filter obtains its media type source and target rectangles from the <A HREF="dssd0287.htm#structs_0001060501001e00" TARGET="TEXT">VIDEOINFOHEADER</A> structure's 
+<A HREF="dssd0287.htm#structs_0001060501001e01" TARGET="TEXT">rcSource</A> and <A HREF="dssd0287.htm#structs_0001060501001e02" TARGET="TEXT">rcTarget</A> structure members, respectively. Filters do not have to support source and target rectangles.
+
+
+
+<P>The cropping rectangle described throughout the <A HREF="dssd0105.htm#If_0001060111000000" TARGET="TEXT">IAMStreamConfig</A> documentation is the same as the <A HREF="dssd0287.htm#structs_0001060501001e00" TARGET="TEXT">VIDEOINFOHEADER</A> structure's <A HREF="dssd0287.htm#structs_0001060501001e01" TARGET="TEXT">rcSource</A> rectangle for the output pin.
+
+<P>The output rectangle described throughout the <A HREF="dssd0105.htm#If_0001060111000000" TARGET="TEXT">IAMStreamConfig</A> documentation is the same as the width and height members of the output pin's <A HREF="dssd0075.htm#avispec_0001050502020800" TARGET="TEXT">BITMAPINFOHEADER</A> structure.
+
+<P>If a filter's output pin is connected to a media type with nonempty source and target rectangles, then your filter is required to stretch the input format's source subrectangle into the output format's target subrectangle. The source subrectangle is stored in the <A HREF="dssd0287.htm#structs_0001060501001c00" TARGET="TEXT">VIDEO_STREAM_CONFIG_CAPS</A> structure's <A HREF="dssd0287.htm#structs_0001060501001c03" TARGET="TEXT">InputSize</A> member.
+
+<P>For example, consider the following video compressor scenario: The input image is in RGB format and has a size of 160 &#215; 120 pixels. The source rectangle's upper-left corner is at coordinate (20,20), and its lower-right corner is at (30,30). The output image is in MPEG format with a size of 320 &#215; 240. The target rectangle's upper-left corner is at (0,0) and its lower-right corner is at (100,100). In this case, the filter should take a 10 &#215; 10 piece of the 160 &#215; 120 RGB source bitmap, and make it fill the top 100 &#215; 100 area of a 320 &#215; 240 bitmap, leaving the rest of the 320 &#215; 240 bitmap untouched. The following diagram illustrates this scenario.
+
+<P><IMG SRC="art/strmcap4.gif" WIDTH="457" HEIGHT="290" ALT="Illustration of video compressor stretching subrectangle of image between source and target rectangles" >
+
+<P>A filter might not support this and can fail to connect with a media type where <A HREF="dssd0287.htm#structs_0001060501001e01" TARGET="TEXT">rcSource</A> and <A HREF="dssd0287.htm#structs_0001060501001e02" TARGET="TEXT">rcTarget</A> are not empty.
+
+<P>The <A HREF="dssd0287.htm#structs_0001060501001e00" TARGET="TEXT">VIDEOINFOHEADER</A> structure exposes information about a filter's data rate capabilities. For example, suppose you connected your output pin to the next filter with a certain media type (either directly or by using the media type passed by the <A HREF="dssd0229.htm#Lib_0001060231020f00" TARGET="TEXT">CMediaType::SetFormat</A> function). Look at the 
+<A HREF="dssd0287.htm#structs_0001060501001e03" TARGET="TEXT">dwBitRate</A> member of that media type's <B>VIDEOINFOHEADER</B> format structure to see what data rate you should compress the video to. If you multiply the number of units of time per frame in the <B>VIDEOINFOHEADER</B> structure's 
+<A HREF="dssd0287.htm#structs_0001060501001e05" TARGET="TEXT">AvgTimePerFrame</A> member by the data rate in the 
+<B>dwBitRate</B> member and divide by 10,000,000 (the number of units per second) you can figure out how many bytes each frame should be. You can produce a smaller sized frame, but never a larger one. To determine the frame rate for a video compressor or for a capture filter, use
+<B>AvgTimePerFrame</B> from your output pin's media type. 
+
+
+<A NAME="strmcap_0001050901020000"></A><P><B>Audio Capabilities</B>
+<P>For audio capabilities, <A HREF="dssd0105.htm#If_0001060111030300" TARGET="TEXT">IAMStreamConfig::GetStreamCaps</A> returns an array of pairs of <A HREF="dssd0287.htm#structs_0001060501000300" TARGET="TEXT">AM_MEDIA_TYPE</A> and <A HREF="dssd0287.htm#structs_0001060501000d00" TARGET="TEXT">AUDIO_STREAM_CONFIG_CAPS</A> structures. As with video, you can use this to expose all kinds of audio capabilities on the pin.
+
+<P>Suppose you support pulse code modulation (PCM) wave format (as represented by the Win32 <A HREF="dssd0389.htm#external_00010a01090000ba" TARGET="TEXT">PCMWAVEFORMAT</A> structure) at sampling rates of 11,025, 22,050, and 44,100 samples per second, all at 8- or 16-bit mono or stereo. In this case, you would offer two pairs of structures. The first pair would have an <A HREF="dssd0287.htm#structs_0001060501000d00" TARGET="TEXT">AUDIO_STREAM_CONFIG_CAPS</A> capability structure saying you support a minimum of 11,025 to a maximum of 22,050 samples per second with a granularity of 11,025 samples per second (granularity is the difference between supported values); an 8-bit minimum to a 16-bit maximum bits per sample with a granularity of 8 bits per sample; and one-channel minimum and two-channel maximum. The first pair's media type would be your default PCM format in that range, perhaps 22 kilohertz (kHz), 16-bit stereo. Your second pair would be a capability showing 44,100 for both minimum and maximum samples per second; 8-bit (minimum) and 16-bit (maximum) bits per sample, with a granularity of 8 bits per sample; and one-channel minimum and two-channel maximum. The media type would be your default 44 kHz format, perhaps 44 kHz 16-bit stereo.
+
+<P>If you support non-PCM wave formats, the media type returned by this method can show which non-PCM formats you support (with a default sample rate, bit rate, and channels) and the capabilities structure accompanying that media type can describe which other sample rates, bit rates, and channels you support.
+
+
+<A NAME="strmcap_0001050901030000"></A><P><B>Reconnecting your Input to Ensure Specific Output Types</B>
+<P>Filters implement the <A HREF="dssd0105.htm#If_0001060111030400" TARGET="TEXT">IAMStreamConfig::SetFormat</A> method to set the audio or video stream's format before pins are connected. Additionally, if your output pin is already connected and you can provide a new type, then reconnect your pin. If the other pin you are connected to can't accept the media type, fail this call and leave your connection alone. 
+
+<P>In the case of transform filters, your pin should refuse any calls to <A HREF="dssd0105.htm#If_0001060111030400" TARGET="TEXT">IAMStreamConfig::SetFormat</A> and <A HREF="dssd0105.htm#If_0001060111030300" TARGET="TEXT">IAMStreamConfig::GetStreamCaps</A> with VFW_E_NOT_CONNECTED until your input is connected if it does not know what output types can be provided. If your pin does know what types it can provide even when your input is not connected, it is still ok to go ahead and offer and accept them as usual. 
+
+<P>In certain cases it is useful to reconnect pins when you are offering a format on an established connection. For example, if you can compress video into format 'X' but only if you get 24 bit RGB input, and you can turn 8 bit RGB input into compressed format 'Y', you can either:
+<OL><LI>Offer and accept both 'X' and 'Y' in <A HREF="dssd0105.htm#If_0001060111030300" TARGET="TEXT">IAMStreamConfig::GetStreamCaps</A> and <A HREF="dssd0105.htm#If_0001060111030400" TARGET="TEXT">IAMStreamConfig::SetFormat</A> all the time, or, 
+<LI>Only offer format 'X' if your input is connected as 24, and only offer 'Y' if your input is connected as 8. FAIL both <A HREF="dssd0105.htm#If_0001060111030300" TARGET="TEXT">IAMStreamConfig::GetStreamCaps</A> and <A HREF="dssd0105.htm#If_0001060111030400" TARGET="TEXT">IAMStreamConfig::SetFormat</A> if your input is not connected.
+</OL>
+<P>No matter which one you choose, you will need some reconnecting code that looks like this:
+<PRE><FONT FACE="Courier" SIZE="2">
+// Overridden to do fancy reconnecting footwork
+//
+HRESULT MyOutputPin::CheckMediaType(const CMediaType *pmtOut)
+{
+    HRESULT hr;
+    CMediaType *pmtEnum;
+    BOOL fFound = FALSE;
+    IEnumMediaTypes *pEnum;
+
+    if (!m_pFilter-&gt;m_pInput-&gt;IsConnected()) {
+       &#009;return VFW_E_NOT_CONNECTED;
+    }
+
+    // Quickly verify that the media type is not bogus here
+    //
+   
+    // If somebody has previously called SetFormat, fail this call if the media type we're
+    // checking isn't an exact match.
+   
+       // We can accept this output type like normal; nothing fancy required
+    hr = m_pFilter-&gt;CheckTransform(&amp;m_pFilter-&gt;m_pInput-&gt;CurrentMediaType(),
+&#009;&#009;&#009;&#009;    pmtOut);
+    if (hr == NOERROR)
+&#009;return hr;
+
+    DbgLog((LOG_TRACE,3,TEXT("*We can't accept this output media type")));
+    DbgLog((LOG_TRACE,3,TEXT(" But how about if we reconnected our input...")));
+    
+    // Now let's get fancy.  We could accept this type if we reconnected our
+    // input pin... in other words if the guy our input pin is connected to
+    // could provide a type that we could convert into the necessary type
+    hr = m_pFilter-&gt;m_pInput-&gt;GetConnected()-&gt;EnumMediaTypes(&amp;pEnum);
+    if (hr != NOERROR)
+&#009;return E_FAIL;
+    while (1) {
+&#009;hr = pEnum-&gt;Next(1, (AM_MEDIA_TYPE **)&amp;pmtEnum, &amp;j);
+
+&#009;// all out of enumerated types
+&#009;if (hr == S_FALSE || j == 0) {
+&#009;    break;
+&#009;}
+
+&#009;// can we convert between these?
+&#009;hr = m_pFilter-&gt;CheckTransform(pmtEnum, pmtOut);
+
+&#009;if (hr != NOERROR) {
+&#009;    DeleteMediaType(pmtEnum);
+&#009;    continue;
+&#009;}
+
+&#009;// OK, it offers the type, and we like it, but will it accept it NOW?
+&#009;hr = m_pFilter-&gt;m_pInput-&gt;GetConnected()-&gt;QueryAccept(pmtEnum);
+&#009;// nope
+&#009;if (hr != NOERROR) {
+&#009;    DeleteMediaType(pmtEnum);
+&#009;    continue;
+&#009;}
+&#009;// OK, I'm satisfied
+&#009;fFound = TRUE;
+&#009;DbgLog((LOG_TRACE,2,TEXT("*We can only accept this output type if we reconnect input")));
+
+&#009;// all done with this
+&#009;DeleteMediaType(pmtEnum);
+&#009;break;
+    }
+    pEnum-&gt;Release();
+
+    if (!fFound)
+        DbgLog((LOG_TRACE,3,TEXT("*NO! Reconnecting our input won't help")));
+&#009;
+    return fFound ? NOERROR : VFW_E_INVALIDMEDIATYPE;
+}
+
+
+
+HRESULT MyOutputPin::SetFormat(AM_MEDIA_TYPE *pmt)
+{
+    HRESULT hr;
+    LPWAVEFORMATEX lpwfx;
+    DWORD dwSize;
+
+    if (pmt == NULL)
+&#009;return E_POINTER;
+
+
+    // To make sure we're not in the middle of start/stop streaming
+    CAutoLock cObjectLock(&amp;m_pFilter-&gt;m_csFilter);
+
+    if (m_pFilter-&gt;m_State != State_Stopped)
+&#009;return VFW_E_NOT_STOPPED;
+
+    // our possible output formats depend on our input format
+    if (!m_pFilter-&gt;m_pInput-&gt;IsConnected())
+&#009;return VFW_E_NOT_CONNECTED;
+
+    // We're already using this format
+    if (IsConnected() &amp;&amp; CurrentMediaType() == *pmt)
+&#009;return NOERROR;
+
+    // see if we like this type
+    if ((hr = CheckMediaType((CMediaType *)pmt)) != NOERROR) {
+&#009;DbgLog((LOG_TRACE,2,TEXT("IAMStreamConfig::SetFormat rejected")));
+&#009;return hr;
+    }
+
+    // If we are connected to somebody, make sure they like it
+    if (IsConnected()) {
+&#009;hr = GetConnected()-&gt;QueryAccept(pmt);
+&#009;if (hr != NOERROR)
+&#009;    return VFW_E_INVALIDMEDIATYPE;
+    }
+
+    // Now make a note that from now on, this is the only format allowed
+    // and refuse anything but this in the CheckMediaType code above
+
+    // Changing the format means reconnecting if necessary
+    if (IsConnected())
+        m_pFilter-&gt;m_pGraph-&gt;Reconnect(this);
+
+    return NOERROR;
+}
+
+
+// overridden to complete our fancy reconnection footwork
+//
+HRESULT MyWrapper::SetMediaType(PIN_DIRECTION direction,const CMediaType *pmt)
+{
+    HRESULT hr;
+
+    // Set the OUTPUT type.
+    if (direction == PINDIR_OUTPUT) {
+
+&#009;// Uh oh.  As part of our fancy footwork we may be being asked to
+&#009;// provide a media type we cannot provide unless we reconnect our
+&#009;// input pin to provide a different type
+&#009;if (m_pInput &amp;&amp; m_pInput-&gt;IsConnected()) {
+
+&#009;    // If we can actually provide this type now, don't worry
+    &#009;    hr = CheckTransform(&amp;m_pInput-&gt;CurrentMediaType(),
+&#009;&#009;&#009;&#009;    &amp;m_pOutput-&gt;CurrentMediaType());
+&#009;    if (hr == NOERROR)
+&#009;&#009;return hr;
+&#009;
+            &#009;DbgLog((LOG_TRACE,2,TEXT("*Set OUTPUT requires RECONNECT of INPUT!")));
+
+&#009;    // Oh boy. Reconnect our input pin.  Cross your fingers.
+&#009;    return m_pGraph-&gt;Reconnect(m_pInput);
+
+&#009;}
+
+&#009;return NOERROR;
+    }
+
+    return NOERROR;
+}
+</FONT></PRE>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

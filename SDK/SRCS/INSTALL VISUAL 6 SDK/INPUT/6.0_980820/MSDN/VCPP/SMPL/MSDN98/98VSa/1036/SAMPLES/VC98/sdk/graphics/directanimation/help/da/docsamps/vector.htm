@@ -1,0 +1,163 @@
+<HTML> 
+<HEAD>
+<TITLE>DirectAnimation SDK, JScript sample</TITLE>
+</HEAD>	 
+
+<BODY BGCOLOR=WHITE TOPMARGIN=15 LEFTMARGIN=10>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2> 
+          
+
+<DIV ID=controlDiv>
+<OBJECT ID="DAViewer"
+        STYLE="position:absolute; left:10; top:50;width:800;height:800;z-index: -1"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D">
+</OBJECT>
+</DIV>
+<FORM NAME="form1" ACTION="">
+<CENTER>
+<H2>Vectors</H2>
+<INPUT TYPE=BUTTON VALUE="" NAME=StartBtn OnClick="start()"> 
+</CENTER>
+
+
+
+<SCRIPT LANGUAGE="JAVASCRIPT">
+<!--
+
+  var m_frm = document.form1;
+  m_frm.StartBtn.value = "Show";
+  var FlagNotStarted = true;
+  
+
+ 
+  function start()
+  {
+ 
+    if (FlagNotStarted)
+    {
+     m_frm.StartBtn.value = "         ";
+     eyeball();
+     FlagNotStarted = false;
+    }
+  }
+
+
+   function eyeball ()
+    {
+
+    m = DAViewer.MeterLibrary;
+
+  // This example draws a face with eyeballs that track the mouse
+  // 2D vectors are used to do the tracking
+  
+  
+  // This is the point describing the location of the mouse
+  pt1 = m.MousePosition;
+  
+  // This is the point describing the center of the left eyeball
+  pt2Lft = m.Point2(-.015,.02);
+
+  // This is the point describing the center of the right eyeball
+  pt2Rt  = m.Point2(.025,.04);
+ 
+  // This is the radius of the outer ovals
+  radius1 = .015;
+
+  // This is the radius of the eyeballs
+  radius2 = .005;
+
+  // This is the distance from the outer edge of the eyeball to the edge of the surrounding oval
+  // This will be the magnitude of the vectors that position each eyeball 
+  distance = m.Sub(m.DANumber(radius1), m.DANumber(radius2));
+
+  //Create the vector that describes the movement of the left eyeball
+
+  // Create a vector that describes the magnitude (which we won't use) and direction (which we will use)
+  //  from the mouse position to the eyeball
+  distVectorLft = m.SubPoint2(pt1, pt2Lft);
+
+  // Find the angle (the direction) of the vector
+  myAngleLft = distVectorLft.PolarCoordAngle;
+
+  //Now create a vector that uses that angle for its direction (theta) and 
+  // the distance (defined above) for the magnitude (rho).
+  // We use this value (distance) because we don't want the eyeball to go outside the surrounding oval
+  eyeVectorLft = m.Vector2PolarAnim(myAngleLft, distance);
+  // Move the eyeball by the amount/direction of the vector
+  eyeMoveLft = m.Translate2Vector(eyeVectorLft);
+
+  // Do the same for the right eyeball as we did for the left
+  distVectorRt = m.SubPoint2(pt1, pt2Rt);
+  myAngleRt = distVectorRt.PolarCoordAngle;
+  eyeVectorRt = m.Vector2PolarAnim(myAngleRt, distance);
+  eyeMoveRt = m.Translate2Vector(eyeVectorRt);
+
+  
+  // Use the default line style to draw the borders of the ovals and eyeballs
+  ls = m.DefaultLineStyle;
+
+  // The outer ovals are white
+  outerFill = m.SolidColorImage(m.White);
+
+  // The eyeballs are blue
+  innerFill = m.SolidColorImage(m.Blue);
+  
+  //Draw the left outer oval and eyball, then combine them to make the left eye
+  outerOvalLft = m.Oval(.03, .04).Fill(ls, outerFill);
+  eyeBallLft = m.Oval(.01,.01).Fill(ls, innerFill).Transform(eyeMoveLft);
+  eyeLft = m.Overlay(eyeBallLft, outerOvalLft);
+
+  // The right eye is the same, except it's shifted over 
+  outerOvalRt = m.Oval(.03,.04).Fill(ls, outerFill).Transform(m.Translate2(.04,0));
+  eyeBallRt = m.Oval(.01,.01).Fill(ls, innerFill).Transform(m.Compose2(m.Translate2(.04,0),eyeMoveRt));
+  eyeRt = m.Overlay(eyeBallRt, outerOvalRt);
+
+  // Draw a nose
+  nosePath =  m.Polyline(new Array(.02,0, .03,-.02, .05,-.04, .02,-.04));
+  drawnNose = nosePath.Draw(ls);
+
+  // Draw a mouth
+  upperLip =  m.Line(m.Point2(.01,-.05), m.Point2(.04,-.05)).Draw(ls);
+
+  // Draw a dimple
+  dimple = m.ArcDegrees(0,180, .01,.005).Draw(ls).Transform(m.Translate2(.025,-.06));
+
+  // Draw outline of head
+  head = m.Oval(.09,.11).Fill(ls,outerFill).Transform(m.Translate2(.02,-.02));
+     
+  // Construct a face
+
+  // Combine the left and right eyes
+  eyes = m.Overlay(eyeLft, eyeRt);
+
+  // Combine the nose and mouth
+  nasal = m.Overlay(drawnNose, upperLip);
+
+  // Combine the nasal and dimple
+  lowerFace = m.Overlay(nasal,dimple);
+
+  // Combine with the eyes
+  features = m.Overlay(eyes, lowerFace);
+
+  // Move the features down a bit
+  features = features.Transform(m.Translate2(0,-.01));
+
+  // Combine the features with an oval for the head
+  head = m.Overlay(features, head);
+
+  // Move the whole thing up a bit
+  head = head.Transform(m.Translate2(.01,.01));
+  
+  finalImg = m.Overlay(head, m.SolidColorImage(m.Yellow));
+  DAViewer.Image = finalImg;
+  DAViewer.Start();
+
+  }
+
+//-->
+</script>
+
+</FORM>
+</FONT>
+</BODY>
+</HTML>

@@ -1,0 +1,95 @@
+<HTML>
+<HEAD>
+<TITLE>Simple Pick Example</TITLE>
+</HEAD>
+
+<BODY BGCOLOR=WHITE TOPMARGIN=15 LEFTMARGIN=20>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2> 
+
+<DIV ID=controlDiv>
+<OBJECT ID="DAViewer"
+        STYLE="position:absolute; left:10; top:10;width:450;height:250"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D">
+</OBJECT>
+</DIV>
+
+<SCRIPT LANGUAGE="JScript">
+  var FlagNotStarted = true;
+  function start ()
+  {
+ 
+    if (FlagNotStarted)
+    {
+      pick();
+      FlagNotStarted = false;
+    }
+  }
+
+  function pick()
+  {
+
+  // This example demonstrates how to make an image "pickable." This means it reacts to
+  // an event when the mouse is within its borders.
+
+  // In this example, the square goes cycles between blue and red when the mouse is within
+  // its borders and the the left button is down.
+
+
+  // First, select the meter library 
+  m = DAViewer.MeterLibrary;
+
+  // Create a detectable empty image. We need this because we can only make 
+  // images and geometries pickable and we have to define our pickable events. 
+
+  myImage = m.DetectableEmptyImage;
+
+  // We need to crop it, so set the minimum and maximum points equal to those of the square
+  // we're going to draw later on.
+  minPt = m.Point2(-.01,-.01)
+  maxPt = m.Point2(.01,.01);
+
+  // Now crop the detectable empty image to the right size
+  myImage = myImage.Crop(minPt, maxPt);
+
+  // Make the image pickable
+  pickImg = myImage.Pickable();
+
+  // Construct an event. This means something will happen only when the mouse
+  // is within the pickable region AND when the mouse's left button is down. 
+  myEvent = m.AndEvent(m.LeftButtonDown, pickImg.PickEvent);
+  
+  // Set up the two colors of the rectangle
+  myBlue = m.ColorRgb(0,0,1);
+  myRed = m.ColorRgb(1,0,0);
+
+  // Now create an object that holds our colors and our event
+  // This will set the color first to blue, then, when the event occurs, to red
+  // then, when the event occurs again, back to blue (It cycles between the two).
+  colcyc = new ActiveXObject("DirectAnimation.DAColor");
+  colcyc.Init(m.Until(myBlue, myEvent, m.Until(myRed, myEvent, colcyc)));
+ 
+  // This will be the fill for the square
+  myFill = m.SolidColorImage(colcyc);
+
+  // Now draw a square (a rectangle with equal width and height, and fill it in
+  // with our cycling colors
+  sqImg = m.Rect(.02,.02).Fill(m.DefaultLineStyle, myFill);
+
+  // Finally, put our pickable, empty image on top of the rectangle
+  dualImg = m.Overlay(pickImg.Image, sqImg);
+ 
+  // And display it 
+  DAViewer.Image = dualImg; 
+  DAViewer.Start(); 
+}
+
+ 
+</SCRIPT>
+<CENTER>
+<H2>Simple Picking Example</H2>
+<INPUT TYPE=BUTTON VALUE="Show" NAME="StartBtn" OnClick="start()">
+</CENTER>
+</FONT>
+</BODY>
+</HTML>
+

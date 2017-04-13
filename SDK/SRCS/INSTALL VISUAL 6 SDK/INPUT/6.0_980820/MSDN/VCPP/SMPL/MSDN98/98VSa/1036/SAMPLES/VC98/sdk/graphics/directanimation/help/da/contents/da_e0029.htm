@@ -1,0 +1,172 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Using Models</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/DA_E0028.htm','/DA_E0000.htm','/DA_E0024.htm','/index.htm','/DA_E0030.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="proguide_0001050105000000">Using Models</A></H2>
+<BR CLEAR=ALL>
+<P>This section discusses how to use models in DirectAnimation. A model is the set of behaviors actually displayed. It is composed of images and sounds. This section contains the following topics:
+<UL><LI><A CLASS=tctop HREF="DA_E0029.htm#proguide_0001050105010000" TARGET="TEXT">Models in DirectAnimation</A>
+<LI><A CLASS=tctop HREF="DA_E0029.htm#proguide_0001050105020000" TARGET="TEXT">Setting Preferences</A>
+<LI><A CLASS=tctop HREF="DA_E0029.htm#proguide_0001050105030000" TARGET="TEXT">DXMApplet and DXMCanvas</A>
+<LI><A CLASS=tctop HREF="DA_E0029.htm#proguide_0001050105040000" TARGET="TEXT">Causing External Side Effects upon Java Events</A>
+</UL>
+<H3><A NAME="proguide_0001050105010000">Models in DirectAnimation</A></H3>
+<P>In DirectAnimation, a model is the set of behaviors actually displayed for the application. A model typically consists of viewing an image behavior and a sound behavior. 
+<P>In scripting, the model is automatically set when you invoke <A HREF="DA_E0115.htm#vref_0001060155000000" TARGET="TEXT">DAViewerControl</A>'s <A HREF="DA_E0115.htm#vref_0001060155010600" TARGET="TEXT">Start</A> function. Whatever image or sound is attached to the control object at the time <B>Start</B> is called is what is displayed. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+DAMyControl.Image = MyImage;
+DAMyControl.Sound = MySound;
+DAMyControl.Start();
+</FONT></PRE>
+<P>DirectAnimation for Java provides a Model class to standardize the construction of DirectAnimation models. In order to view a behavior, an instance of this Model class must be provided as input when constructing a DirectAnimation viewer inside a DXMApplet or DXMCanvas subclass. This is the relevant portion of the Java definition of the Model class: 
+<PRE><FONT FACE="Courier" SIZE="2">
+public abstract class Model extends Statics
+{
+   // This is to be overridden by the application 
+   public abstract void createModel(BvrsToRun blist);
+
+   // These are to be invoked by the application
+    public void setImage(ImageBvr im1);
+    public void setSound(SoundBvr snd);
+
+    // These are invoked by the application to get and set the URL for importing files
+    public URL getImportBase();
+    public void setImportBase(URL url);
+
+}
+</FONT></PRE>
+<P>Applications override this class and implement at least the <B>createModel</B> method. This method creates the set of behaviors to be displayed, then calls <B>setImage</B> and <B>setSound</B> on the image and sound behaviors that are intended to be viewed. 
+<P>The following is an example model that simply constructs a red image. This model has no sound. 
+<PRE><FONT FACE="Courier" SIZE="2">
+public class RedImg extends Model {
+    public void createModel(BvrsToRun blist) {
+        ImageBvr im = solidColorImage(red);
+        setImage(im);
+    }
+}
+</FONT></PRE>
+<H3><A NAME="proguide_0001050105020000">Setting Preferences</A></H3>
+<P>Occasionally, the programmer constructing the model, or the application controlling the viewer, will want to provide explicit rendering/viewing preference settings to DirectAnimation. Such preferences can include texture mapping quality, output audio format, maximum frames per second, polygon fill mode, and so on. 
+<P>The Preferences object is the means by which these settings are made. A model can set preferences upon model construction, and the application can set them at any time by querying the viewer for them, setting them, and then submitting them back to the viewer. 
+<P>To set preferences, first create a <B>Preferences</B> object, as shown in the following JScript code: 
+<PRE><FONT FACE="Courier" SIZE="2"> p = DAControl.View.Preferences;
+</FONT></PRE>
+<P>When the application is run, the <B>Preferences</B> object will be set to the default preferences in the registry. You can override these settings by calling the Preferences class <B>PutPreference</B> method. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+ p = DAControl.View.Preferences;
+ oldvalue = p.GetPreference("FILL_MODE");
+ p.PutPreference("FILL_MODE", FILL_MODE_SOLID);
+</FONT></PRE>
+<P>Note also that, through the system registry, the user has an opportunity to establish preferences that become the default set of preferences for viewing a model. Changes made by the model or the application override these defaults. Because of this, setting of preferences should be something that both the model and the application approach conservatively, and only do if it is truly appropriate for the situation. 
+<P>Also see the reference entry for the Java <A HREF="DA_E0154.htm#dxmref_0001070126000000" TARGET="TEXT">Preferences Class</A>. 
+
+
+
+
+<H3><A NAME="proguide_0001050105030000">DXMApplet and DXMCanvas</A></H3>
+<P>In DirectAnimation, a model is the set of behaviors actually displayed and sampled for the application. A model typically consists of some combination of image behaviors and sound behaviors. DirectAnimation for Java provides a Model class to standardize the construction of DirectAnimation models. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+public class RedImg extends Model {
+    public void createModel(BvrsToRun blist) {
+        ImageBvr im = solidColorImage(red);
+        setImage(im);
+    }
+}
+</FONT></PRE>
+<P>In order to view a behavior, an instance of this Model class must be provided as input when constructing a DirectAnimation viewer inside a DXMApplet or DXMCanvas subclass.
+
+<P> DirectAnimation for Java provides the DXMApplet and DXMCanvas classes that extend the standard AWT Applet and Canvas classes and provide applets and canvases specifically for displaying behaviors. Each of these requires a Model upon construction, and each overrides the necessary methods on Applet and Canvas in order to view that model. 
+<P>By default, DXMApplet and DXMCanvas provide their own frame-loop so the application needn't provide one explicitly (though it may choose to do so by overriding this default behavior). See the GeoApplet2 template in the Samples\DirectAnimation\Java\Templates\Applet\GeoApplet2 directory.
+<P>Here is an example of using the DXMApplet class to view a model: 
+<PRE><FONT FACE="Courier" SIZE="2">
+public class MyApplet extends DXMApplet {
+    public void init() {
+       // Always call the superclass's init() first to ensure codeBase is set
+       super.init();
+       // Now set the model
+       setModel(new MyModel());
+    }
+}
+</FONT></PRE>
+<P>Given a model, this is all that is needed to construct an applet to view that model.
+<P>The use of DXMCanvas is identical, except, you need to position the canvas inside of an application frame, just as you would any other canvas. For an example of how to use DXMCanvas, see the Java code in Samples\DirectAnimation\Java\Templates\Application.
+
+<H4><A NAME="proguide_0001050105030100">Dynamically Changing the Java Model</A></H4>
+<P>The DXMApplet and DXMCanvas classes are defined such that once an applet or canvas is built, the model cannot be changed. This is intentional. If there is a need to change the model dynamically, this should be reflected in changes to the behaviors that make up the model, and not by switching to another model. If an application really needs to switch to an entirely different model, it can construct a new applet or canvas. 
+
+<H4><A NAME="proguide_0001050105030200">The Java Viewer Interface</A></H4>
+<P>DirectAnimation for Java provides a Java interface called Viewer that encapsulates operations common to all displayers of behaviors. Because it is an interface, it is not constructed directly by applications. Instead, it is provided through concrete classes such as the DXMApplet and DXMCanvas classes. However, it does have a set of methods that can be used by applications. 
+<P>Most applications never need to call any of these methods or, for that matter, ever need know about the Viewer interface. This is only for more explicit control of the running of behaviors, and for non-default ways of dealing with error handling and preference establishment. 
+<P>Here are the relevant portions: 
+<PRE><FONT FACE="Courier" SIZE="2">
+public interface Viewer {
+    public abstract double getCurrentTime();
+    public abstract double getCurrentTickTime();
+    public abstract Preferences getPreferences();
+    public abstract ErrorAndWarningReceiver registerErrorAndWarningReceiver(ErrorAndWarningReceiver w);
+    public abstract void startModel();
+    public abstract void stopModel();
+    public abstract void tick();
+    public abstract void tick(double timeToUse);
+}
+</FONT></PRE>
+<P>The viewer gets its model via a mechanism not shown here (it is not meant to be called by applications). The relevant methods are:
+<UL><LI> The <B>startModel()</B> method which starts the behaviors associated with the model at global time 0. This is when the globalTime behavior starts. Incidentally, <B>startModel()</B> is also what causes the <B>createModel()</B> method on the model itself to get invoked. 
+<LI> The <B>tick(double timeToUse)</B> method which explicitly does a single sampling and display of the model with <B>timeToUse</B> as the global time. 
+<LI> The <B>tick()</B> method, which is shorthand for <B>tick(getCurrentTime()),</B> and is the easiest way to explicitly sample and display the model, thus providing a real-time clock for global time. 
+<LI> The <B>rrentTime()</B> method returns the number of seconds since <B>startModel</B> was invoked. 
+<LI> The <B>getCurrentTickTime()</B> method returns the time provided for the most recent call to tick, or 0 if it hasn't yet been called. 
+<LI> The <B>registerErrorAndWarningReceiver()</B> method which allows the application to register an object that will have its methods invoked upon asynchronous errors encountered when DirectAnimation is controlling the frame loop, or when recoverable warnings occur when sampling and displaying the model. 
+<LI> The <B>getPreferences/setPreferences</B> methods which allow the application to dynamically modify the viewer preferences. 
+</UL>
+<H4><A NAME="proguide_0001050105030300">Explicit Control of the Frame Loop</A></H4>
+<P>The implementations of DXMApplet and DXMCanvas implement a thread that repeatedly calls the <B>tick()</B> method, and thus have a built-in frame loop. If an application wants to explicitly control the frame loop, it must override these classes and provide different implementations that invoke <B>tick()</B> in their application-specific way. 
+
+<H3><A NAME="proguide_0001050105040000">Causing External Side Effects upon Java Events</A></H3>
+<P>Sometimes an application wants to cause an external action when an event occurs in DirectAnimation for Java. For instance, the application may want to display a GUI window when the mouse moves past a certain region of the window. This capability is supported by the <A HREF="DA_E0132.htm#dxmref_0001070110020300" TARGET="TEXT">registerCallback</A> method available on events. The <B>registerCallback</B> method takes an object that implements the EventCallbackObject interface (along with some other parameters), and returns an Object that can later be used to unregister that callback. Whenever that event occurs, the <B>invoke</B> method of the callback is called with the event data produced by that event.
+<P>Here is an example: 
+<PRE><FONT FACE="Courier" SIZE="2">
+class MyCallback implements EventCallbackObject {
+    MyCallback(...);
+    
+    public void invoke(Object eventData) {
+        ... pop up my GUI window ...
+    }
+}
+//... elsewhere ...
+ev = predicate(gte(mousePosition.getX(), toBvr(0.05)));
+Object cookie = ev.registerCallback(new MyCallback(...),
+                                    startTime,
+                                    false);  // not a one-shot event
+// ... from this point, every occurrence of ev will trigger "invoke"
+...
+// at some later point, unregister the callback
+unregisterCallback(cookie);
+</FONT></PRE>
+<P>Registering callbacks can be thought of as a complement to <A HREF="DA_E0118.htm#dxmref_0001070102000000" TARGET="TEXT">AppTriggeredEvent</A>. The former causes an application action to occur upon a DirectAnimation event, while the latter is an application action triggering a DirectAnimation event.
+
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

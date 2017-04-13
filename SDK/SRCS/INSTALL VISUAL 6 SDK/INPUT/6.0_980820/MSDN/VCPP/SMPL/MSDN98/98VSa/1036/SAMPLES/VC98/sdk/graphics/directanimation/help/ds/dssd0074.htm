@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>DirectShow Graph File Format</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0073.htm','/dssd0000.htm','/dssd0073.htm','/index.htm','/dssd0075.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="file_0001050501000000">DirectShow Graph File Format</A></H2>
+<BR CLEAR=ALL>
+<P>The format of a saved DirectShow&#153; graph file is as follows:
+
+<P>The docfile (storage file) contains a stream called ActiveMovieGraph.
+
+
+
+This single stream contains within it all the filters, filter names, file names, connections, and so on.
+
+<P>To load such a graph, either:
+<UL><LI>Pass the storage file name to <A HREF="dssd0146.htm#If_000106013a030400" TARGET="TEXT">RenderFile</A>. It will recognize that this is not a media file but a saved graph, and will restore the graph.
+</UL>
+<P>or:
+<OL><LI>Open the storage file (by using <A HREF="dssd0389.htm#external_00010a01090000cd" TARGET="TEXT">StgOpenStorage</A>).
+ <LI>Query the filter graph manager for <A HREF="dssd0389.htm#external_00010a010900008f" TARGET="TEXT">IPersistStream</A>.
+ <LI>Open the L"ActiveMovieGraph" stream (by using <A HREF="dssd0389.htm#external_00010a01090000a4" TARGET="TEXT">IStorage::OpenStream</A>).
+
+
+
+ <LI>Pass the stream to the filter graph (by using <A HREF="dssd0389.htm#external_00010a0109000092" TARGET="TEXT">IPersistStream::Load</A>).
+</OL>
+<P>The syntax of the graph within the stream follows:
+
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&lt;graph&gt; ::= &lt;version3&gt;&lt;filters&gt;&lt;connections&gt;&lt;clock&gt;END | &lt;version2&gt;&lt;filters&gt;&lt;connections&gt;END
+&lt;version3&gt; ::= 0003\r\n
+&lt;version2&gt; ::= 0002\r\n
+&lt;clock&gt; ::= CLOCK &lt;b&gt; &lt;required&gt;&lt;b&gt;&lt;clockid&gt;\r\n
+&lt;required&gt; ::= 1|0
+&lt;clockid&gt; ::= &lt;n&gt;|&lt;class id&gt;
+&lt;filters ::= FILTERS &lt;b&gt;[&lt;filter list&gt;&lt;b&gt;]
+&lt;connections&gt; ::= CONNECTIONS [&lt;b&gt; &lt;connection list&gt;]
+&lt;filter list&gt; ::= [&lt;filter&gt; &lt;b&gt;] &lt;filter list&gt;
+&lt;connection list&gt; ::= [&lt;connection&gt;&lt;b&gt;]&lt;connection list&gt;
+&lt;filter&gt; ::= &lt;n&gt;&lt;b&gt;"&lt;name&gt;"&lt;b&gt;&lt;class id&gt;&lt;b&gt;[&lt;file&gt;]&lt;length&gt;&lt;b1&gt;&lt;filter data&gt;
+&lt;file&gt; ::= SOURCE "&lt;name&gt;"&lt;b&gt; | SINK "&lt;name&gt;"&lt;b&gt;
+&lt;class id&gt; ::= class id of the filter in standard string form
+&lt;name&gt; ::= any sequence of characters NOT including "
+&lt;length&gt; ::= character string representing unsigned decimal number, for example, 23
+             this is the number of bytes of data that follow the following space.
+&lt;b&gt; ::= any combination of space, \t, \r, or \n
+&lt;b1&gt; ::= exactly one space character
+&lt;n&gt; ::= an identifier that will in fact be an integer, 0001, 0002, 0003, etc.
+&lt;connection&gt; ::= &lt;n1&gt;&lt;b&gt;"&lt;pin1 id&gt;"&lt;b&gt;&lt;n2&gt;&lt;b&gt;"&lt;pin2 id&gt;" &lt;media type&gt;
+&lt;n1&gt; ::= identifier of first filter
+&lt;n2&gt; ::= identifier of second filter
+&lt;pin1 id&gt; ::= &lt;name&gt;
+&lt;pin2 id&gt; ::= &lt;name&gt;
+&lt;media type&gt; ::= &lt;major type&gt;&lt;b&gt;&lt;sub type&gt;&lt;b&gt;&lt;flags&gt;&lt;length&gt;&lt;b1&gt;&lt;format&gt;
+&lt;major type&gt; ::= &lt;class id&gt;
+&lt;sub type&gt; ::= &lt;class id&gt;
+&lt;flags&gt; ::= &lt;FixedSizeSamples&gt;&lt;b&gt;&lt;TemporalCompression&gt;&lt;b&gt;
+&lt;FixedSizeSamples&gt; ::= 1|0
+&lt;TemporalCompression&gt; ::= 1|0
+&lt;Format&gt; ::= &lt;SampleSize&gt;&lt;b&gt;&lt;FormatType&gt;&lt;b&gt;&lt;FormatLength&gt;&lt;b1&gt;&lt;FormatData&gt;
+&lt;FormatType&gt; ::= class id of the format in standard string form
+&lt;FormatLength&gt; ::= character string representing unsigned decimal number
+             this is the number of bytes of data that follow the following space.
+&lt;FormatData&gt; ::= binary data
+</FONT></PRE>
+<P>On output there will be a new line (\r\n)
+
+
+ per filter, one per connection, and one for each of the keywords FILTERS and CONNECTIONS.
+Each other case of &lt;B&gt; will be a single space. The keywords FILTERS, CONNECTIONS, and END are not localizable. Note also that the filter data and the format data are binary, so they might contain incorrect line breaks, null values, and so on.
+
+<P>The following approximates what the output looks like (a connection line is long and so has been split for presentation here, &lt;with comments enclosed like this&gt;).
+
+<PRE><FONT FACE="Courier" SIZE="2">
+0002
+&lt;version 2 of the syntax&gt;
+FILTERS
+0001 "Source" {00000000-0000-0000-0000-000000000001} SOURCE "MyFile.mpg" 0000000000
+&lt;id   name   guid of the filter (need this to load it)   source file name   no private data&gt;
+0002 "another filter" {00000000-0000-0000-0000-000000000002} 0000000008 XXXXXXXX
+&lt;id   name   guid   (this one is not a file source or sink)   8 bytes private data&gt;
+CONNECTIONS
+0001 "Output pin" 0002 "In"   &lt;no line break here&gt;
+&lt;filter id pin id   filter id pin id  (output pin is first, then input pin)&gt;
+    0000000172 {00000000-0000-0000-0000-000000000003}   &lt;no line break here&gt;
+&lt;sample size,   media type major-type&gt;
+    {00000000-0000-0000-0000-000000000004} 1 0   &lt;no line break here&gt;
+&lt;media type sub-type, fixed size samples, no temporal compression&gt;
+    0000000093 {00000000-0000-0000-0000-000000000005} 18 YYYYYYYYYYYYYYYYYY
+&lt;length of format   format type   18 bytes of binary format data&gt;
+END
+</FONT></PRE>
+<P>where:
+
+<UL><LI>XXX... represents filter data
+<LI>YYY... represents format data
+</UL>
+<P>The strings and characters in the file are always in Unicode.
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

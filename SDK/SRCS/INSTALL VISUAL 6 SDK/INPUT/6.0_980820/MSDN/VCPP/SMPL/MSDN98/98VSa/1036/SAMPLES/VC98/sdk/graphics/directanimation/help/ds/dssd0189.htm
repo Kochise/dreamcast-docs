@@ -1,0 +1,325 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>CBaseAllocator Class</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0188.htm','/dssd0000.htm','/dssd0180.htm','/index.htm','/dssd0190.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Lib_0001060209000000">CBaseAllocator Class</A></H2>
+<BR CLEAR=ALL>
+<P><IMG SRC="art/filter09.gif" WIDTH="283" HEIGHT="169" ALT="CBaseAllocator class hierarchy" >
+
+<P><B>CBaseAllocator</B> is an abstract base class that 
+implements the basic mechanisms for an allocator with a fixed
+number of fixed-size buffers. The number of buffers and their size can be
+changed using the <A HREF="dssd0189.htm#Lib_0001060209050b00" TARGET="TEXT">CBaseAllocator::SetProperties</A> member function when an input pin and 
+an output pin negotiate the allocator between them.
+
+<P>The class provides the basic functionality for a memory allocator by implementing the <A HREF="dssd0160.htm" TARGET="TEXT">IMemAllocator</A> interface. It provides support for 
+managing a list of <A HREF="dssd0228.htm" TARGET="TEXT">CMediaSample</A> objects (or objects derived from this class), including 
+support for the <A HREF="dssd0160.htm#If_0001060148030100" TARGET="TEXT">IMemAllocator::Commit</A> and <A HREF="dssd0160.htm#If_0001060148030200" TARGET="TEXT">IMemAllocator::Decommit</A> methods, 
+and blocking the <A HREF="dssd0160.htm#If_0001060148030300" TARGET="TEXT">IMemAllocator::GetBuffer</A> method.
+
+<P>Any class derived from this class (such as <A HREF="dssd0230.htm" TARGET="TEXT">CMemAllocator</A>) must create
+<A HREF="dssd0228.htm" TARGET="TEXT">CMediaSample</A> objects, which this base class does not.
+
+<P>A signaling mechanism employing a semaphore is used so that if there
+are no samples, a thread can wait until there are samples or until the allocator
+is decommitted. The <A HREF="dssd0189.htm#Lib_0001060209010006" TARGET="TEXT">m_lFree</A> and <A HREF="dssd0189.htm#Lib_000106020901000a" TARGET="TEXT">m_hSem</A> member variables are used 
+to implement this simple signaling mechanism as follows. 
+
+<P>When a thread calls <A HREF="dssd0189.htm#Lib_0001060209050600" TARGET="TEXT">CBaseAllocator::GetBuffer</A> and there are no samples available, 
+<A HREF="dssd0189.htm#Lib_000106020901000b" TARGET="TEXT">m_lWaiting</A> is incremented and the thread calls the Microsoft&#174; Win32&#174; 
+<A HREF="dssd0389.htm#external_00010a01090000da" TARGET="TEXT">WaitForSingleObject</A> function on the semaphore indicated by <A HREF="dssd0189.htm#Lib_000106020901000a" TARGET="TEXT">m_hSem</A>.
+
+<P>When a sample is freed (by the <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">IUnknown::Release</A> method returning the reference 
+count to zero) or <A HREF="dssd0189.htm#Lib_0001060209050400" TARGET="TEXT">CBaseAllocator::Decommit</A> is called
+and <A HREF="dssd0189.htm#Lib_000106020901000b" TARGET="TEXT">m_lWaiting</A> is nonzero, the Win32 <A HREF="dssd0389.htm#external_00010a01090000c0" TARGET="TEXT">ReleaseSemaphore</A> function is called
+on <A HREF="dssd0189.htm#Lib_000106020901000a" TARGET="TEXT">m_hSem</A> with a release count of <B>m_lWaiting</B>, and <B>m_lWaiting</B>
+is reset to zero. 
+
+<P>All member functions in this class that return <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> and accept a pointer as a 
+parameter return E_POINTER when passed a null pointer. 
+
+<A NAME="Lib_0001060209010000"></A><P><B>Protected Data Members</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060209010001">m_bChanged</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TRUE if the buffers have changed; otherwise, FALSE.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060209010002">m_lCount</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Established number of buffers to provide.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060209010003">m_lAlignment</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Agreed alignment of the buffer.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060209010004">m_lAllocated</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Number of buffers actually allocated.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060209010005">m_lSize</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Size of each buffer.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060209010006">m_lFree</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">List of <A HREF="dssd0228.htm" TARGET="TEXT">CMediaSample</A> objects that are currently free (free list).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060209010007">m_lPrefix</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Agreed prefix of the buffer (precedes value returned by <A HREF="dssd0156.htm#If_0001060144030400" TARGET="TEXT">IMediaSample::GetPointer</A>).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060209010008">m_bCommitted</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">If TRUE, the allocator is in a state in which all <A HREF="dssd0160.htm#If_0001060148030300" TARGET="TEXT">IMemAllocator::GetBuffer</A> methods
+fail. The <A HREF="dssd0160.htm#If_0001060148030600" TARGET="TEXT">IMemAllocator::SetProperties</A> method is the only member function
+permitted to operate in this state.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060209010009">m_bDecommitInProgress</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">If TRUE, the decommit process completes upon the return of all media samples. 
+Until the decommit process has completed, any calls to <A HREF="dssd0160.htm#If_0001060148030300" TARGET="TEXT">IMemAllocator::GetBuffer</A> 
+return E_OUTOFMEMORY.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106020901000a">m_hSem</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Semaphore for signaling.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106020901000b">m_lWaiting</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Count of threads waiting for samples.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060209020000"></A><P><B>Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0189.htm#Lib_0001060209050200" TARGET="TEXT">CBaseAllocator</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Constructs a <A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator</A> object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0189.htm#Lib_0001060209050900" TARGET="TEXT">NotifySample</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Notifies a waiting thread that a sample is available on the free list.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0189.htm#Lib_0001060209050c00" TARGET="TEXT">SetWaiting</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Increments the <A HREF="dssd0189.htm#Lib_000106020901000b" TARGET="TEXT">m_lWaiting</A> data member to indicate that a thread is waiting for a sample.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060209030000"></A><P><B>Overridable Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0189.htm#Lib_0001060209050100" TARGET="TEXT">Alloc</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Allocates memory, instantiates <A HREF="dssd0228.htm" TARGET="TEXT">CMediaSample</A> 
+objects, and adds them to the <A HREF="dssd0189.htm#Lib_0001060209010004" TARGET="TEXT">m_lAllocated</A> and <A HREF="dssd0189.htm#Lib_0001060209010006" TARGET="TEXT">m_lFree</A> data members.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0189.htm#Lib_0001060209050500" TARGET="TEXT">Free</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Decommits memory when the last buffer is freed. 
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060209040000"></A><P><B>Implemented IMemAllocator Methods</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0189.htm#Lib_0001060209050300" TARGET="TEXT">Commit</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Allocates memory by calling the <A HREF="dssd0189.htm#Lib_0001060209050100" TARGET="TEXT">CBaseAllocator::Alloc</A> member function, which you must override.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0189.htm#Lib_0001060209050400" TARGET="TEXT">Decommit</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Releases any resources and enters the inactive state. Any blocking calls to <A HREF="dssd0160.htm#If_0001060148030300" TARGET="TEXT">IMemAllocator::GetBuffer</A> should return with an error value, and all further calls to <A HREF="dssd0160.htm#If_0001060148030300" TARGET="TEXT">GetBuffer</A> fail when in the inactive state.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0189.htm#Lib_0001060209050600" TARGET="TEXT">GetBuffer</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves a container for a sample.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0189.htm#Lib_0001060209050700" TARGET="TEXT">GetProperties</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines the size, number, and alignment of blocks.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0189.htm#Lib_0001060209050a00" TARGET="TEXT">ReleaseBuffer</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Releases the <A HREF="dssd0228.htm" TARGET="TEXT">CMediaSample</A> object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0189.htm#Lib_0001060209050b00" TARGET="TEXT">SetProperties</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies a desired number of blocks, size of the blocks, and block alignment figure.
+This method returns the actual values for the same.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060209050000"></A><P><B>Implemented INonDelegatingUnknown Methods</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0189.htm#Lib_0001060209050800" TARGET="TEXT">NonDelegatingQueryInterface</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Passes out pointers to any interfaces added to the derived filter class.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060209050100">CBaseAllocator::Alloc</A></H3>
+<A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator Class</A>
+<P>Allocates a media sample object.
+
+<P><B>HRESULT</B> <B>Alloc</B><B>(</B><B>void</B><B>)</B><B>;</B> <BR><H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>Override this member function to allocate memory, instantiate <A HREF="dssd0228.htm" TARGET="TEXT">CMediaSample</A> objects, and add them to the free list represented by the <A HREF="dssd0189.htm#Lib_0001060209010006" TARGET="TEXT">m_lFree</A> data member. The <A HREF="dssd0230.htm#Lib_0001060232030100" TARGET="TEXT">CMemAllocator::Alloc</A> member function is an example of an override of this member function. It calls this member function first to ensure that allocator properties have been set.
+
+<P>This member function is called from the <A HREF="dssd0189.htm#Lib_0001060209050300" TARGET="TEXT">CBaseAllocator::Commit</A> member function when entering the active state. The default implementation returns an error value if the <A HREF="dssd0160.htm#If_0001060148030600" TARGET="TEXT">IMemAllocator::SetProperties</A> method has not been called yet, and checks that there are no outstanding buffers.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060209050200">CBaseAllocator::CBaseAllocator</A></H3>
+<A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator Class</A>
+<P>Constructs a <A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator</A> object.
+
+<P><B>CBaseAllocator</B><B>(</B><BR>&nbsp;&nbsp;<B>TCHAR</B> <B>*</B> <I>pName</I><B>,</B><BR>&nbsp;&nbsp;<B>LPUNKNOWN</B> <I>lpUnk</I><B>,</B><BR>&nbsp;&nbsp;<B>HRESULT</B> <B>*</B> <I>phr</I><B>,</B><BR>&nbsp;&nbsp;<B>BOOL</B> <I>bListSemaphore</I> <B>=</B> <B>TRUE</B><BR>&nbsp;&nbsp;<B>)</B><B>;</B> <BR><H5>Parameters</H5>
+<DL><DT><I>pName</I>
+</DT><DD>Name of the allocator object.
+</DD><DT><I>lpUnk</I>
+</DT><DD>Pointer to LPUNKNOWN.
+</DD><DT><I>phr</I>
+</DT><DD>Pointer to an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> for return values. This is not modified unless this member function fails.
+</DD><DT><I>bListSemaphore</I>
+</DT><DD>If TRUE, the free list in the allocator has a semaphore associated with it. If FALSE, no semaphore is created for the list. Setting this to FALSE can be useful for subclassing <A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator</A> when the semaphore is not required for blocking. The semaphore is used for the waiting and signaling mechanism.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060209050300">CBaseAllocator::Commit</A></H3>
+<A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator Class</A>
+<P>Commits the memory for the specified buffers.
+
+<P><B>HRESULT</B> <B>Commit</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0160.htm#If_0001060148030100" TARGET="TEXT">IMemAllocator::Commit</A> method. The <A HREF="dssd0160.htm#If_0001060148030600" TARGET="TEXT">IMemAllocator::SetProperties</A> method must be called before calling this member function. This member function sets <A HREF="dssd0189.htm#Lib_0001060209010008" TARGET="TEXT">m_bCommitted</A> to TRUE and overrides any pending decommit operation. It then calls the <A HREF="dssd0189.htm#Lib_0001060209050100" TARGET="TEXT">CBaseAllocator::Alloc</A> member function to allocate memory (which should be overridden in the derived class to call the base class member function and then allocate the memory). The <A HREF="dssd0160.htm#If_0001060148030300" TARGET="TEXT">IMemAllocator::GetBuffer</A> method fails if it is called before calling this member function.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060209050400">CBaseAllocator::Decommit</A></H3>
+<A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator Class</A>
+<P>Releases the memory for the specified buffers.
+
+<P><B>HRESULT</B> <B>Decommit</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0160.htm#If_0001060148030200" TARGET="TEXT">IMemAllocator::Decommit</A> method. Any threads waiting in the <A HREF="dssd0160.htm#If_0001060148030300" TARGET="TEXT">IMemAllocator::GetBuffer</A> method return with an error after this method is called. The <B>IMemAllocator::GetBuffer</B> method
+fails if it is called before the <A HREF="dssd0160.htm#If_0001060148030100" TARGET="TEXT">IMemAllocator::Commit</A> method or after this method.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060209050500">CBaseAllocator::Free</A></H3>
+<A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator Class</A>
+<P>Called to decommit the memory when the last buffer is freed.
+
+<P><B>virtual</B> <B>void</B> <B>Free</B><B>(</B><B>void</B><B>)</B> <B>PURE;</B> <BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This member function must be implemented in the derived class. It is called from <A HREF="dssd0189.htm#Lib_0001060209050a00" TARGET="TEXT">CBaseAllocator::ReleaseBuffer</A> when a decommit is pending and the allocator has put its last buffer on the free list. It is also called from <A HREF="dssd0189.htm#Lib_0001060209050400" TARGET="TEXT">CBaseAllocator::Decommit</A>. 
+
+<P>The <A HREF="dssd0230.htm#Lib_0001060232030400" TARGET="TEXT">CMemAllocator::Free</A> member function is an example of how this can be implemented in the derived class. In this case, it simply returns, because the <A HREF="dssd0230.htm" TARGET="TEXT">CMemAllocator</A> class releases memory from its destructor. 
+
+<P>This member function is protected.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060209050600">CBaseAllocator::GetBuffer</A></H3>
+<A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator Class</A>
+<P>Retrieves a container for a sample.
+
+<P><B>HRESULT</B> <B>GetBuffer</B><B>(</B><BR>&nbsp;&nbsp;<B>IMediaSample</B> <B>**</B> <I>ppBuffer</I><B>,</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <B>*</B> <I>pStartTime</I><B>,</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <B>*</B> <I>pEndTime</I><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>dwFlags</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>ppBuffer</I>
+ </DT><DD>Pointer to a retrieved media sample buffer.
+</DD><DT><I>pStartTime</I>
+ </DT><DD>Either NULL or set to the beginning time of the sample to retrieve.
+</DD><DT><I>pEndTime</I>
+ </DT><DD>Either NULL or set to the ending time of the sample to retrieve.
+</DD><DT><I>dwFlags</I>
+ </DT><DD>The following flags are supported.
+ <TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+ </B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_GBF_PREVFRAMESKIPPED
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The buffer returned will not be filled with data contiguous to any previous data sent.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_GBF_NOTASYNCPOINT
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Dynamic format changes are not allowed on this buffer because it is not a key frame. 
+ </FONT></TD></TR></TABLE>
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0160.htm#If_0001060148030300" TARGET="TEXT">IMemAllocator::GetBuffer</A> method.
+
+<P>This is a blocking, synchronous call to access the next free buffer (as represented by an 
+<A HREF="dssd0156.htm" TARGET="TEXT">IMediaSample</A> interface). Upon return, properties (such as the time and so on) 
+are invalid, but the buffer pointer and size are correct. 
+
+<P>If no buffers are available, <B>CBaseAllocator::GetBuffer</B> calls
+<A HREF="dssd0189.htm#Lib_0001060209050c00" TARGET="TEXT">CBaseAllocator::SetWaiting</A> and then calls the Microsoft&#174; Win32&#174; 
+<A HREF="dssd0389.htm#external_00010a01090000da" TARGET="TEXT">WaitForSingleObject</A> function to wait for the list to signal that a sample is available. 
+The list signals by calling <A HREF="dssd0189.htm#Lib_0001060209050a00" TARGET="TEXT">CBaseAllocator::ReleaseBuffer</A>, which in turn calls 
+<A HREF="dssd0189.htm#Lib_0001060209050900" TARGET="TEXT">CBaseAllocator::NotifySample</A>, which sets <A HREF="dssd0189.htm#Lib_000106020901000b" TARGET="TEXT">m_lWaiting</A> to zero and calls the
+Win32 <A HREF="dssd0389.htm#external_00010a01090000c0" TARGET="TEXT">ReleaseSemaphore</A> function.
+
+<P>This member function also takes two time parameters. These parameters are
+used in certain advanced buffering scenarios, when it is necessary to have an idea of the amount 
+of time a buffer is required. The only place this is currently used is in the video
+renderer, when the time stamps are used as a guide to when the primary surfaces of
+Display Control Interface (DCI) and Microsoft&#174; DirectDraw&#174;
+should be returned (this is because filling a primary surface buffer corresponds
+directly to the actual rendering of the data). In all other cases, these parameters
+can be safely set to NULL. If one is non-NULL, both should be non-NULL; these
+times will not be set on the sample when it is subsequently returned.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060209050700">CBaseAllocator::GetProperties</A></H3>
+<A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator Class</A>
+<P>Retrieves the size, number, and alignment of blocks.
+
+<P><B>HRESULT</B> <B>GetProperties</B><B>(</B><BR>&nbsp;&nbsp;<B>ALLOCATOR_PROPERTIES</B> <B>*</B> <I>pProps</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pProps</I>
+ </DT><DD>Structure to be filled in with allocator properties.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0160.htm#If_0001060148030400" TARGET="TEXT">IMemAllocator::GetProperties</A> method. The default implementation fills the <A HREF="dssd0287.htm#structs_0001060501000100" TARGET="TEXT">ALLOCATOR_PROPERTIES</A> structure passed in with the values of <A HREF="dssd0189.htm#Lib_0001060209010005" TARGET="TEXT">m_lSize</A>, <A HREF="dssd0189.htm#Lib_0001060209010002" TARGET="TEXT">m_lCount</A>, <A HREF="dssd0189.htm#Lib_0001060209010003" TARGET="TEXT">m_lAlignment</A>, and <A HREF="dssd0189.htm#Lib_0001060209010007" TARGET="TEXT">m_lPrefix</A>. 
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060209050800">CBaseAllocator::NonDelegatingQueryInterface</A></H3>
+<A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator Class</A>
+<P>Retrieves an interface and increments the reference count.
+
+<P><B>HRESULT</B> <B>NonDelegatingQueryInterface</B><B>(</B><BR>&nbsp;&nbsp;<B>REFIID</B> <I>riid</I><B>,</B><BR>&nbsp;&nbsp;<B>void</B> <B>**</B> <I>ppv</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>riid</I>
+ </DT><DD>Reference identifier.
+</DD><DT><I>ppv</I>
+ </DT><DD>Pointer to the interface.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns a pointer to the interface.
+
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0265.htm#fmutil_0001060309000001" TARGET="TEXT">INonDelegatingUnknown::NonDelegatingQueryInterface</A> method and passes out 
+references to the <A HREF="dssd0160.htm" TARGET="TEXT">IMemAllocator</A> and <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> interfaces. Override this member function to return other interfaces on the object in the derived class.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060209050900">CBaseAllocator::NotifySample</A></H3>
+<A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator Class</A>
+<P>Notifies a waiting thread that a sample is available on the free list.
+
+<P><B>void</B> <B>NotifySample</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>If <A HREF="dssd0189.htm#Lib_000106020901000b" TARGET="TEXT">m_lWaiting</A> has been incremented (is not zero), this indicates a thread is waiting. This member function checks for this condition and calls the Microsoft Win32 <A HREF="dssd0389.htm#external_00010a01090000c0" TARGET="TEXT">ReleaseSemaphore</A> function with the semaphore value 
+<A HREF="dssd0189.htm#Lib_000106020901000a" TARGET="TEXT">m_hSem</A> to activate any waiting thread. It also sets 
+<B>m_lWaiting</B> back to zero. 
+
+<P>This member function is called from <A HREF="dssd0189.htm#Lib_0001060209050a00" TARGET="TEXT">CBaseAllocator::ReleaseBuffer</A> when putting a sample back on the free list and from <A HREF="dssd0189.htm#Lib_0001060209050400" TARGET="TEXT">CBaseAllocator::Decommit</A> when decommitting the allocator (so that waiting threads can be denied).
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060209050a00">CBaseAllocator::ReleaseBuffer</A></H3>
+<A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator Class</A>
+<P>Releases the object back to the list of free objects.
+
+<P><B>HRESULT</B> <B>ReleaseBuffer</B><B>(</B><BR>&nbsp;&nbsp;<B>IMediaSample</B> <B>*</B> <I>pSample</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B> <BR><H5>Parameters</H5>
+<DL><DT><I>pSample</I>
+ </DT><DD>Pointer to the <A HREF="dssd0156.htm" TARGET="TEXT">IMediaSample</A> interface of the media sample object.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0160.htm#If_0001060148030500" TARGET="TEXT">IMemAllocator::ReleaseBuffer</A> method. It adds the sample to the free list (represented by <A HREF="dssd0189.htm#Lib_0001060209010006" TARGET="TEXT">m_lFree</A>) and calls <A HREF="dssd0189.htm#Lib_0001060209050900" TARGET="TEXT">CBaseAllocator::NotifySample</A> to notify any blocked thread waiting for a free sample. If there is a pending <A HREF="dssd0189.htm#Lib_0001060209050400" TARGET="TEXT">CBaseAllocator::Decommit</A> call (indicated by <A HREF="dssd0189.htm#Lib_0001060209010009" TARGET="TEXT">m_bDecommitInProgress</A>), the pure virtual <A HREF="dssd0189.htm#Lib_0001060209050500" TARGET="TEXT">CBaseAllocator::Free</A> member function is called to decommit memory when the last buffer is placed on the free list. 
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060209050b00">CBaseAllocator::SetProperties</A></H3>
+<A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator Class</A>
+<P>Determines the size, number, and alignment of blocks.
+
+<P><B>HRESULT</B> <B>SetProperties</B><B>(</B><BR>&nbsp;&nbsp;<B>ALLOCATOR_PROPERTIES</B> <B>*</B> <I>pRequest</I><B>,</B><BR>&nbsp;&nbsp;<B>ALLOCATOR_PROPERTIES</B> <B>*</B> <I>pActual</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pRequest</I>
+ </DT><DD>Allocator properties requested to be set.
+</DD><DT><I>pActual</I>
+ </DT><DD>Allocator properties actually set.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>The <I>pRequest</I> parameter is filled in by the caller with the requested values for the count, number, and alignment as specified by the <A HREF="dssd0287.htm#structs_0001060501000100" TARGET="TEXT">ALLOCATOR_PROPERTIES</A> structure. The <I>pActual</I> parameter is filled in by the allocator with the closest
+values that it can provide for the request. This method cannot be called unless the allocator has been decommitted using the <A HREF="dssd0160.htm#If_0001060148030200" TARGET="TEXT">IMemAllocator::Decommit</A> method.
+
+<P>The values of data members <A HREF="dssd0189.htm#Lib_0001060209010005" TARGET="TEXT">m_lSize</A>, <A HREF="dssd0189.htm#Lib_0001060209010002" TARGET="TEXT">m_lCount</A>, <A HREF="dssd0189.htm#Lib_0001060209010003" TARGET="TEXT">m_lAlignment</A>, and <A HREF="dssd0189.htm#Lib_0001060209010007" TARGET="TEXT">m_lPrefix</A> are set to the corresponding members of the <I>pActual</I> parameter's <A HREF="dssd0287.htm#structs_0001060501000100" TARGET="TEXT">ALLOCATOR_PROPERTIES</A> structure.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060209050c00">CBaseAllocator::SetWaiting</A></H3>
+<A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator Class</A>
+<P>Increments the <A HREF="dssd0189.htm#Lib_000106020901000b" TARGET="TEXT">m_lWaiting</A> data member to indicate that a thread is waiting for a 
+sample.
+
+<P><B>void</B> <B>SetWaiting</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This member function is called from <A HREF="dssd0189.htm#Lib_0001060209050600" TARGET="TEXT">CBaseAllocator::GetBuffer</A> if no samples are available on the free list. After calling this, <B>CBaseAllocator::GetBuffer</B> calls the Microsoft&#174; Win32&#174; <A HREF="dssd0389.htm#external_00010a01090000da" TARGET="TEXT">WaitForSingleObject</A> function to wait for the list to signal that 
+a sample is available. The list signals by calling <A HREF="dssd0189.htm#Lib_0001060209050a00" TARGET="TEXT">CBaseAllocator::ReleaseBuffer</A>, which in turn calls <A HREF="dssd0189.htm#Lib_0001060209050900" TARGET="TEXT">CBaseAllocator::NotifySample</A>, which sets <A HREF="dssd0189.htm#Lib_000106020901000b" TARGET="TEXT">m_lWaiting</A> to zero and calls the Win32 <A HREF="dssd0389.htm#external_00010a01090000c0" TARGET="TEXT">ReleaseSemaphore</A> function.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

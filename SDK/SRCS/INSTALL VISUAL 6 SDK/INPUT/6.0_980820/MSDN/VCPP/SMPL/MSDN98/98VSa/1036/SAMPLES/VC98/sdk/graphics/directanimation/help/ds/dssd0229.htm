@@ -1,0 +1,462 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>CMediaType Class</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0228.htm','/dssd0000.htm','/dssd0180.htm','/index.htm','/dssd0230.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Lib_0001060231000000">CMediaType Class</A></H2>
+<BR CLEAR=ALL>
+<P><IMG SRC="art/mtype01.gif" WIDTH="205" HEIGHT="56" ALT="CMediaType class hierarchy" >
+
+<P>When filters are connected, they typically negotiate a type between them. This type describes the format of the data to be exchanged; if the filters do not agree on a media type, they cannot connect. Microsoft&#174; DirectShow&#153; describes types through the media type structure, which contains two conceptual parts. The first is a list of members that describes generic attributes of a data stream. An example of this is a member that declares whether the data will be passed in fixed-size buffers. The second part of the structure is a variable-length block of data. How large the block of data should be and what it will contain depend on the type of data stream. For example, if the data stream is digital video, the format block is a <A HREF="dssd0287.htm#structs_0001060501001e00" TARGET="TEXT">VIDEOINFOHEADER</A> structure. If, on the other hand, it is digital audio, the format block is a Microsoft Win32&#174; <A HREF="dssd0075.htm#avispec_0001050502020900" TARGET="TEXT">WAVEFORMATEX</A> structure.
+
+<P>A data stream type (for example, digital video) is set with a combination of two globally unique identifiers (<A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A>s), called a major type and a subtype. The <I>major type</I> describes the overall class of data, examples of which might be digital video, digital audio, MIDI, or text captions. The <I>subtype</I> should supply a more specific description of the data type. In the case of digital video, for example, the subtype could be RGB8, RGB16, or RGB32 (among others). By having these two types in a generic structure (<A HREF="dssd0287.htm#structs_0001060501000300" TARGET="TEXT">AM_MEDIA_TYPE</A>), a component, such as a filter graph, can connect filters without any knowledge that is type specific.
+
+<P>The distinction between what goes in the major type and the subtype is somewhat arbitrary. However, as a general rule, transformations between major types (for example, video to audio or video to MIDI) should be relatively rare. Such a rare exception might be a transformation between audio and MIDI. As for the subtype, the more information promoted from the type-specific format block into the subtype, the better the design.
+
+<P>As an example of promoting type-specific information to the subtype, video in DirectShow uses a <A HREF="dssd0287.htm#structs_0001060501001e00" TARGET="TEXT">VIDEOINFOHEADER</A> structure for the type-specific format block. This contains a Win32 <A HREF="dssd0075.htm#avispec_0001050502020800" TARGET="TEXT">BITMAPINFOHEADER</A> structure that defines the video stream. <B>BITMAPINFOHEADER</B> contains the bit depth of the video, such as 8-bit, 16-bit, or 24-bit. This information is duplicated in the subtype field, because a subtype of RGB8 directly infers a bit count of 8.
+
+<P>DirectShow defines a number of major types. The most important of these are a video type that uses <A HREF="dssd0287.htm#structs_0001060501001e00" TARGET="TEXT">VIDEOINFOHEADER</A> for the variable-length format block, and an audio that uses <A HREF="dssd0075.htm#avispec_0001050502020900" TARGET="TEXT">WAVEFORMATEX</A>. However, it is insufficient to have a major type (such as digital video) inferring the contents of the format block (in this case, <B>VIDEOINFOHEADER</B>). The principal reason for this is extensibility: the format block type must be able to be updated without changing the less-specific major type. Therefore, what the format block actually contains is inferred by another <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> called the <I>format type</I>. If the format block contains <B>VIDEOINFOHEADER</B>, the format type <B>GUID</B> will be FORMAT_VideoInfo.
+
+<P>The principal use of the <B>CMediaType</B> class is to manage a media type structure in a simple way. At the same time, the class provides some extra helper functions (such as format-block copying and allocation). The class can be cast to an <A HREF="dssd0287.htm#structs_0001060501000300" TARGET="TEXT">AM_MEDIA_TYPE</A> structure when an interface method requires one to be passed to it.
+
+<P>The <B>CMediaType</B> class contains a pointer to a block of memory. When copying a <B>CMediaType</B> object, it is insufficient to simply copy the pointer. In C++, a data copy is required, which actually allocates a new block of memory and copies the data into it. This is the purpose of the copy operator.
+
+<P>Similarly, when comparing two <B>CMediaType</B> objects, you must compare the blocks of variable-length data (actually using <A HREF="dssd0389.htm#external_00010a01090000b1" TARGET="TEXT">memcmp</A>) when producing the final result. To make this possible, <B>CMediaType</B> overrides the equivalence operator.
+
+<A NAME="Lib_0001060231010000"></A><P><B>Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020100" TARGET="TEXT">AllocFormatBuffer</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Allocates an uninitialized format block in the object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020200" TARGET="TEXT">CMediaType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Constructs a <B>CMediaType</B> object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020300" TARGET="TEXT">Format</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the format block for this media type.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020400" TARGET="TEXT">FormatLength</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the length of the format block of this object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020500" TARGET="TEXT">FormatType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns a pointer to the format type.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020600" TARGET="TEXT">GetSampleSize</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the size of the samples.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020700" TARGET="TEXT">InitMediaType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Initializes the media type.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020800" TARGET="TEXT">IsFixedSize</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Queries whether the samples are fixed in length.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020900" TARGET="TEXT">IsPartiallySpecified</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if the media type is not completely specified.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020a00" TARGET="TEXT">IsTemporalCompressed</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Queries whether the data stream is compressed temporally.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020b00" TARGET="TEXT">IsValid</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Queries whether the media type is currently valid.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020c00" TARGET="TEXT">MatchesPartial</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks whether this media type matches another media type that is only partially specified.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020d00" TARGET="TEXT">ReallocFormatBuffer</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Reallocates the format block,
+maintaining its current content where possible.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020e00" TARGET="TEXT">ResetFormatBuffer</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Deletes any format block that is currently present.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231020f00" TARGET="TEXT">SetFormat</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the format block.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231021000" TARGET="TEXT">SetFormatType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the type of the format block in the object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231021100" TARGET="TEXT">SetSampleSize</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the size of the samples.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231021200" TARGET="TEXT">SetSubtype</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the subtype.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231021300" TARGET="TEXT">SetTemporalCompression</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Marks the media type to indicate that samples will be temporally compressed.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231021400" TARGET="TEXT">SetType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the major type.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231021500" TARGET="TEXT">SetVariableSize</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Marks the media type to indicate that samples will vary in length.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231021600" TARGET="TEXT">Subtype</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns a pointer to the subtype.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231021700" TARGET="TEXT">Type</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns a pointer to the major type.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060231020000"></A><P><B>Operators</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231021800" TARGET="TEXT">operator =</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Performs a copy operation.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231021900" TARGET="TEXT">operator ==</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Tests for equality between <B>CMediaType</B> objects.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm#Lib_0001060231021a00" TARGET="TEXT">operator !=</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Tests for inequality between <B>CMediaType</B> objects.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020100">CMediaType::AllocFormatBuffer</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Allocates a block of memory for the format block.
+
+<P><B>BYTE*</B> <B>AllocFormatBuffer</B><B>(</B><BR>&nbsp;&nbsp;<B>ULONG</B> <I>length</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>length</I>
+</DT><DD>Size required for the format block.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns a pointer to the new block if successful; otherwise, returns NULL.
+
+<H5>Remarks</H5>
+<P>Any previous format block is deleted and a new block is allocated and installed.
+The size required must be nonzero.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020200">CMediaType::CMediaType</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Constructs a <A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> object.
+
+<P><B>CMediaType</B><B>(</B> <B>)</B><B>;</B><BR><B>CMediaType</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>GUID</B> <B>*</B> <I>majortype</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><B>CMediaType</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>AM_MEDIA_TYPE&amp;</B> <I>mtype</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><B>CMediaType</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>CMediaType&amp;</B> <I>cmtype</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>majortype</I>
+ </DT><DD>Major type <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A>.
+</DD><DT><I>mtype</I>
+ </DT><DD><A HREF="dssd0287.htm#structs_0001060501000300" TARGET="TEXT">AM_MEDIA_TYPE</A> structure.
+</DD><DT><I>cmtype</I>
+ </DT><DD><A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> object from which this object is constructed.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>A <A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> object can be constructed in a number of different ways.
+The class provides a default constructor that takes no parameters. It can also be constructed
+based on an <A HREF="dssd0287.htm#structs_0001060501000300" TARGET="TEXT">AM_MEDIA_TYPE</A> structure or another <B>CMediaType</B> object. In both
+cases, it takes a data copy of the format block before returning.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020300">CMediaType::Format</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Returns a pointer to the variable-length format block of the object.
+
+<P><B>BYTE*</B> <B>Format</B><B>(</B> <B>)</B> <B>const;</B><BR><H5>Return Values</H5>
+<P>Returns the format block of the object whose content is type-specific.
+
+<H5>Remarks</H5>
+<P>If no format block has been allocated, it might return NULL.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020400">CMediaType::FormatLength</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Returns the size, in bytes, of the format block that the object contains.
+
+<P><B>ULONG</B> <B>FormatLength</B><B>(</B> <B>)</B> <B>const;</B><BR><H5>Return Values</H5>
+<P>Returns the length of the format block, or NULL if no format block is present.
+
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020500">CMediaType::FormatType</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Retrieves the format type.
+
+<P><B>const</B> <B>GUID</B> <B>*FormatType</B><B>(</B> <B>)</B> <B>const;</B><BR><H5>Return Values</H5>
+<P>Returns a pointer to the format type.
+
+
+<H5>Remarks</H5>
+<P>The format <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> describes the content of the
+variable-length format block. Examples of format types are FORMAT_VideoInfo and
+FORMAT_WaveFormatEx.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020600">CMediaType::GetSampleSize</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Returns the maximum sample size for the data stream.
+
+<P><B>ULONG</B> <B>GetSampleSize</B><B>(</B> <B>)</B> <B>const;</B><BR><H5>Return Values</H5>
+<P>Returns the maximum size of any sample to be sent, or zero
+to indicate that the sample size is variable.
+
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020700">CMediaType::InitMediaType</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Initializes the sample.
+
+<P><B>void</B> <B>InitMediaType</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This member function clears memory, sets the fixed sample size property, and sets
+the sample size to 1.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020800">CMediaType::IsFixedSize</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Determines if the samples for the stream will be fixed or variable size.
+
+<P><B>BOOL</B> <B>IsFixedSize</B><B>(</B> <B>)</B> <B>const;</B><BR><H5>Return Values</H5>
+<P>Returns one of the following values.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TRUE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Samples will be fixed size.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">FALSE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Samples will be variable length.
+</FONT></TD></TR></TABLE>
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020900">CMediaType::IsPartiallySpecified</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Determines if the media type is only partially defined. This is
+the case if the major type or format type is GUID_NULL.
+
+<P><B>BOOL</B> <B>IsPartiallySpecified</B><B>(</B> <B>)</B> <B>const;</B><BR><H5>Return Values</H5>
+<P>Returns one of the following values.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TRUE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Media type is partially specified.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">FALSE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Media type is completely specified.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>This function does not check the sub type.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020a00">CMediaType::IsTemporalCompressed</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Asks if the stream will be compressed temporally.
+
+<P><B>BOOL</B> <B>IsTemporalCompressed</B><B>(</B> <B>)</B> <B>const;</B><BR><H5>Return Values</H5>
+<P>Returns one of the following values.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TRUE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Stream will have temporal compression.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">FALSE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Stream will have no temporal compression.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>Some data streams, such as compressed video, have temporal dependencies between
+successive samples. Other data streams do not have temporal dependencies between their samples;
+that is, each sample can be treated as an independent unit; for example, MIDI.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020b00">CMediaType::IsValid</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Queries whether the object has a valid major type.
+
+<P><B>BOOL</B> <B>IsValid</B><B>(</B> <B>)</B> <B>const;</B><BR><H5>Return Values</H5>
+<P>Returns one of the following values.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TRUE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> object has a valid major type.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">FALSE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> object does not have a valid major type.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>When <A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> objects are constructed, their GUIDs are initialized with
+GUID_NULL (unless they are constructed based on another <A HREF="dssd0287.htm#structs_0001060501000300" TARGET="TEXT">AM_MEDIA_TYPE</A>
+structure or <B>CMediaType</B> object). This member function is useful
+for discovering if the object has been correctly initialized.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020c00">CMediaType::MatchesPartial</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Determines if this media type matches the media type pointed to
+by the <I>ppartial</I> parameter.
+
+<P><B>BOOL</B> <B>MatchesPartial</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>CMediaType</B> <I>*ppartial</I><BR>&nbsp;&nbsp;<B>)</B> <B>const;</B><BR><H5>Parameters</H5>
+<DL><DT><I>ppartial</I>
+ </DT><DD>Pointer to the media type to match.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns one of the following values.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TRUE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Media types match for the parts that are defined.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">FALSE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Media types do not match.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>The matching applies only for the parts of <I>ppartial</I> that are defined.
+That is, this only matches the major type, subtype, or format type of the media type if these
+are not defined as GUID_NULL.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020d00">CMediaType::ReallocFormatBuffer</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Reallocates the format block to a new size.
+
+<P><B>BYTE*</B> <B>ReallocFormatBuffer</B><B>(</B><BR>&nbsp;&nbsp;<B>ULONG</B> <I>length</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>length</I>
+ </DT><DD>New size required for the format block.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns a pointer to the new block if successful; otherwise, returns NULL.
+
+
+<H5>Remarks</H5>
+<P>Any current format block will be copied into the newly allocated block up to
+its maximum size. Any excess will be lost when the new block is smaller than the old one.
+When the new block is larger, the excess is not filled with zeros.
+
+<P>The size required must be nonzero.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020e00">CMediaType::ResetFormatBuffer</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Deletes any format block currently held, sets it to NULL, and
+sets the size of the format block to zero.
+
+<P><B>void</B> <B>ResetFormatBuffer</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231020f00">CMediaType::SetFormat</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Sets the variable-length format block.
+
+<P><B>BOOL</B> <B>SetFormat</B><B>(</B><BR>&nbsp;&nbsp;<B>BYTE</B> <I>*pFormat</I><B>,</B><BR>&nbsp;&nbsp;<B>ULONG</B> <I>length</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pFormat</I>
+ </DT><DD>Block of memory containing type-specific information.
+</DD><DT><I>length</I>
+ </DT><DD>Overall length of the format block.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns one of the following values.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TRUE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Format block was set.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">FALSE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">An error occurred; most likely there was no memory available.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>The function takes a copy of the format block and stores that internally.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231021000">CMediaType::SetFormatType</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Sets the <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> that describes the content of the format block.
+
+<P><B>void</B> <B>SetFormatType</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>GUID</B> <B>*</B> <I>pformattype</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pformattype</I>
+</DT><DD><A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> describing the format type.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The format <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> describes what can be expected to be found in the
+variable-length format block. For example, if the format type is FORMAT_VideoInfo,
+the format block should contain a <A HREF="dssd0287.htm#structs_0001060501001e00" TARGET="TEXT">VIDEOINFOHEADER</A> structure. The creator of this object is
+responsible for making them consistent.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231021100">CMediaType::SetSampleSize</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Sets the maximum sample size for the data stream.
+
+<P><B>void</B> <B>SetSampleSize</B><B>(</B><BR>&nbsp;&nbsp;<B>ULONG</B> <I>sz</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>sz</I>
+ </DT><DD>Size of the sample.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>If the sample size passed is zero, the object is set so that the data
+stream will send variable-length samples (the <A HREF="dssd0229.htm#Lib_0001060231020600" TARGET="TEXT">CMediaType::GetSampleSize</A> member
+function will return zero). Otherwise, it will set the maximum size of the sample to the size
+specified in the <I>sz</I> parameter.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231021200">CMediaType::SetSubtype</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Sets the subtype for the object.
+
+<P><B>void</B> <B>SetSubtype</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>GUID</B> <B>*</B> <I>psubtype</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>psubtype</I>
+ </DT><DD><A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> defining the subtype for the object.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231021300">CMediaType::SetTemporalCompression</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Marks the media type so that the data stream it describes might or might not
+contain temporal compression (according to the input Boolean flag).
+
+<P><B>void</B> <B>SetTemporalCompression</B><B>(</B><BR>&nbsp;&nbsp;<B>BOOL</B> <I>bCompressed</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>bCompressed</I>
+ </DT><DD>TRUE to indicate that the stream will contain temporal compression;
+otherwise, FALSE.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231021400">CMediaType::SetType</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Sets the major type for the object.
+
+<P><B>void</B> <B>SetType</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>GUID</B> <B>*</B> <I>ptype</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>ptype</I>
+ </DT><DD><A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> defining the major type for the object.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231021500">CMediaType::SetVariableSize</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Sets the media type to indicate that the data stream will send variable-length samples. 
+
+<P><B>void</B> <B>SetVariableSize</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>Subsequent calls to <A HREF="dssd0229.htm#Lib_0001060231020600" TARGET="TEXT">CMediaType::GetSampleSize</A> will return zero.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231021600">CMediaType::Subtype</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Retrieves the subtype.
+
+<P><B>const</B> <B>GUID</B> <B>*Type</B><B>(</B> <B>)</B> <B>const;</B><BR><H5>Return Values</H5>
+<P>Returns a pointer to the subtype.
+
+
+<H5>Remarks</H5>
+<P>The subtype <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> gives finer detail within the
+major type of data represented by this media type.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231021700">CMediaType::Type</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Retrieves the major type.
+
+<P><B>const</B> <B>GUID</B> <B>*Type</B><B>(</B> <B>)</B> <B>const;</B><BR><H5>Return Values</H5>
+<P>Returns a pointer to the major type.
+
+
+<H5>Remarks</H5>
+<P>The major type <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> describes the class of data
+represented by this media type.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231021800">CMediaType::operator =</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>The <A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> variation of this operator is the copy constructor for a <B>CMediaType</B> object.
+
+<P>The <A HREF="dssd0287.htm#structs_0001060501000300" TARGET="TEXT">AM_MEDIA_TYPE</A> variation of this operator is the copy constructor for an
+<B>AM_MEDIA_TYPE</B> object.
+
+<P><B>CMediaType&amp;</B> <B>operator=</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>CMediaType&amp;</B> <I>rt</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><B>CMediaType&amp;</B> <B>operator=</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>AM_MEDIA_TYPE&amp;</B> <I>mrt</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>rt</I>
+ </DT><DD>Object to copy during the assignment operation.
+</DD><DT><I>mrt</I>
+ </DT><DD>Object to copy during the assignment operation.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns a reference to this object after the operation.
+
+
+<H5>Remarks</H5>
+<P>Because the <A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> class inherits publicly from <A HREF="dssd0287.htm#structs_0001060501000300" TARGET="TEXT">AM_MEDIA_TYPE</A>,
+the compiler could generate the copy constructor for the <B>AM_MEDIA_TYPE</B> object itself.
+However, this could introduce some memory conflicts and leaks in the process because
+the structure contains a dynamically allocated block
+(which the <B>AM_MEDIA_TYPE</B> <A HREF="dssd0287.htm#structs_0001060501000309" TARGET="TEXT">pbFormat</A> member points to), which the
+compiler's copy constructor will not copy correctly.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231021900">CMediaType::operator ==</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Tests for equality between <A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> objects.
+
+<PRE><FONT FACE="Courier" SIZE="2">inline BOOL operator==(const CMediaType&amp; rt) const;
+</FONT></PRE>
+<H5>Parameters</H5>
+<DL><DT><I>rt</I>
+ </DT><DD><A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> object corresponding to the right side of the operator.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns TRUE if the <A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> object tested is equal to
+this object; otherwise, returns FALSE.
+
+
+<H5>Remarks</H5>
+<P>This object is on the left side of the operator.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060231021a00">CMediaType::operator !=</A></H3>
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType Class</A>
+<P>Tests for inequality between <A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> objects.
+
+<P><B>BOOL</B> <B>operator!=</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>CMediaType&amp;</B> <I>rt</I><BR>&nbsp;&nbsp;<B>)</B> <B>const;</B><BR><H5>Parameters</H5>
+<DL><DT><I>rt</I>
+ </DT><DD><A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> object corresponding to the right side of the operator.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns TRUE if the <A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> object tested is not equal to
+this object; otherwise, returns FALSE.
+
+
+<H5>Remarks</H5>
+<P>This object is on the left side of the operator.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

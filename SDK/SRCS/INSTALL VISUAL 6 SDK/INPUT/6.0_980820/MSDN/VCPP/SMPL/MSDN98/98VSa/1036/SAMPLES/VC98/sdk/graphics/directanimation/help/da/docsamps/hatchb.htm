@@ -1,0 +1,122 @@
+<HTML> 
+<HEAD>
+<TITLE>DirectAnimation SDK, JScript sample</TITLE>
+</HEAD>	 
+
+<BODY BGCOLOR=WHITE TOPMARGIN=15 LEFTMARGIN=20>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2> 
+<CENTER>
+<H1>HatchBackwardDiagonal</H1>
+</CENTER>
+
+<DIV ID=controlDiv>
+<OBJECT ID="DAViewer"
+        STYLE="position:absolute; left:10; top:50;width:800;height:800;z-index: -1"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D">
+</OBJECT>
+</DIV>
+<FORM NAME="form1" ACTION="">
+<CENTER>
+<INPUT TYPE=BUTTON VALUE="" NAME=StartBtn OnClick="start()"> 
+</CENTER>
+
+
+
+<SCRIPT LANGUAGE="JAVASCRIPT">
+<!--
+
+  var m_frm = document.form1;
+  m_frm.StartBtn.value = "Show";
+  var FlagNotStarted = true;
+
+ 
+  function start()
+  {
+ 
+    if (FlagNotStarted)
+    {
+     m_frm.StartBtn.value = "         ";
+     hatchb();
+     FlagNotStarted = false;
+    }
+  }
+
+
+   function hatchb ()
+    {
+ 
+
+  // This example shows how to use the HatchBackwardDiagonal function. In each case, 
+  // the color of the fill is blue, but the spacing in the first rectangle is .01 meters,
+  // in the 2nd, it is .001 meters, while in the 3d it varies over time. (This is done with
+  // the HatchBackwardDiagonalAnim function.)
+
+  // Get the meter library
+  m = DAViewer.MeterLibrary;
+
+  // Define the line style
+  ls = m.DefaultLineStyle;
+
+  // Define the font family
+  font1 = "Garamond";
+
+  // Define the font size
+  fontSize = 14;
+
+  // Define the font color
+  fontColor = m.Black;
+
+  // Construct the font style
+  textFont = m.Font(font1, fontSize, fontColor);
+
+  // Use this for the spacing in HatchBackwardDiagonalAnim
+  // Keep the values positive and scale them
+  varySpacing = m.Abs(m.mul(m.DANumber(.02), m.Sin(m.LocalTime)));
+
+  
+  // Set up the fills for the three rectangles -- same color, different spacing
+  myFill1 = m.HatchBackwardDiagonal(m.Blue, .01);
+  myFill2 = m.HatchBackwardDiagonal(m.Blue, .001);
+  myFill3 = m.HatchBackwardDiagonalAnim(m.Blue, varySpacing);
+
+  
+  // Construct 3 rectangles and fill them in 
+  myRect1 = m.Rect(.04,.06).Fill(ls,myFill1).Transform(m.Translate2(-.05,.03));
+  myRect2 = m.Rect(.04,.06).Fill(ls,myFill2).Transform(m.Translate2(0,.03));
+  myRect3 = m.Rect(.04,.06).Fill(ls,myFill3).Transform(m.Translate2(.05,.03));
+
+  // Define the text
+  rect1String = "Spacing of .01 meters";
+  rect2String = "Spacing of .001 meters";
+  rect3String = "Animated Spacing";
+
+  // Make the text into an image, correctly placed
+  rect1Text = m.StringImage(rect1String, textFont).Transform(m.Translate2(-.05,-.01));
+  rect2Text = m.StringImage(rect2String, textFont).Transform(m.Translate2(0,-.01));
+  rect3Text = m.StringImage(rect3String, textFont).Transform(m.Translate2(.05,-.01));
+
+  // Combine each rectangle with its text
+  myRect1 = m.Overlay(myRect1, rect1Text);
+  myRect2 = m.Overlay(myRect2, rect2Text);
+  myRect3 = m.Overlay(myRect3, rect3Text);
+ 
+  // Combine the rectangles
+  twoRects = m.Overlay(myRect1,myRect2);
+  threeRects = m.Overlay(twoRects, myRect3);
+
+  // This is what will be displayed
+  finalImg = m.Overlay(threeRects, m.SolidColorImage(m.White));
+
+  DAViewer.Image = finalImg;
+
+  DAViewer.Start();
+  
+  }
+
+//-->
+</SCRIPT>
+</FORM>
+</FONT>
+
+</BODY>
+</HTML>

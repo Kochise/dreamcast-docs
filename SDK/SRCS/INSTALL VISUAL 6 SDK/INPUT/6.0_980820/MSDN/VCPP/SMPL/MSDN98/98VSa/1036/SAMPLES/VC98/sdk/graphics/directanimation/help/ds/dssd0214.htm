@@ -1,0 +1,466 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>CDrawImage Class</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0213.htm','/dssd0000.htm','/dssd0180.htm','/index.htm','/dssd0215.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Lib_0001060222000000">CDrawImage Class</A></H2>
+<BR CLEAR=ALL>
+<P><IMG SRC="art/wutil02.gif" WIDTH="179" HEIGHT="24" ALT="CDrawImage class hierarchy" >
+
+<P>This class is a worker class for the owning <A HREF="dssd0207.htm" TARGET="TEXT">CBaseWindow</A> object.
+It handles the actual drawing operation from that class. To use this class,
+be sure to call <A HREF="dssd0214.htm#Lib_0001060222020900" TARGET="TEXT">CDrawImage::NotifyAllocator</A> when the allocator has
+been agreed upon, and call <A HREF="dssd0214.htm#Lib_0001060222020b00" TARGET="TEXT">CDrawImage::NotifyMediaType</A> with a
+pointer to a <A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> object (which must not be stack-based, because
+a pointer is maintained by this class rather than making a copy) when
+that is agreed.
+
+<P>When the palette changes, call <A HREF="dssd0214.htm#Lib_0001060222020800" TARGET="TEXT">CDrawImage::IncrementPaletteVersion</A>,
+and before rendering call <A HREF="dssd0214.htm#Lib_0001060222020f00" TARGET="TEXT">CDrawImage::SetDrawContext</A> so that the
+class can obtain the handle to a device context (HDC) handles from the owning <A HREF="dssd0207.htm" TARGET="TEXT">CBaseWindow</A> object.
+
+
+<A NAME="Lib_0001060222010000"></A><P><B>Protected Data Members</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060222010001">m_bStretch</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Flag to stretch the images.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060222010002">m_bUsingImageAllocator</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Flag to determine if samples share <A HREF="dssd0389.htm#external_00010a0109000020" TARGET="TEXT">DIBSECTION</A> structures.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060222010003">m_EndSample</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">End time for the current sample.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060222010004">m_hdc</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Main window device context (DC).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060222010005">m_MemoryDC</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Offscreen draw DC.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060222010006">m_pBaseWindow</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Owning video window object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060222010007">m_perfidRenderNow</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Moment when returned from draw (for performance logging).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060222010008">m_perfidRenderTime</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Time taken to render an image (for performance logging).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060222010009">m_pMediaType</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Pointer to the current media type format.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106022201000a">m_PaletteVersion</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Current palette version token.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106022201000b">m_SourceRect</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Source image rectangle.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106022201000c">m_StartSample</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Start time for the current sample.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106022201000d">m_TargetRect</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Destination rectangle.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060222020000"></A><P><B>Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020100" TARGET="TEXT">CDrawImage</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Constructs a <A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage</A> object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020200" TARGET="TEXT">DisplaySampleTimes</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Displays a time stamp of a sample on top of its image.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020300" TARGET="TEXT">DrawImage</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Looks after drawing an image to a window.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020400" TARGET="TEXT">FastRender</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Draws an image using <A HREF="dssd0389.htm#external_00010a0109000003" TARGET="TEXT">BitBlt</A> and <A HREF="dssd0389.htm#external_00010a01090000ce" TARGET="TEXT">StretchBlt</A>.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020500" TARGET="TEXT">GetPaletteVersion</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the currently installed palette version.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020600" TARGET="TEXT">GetSourceRect</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current source rectangle.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020700" TARGET="TEXT">GetTargetRect</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current target rectangle.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020800" TARGET="TEXT">IncrementPaletteVersion</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Increments the current palette version.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020900" TARGET="TEXT">NotifyAllocator</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Notifies the draw object which allocator is being used.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020a00" TARGET="TEXT">NotifyEndDraw</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Indicates the conclusion of image rendering.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020b00" TARGET="TEXT">NotifyMediaType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Passes the media type established during connection.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020c00" TARGET="TEXT">NotifyStartDraw</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Indicates the beginning of image rendering.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020d00" TARGET="TEXT">ResetPaletteVersion</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Resets the current palette version.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020e00" TARGET="TEXT">ScaleSourceRect</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns a scaled version of a provided source rectangle.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222020f00" TARGET="TEXT">SetDrawContext</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the window and offscreen device contexts to draw with.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222021000" TARGET="TEXT">SetSourceRect</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the source rectangle for the video.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222021100" TARGET="TEXT">SetStretchMode</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines whether it is necessary to stretch.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222021200" TARGET="TEXT">SetTargetRect</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the target rectangle for the window.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222021300" TARGET="TEXT">SlowRender</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Uses the Microsoft&#174; Win32&#174; <A HREF="dssd0389.htm#external_00010a01090000c6" TARGET="TEXT">SetDIBitsToDevice</A> and
+ <A HREF="dssd0389.htm#external_00010a01090000cf" TARGET="TEXT">StretchDIBits</A> functions to draw an image.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222021400" TARGET="TEXT">UpdateColourTable</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Updates the palette held in a <A HREF="dssd0389.htm#external_00010a0109000020" TARGET="TEXT">DIBSECTION</A> structure.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0214.htm#Lib_0001060222021500" TARGET="TEXT">UsingImageAllocator</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the type of samples to be drawn.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020100">CDrawImage::CDrawImage</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Constructs a <A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage</A> object.
+
+<P><B>CDrawImage</B><B>(</B><BR>&nbsp;&nbsp;<B>CBaseWindow</B> <I>*pBaseWindow</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pBaseWindow </I>
+ </DT><DD>Window where drawing will occur.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This class handles drawing of images through GDI. It works closely in
+conjunction with the <A HREF="dssd0220.htm" TARGET="TEXT">CImageAllocator</A> and <A HREF="dssd0207.htm" TARGET="TEXT">CBaseWindow</A> classes. It must
+know about the <B>CImageAllocator</B> class, because the draw code provides a faster
+drawing implementation if the buffers it is handed are created through the Microsoft&#174;
+Win32&#174; <A HREF="dssd0389.htm#external_00010a0109000013" TARGET="TEXT">CreateDIBSection</A> function. The image allocator creates this type of sample.
+It is told whether the buffers are allocated by a <B>CImageAllocator</B> object
+(or derived class) via the <A HREF="dssd0214.htm#Lib_0001060222020900" TARGET="TEXT">CDrawImage::NotifyAllocator</A> member function.
+
+<P>If the buffers used to draw are not allocated by a compatible allocator, it will draw using the
+Win32 <A HREF="dssd0389.htm#external_00010a01090000c6" TARGET="TEXT">SetDIBitsToDevice</A> family of APIs. The <A HREF="dssd0207.htm" TARGET="TEXT">CBaseWindow</A> class
+retrieves the window handle where the images are to be drawn. The
+device contexts that the drawing code should use are passed in through the
+<A HREF="dssd0214.htm#Lib_0001060222020f00" TARGET="TEXT">CDrawImage::SetDrawContext</A> member function.
+
+<P>The <A HREF="dssd0220.htm" TARGET="TEXT">CImageAllocator</A>, <A HREF="dssd0223.htm" TARGET="TEXT">CImageSample</A>, and
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage</A> classes are all tightly
+associated. The buffers that the image allocator creates are made using the
+Win32 <A HREF="dssd0389.htm#external_00010a0109000013" TARGET="TEXT">CreateDIBSection</A> function. The allocator then creates its own samples
+(based on the <B>CImageSample</B> class). The image samples are initialized with
+the buffer pointer and its length. The sample is also passed in a structure
+(a <A HREF="dssd0287.htm#structs_0001060501000f00" TARGET="TEXT">DIBDATA</A> structure) that holds a number of pieces of information obtained
+from the <B>CreateDIBSection</B> function.
+
+<P>These samples can then be passed to the draw object. The draw object knows
+the private format of the samples, and how to get the <A HREF="dssd0287.htm#structs_0001060501000f00" TARGET="TEXT">DIBDATA</A> structure back
+from them. Once the draw object has obtained that information, it can pass a bitmap handle,
+stored in the <B>DIBDATA</B> structure, down into GDI when it draws the image that
+the sample contains. By using the bitmap handle from the sample in the
+drawing, rather than just the buffer pointer (which is the alternative if
+the sample is not a <A HREF="dssd0223.htm" TARGET="TEXT">CImageSample</A>), it gets a modest performance improvement.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020200">CDrawImage::DisplaySampleTimes</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Displays time stamp of a sample on top of the image.
+
+<P><B>void</B> <B>DisplaySampleTimes</B><B>(</B><BR>&nbsp;&nbsp;<B>IMediaSample</B> <I>*pSample</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSample</I>
+ </DT><DD>Sample containing time stamps.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>In debugging builds, it is often instructive to see the time stamps for
+images that the object is drawing. This member function gets the data pointer for
+the image the sample holds, along with its time stamps; then, using an
+offscreen device context, it draws the times approximately 80 percent of the way
+down the image (and centered horizontally).
+
+<P>This is a protected member function.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020300">CDrawImage::DrawImage</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Entry point for drawing an image.
+
+
+<P><B>BOOL</B> <B>DrawImage</B><B>(</B><BR>&nbsp;&nbsp;<B>IMediaSample</B> <I>*pMediaSample</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pMediaSample</I>
+ </DT><DD>Sample to draw.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>If the samples have been allocated by a <A HREF="dssd0220.htm" TARGET="TEXT">CImageAllocator</A> object (or a
+derived class), the images that the samples contain will be drawn using the Microsoft
+Win32 <A HREF="dssd0389.htm#external_00010a0109000003" TARGET="TEXT">BitBlt</A> or <A HREF="dssd0389.htm#external_00010a01090000ce" TARGET="TEXT">StretchBlt</A> function. If not, they will be drawn using
+<A HREF="dssd0389.htm#external_00010a01090000c6" TARGET="TEXT">SetDIBitsToDevice</A> or <A HREF="dssd0389.htm#external_00010a01090000cf" TARGET="TEXT">StretchDIBits</A>. The client must call
+<A HREF="dssd0214.htm#Lib_0001060222020900" TARGET="TEXT">CDrawImage::NotifyAllocator</A> prior to calling this member function to
+inform the <A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage</A> object how the image buffers have been allocated.
+The object is informed each time the source or destination changes (through its
+<A HREF="dssd0214.htm#Lib_0001060222021000" TARGET="TEXT">CDrawImage::SetSourceRect</A> and <A HREF="dssd0214.htm#Lib_0001060222021200" TARGET="TEXT">CDrawImage::SetTargetRect</A> member
+functions). It uses this information to determine if it needs to stretch the image during the draw.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020400">CDrawImage::FastRender</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Draws the sample image using the Microsoft Win32 <A HREF="dssd0389.htm#external_00010a0109000003" TARGET="TEXT">BitBlt</A> and
+<A HREF="dssd0389.htm#external_00010a01090000ce" TARGET="TEXT">StretchBlt</A> functions.
+
+<P><B>void</B> <B>FastRender</B><B>(</B><BR>&nbsp;&nbsp;<B>IMediaSample</B> <I>*pMediaSample</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pMediaSample</I>
+ </DT><DD>Sample to draw.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This protected member function is called by <A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage</A> with a sample that
+ contains an image buffer. The image buffer must have been allocated through the
+ Win32 <A HREF="dssd0389.htm#external_00010a0109000013" TARGET="TEXT">CreateDIBSection</A> function and by a <A HREF="dssd0220.htm" TARGET="TEXT">CImageAllocator</A>
+ object (or derived class). There are some performance benefits from drawing images
+ created through this mechanism.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020500">CDrawImage::GetPaletteVersion</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Retrieves the current palette version.
+
+<P><B>LONG</B> <B>GetPaletteVersion</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns the palette version.
+<H5>Remarks</H5>
+<P>This member function is applicable only when using samples allocated through a
+<A HREF="dssd0220.htm" TARGET="TEXT">CImageAllocator</A> (or derived class) object.
+For more information about working with palettes, see the <A HREF="dssd0214.htm#Lib_0001060222021400" TARGET="TEXT">CDrawImage::UpdateColourTable</A> member function.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020600">CDrawImage::GetSourceRect</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Retrieves the current source rectangle the draw object is using.
+
+<P><B>void</B> <B>GetSourceRect</B><B>(</B><BR>&nbsp;&nbsp;<B>RECT</B> <I>*pSourceRect</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSourceRect</I>
+ </DT><DD>Holds the source rectangle.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020700">CDrawImage::GetTargetRect</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Retrieves the current destination rectangle the draw object is using.
+
+<P><B>void</B> <B>GetTargetRect</B><B>(</B><BR>&nbsp;&nbsp;<B>RECT</B> <I>*pTargetRect</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pTargetRect</I>
+ </DT><DD>Holds the target rectangle.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020800">CDrawImage::IncrementPaletteVersion</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Increments the current palette version.
+
+<P><B>void</B> <B>IncrementPaletteVersion</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This member function is applicable only when using samples allocated through a
+<A HREF="dssd0220.htm" TARGET="TEXT">CImageAllocator</A> (or derived class) object.
+For more information about working with palettes, see the <A HREF="dssd0214.htm#Lib_0001060222021400" TARGET="TEXT">CDrawImage::UpdateColourTable</A> member function.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020900">CDrawImage::NotifyAllocator</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Notifies the draw object which allocator the output pin is actually going to use.
+
+<P><B>void</B> <B>NotifyAllocator</B><B>(</B><BR>&nbsp;&nbsp;<B>BOOL</B> <I>bUsingImageAllocator</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>bUsingImageAllocator</I>
+ </DT><DD>Flag to indicate whether to use a <A HREF="dssd0220.htm" TARGET="TEXT">CImageAllocator</A> object allocator or not.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This member function tells the draw object whose allocator to use. This should be
+called with TRUE if the filter agrees to use an allocator based around the DirectShow&#153;
+<A HREF="dssd0220.htm" TARGET="TEXT">CImageAllocator</A> base class. These image buffers are made through
+<A HREF="dssd0389.htm#external_00010a0109000013" TARGET="TEXT">CreateDIBSection</A>. Otherwise this should be called with FALSE, and the images
+will be drawn using <A HREF="dssd0389.htm#external_00010a01090000c6" TARGET="TEXT">SetDIBitsToDevice</A> and <A HREF="dssd0389.htm#external_00010a01090000cf" TARGET="TEXT">StretchDIBits</A>.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020a00">CDrawImage::NotifyEndDraw</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Indicates the conclusion of image rendering.
+
+<P><B>void</B> <B>NotifyEndDraw</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This member function is used for performance measurements and just calls
+the <A HREF="dssd0269.htm#fmutil_000106030d000200" TARGET="TEXT">MSR_STOP</A> macro.
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020b00">CDrawImage::NotifyMediaType</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Provides the image format for the draw object.
+
+<P><B>void</B> <B>NotifyMediaType</B><B>(</B><BR>&nbsp;&nbsp;<B>CMediaType</B> <I>*pMediaType</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pMediaType</I>
+ </DT><DD>Media type.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The draw object must know the format of the images it will be
+drawing. For the most part, this is so it can retrieve the palette
+when the images are 8-bit palettized. A filter using the draw
+class will normally call this just after completing a connection.
+<P>The method does not take a copy of the media type but just stores a
+pointer (for performance reasons). Therefore, the caller should ensure
+that the media type is not destroyed inadvertently.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020c00">CDrawImage::NotifyStartDraw</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Indicates the beginning of image rendering.
+
+<P><B>void</B> <B>NotifyStartDraw</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This member function is used for performance measurements and just calls
+the <A HREF="dssd0269.htm#fmutil_000106030d000100" TARGET="TEXT">MSR_START</A> macro.
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020d00">CDrawImage::ResetPaletteVersion</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Resets the current palette version.
+
+<P><B>void</B> <B>ResetPaletteVersion</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This member function is applicable only when using samples allocated through a
+<A HREF="dssd0220.htm" TARGET="TEXT">CImageAllocator</A> (or derived class) object.
+For more information about working with palettes, see the <A HREF="dssd0214.htm#Lib_0001060222021400" TARGET="TEXT">CDrawImage::UpdateColourTable</A> member function.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020e00">CDrawImage::ScaleSourceRect</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Returns a scaled version of a provided source rectangle.
+
+<P><B>virtual</B> <B>RECT</B> <B>ScaleSourceRect</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>RECT</B> <I>*pSource</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSource</I>
+ </DT><DD>Unscaled source rectangle.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns the scaled source rectangle (returns unscaled <I>pSource</I>
+by default).
+<H5>Remarks</H5>
+<P>The base class implementation does not scale the source rectangle.
+Derived classes can override this to implement scaling, if required.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222020f00">CDrawImage::SetDrawContext</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Sets the device contexts used for drawing.
+
+<P><B>void</B> <B>SetDrawContext</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The draw object always needs a device context for the window to draw
+images in. It might also need an offscreen device context to select bitmaps
+into when using <A HREF="dssd0389.htm#external_00010a0109000020" TARGET="TEXT">DIBSECTION</A> buffers (for
+more details on these and <A HREF="dssd0389.htm#external_00010a0109000013" TARGET="TEXT">CreateDIBSection</A>, see the Microsoft Platform SDK
+documentation). This member function will typically
+be called by a filter using this class, once it has initialized a window.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222021000">CDrawImage::SetSourceRect</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Sets the source rectangle for the video.
+
+<P><B>void</B> <B>SetSourceRect</B><B>(</B><BR>&nbsp;&nbsp;<B>RECT</B> <I>*pSourceRect</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSourceRect</I>
+ </DT><DD>New source rectangle.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The source rectangle should already have been validated before calling
+this member function so that the source rectangle specified will not extend over the edges of
+the available video.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222021100">CDrawImage::SetStretchMode</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Decides whether the video is to be stretched.
+
+<P><B>void</B> <B>SetStretchMode</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>When the object is asked to draw an image, the object must know whether the
+video is being stretched, because it affects the function it calls (<A HREF="dssd0389.htm#external_00010a0109000003" TARGET="TEXT">BitBlt</A> or
+<A HREF="dssd0389.htm#external_00010a01090000ce" TARGET="TEXT">StretchBlt</A>, for example). Rather than calculate this for every frame, it works
+it out just once when the source or destination rectangle is updated. This
+member function is called by <A HREF="dssd0214.htm#Lib_0001060222021000" TARGET="TEXT">SetSourceRect</A> and <A HREF="dssd0214.htm#Lib_0001060222021200" TARGET="TEXT">SetTargetRect</A> to manage this calculation.
+
+<P>This is a protected member function.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222021200">CDrawImage::SetTargetRect</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Sets the target rectangle for the video.
+
+<P><B>void</B> <B>SetTargetRect</B><B>(</B><BR>&nbsp;&nbsp;<B>RECT</B> <I>*pTargetRect</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pTargetRect</I>
+ </DT><DD>New target area.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The destination rectangle should already have been validated before calling
+this member function, so that the destination specified will not define an empty playback area.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222021300">CDrawImage::SlowRender</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Draws the sample image using <A HREF="dssd0389.htm#external_00010a01090000c6" TARGET="TEXT">SetDIBitsToDevice</A> and <A HREF="dssd0389.htm#external_00010a01090000cf" TARGET="TEXT">StretchDIBits</A>.
+
+<P><B>void</B> <B>SlowRender</B><B>(</B><BR>&nbsp;&nbsp;<B>IMediaSample</B> <I>*pMediaSample</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pMediaSample</I>
+ </DT><DD>Sample to draw.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The sample provided should contain the image to draw and should match
+the format as specified to the draw object through
+<A HREF="dssd0214.htm#Lib_0001060222020b00" TARGET="TEXT">NotifyMediaType</A>.
+
+<P>This is a protected member function.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222021400">CDrawImage::UpdateColourTable</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Updates the palette associated with a sample.
+
+<P><B>void</B> <B>UpdateColourTable</B><B>(</B><BR>&nbsp;&nbsp;<B>HDC</B> <I>hdc</I><B>,</B><BR>&nbsp;&nbsp;<B>BITMAPINFOHEADER</B> <I>*pbmi</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>hdc</I>
+ </DT><DD>Device context containing the sample image.
+</DD><DT><I>pbmi</I>
+ </DT><DD><A HREF="dssd0075.htm#avispec_0001050502020801" TARGET="TEXT">BITMAPINFO</A> structure containing the new palette.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This member function is applicable only when using samples allocated through a
+<A HREF="dssd0220.htm" TARGET="TEXT">CImageAllocator</A> (or derived class) object. <B>CImageAllocator</B> creates
+samples that are created with the Microsoft Win32 <A HREF="dssd0389.htm#external_00010a0109000013" TARGET="TEXT">CreateDIBSection</A> function.
+When a palettized buffer is allocated through <B>CreateDIBSection</B>, a palette is
+passed in that is associated with that buffer.
+
+<P>Should the palette be changed, the new palette must be associated with the
+buffer before drawing it (this is done through the Win32 <A HREF="dssd0389.htm#external_00010a01090000c5" TARGET="TEXT">SetDIBColorTable</A>
+function and internally with the <B>UpdateColourTable</B> member function). The drawing code
+knows to update the palette because the palette version it stores in the
+sample will differ from the palette version it keeps internally.
+
+<P>In essence, the sample gets an initial palette version when created. When the
+palette is changed (probably by a filter), it tells the draw object to
+increment its palette version (through the <A HREF="dssd0214.htm#Lib_0001060222020800" TARGET="TEXT">IncrementPaletteVersion</A> member function).
+When the draw object next comes to draw the sample, it will see that the sample
+has an old palette version and will know to call <B>UpdateColourTable</B> on it.
+
+<P>The draw object knows the type of buffer used for samples through the 
+<A HREF="dssd0214.htm#Lib_0001060222020900" TARGET="TEXT">NotifyAllocator</A> member function. If it is called with
+TRUE, the buffers passed to it must be allocated by a <A HREF="dssd0220.htm" TARGET="TEXT">CImageAllocator</A> (or derived class) object. If it is called
+with FALSE, the buffers should be allocated in standard system memory (or other memory accessible to GDI in the same manner).
+
+<P>When the allocator is decommitted, it will typically delete all the samples it
+holds on to. When it is subsequently committed, the samples will be created
+again with their initial palette versions. At this point, the allocator should
+also reset the palette version in the draw object so that they remain in sync.
+An allocator can do this by calling the <A HREF="dssd0214.htm#Lib_0001060222020d00" TARGET="TEXT">ResetPaletteVersion</A> member function.
+
+<P>This is a protected member function.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060222021500">CDrawImage::UsingImageAllocator</A></H3>
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage Class</A>
+<P>Retrieves the type of samples to be drawn.
+
+<P><B>BOOL</B> <B>UsingImageAllocator</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns one of the following values.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TRUE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Allocated through <A HREF="dssd0389.htm#external_00010a0109000013" TARGET="TEXT">CreateDIBSection</A>.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">FALSE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Not allocated through <A HREF="dssd0389.htm#external_00010a0109000013" TARGET="TEXT">CreateDIBSection</A>.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>This member function is applicable only when using samples allocated through a
+<A HREF="dssd0220.htm" TARGET="TEXT">CImageAllocator</A> (or derived class) object.
+For more information about working with palettes and the image allocator, see the
+<A HREF="dssd0214.htm#Lib_0001060222021400" TARGET="TEXT">CDrawImage::UpdateColourTable</A> member function.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

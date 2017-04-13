@@ -1,0 +1,299 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;  Version identifies stlye (WIN4) and class
+;  Class is usually used to get all infs for a
+;  product or driver type if an exe it giving
+;  users a list of things to install, for example 
+;  all video drivers infs in the windows\inf directory
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[version]
+signature="$CHICAGO$"
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;  Install sections, these are the options
+;  for building the installation file lists
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[DefaultInstall]
+; we are leave this blank so that a right mouse click
+; install does do anything
+; we are chosing to do this because we want our install to
+; give the user a choice of where to install to
+; For drivers or other installations where the files must go
+; to a predetermined location (like windows\system) this section
+; can be used
+
+[ProductInstall]
+CopyFiles=Product.copy.files
+AddReg=Product.Add.Reg
+UpdateInis=Product.links
+;,del.links.old
+
+[ProductInstall.Alpha]
+CopyFiles=Product.copy.files
+AddReg=Product.Add.Reg
+UpdateInis=Product.links,del.links.old
+
+[ProductInstall.Mips]
+CopyFiles=Product.copy.files
+AddReg=Product.Add.Reg
+UpdateInis=Product.links,del.links.old
+
+[ProductInstall.PPC]
+CopyFiles=Product.copy.files
+AddReg=Product.Add.Reg
+UpdateInis=Product.links,del.links.old
+
+[Option2Section]
+CopyFiles=Product.copy.files2
+
+[Option3Section]
+CopyFiles=Product.copy.files3
+
+[Option4Section]
+CopyFiles=Product.copy.files4
+
+;;;;;;;;;;
+; Uninstall
+
+[DefaultUninstall]
+; be sure to remove everything
+DelFiles=Product.del.files,
+DelFiles=Product.del.files2,Product.del.files3,Product.del.files4
+DelReg=Product.Del.Reg
+UpdateInis=del.links
+
+[MyProgramUninstall]
+; be sure to remove everything
+DelFiles=Product.copy.files
+DelFiles=Product.copy.files2,Product.copy.files3,Product.copy.files4
+DelReg=Product.Del.Reg
+UpdateInis=del.links
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;  Registry sections, used by different install
+;  sections above
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+[Product.Add.Reg]
+;
+; Product Registry entries here
+; For compatibility you must specify 0,1,2,3 for the fourth
+; parameter if you want to specify a value
+;
+HKLM,SOFTWARE\MyCompany\MyProduct,"Version",0,"1.0"
+HKLM,SOFTWARE\MyCompany\MyProduct\Test1,"Allow International Export",0,"Yes"
+HKLM,SOFTWARE\MyCompany\MyProduct\Test1,"MyProduct Data Value",0,"Data 1"
+HKLM,SOFTWARE\MyCompany\MyProduct\Test1,"MyProduct A Number",1,0x1
+HKLM,SOFTWARE\MyCompany\MyProduct\Test1,"MyProduct Number2",1,0xC2
+HKLM,SOFTWARE\MyCompany\MyProduct\Test1\"MyProduct Extra Key",ValueD1,0,"Test Data"
+;
+; Register shared components, note these are bogus names in this sample
+;
+HKLM,SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs,%11%\myprodsys.dll,1,01,00,00,00
+HKLM,SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs,%65600%\myproduct.dll,1,01,00,00,00
+;
+; for add/remove programs applet
+;
+HKLM,SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MyProduct,"DisplayName",0,"MyProduct Version 1.0"
+HKLM,SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MyProduct,"UninstallString",0,"Rundll32.exe setupapi.dll,InstallHinfSection DefaultUninstall 132 "%65600%"\product.inf"
+
+;;;;;;;;;
+;
+; registry delete works by pruning the tree,
+; so if you have interdependent values, put thems in subkeys and
+; not in values of the main key since when you prune all the values are lost
+;
+
+[Product.Del.Reg]
+;
+;Registry entries here
+;
+
+HKLM,SOFTWARE\MyCompany\MyProduct,"Version",,
+HKLM,SOFTWARE\MyCompany\MyProduct\Test1,,,
+HKLM,SOFTWARE\MyCompany\MyProduct\Test1,,,
+HKLM,SOFTWARE\MyCompany\MyProduct\Test1,,,
+HKLM,SOFTWARE\MyCompany\MyProduct\Test1,,,
+HKLM,SOFTWARE\MyCompany\MyProduct\Test1\"MyProduct Extra Key",,
+HKCU,SOFTWARE\MyCompany\MyProduct,,,
+
+;
+; for add/remove programs applet
+;
+
+HKLM,SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MyProduct,"DisplayName",,
+HKLM,SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MyProduct,"UninstallString",,
+HKCU,SoftWare\Microsoft\Windows\CurrentVersion\Uninstall\MyProduct,,,
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Disk lay out information, used by the CopyFiles lists
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; This is the source disk identifiers the number at the
+; beginning maps to the SourceDisksFiles first parameter
+
+[SourceDisksNames]
+1="The Product Source Disk Name, 1.0","",1
+2="The Product Optional Component Disk, 1.0","",1
+
+;;;;;;;;;;;;;;;;;;
+;
+; SourceDisksFiles -
+; this must have ALL file names in any copyfiles section
+; so that the default copyfile error callback dialog (browse,skip)
+; can use the SourceDisksNames strings above to help find the file
+; -- this infomation can also be put in a layout.inf
+;
+; filename_on_source = diskid,subdir,size,checksum,spare,spare
+; 
+
+[SourceDisksFiles]
+license.txt = 1,,,,,
+product.dll = 1,,,,,
+product.inf = 1,,,,,
+readme.txt = 1,,,,,
+error.txt = 1,,,,,
+opt2.txt = 2,,,,,
+opt3.txt = 2,,,,,
+opt4.txt = 2,,,,,
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Targetdirectories predefined for [DestinationDirs] section
+;   parameter number one  
+;     00 = null, use only the second parameter for a path
+;     11 = windows system directory
+;     ...
+;
+
+[DestinationDirs]
+;
+; a default if a particular copyfiles section
+;
+; DefaultDestDir=LDID[,subdir]  ; not used in this sample
+
+Product.del.files=01      ; 01 is the source directory
+Product.del.files2=01 
+Product.del.files3=01 
+Product.del.files4=01 
+
+;
+; Run time defined strings, these are set with 
+; SetupSetDirectoryId once this inf is openned
+;
+
+Product.copy.files=65600   ; 65600 is a random choice for a dirid
+Product.copy.files2=65600  ; note this must be set by a calling
+Product.copy.files3=65600  ; application and must be > 65536
+Product.copy.files4=65600
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; These are the CopyFiles lists, here is where the files
+; for each component are defined
+; Note the last param (parm 4) is the CopyFlag for that
+; File, for example 8 means copy on  restart--see the doc for more
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Product.copy.files]
+license.txt
+product.dll,,,
+product.inf
+readme.txt
+error.txt
+
+[Product.del.files]
+license.txt
+product.dll,,,
+product.inf
+readme.txt
+error.txt
+
+[Product.copy.files2]
+opt2.txt
+[Product.del.files2]
+opt2.txt
+
+[Product.copy.files3]
+opt3.txt
+[Product.del.files3]
+opt3.txt
+
+[Product.copy.files4]
+opt4.txt
+[Product.del.files4]
+opt4.txt
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; INI sections, used to create and delete icons 
+;  other uses are possible
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Product.links]
+;create folders
+setup.ini, progman.groups,,"ProductGroup=The Product Group"     
+; create links
+; second param must match above and the linked to file must really exist
+setup.ini, ProductGroup,,"%PRODUCT_DESC%,%65600%\Product.dll,,,"
+setup.ini, ProductGroup,,"%README_DESC%,%65600%\readme.txt,,," 
+;Add desktop icons here
+
+[del.links]
+;remove folders
+setup.ini, progman.groups,,"ProductGroup=The Product Group"     
+; remove links
+; second param must match above and last param is EXACT description name
+setup.ini, ProductGroup,,"%PRODUCT_DESC%" 
+setup.ini, ProductGroup,,"%README_DESC%" 
+;remove desktop icons here
+
+[del.links.old]
+setup.ini, progman.groups,,"MyProductFolderOld=%DESC_OLD%"
+setup.ini, MyProductFolderOld,, """%README_DESC%"""
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Strings replace variable in percents above
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[Strings]
+PRODUCT_DESC    = "Product Name"
+DT_MESSAGES     = "The Product"
+DT_DESKTOP      = "Desktop"
+DESC_OLD   = "Old Product"    ; removes old links
+README_DESC       = "Read Me (Product)"
+
+
+;
+; Optional Components are not demonstrated in this samples
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;  Optional Install sections, these are the options
+;  for building the installation file lists for optional
+;  components.  This is used for example with "Have Disk"
+;  on the windows setup add/remove programs applet
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;[Option Components]
+;OptionalInstall
+;
+;[OptionalInstall]
+;CopyFiles=Product.optional.copy.files
+;OptionDesc="Optional Product components"
+;Tip="Install these optionally"
+;InstallDefault=0 ; 1 if this section should be installed by default
+;IconIndex=11      ; Icon to display, see doc for choices, 11 is the default
+;;Parent=install-section
+;Needs=DefaultInstallation ; dependency the user is warned about
+;Include=additional.inf    ; inf automatically included
+

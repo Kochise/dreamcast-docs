@@ -1,0 +1,1059 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>CBaseControlWindow Class</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0191.htm','/dssd0000.htm','/dssd0180.htm','/index.htm','/dssd0193.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Lib_000106020c000000">CBaseControlWindow Class</A></H2>
+<BR CLEAR=ALL>
+<P><IMG SRC="art/wctrl01.gif" WIDTH="307" HEIGHT="229" ALT="CBaseControlWindow class hierarchy" >
+
+<P>The <B>CBaseControlWindow</B> class implements the <A HREF="dssd0177.htm" TARGET="TEXT">IVideoWindow</A> interface and controls external access to its associated filter. You must synchronize the <B>CBaseControlWindow</B> object with the filter by passing it a pointer to a critical section synchronization object. For more information about critical section synchronization objects, see the Platform SDK. The <B>CBaseControlWindow</B> class provides a number of methods that return property settings without dealing with this critical section. For example, calling <A HREF="dssd0192.htm#Lib_000106020c030400" TARGET="TEXT">CBaseControlWindow::get_AutoShow</A> to retrieve the value of the <A HREF="dssd0192.htm#Lib_000106020c010001" TARGET="TEXT">m_bAutoShow</A> data member locks the critical section. The filter might already have a locked internal critical section, however, which could violate the filter's lock hierarchy. Instead, calling the <A HREF="dssd0192.htm#Lib_000106020c031b00" TARGET="TEXT">CBaseControlWindow::IsAutoShowEnabled</A> member function returns the required value without affecting the critical section.
+
+<P>All <B>CBaseControlWindow</B> implemented <A HREF="dssd0177.htm" TARGET="TEXT">IVideoWindow</A> methods require that the filter be connected correctly with its upstream filter. For this reason, class objects require a synchronization pin, which you set by calling the <A HREF="dssd0192.htm#Lib_000106020c032d00" TARGET="TEXT">CBaseControlWindow::SetControlWindowPin</A> method. Whenever you call an <B>IVideoWindow</B> method, the <B>CBaseControlWindow</B> object checks that the pin is still connected.
+
+<A NAME="Lib_000106020c010000"></A><P><B>Protected Data Members</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106020c010001">m_bAutoShow</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Result when the state changes.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106020c010002">m_BorderColour</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Color of the current window border.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106020c010003">m_bCursorHidden</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determination of whether the cursor is displayed or hidden.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106020c010004">m_hwndDrain</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Window handle to which messages received are posted.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106020c010005">m_hwndOwner</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Owning window.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106020c010006">m_pFilter</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Pointer to the owning media filter.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106020c010007">m_pInterfaceLock</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Externally defined critical section.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106020c010008">m_pPin</A></B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Control of the media types for connection.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_000106020c020000"></A><P><B>Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030100" TARGET="TEXT">CBaseControlWindow</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Constructs a <A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow</A> object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030200" TARGET="TEXT">DoGetWindowStyle</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves either the typical or extended window styles.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030300" TARGET="TEXT">DoSetWindowStyle</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the typical or extended window styles.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031400" TARGET="TEXT">GetBorderColour</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current border color. This is a helper member function.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031700" TARGET="TEXT">GetOwnerWindow</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the owning window. This is a helper member function.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031b00" TARGET="TEXT">IsAutoShowEnabled</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves information about whether the video window automatically appears when the rendering filter pauses or runs.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031a00" TARGET="TEXT">IsCursorHidden</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current state of the <A HREF="dssd0192.htm#Lib_000106020c010003" TARGET="TEXT">m_bCursorHidden</A>
+data member without locking the critical section. This is a helper member function.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031d00" TARGET="TEXT">PossiblyEatMessage</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Distributes messages to the parent window.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032d00" TARGET="TEXT">SetControlWindowPin</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Notifies the object of the pin to which it applies.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_000106020c030000"></A><P><B>Implemented IVideoWindow Methods</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030400" TARGET="TEXT">get_AutoShow</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current AutoShow flag setting.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030500" TARGET="TEXT">get_BackgroundPalette</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the realized palette in the background flag.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030600" TARGET="TEXT">get_BorderColor</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current border color.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030700" TARGET="TEXT">get_Caption</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current window caption.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030800" TARGET="TEXT">get_FullScreenMode</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current full-screen mode.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030900" TARGET="TEXT">get_Height</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current window height.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030a00" TARGET="TEXT">get_Left</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current left window coordinate.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030b00" TARGET="TEXT">get_MessageDrain</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the current message drain.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030c00" TARGET="TEXT">get_Owner</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the Microsoft&#174; Win32&#174; parent window handle.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030e00" TARGET="TEXT">get_Top</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the y-coordinate for the top of the window.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030f00" TARGET="TEXT">get_Visible</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current visibility setting of the window.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031000" TARGET="TEXT">get_Width</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the width of the window.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031100" TARGET="TEXT">get_WindowState</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current state of the window.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031200" TARGET="TEXT">get_WindowStyle</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the standard window styles.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031300" TARGET="TEXT">get_WindowStyleEx</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the extended window styles.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031e00" TARGET="TEXT">put_AutoShow</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the AutoShow property.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031f00" TARGET="TEXT">put_BackgroundPalette</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets a flag to realize the palette in the background.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032000" TARGET="TEXT">put_BorderColor</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the current border color.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032100" TARGET="TEXT">put_Caption</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the current window caption.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032200" TARGET="TEXT">put_FullScreenMode</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the full-screen mode.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032300" TARGET="TEXT">put_Height</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the current window height.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032400" TARGET="TEXT">put_Left</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the left coordinate for the window.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032500" TARGET="TEXT">put_MessageDrain</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the message drain window.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032600" TARGET="TEXT">put_Owner</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the Microsoft Win32 parent window handle.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032700" TARGET="TEXT">put_Top</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the position for the top of the window.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032800" TARGET="TEXT">put_Visible</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Hides or shows the window.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032900" TARGET="TEXT">put_Width</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the width of the window.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032a00" TARGET="TEXT">put_WindowState</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the state of the window.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032b00" TARGET="TEXT">put_WindowStyle</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the standard window styles.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032c00" TARGET="TEXT">put_WindowStyleEx</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the extended window styles.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031500" TARGET="TEXT">GetMaxIdealImageSize</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the maximum size of the ideal image.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031600" TARGET="TEXT">GetMinIdealImageSize</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the minimum size of the ideal image.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c030d00" TARGET="TEXT">GetRestorePosition</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the position to which the window will be restored when maximized or minimized.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031800" TARGET="TEXT">GetWindowPosition</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current window coordinates.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031900" TARGET="TEXT">HideCursor</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Hides or displays the cursor.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031a00" TARGET="TEXT">IsCursorHidden</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current state of the <A HREF="dssd0192.htm#Lib_000106020c010003" TARGET="TEXT">m_bCursorHidden</A> data member.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c031c00" TARGET="TEXT">NotifyOwnerMessage</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Passes on messages that are sent to owning windows.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032e00" TARGET="TEXT">SetWindowForeground</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the window in the foreground.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0192.htm#Lib_000106020c032f00" TARGET="TEXT">SetWindowPosition</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the window position.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030100">CBaseControlWindow::CBaseControlWindow</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Constructs a <A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow</A> object.
+
+<P><B>CBaseControlWindow</B><B>(</B><BR>&nbsp;&nbsp;<B>CBaseMediaFilter</B> <I>*pFilter</I><B>,</B><BR>&nbsp;&nbsp;<B>CCritSec</B> <I>*pInterfaceLock</I><B>,</B><BR>&nbsp;&nbsp;<B>TCHAR</B> <I>*pName</I><B>,</B><BR>&nbsp;&nbsp;<B>LPUNKNOWN</B> <I>pUnk</I><B>,</B><BR>&nbsp;&nbsp;<B>HRESULT</B> <I>*phr</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pFilter</I>
+ </DT><DD>Owning media filter object.
+</DD><DT><I>pInterfaceLock</I>
+ </DT><DD>Critical section to use for locking.
+</DD><DT><I>pName</I>
+ </DT><DD>Object description.
+</DD><DT><I>pUnk</I>
+ </DT><DD>Typical Component Object Model (COM) ownership.
+</DD><DT><I>phr</I>
+ </DT><DD>OLE return value.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030200">CBaseControlWindow::DoGetWindowStyle</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the current normal or extended window styles.
+
+<P><B>HRESULT</B> <B>DoGetWindowStyle</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pStyle</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>WindowLong</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pStyle</I>
+ </DT><DD>Contains the appropriate styles.
+</DD><DT><I>WindowLong</I>
+ </DT><DD>Either GWL_STYLE or GWL_EXSTYLE.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function calls the Win32 <A HREF="dssd0389.htm#external_00010a0109000035" TARGET="TEXT">GetWindowLong</A> function to
+retrieve the window style. It is called by the <A HREF="dssd0192.htm#Lib_000106020c031200" TARGET="TEXT">CBaseControlWindow::get_WindowStyle</A>
+and <A HREF="dssd0192.htm#Lib_000106020c031300" TARGET="TEXT">CBaseControlWindow::get_WindowStyleEx</A> member functions.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030300">CBaseControlWindow::DoSetWindowStyle</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Changes the typical or extended window styles.
+
+<P><B>HRESULT</B> <B>DoSetWindowStyle</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Style</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>WindowLong</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Style</I>
+ </DT><DD>Contains the appropriate window styles.
+</DD><DT><I>WindowLong</I>
+ </DT><DD>Either GWL_STYLE or GWL_EXSTYLE.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function calls the Win32 <A HREF="dssd0389.htm#external_00010a01090000c9" TARGET="TEXT">SetWindowLong</A> function to
+set the window style, and then redisplays the window in the current position.
+This member function is called by the <A HREF="dssd0192.htm#Lib_000106020c032b00" TARGET="TEXT">CBaseControlWindow::put_WindowStyle</A> and
+<A HREF="dssd0192.htm#Lib_000106020c032c00" TARGET="TEXT">CBaseControlWindow::put_WindowStyleEx</A> member functions.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030400">CBaseControlWindow::get_AutoShow</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the current AutoShow state flag.
+
+<P><B>HRESULT</B> <B>get_AutoShow</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*AutoShow</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>AutoShow</I>
+ </DT><DD>Automation Boolean flag (0 is off, &#150;1 is on).
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0177.htm#If_0001060159030100" TARGET="TEXT">IVideoWindow::get_AutoShow</A> method.
+This property simplifies window display access for applications.
+If this is set to &#150;1 (on), the window, which is typically hidden after connection of the filter,
+will be displayed automatically when the filter pauses or runs. The window should not be hidden
+when the filter stops, however. If this parameter is set to 0 (off), the window is made
+visible only when the application calls <A HREF="dssd0192.htm#Lib_000106020c032800" TARGET="TEXT">CBaseControlWindow::put_Visible</A> or
+<A HREF="dssd0192.htm#Lib_000106020c032a00" TARGET="TEXT">CBaseControlWindow::put_WindowState</A> with the appropriate parameters.
+
+<P>This member function is meant to be called by external objects through the <A HREF="dssd0177.htm" TARGET="TEXT">IVideoWindow</A> interface, and therefore locks the critical section to synchronize with the associated filter. Call the <A HREF="dssd0192.htm#Lib_000106020c031b00" TARGET="TEXT">CBaseControlWindow::IsAutoShowEnabled</A> member function to retrieve this property if you are not calling from an external object.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030500">CBaseControlWindow::get_BackgroundPalette</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the realized palette in the background flag.
+
+<P><B>HRESULT</B> <B>get_BackgroundPalette</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pBackgroundPalette</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pBackgroundPalette</I>
+ </DT><DD>Automation Boolean flag (0 is off, &#150;1 is on).
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0177.htm#If_0001060159030200" TARGET="TEXT">IVideoWindow::get_BackgroundPalette</A>
+method. If a video will be played within another application or document, the
+application might want to use its own palette. It can ask that the video use
+the current foreground palette rather than its own by setting this flag to &#150;1. If
+this is set to 0, the window will install and realize its own preferred palette.
+Note that asking the window to use a different palette will
+cause severe performance penalties.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030600">CBaseControlWindow::get_BorderColor</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the current border color.
+
+<P><B>HRESULT</B> <B>get_BorderColor</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*Color</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Color</I>
+ </DT><DD>Current border color.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>An application can set a destination rectangle in which the video should be displayed. This rectangle is relative to the client area for the window. If this is done (the default is to always paint the entire window), there is a border surrounding the video. This property affects the color used by the border. Although the parameter is specified as a <A HREF="dssd0389.htm#external_00010a01090000aa" TARGET="TEXT">LONG</A> type, it is actually a <A HREF="dssd0389.htm#external_00010a010900000e" TARGET="TEXT">COLORREF</A> value.
+
+<P>This member function is meant to be called by external objects through the <A HREF="dssd0177.htm" TARGET="TEXT">IVideoWindow</A> interface, and therefore locks the critical section to synchronize with the associated filter. Call the <A HREF="dssd0192.htm#Lib_000106020c031400" TARGET="TEXT">CBaseControlWindow::GetBorderColour</A> member function to retrieve this property if not calling from an external object.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030700">CBaseControlWindow::get_Caption</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the current window caption.
+
+<P><B>HRESULT</B> <B>get_Caption</B><B>(</B><BR>&nbsp;&nbsp;<B>BSTR</B> <I>*pstrCaption</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pstrCaption</I>
+ </DT><DD>Current window caption.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>Most top-level windows on a Windows-based desktop have a title (caption)
+associated with them. This property can be queried and set through the
+<A HREF="dssd0177.htm" TARGET="TEXT">IVideoWindow</A> interface. Any caption set will be visible only if the window
+has the WS_CAPTION style applied. If it does not, the caption can still be
+set (and retrieved), although it will not be visible to the user.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030800">CBaseControlWindow::get_FullScreenMode</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the current full-screen mode.
+
+<P><B>HRESULT</B> <B>get_FullScreenMode</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*FullScreenMode</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>FullScreenMode</I>
+ </DT><DD>Current full-screen mode.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function returns E_NOTIMPL by default. This informs the <A HREF="dssd0177.htm" TARGET="TEXT">IVideoWindow</A> plug-in distributor that this renderer does not implement a full-screen renderer.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030900">CBaseControlWindow::get_Height</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the current window height.
+
+<P><B>HRESULT</B> <B>get_Height</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pHeight</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pHeight</I>
+ </DT><DD>Current window height, in pixels.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>The window has a position on the desktop. This is expressed in pixels by
+four coordinates (left, top, right, and bottom). Interfaces that are automated by OLE
+typically express this position through left, top, width, and height; this
+is the convention used in DirectShow&#153;. All coordinates are expressed in pixels,
+and changing any coordinate will update the window immediately.
+
+<P>Setting the left or top coordinates moves the window left or up,
+respectively; these coordinates have no effect on the width and height of the window. Likewise,
+setting the width and height does not affect the left and top coordinates.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030a00">CBaseControlWindow::get_Left</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the current left window coordinate.
+
+<P><B>HRESULT</B> <B>get_Left</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pLeft</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pLeft</I>
+ </DT><DD>Contains the left coordinate, in pixels.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>The window has a position on the desktop. This position is expressed in pixels by
+four coordinates (left, top, right, and bottom). Interfaces that are automated by OLE
+typically express this position through left, top, width, and height; this
+is the convention used in DirectShow. All coordinates are expressed in pixels,
+and changing any coordinate will update the window immediately.
+
+<P>Setting the left or top coordinates moves the window left and up,
+respectively; these coordinates have no effect on the width and height of the window. Likewise,
+setting the width and height have no effect on the left and top coordinates.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030b00">CBaseControlWindow::get_MessageDrain</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Returns the current message drain.
+
+<P><B>HRESULT</B> <B>get_MessageDrain</B><B>(</B><BR>&nbsp;&nbsp;<B>OAHWND</B> <I>*Drain</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Drain</I>
+ </DT><DD>Current window receiving window messages.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>Messages sent to the video renderer filter can be posted to another window.
+The window registered to receive these messages (using the
+<B>CBaseControlWindow::get_MessageDrain</B> member function) is the current message drain.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030c00">CBaseControlWindow::get_Owner</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the current window owner.
+
+<P><B>HRESULT</B> <B>get_Owner</B><B>(</B><BR>&nbsp;&nbsp;<B>OAHWND</B> <I>*Owner</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Owner</I>
+ </DT><DD>Contains the window owner.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>The video window can play back within a document environment.
+To do this, the window must be made a child of another window (so that it
+is clipped and moved appropriately). This property allows the owner of the
+window to be set and retrieved. When the window is owned by another window,
+it simply calls the Microsoft Win32 <A HREF="dssd0389.htm#external_00010a01090000c8" TARGET="TEXT">SetParent</A> function. An application calling
+this function will change the window styles to set the WS_CHILD bit on.
+
+<P>When the window is owned by another window, it will automatically forward
+certain sets of messages (in particular, mouse and keyboard messages). This
+allows an application to do simple hot-spot editing and other interactions.
+
+<P>This member function is meant to be called by external objects through
+the <A HREF="dssd0177.htm" TARGET="TEXT">IVideoWindow</A> interface, and therefore locks the critical section
+to synchronize with the associated filter. Call the
+<A HREF="dssd0192.htm#Lib_000106020c031700" TARGET="TEXT">CBaseControlWindow::GetOwnerWindow</A>
+member function to retrieve this property if not calling from an external object.
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030d00">CBaseControlWindow::GetRestorePosition</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the position to which the window will be restored when it is not maximized or minimized.
+
+<P><B>HRESULT</B> <B>GetRestorePosition</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pLeft</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pTop</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pWidth</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pHeight</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pLeft</I>
+ </DT><DD>Value for leftmost coordinate.
+</DD><DT><I>pTop</I>
+ </DT><DD>Value for top of the window.
+</DD><DT><I>pWidth</I>
+ </DT><DD>Value for width of the window.
+</DD><DT><I>pHeight</I>
+ </DT><DD>Value for height of window.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This is the same as the values returned by the <A HREF="dssd0192.htm#Lib_000106020c031800" TARGET="TEXT">CBaseControlWindow::GetWindowPosition</A> function when the window is neither maximized nor minimized.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030e00">CBaseControlWindow::get_Top</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the top window coordinate.
+
+<P><B>HRESULT</B> <B>get_Top</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pTop</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pTop</I>
+ </DT><DD>Contains the top coordinate, in pixels.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>The window has a position on the desktop. This is expressed in pixels by
+four coordinates (left, top, right, and bottom). Interfaces that are automated by OLE
+typically express this position through left, top, width, and height; this
+is the convention used in DirectShow. All coordinates are expressed in pixels,
+and changing any coordinate will update the window immediately.
+
+<P>Setting the left or top coordinates moves the window left or up,
+respectively; these coordinates have no effect on the width and height of the window. Likewise,
+setting the width and height does not affect the left and top coordinates.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c030f00">CBaseControlWindow::get_Visible</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the current window visibility.
+
+<P><B>HRESULT</B> <B>get_Visible</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pVisible</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pVisible</I>
+ </DT><DD>Automation Boolean flag (0 is off, &#150;1 is on).
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function returns &#150;1 if the window has the WS_VISIBLE style;
+0 otherwise.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031000">CBaseControlWindow::get_Width</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the current window width.
+
+<P><B>HRESULT</B> <B>get_Width</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pWidth</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pWidth</I>
+ </DT><DD>Contains the window width, in pixels.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>The window has a position on the desktop. This is expressed in pixels by
+four coordinates (left, top, right, and bottom). Interfaces that are automated by OLE
+typically express this position through left, top, width, and height; this
+is the convention used in DirectShow. All coordinates are expressed in pixels,
+and changing any coordinate will update the window immediately.
+
+<P>Setting the left or top coordinates moves the window left or up,
+respectively; these coordinates have no effect on the width and height of the window. Likewise,
+setting the width and height does not affect the left and top coordinates.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031100">CBaseControlWindow::get_WindowState</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the current window state.
+
+<P><B>HRESULT</B> <B>get_WindowState</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pWindowState</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pWindowState</I>
+ </DT><DD>Contains the window state.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function returns a subset of the parameters of the Microsoft Win32
+<A HREF="dssd0389.htm#external_00010a01090000ca" TARGET="TEXT">ShowWindow</A> function. In particular, it returns SW_SHOW and SW_HIDE,
+depending on the current visibility of the window. It also returns SW_MINIMIZE and
+SW_MAXIMIZE, depending on whether the window is an icon or is expanded.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031200">CBaseControlWindow::get_WindowStyle</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the standard window styles.
+
+<P><B>HRESULT</B> <B>get_WindowStyle</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pWindowStyle</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pWindowStyle</I>
+ </DT><DD>Contains the window styles.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function returns the standard window styles, such as
+WS_CHILD and WS_VISIBLE. It calls the
+<A HREF="dssd0192.htm#Lib_000106020c030200" TARGET="TEXT">CBaseControlWindow::DoGetWindowStyle</A> member function.
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031300">CBaseControlWindow::get_WindowStyleEx</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the extended window styles.
+
+<P><B>HRESULT</B> <B>get_WindowStyleEx</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pWindowStyleEx</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pWindowStyleEx</I>
+ </DT><DD>Contains the extended window styles.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function retrieves the extended window styles. It calls the
+<A HREF="dssd0192.htm#Lib_000106020c030200" TARGET="TEXT">CBaseControlWindow::DoGetWindowStyle</A> member function.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031400">CBaseControlWindow::GetBorderColour</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Returns the current window border color, <A HREF="dssd0192.htm#Lib_000106020c010002" TARGET="TEXT">m_BorderColour</A>.
+
+<P><B>COLORREF</B> <B>GetBorderColour</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns the color of the border.
+
+<H5>Remarks</H5>
+<P>An application can set a destination rectangle to display the video. This rectangle
+should be relative to the client area for the window. If this
+is done (the default is to always paint the entire window), there is an area
+that surrounds the video; that is, the border. The border color can be set through the
+<A HREF="dssd0192.htm#Lib_000106020c032000" TARGET="TEXT">CBaseControlWindow::put_BorderColor</A> member function.
+This property affects the color of the
+border. Use this member function instead of <A HREF="dssd0192.htm#Lib_000106020c030600" TARGET="TEXT">CBaseControlWindow::get_BorderColor</A>,
+unless you are calling this externally through the <A HREF="dssd0177.htm#If_0001060159030300" TARGET="TEXT">IVideoWindow::get_BorderColor</A>
+method.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031500">CBaseControlWindow::GetMaxIdealImageSize</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the maximum ideal image size.
+
+<P><B>HRESULT</B> <B>GetMaxIdealImageSize</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pWidth</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pHeight</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pWidth</I>
+ </DT><DD>Maximum ideal width, in pixels.
+</DD><DT><I>pHeight</I>
+ </DT><DD>Maximum ideal height, in pixels.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>Various renderers have performance restrictions on the size of images they can
+display. Although they should still function properly when requested to display
+images larger than the specified maximum, renderers can nominate the minimum and
+maximum ideal sizes through the <A HREF="dssd0177.htm" TARGET="TEXT">IVideoWindow</A> interface.
+This interface can be called only when the filter graph is paused or running,
+because it is not until then that resources are allocated and the renderer
+can recognize its restrictions.
+
+If no restrictions exist, the renderer fills in the <I>pWidth</I> and <I>pHeight</I> parameters
+with the native video dimensions and returns S_FALSE. If restrictions do exist,
+the restricted width and height are entered, and the member function returns S_OK.
+
+<P>The dimensions apply to the size of the destination video and not to
+the overall window size. So, when calculating the size of the window to set,
+account for the current window styles (for example, WS_CAPTION and WS_BORDER).
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031600">CBaseControlWindow::GetMinIdealImageSize</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the minimum ideal image size.
+
+<P><B>HRESULT</B> <B>GetMinIdealImageSize</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pWidth</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pHeight</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pWidth</I>
+ </DT><DD>Minimum ideal width, in pixels.
+</DD><DT><I>pHeight</I>
+ </DT><DD>Minimum ideal height, in pixels.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>Various renderers have performance restrictions on the size of images they can
+display. Although they should still function properly when requested to display
+images larger than the specified maximum, renderers can nominate the minimum and
+maximum ideal sizes through the <A HREF="dssd0177.htm" TARGET="TEXT">IVideoWindow</A> interface.
+This interface can be called only when the filter graph is paused or running,
+because it is not until then that resources are allocated and the renderer
+can recognize its restrictions.
+
+If no restrictions exist, the renderer fills in the <I>pWidth</I> and <I>pHeight</I> parameters
+with the native video dimensions and returns S_FALSE. If restrictions do exist,
+the restricted width and height are entered, and the member function returns S_OK.
+
+<P>The dimensions apply to the size of the destination video and not to
+the overall window size. So, when calculating the size of the window to set,
+account for the current window styles (for example, WS_CAPTION and WS_BORDER).
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031700">CBaseControlWindow::GetOwnerWindow</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Returns the owning window handle, <A HREF="dssd0192.htm#Lib_000106020c010005" TARGET="TEXT">m_hwndOwner</A>.
+
+<P><B>HWND</B> <B>GetOwnerWindow</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns an internal method to return the owner window.
+
+<H5>Remarks</H5>
+<P>Retrieves the owning window without calling the interface method.
+Use this member function instead of <A HREF="dssd0192.htm#Lib_000106020c030c00" TARGET="TEXT">CBaseControlWindow::get_Owner</A>,
+unless you are calling this externally through the <A HREF="dssd0177.htm#If_0001060159030900" TARGET="TEXT">IVideoWindow::get_Owner</A>
+method.
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031800">CBaseControlWindow::GetWindowPosition</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the current coordinates for the window.
+
+<P><B>HRESULT</B> <B>GetWindowPosition</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pLeft</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pTop</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pWidth</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pHeight</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pLeft</I>
+ </DT><DD>Contains the left coordinate, in screen coordinates.
+</DD><DT><I>pTop</I>
+ </DT><DD>Contains the top coordinate, in screen coordinates.
+</DD><DT><I>pWidth</I>
+ </DT><DD>Contains the window width, in screen coordinates.
+</DD><DT><I>pHeight</I>
+ </DT><DD>Contains the window height, in screen coordinates.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031900">CBaseControlWindow::HideCursor</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Hides or displays the cursor.
+
+<P><B>HRESULT</B> <B>HideCursor</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>HideCursor</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>HideCursor</I>
+ </DT><DD>Set to OATRUE to hide the cursor, or OAFALSE to display the cursor.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031a00">CBaseControlWindow::IsCursorHidden</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves the current state of the <A HREF="dssd0192.htm#Lib_000106020c010003" TARGET="TEXT">m_bCursorHidden</A> data member.
+
+<P><B>HRESULT</B> <B>IsCursorHidden</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*CursorHidden</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><P><B>BOOL</B> <B>IsCursorHidden</B><B>(</B> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>CursorHidden</I>
+ </DT><DD>Value of <A HREF="dssd0192.htm#Lib_000106020c010003" TARGET="TEXT">m_bCursorHidden</A>.
+</DD></DL>
+<H5>Return Values</H5>
+<P>When called without a parameter,
+returns OATRUE if the cursor is hidden, or
+OAFALSE if the cursor is visible.
+<P>When called
+with a parameter, returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>Internal objects should call this member function without the <I>CursorHidden</I>
+parameter to avoid locking the critical section. External objects access this member
+function with the <I>CursorHidden</I> parameter through the <A HREF="dssd0177.htm#If_0001060159031500" TARGET="TEXT">IVideoWindow::IsCursorHidden</A> method.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031b00">CBaseControlWindow::IsAutoShowEnabled</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Retrieves information about whether the video window automatically appears when the rendering filter pauses or runs.
+
+<P><B>BOOL</B> <B>IsAutoShowEnabled</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns TRUE if the <A HREF="dssd0192.htm#Lib_000106020c010001" TARGET="TEXT">m_bAutoShow</A> member is set to &#150;1 or FALSE if it is set to 0.
+
+<H5>Remarks</H5>
+<P>If the <A HREF="dssd0192.htm#Lib_000106020c010001" TARGET="TEXT">m_bAutoShow</A> member is set to &#150;1 on a video window that is hidden, the window becomes visible when the filter pauses or runs. If this member is set to 0, the window will appear only if you use the <A HREF="dssd0192.htm#Lib_000106020c032800" TARGET="TEXT">CBaseControlWindow::put_Visible</A> or <A HREF="dssd0192.htm#Lib_000106020c032a00" TARGET="TEXT">CBaseControlWindow::put_WindowState</A> member function with the appropriate parameters.
+
+<P>This member function retrieves the <A HREF="dssd0192.htm#Lib_000106020c010001" TARGET="TEXT">m_bAutoShow</A> member setting and has the same result as using the <A HREF="dssd0177.htm#If_0001060159030100" TARGET="TEXT">IVideoWindow::get_AutoShow</A> method.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031c00">CBaseControlWindow::NotifyOwnerMessage</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Passes along specific messages to the video window.
+
+<P><B>HRESULT</B> <B>NotifyOwnerMessage</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>hwnd</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>uMsg</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>wParam</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>lParam</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>hwnd</I>
+ </DT><DD>Handle to the video window.
+</DD><DT><I>uMsg</I>
+ </DT><DD>Message details.
+</DD><DT><I>wParam</I>
+ </DT><DD>Standard WPARAM parameter.
+</DD><DT><I>lParam</I>
+ </DT><DD>Standard LPARAM parameter.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns NO_ERROR.
+
+<H5>Remarks</H5>
+<P>When the video window is a child of another window, it does not receive certain top-level window messages. These messages can be valuable to a renderer, because they could affect its behavior. <B>NotifyOwnerMessage</B> passes any of the following messages to the video window.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_ACTIVATEAPP
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_DEVMODECHANGE
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_DISPLAYCHANGE
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_PALETTECHANGED
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_PALETTEISCHANGING
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_QUERYNEWPALETTE
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_SYSCOLORCHANGE
+</FONT></TD></TABLE>
+<P>You can request that the <A HREF="dssd0177.htm" TARGET="TEXT">IVideoWindow</A> plug-in distributor (PID) make a window become a child of another window. When this occurs, the PID will look for certain messages that might be sent to the owning window. The PID will then forward those messages to the owned window. The default processing for the messages is to send them to the owned window procedure synchronously by calling the Win32 <A HREF="dssd0389.htm#external_00010a01090000c4" TARGET="TEXT">SendMessage</A> function.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031d00">CBaseControlWindow::PossiblyEatMessage</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Forwards keyboard and mouse messages to a specified window.
+
+<P><B>BOOL</B> <B>WINAPI</B> <B>PossiblyEatMessage</B><B>(</B><BR>&nbsp;&nbsp;<B>HWND</B> <I>hwndDrain</I><B>,</B><BR>&nbsp;&nbsp;<B>UINT</B> <I>uMsg</I><B>,</B><BR>&nbsp;&nbsp;<B>WPARAM</B> <I>wParam</I><B>,</B><BR>&nbsp;&nbsp;<B>LPARAM</B> <I>lParam</I><BR>&nbsp;&nbsp;<B>)</B><BR><H5>Parameters</H5>
+<DL><DT><I>hwndDrain</I>
+ </DT><DD>Handle of the window to which messages will be forwarded.
+</DD><DT><I>uMsg</I>
+ </DT><DD>Message that was forwarded.
+</DD><DT><I>wParam</I>
+ </DT><DD>First message parameter.
+</DD><DT><I>lParam</I>
+ </DT><DD>Second message parameter.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns TRUE if the message was posted or FALSE if it wasn't.
+
+<H5>Remarks</H5>
+<P>When the window is owned, it will pass certain classes of messages to the owning window (such as keyboard and mouse events). In this case, the Win32 <A HREF="dssd0389.htm#external_00010a01090000bc" TARGET="TEXT">PostMessage</A> function is used to post messages to any window specified by <I>hwndDrain</I> which is set in <A HREF="dssd0192.htm#Lib_000106020c032500" TARGET="TEXT">CBaseControlWindow::put_MessageDrain</A>. If a certain message cannot be posted, this message will return FALSE.
+
+<P>The following is a list of messages that will get passed on untranslated and return TRUE.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_CHAR
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_DEADCHAR
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_KEYDOWN
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_KEYUP
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_LBUTTONDBLCLK
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_LBUTTONDOWN
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_LBUTTONUP
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_MBUTTONDBLCLK
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_MBUTTONDOWN
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_MBUTTONUP
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_MOUSEACTIVATE
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_MOUSEMOVE
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_NCHITTEST
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_NCLBUTTONDBLCLK
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_NCLBUTTONDOWN
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_NCLBUTTONUP
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_NCMBUTTONDBLCLK
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_NCMBUTTONDOWN
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_NCMBUTTONUP
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_NCMOUSEMOVE
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_NCRBUTTONDBLCLK
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_NCRBUTTONDOWN
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_NCRBUTTONUP
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_RBUTTONDBLCLK
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_RBUTTONDOWN
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_RBUTTONUP
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_SYSCHAR
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_SYSDEADCHAR
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_SYSKEYDOWN
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WM_SYSKEYUP
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031e00">CBaseControlWindow::put_AutoShow</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets the AutoShow state flag.
+
+<P><B>HRESULT</B> <B>put_AutoShow</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>AutoShow</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>AutoShow</I>
+ </DT><DD>Automation Boolean flag (0 is off, &#150;1 is on).
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This property simplifies window display access for applications.
+If this is set to &#150;1 (on), the window, which is typically hidden after the filter
+is connected, will be displayed automatically when the filter pauses or runs.
+The window should not be hidden when the filter stops, however. If this is set
+to 0 (off), the window is made visible only when the application calls
+<A HREF="dssd0192.htm#Lib_000106020c032800" TARGET="TEXT">CBaseControlWindow::put_Visible</A> or
+<A HREF="dssd0192.htm#Lib_000106020c032a00" TARGET="TEXT">CBaseControlWindow::put_WindowState</A> with the appropriate parameters.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c031f00">CBaseControlWindow::put_BackgroundPalette</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets a flag to realize the palette in the background.
+
+<P><B>HRESULT</B> <B>put_BackgroundPalette</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>BackgroundPalette</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>BackgroundPalette</I>
+ </DT><DD>Automation Boolean flag (0 is off, &#150;1 is on).
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>To play a video within another application or document, the
+application might want to use its own palette. It can ask that the video use
+the current foreground palette rather than its own as the background palette
+by setting this flag to &#150;1. If this is set to 0, the window will install and
+realize its own preferred palette.
+Asking the window to use a different palette will
+cause severe performance penalties.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032000">CBaseControlWindow::put_BorderColor</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Changes the border color.
+
+<P><B>HRESULT</B> <B>put_BorderColor</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Color</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Color</I>
+ </DT><DD>Contains the new border color.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>An application can establish a destination rectangle in which the video should be displayed.
+This rectangle is relative to the client area for the window. If this
+is done (the default is to always paint the entire window), there is a
+border surrounding the video. This property affects the color used by the border.
+Although the parameter is specified as a <A HREF="dssd0389.htm#external_00010a01090000aa" TARGET="TEXT">LONG</A> type, it is actually a <A HREF="dssd0389.htm#external_00010a010900000e" TARGET="TEXT">COLORREF</A> value.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032100">CBaseControlWindow::put_Caption</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets the window title or caption.
+
+<P><B>HRESULT</B> <B>put_Caption</B><B>(</B><BR>&nbsp;&nbsp;<B>BSTR</B> <I>strCaption</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>strCaption</I>
+ </DT><DD>Contains the new window caption.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>Most top-level windows on a Windows-based desktop have a title (caption)
+associated with them. This property can be queried and set through the
+<A HREF="dssd0177.htm" TARGET="TEXT">IVideoWindow</A> interface. Any caption set will be visible only if the window
+has the WS_CAPTION style applied. If it does not, the caption can still be
+set (and retrieved), although it will not be visible to the user.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032200">CBaseControlWindow::put_FullScreenMode</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets the full-screen mode of the renderer.
+
+<P><B>HRESULT</B> <B>put_FullScreenMode</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>FullScreenMode</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>FullScreenMode</I>
+ </DT><DD>Full-screen mode to apply.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>The current implementation returns E_NOTIMPL. A video renderer that implements
+a full-screen mode should override this member function and implement whatever
+modes it supports.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032300">CBaseControlWindow::put_Height</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets the window height.
+
+<P><B>HRESULT</B> <B>put_Height</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Height</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Height</I>
+ </DT><DD>New window height, in pixels.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>The window has a position on the desktop. This is expressed in pixels by
+four coordinates (left, top, right, and bottom). Interfaces that are automated by OLE
+typically express this position through left, top, width, and height; this
+is the convention used in DirectShow. All coordinates are expressed in pixels,
+and changing any coordinate will update the window immediately.
+
+<P>Setting the left or top coordinates moves the window left or up,
+respectively; these coordinates have no effect on the width and height of the window. Likewise,
+setting the width and height does not affect the left and top coordinates.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032400">CBaseControlWindow::put_Left</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets the left coordinate for the window.
+
+<P><B>HRESULT</B> <B>put_Left</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Left</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Left</I>
+ </DT><DD>New left coordinate, in pixels.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>The window has a position on the desktop. This is expressed in pixels by
+four coordinates (left, top, right, and bottom). Interfaces that are automated by OLE
+typically express this position through left, top, width, and height; this
+is the convention used in DirectShow. All coordinates are expressed in pixels,
+and changing any coordinate will update the window immediately.
+
+<P>Setting the left or top coordinates moves the window left or up,
+respectively; these coordinates have no effect on the width and height of the window. Likewise,
+setting the width and height does not affect the left and top coordinates.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032500">CBaseControlWindow::put_MessageDrain</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets the window to receive window messages sent to the video renderer.
+
+<P><B>HRESULT</B> <B>put_MessageDrain</B><B>(</B><BR>&nbsp;&nbsp;<B>OAHWND</B> <I>Drain</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Drain</I>
+ </DT><DD>Window to post messages to.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>Messages sent to the video renderer filter can be posted to another window.
+This member function registers the window to receive these messages. Unlike
+the <A HREF="dssd0192.htm#Lib_000106020c032600" TARGET="TEXT">CBaseControlWindow::put_Owner</A> member function, this member function
+does not make the video window a child of another window. It is particularly useful for
+full-screen video renderers, which cannot be child windows.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032600">CBaseControlWindow::put_Owner</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets the video window's parent window; the parent window then forwards certain messages to the video window.
+
+<P><B>HRESULT</B> <B>put_Owner</B><B>(</B><BR>&nbsp;&nbsp;<B>OAHWND</B> <I>Owner</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Owner</I>
+ </DT><DD>Handle to the parent window.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns NOERROR.
+
+<H5>Remarks</H5>
+<P>Internally, this method calls the Microsoft Win32 <A HREF="dssd0389.htm#external_00010a01090000c8" TARGET="TEXT">SetParent</A> function to set the new owner and sets the parent window's style to WS_CHILD. The parent window will then forward certain sets of messages (in particular, mouse and keyboard messages) to the video window.
+
+<P>After you set the video window's owner, you must set the owner to NULL and the owner's window style to WS_OVERLAPPED and WS_CLIPCHILDREN before releasing the filter graph. When you set the owner to NULL, this method turns off the parent window's WS_CHILD bit. If you don't set the owner to NULL, the parent window will continue to pass messages to the video window and errors will likely occur when the application closes.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032700">CBaseControlWindow::put_Top</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets the top window coordinate.
+
+<P><B>HRESULT</B> <B>put_Top</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Top</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Top</I>
+ </DT><DD>New top coordinate, in pixels.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>The window has a position on the desktop. This is expressed in pixels by
+four coordinates (left, top, right, and bottom). Interfaces that are automated by OLE
+typically express this position through left, top, width, and height; this
+is the convention used in DirectShow. All coordinates are expressed in pixels,
+and changing any coordinate will update the window immediately.
+
+<P>Setting the left or top coordinates moves the window left or up,
+respectively; these coordinates have no effect on the width and height of the window. Likewise,
+setting the width and height does not affect the left and top coordinates.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032800">CBaseControlWindow::put_Visible</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Makes the window either visible or hidden.
+
+<P><B>HRESULT</B> <B>put_Visible</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Visible</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Visible</I>
+ </DT><DD>Automation Boolean flag (0 means window is hidden, &#150;1 means window is shown).
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032900">CBaseControlWindow::put_Width</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets the window width.
+
+<P><B>HRESULT</B> <B>put_Width</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Width</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Width</I>
+ </DT><DD>New window width, in pixels.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>The window has a position on the desktop. This is expressed in pixels by
+four coordinates (left, top, right, and bottom). Interfaces that are automated by OLE
+typically express this position through left, top, width, and height; this
+is the convention used in DirectShow. All coordinates are expressed in pixels
+and changing any coordinate will update the window immediately.
+
+<P>Setting the left or top coordinates moves the window left or up
+respectively; these coordinates have no effect on the width and height of the window. Likewise,
+setting the width and height does not affect the left and top coordinates.
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032a00">CBaseControlWindow::put_WindowState</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets the window state.
+
+<P><B>HRESULT</B> <B>put_WindowState</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>WindowState</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>WindowState</I>
+ </DT><DD>New window state.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This member function takes the same parameters as the Microsoft Win32 <A HREF="dssd0389.htm#external_00010a01090000ca" TARGET="TEXT">ShowWindow</A> function (for example, WS_SHOWNORMAL,
+WS_SHOWMINNOACTIVATE, and WS_SHOWMAXIMIZED).
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032b00">CBaseControlWindow::put_WindowStyle</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets the standard Windows-based styles.
+
+<P><B>HRESULT</B> <B>put_WindowStyle</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>WindowStyle</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>WindowStyle</I>
+ </DT><DD>New window styles.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>Take care when changing the window styles. In most cases, an application should retrieve the current style and then add or remove the inappropriate bits. This procedure allows various internal
+window styles used by Windows&#174; to remain intact.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032c00">CBaseControlWindow::put_WindowStyleEx</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets the style of the control window.
+
+<P><B>HRESULT</B> <B>put_WindowStyleEx</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>WindowStyleEx</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>WindowStyleEx</I>
+ </DT><DD>[in] Value that specifies the style of the control window.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns NOERROR.
+
+
+<H5>Remarks</H5>
+<P>This method uses EX (extended) window styles. For a complete list of extended window styles, see the Microsoft Win32 <A HREF="dssd0389.htm#external_00010a0109000017" TARGET="TEXT">CreateWindowEx</A> function. To change the window style, retrieve the current window style, and then add or remove the necessary bit fields. 
+
+<P>Note: Do not use the following window styles because they are not validated.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WS_DISABLED
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WS_HSCROLL
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WS_ICONIC
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WS_MAXIMIZE
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WS_MINIMIZE
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">WS_VSCROLL
+</FONT></TD></TABLE>
+<P>With some exceptions (noted here), the acceptable flags are the same as those allowed by the Win32 <A HREF="dssd0389.htm#external_00010a0109000016" TARGET="TEXT">CreateWindow</A> function.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032d00">CBaseControlWindow::SetControlWindowPin</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets the pin with which to synchronize.
+
+<P><B>void</B> <B>SetControlWindowPin</B><B>(</B><BR>&nbsp;&nbsp;<B>CBasePin</B> <I>*pPin</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pPin</I>
+ </DT><DD>Pin with which the interface is synchronized.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This member function sets the <A HREF="dssd0191.htm#Lib_000106020b010003" TARGET="TEXT">m_pPin</A>
+ variable equal to the <I>pPin</I> parameter.
+As described in the constructor, the interface can be called only when
+the filter has been connected successfully. The object is passed in through
+this member function to the pin with which it should synchronize; in most cases, it will
+determine if the pin is connected whenever it has an interface method called and
+will return <A HREF="dssd0293.htm#errcodes_0001060a01000031" TARGET="TEXT">VFW_E_NOT_CONNECTED</A> if it fails.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032e00">CBaseControlWindow::SetWindowForeground</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Moves the video window to the foreground and optionally gives it focus.
+
+<P><B>HRESULT</B> <B>SetWindowForeground</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Focus</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Focus</I>
+ </DT><DD><A HREF="dssd0389.htm#external_00010a01090000a9" TARGET="TEXT">Long</A> value that specifies whether the video window will get focus. A value of &#150;1 gives the window focus and 0 does not.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns one of the following values.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">NOERROR </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The method succeeded.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">E_INVALIDARG </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><I>Focus</I> doesn't equal &#150;1 or 0.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0293.htm#errcodes_0001060a01000031" TARGET="TEXT">VFW_E_NOT_CONNECTED</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The current filter isn't connected to a complete filter graph.
+</FONT></TD></TR></TABLE>
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106020c032f00">CBaseControlWindow::SetWindowPosition</A></H3>
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow Class</A>
+<P>Sets the window position on the desktop.
+
+<P><B>HRESULT</B> <B>SetWindowPosition</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Left</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>Top</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>Width</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>Height</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Left</I>
+ </DT><DD>New left coordinate.
+</DD><DT><I>Top</I>
+ </DT><DD>New top coordinate.
+</DD><DT><I>Width</I>
+ </DT><DD>Width of the window.
+</DD><DT><I>Height</I>
+ </DT><DD>Height of the window.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

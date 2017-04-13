@@ -1,0 +1,477 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Controlling Filter Graphs Using Visual Basic</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0039.htm','/dssd0000.htm','/dssd0030.htm','/index.htm','/dssd0041.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="vbdemo_000103010a000000">Controlling Filter Graphs Using Visual Basic</A></H2>
+<BR CLEAR=ALL>
+<P>This article describes how to use the methods, events, and properties exposed by 
+the Microsoft&#174; DirectShow&#153; dynamic-link library, Quartz.dll, to render a stream of time-stamped 
+video data in applications based in Microsoft Visual Basic&#174;. This article is written for the Visual Basic developer who is already familiar with 
+Windows&#174;-based application programming, Windows-based multimedia programming, and Automation features of the Visual Basic programming system version 5.0.
+
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0040.htm#vbdemo_000103010a010000" TARGET="TEXT">DirectShow Filters and Filter Graphs</A>
+<LI><A HREF="dssd0040.htm#vbdemo_000103010a020000" TARGET="TEXT">DirectShow Interfaces, Visual Basic Objects, and Registering Quartz.dll</A>
+<LI><A HREF="dssd0040.htm#vbdemo_000103010a030000" TARGET="TEXT">The VBDemo Sample Application</A>
+<UL><LI><A HREF="dssd0040.htm#vbdemo_000103010a030100" TARGET="TEXT">Installing the Files</A>
+<LI><A HREF="dssd0040.htm#vbdemo_000103010a030200" TARGET="TEXT">Registering Quartz.dll with Visual Basic</A>
+<LI><A HREF="dssd0040.htm#vbdemo_000103010a030300" TARGET="TEXT">Preparing to Use the DirectShow Objects</A>
+<LI><A HREF="dssd0040.htm#vbdemo_000103010a030400" TARGET="TEXT">Instantiating the Filter Graph</A>
+<LI><A HREF="dssd0040.htm#vbdemo_000103010a030500" TARGET="TEXT">Rendering Video</A>
+<LI><A HREF="dssd0040.htm#vbdemo_000103010a030600" TARGET="TEXT">Controlling Audio</A>
+<LI><A HREF="dssd0040.htm#vbdemo_000103010a030700" TARGET="TEXT">Scaling and Translating the Video Output</A>
+<LI><A HREF="dssd0040.htm#vbdemo_000103010a030800" TARGET="TEXT">Tracking Status</A>
+<LI><A HREF="dssd0040.htm#vbdemo_000103010a030900" TARGET="TEXT">Getting and Setting the Start Position</A>
+<LI><A HREF="dssd0040.htm#vbdemo_000103010a030a00" TARGET="TEXT">Getting and Setting the Rate</A>
+<LI><A HREF="dssd0040.htm#vbdemo_000103010a030b00" TARGET="TEXT">Cleaning Up</A>
+</UL>
+</UL>
+<A NAME="vbdemo_000103010a010000"></A><P><B>DirectShow Filters and Filter Graphs</B>
+<P>When multimedia is displayed in an application by using Quartz.dll, the application is 
+using a collection of objects called <I>filters</I>; this collection is sometimes called a <I>filter 
+graph</I>. The following diagram depicts a filter graph that is capable of rendering an audio-video 
+interleaved (.avi) file.
+
+<P><IMG SRC="art/vbdemo01.gif" WIDTH="259" HEIGHT="95" ALT="AVI filter graph" >
+<P>In this illustration, the AVI source filter reads the file from disk. The AVI decompressor filter (codec)
+decompresses the video data as it is passed from the source filter. The codec filter then passes this data to the 
+video renderer. The video renderer, in turn, passes the data to the device in a format that the device 
+understands. The AVI source filter passes the audio data directly to the audio renderer, which, in 
+turn, passes the data to the audio device.
+
+<P>In addition to filters, DirectShow supports an Automation object called the <I>filter graph manager</I>. 
+This object knows about the available filters and understands which filter types are required to 
+render which file formats. The filter graph manager exposes the methods, events, and properties 
+supported by the filters in a given graph. The filter graph manager also exposes its own set of 
+methods, events, and properties. These are exposed by using interfaces, which are simply collections 
+of related methods, events, and properties.
+
+<P>The following table identifies the DirectShow interfaces available in Quartz.dll for use 
+with Visual Basic-based applications, and describes the purpose of each interface.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Interface </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0019.htm" TARGET="TEXT">IAMCollection</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Accesses pin and filter collections.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0020.htm" TARGET="TEXT">IBasicAudio</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Controls and retrieves current volume setting.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0021.htm" TARGET="TEXT">IBasicVideo</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Controls a generic video renderer.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0022.htm" TARGET="TEXT">IFilterInfo</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves information about a filter and about pin objects in the filter.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0023.htm" TARGET="TEXT">IMediaControl</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Instantiates the filter graph and controls media flow (running, paused, stopped).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0024.htm" TARGET="TEXT">IMediaEvent</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Allows customized event handling for events such as repainting, user termination, 
+completion, and so on.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0025.htm" TARGET="TEXT">IMediaPosition</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Controls and retrieves start time, stop time, rate, and current position.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0026.htm" TARGET="TEXT">IMediaTypeInfo</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the media type and subtype.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0027.htm" TARGET="TEXT">IPinInfo</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Accesses pin information, such as pin direction and media type, and 
+controls pin connection, disconnection, and rendering.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0028.htm" TARGET="TEXT">IRegFilterInfo</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Contains information about registered (transform and render) filters. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0029.htm" TARGET="TEXT">IVideoWindow</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Controls window aspects of a video renderer.
+</FONT></TD></TR></TABLE>
+<A NAME="vbdemo_000103010a020000"></A><P><B>DirectShow Interfaces, Visual Basic Objects, and Registering Quartz.dll</B>
+<P>To use the DirectShow interfaces in your Microsoft Visual Basic-based application, you must register the ActiveMovie Control type library in your Visual Basic project. 
+
+<P>When you register the ActiveMovie Control type library by using the Visual Basic 
+References dialog box, you are identifying the type library that contains the Automation information that 
+Visual Basic requires. The following illustration shows the References dialog box.
+
+<P><IMG SRC="art/vbdemo02.gif" WIDTH="435" HEIGHT="357" ALT="Visual Basic References dialog box" >
+
+<P>Once the type library is registered, you can use the Object Browser dialog box to view the list 
+of methods, events, and properties associated with a given interface.
+
+<P><IMG SRC="art/vbdemo03.gif" WIDTH="437" HEIGHT="342" ALT="Object Browser dialog box" >
+
+<P><P><B>Note</B>  The type information in the filter graph manager is organized 
+by interface, rather than object.<A NAME="vbdemo_000103010a030000"></A><P><B>The VBDemo Sample Application</B>
+<P>This section is based on the VBDemo sample application, which enables the user to do the following:
+
+<UL><LI>Choose an DirectShow file (.avi, .mpg, or .mov).
+<LI>Display a simple toolbar that lets the user play, pause, or stop the rendering.
+<LI>Display the length of the video and the elapsed time.
+<LI>Display start position and run rate.
+<LI>Display a volume control and a balance control.
+<LI>Position the destination window (a shape control) below all other controls in the main form.
+</UL>
+<P>The application, when running a file, appears as follows:
+
+<P><IMG SRC="art/vbdemo04.gif" WIDTH="398" HEIGHT="477" ALT="VBDemo sample application" >
+
+<A NAME="vbdemo_000103010a030100"></A><P><B>Installing the Files</B>
+<P>Before using the DirectShow objects in your Visual Basic-based application, you must install 
+Quartz.dll in the Windows\System directory and ensure that the appropriate entries are made 
+in your system's registry database. Currently, the DirectShow Software Development Kit (SDK) 
+setup program automates this process. To install, start Setup.exe and choose the Runtime 
+option. The dynamic-link library (DLL) will be copied to the correct location, and the registry will 
+be automatically updated. 
+
+<A NAME="vbdemo_000103010a030200"></A><P><B>Registering Quartz.dll with Visual Basic</B>
+<P>Open the Visual Basic application and choose the References command from the Tools menu to verify that the files were installed succesfully. (At startup, Visual 
+Basic examines the registry database for registered automation controls
+
+
+
+
+ and adds their names to the list 
+that appears in this dialog box.) To use the filter graph manager, click the box that appears next to 
+the ActiveMovie Control type library name.
+
+<P>Once Visual Basic registers the type information, you can use the filter graph manager and its associated interfaces in your application.
+
+<A NAME="vbdemo_000103010a030300"></A><P><B>Preparing to Use the DirectShow Objects</B>
+<P>Visual Basic initializes all objects in the VBDemo sample program using the FilgraphManager object, which implements the following interfaces.
+<UL><LI><A HREF="dssd0020.htm" TARGET="TEXT">IBasicAudio</A> 
+<LI><A HREF="dssd0021.htm" TARGET="TEXT">IBasicVideo</A> 
+<LI><A HREF="dssd0023.htm" TARGET="TEXT">IMediaControl</A> 
+<LI><A HREF="dssd0024.htm" TARGET="TEXT">IMediaEvent</A> 
+<LI><A HREF="dssd0025.htm" TARGET="TEXT">IMediaPosition</A> 
+<LI><A HREF="dssd0029.htm" TARGET="TEXT">IVideoWindow</A> 
+</UL>
+<P>Each of the interfaces is accessed by a Visual Basic programmable object defined to be of that interface type. The objects in the sample application are defined as global variables in the general declarations section, as shown in the following example.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+Dim g_objVideoWindow As IVideoWindow  &#009;&#009;'VideoWindow Object
+Dim g_objMediaControl As IMediaControl          'MediaControl Object
+Dim g_objMediaPosition As IMediaPosition        'MediaPosition Object
+Dim g_objBasicAudio  As IBasicAudio             'Basic Audio Object
+Dim g_objBasicVideo As IBasicVideo              'Basic Video Object
+</FONT></PRE>
+<P>All the programmable objects are initialized using FilgraphManager, as shown in the following example:
+
+<PRE><FONT FACE="Courier" SIZE="2">     Set g_objMediaControl = New FilgraphManager
+    g_objMediaControl.RenderFile (g_strFileName)    ' name of input file
+    ...
+    Set g_objBasicAudio = g_objMediaControl
+    Set g_objVideoWindow = g_objMediaControl
+    Set g_objMediaEvent = g_objMediaControl
+    Set g_objMediaPosition = g_objMediaControl
+</FONT></PRE>
+<P>The other interfaces available for use with Visual Basic-based applications are obtained by calling methods that explicitly return the desired interface. The following table summarizes how to obtain these interfaces.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Interface </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Methods that return the interface pointer
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0093.htm#If_0001060105000000" TARGET="TEXT">IAMCollection</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0027.htm#vbref_0001020209020900" TARGET="TEXT">IPinInfo.MediaTypes</A>, 
+<A HREF="dssd0022.htm#vbref_0001020204020600" TARGET="TEXT">IFilterInfo.Pins</A>, 
+<A HREF="dssd0023.htm#vbref_0001020205020200" TARGET="TEXT">IMediaControl.FilterCollection</A>, 
+<A HREF="dssd0023.htm#vbref_0001020205020400" TARGET="TEXT">IMediaControl.RegFilterCollection</A>
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0022.htm" TARGET="TEXT">IFilterInfo</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">First <A HREF="dssd0023.htm#vbref_0001020205020200" TARGET="TEXT">IMediaControl.FilterCollection</A>, 
+then <A HREF="dssd0019.htm#vbref_0001020201020200" TARGET="TEXT">IAMCollection.Item</A> 
+or <A HREF="dssd0027.htm#vbref_0001020209020800" TARGET="TEXT">IPinInfo.FilterInfo</A>
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0026.htm" TARGET="TEXT">IMediaTypeInfo</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0027.htm#vbref_0001020209020400" TARGET="TEXT">IPinInfo.ConnectionMediaType</A>
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0027.htm" TARGET="TEXT">IPinInfo</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0022.htm#vbref_0001020204020300" TARGET="TEXT">IFilterInfo.FindPin</A>, 
+<A HREF="dssd0019.htm#vbref_0001020201020200" TARGET="TEXT">IAMCollection.Item</A>
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0028.htm" TARGET="TEXT">IRegFilterInfo</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">First <A HREF="dssd0023.htm#vbref_0001020205020400" TARGET="TEXT">IMediaControl.RegFilterCollection</A>, 
+then <A HREF="dssd0019.htm#vbref_0001020201020200" TARGET="TEXT">IAMCollection.Item</A>
+</FONT></TD></TR></TABLE>
+<P>For a sample that shows how to manipulate these filter and pin interfaces, see <A HREF="dssd0039.htm" TARGET="TEXT">Constructing Filter Graphs Using Visual Basic</A>. 
+
+<A NAME="vbdemo_000103010a030400"></A><P><B>Instantiating the Filter Graph</B>
+<P>You can use the filter graph manager to render existing files of the following types.
+
+<UL><LI>.avi (audio-video interleaved)
+<LI>.mov (Apple&#174; QuickTime&#174;)
+<LI>.mpg (Motion Picture Experts Group)
+</UL>
+<P>In addition, you can use the filter graph manager to render an existing filter graph by 
+specifying the file that contains that graph as a parameter to the 
+<A HREF="dssd0023.htm#vbref_0001020205020600" TARGET="TEXT">RenderFile</A> method.
+
+<P>Because the filters in a filter graph are dependent on the type of file being rendered, the sample 
+application does not instantiate a filter graph until the user selects a file. The code that handles this 
+selection is embedded in the procedure that opens the file, mnu_FileOpen. This code displays the 
+Show Open common dialog box and stores the selected file name in a <I>g_strFileName</I> variable. 
+After this, the code verifies that the correct file type was chosen. Quartz.dll issues an error message 
+if it is passed a file extension other than .mpg, .avi, or .mov.
+
+<P>Once the <I>g_strFileName</I> variable is set, the application instantiates the filter graph manager 
+and creates the filter graph object. The filter graph manager is instantiated when the Visual Basic keyword <I>New</I> 
+is used to create the AUTOMATION object. The filter graph object is created when the 
+<A HREF="dssd0023.htm#vbref_0001020205020600" TARGET="TEXT">IMediaControl::RenderFile</A> method is called, as shown in the following example.
+
+<PRE><FONT FACE="Courier" SIZE="2">    'Instantiate a filter graph for the requested
+    'file format.
+    
+    Set g_objMediaControl = New FileGraphManager
+    g_objMediaControl.RenderFile (g_strFileName)
+</FONT></PRE>
+<A NAME="vbdemo_000103010a030500"></A><P><B>Rendering Video</B>
+<P>The <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A> interface supports three methods (<A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">Run</A>, <A HREF="dssd0149.htm#If_000106013d030500" TARGET="TEXT">Pause</A>, and <A HREF="dssd0149.htm#If_000106013d030800" TARGET="TEXT">Stop</A>) that an 
+application can call to render, pause, or stop a video stream. After the filter graph object is 
+instantiated, your application can call these methods.
+
+<P>The sample application displays a toolbar from which the user controls video rendering. When 
+the user clicks Run, the <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">Run</A> method is activated and a global Boolean 
+variable (<I>fVideoRun</I>) is set to True. This variable is used in a timer procedure that retrieves 
+the current media position (or elapsed rendering time). If the Pause or Stop button is clicked, this 
+variable is set to False, and the current media position is not retrieved during timer events.
+
+<P>The code that activates the <A HREF="dssd0023.htm#vbref_0001020205020700" TARGET="TEXT">Run</A>, 
+<A HREF="dssd0023.htm#vbref_0001020205020500" TARGET="TEXT">Pause</A>, and <A HREF="dssd0023.htm#vbref_0001020205020800" TARGET="TEXT">Stop</A> 
+methods is found in the Toolbar1_ButtonClick 
+procedure. The toolbar contains buttons that are numbered 1, 3, and 5; the buttons numbered 2 and 4 
+are separators that provide additional space between the buttons, as shown in the following example.
+
+<PRE><FONT FACE="Courier" SIZE="2">Private Sub Toolbar1_ButtonClick(ByVal Button As Button)
+' handle buttons on the toolbar
+' buttons 1, 3 and 5 are defined; 2 and 4 are separators
+' all DirectShow objects are defined only if the user
+' has already selected a filename and initialized the objects
+
+    ' if the objects aren't defined, avoid errors
+    If g_objMediaControl Is Nothing Then
+        Exit Sub
+    End If
+    
+    If Button.Index = 1 Then 'PLAY
+        'Invoke the MediaControl Run() method
+        'and play the video through the predefined
+        'filter graph.
+    
+        g_objMediaControl.Run
+        g_fVideoRun = True
+            
+    ElseIf Button.Index = 3 Then  'PAUSE
+        'Invoke the MediaControl Pause() method
+        'and pause the video that is being
+        'displayed through the predefined
+        'filter graph.
+    
+        g_objMediaControl.Pause
+        g_fVideoRun = False
+    
+    ElseIf Button.Index = 5 Then  'STOP
+    
+        'Invoke the MediaControl Stop() method
+        'and stop the video that is being
+        'displayed through the predefined
+        'filter graph.
+    
+        g_objMediaControl.Stop
+        g_fVideoRun = False
+        ' reset to the beginning of the video
+        g_objMediaPosition.CurrentPosition = 0
+        txtElapsed.Text = "0.0"
+</FONT></PRE>
+<A NAME="vbdemo_000103010a030600"></A><P><B>Controlling Audio</B>
+<P>The <A HREF="dssd0020.htm" TARGET="TEXT">IBasicAudio</A> interface supports two properties: 
+the <A HREF="dssd0020.htm#vbref_0001020202010200" TARGET="TEXT">Volume</A> property and the 
+<A HREF="dssd0020.htm#vbref_0001020202010100" TARGET="TEXT">Balance</A> property.
+The <B>Volume</B> property 
+retrieves or sets the volume. In the sample application, this property is bound to the slider control slVolume. 
+The <B>Balance</B> property retrieves or sets the stereo balance. In the sample application, this 
+property is bound to the slider control slBalance.
+
+<P><B>Note</B>  The volume is a linear volume scale, so only the far right side of the slider is useful.<P>The following example shows the code that adjusts the volume (by setting the <A HREF="dssd0020.htm#vbref_0001020202010200" TARGET="TEXT">g_objBasicAudio.Volume</A> property) 
+is found in the slVolume_Change procedure.
+
+<PRE><FONT FACE="Courier" SIZE="2">Private Sub slVolume_Change()
+    
+    'Set the volume on the slider
+
+    If Not g_objMediaControl Is Nothing Then
+    'if g_objMediaControl has been assigned
+
+       g_objBasicAudio.Volume = slVolume.Value
+
+    End If
+    
+End Sub
+</FONT></PRE>
+<A NAME="vbdemo_000103010a030700"></A><P><B>Scaling and Translating the Video Output</B>
+<P>The <A HREF="dssd0029.htm" TARGET="TEXT">IVideoWindow</A> interface supports the methods and properties you can use to 
+alter the size, state, owner, palette, visibility, and so on, for the destination window. If you are not concerned with the location or appearance of the destination window, you can render output in the default window (which appears in the upper-left corner of the desktop) without calling any of these methods or properties.
+
+<P>The sample application moves the destination window to a position below the other controls on its main form. In addition to moving the window, the sample application alters the window style by removing the caption, border, and dialog box frame. To do this, set the <A HREF="dssd0029.htm#vbref_000102020b021700" TARGET="TEXT">g_objVideoWindow.WindowStyle</A> property to 0x06000000.
+This corresponds to the logical OR operation of the values WS_DLGFRAME (0x04000000) and WS_VSCROLL (0x02000000). For a complete list of window styles and corresponding values, see the Winuser.h file in the Microsoft&#174; Platform SDK.
+
+<P>To move the destination window onto the form, specify a new position by setting the <A HREF="dssd0029.htm#vbref_000102020b021300" TARGET="TEXT">Top</A> and <A HREF="dssd0029.htm#vbref_000102020b020d00" TARGET="TEXT">Left</A> 
+properties of g_objVideoWindow. The <B>Top</B> and <B>Left</B> properties are set to correspond to the upper-left corner of a blank control with a rectangular shape, a placeholder of sorts, that appears on the form. The ScaleMode property
+
+
+
+
+
+ for the form was set to 3, which specifies units of pixels. This allows the form properties and DirectShow object properties to be used without conversion. The DirectShow object properties are also expressed in pixels. The default units for a Visual Basic form are twips.
+
+<P>The sample application uses the left top of the placeholder rectangle, then resizes the shape 
+based on the size of the specified video. The application determines the required 
+size of the rectangle by retrieving the source video width and height. These values correspond to the 
+<A HREF="dssd0021.htm#vbref_0001020203021700" TARGET="TEXT">VideoWidth</A> and <A HREF="dssd0021.htm#vbref_0001020203021600" TARGET="TEXT">VideoHeight</A> properties of the
+<A HREF="dssd0021.htm" TARGET="TEXT">g_objBasicVideo</A> object.
+
+<P>In addition to setting the <A HREF="dssd0029.htm#vbref_000102020b021300" TARGET="TEXT">Top</A> 
+and <A HREF="dssd0029.htm#vbref_000102020b020d00" TARGET="TEXT">Left</A> properties, it is necessary to identify 
+the form of the application as the new parent window by passing the window handle of the form, <I>hWnd</I>, 
+to the <A HREF="dssd0029.htm#vbref_000102020b021000" TARGET="TEXT">g_objVideoWindow.Owner</A> property. If the handle is not passed,
+ the destination window will appear 
+relative to the desktop and not the form.
+
+<P>The following example shows the tasks that are accomplished in the mnu_FileOpen procedure.
+
+<PRE><FONT FACE="Courier" SIZE="2">    Set g_objVideoWindow = g_objMediaControl
+    g_objVideoWindow.WindowStyle = CLng(&amp;H6000000)   ' WS_DLGFRAME | WS_VSCROLL
+    g_objVideoWindow.Left = CLng(Shape1.Left)   ' shape is a placeholder on the form
+    g_objVideoWindow.Top = CLng(Shape1.Top)
+    Shape1.Width = g_objVideoWindow.Width    ' resize the shape given the input video
+    Shape1.Height = g_objVideoWindow.Height
+    g_objVideoWindow.Owner = frmMain.hWnd    ' set the form as the parent
+</FONT></PRE>
+<P>The following example shows how the <B>ScaleMode</B> property is initialized in the Form_Load procedure.
+
+<PRE><FONT FACE="Courier" SIZE="2">' code fragment from the Form_Load procedure
+' ...
+    frmMain.ScaleMode = 3    ' pixels
+' ...
+</FONT></PRE>
+<P>Avoid attempting to scale the destination window by setting the <A HREF="dssd0029.htm#vbref_000102020b021500" TARGET="TEXT">Width</A> and
+<A HREF="dssd0029.htm#vbref_000102020b020a00" TARGET="TEXT">Height</A> 
+properties for the <A HREF="dssd0029.htm" TARGET="TEXT">g_objVideoWindow</A> object, because 
+performance suffers considerably.
+
+<A NAME="vbdemo_000103010a030800"></A><P><B>Tracking Status</B>
+<P>The <A HREF="dssd0025.htm" TARGET="TEXT">g_objMediaPosition</A> object exposes a number of properties that you can use to retrieve 
+or set the current position, stop point, duration, and rate. 
+When the user selects a file, the sample application retrieves and displays the duration, starting position, and rate. 
+The corresponding code appears in the mnu_FileOpen procedure, as shown in the following example.
+
+<PRE><FONT FACE="Courier" SIZE="2">    Set g_objMediaPosition = g_objMediaControl
+    g_dblRunLength = g_objMediaPosition.Duration
+    txtDuration.Text = CStr(g_dblRunLength)   ' display the duration
+    g_dblStartPosition = 0.0
+    txtStart.Text = CDbl(g_dblStartPosition)   ' display the start time
+    g_dblRate = g_objMediaPosition.Rate
+    txtRate.Text = CStr(g_dblRate)
+</FONT></PRE>
+<P>The current position is also displayed, using a timer that is started when the user clicks Run. 
+When the user clicks Run, a global Boolean variable, <I>g_fVideoRun</I>, is set to True, 
+indicating that the program should retrieve and display the current media position, which is expressed as the 
+elapsed rendering time from the absolute beginning of the multimedia stream.
+
+<P>If Pause or Stop is clicked, the variable is set to False, and the current media position is not 
+retrieved. The corresponding code (which displays the current position) appears in the Timer1_Timer 
+procedure, as shown in the following example.
+
+<PRE><FONT FACE="Courier" SIZE="2">Private Sub Timer1_Timer()
+    'Retrieve the Elapsed Time and
+    'display it in the corresponding
+    'textbox.
+Dim Dbl As Double
+
+    If g_fVideoRun = True Then
+        Dbl = g_objMediaPosition.CurrentPosition
+        If Dbl &lt; g_dblRunLength Then
+            txtElapsed.Text = CStr(Dbl)
+        Else
+            txtElapsed.Text = CStr(g_dblRunLength)
+        End If
+    End If
+End Sub
+</FONT></PRE>
+<A NAME="vbdemo_000103010a030900"></A><P><B>Getting and Setting the Start Position</B>
+<P>The sample application uses the 
+<A HREF="dssd0025.htm#vbref_0001020207020100" TARGET="TEXT">IMediaPosition.CurrentPosition</A> property to let the
+user adjust the point at which the video begins rendering. If the user enters a new
+<A HREF="dssd0025.htm#vbref_0001020207020100" TARGET="TEXT">CurrentPosition</A> and then clicks Play, the 
+video begins rendering at the frame whose
+timestamp is closest to the requested time. 
+
+<P>In addition to adjusting the starting time, the user can jump to new frames while the video is 
+rendering by specifying a new value in the corresponding text box and then pressing <SMALL>ENTER</SMALL>.
+
+<P>The code that handles the <A HREF="dssd0025.htm#vbref_0001020207020100" TARGET="TEXT">CurrentPosition</A> property is found in the following example of the txtStart_KeyDown procedure.
+
+<PRE><FONT FACE="Courier" SIZE="2"> Private Sub txtStart_KeyDown(KeyCode As Integer, Shift As Integer)
+' handle user input to change the start position
+If KeyCode = vbKeyReturn Then
+    If g_objMediaPosition Is Nothing Then
+        Exit Sub
+    ElseIf CDbl(txtStart.Text) &gt; g_dblRunLength Then
+        MsgBox "Specified position invalid: re-enter new position."
+    ElseIf CDbl(txtStart.Text) &lt; 0 Then
+        MsgBox "Specified position invalid: re-enter new position."
+    ElseIf CDbl(txtStart.Text) &lt;&gt; "" Then
+        g_dblStartPosition = CDbl(txtStart.Text)
+        g_objMediaPosition.CurrentPosition = g_dblStartPosition
+    End If
+End If
+End Sub
+</FONT></PRE>
+<A NAME="vbdemo_000103010a030a00"></A><P><B>Getting and Setting the Rate</B>
+<P>The sample application uses the <A HREF="dssd0025.htm#vbref_0001020207020400" TARGET="TEXT">IMediaPosition.Rate</A> property to let the user 
+adjust the rate at which the video is rendered. This rate is a ratio with respect to typical playback 
+speed. For example, a rate of 0.5 causes the video to be rendered at one-half its typical speed, and a 
+rate of 2.0 causes the video to be rendered at twice its typical speed.
+
+<P>Unlike the <A HREF="dssd0025.htm#vbref_0001020207020100" TARGET="TEXT">CurrentPosition</A> property,
+which can be set while the video is being rendered, the
+<A HREF="dssd0025.htm#vbref_0001020207020400" TARGET="TEXT">Rate</A> property must be set prior to rendering.
+
+<P><B>Note</B>  The sound track can be disabled 
+for some videos when the rate is less than 1.0.
+<P>The code that handles the <A HREF="dssd0025.htm#vbref_0001020207020400" TARGET="TEXT">Rate</A> property is found in the 
+following txtRate_KeyDown procedure.
+
+<PRE><FONT FACE="Courier" SIZE="2">Private Sub txtRate_KeyDown(KeyCode As Integer, Shift As Integer)
+' DirectShow VB sample
+' handle user updates to the Rate value
+If KeyCode = vbKeyReturn Then
+    If g_objMediaPosition Is Nothing Then
+        Exit Sub
+    ElseIf CDbl(txtRate.Text) &lt; 0# Then
+        MsgBox "Negative values invalid: re-enter value between 0 and 2.0"
+    ElseIf CStr(txtRate.Text) &lt;&gt; "" Then
+        g_dblRate = CDbl(txtRate.Text)
+        g_objMediaPosition.Rate = g_dblRate
+    End If
+End If
+End Sub
+</FONT></PRE>
+<A NAME="vbdemo_000103010a030b00"></A><P><B>Cleaning Up</B>
+<P>Each time your application uses the Visual Basic Set statement to instantiate a new DirectShow 
+object, it must include a corresponding Set statement to remove that object (and its 
+corresponding resources) from memory prior to shutdown. For example, in the mnu_FileOpen 
+procedure, a new <A HREF="dssd0020.htm" TARGET="TEXT">g_objBasicAudio</A> object is instantiated with the following syntax.
+
+<PRE><FONT FACE="Courier" SIZE="2">Set g_objBasicAudio = g_objMediaControl
+</FONT></PRE>
+<P>When the user selects Exit from the File menu, a corresponding Set 
+statement removes this object:
+
+<PRE><FONT FACE="Courier" SIZE="2">Set g_objBasicAudio = Nothing
+</FONT></PRE>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

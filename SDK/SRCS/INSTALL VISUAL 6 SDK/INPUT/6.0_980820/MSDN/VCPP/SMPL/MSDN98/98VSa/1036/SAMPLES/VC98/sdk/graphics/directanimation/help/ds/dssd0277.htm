@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Assert Macros and Functions</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0276.htm','/dssd0000.htm','/dssd0275.htm','/index.htm','/dssd0278.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="fmdebug_0001060402000000">Assert Macros and Functions</A></H2>
+<BR CLEAR=ALL>
+<P>The Microsoft&#174; DirectShow&#153; SDK has three assertion macros: <A HREF="dssd0277.htm#fmdebug_0001060402000100" TARGET="TEXT">ASSERT</A>, <A HREF="dssd0277.htm#fmdebug_0001060402000400" TARGET="TEXT">EXECUTE_ASSERT</A>, and <A HREF="dssd0277.htm#fmdebug_0001060402000500" TARGET="TEXT">KASSERT</A>. The most commonly used assertion macro is <B>ASSERT</B>. If <B>ASSERT</B> fails, DirectShow displays a message box that lists the file and line number of the macro call. The <B>EXECUTE_ASSERT</B> macro is similar to <B>ASSERT</B> except that the condition will still be evaluated in a build of any kind. The third assertion macro is <B>KASSERT</B>, which is more suitable for pure filters, such as those in the kernel, where the condition is printed onto the debugger rather than to a message box.
+
+<P>There are also two assertion functions: <A HREF="dssd0277.htm#fmdebug_0001060402000200" TARGET="TEXT">DbgAssert</A> and <A HREF="dssd0277.htm#fmdebug_0001060402000300" TARGET="TEXT">DbgKernelAssert</A>. You should call the assertion functions from assertion macros, rather than from normal code.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0277.htm#fmdebug_0001060402000100" TARGET="TEXT">ASSERT</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks an assertion in a debug build.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0277.htm#fmdebug_0001060402000200" TARGET="TEXT">DbgAssert</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Handles an assertion failure in a debug build.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0277.htm#fmdebug_0001060402000300" TARGET="TEXT">DbgKernelAssert</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Handles a kernel assertion failure in a debug build.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0277.htm#fmdebug_0001060402000400" TARGET="TEXT">EXECUTE_ASSERT</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Always evaluates a condition; if it is not TRUE in a debug build,
+treat this as an assertion failure.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0277.htm#fmdebug_0001060402000500" TARGET="TEXT">KASSERT</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks a kernel assertion in a debug build.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_0001060402000100">ASSERT</A></H3>
+<P>Evaluates the given condition in a debug build. If the resulting evaluation is false, then <B>ASSERT</B> calls <A HREF="dssd0277.htm#fmdebug_0001060402000200" TARGET="TEXT">DbgAssert</A> to handle the assertion failure. <B>DbgAssert</B> can return to its caller later, if the user so desires.
+
+<P><B>ASSERT</B><B>(</B><BR>&nbsp;&nbsp;<I>cond</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>cond</I>
+ </DT><DD>Boolean expression that defines the condition to evaluate.
+</DD></DL>
+<H5>Remarks</H5>
+<P>If you use the ASSERT macro, <A HREF="dssd0277.htm#fmdebug_0001060402000200" TARGET="TEXT">DbgAssert</A> might display a message box. If this is not acceptable in your environment, you can use <A HREF="dssd0277.htm#fmdebug_0001060402000500" TARGET="TEXT">KASSERT</A> (kernel assert) instead.
+
+<P>Here are two examples of <B>ASSERT</B> calls:
+<PRE><FONT FACE="Courier" SIZE="2">
+ASSERT( First != NULL);
+ASSERT( StartTime &lt;= EndTime);
+</FONT></PRE>
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_0001060402000200">DbgAssert</A></H3>
+<P>Handles an assertion failure in a debug build.
+<B>DbgAssert</B> will display a message box that includes the condition text,
+source file name, and source line number.
+The user will be given the choice to ignore the assertion failure,
+debug the assertion, or force the application to exit.
+Thus <B>DbgAssert</B> might return to the caller, depending on the user's actions.
+
+<P><B>void</B> <B>WINAPI</B> <B>DbgAssert</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>TCHAR</B> <I>*pCondition</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>TCHAR</B> <I>*pFileName</I><B>,</B><BR>&nbsp;&nbsp;<B>INT</B> <I>iLine</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pCondition</I>
+ </DT><DD>Pointer to a string version of a Boolean expression.
+</DD><DT><I>pFileName</I>
+ </DT><DD>Pointer to a source file name.
+</DD><DT><I>iLine</I>
+ </DT><DD>Line number within the source file.
+</DD></DL>
+<H5>Remarks</H5>
+<P>This function is available only in a debug build.
+Normally, <B>DbgAssert</B> will be called by macros such as <A HREF="dssd0277.htm#fmdebug_0001060402000100" TARGET="TEXT">ASSERT</A>,
+not directly from other code.
+
+<P>If you use the <A HREF="dssd0277.htm#fmdebug_0001060402000100" TARGET="TEXT">ASSERT</A> macro, <B>DbgAssert</B> might display a message box.
+If this is not acceptable in your environment, you can use
+<A HREF="dssd0277.htm#fmdebug_0001060402000300" TARGET="TEXT">DbgKernelAssert</A> instead.
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_0001060402000300">DbgKernelAssert</A></H3>
+<P>Called in a debug build to print the condition onto the kernel debugger,
+including the condition text, source file name, and source line number.
+
+<P><B>void</B> <B>WINAPI</B> <B>DbgKernelAssert</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>TCHAR</B> <I>*pCondition</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>TCHAR</B> <I>*pFileName</I><B>,</B><BR>&nbsp;&nbsp;<B>INT</B> <I>iLine</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pCondition</I>
+ </DT><DD>Pointer to a string version of a Boolean expression.
+</DD><DT><I>pFileName</I>
+ </DT><DD>Pointer to a source file name.
+</DD><DT><I>iLine</I>
+ </DT><DD>Line number within the source file.
+</DD></DL>
+<H5>Remarks</H5>
+<P>This function is available only in a debug build.
+Normally, <B>DbgKernelAssert</B> is called by macros such as <A HREF="dssd0277.htm#fmdebug_0001060402000500" TARGET="TEXT">KASSERT</A>,
+not directly from other code.
+
+<P>Unlike <A HREF="dssd0277.htm#fmdebug_0001060402000200" TARGET="TEXT">DbgAssert</A>, when macros call <B>DbgKernelAssert</B> in a debug build, no message box appears.
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_0001060402000400">EXECUTE_ASSERT</A></H3>
+<P>Evaluates the condition. In a debug build, if the resulting value is not TRUE,
+then the <B>EXECUTE_ASSERT</B> macro will invoke <A HREF="dssd0277.htm#fmdebug_0001060402000200" TARGET="TEXT">DbgAssert</A> to handle
+the assertion failure. <B>DbgAssert</B> might return to the caller, depending on the user's actions.
+
+<P><B>EXECUTE_ASSERT</B><B>(</B><BR>&nbsp;&nbsp;<I>cond</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>cond</I>
+ </DT><DD>Condition (a Boolean expression), which is always evaluated. This contrasts with <A HREF="dssd0277.htm#fmdebug_0001060402000100" TARGET="TEXT">ASSERT</A> and many other traditional assertion macros, which do not evaluate the condition in nondebug builds.
+</DD></DL>
+<H5>Remarks</H5>
+<P>If you use the EXECUTE_ASSERT macro in a debug build, <A HREF="dssd0277.htm#fmdebug_0001060402000200" TARGET="TEXT">DbgAssert</A> might display a message box. If this is not acceptable in your environment, you can use
+<A HREF="dssd0277.htm#fmdebug_0001060402000500" TARGET="TEXT">KASSERT</A> (kernel assert) instead.
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_0001060402000500">KASSERT</A></H3>
+<P>In a debug build, if the condition evaluates to FALSE,
+the <B>KASSERT</B> macro prints the condition on the kernel debugger,
+including the file name and line number.
+
+<P><B>KASSERT</B><B>(</B><BR>&nbsp;&nbsp;<I>cond</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>cond</I>
+ </DT><DD>Condition (a Boolean expression). 
+</DD></DL>
+<H5>Remarks</H5>
+<P>This macro is ignored unless <A HREF="dssd0388.htm#reserved_00010a0108000001" TARGET="TEXT">DEBUG</A> is defined when the 
+Microsoft DirectShow headers are included.
+
+<P>Unlike <A HREF="dssd0277.htm#fmdebug_0001060402000100" TARGET="TEXT">ASSERT</A> and <A HREF="dssd0277.htm#fmdebug_0001060402000400" TARGET="TEXT">EXECUTE_ASSERT</A>, if you use this macro in a debug build no
+message box will appear.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

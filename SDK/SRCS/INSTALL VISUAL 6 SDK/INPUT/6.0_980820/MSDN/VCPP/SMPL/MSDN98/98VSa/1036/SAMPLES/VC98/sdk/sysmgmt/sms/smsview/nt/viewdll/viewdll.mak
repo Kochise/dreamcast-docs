@@ -1,0 +1,90 @@
+# Microsoft Visual C++ generated build script - Do not modify
+
+PROJ = VIEWDLL
+DEBUG = 0
+PROGTYPE = 1
+CALLER = 
+ARGS = 
+DLLS = 
+ORIGIN = MSVCNT
+ORIGIN_VER = 1.00
+PROJPATH = D:\MSVCNT\BIN\VIEWC\DLL\ 
+USEMFC = 0
+CC = cl
+CPP = cl
+CXX = cl
+CCREATEPCHFLAG = 
+CPPCREATEPCHFLAG = 
+CUSEPCHFLAG = 
+CPPUSEPCHFLAG = 
+FIRSTC = 
+FIRSTCPP = 
+RC = rc
+CFLAGS_D_WDLL32 = /nologo /D_X86_ /W3 /FR /YX /D_DEBUG /Zi /MT /Fd"VIEWDLL.PDB" /Fp"VIEWDLL.PCH"
+CFLAGS_R_WDLL32 = /nologo /D_X86_ /W3 /FR /YX /O2 /DNDEBUG /MT /Fp"VIEWDLL.PCH"
+LFLAGS_D_WDLL32 = /NOLOGO /DEBUG /DEBUGTYPE:cv /SUBSYSTEM:windows user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib olecli32.lib olesvr32.lib shell32.lib
+LFLAGS_R_WDLL32 = /NOLOGO /SUBSYSTEM:windows user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib olecli32.lib olesvr32.lib shell32.lib
+LFLAGS_D_LIB32 = /NOLOGO
+LFLAGS_R_LIB32 = /NOLOGO
+LIBS_D_WDLL32 = 
+LIBS_R_WDLL32 = 
+RCFLAGS32 = 
+D_RCDEFINES32 = -d_DEBUG
+R_RCDEFINES32 = -dNDEBUG
+OBJS_EXT = 
+LIBS_EXT = ..\..\..\LIB\NTWDBLIB.LIB 
+!if "$(DEBUG)" == "1"
+CFLAGS = $(CFLAGS_D_WDLL32)
+LFLAGS = $(LFLAGS_D_WDLL32)
+LIBS = $(LIBS_D_WDLL32)
+LFLAGS_LIB=$(LFLAGS_D_LIB32)
+MAPFILE_OPTION = 
+RCDEFINES = $(D_RCDEFINES32)
+!else
+CFLAGS = $(CFLAGS_R_WDLL32)
+LFLAGS = $(LFLAGS_R_WDLL32)
+LIBS = $(LIBS_R_WDLL32)
+MAPFILE_OPTION = 
+LFLAGS_LIB=$(LFLAGS_R_LIB32)
+RCDEFINES = $(R_RCDEFINES32)
+!endif
+SBRS = VIEWDLL.SBR
+
+
+NTWDBLIB_DEP = 
+
+VIEWDLL_DEP =  \
+	d:\msvcnt\include\sqlfront.h \
+	d:\msvcnt\include\sqldb.h \
+	d:\msvcnt\bin\viewc\dll\smsview.h
+
+
+all:	$(PROJ).DLL $(PROJ).BSC
+
+VIEWDLL.OBJ:	VIEWDLL.C $(VIEWDLL_DEP)
+	$(CC) $(CFLAGS) $(CUSEPCHFLAG) /c VIEWDLL.C
+
+
+$(PROJ).DLL:	VIEWDLL.OBJ $(OBJS_EXT) $(LIBS_EXT)
+	echo >NUL @<<$(PROJ).CRF
+VIEWDLL.OBJ 
+$(OBJS_EXT)
+-DLL -OUT:$(PROJ).DLL
+$(MAPFILE_OPTION)
+..\..\..\LIB\NTWDBLIB.LIB
+
+
+$(LIBS)
+$(LIBS_EXT)
+$(DEFFILE_OPTION) -implib:$(PROJ).lib
+<<
+	link $(LFLAGS) @$(PROJ).CRF
+
+run: $(PROJ).DLL
+	$(PROJ) $(RUNFLAGS)
+
+
+$(PROJ).BSC: $(SBRS)
+	bscmake @<<
+/o$@ $(SBRS)
+<<

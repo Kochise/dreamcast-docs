@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>About Effect Filters</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0081.htm','/dssd0000.htm','/dssd0062.htm','/index.htm','/dssd0083.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="effects_0001050701000000">About Effect Filters</A></H2>
+<BR CLEAR=ALL>
+<P>In DirectShow, <I>effect filters</I> are defined as filters that apply an effect to media data, but don't change the media type.
+
+
+ DirectShow provides several effect filters, including <A HREF="dssd0350.htm#samples_0001070204010000" TARGET="TEXT">Contrast</A>, <A HREF="dssd0350.htm#samples_0001070204030000" TARGET="TEXT">Gargle</A>, and <A HREF="dssd0350.htm#samples_0001070204020000" TARGET="TEXT">EzRGB24</A>.
+
+
+ Effect filters can apply a wide range of useful video and audio effects to media data. 
+
+
+ 
+
+
+<P><B>Contents of this article:</B>
+
+<UL><LI><A HREF="dssd0082.htm#effects_0001050701010000" TARGET="TEXT">Creating Effect Filters</A>
+<LI><A HREF="dssd0082.htm#effects_0001050701020000" TARGET="TEXT">List of DirectShow Effect Filters and Samples</A>
+</UL>
+<A NAME="effects_0001050701010000"></A><P><B>Creating Effect Filters</B>
+<P>Because the input and output media formats
+
+
+ are the same, and the applied effect can't change the format, effect filters often contain a code that checks the media formatting. If the filter derives from one of the transform filter base classes, <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A> or <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A>, the filter typically checks the format with the <A HREF="dssd0248.htm#Lib_0001060244050400" TARGET="TEXT">CheckMediaType</A>, <A HREF="dssd0247.htm#Lib_0001060243040500" TARGET="TEXT">CheckInputType</A>, and <A HREF="dssd0247.htm#Lib_0001060243040500" TARGET="TEXT">CheckTransform</A> methods. If the filter doesn't derive from one of the transform filter base classes, its pins typically check the format by calling the <A HREF="dssd0200.htm#Lib_0001060214060700" TARGET="TEXT">CBasePin::CheckMediaType</A> member function. See <A HREF="dssd0070.htm#connect_0001050202020200" TARGET="TEXT">Negotiating Media Types with CBasePin::AgreeMediaType</A> for more information.
+<P>You should choose a base class for your effect filter class that provides the greatest amount of the functionality you need. Often, the base class will be one of the transform filter base classes. If none of the higher-level base classes support your required functionality, you can choose <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A> or <A HREF="dssd0200.htm#Lib_0001060214000000" TARGET="TEXT">CBasePin</A> as your base class.
+
+
+
+<P>Your effect filter must implement the <A HREF="dssd0389.htm#external_00010a010900008f" TARGET="TEXT">IPersistStream</A> interface if you want to save the state of your effects in the Filter Graph Editor.
+
+
+ To access this interface, derive your effect filter class from <A HREF="dssd0235.htm#Lib_0001060237000000" TARGET="TEXT">CPersistStream</A> and query for the <B>IPersistStream</B> interface.
+
+
+ Saving the filter's state can be helpful during design, but it is often useful to have the effect filter return to a default state when the Filter Graph Editor closes it, in which case you don't need to implement <B>IPersistStream</B>.
+
+<P>If you want the user to be able to manipulate the effect, you must create and display your effect filter's property page and provide a mechanism for returning the user's input to the filter. To do this, implement a property page class,
+
+
+ the <A HREF="dssd0389.htm#external_00010a01090000a2" TARGET="TEXT">ISpecifyPropertyPages</A> interface (which exposes property pages), and a custom interface that changes property page values. Typically, property pages use controls such as a slider, button, or check box to receive user input. You also must provide the resource file that displays the controls on the property page.
+
+<P>To implement the property page class, create a class that derives from <A HREF="dssd0201.htm#Lib_0001060215000000" TARGET="TEXT">CBasePropertyPage</A> and implement the 
+<A HREF="dssd0201.htm#Lib_0001060215051100" TARGET="TEXT">OnReceiveMessage</A> method, the <A HREF="dssd0235.htm#Lib_0001060237050900" TARGET="TEXT">CPersistStream::SetDirty</A> method,
+
+
+ and a data member for each effect parameter. To access the two interfaces, derive your effect filter class from <A HREF="dssd0389.htm#external_00010a01090000a2" TARGET="TEXT">ISpecifyPropertyPages</A> and the custom interface, and then query for the interfaces. You can query for all the interfaces you need by overriding the 
+<A HREF="dssd0201.htm#Lib_0001060215050a00" TARGET="TEXT">NonDelegatingQueryInterface</A> method as shown in the following code from the Gargle sample (IGargle is the custom interface):
+
+<PRE><FONT FACE="Courier" SIZE="2">
+STDMETHODIMP CGargle::NonDelegatingQueryInterface(REFIID riid, void **ppv)
+{
+    CheckPointer(ppv,E_POINTER);
+    if (riid == IID_IGargle) {
+        return GetInterface((IGargle *) this, ppv);
+    } else if (riid == IID_ISpecifyPropertyPages) {
+        return GetInterface((ISpecifyPropertyPages *) this, ppv);
+    } else if (riid == IID_IPersistStream) {
+        return GetInterface((IPersistStream *) this, ppv);
+    } else {
+        return CTransInPlaceFilter::NonDelegatingQueryInterface(riid, ppv);
+    }
+} 
+</FONT></PRE>
+<P>The effect filter's custom interface typically supplies a put and a get method for each effect parameter. For example, the IGargle custom interface supplies put_GargleRate and get_GargleRate methods. The IContrast custom interface in the Contrast sample supplies put_ContrastLevel and get_ContrastLevel methods. When the user accesses one of the controls on the property page, the page generates a windows message.
+
+
+ The property page class's OnReceiveMessage member function handles this message. The following code fragment from the Contrast sample demonstrates this message generation and handling. IDB_DEFAULT is the resource ID of the Default button. The user clicks this button to set the video contrast to its default state. The CContrastProperties class implements the property page and the IContrast::put_DefaultContrastLevel method sets the contrast level to its default value. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+BOOL CContrastProperties::OnReceiveMessage(HWND hwnd, UINT uMsg, 
+                                WPARAM wParam, LPARAM lParam)
+{
+    switch (uMsg)
+    {
+       case WM_COMMAND:
+        {
+          if (LOWORD(wParam) == IDB_DEFAULT)
+            {
+&#009;        pIContrast()-&gt;put_DefaultContrastLevel();
+&#009;        SendMessage(m_hwndSlider, TBM_SETPOS, TRUE, 0L);
+              SetDirty();
+&#009;    }
+            return (LRESULT) 1;
+        }
+...
+</FONT></PRE>
+<P>Effect filters use critical sections internally to protect the global filter state. Effect filters can lock a critical section to ensure that data flow through the filter graph is serialized and that the global filter state doesn't change while an effect is occurring.
+
+
+ DirectShow locks a critical section
+
+
+ by declaring a <A HREF="dssd0188.htm#Lib_0001060208000000" TARGET="TEXT">CAutoLock</A> class object. Typically, effect filters lock the critical section as soon as they enter the function that applies the effect. For example, in the following code fragment from the Gargle sample, the function that applies the effect is MessItAbout:
+
+
+
+<PRE><FONT FACE="Courier" SIZE="2">
+CCritSec   m_GargleLock; // Declare the critical section data member in the effect filter class definition
+
+void CGargle::MessItAbout(PBYTE pb, int cb)
+{
+    CAutoLock foo(&amp;m_GargleLock);
+</FONT></PRE>
+<P>The put and get methods of the effect properties (for example, put_GargleRate) typically lock the critical section so effect values can't change in the middle of an update.
+
+
+
+<A NAME="effects_0001050701020000"></A><P><B>List of DirectShow Effect Filters and Samples</B>
+<P>The DirectShow SDK ships with the following effect filters. You can find these filters in the Samples directory. All the source code is included.
+
+<P><A HREF="dssd0350.htm#samples_0001070204010000" TARGET="TEXT">Contrast</A>: This effect filter adjusts the contrast of the video images sent through it. The filter adjusts the contrast by using palettes, because an image's color palette effectively determines how the image is interpreted by the display device;
+
+
+ that is, how the value 23 (for example) maps into an RGB triplet for display. By changing the palette, you can reduce and increase contrast without doing anything to the image pixels themselves. The Filter Graph Editor lists this filter as Video Contrast.
+
+
+
+<P><A HREF="dssd0350.htm#samples_0001070204020000" TARGET="TEXT">EzRGB24</A>: This effect filter modifies decompressed video images sent through it. It creates color and image filtering effects through simple techniques such as adjusting the red, green, or blue levels (to change the playback color) and by averaging neighboring pixels (to achieve blur and embossed (raised) effects).
+
+
+ The Filter Graph Editor lists this filter as Image Effects. 
+
+
+<P><A HREF="dssd0350.htm#samples_0001070204030000" TARGET="TEXT">Gargle</A>: This effect filter modifies audio data sent through it. A synthesized wave function
+
+
+ modulates the audio data's amplitude. The secondary wave can be a triangular or square wave, and can have different frequencies. At low modulation frequencies it sounds like a tremolo.
+
+
+ At high modulation frequencies it sounds like a distortion. The Filter Graph Editor lists this filter as Gargle. 
+
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

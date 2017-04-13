@@ -1,0 +1,248 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>CVideoTransformFilter Class</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0253.htm','/dssd0000.htm','/dssd0180.htm','/index.htm','/dssd0255.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Lib_000106024a000000">CVideoTransformFilter Class</A></H2>
+<BR CLEAR=ALL>
+<P><IMG SRC="art/vtsip01.gif" WIDTH="323" HEIGHT="261" ALT="CVideoTransformFilter class hierarchy" >
+
+<P>The <B>CVideoTransformFilter</B> class is designed primarily as a base class for AVI decompressor filters. It is based on a "copying" transform class and assumes that the output buffer will likely be a video buffer or Microsoft&#174; DirectDraw&#174; buffer, although this could be used as a base class for other types of transform filters. The main feature of this class is that it enables quality-control management in a transform filter. This means that it decides to drop frames based on receiving a quality notification from the renderer, and taking into account other factors about the media stream it is processing and the filter's own behavior.
+
+<P>Every time the <A HREF="dssd0254.htm#Lib_000106024a030400" TARGET="TEXT">CVideoTransformFilter::Receive</A> member function is called, it calls
+<A HREF="dssd0254.htm#Lib_000106024a030600" TARGET="TEXT">CVideoTransformFilter::ShouldSkipFrame</A> to determine whether to start, continue, or 
+stop skipping frames. This member function starts skipping samples 
+only if all the following conditions are true.
+<UL><LI>The average time to decode is more than one fourth of the frame time.
+ <LI>The filter is running at least one frame late.
+ <LI>The next anticipated key frame is estimated to be no more than one frame early. 
+ <LI>The occurrence of key frames is sufficiently frequent. 
+</UL>
+<P>Once the class starts to skip frames, it will skip all frames until a key frame
+appears, at which time it resets the <A HREF="dssd0254.htm#Lib_000106024a010003" TARGET="TEXT">m_bSkipping</A> flag and processes
+the sample. 
+
+
+<P>Key frames are defined as AVI key frames or MPEG I frames. These require no
+history to decode and, if they are skipped, no other frames can be decoded 
+until the next key frame. Non-key frames include AVI non-key frames, MPEG P frames,
+and MPEG B frames. MPEG B frames are treated the same as other non-key frames by 
+this class. (MPEG B frames can be dropped without the need to skip further frames;
+however, because this class is aimed primarily at AVI decompressors, it does not
+allow for this. Once any frame is skipped, all frames are skipped up to the next
+key frame.)
+
+<A NAME="Lib_000106024a010000"></A><P><B>Protected Data Members</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106024a010001">m_bNoSkip</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Set to TRUE to prevent skipping to the next key frame (for debugging the filter).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106024a010002">m_bQualityChanged</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Status flag that indicates if the stream has degraded. This is set to TRUE in 
+<A HREF="dssd0254.htm#Lib_000106024a030400" TARGET="TEXT">CVideoTransformFilter::Receive</A> if the call to the derived class 
+<A HREF="dssd0247.htm#Lib_0001060243041800" TARGET="TEXT">Transform</A> member function fails. 
+(<A HREF="dssd0254.htm#Lib_000106024a030400" TARGET="TEXT">Receive</A> returns NOERROR in this case 
+because returning S_FALSE indicates that end-of-stream has arrived.) 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106024a010003">m_bSkipping</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Set to TRUE if the filter is skipping to the next key frame.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106024a010004">m_idFrameType</A></B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Performance-measuring frame type identifier (available if <A HREF="dssd0388.htm#reserved_00010a0108000002" TARGET="TEXT">PERF</A> is defined).
+Logs 1 for key frames; logs 2 for nonkey frames.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106024a010005">m_idLate</A></B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Performance identifier for measuring lateness (available if PERF is defined).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106024a010006">m_idSkip</A></B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Performance identifier for measuring frame skipping (available if <A HREF="dssd0388.htm#reserved_00010a0108000002" TARGET="TEXT">PERF</A> is defined).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106024a010007">m_idTimeTillKey</A></B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Performance identifier that represents an estimate of the 
+time in milliseconds until the next key frame arrives 
+(available if <A HREF="dssd0388.htm#reserved_00010a0108000002" TARGET="TEXT">PERF</A> is defined). 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106024a010008">m_itrAvgDecode</A></B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Average time required to decode (transform) the sample. If this is less than
+one-fourth of the frame time, it is assumed the quality problems are not
+being generated by this filter and no frames are dropped. 
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106024a010009">m_itrLate</A></B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Amount of time that the current frame is late. This is originally set to the
+value of the <A HREF="dssd0287.htm#structs_0001060501001700" TARGET="TEXT">Quality</A> structure's <A HREF="dssd0287.htm#structs_0001060501001703" TARGET="TEXT">Late</A> member passed in the quality
+control message from the renderer filter. It is decremented by the frame time 
+of each frame that is skipped.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106024a01000a">m_nKeyFramePeriod</A></B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The largest observed interval between key frames. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106024a01000b">m_nFramesSinceKeyFrame</A></B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Used to count frames since the last key frame. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106024a01000c">m_nWaitForKey</A></B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Used to ensure output after a format change before getting the first key frame. 
+When nonzero, frames are not passed to the renderer. Set to 30 when format is 
+changed and decremented on each non-key frame. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106024a01000d">m_tDecodeStart</A></B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Time since the start of the decoding.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_000106024a020000"></A><P><B>Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0254.htm#Lib_000106024a030100" TARGET="TEXT">AlterQuality</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Receives a quality-control notification from the output pin and provides 
+an opportunity to alter the quality of the media stream. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0254.htm#Lib_000106024a030200" TARGET="TEXT">CVideoTransformFilter</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Constructs a <A HREF="dssd0254.htm" TARGET="TEXT">CVideoTransformFilter</A> object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0254.htm#Lib_000106024a030600" TARGET="TEXT">ShouldSkipFrame</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines if the filter should start, continue, or stop skipping frames.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_000106024a030000"></A><P><B>Overridable Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0254.htm#Lib_000106024a030300" TARGET="TEXT">EndFlush</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Receives notification of leaving the flushing state and passes it downstream.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0254.htm#Lib_000106024a030400" TARGET="TEXT">Receive</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Receives the media sample and either skips the sample or 
+transforms and delivers the media sample.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0254.htm#Lib_000106024a030500" TARGET="TEXT">RegisterPerfId</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Registers a performance measurement identifier.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0254.htm#Lib_000106024a030700" TARGET="TEXT">StartStreaming</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Overrides <A HREF="dssd0247.htm#Lib_0001060243041500" TARGET="TEXT">CTransformFilter::StartStreaming</A> to reset the quality control 
+information when streaming starts or flushing starts.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106024a030100">CVideoTransformFilter::AlterQuality</A></H3>
+<A HREF="dssd0254.htm" TARGET="TEXT">CVideoTransformFilter Class</A>
+<P>Receives a quality-control notification and provides an opportunity to alter the quality 
+of the media stream. 
+
+<P><B>virtual</B> <B>HRESULT</B> <B>AlterQuality</B><B>(</B><BR>&nbsp;&nbsp;<B>Quality</B> <I>q</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>q</I>
+</DT><DD>Quality-control notification message.
+</DD></DL>
+<H5>Return Values</H5>
+<P>This member function returns E_FAIL by default. 
+
+
+<H5>Remarks</H5>
+<P>This member function overrides the <A HREF="dssd0247.htm#Lib_0001060243040100" TARGET="TEXT">CTransformFilter::AlterQuality</A> member function. 
+It is called by the <A HREF="dssd0249.htm#Lib_0001060245070a00" TARGET="TEXT">CTransformOutputPin::Notify</A> member function before calling the 
+<A HREF="dssd0248.htm#Lib_0001060244050c00" TARGET="TEXT">CTransformInputPin::PassNotify</A> member function to pass the quality control message 
+upstream. This function sets the <A HREF="dssd0254.htm#Lib_000106024a010009" TARGET="TEXT">CVideoTransformFilter::m_itrLate</A> data member to the 
+value <A HREF="dssd0287.htm#structs_0001060501001700" TARGET="TEXT">Quality</A> structure's <A HREF="dssd0287.htm#structs_0001060501001703" TARGET="TEXT">Late</A> member so that the filter can determine whether 
+to skip frames. It returns E_FAIL so that the renderer downstream will continue to handle 
+quality control.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106024a030200">CVideoTransformFilter::CVideoTransformFilter</A></H3>
+<A HREF="dssd0254.htm" TARGET="TEXT">CVideoTransformFilter Class</A>
+<P>Constructs a <A HREF="dssd0254.htm" TARGET="TEXT">CVideoTransformFilter</A> object.
+
+<P><B>CVideoTransformFilter</B><B>(</B><BR>&nbsp;&nbsp;<B>TCHAR</B> <I>*pName</I><B>,</B><BR>&nbsp;&nbsp;<B>LPUNKNOWN</B> <I>pUnk</I><B>,</B><BR>&nbsp;&nbsp;<B>REFCLSID</B> <I>clsid</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pName</I>
+</DT><DD>Name given to the <A HREF="dssd0254.htm" TARGET="TEXT">CVideoTransformFilter</A> object.
+</DD><DT><I>pUnk</I>
+</DT><DD>Pointer to LPUNKNOWN.
+</DD><DT><I>clsid</I>
+</DT><DD>Class identifier of the <A HREF="dssd0254.htm" TARGET="TEXT">CVideoTransformFilter</A> class.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106024a030300">CVideoTransformFilter::EndFlush</A></H3>
+<A HREF="dssd0254.htm" TARGET="TEXT">CVideoTransformFilter Class</A>
+<P>Receives notification that the filter is leaving the flushing state and passes it downstream.
+
+<P><B>HRESULT</B> <B>EndFlush</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns <A HREF="dssd0293.htm#errcodes_0001060a01000031" TARGET="TEXT">VFW_E_NOT_CONNECTED</A> if the filter finds no input pin; otherwise, returns the value that the <A HREF="dssd0165.htm#If_000106014d030600" TARGET="TEXT">IPin::EndFlush</A> method returns.
+
+
+<H5>Remarks</H5>
+<P>This member function overrides the <A HREF="dssd0247.htm#Lib_0001060243040a00" TARGET="TEXT">CTransformFilter::EndFlush</A> member function to reset quality management information. 
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106024a030400">CVideoTransformFilter::Receive</A></H3>
+<A HREF="dssd0254.htm" TARGET="TEXT">CVideoTransformFilter Class</A>
+<P>Receives the media sample and either skips the sample or 
+transforms and delivers the media sample.
+
+<P><B>HRESULT</B> <B>Receive</B><B>(</B><BR>&nbsp;&nbsp;<B>IMediaSample</B> <I>*pSample</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSample</I>
+</DT><DD>Sample to deliver.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>This member function overrides the <A HREF="dssd0247.htm#Lib_0001060243041200" TARGET="TEXT">CTransformFilter::Receive</A> member function.
+Override only if you need more control of the process. 
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106024a030500">CVideoTransformFilter::RegisterPerfId</A></H3>
+<A HREF="dssd0254.htm" TARGET="TEXT">CVideoTransformFilter Class</A>
+<P>Registers performance measurement identifiers.
+
+<P><B>virtual</B> <B>void</B> <B>RegisterPerfId</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>By default, this member function registers the following performance identifiers.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Performance identifier </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Registered string
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0254.htm#Lib_000106024a010006" TARGET="TEXT">m_idSkip</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Video transform skip frame
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0254.htm#Lib_000106024a010004" TARGET="TEXT">m_idFrameType</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Video transform frame type
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0254.htm#Lib_000106024a010005" TARGET="TEXT">m_idLate</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Video transform lateness
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0254.htm#Lib_000106024a010007" TARGET="TEXT">m_idTimeTillKey</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Video transform estd. time to next key
+</FONT></TD></TR></TABLE>
+<P>This member function also calls <A HREF="dssd0247.htm#Lib_0001060243041300" TARGET="TEXT">CTransformFilter::RegisterPerfId</A> for its
+performance identifier.
+
+<P>Override this member function if you want to register performance measurement identifiers
+in the derived class. If you do this, be sure to register these as well. 
+This member function is enabled only when <A HREF="dssd0388.htm#reserved_00010a0108000002" TARGET="TEXT">PERF</A> is defined. 
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106024a030600">CVideoTransformFilter::ShouldSkipFrame</A></H3>
+<A HREF="dssd0254.htm" TARGET="TEXT">CVideoTransformFilter Class</A>
+<P>Determines if the filter should start, continue, or stop skipping frames.
+
+<P><B>BOOL</B> <B>ShouldSkipFrame</B><B>(</B><BR>&nbsp;&nbsp;<B>IMediaSample</B> <B>*</B> <I>pIn</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pIn</I>
+</DT><DD>Received sample to be transformed or skipped.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns TRUE if the filter should skip this sample; otherwise, returns FALSE.
+
+
+<H5>Remarks</H5>
+<P>This member function sets the <A HREF="dssd0254.htm#Lib_000106024a010003" TARGET="TEXT">m_bSkipping</A> member variable to FALSE if
+the sample is a key frame (sync point) and returns FALSE. This stops any skipping 
+that has started. This member function starts skipping samples (sets <B>m_bSkipping</B>
+to TRUE and returns TRUE) only if all of the following conditions are true.
+<UL><LI>The average time to decode is more than one-fourth of the frame time.
+ <LI>The filter is running at least one frame late.
+ <LI>The next anticipated key frame is estimated to be no more than one frame early. 
+ <LI>The occurrence of key frames is sufficiently frequent. 
+</UL>
+<P>This member function sends an <A HREF="dssd0291.htm#events_0001060801000e00" TARGET="TEXT">EC_QUALITY_CHANGE</A> notification when sample skipping
+starts. Once skipping starts, all samples are skipped until the next key frame arrives.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106024a030700">CVideoTransformFilter::StartStreaming</A></H3>
+<A HREF="dssd0254.htm" TARGET="TEXT">CVideoTransformFilter Class</A>
+<P>Overrides <A HREF="dssd0247.htm#Lib_0001060243041500" TARGET="TEXT">CTransformFilter::StartStreaming</A> to reset the quality control 
+ information when streaming starts or flushing starts.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>StartStreaming</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns NOERROR. 
+
+
+<H5>Remarks</H5>
+<P>This member function sets several quality control member variables to 0,
+including <A HREF="dssd0254.htm#Lib_000106024a010009" TARGET="TEXT">m_itrLate</A>, <A HREF="dssd0254.htm#Lib_000106024a01000a" TARGET="TEXT">m_nKeyFramePeriod</A>, <A HREF="dssd0254.htm#Lib_000106024a01000b" TARGET="TEXT">m_nFramesSinceKeyFrame</A>,
+<A HREF="dssd0254.htm#Lib_000106024a010003" TARGET="TEXT">m_bSkipping</A>, and <A HREF="dssd0254.htm#Lib_000106024a01000d" TARGET="TEXT">m_tDecodeStart</A>. It sets <A HREF="dssd0254.htm#Lib_000106024a010008" TARGET="TEXT">m_itrAvgDecode</A>
+to 3000, and sets <A HREF="dssd0254.htm#Lib_000106024a010002" TARGET="TEXT">m_bQualityChanged</A> and 
+<A HREF="dssd0247.htm#Lib_0001060243010007" TARGET="TEXT">m_bSampleSkipped</A> to FALSE. 
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

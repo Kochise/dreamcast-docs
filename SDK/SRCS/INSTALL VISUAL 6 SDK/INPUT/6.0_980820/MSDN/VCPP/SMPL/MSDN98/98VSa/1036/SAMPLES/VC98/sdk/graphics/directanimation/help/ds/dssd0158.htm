@@ -1,0 +1,560 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>IMediaSeeking Interface</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0157.htm','/dssd0000.htm','/dssd0088.htm','/index.htm','/dssd0159.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="If_0001060146000000">IMediaSeeking Interface</A></H2>
+<BR CLEAR=ALL>
+<P>Although <A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A> allows applications a simple seeking interface on a 
+filter graph, it has a number of limitations. The <B>IMediaPosition</B> interface allows 
+seeking only by using REFTIME time-based units; however, many filter graphs would prefer to seek 
+on units of samples, video frames, or fields in a compressed stream. 
+Also, the <B>IMediaPosition</B> interface uses separate methods to 
+set and retrieve position properties, which can cause unnecessary filter flushing.
+
+
+<P>The <B>IMediaSeeking</B> interface improves on the <A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A> interface
+by allowing arbitrary formats for seekable units, such as frames, bytes, and
+100-second units of time. It also offers the ability to start and stop times
+using a single method call, which is absent in <B>IMediaPosition</B>. 
+When seeking to time units, <B>IMediaSeeking</B> expresses time as a 64-bit integer 
+(<A HREF="dssd0389.htm#external_00010a01090000ab" TARGET="TEXT">LONGLONG</A>), providing greater accuracy than <B>IMediaPosition</B>, which expresses time 
+in decimal seconds stored as a <A HREF="dssd0389.htm#external_00010a010900002a" TARGET="TEXT">double</A>. 
+
+However, because of this difference
+in time unit data types, only <B>IMediaPosition</B> supports Automation.
+<B>IMediaPosition</B> is maintained as an interface for this reason only. 
+Applications not using Automation to seek the media stream should use the 
+<B>IMediaSeeking</B> interface instead. 
+ 
+<P>The <B>IMediaSeeking</B> interface is set by using a defined time format, such as 
+TIME_FORMAT_MEDIA_TIME or TIME_FORMAT_SAMPLE, which then defines 
+how parameters in other methods are interpreted. The format can 
+be changed only when the filter graph is stopped (the default DirectShow
+plug-in distributor method for this method takes care of this automatically,
+effectively eliminating this restriction). 
+Only one time format is available at any given time.
+
+<P>When a filter is seeked in media time, it must return a time at which the media seek positioned it.
+For example, if a source filter is seeked to frame 30, it might return 2 seconds if the
+video is 15 frames per second. With that position time (of 2 seconds), the filter graph manager can then
+seek all the other filters to that 2-second position so that the graph as a whole remains synchronized.
+
+<P>Time formats are globally unique identifiers (<A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A>s), which are defined as follows:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>GUID </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Defined as 
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">0L-0-0-0-0-0-0-0-0-0-0 </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_NONE
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">7b785570-8c82-11cf-bc0c-00aa00ac74f6 </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_FRAME
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">7b785571-8c82-11cf-bc0c-00aa00ac74f6 </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_BYTE
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">7b785572-8c82-11cf-bc0c-00aa00ac74f6 </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_SAMPLE
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">7b785573-8c82-11cf-bc0c-00aa00ac74f6 </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_FIELD
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">7b785574-8c82-11cf-bc0c-00aa00ac74f6 </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_MEDIA_TIME
+</FONT></TD></TR></TABLE>
+<A NAME="If_0001060146010000"></A><P><B>When to Implement</B>
+<P>The filter graph manager exposes the <A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking</A> interface from the plug-in
+distributor (PID) that handles this interface. If none of the filters within the graph 
+support this interface, the PID will return E_NOINTERFACE; if at least one filter supports 
+the interface, but all such filters return E_NOTIMPL, the PID will return E_NOTIMPL. 
+Otherwise, the filter graph manager will return either a success or the first failure it encounters. 
+
+<P>A success normally means that a seekable file source filter was found. 
+Filters, such as a file source filter, will expose 
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking</A> if they can seek their data or if their output pin represents a seekable 
+stream. The renderer filter also should expose this interface. Output pins of transform filters 
+expose this interface to pass the positioning information upstream, from the renderer 
+through each intermediate filter to the seekable filter. 
+
+<P>Use the <A HREF="dssd0236.htm#Lib_0001060238000000" TARGET="TEXT">CPosPassThru</A> base class to implement this interface on output pins
+of transform filters used to pass media positioning information upstream.
+This is enabled by default in the pin base classes. Renderers can use the same class, 
+although in most cases they should use <A HREF="dssd0242.htm#Lib_000106023e000000" TARGET="TEXT">CRendererPosPassThru</A>, 
+which is derived from <B>CPosPassThru</B>, to implement this interface. 
+
+<A NAME="If_0001060146020000"></A><P><B>When to Use</B>
+<P>Applications can use this interface to set or retrieve properties such as the duration of the stream,
+the current position, the stop time, and the media time format being used. Most commonly,
+an application will use the methods on this interface to play a media stream for some duration
+starting at some set position in the stream (for example, 10 seconds from the start). 
+
+<P>A transform filter will call the <A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking</A> methods on the connected 
+upstream pin when passing media times upstream from the renderer. 
+
+
+<A NAME="If_0001060146030000"></A><P><B>Methods in Vtable Order</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IUnknown methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns pointers to supported interfaces.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">AddRef</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Increments the reference count.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Decrements the reference count.
+</FONT></TD></TR></TABLE>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IMediaSeeking methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030400" TARGET="TEXT">GetCapabilities</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the seeking capabilities of the media stream.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030100" TARGET="TEXT">CheckCapabilities</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines which capabilities exist on a media stream by
+ applying seeking capability flags and checking the returned value.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030c00" TARGET="TEXT">IsFormatSupported</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines if a specified time format is supported.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030e00" TARGET="TEXT">QueryPreferredFormat</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the preferred time format to be used by the interface.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030b00" TARGET="TEXT">GetTimeFormat</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current time format.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030d00" TARGET="TEXT">IsUsingTimeFormat</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines if the time format being used in the call is the same as the 
+ one currently in use by the interface.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146031100" TARGET="TEXT">SetTimeFormat</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the time format, which determines the format of units used during seeking.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030600" TARGET="TEXT">GetDuration</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the length of time that the media stream will play.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030a00" TARGET="TEXT">GetStopPosition</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the position within the media stream at which playback should stop.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030500" TARGET="TEXT">GetCurrentPosition</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current position within the media stream.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030200" TARGET="TEXT">ConvertTimeFormat</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Converts a time from one time format to another.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030f00" TARGET="TEXT">SetPositions</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets current and stop positions and applies flags to both.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030700" TARGET="TEXT">GetPositions</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the current and stop position settings.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030300" TARGET="TEXT">GetAvailable</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the range of times in which seeking is efficient.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146031000" TARGET="TEXT">SetRate</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets a new playback rate.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030900" TARGET="TEXT">GetRate</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the current rate.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm#If_0001060146030800" TARGET="TEXT">GetPreroll</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the preroll settings.
+
+
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030100">IMediaSeeking::CheckCapabilities</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Determines which capabilities exist on a media stream by
+applying seeking capability flags and checking the returned value.
+
+<P><B>HRESULT</B> <B>CheckCapabilities</B><B>(</B><BR>&nbsp;&nbsp;<B>DWORD</B> <B>*</B> <I>pCapabilities</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pCapabilities</I>
+ </DT><DD>[in, out] Pointer to an AM_SEEKING_SEEKING_CAPABILITIES <A HREF="dssd0389.htm#external_00010a010900002c" TARGET="TEXT">enum</A> type 
+ containing the seeking capabilities flags to apply. These flags can be 
+ any combination of the following.
+ <TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_CanSeekAbsolute 
+ </FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_CanSeekForwards 
+ </FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_CanSeekBackwards
+ </FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_CanGetCurrentPos
+ </FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_CanGetStopPos
+ </FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_CanGetDuration
+ </FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_CanPlayBackwards
+ </FONT></TD></TABLE>
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns S_OK if all capabilities in <I>pCapabilities</I> are present,
+S_FALSE if some are present, or E_FAIL if none are present.
+
+
+<H5>Remarks</H5>
+<P>This method determines which seeking capabilities are present
+on a media stream. It applies the <I>pCapabilities</I> flags using a bitwise-AND
+operation, and returns a value to indicate whether they match the capabilities of the
+media stream. The value of <I>pCapabilities</I> is accumulated between successive 
+calls to this method so that the value of <I>pCapabilities</I>
+can be checked when an S_FALSE value is returned to find the capability that
+does not match.
+
+ 
+
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030200">IMediaSeeking::ConvertTimeFormat</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Converts a time from one format to another.
+
+<P><B>HRESULT</B> <B>ConvertTimeFormat</B><B>(</B><BR>&nbsp;&nbsp;<B>LONGLONG</B> <B>*</B> <I>pTarget</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>GUID</B> <B>*</B> <I>pTargetFormat</I><B>,</B><BR>&nbsp;&nbsp;<B>LONGLONG</B> <I>Source</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>GUID</B> <B>*</B> <I>pSourceFormat</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pTarget</I>
+ </DT><DD>[out] Time in converted format. 
+</DD><DT><I>pTargetFormat</I>
+ </DT><DD>[in] <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> of the format to convert to, or the currently selected format if NULL. 
+</DD><DT><I>Source</I>
+ </DT><DD>[in] Time in original format. 
+</DD><DT><I>pSourceFormat</I>
+ </DT><DD>[in] <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> of the format to be converted from, or the currently selected format if NULL.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>Time formats can be converted between any two of the following:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_FIELD
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_FRAME 
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_MEDIA_TIME
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_NONE
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_SAMPLE
+</FONT></TD></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030300">IMediaSeeking::GetAvailable</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Returns the range of times in which seeking is efficient.
+
+<P><B>HRESULT</B> <B>GetAvailable</B><B>(</B><BR>&nbsp;&nbsp;<B>LONGLONG</B> <B>*</B> <I>pEarliest</I><B>,</B><BR>&nbsp;&nbsp;<B>LONGLONG</B> <B>*</B> <I>pLatest</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pEarliest</I>
+ </DT><DD>[out] Earliest time that can be efficiently seeked to.
+</DD><DT><I>pLatest</I>
+ </DT><DD>[out] Latest time that can be efficiently seeked to.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>This method is intended primarily for seeking in media streams that
+might have excessive latency, such as when playing back media "live" from 
+an Internet server. The returned values indicate cached data that has already arrived, 
+which can be easily seeked. It is assumed that seeking to values beyond these 
+returned parameters will cause a delay while waiting for the data to arrive. 
+
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030400">IMediaSeeking::GetCapabilities</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Returns the seeking capabilities of the media stream.
+
+<P><B>HRESULT</B> <B>GetCapabilities</B><B>(</B><BR>&nbsp;&nbsp;<B>DWORD</B> <B>*</B> <I>pCapabilities</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pCapabilities</I>
+ </DT><DD>[out] Seeking capability flags, which can be 
+ any combination of the following.
+ <TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_CanSeekAbsolute 
+ </FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_CanSeekForwards 
+ </FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_CanSeekBackwards
+ </FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_CanGetCurrentPos
+ </FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_CanGetStopPos
+ </FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_CanGetDuration
+ </FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_CanPlayBackwards
+ </FONT></TD></TABLE>
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+
+
+
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030500">IMediaSeeking::GetCurrentPosition</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Retrieves the current position in terms of the total length of the media stream.
+
+<P><B>HRESULT</B> <B>GetCurrentPosition</B><B>(</B><BR>&nbsp;&nbsp;<B>LONGLONG*</B> <I>pCurrent</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pCurrent</I>
+ </DT><DD>[out] Current position in current time format units.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>The current position is the position that playback has reached. It is a value 
+between zero and the duration. If the filter graph is paused, this is the position at 
+which it will restart.
+
+<P>Since <A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking</A> uses media times for its time parameters, the current position
+value is independent of any rate or start position that might have been set.
+
+<P>When the filter graph is stopped or paused, this method returns the position at 
+which playback will recommence. 
+When the filter graph is running, the filter graph manager returns the position
+according to the data arriving at the renderer. If an individual filter implements 
+this method, it should return the media time of the sample it is currently processing 
+when paused or running.
+
+<P>After stopping or pausing, a run command causes playback to begin at
+the current position. This will be where playback stopped or paused, unless
+there has been an <A HREF="dssd0158.htm#If_0001060146030f00" TARGET="TEXT">IMediaSeeking::SetPositions</A> call in the meantime
+to reset the start position. 
+
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030600">IMediaSeeking::GetDuration</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Retrieves the length of time that the media stream will play.
+
+<P><B>HRESULT</B> <B>GetDuration</B><B>(</B><BR>&nbsp;&nbsp;<B>LONGLONG*</B> <I>pDuration</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pDuration</I>
+ </DT><DD>[out] Returned length of the media stream.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>The duration assumes normal playback speed, and it is therefore unaffected 
+by the rate. Although <A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking</A> allows filters to be seeked in media
+time, it still requires that the media samples it sends downstream are time stamped
+appropriately. 
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030700">IMediaSeeking::GetPositions</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Returns the current and stop position settings.
+
+<P><B>HRESULT</B> <B>GetPositions</B><B>(</B><BR>&nbsp;&nbsp;<B>LONGLONG</B> <B>*</B> <I>pCurrent</I><B>,</B><BR>&nbsp;&nbsp;<B>LONGLONG</B> <B>*</B> <I>pStop</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pCurrent</I>
+ </DT><DD>[out] Start time in the current time format.
+</DD><DT><I>pStop</I>
+ </DT><DD>[out] Stop time in the current time format.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>This method is provided for efficiency so that just one call will retrieve 
+both the current and stop position. 
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030800">IMediaSeeking::GetPreroll</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Retrieves the preroll settings.
+
+<P><B>HRESULT</B> <B>GetPreroll</B><B>(</B><BR>&nbsp;&nbsp;<B>LONGLONG</B> <B>*</B> <I>pllPreroll</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pllPreroll</I>
+ </DT><DD>[out] Returned preroll time. 
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>This method retrieves the time prior to the start position that the filter graph
+begins any nonrandom access device rolling.
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030900">IMediaSeeking::GetRate</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Retrieves the current rate.
+
+<P><B>HRESULT</B> <B>GetRate</B><B>(</B><BR>&nbsp;&nbsp;<B>double</B> <B>*</B> <I>dRate</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>dRate</I>
+ </DT><DD>[out] Current rate, where 1 is the normal rate. 
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030a00">IMediaSeeking::GetStopPosition</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Retrieves the time at which the media stream stops.
+
+<P><B>HRESULT</B> <B>GetStopPosition</B><B>(</B><BR>&nbsp;&nbsp;<B>LONGLONG*</B> <I>pStop</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pStop</I>
+ </DT><DD>[out] Returned stop time.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>The stop position is a time between zero and the duration of the media
+at which playback should stop.
+
+<P>The stop position is applied before the rate and therefore is the position at 
+typical playback speed.
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030b00">IMediaSeeking::GetTimeFormat</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Retrieves the current time format, which determines the format of units used during seeking.
+
+<P><B>HRESULT</B> <B>GetTimeFormat</B><B>(</B><BR>&nbsp;&nbsp;<B>GUID</B> <B>*</B> <I>pFormat</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pFormat</I>
+ </DT><DD>[out] Time format currently supported by this interface.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>See the <A HREF="dssd0158.htm#If_0001060146030c00" TARGET="TEXT">IsFormatSupported</A> method 
+for a list of time formats. Only one time format can be
+set on the filter graph at any one time.
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030c00">IMediaSeeking::IsFormatSupported</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Determines if a specified time format is supported.
+
+<P><B>HRESULT</B> <B>IsFormatSupported</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>GUID</B> <B>*</B> <I>pFormat</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pFormat</I>
+ </DT><DD>[in] Time format to compare.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns S_OK if the time format is supported;
+otherwise returns S_FALSE.
+
+
+<H5>Remarks</H5>
+<P>Time formats are defined as follows:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>GUID </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Defined as 
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_NONE
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Seeking is not supported.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_FRAME
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Seeks to specific video frames.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_SAMPLE
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Seeks to samples in the stream.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_FIELD
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Seeks to interlaced video fields.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_BYTE
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Seeks to a byte in the stream.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TIME_FORMAT_MEDIA_TIME
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Seeks to time stamps on the media samples. 
+</FONT></TD></TR></TABLE>
+<P>Third-party vendors are encouraged to add their own time formats to this
+list.
+
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030d00">IMediaSeeking::IsUsingTimeFormat</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Determines if the time format being used in the call is the same as the 
+ one currently in use by the interface.
+
+<P><B>HRESULT</B> <B>IsUsingTimeFormat</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>GUID</B> <B>*</B> <I>pFormat</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pFormat</I>
+ </DT><DD>[in] Time format to check.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns S_OK if <I>pFormat</I> is the current time format; otherwise returns S_FALSE.
+
+
+<H5>Remarks</H5>
+<P>This can be used in place of <A HREF="dssd0158.htm#If_0001060146030b00" TARGET="TEXT">IMediaSeeking::GetTimeFormat</A> to compare time
+formats, since it is faster and does not require copying the <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A>.
+
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030e00">IMediaSeeking::QueryPreferredFormat</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Retrieves the preferred time format to be used by the interface.
+
+<P><B>HRESULT</B> <B>QueryPreferredFormat</B><B>(</B><BR>&nbsp;&nbsp;<B>GUID</B> <B>*</B> <I>pFormat</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pFormat</I>
+ </DT><DD>[out] Time format preferred by the interface.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>See the description for <A HREF="dssd0158.htm#If_0001060146030c00" TARGET="TEXT">IsFormatSupported</A> 
+for a list of available time formats. If the time format returned is not satisfactory, use the
+<B>IsFormatSupported</B> method to query for supported time formats that you can use.
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146030f00">IMediaSeeking::SetPositions</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Sets current and stop positions and applies flags to both.
+
+<P><B>HRESULT</B> <B>SetPositions</B><B>(</B><BR>&nbsp;&nbsp;<B>LONGLONG</B> <B>*</B> <I>pCurrent</I><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>dwCurrentFlags</I><B>,</B><BR>&nbsp;&nbsp;<B>LONGLONG</B> <B>*</B> <I>pStop</I><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>dwStopFlags</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pCurrent</I>
+ </DT><DD>[in,out] Start position if stopped, or position from which to continue if paused.
+</DD><DT><I>dwCurrentFlags</I>
+ </DT><DD>[in] When seeking, one of these flags must be set to indicate the type of seek.
+The flags passed to this method should include one positioning value and 
+(optionally) any of the nonpositioning values
+. 
+ 
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Flag </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+ </B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_NoPositioning </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">No change in positioning.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_AbsolutePositioning </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Position supplied is absolute.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_RelativePositioning </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Position supplied is relative to the current position.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_IncrementalPositioning </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Stop position relative to current; 
+ useful for seeking when paused
+ (only valid in conjunction with stop times).
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_PositioningBitsMask </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Mask flag; determine if seeking is required by 
+ performing a bitwise AND of the four flags
+ listed above and this mask. If the resulting value
+ is nonzero, some form of seeking is required. Check
+ the value of the last two bits to determine which of the above flags are set.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_SeekToKeyFrame </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Seek to the nearest key frame (not as accurate but quicker).
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AM_SEEKING_ReturnTime </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return the media time equivalents for 
+ <I>pCurrent</I> and <I>pStop</I> 
+ (overwriting these values with the returned values).
+ 
+</FONT></TD></TR></TABLE>
+</DD><DT><I>pStop</I>
+ </DT><DD>[in,out] Position in the stream at which to quit.
+</DD><DT><I>dwStopFlags</I>
+ </DT><DD>[in] Stop position seeking options to be applied. These are the same 
+as listed for <I>dwCurrentFlags</I>.
+ 
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+<H5>Remarks</H5>
+<P><BR>The following code fragment checks for the type of seeking required.
+
+<PRE><FONT FACE="Courier" SIZE="2">switch ( dwFlags &amp; AM_SEEKING_PositioningBitsMask )
+{
+&#009;case AM_SEEKING_IncrementalPositioning:
+&#009;&#009;// Check this is on a stop time
+&#009;&#009;// Get Current, add this delta, apply result as new stop time
+&#009;&#009;break;
+&#009;case AM_SEEKING_RelativePositioning:
+&#009;&#009;// ...
+&#009;&#009;break;
+&#009;case AM_SEEKING_AbsolutePositioning:
+&#009;&#009;// ...
+&#009;&#009;break;
+&#009;case AM_SEEKING_NoPositioning:
+&#009;&#009;// Nothing to do.
+&#009;&#009;break;
+}
+</FONT></PRE>
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146031000">IMediaSeeking::SetRate</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Sets a new playback rate.
+
+<P><B>HRESULT</B> <B>SetRate</B><B>(</B><BR>&nbsp;&nbsp;<B>double</B> <I>dRate</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>dRate</I>
+ </DT><DD>[in] New rate, where 1 is the normal rate, 2 is twice as fast, and so on. 
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H3><HR COLOR=#0000FF><A NAME="If_0001060146031100">IMediaSeeking::SetTimeFormat</A></H3>
+<A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking Interface</A>
+<P>Sets the time format, which determines the format of units used during seeking.
+
+<P><B>HRESULT</B> <B>SetTimeFormat</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>GUID</B> <B>*</B> <I>pFormat</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pFormat</I>
+ </DT><DD>[in] Time format to be supported by this interface.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>See the <A HREF="dssd0158.htm#If_0001060146030c00" TARGET="TEXT">IsFormatSupported</A> method 
+for a list of time formats. Note that the filter graph must be stopped before calling this method or
+a VFW_E_WRONG_STATE error will be returned.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

@@ -1,0 +1,155 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>IQueueCommand Interface</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0168.htm','/dssd0000.htm','/dssd0088.htm','/index.htm','/dssd0170.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="If_0001060151000000">IQueueCommand Interface</A></H2>
+<BR CLEAR=ALL>
+<P>The <B>IQueueCommand</B> interface provides a way to defer
+commands and property changes.
+The deferred command mechanism allows filters themselves to handle deferred
+commands. When they do not, the filter graph manager queues the command until the requested
+time and then calls the method on the filter (this would result in coarse rather than accurate
+synchronization). Note that a filter that does handle deferred commands must make them apply
+to data appearing at that time. Thus, a contrast filter asked to change the contrast at time x must
+ensure that it applies the change when processing data time-stamped to be rendered at time x;
+these samples will be processed by the filter somewhat before time x.
+
+<P>The <B>IQueueCommand</B> interface provides two methods,
+<A HREF="dssd0169.htm#If_0001060151030200" TARGET="TEXT">InvokeAtStreamTime</A>, which queues commands at stream time, and
+<A HREF="dssd0169.htm#If_0001060151030100" TARGET="TEXT">InvokeAtPresentationTime</A>, which queues commands at presentation time. Both
+return an <A HREF="dssd0125.htm" TARGET="TEXT">IDeferredCommand</A> interface to the queued command, by which the
+application can cancel the command, set a new presentation time for it, or get back an estimate
+of the likelihood of the filter graph manager being able to run the command on time.
+
+<P>Both presentation time and stream time commands will run once, and then be removed
+from the queue. Both the queue and the application will hold a reference count on the object
+(represented to the application by the <A HREF="dssd0125.htm" TARGET="TEXT">IDeferredCommand</A> interface), and the object
+will not be destroyed until both are released. Similarly, calling <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">IUnknown::Release</A>
+on the <B>IDeferredCommand</B> interface is not sufficient to cancel the command,
+because the queue also holds a reference count.
+
+<P>Rather than add optional stream time and presentation time constraints to every method
+and property on every control interface, the application uses <A HREF="dssd0389.htm#external_00010a010900007d" TARGET="TEXT">IDispatch</A> to provide a single
+interface where these time parameters can be specified. <B>IQueueCommand</B> provides
+<A HREF="dssd0169.htm#If_0001060151030200" TARGET="TEXT">InvokeAtStreamTime</A> and <A HREF="dssd0169.htm#If_0001060151030100" TARGET="TEXT">InvokeAtPresentationTime</A> methods that are similar
+in style to the <A HREF="dssd0389.htm#external_00010a0109000081" TARGET="TEXT">IDispatch::Invoke</A> method.
+
+
+
+<P>Filters can implement <B>IQueueCommand</B> themselves. In this case, they parse the
+command and queue it for action when the relevant samples arrive or when the reference clock
+reaches the correct point, as appropriate. For filters that do not support this, the filter graph manager
+will run the command when the reference clock reaches the specified time, regardless of the
+samples being processed at the filter.
+
+
+
+
+<A NAME="If_0001060151010000"></A><P><B>When to Implement</B>
+<P>This method is implemented by the filter graph manager to allow queuing of
+deferred commands.
+
+<A NAME="If_0001060151020000"></A><P><B>When to Use</B>
+<P>Applications can use this interface, along with the <A HREF="dssd0125.htm" TARGET="TEXT">IDeferredCommand</A> interface,
+to queue commands for deferred processing.
+
+<A NAME="If_0001060151030000"></A><P><B>Methods in Vtable Order</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IUnknown methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns pointers to supported interfaces.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">AddRef</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Increments the reference count.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Decrements the reference count.
+</FONT></TD></TR></TABLE>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IQueueCommand methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0169.htm#If_0001060151030200" TARGET="TEXT">InvokeAtStreamTime</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Queues a method or property change for execution at a specified stream time (that is,
+presentation time relative to the current stream time offset).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0169.htm#If_0001060151030100" TARGET="TEXT">InvokeAtPresentationTime</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Queues a method or property change for execution at a specified presentation time.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="If_0001060151030100">IQueueCommand::InvokeAtPresentationTime</A></H3>
+<A HREF="dssd0169.htm" TARGET="TEXT">IQueueCommand Interface</A>
+<P>Queues a method or property change for execution at a specified presentation time.
+
+<P><B>HRESULT</B> <B>InvokeAtPresentationTime</B><B>(</B><BR>&nbsp;&nbsp;<B>IDeferredCommand</B> <B>*</B> <I>pCmd</I><B>,</B><BR>&nbsp;&nbsp;<B>REFTIME</B> <I>time</I><B>,</B><BR>&nbsp;&nbsp;<B>GUID*</B> <I>iid</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>dispidMember</I><B>,</B><BR>&nbsp;&nbsp;<B>short</B> <I>wFlags</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>cArgs</I><B>,</B><BR>&nbsp;&nbsp;<B>VARIANT</B> <I>*pDispParams</I><B>,</B><BR>&nbsp;&nbsp;<B>VARIANT</B> <I>*pvarResult</I><B>,</B><BR>&nbsp;&nbsp;<B>short</B> <I>*puArgErr</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pCmd</I>
+ </DT><DD>[out] Pointer to the place to return an interface on the deferred command
+if it is successfully created.
+</DD><DT><I>time</I>
+ </DT><DD>[in] Time at which to invoke the command.
+</DD><DT><I>iid</I>
+ </DT><DD>[in] Interface to be called.
+</DD><DT><I>dispidMember</I>
+ </DT><DD>[in] Method or property to call on the interface.
+</DD><DT><I>wFlags</I>
+ </DT><DD>[in] Method or property flag.
+</DD><DT><I>cArgs</I>
+ </DT><DD>[in] Number of arguments on <I>pDispParams</I>.
+</DD><DT><I>pDispParams</I>
+ </DT><DD>[in] Parameters to this method.
+</DD><DT><I>pvarResult</I>
+ </DT><DD>[in,out] Return value.
+</DD><DT><I>puArgErr</I>
+ </DT><DD>[out] Index to the arguments in error.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H3><HR COLOR=#0000FF><A NAME="If_0001060151030200">IQueueCommand::InvokeAtStreamTime</A></H3>
+<A HREF="dssd0169.htm" TARGET="TEXT">IQueueCommand Interface</A>
+<P>Queues a method or property change for execution at a specified stream time (that is, presentation time relative to the current stream time offset).
+
+<P><B>HRESULT</B> <B>InvokeAtStreamTime</B><B>(</B><BR>&nbsp;&nbsp;<B>IDeferredCommand</B> <B>**</B> <I>pCmd</I><B>,</B><BR>&nbsp;&nbsp;<B>REFTIME</B> <I>time</I><B>,</B><BR>&nbsp;&nbsp;<B>GUID</B> <I>*iid</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>dispidMember</I><B>,</B><BR>&nbsp;&nbsp;<B>short</B> <I>wFlags</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>cArgs</I><B>,</B><BR>&nbsp;&nbsp;<B>VARIANT</B> <I>*pDispParams</I><B>,</B><BR>&nbsp;&nbsp;<B>VARIANT</B> <I>*pvarResult</I><B>,</B><BR>&nbsp;&nbsp;<B>short</B> <I>*puArgErr</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pCmd</I>
+ </DT><DD>[out] Pointer to the place to return an interface on the deferred command
+if it is successfully created.
+</DD><DT><I>time</I>
+ </DT><DD>[in] Time at which to invoke the command.
+</DD><DT><I>iid</I>
+ </DT><DD>[in] Interface to be called.
+</DD><DT><I>dispidMember</I>
+ </DT><DD>[in] Method or property to call on the interface.
+</DD><DT><I>wFlags</I>
+ </DT><DD>[in] Method or property flag.
+</DD><DT><I>cArgs</I>
+ </DT><DD>[in] Number of arguments in <I>pDispParams</I>.
+</DD><DT><I>pDispParams</I>
+ </DT><DD>[in] Parameters to this method.
+</DD><DT><I>pvarResult</I>
+ </DT><DD>[in, out] Return value of the called method.
+</DD><DT><I>puArgErr</I>
+ </DT><DD>[out] Index to the arguments in error.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>Run this command to affect the presentation that occurs after the specified stream time.
+The interface IID is an interface that can be obtained by calling
+<A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">IUnknown::QueryInterface</A> on this same <A HREF="dssd0169.htm" TARGET="TEXT">IQueueCommand</A> interface.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

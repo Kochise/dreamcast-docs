@@ -1,0 +1,129 @@
+<HTML> 
+<HEAD>
+<TITLE>DirectAnimation SDK, JScript sample</TITLE>
+</HEAD>	 
+
+<BODY BGCOLOR=WHITE TOPMARGIN=15 LEFTMARGIN=10>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2> 
+          
+
+<DIV ID=controlDiv>
+<OBJECT ID="DAViewer"
+        STYLE="position:absolute; left:10; top:50;width:370;height:250;z-index: -1"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D">
+</OBJECT>
+</DIV>
+<FORM NAME="form1" ACTION="">
+<CENTER>
+<H2>Sequencing</H2>
+<INPUT TYPE=BUTTON VALUE="" NAME=StartBtn OnClick="start()"> 
+</CENTER>
+
+
+
+<SCRIPT LANGUAGE="JAVASCRIPT">
+<!--
+
+  var m_frm = document.form1;
+  m_frm.StartBtn.value = "Show";
+  var FlagNotStarted = true;
+  
+
+ 
+  function start()
+  {
+ 
+    if (FlagNotStarted)
+    {
+     m_frm.StartBtn.value = "         ";
+     seq();
+     FlagNotStarted = false;
+    }
+  }
+
+
+
+
+   function seq ()
+    {
+
+   // This script draws a red circle that moves in a straight line. It starts at the beginning of the line,
+   // waits 1 seconds, and then starts to move. It goes from the beginning of the line to end in 4 seconds.
+   // It repeats these actions 3 times and then stops at the end.
+
+   // All our measurements will be in pixels, so we use the PixelLibrary
+
+   // The variable "l" is shorthand for the DAStatics Library. Every function that is in that library 
+   // (most of them!) needs to be preceded by an "l" so the interpreter knows where to find them
+   
+     l = DAViewer.PixelLibrary;
+
+   
+   // Now construct a red circle
+  
+   // First set the color that will fill the inside of the circle to red
+   fill = l.SolidColorImage(l.Red);
+
+   // Now draw a circle. A circle is an oval whose radius along the x-axis is the same
+   // as its radius along the y-axis
+
+   ovalImg = l.Oval(50, 50).Fill(l.DefaultLineStyle, fill);
+
+   // Now construct a straight path that the circle will travel along
+
+   // Our path is a line, and lines are defined by their starting and ending points
+   startingPoint = l.Point2(25, 50);
+   endingPoint = l.Point2(150, 50);
+
+   // Now make the line (in this case, it isn't drawn on the screen -- it's a guide for the circle)
+
+   myPath = l.Line(startingPoint, endingPoint);
+
+   
+   // Define the instruction that will tell the circle where to begin
+
+   // To translate something means to move it. If you want to move something, you need to know where
+   // it's going. In this case we want to move the circle to "startingPoint". Because we are defining the
+   // place we want to go as a point, we use the Translate2Point function. There are other Translate functions
+   // for different ways of expressing where to place something.
+
+   // The Duration function means to wait for 1 seconds at the location we've defined. So, to sum up, this says:
+   // "Go to the starting point and wait 1 seconds" (Note that it doesn't need the l in front of it. That's because
+   // a Translate2 returns a DATransform2 and that kind of object has the Duration function in its own class. 
+ 
+   goToStart = l.Translate2Point(startingPoint).Duration(1);
+
+   // Now we'll define the instruction that will tell the circle to follow the path:
+   // The FollowPath function does exactly what it's name says and it defines how long it should take to go
+   // from one end of the path to the other.
+   // Here we're saying, follow myPath and go from the beginning to end in 4 seconds. Do this 3 times
+
+   followRoute = l.FollowPath(myPath, 4).Repeat(3);
+
+   
+   // Next, we'll combine the two instructions. 
+
+   combineMovements = l.Sequence(goToStart, followRoute);
+
+   // Finally, we need to tell the circle our instructions
+   // We're transforming our static drawing of a circle into one that moves along a path.
+
+   movingCircle = ovalImg.Transform(combineMovements);
+
+   
+   // Now tell the DAViewer what image to display (our moving circle)
+   DAViewer.Image = movingCircle;
+
+   // Finally, give it the go-ahead
+   DAViewer.Start();
+  }
+
+
+
+//-->
+</script>
+
+</FORM>
+</FONT>
+</BODY>
+</HTML>

@@ -1,0 +1,512 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Creating a Capture Application</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0058.htm','/dssd0000.htm','/dssd0044.htm','/index.htm','/dssd0060.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="capapp_0001040401000000">Creating a Capture Application</A></H2>
+<BR CLEAR=ALL>
+<P>DirectShow provides the capability to capture and preview both video and audio data from an application, when combined with the appropriate capture hardware. The data source might include a VCR, camera, TV tuner, microphone, or other source. An application can display the captured data immediately (preview) or save it to a file for later viewing either inside or outside of the application. 
+
+<P>DirectShow takes advantage of new capture drivers that are written as DirectShow filters, and also uses existing Video for Windows-style drivers.
+
+<P><B>Note:</B>  This article relies heavily on the <A HREF="dssd0353.htm#samples_0001070207020000" TARGET="TEXT">DirectShow Capture</A> sample
+ application. See the AMCap sample code (Amcap.cpp) in the Samples\DS\Capture directory of the DirectShow SDK for complete sample code, because this article does not present <A HREF="dssd0353.htm#samples_0001070207020000" TARGET="TEXT">DirectShow Capture</A> in its entirety. 
+<P>The <A HREF="dssd0353.htm#samples_0001070207020000" TARGET="TEXT">DirectShow Capture</A> sample application performs video and audio capture, similar to the VidCap sample from Video for Windows&#174;. It uses the <A HREF="dssd0119.htm#If_000106011f000000" TARGET="TEXT">ICaptureGraphBuilder</A> interface to handle the majority of the capture work. In your own capture application, you'll use the same methods and interfaces that AMCap uses. This article focuses on AMCap's use of <B>ICaptureGraphBuilder</B> to perform video and audio capture and presents relevant code excerpts from AMCap. 
+
+<P>This article assumes you are familiar with the DirectShow filter graph architecture and the general layout of a capture filter graph. See <A HREF="dssd0032.htm" TARGET="TEXT">Filter Graph Manager and Filter Graphs</A> and <A HREF="dssd0036.htm" TARGET="TEXT">About Capture Filter Graphs</A> for more information.
+
+<P><B>Contents of this article:</B>
+<UL><LI><A HREF="dssd0059.htm#capapp_0001040401010000" TARGET="TEXT">Introduction to ICaptureGraphBuilder</A>
+<LI><A HREF="dssd0059.htm#capapp_0001040401020000" TARGET="TEXT">Device Enumeration and Capture Interfaces</A> 
+<LI><A HREF="dssd0059.htm#capapp_0001040401030000" TARGET="TEXT">Building the Capture and Preview Filter Graph</A>
+<LI><A HREF="dssd0059.htm#capapp_0001040401040000" TARGET="TEXT">Controlling the Capture Filter Graph</A>
+<LI><A HREF="dssd0059.htm#capapp_0001040401050000" TARGET="TEXT">Obtaining Capture Statistics</A>
+<LI><A HREF="dssd0059.htm#capapp_0001040401060000" TARGET="TEXT">Saving the Captured File</A>
+</UL>
+<A NAME="capapp_0001040401010000"></A><P><B>Introduction to ICaptureGraphBuilder</B>
+<P>The <A HREF="dssd0119.htm#If_000106011f000000" TARGET="TEXT">ICaptureGraphBuilder</A> interface provides a filter graph builder object that applications use to handle some of the more tedious tasks involved in building a capture filter graph, which frees the application to focus on capture. You access the graph builder object by calling methods on <B>ICaptureGraphBuilder</B>. The variety of methods satisfies the basic requirements for capture and preview functionality. 
+
+<P>The <A HREF="dssd0119.htm#If_000106011f030400" TARGET="TEXT">FindInterface</A> method searches for a particular capture-related interface in the filter graph. The method handles the complexities of filter graph traversal for you, which enables you to access the functionality of a particular interface without having to enumerate pins and filters in the filter graph looking for the interface. The <A HREF="dssd0119.htm#If_000106011f030600" TARGET="TEXT">RenderStream</A> method connects source filters to rendering filters, optionally adding other needed intermediate filters. The 
+<A HREF="dssd0119.htm#If_000106011f030200" TARGET="TEXT">ControlStream</A> method independently control sections of the graph for frame-accurate start and stop. 
+
+<P>Additional methods deal with allocating space for the capture file (<A HREF="dssd0119.htm#If_000106011f030100" TARGET="TEXT">AllocCapFile</A>), specifying a name for it and building up the <I>file writer</I> section of the graph, which consists of the multiplexer and file writer filters (<A HREF="dssd0119.htm#If_000106011f030800" TARGET="TEXT">SetOutputFileName</A>), and saving the captured data to another file (<A HREF="dssd0119.htm#If_000106011f030300" TARGET="TEXT">CopyCaptureFile</A>). Finally, <A HREF="dssd0119.htm#If_000106011f030700" TARGET="TEXT">SetFiltergraph</A> and <A HREF="dssd0119.htm#If_000106011f030500" TARGET="TEXT">GetFiltergraph</A> enable the application to provide a filter graph for the graph builder to use or retrieve the filter graph already in use.
+
+<A NAME="capapp_0001040401020000"></A><P><B>Device Enumeration and Capture Interfaces</B>
+<P>AMCap's InitCapFilters function enumerates the capture devices on the system by using the <A HREF="dssd0122.htm#If_0001060122030100" TARGET="TEXT">ICreateDevEnum::CreateClassEnumerator</A> method. After enumerating a capture device and instantiating a DirectShow filter to use that device, the sample calls the <A HREF="dssd0119.htm#If_000106011f030400" TARGET="TEXT">ICaptureGraphBuilder::FindInterface</A> method several times to obtain interface pointers for the <A HREF="dssd0099.htm#If_000106010b000000" TARGET="TEXT">IAMDroppedFrames</A>, <A HREF="dssd0113.htm#If_0001060119000000" TARGET="TEXT">IAMVideoCompression</A>, <A HREF="dssd0105.htm#If_0001060111000000" TARGET="TEXT">IAMStreamConfig</A>, and <A HREF="dssd0111.htm#If_0001060117000000" TARGET="TEXT">IAMVfwCaptureDialogs</A> capture-related interfaces. The AMCap code saves all of these interface pointers for later use in the gcap global structure and uses gcap structure members throughout the code. 
+
+<P><B>Note:</B>  <A HREF="dssd0111.htm#If_0001060117000000" TARGET="TEXT">IAMVfwCaptureDialogs</A> is designed for you to use only with the Microsoft-supplied video capture filter and only when using a former Video for Windows device.<P>For your convenience, the declaration of the gcap structure follows:
+
+<PRE><FONT FACE="Courier" SIZE="2">
+struct _capstuff {
+    char szCaptureFile[_MAX_PATH];
+    WORD wCapFileSize;  // size in Meg
+    ICaptureGraphBuilder *pBuilder;
+    IVideoWindow *pVW;
+    IMediaEventEx *pME;
+    IAMDroppedFrames *pDF;
+    IAMVideoCompression *pVC;
+    IAMVfwCaptureDialogs *pDlg;
+    IAMStreamConfig *pASC;      // for audio cap
+    IAMStreamConfig *pVSC;      // for video cap
+    IBaseFilter *pRender;
+    IBaseFilter *pVCap, *pACap;
+    IGraphBuilder *pFg;
+    IFileSinkFilter *pSink;
+    IConfigAviMux *pConfigAviMux;
+    int  iMasterStream;
+    BOOL fCaptureGraphBuilt;
+    BOOL fPreviewGraphBuilt;
+    BOOL fCapturing;
+    BOOL fPreviewing;
+    BOOL fCapAudio;
+    int  iVideoDevice;
+    int  iAudioDevice;
+    double FrameRate;
+    BOOL fWantPreview;
+    long lCapStartTime;
+    long lCapStopTime;
+    char achFriendlyName[120];
+    BOOL fUseTimeLimit;
+    DWORD dwTimeLimit;
+} gcap;
+</FONT></PRE>
+<P>AMCap's InitCapFilters function stores several interface pointers in the gcap structure. Be sure to properly release all interface pointers when they are no longer needed as shown in the following example.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    if (gcap.pBuilder)
+&#009;gcap.pBuilder-&gt;Release();
+    gcap.pBuilder = NULL;
+    if (gcap.pSink)
+&#009;gcap.pSink-&gt;Release();
+    gcap.pSink = NULL;
+    if (gcap.pConfigAviMux)
+&#009;gcap.pConfigAviMux-&gt;Release();
+    gcap.pConfigAviMux = NULL;
+    if (gcap.pRender)
+&#009;gcap.pRender-&gt;Release();
+    gcap.pRender = NULL;
+    if (gcap.pVW)
+&#009;gcap.pVW-&gt;Release();
+    gcap.pVW = NULL;
+    if (gcap.pME)
+&#009;gcap.pME-&gt;Release();
+    gcap.pME = NULL;
+    if (gcap.pFg)
+&#009;gcap.pFg-&gt;Release();
+    gcap.pFg = NULL;
+</FONT></PRE>
+<P>See <A HREF="dssd0054.htm" TARGET="TEXT">Enumerate and Access Hardware Devices in DirectShow Applications</A> for more information about device enumeration.
+
+<A NAME="capapp_0001040401030000"></A><P><B>Building the Capture and Preview Filter Graph</B>
+<P>AMCap includes a BuildCaptureGraph function that builds up a capture graph with both capture and preview components. Most applications will perform the same tasks as follows:
+
+
+<UL><LI><A HREF="dssd0059.htm#capapp_0001040401030100" TARGET="TEXT">Set the Capture File Name</A>
+<LI><A HREF="dssd0059.htm#capapp_0001040401030200" TARGET="TEXT">Create a Graph Builder Object</A>
+<LI><A HREF="dssd0059.htm#capapp_0001040401030300" TARGET="TEXT">Create the Rendering Section of the Graph and Tell it to Write to the Capture File Specified Previously</A>
+<LI><A HREF="dssd0059.htm#capapp_0001040401030400" TARGET="TEXT">Retrieve the Current Filter Graph</A>
+<LI><A HREF="dssd0059.htm#capapp_0001040401030500" TARGET="TEXT">Add the Video and Audio Capture Filters to the Current Filter Graph</A>
+<LI><A HREF="dssd0059.htm#capapp_0001040401030600" TARGET="TEXT">Render the Video Capture Filter's Capture Pin and the Audio Capture Filter's Capture Pin</A>
+<LI><A HREF="dssd0059.htm#capapp_0001040401030700" TARGET="TEXT">Render the Video Capture Filter's Preview Pin</A>
+<LI><A HREF="dssd0059.htm#capapp_0001040401030800" TARGET="TEXT">Obtain a Pointer to the Interface that Provides Access to the Video Preview Window</A>
+</UL>
+<P>These tasks are explained in greater detail later in this section.
+
+<P>AMCap also includes a BuildPreviewGraph function that is essentially a version of BuildCaptureGraph that deals only with preview. Another difference between BuildCaptureGraph and BuildPreviewGraph is that the latter uses <A HREF="dssd0119.htm#If_000106011f030700" TARGET="TEXT">ICaptureGraphBuilder::SetFiltergraph</A> to provide a filter graph object (<A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A> interface) for the capture graph builder object (<A HREF="dssd0119.htm#If_000106011f000000" TARGET="TEXT">ICaptureGraphBuilder</A> interface) to use. You probably won't need to call <A HREF="dssd0119.htm#If_000106011f030700" TARGET="TEXT">SetFiltergraph</A> as the graph builder object creates a filter graph to use by default. Use this method only if you have already created your own filter graph and want the graph builder to use your filter graph. If you call this method after the graph builder has created a filter graph, this method will fail.
+
+ BuildPreviewGraph calls <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A> to create a new filter graph object, if necessary, as shown in the following example.
+
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;hr = CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC,
+                      IID_IGraphBuilder, (LPVOID *)&amp;gcap.pFg);
+
+
+hr = gcap.pBuilder-&gt;SetFiltergraph(gcap.pFg);
+    if (hr != NOERROR) {
+&#009;ErrMsg("Cannot give graph to builder");
+&#009;goto SetupPreviewFail;
+    }
+</FONT></PRE>
+<P>The details of each important task performed by BuildCaptureGraph follow. 
+
+<A NAME="capapp_0001040401030100"></A><P><B>Set the Capture File Name</B>
+<P>AMCap's SetCaptureFile function displays the common Open File dialog box to enable the user to select a capture file. If the specified file is a new file, it calls the application-defined AllocCaptureFile function that prompts the user to allocate space for the capture file. This "preallocation" of file space is important, because it reserves a large block of space on disk. This speeds up the capture operation when it occurs, because the file space doesn't have to be allocated while capture takes place (it has been preallocated). The <A HREF="dssd0119.htm#If_000106011f030100" TARGET="TEXT">ICaptureGraphBuilder::AllocCapFile</A> method performs the actual file allocation. <A HREF="dssd0137.htm#If_0001060131030200" TARGET="TEXT">IFileSinkFilter::SetFileName</A> instructs the file writer filter to use the file name that the user chose. The code assumes you've called <A HREF="dssd0119.htm#If_000106011f030800" TARGET="TEXT">ICaptureGraphBuilder::SetOutputFileName</A> to add the file writer to the filter graph. See <A HREF="dssd0059.htm#capapp_0001040401030300" TARGET="TEXT">Create the Rendering Section of the Graph and Tell it to Write to the Capture File Specified Previously</A> for more information.
+
+<P>The AMCap-defined SetCaptureFile and AllocCaptureFile functions follow:
+
+<PRE><FONT FACE="Courier" SIZE="2">
+/*
+ * Put up a dialog to allow the user to select a capture file.
+ */
+BOOL SetCaptureFile(HWND hWnd)
+{
+    if (OpenFileDialog(hWnd, gcap.szCaptureFile, _MAX_PATH)) {
+        OFSTRUCT os;
+
+&#009;// We have a capture file name
+
+        /*
+         * if this is a new file, then invite the user to
+         * allocate some space
+         */
+        if (OpenFile(gcap.szCaptureFile, &amp;os, OF_EXIST) == HFILE_ERROR) {
+
+&#009;    // Bring up dialog, and set new file size
+&#009;    BOOL f = AllocCaptureFile(hWnd);
+&#009;    if (!f)
+&#009;&#009;return FALSE;
+        }
+    } else {
+&#009;return FALSE;
+    }
+
+    SetAppCaption();&#009;// need a new app caption
+
+    // Tell the file writer to use the new file name
+    if (gcap.pSink) {
+        WCHAR wach[_MAX_PATH];
+        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, gcap.szCaptureFile, -1,
+&#009;&#009;&#009;&#009;&#009;&#009;&#009;wach, _MAX_PATH);
+        gcap.pSink-&gt;SetFileName(wach, NULL);
+    }
+
+    return TRUE;
+}
+
+// Preallocate the capture file
+// 
+BOOL AllocCaptureFile(HWND hWnd)
+{
+// We'll get into an infinite loop in the dlg proc setting a value
+    if (gcap.szCaptureFile[0] == 0)
+&#009;return FALSE;
+
+    /*
+     * show the allocate file space dialog to encourage
+     * the user to pre-allocate space
+     */
+    if (DoDialog(hWnd, IDD_AllocCapFileSpace, AllocCapFileProc, 0)) {
+
+&#009;// Ensure repaint after dismissing dialog before
+&#009;// possibly lengthy operation
+&#009;UpdateWindow(ghwndApp);
+
+        // User has hit OK. Alloc requested capture file space
+&#009;BOOL f = MakeBuilder();
+&#009;if (!f)
+&#009;    return FALSE;
+        WCHAR wach[_MAX_PATH];
+        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, gcap.szCaptureFile, -1,
+&#009;&#009;&#009;&#009;&#009;&#009;&#009;wach, _MAX_PATH);
+        if (gcap.pBuilder-&gt;AllocCapFile(wach,
+&#009;&#009;&#009;gcap.wCapFileSize * 1024L * 1024L) != NOERROR) {
+            MessageBoxA(ghwndApp, "Error",
+&#009;&#009;&#009;&#009;"Failed to pre-allocate capture file space",
+                          &#009;MB_OK | MB_ICONEXCLAMATION);
+&#009;    return FALSE;
+        }
+&#009;return TRUE;
+    } else {
+&#009;return FALSE;
+    }
+}
+</FONT></PRE>
+<A NAME="capapp_0001040401030200"></A><P><B>Create a Graph Builder Object</B>
+<P>AMCap's MakeBuilder function creates a capture graph builder object and obtains an <A HREF="dssd0119.htm#If_000106011f000000" TARGET="TEXT">ICaptureGraphBuilder</A> interface pointer by calling <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A>. If you already have a capture graph builder object, you can call <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> to obtain an interface pointer. AMCap stores the object pointer in the pBuilder member of the global gcap structure. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+// Make a graph builder object we can use for capture graph building
+//
+BOOL MakeBuilder()
+{
+    // We have one already
+    if (gcap.pBuilder)
+&#009;return TRUE;
+
+    HRESULT hr = CoCreateInstance((REFCLSID)CLSID_CaptureGraphBuilder,
+&#009;&#009;&#009;NULL, CLSCTX_INPROC, (REFIID)IID_ICaptureGraphBuilder,
+&#009;&#009;&#009;(void **)&amp;gcap.pBuilder);
+    return (hr == NOERROR) ? TRUE : FALSE;
+}
+</FONT></PRE>
+<A NAME="capapp_0001040401030300"></A><P><B>Create the Rendering Section of the Graph and Tell it to Write to the Capture File Specified Previously</B>
+<P>The rendering section consists of a multiplexer filter and the <A HREF="dssd0317.htm#filteref_0001070117000000" TARGET="TEXT">File Writer</A>. DirectShow provides an <A HREF="dssd0303.htm#filteref_0001070109000000" TARGET="TEXT">AVI MUX</A> (multiplexer) filter. See <A HREF="dssd0036.htm" TARGET="TEXT">About Capture Filter Graphs</A> for more information. 
+
+
+<P><A HREF="dssd0119.htm#If_000106011f030800" TARGET="TEXT">ICaptureGraphBuilder::SetOutputFileName</A> is the key method here. It signals to add the multiplexer and file writer to the filter graph, connects them, and sets the file name. The value of the first parameter is MEDIASUBTYPE_Avi, indicating that the capture graph builder object will insert an AVI multiplexer filter, and, consequently, the file writer will write the data to the capture file in AVI file format.
+
+ The second parameter (wach) is the file name. The last two parameters are pointers to the multiplexer filter (gcap.pRender)
+
+
+
+ and the file writer filter (gcap.pSink), respectively, and are initialized for you by the capture graph builder object upon return from <A HREF="dssd0119.htm#If_000106011f030800" TARGET="TEXT">SetOutputFileName</A>. AMCap stores these pointers in its gcap structure. Internally, the capture graph builder object creates a filter graph object which exposes the <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A> interface and inserts these two filters into that filter graph. It tells the file writer to use the specified file when writing to disk. The following example demonstrates a call to <B>SetOutputFileName</B>. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+//
+// We need a rendering section that will write the capture file out in AVI
+// file format
+//
+
+    WCHAR wach[_MAX_PATH];
+    MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, gcap.szCaptureFile, -1, wach,
+&#009;&#009;&#009;&#009;&#009;&#009;&#009;&#009;_MAX_PATH);
+    GUID guid = MEDIASUBTYPE_Avi;
+    hr = gcap.pBuilder-&gt;SetOutputFileName(&amp;guid, wach, &amp;gcap.pRender,
+&#009;&#009;&#009;&#009;&#009;&#009;&#009;&#009;&amp;gcap.pSink);
+    if (hr != NOERROR) {
+&#009;ErrMsg("Error %x: Cannot set output file", hr);
+&#009;goto SetupCaptureFail;
+    }
+</FONT></PRE>
+<P>Alternatively, if you want filters besides the multiplexer and file writer in the rendering section of your filter graph, call <A HREF="dssd0140.htm#If_0001060134030100" TARGET="TEXT">IFilterGraph::AddFilter</A> to explicitly add the necessary filters. You might need to remember the pointer to the <A HREF="dssd0116.htm#If_000106011c000000" TARGET="TEXT">IBaseFilter</A> interface of the first filter in your custom rendering chain so you can use it in calls such as <A HREF="dssd0119.htm#If_000106011f030600" TARGET="TEXT">RenderStream</A>.
+
+<A NAME="capapp_0001040401030400"></A><P><B>Retrieve the Current Filter Graph</B>
+<P>Because the capture graph builder object created a filter graph in response to 
+<A HREF="dssd0119.htm#If_000106011f030800" TARGET="TEXT">SetOutputFileName</A> and you must put the necessary filters in the same filter graph, call the <A HREF="dssd0119.htm#If_000106011f030500" TARGET="TEXT">ICaptureGraphBuilder::GetFiltergraph</A> method to retrieve the newly created filter graph. The pointer to the filter graph's <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A> interface is returned in the parameter (gcap.pFg).
+
+<PRE><FONT FACE="Courier" SIZE="2">
+//
+// The graph builder created a filter graph to do that.  Find out what it is,
+// and put the video capture filter in the graph too.
+//
+
+    hr = gcap.pBuilder-&gt;GetFiltergraph(&amp;gcap.pFg);
+    if (hr != NOERROR) {
+&#009;ErrMsg("Error %x: Cannot get filtergraph", hr);
+&#009;goto SetupCaptureFail;
+    }
+</FONT></PRE>
+<A NAME="capapp_0001040401030500"></A><P><B>Add the Video and Audio Capture Filters to the Current Filter Graph</B>
+<P>Call <A HREF="dssd0140.htm#If_0001060134030100" TARGET="TEXT">IFilterGraph::AddFilter</A> to add the capture filters to the filter graph as shown in the following example. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    hr = gcap.pFg-&gt;AddFilter(gcap.pVCap, NULL);
+    if (hr != NOERROR) {
+&#009;ErrMsg("Error %x: Cannot add vidcap to filtergraph", hr);
+&#009;goto SetupPreviewFail;
+    }
+
+    hr = gcap.pFg-&gt;AddFilter(gcap.pACap, NULL);
+&#009;if (hr != NOERROR) {
+&#009;    ErrMsg("Error %x: Cannot add audcap to filtergraph", hr);
+&#009;    goto SetupCaptureFail;
+&#009;}
+</FONT></PRE>
+<A NAME="capapp_0001040401030600"></A><P><B>Render the Video Capture Filter's Capture Pin and the Audio Capture Filter's Capture Pin</B>
+<P>The <A HREF="dssd0119.htm#If_000106011f030600" TARGET="TEXT">ICaptureGraphBuilder::RenderStream</A> method connects the source filter's pin to the rendering filter. It connects intermediate filters if necessary. The pin category is optional, but typically specifies either a capture pin (<A HREF="dssd0289.htm#propset_0001060701030102" TARGET="TEXT">PIN_CATEGORY_CAPTURE</A>) or a preview pin (<A HREF="dssd0289.htm#propset_0001060701030103" TARGET="TEXT">PIN_CATEGORY_PREVIEW</A>). The following example connects the capture pin on the video capture filter (gcap.pVCap) to the renderer (gcap.pRender).
+ 
+<PRE><FONT FACE="Courier" SIZE="2">
+//
+// Render the video capture and preview pins - we may not have preview, so
+// don't worry if it doesn't work
+//
+
+    hr = gcap.pBuilder-&gt;RenderStream(&amp;PIN_CATEGORY_CAPTURE, NULL, gcap.pVCap,
+&#009;&#009;&#009;&#009;&#009;&#009;NULL, gcap.pRender);
+    // Error checking
+</FONT></PRE>
+<P>Call <A HREF="dssd0119.htm#If_000106011f030600" TARGET="TEXT">ICaptureGraphBuilder::RenderStream</A> again to connect the audio capture filter (gcap.pACap) to the audio renderer as in the following example.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+//
+// Render the audio capture pin?
+//
+
+    if (gcap.fCapAudio) {
+&#009;hr = gcap.pBuilder-&gt;RenderStream(&amp;PIN_CATEGORY_CAPTURE, NULL,
+&#009;&#009;&#009;&#009;&#009;gcap.pACap, NULL, gcap.pRender);
+    // Error checking
+</FONT></PRE>
+<A NAME="capapp_0001040401030700"></A><P><B>Render the Video Capture Filter's Preview Pin</B>
+<P>Call <A HREF="dssd0119.htm#If_000106011f030600" TARGET="TEXT">ICaptureGraphBuilder::RenderStream</A> again to render the graph from the capture filter's preview pin to a video renderer as in the following example. 
+<PRE><FONT FACE="Courier" SIZE="2">
+    hr = gcap.pBuilder-&gt;RenderStream(&amp;PIN_CATEGORY_PREVIEW, NULL, gcap.pVCap,
+&#009;&#009;&#009;&#009;&#009;&#009;NULL, NULL);
+</FONT></PRE>
+<A NAME="capapp_0001040401030800"></A><P><B>Obtain a Pointer to the Interface that Provides Access to the Video Preview Window</B>
+<P>By default, the video preview window will be a separate window from your application window. If you want to change the default behavior, call <A HREF="dssd0119.htm#If_000106011f030400" TARGET="TEXT">ICaptureGraphBuilder::FindInterface</A> to obtain a pointer to the <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> interface. The first parameter, specified by <I>gcap.pVCap</I>, represents the video capture filter, the second is the desired interface (<B>IVideoWindow</B>), and the last will be filled upon return from this function to give you the <B>IVideoWindow</B> interface. After you have the <B>IVideoWindow</B> interface, you can call <B>IVideoWindow</B> methods such as 
+<A HREF="dssd0177.htm#If_0001060159031f00" TARGET="TEXT">put_Owner</A>, <A HREF="dssd0177.htm#If_0001060159032400" TARGET="TEXT">put_WindowStyle</A>, or 
+<A HREF="dssd0177.htm#If_0001060159032700" TARGET="TEXT">SetWindowPosition</A> to take ownership of the video preview window, make it a child of your application, or to position it as desired. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+// This will go through a possible decoder, find the video renderer it's
+// connected to, and get the IVideoWindow interface on it
+   hr = gcap.pBuilder-&gt;FindInterface(&amp;PIN_CATEGORY_PREVIEW, gcap.pVCap,
+&#009;&#009;&#009;&#009;&#009;IID_IVideoWindow, (void **)&amp;gcap.pVW);
+    if (hr != NOERROR) {
+&#009;ErrMsg("This graph cannot preview");
+    } else {
+&#009;RECT rc;
+&#009;gcap.pVW-&gt;put_Owner((long)ghwndApp);    // We own the window now
+&#009;gcap.pVW-&gt;put_WindowStyle(WS_CHILD);    // you are now a child
+&#009;// give the preview window all our space but where the status bar is
+&#009;GetClientRect(ghwndApp, &amp;rc);
+&#009;cyBorder = GetSystemMetrics(SM_CYBORDER);
+&#009;cy = statusGetHeight() + cyBorder;
+&#009;rc.bottom -= cy;
+&#009;gcap.pVW-&gt;SetWindowPosition(0, 0, rc.right, rc.bottom); // be this big
+&#009;gcap.pVW-&gt;put_Visible(OATRUE);
+    }
+</FONT></PRE>
+<P>Now that you've built the entire capture filter graph, you can preview video, audio, or actually capture data.
+
+<A NAME="capapp_0001040401040000"></A><P><B>Controlling the Capture Filter Graph</B>
+<P>Because a capture filter graph constructed by the <A HREF="dssd0119.htm#If_000106011f000000" TARGET="TEXT">ICaptureGraphBuilder</A> interface is simply a specialized filter graph, controlling a capture filter graph is much like controlling any other kind of filter graph: you use the <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A> interface's <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">Run</A>, <A HREF="dssd0149.htm#If_000106013d030500" TARGET="TEXT">Pause</A>, and <A HREF="dssd0149.htm#If_000106013d030800" TARGET="TEXT">Stop</A> methods. You can use the <A HREF="dssd0194.htm#Lib_000106020e081100" TARGET="TEXT">CBaseFilter::Pause</A> method to cue things up, but remember that capture and recompression only happen when the graph is running. In addition, <B>ICaptureGraphBuilder</B> provides the <A HREF="dssd0119.htm#If_000106011f030200" TARGET="TEXT">ControlStream</A> method to control the start and stop times of the capture filter graph's streams. Internally, <B>ControlStream</B> calls the <A HREF="dssd0106.htm#If_0001060112030100" TARGET="TEXT">IAMStreamControl::StartAt</A> and <A HREF="dssd0106.htm#If_0001060112030200" TARGET="TEXT">IAMStreamControl::StopAt</A> methods to start and stop the capture and preview portions of the filter graph for frame-accurate control.
+
+<P><B>Note:</B>  This method might not work on every capture filter because not every capture filter supports <A HREF="dssd0106.htm#If_0001060112000000" TARGET="TEXT">IAMStreamControl</A> on its pins.
+<P>The <A HREF="dssd0119.htm#If_000106011f030200" TARGET="TEXT">ICaptureGraphBuilder::ControlStream</A> method's first parameter (<I>pCategory</I>) is a pointer to a <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> that specifies the output pin category. This value is normally either <A HREF="dssd0289.htm#propset_0001060701030102" TARGET="TEXT">PIN_CATEGORY_CAPTURE</A> or <A HREF="dssd0289.htm#propset_0001060701030103" TARGET="TEXT">PIN_CATEGORY_PREVIEW</A>. See <A HREF="dssd0289.htm#propset_0001060701030100" TARGET="TEXT">AMPROPERTY_PIN</A> for a complete list of categories. Specify NULL to control all capture filters in the graph.
+
+<P>The second parameter (<I>pFilter</I>) in <A HREF="dssd0119.htm#If_000106011f030200" TARGET="TEXT">ICaptureGraphBuilder::ControlStream</A> indicates which filter to control. Specify NULL to control the whole filter graph as AMCap does.
+
+<P>To run only the preview portion of the capture filter graph, prevent capture by calling <A HREF="dssd0119.htm#If_000106011f030200" TARGET="TEXT">ICaptureGraphBuilder::ControlStream</A> with the capture pin category and the value MAX_TIME as the start time (third parameter, <I>pstart</I>). Call the method again with preview as the pin category, and a NULL start value to start preview immediately. The fourth parameter indicates the desired stop time (<I>pstop</I>, as with start time, NULL means immediately). MAX_TIME is defined in the DirectShow base classes as the maximum reference time, and in this case means to ignore or cancel the specified operation. 
+
+
+<P>The last two parameters, <I>wStartCookie</I> and <I>wStopCookie</I> are start and stop cookies respectively.
+
+
+ These cookies are arbitrary values set by the application so that it can differentiate between start and stop times and tell when specific actions have been completed. AMCap doesn't use a specific time in <A HREF="dssd0119.htm#If_000106011f030200" TARGET="TEXT">ICaptureGraphBuilder::ControlStream</A>, so it doesn't need any cookies. If you use a cookie, use <A HREF="dssd0150.htm#If_000106013e000000" TARGET="TEXT">IMediaEvent</A> to get event notifications. See <A HREF="dssd0106.htm#If_0001060112000000" TARGET="TEXT">IAMStreamControl</A> for more information.
+
+<P>The following code fragment sets preview to start immediately, but ignores capture.
+<PRE><FONT FACE="Courier" SIZE="2">
+// Let the preview section run, but not the capture section
+    // (There might not be a capture section)
+    REFERENCE_TIME start = MAX_TIME, stop = MAX_TIME;
+    // show us a preview first? but don't capture quite yet...
+    hr = gcap.pBuilder-&gt;ControlStream(&amp;PIN_CATEGORY_PREVIEW, NULL,
+&#009;&#009;&#009;&#009;gcap.fWantPreview ? NULL : &amp;start,
+&#009;&#009;&#009;&#009;gcap.fWantPreview ? &amp;stop : NULL, 0, 0);
+    if (SUCCEEDED(hr))
+        hr = gcap.pBuilder-&gt;ControlStream(&amp;PIN_CATEGORY_CAPTURE, NULL, &amp;start,
+&#009;&#009;&#009;&#009;&#009;&#009;&#009;&#009;NULL, 0, 0);
+</FONT></PRE>
+<P>The same concept applies if you want only to capture and not preview. Set the capture start time to NULL to capture immediately and set the capture stop time to MAX_TIME. Set the preview start time to MAX_TIME, with an immediate (NULL) stop time.
+
+<P>The following example tells the filter graph to start the preview stream now (the start (third) parameter is NULL).
+
+
+ Specifying MAX_TIME for the stop time means disregard the stop time.
+<PRE><FONT FACE="Courier" SIZE="2">
+    gcap.pBuilder-&gt;ControlStream(&amp;PIN_CATEGORY_PREVIEW, NULL, NULL, MAX_TIME, 0, 0); 
+</FONT></PRE>
+<P>Calling <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">IMediaControl::Run</A> runs the graph.
+<PRE><FONT FACE="Courier" SIZE="2">
+// Run the graph
+    IMediaControl *pMC = NULL;
+    HRESULT hr = gcap.pFg-&gt;QueryInterface(IID_IMediaControl, (void **)&amp;pMC);
+    if (SUCCEEDED(hr)) {
+&#009;hr = pMC-&gt;Run();
+&#009;if (FAILED(hr)) {
+&#009;    // Stop parts that ran
+&#009;    pMC-&gt;Stop();
+&#009;}
+&#009;pMC-&gt;Release();
+    }
+    if (FAILED(hr)) {
+&#009;ErrMsg("Error %x: Cannot run preview graph", hr);
+&#009;return FALSE;
+</FONT></PRE>
+<P>If the graph is already running, start capture immediately with another call to <A HREF="dssd0119.htm#If_000106011f030200" TARGET="TEXT">ICaptureGraphBuilder::ControlStream</A>. For example, the following call controls the whole filter graph (NULL second parameter), starts now (NULL third parameter), and never stops (fourth parameter initialized to MAX_TIME).
+<PRE><FONT FACE="Courier" SIZE="2">
+    // NOW!
+    gcap.pBuilder-&gt;ControlStream(&amp;PIN_CATEGORY_CAPTURE, NULL, NULL, &amp;stop, 0, 0);
+</FONT></PRE>
+<P>AMCap uses this approach to start capture in response to the user clicking a button.
+
+<P>To stop the capture or preview operation, call <A HREF="dssd0149.htm#If_000106013d030800" TARGET="TEXT">IMediaControl::Stop</A>, much as you called <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">IMediaControl::Run</A> to run the filter graph.
+<PRE><FONT FACE="Courier" SIZE="2">
+// Stop the graph
+    IMediaControl *pMC = NULL;
+    HRESULT hr = gcap.pFg-&gt;QueryInterface(IID_IMediaControl, (void **)&amp;pMC);
+    if (SUCCEEDED(hr)) {
+&#009;hr = pMC-&gt;Stop();
+&#009;pMC-&gt;Release();
+    }
+</FONT></PRE>
+<A NAME="capapp_0001040401050000"></A><P><B>Obtaining Capture Statistics</B>
+<P>AMCap calls methods on the <A HREF="dssd0099.htm#If_000106010b000000" TARGET="TEXT">IAMDroppedFrames</A> interface to obtain capture statistics. It determines the number of frames dropped (<A HREF="dssd0099.htm#If_000106010b030300" TARGET="TEXT">IAMDroppedFrames::GetNumDropped</A>) and captured (<A HREF="dssd0099.htm#If_000106010b030400" TARGET="TEXT">IAMDroppedFrames::GetNumNotDropped</A>), and uses the Win32 <A HREF="dssd0389.htm#external_00010a01090000d4" TARGET="TEXT">timeGetTime</A> function at the beginning and end of capture to determine the capture operation's duration. The <A HREF="dssd0099.htm#If_000106010b030100" TARGET="TEXT">IAMDroppedFrames::GetAverageFrameSize</A> method provides the average size of captured frames in bytes. Use the information from <B>IAMDroppedFrames::GetNumNotDropped</B>, <B>timeGetTime</B>, and <B>IAMDroppedFrames::GetAverageFrameSize</B> to obtain the total bytes captured and calculate the sustained frames per second for the capture operation.
+
+<A NAME="capapp_0001040401060000"></A><P><B>Saving the Captured File</B>
+<P>The original preallocated capture file temporarily holds capture data so you can capture as quickly as possible. When you want to save the data you captured to a more permanent location, call <A HREF="dssd0119.htm#If_000106011f030300" TARGET="TEXT">ICaptureGraphBuilder::CopyCaptureFile</A>. This method transfers the captured data out of the previously allocated capture file to another file you choose. The resulting new file size matches the size of the actual captured data rather than the preallocated file size, which is usually very large.
+
+<P>The <A HREF="dssd0119.htm#If_000106011f030300" TARGET="TEXT">ICaptureGraphBuilder::CopyCaptureFile</A> method's first parameter
+
+
+ is the file you're copying from (typically the very large, preallocated file you always use for capture). The second parameter is the file to which you want to save your captured data. Setting the third parameter to TRUE indicates that the user is allowed to abort the copy operation by pressing <SMALL>ESC</SMALL>. The last parameter is optional and enables you to supply a progress indicator, if desired, by implementing the <A HREF="dssd0094.htm#If_0001060106000000" TARGET="TEXT">IAMCopyCaptureFileProgress</A> interface. The following example demonstrates a call to <A HREF="dssd0119.htm#If_000106011f030300" TARGET="TEXT">CopyCaptureFile</A>.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    hr = pBuilder-&gt;CopyCaptureFile(wachSrcFile, wachDstFile,TRUE,NULL);
+</FONT></PRE>
+<P>The SaveCaptureFile function defined by AMCap prompts the to enter a new file name in the Open File common dialog box, uses the Win32 <A HREF="dssd0389.htm#external_00010a01090000b5" TARGET="TEXT">MultiByteToWideChar</A> function to convert the file name to a wide string, and saves the captured data to the specified file using <A HREF="dssd0119.htm#If_000106011f030300" TARGET="TEXT">ICaptureGraphBuilder::CopyCaptureFile</A>.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+/*
+ * Put up a dialog to allow the user to save the contents of the capture file
+ * elsewhere
+ */
+BOOL SaveCaptureFile(HWND hWnd)
+{
+    HRESULT hr;
+    char achDstFile[_MAX_PATH];
+    WCHAR wachDstFile[_MAX_PATH];
+    WCHAR wachSrcFile[_MAX_PATH];
+
+    if (gcap.pBuilder == NULL)
+&#009;return FALSE;
+
+    if (OpenFileDialog(hWnd, achDstFile, _MAX_PATH)) {
+
+&#009;// We have a capture file name
+&#009;MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, gcap.szCaptureFile, -1,
+&#009;&#009;&#009;&#009;&#009;&#009;wachSrcFile, _MAX_PATH);
+&#009;MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, achDstFile, -1,
+&#009;&#009;&#009;&#009;&#009;&#009;wachDstFile, _MAX_PATH);
+&#009;statusUpdateStatus(ghwndStatus, "Saving capture file - please wait...");
+
+&#009;// We need our own graph builder because the main one might not exist
+&#009;ICaptureGraphBuilder *pBuilder;
+&#009;hr = CoCreateInstance((REFCLSID)CLSID_CaptureGraphBuilder,
+&#009;&#009;&#009;NULL, CLSCTX_INPROC, (REFIID)IID_ICaptureGraphBuilder,
+&#009;&#009;&#009;(void **)&amp;pBuilder);
+&#009;if (hr == NOERROR) {
+&#009;    // Allow the user to press ESC to abort... don't ask for progress
+&#009;    hr = pBuilder-&gt;CopyCaptureFile(wachSrcFile, wachDstFile,TRUE,NULL);
+&#009;    pBuilder-&gt;Release();
+&#009;}
+&#009;if (hr == S_OK)
+&#009;    statusUpdateStatus(ghwndStatus, "Capture file saved");
+&#009;else if (hr == S_FALSE)
+&#009;    statusUpdateStatus(ghwndStatus, "Capture file save aborted");
+&#009;else
+&#009;    statusUpdateStatus(ghwndStatus, "Capture file save ERROR");
+&#009;return (hr == NOERROR ? TRUE : FALSE); 
+
+    } else {
+return TRUE;    // They canceled or something
+    }
+}
+</FONT></PRE>
+<P>See Amcap.cpp and Status.cpp from the AMCap sample for more details about capturing media files and obtaining capture statistics.
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

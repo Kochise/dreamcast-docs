@@ -1,0 +1,176 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>CUnknown Class</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0252.htm','/dssd0000.htm','/dssd0180.htm','/index.htm','/dssd0254.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Lib_0001060249000000">CUnknown Class</A></H2>
+<BR CLEAR=ALL>
+<P><IMG SRC="art/cbase01.gif" WIDTH="219" HEIGHT="83" ALT="CUnknown class hierarchy" >
+
+<P>All Microsoft&#174; DirectShow&#153; Component Object Model (COM) objects derive from the <B>CUnknown</B> abstract base class. This class facilitates the creation of simple COM objects that you can combine with other COM objects to support multiple interfaces. To use this class, derive your object from <B>CUnknown</B> and call the <A HREF="dssd0264.htm#fmutil_0001060308000100" TARGET="TEXT">DECLARE_IUNKNOWN</A> macro in the public section of your object class definition; this implements the <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> interface for your object. Note that if derive from an object that has already done this, such as <A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A>, you do not need to do it yourself.
+
+<P>The <B>CUnknown</B> class supports only one interface, <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A>. To support interfaces in addition to those provided by the base class, override the 
+<A HREF="dssd0253.htm#Lib_0001060249030400" TARGET="TEXT">NonDelegatingQueryInterface</A> method. In the overriding function, call the <A HREF="dssd0268.htm#fmutil_000106030c000200" TARGET="TEXT">GetInterface</A> function to retrieve the interface pointer for any interfaces your object supports. If the derived class does not implement the specified interface, you must query the base class to retrieve the interface.
+
+<P>For example, <A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A> supports the following interfaces directly.
+
+<UL><LI><A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A> 
+<LI><A HREF="dssd0389.htm#external_00010a0109000089" TARGET="TEXT">IPersist</A> 
+<LI><A HREF="dssd0104.htm" TARGET="TEXT">IAMovieSetup</A> 
+</UL>
+<P><A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A> also supports <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> by passing queries for this interface to <B>CUnknown</B>. The following code sample demonstrates this process.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+/* Override this to say what interfaces are supported and where */
+
+STDMETHODIMP CBaseFilter::NonDelegatingQueryInterface(REFIID riid, void **ppv)
+{
+    CheckPointer(ppv,E_POINTER);
+    ValidateReadWritePtr(ppv,sizeof(PVOID));
+
+    /* Do we have this interface */
+
+    if (riid == IID_IFilter) {
+         return GetInterface((IBaseFilter *) this, ppv);
+    } else if (riid == IID_IMediaFilter) {
+                   return GetInterface((IMediaFilter *) this, ppv);
+    } else if (riid == IID_IPersist) {
+                   return GetInterface((IPersist *) this, ppv);
+    } else if (riid == IID_IAMovieSetup) {
+                   return GetInterface((IAMovieSetup *) this, ppv);
+    } else {
+                   return CUnknown::NonDelegatingQueryInterface(riid, ppv);
+    }
+}
+</FONT></PRE>
+<P>To build composite objects, the <B>CUnknown</B> constructor has an LPUNKNOWN parameter that is a pointer to the top-level <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> interface for the entire composite object (the object that includes all objects based on a class derived from <B>CUnknown</B>). If this value is non-NULL, <B>CUnknown</B> stores a pointer to the topmost object; if it is null, the topmost object is <B>CUnknown</B> itself. This way, the topmost object's <B>IUnknown</B> has the same implementation as the <A HREF="dssd0265.htm#fmutil_0001060309000100" TARGET="TEXT">INonDelegatingUnknown</A> interface.
+
+<P>A derived class will typically override the <A HREF="dssd0253.htm#Lib_0001060249030400" TARGET="TEXT">NonDelegatingQueryInterface</A> method to return interfaces that it supports; however, it must delegate support for <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> to the <B>CUnknown</B> class implementation. Usually <A HREF="dssd0253.htm#Lib_0001060249030300" TARGET="TEXT">NonDelegatingAddRef</A> and <A HREF="dssd0253.htm#Lib_0001060249030500" TARGET="TEXT">NonDelegatingRelease</A> do not need to be overridden because the reference count for the whole object is managed inside the top-level object. However, <B>NonDelegatingRelease</B> might need to be overridden sometimes because its default action when the reference count goes to zero is to delete the object from inside itself.
+
+<P><B>CUnknown</B> provides the <A HREF="dssd0253.htm#Lib_0001060249030200" TARGET="TEXT">CUnknown::GetOwner</A> member function. <A HREF="dssd0253.htm#Lib_0001060249030200" TARGET="TEXT">GetOwner</A> simply returns an LPUNKNOWN pointer to the controlling unknown. This is used in the <A HREF="dssd0264.htm#fmutil_0001060308000100" TARGET="TEXT">DECLARE_IUNKNOWN</A> macro when calling <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A>. It can also be used when creating a composite object to pass an LPUNKNOWN pointer to a component interface as an (equivalent) alternative to passing the LPUNKNOWN pointer that was passed to the composite object constructor.
+
+<P>When <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> is called on an interface owned by a component interface, it is immediately passed to the <A HREF="dssd0253.htm#Lib_0001060249030400" TARGET="TEXT">NonDelegatingQueryInterface</A> method of the top-level object's
+<A HREF="dssd0265.htm#fmutil_0001060309000001" TARGET="TEXT">INonDelegatingUnknown::NonDelegatingQueryInterface</A> method, which either returns an interface it implements itself or passes the call to the correct member or base class's
+<B>INonDelegatingUnknown::NonDelegatingQueryInterface</B> method. This then repeats the process until a component is found that implements the interface or calls <A HREF="dssd0253.htm#Lib_0001060249030400" TARGET="TEXT">CUnknown::NonDelegatingQueryInterface</A>, which fails the call.
+
+<P>Note that the top-level object's <A HREF="dssd0253.htm#Lib_0001060249030400" TARGET="TEXT">CUnknown::NonDelegatingQueryInterface</A> member function (as distinct from its own implementation) must be called to support <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A>.
+
+ 
+<P>This design makes support for COM aggregation straightforward. The derived object's <B>CreateInstance</B> member function, which is called from the class factory (by <B>CClassFactory::CreateInstance</B>) passes the outer unknown (the <I>pUnkOuter</I> parameter from <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A>) on to <B>CUnknown</B> by calling the class constructor. So the object behaves as if it were part of a larger object by delegating its <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> calls to the outer unknown.
+
+<A NAME="Lib_0001060249010000"></A><P><B>Protected Data Members</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_0001060249010001">m_cRef</A></B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Number of reference counts (so the 
+<A HREF="dssd0265.htm#fmutil_0001060309000003" TARGET="TEXT">INonDelegatingUnknown::NonDelegatingRelease</A> method can be overridden).
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060249020000"></A><P><B>Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0253.htm#Lib_0001060249030100" TARGET="TEXT">CUnknown</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Constructs a <A HREF="dssd0253.htm" TARGET="TEXT">CUnknown</A> object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0253.htm#Lib_0001060249030200" TARGET="TEXT">GetOwner</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns an LPUNKNOWN 
+pointer to the controlling unknown.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_0001060249030000"></A><P><B>Implemented INonDelegatingUnknown Methods</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0253.htm#Lib_0001060249030300" TARGET="TEXT">NonDelegatingAddRef</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Increments the reference count for an interface.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0253.htm#Lib_0001060249030400" TARGET="TEXT">NonDelegatingQueryInterface</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns an interface and increments the reference count.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0253.htm#Lib_0001060249030500" TARGET="TEXT">NonDelegatingRelease</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Decrements the reference count for an interface.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060249030100">CUnknown::CUnknown</A></H3>
+<A HREF="dssd0253.htm" TARGET="TEXT">CUnknown Class</A>
+<P>Constructs a <A HREF="dssd0253.htm" TARGET="TEXT">CUnknown</A> object.
+
+<P><B>CUnknown</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>TCHAR</B> <I>*pName</I><B>,</B><BR>&nbsp;&nbsp;<B>LPUNKNOWN</B> <I>pUnk</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pName</I>
+</DT><DD>Name of the object used in the <A HREF="dssd0198.htm" TARGET="TEXT">CBaseObject</A> constructor for debugging purposes.
+</DD><DT><I>pUnk</I>
+</DT><DD>Pointer to the owner of this object. If non-NULL, <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> calls are delegated 
+to this object.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The object is initialized with a reference count of zero. This reference count can be 
+incremented when the object is queried for its first interface, depending on whether the object 
+is currently being aggregated.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060249030200">CUnknown::GetOwner</A></H3>
+<A HREF="dssd0253.htm" TARGET="TEXT">CUnknown Class</A>
+<P>Retrieves this object's Component Object Model (COM) class owner.
+
+<P><B>LPUNKNOWN</B> <B>GetOwner</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns an LPUNKNOWN pointer to the controlling <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> interface.
+
+
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060249030300">CUnknown::NonDelegatingAddRef</A></H3>
+<A HREF="dssd0253.htm" TARGET="TEXT">CUnknown Class</A>
+<P>Increments the reference count for an interface.
+
+<P><B>ULONG</B> <B>NonDelegatingAddRef</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns the reference count of the object.
+
+
+<H5>Remarks</H5>
+<P>This member function provides a base class implementation of the
+<A HREF="dssd0265.htm#fmutil_0001060309000002" TARGET="TEXT">INonDelegatingUnknown::NonDelegatingAddRef</A> method. When the
+object derived from <A HREF="dssd0253.htm" TARGET="TEXT">CUnknown</A> is part of an aggregated object,
+this reference count modification is private to the embedded object.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060249030400">CUnknown::NonDelegatingQueryInterface</A></H3>
+<A HREF="dssd0253.htm" TARGET="TEXT">CUnknown Class</A>
+<P>Returns an interface and increments the reference count.
+
+<P><B>HRESULT</B> <B>NonDelegatingQueryInterface</B><B>(</B><BR>&nbsp;&nbsp;<B>REFIID</B> <I>riid</I><B>,</B><BR>&nbsp;&nbsp;<B>void</B> <B>**</B> <I>ppv</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>riid</I>
+ </DT><DD>Reference identifier.
+</DD><DT><I>ppv</I>
+ </DT><DD>Pointer to the interface.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns a pointer to the interface.
+
+
+<H5>Remarks</H5>
+<P>This member function provides a base class implementation of the 
+<A HREF="dssd0265.htm#fmutil_0001060309000001" TARGET="TEXT">INonDelegatingUnknown::NonDelegatingQueryInterface</A> method. 
+Override this class to return interfaces on the object in the derived class.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060249030500">CUnknown::NonDelegatingRelease</A></H3>
+<A HREF="dssd0253.htm" TARGET="TEXT">CUnknown Class</A>
+<P>Decrements the reference count for an interface.
+
+<P><B>ULONG</B> <B>NonDelegatingRelease</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns the reference count.
+
+
+<H5>Remarks</H5>
+<P>This member function provides a base class implementation of the
+<A HREF="dssd0265.htm#fmutil_0001060309000003" TARGET="TEXT">INonDelegatingUnknown::NonDelegatingRelease</A> method. When the
+object derived from <A HREF="dssd0253.htm" TARGET="TEXT">CUnknown</A> is part of an aggregated object,
+this reference count modification is private to the embedded object.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

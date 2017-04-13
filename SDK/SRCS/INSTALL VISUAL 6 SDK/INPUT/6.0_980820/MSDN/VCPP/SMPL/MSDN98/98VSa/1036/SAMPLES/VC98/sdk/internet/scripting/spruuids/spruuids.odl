@@ -1,0 +1,289 @@
+//---------------------------------------------------------------------------
+// Spruuids.odl
+//---------------------------------------------------------------------------
+// Sample OLE Scripting host.
+//---------------------------------------------------------------------------
+// (C) Copyright 1992-1997 by Microsoft Corporation.  All rights reserved.
+//
+// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF 
+// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO 
+// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A 
+// PARTICULAR PURPOSE.
+//---------------------------------------------------------------------------
+
+#include "DispIDs.h"
+
+// NOTE: These are duplicated from dispatch.h. They need to match.
+#define DISPID_VALUE 0
+
+[uuid(8703FF61-669C-11cf-A92B-00AA00688A2F), version(1.0)]
+library SPRUUIDS
+  {
+  importlib("stdole32.tlb");
+
+  coclass   SpruuidsApp;
+  interface ISpruuidsApp;
+
+  coclass       Game;
+  interface     IGame;
+  dispinterface IGameEvents;
+
+  coclass       SpriteClass;
+  interface     ISpriteClass;
+  dispinterface ISpriteClassEvents;
+
+  coclass   Sprite;
+  interface ISprite;
+
+
+  //-----------------------------------------------------------------------
+  // The SpruuidsApp Object
+  //-----------------------------------------------------------------------
+  [uuid(8703FF62-669C-11cf-A92B-00AA00688A2F), odl, dual]
+  interface ISpruuidsApp : IDispatch
+    {
+    // Standard properties for all objects
+    [id(1), propget] HRESULT Application([out, retval] ISpruuidsApp** ppRet);
+    [id(2), propget] HRESULT Parent(     [out, retval] ISpruuidsApp** ppRet);
+
+    // Methods
+    [id(10)] HRESULT Quit();
+
+    // Properties R/O
+    [id(30), propget] HRESULT Game([out, retval] IGame** ppRet);
+    }
+
+  [uuid(8703FF63-669C-11cf-A92B-00AA00688A2F)]
+  coclass SpruuidsApp
+    {
+	[default] interface ISpruuidsApp;
+    };
+
+
+  //-----------------------------------------------------------------------
+  // The Game Object
+  //-----------------------------------------------------------------------
+  [uuid(8703FF64-669C-11cf-A92B-00AA00688A2F), odl, dual]
+  interface IGame : IDispatch
+    {
+    // Default (value) property/method
+    [id(DISPID_VALUE), propget]	HRESULT Caption([out, retval] BSTR* pbstrReturn);
+    [id(DISPID_VALUE), propput]	HRESULT Caption([in] BSTR bstr);
+
+    // Standard properties for all objects
+    [id(1), propget] HRESULT Application([out, retval] ISpruuidsApp** ppRet);
+    [id(2), propget] HRESULT Parent(     [out, retval] ISpruuidsApp** ppRet);
+
+    // Methods
+    [id(10)] HRESULT StartGame();
+    [id(11)] HRESULT EndGame();
+    [id(12)] HRESULT RemoveAllSprites();
+    [id(13)] HRESULT NextLevel();
+    [id(14)] HRESULT Refresh();
+    [id(15)] HRESULT AddScore([in] int val);
+    [id(16)] HRESULT StdBorderBounce([in] ISprite* pspr, [in] int brd);
+    [id(17)] HRESULT StdBorderWrap(  [in] ISprite* pspr, [in] int brd);
+    [id(18)] HRESULT StdInitRand(    [in] ISprite* pspr, [in] VARIANT user);
+    [id(19)] HRESULT StdInitEdge(    [in] ISprite* pspr, [in] VARIANT user);
+
+    // Properties R/W
+    [id(20), propget] HRESULT Paused([out, retval] boolean* pRet);
+    [id(20), propput] HRESULT Paused([in] boolean val);
+
+    [id(21), propget] HRESULT Width([out, retval] int* pRet);
+    [id(21), propput] HRESULT Width([in] int val);
+
+    [id(22), propget] HRESULT Height([out, retval] int* pRet);
+    [id(22), propput] HRESULT Height([in] int val);
+
+    [id(23), propget] HRESULT BackColor([out, retval] long* pRet);
+    [id(23), propput] HRESULT BackColor([in] long val);
+
+    [id(24), propget] HRESULT Score([out, retval] int* pRet);
+    [id(24), propput] HRESULT Score([in] int val);
+
+    [id(25), propget] HRESULT Level([out, retval] int* pRet);
+    [id(25), propput] HRESULT Level([in] int val);
+
+    [id(26), propget] HRESULT ShipCount([out, retval] int* pRet);
+    [id(26), propput] HRESULT ShipCount([in] int val);
+
+    [id(27), propget] HRESULT ScoreFirst1Up([out, retval] int* pRet);
+    [id(27), propput] HRESULT ScoreFirst1Up([in] int val);
+
+    [id(28), propget] HRESULT ScoreSecond1Up([out, retval] int* pRet);
+    [id(28), propput] HRESULT ScoreSecond1Up([in] int val);
+
+    [id(29), propget] HRESULT DScoreNext1Up([out, retval] int* pRet);
+    [id(29), propput] HRESULT DScoreNext1Up([in] int val);
+
+    [id(30), propget] HRESULT ShipsStart([out, retval] int* pRet);
+    [id(30), propput] HRESULT ShipsStart([in] int val);
+
+    [id(31), propget] HRESULT Tag([out, retval] VARIANT* pRet);
+    [id(31), propput] HRESULT Tag([in] VARIANT val);
+
+    [id(32), propget] HRESULT StatusText([out, retval] BSTR* pbstrReturn);
+    [id(32), propput] HRESULT StatusText([in] BSTR bstr);
+    }
+
+  [uuid(8703FF65-669C-11cf-A92B-00AA00688A2F)]
+  dispinterface IGameEvents
+    {
+	properties:
+	methods: // Events
+    [id(DISPID_GameEvents_NewGame)]  void NewGame();
+    [id(DISPID_GameEvents_NewLevel)] void NewLevel();
+    [id(DISPID_GameEvents_NewShip)]  void NewShip();
+    [id(DISPID_GameEvents_Collide)]  void Collide( [in] IDispatch* pspr1, [in] IDispatch* pspr2, [in] long collide);
+    [id(DISPID_GameEvents_Tick)]     void Tick();
+    [id(DISPID_GameEvents_KeyDown)]  void KeyDown( [in] long vk);
+    [id(DISPID_GameEvents_KeyPress)] void KeyPress([in] long ascii);
+    [id(DISPID_GameEvents_KeyUp)]    void KeyUp(   [in] long vk);
+    [id(DISPID_GameEvents_MouseMove)]void MouseMove([in] long x, [in] long y, [in] long keys, [in] long buttons);
+    [id(DISPID_GameEvents_MouseDown)]void MouseDown([in] long x, [in] long y, [in] long keys, [in] long buttons);
+    [id(DISPID_GameEvents_MouseUp)]  void MouseOver([in] long x, [in] long y, [in] long keys, [in] long buttons);
+    }
+
+  [uuid(8703FF66-669C-11cf-A92B-00AA00688A2F)]
+  coclass Game
+    {
+	[default]          interface     IGame;
+	[default, source]  dispinterface IGameEvents;
+    };
+
+
+  //-----------------------------------------------------------------------
+  // The SpriteClass Object
+  //-----------------------------------------------------------------------
+  [uuid(8703FF67-669C-11cf-A92B-00AA00688A2F), odl, dual]
+  interface ISpriteClass : IDispatch
+    {
+    // Standard properties for all objects
+    [id(1), propget] HRESULT Application([out, retval] ISpruuidsApp** ppRet);
+    [id(2), propget] HRESULT Parent(     [out, retval] IGame** ppRet);
+
+    // Methods
+    [id(10)] HRESULT CreateSprite([in] int x, [in] int y, [in] VARIANT arg, [out, retval] ISprite** ppRet);
+
+    // Properties R/W
+    [id(11), propget] HRESULT Tag([out, retval] VARIANT* pRet);
+    [id(11), propput] HRESULT Tag([in] VARIANT val);
+
+    [id(12), propget] HRESULT Image([out, retval] int* pRet);
+    [id(12), propput] HRESULT Image([in] int val);
+
+    [id(13), propget] HRESULT Border([out, retval] int* pRet);
+    [id(13), propput] HRESULT Border([in] int val);
+
+    [id(14), propget] HRESULT Collide([out, retval] int* pRet);
+    [id(14), propput] HRESULT Collide([in] int val);
+
+    [id(15), propget] HRESULT MaximumVelocity([out, retval] float* pRet);
+    [id(15), propput] HRESULT MaximumVelocity([in] float val);
+
+    [id(16), propget] HRESULT Friction([out, retval] float* pRet);
+    [id(16), propput] HRESULT Friction([in] float val);
+
+    [id(17), propget] HRESULT MaximumAcceleration([out, retval] float* pRet);
+    [id(17), propput] HRESULT MaximumAcceleration([in] float val);
+
+    [id(18), propget] HRESULT AccelerationFriction([out, retval] float* pRet);
+    [id(18), propput] HRESULT AccelerationFriction([in] float val);
+
+    // Properties R/O
+    [id(20), propget] HRESULT SpriteCount([out, retval] int* pRet);
+    }
+
+  [uuid(8703FF68-669C-11cf-A92B-00AA00688A2F)]
+  dispinterface ISpriteClassEvents
+    {
+	properties:
+	methods: // Events
+    [id(DISPID_SpriteClassEvents_Init)]     void Init(  [in] IDispatch *sprite, [in] VARIANT arg);
+    [id(DISPID_SpriteClassEvents_Tick)]     void Tick(  [in] IDispatch *sprite);
+    [id(DISPID_SpriteClassEvents_Border)]   void Border([in] IDispatch *sprite, [in] long border);
+    [id(DISPID_SpriteClassEvents_Term)]     void Term(  [in] IDispatch *sprite);
+    [id(DISPID_SpriteClassEvents_LastTerm)] void lastTerm(void);
+    }
+
+  [uuid(8703FF69-669C-11cf-A92B-00AA00688A2F)]
+  coclass SpriteClass
+    {
+	[default]          interface     ISpriteClass;
+	[default, source]  dispinterface ISpriteClassEvents;
+    };
+
+
+  //-----------------------------------------------------------------------
+  // The Sprite Object
+  //-----------------------------------------------------------------------
+  [uuid(8703FF6a-669C-11cf-A92B-00AA00688A2F), odl, dual]
+  interface ISprite : IDispatch
+    {
+    // Standard properties for all objects
+    [id(1), propget] HRESULT Application([out, retval] ISpruuidsApp** ppRet);
+    [id(2), propget] HRESULT Parent(     [out, retval] ISpriteClass** ppRet);
+
+    // Methods
+    [id(10)] HRESULT MoveTo([in] float x,  [in] float y);
+    [id(11)] HRESULT MoveBy([in] float dx, [in] float dy);
+    // flags: 1=X, 2=Y, 4=Pos; 8=Vel; 16=Accel; 128=Remember
+    [id(12)] HRESULT MoveAtSprite([in] ISprite *sprite, [in] float scale, [in] float dMax, [in] long flags);
+    [id(15)] HRESULT Remove();
+    [id(16)] HRESULT Refresh();
+    [id(17)] HRESULT IgnoreMove();
+
+    // Properties R/W
+    [id(20), propget] HRESULT Left([out, retval] float* pRet);
+    [id(20), propput] HRESULT Left([in] float val);
+
+    [id(21), propget] HRESULT Top([out, retval] float* pRet);
+    [id(21), propput] HRESULT Top([in] float val);
+
+    [id(22), propget] HRESULT Vx([out, retval] float* pRet);
+    [id(22), propput] HRESULT Vx([in] float val);
+
+    [id(23), propget] HRESULT Vy([out, retval] float* pRet);
+    [id(23), propput] HRESULT Vy([in] float val);
+
+    [id(24), propget] HRESULT Ax([out, retval] float* pRet);
+    [id(24), propput] HRESULT Ax([in] float val);
+
+    [id(25), propget] HRESULT Ay([out, retval] float* pRet);
+    [id(25), propput] HRESULT Ay([in] float val);
+
+    [id(26), propget] HRESULT FrictionX([out, retval] float* pRet);
+    [id(26), propput] HRESULT FrictionX([in] float val);
+
+    [id(27), propget] HRESULT FrictionY([out, retval] float* pRet);
+    [id(27), propput] HRESULT FrictionY([in] float val);
+
+    [id(28), propget] HRESULT Image([out, retval] int* pRet);
+    [id(28), propput] HRESULT Image([in] int val);
+
+    [id(29), propget] HRESULT TickMove([out, retval] int* pRet);
+    [id(29), propput] HRESULT TickMove([in] int val);
+
+    [id(30), propget] HRESULT TickEvent([out, retval] int* pRet);
+    [id(30), propput] HRESULT TickEvent([in] int val);
+
+    [id(31), propget] HRESULT Visible([out, retval] boolean* pRet);
+    [id(31), propput] HRESULT Visible([in] boolean val);
+
+    [id(32), propget] HRESULT Tag([out, retval] VARIANT* pRet);
+    [id(32), propput] HRESULT Tag([in] VARIANT val);
+
+    // Properties R/O
+    [id(40), propget] HRESULT Width( [out, retval] int* pRet);
+    [id(41), propget] HRESULT Height([out, retval] int* pRet);
+    }
+
+  [uuid(8703FF6b-669C-11cf-A92B-00AA00688A2F)]
+  coclass Sprite
+    {
+	[default] interface ISprite;
+    };
+  }
+
+//--- EOF -------------------------------------------------------------------

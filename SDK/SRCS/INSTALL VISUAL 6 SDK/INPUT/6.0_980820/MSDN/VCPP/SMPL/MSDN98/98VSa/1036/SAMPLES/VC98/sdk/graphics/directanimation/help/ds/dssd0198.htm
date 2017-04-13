@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>CBaseObject Class</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0197.htm','/dssd0000.htm','/dssd0180.htm','/index.htm','/dssd0199.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Lib_0001060212000000">CBaseObject Class</A></H2>
+<BR CLEAR=ALL>
+<P><IMG SRC="art/cbase02.gif" WIDTH="179" HEIGHT="24" ALT="CBaseObject class hierarchy" >
+
+<P>The <B>CBaseObject</B> class is an abstract base class that is the basis for all 
+component objects. It maintains a process-wide count of active objects that can be queried 
+from the <A HREF="dssd0389.htm#external_00010a0109000026" TARGET="TEXT">DllCanUnloadNow</A> entry point.
+
+<P>All Component Object Model (COM) objects are derived from
+the <A HREF="dssd0253.htm" TARGET="TEXT">CUnknown</A> class, which is derived from
+the <B>CBaseObject</B> class. Other objects can be derived from 
+<B>CBaseObject</B> to assist in the detection of memory leaks,
+because <B>CBaseObject</B> maintains the count of created objects.
+
+<P>The constructor requires a character-string name that describes the object
+being created. This string can be displayed on the debugging screen to trace the 
+creation of objects; the string will also be displayed upon deletion of the object. 
+The string should be created in static storage rather than in local-function storage. 
+The string can be enclosed by the <A HREF="dssd0282.htm#fmdebug_0001060407000100" TARGET="TEXT">NAME</A> macro, which compiles to NULL 
+in retail builds so that the static strings are optimized out during compilation.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+/* Typical object creation method */
+HRESULT CSomeClass::CreateMyObject(void)
+{
+   HRESULT hr = NOERROR;
+
+   CMyObject *pObject = new CMyObject(NAME("My filter object"),NULL,&amp;hr);
+      if (FAILED(hr)) {
+         return hr;
+   }
+
+   if (pObject == NULL) {
+      return E_OUTOFMEMORY;
+   }
+   m_pObject = pObject;
+   return NOERROR;
+}
+
+/* Incorrect object creation method */
+
+HRESULT CSomeClass::ThisMayAccessViolate(void)
+{
+   HRESULT hr = NOERROR;
+
+   TCHAR MyObjectName[] = TEXT("My GP faulting object");
+   CMyObject *pObject = new CMyObject(MyObjectName,NULL,&amp;hr);
+}
+</FONT></PRE>
+<A NAME="Lib_0001060212010000"></A><P><B>Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0198.htm#Lib_0001060212010100" TARGET="TEXT">CBaseObject</A> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Constructs a <A HREF="dssd0198.htm" TARGET="TEXT">CBaseObject</A> object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0198.htm#Lib_0001060212010200" TARGET="TEXT">ObjectsActive</A> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the count of active objects.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060212010100">CBaseObject::CBaseObject</A></H3>
+<A HREF="dssd0198.htm" TARGET="TEXT">CBaseObject Class</A>
+<P>Constructs a <A HREF="dssd0198.htm" TARGET="TEXT">CBaseObject</A> object.
+
+<P><B>CBaseObject</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>TCHAR</B> <I>*pName</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pName</I>
+</DT><DD>Name assigned to the object for debugging purposes.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>The <I>pName</I> parameter should be allocated in static memory. This name appears on the debugging screen when the object is created and deleted.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060212010200">CBaseObject::ObjectsActive</A></H3>
+<A HREF="dssd0198.htm" TARGET="TEXT">CBaseObject Class</A>
+<P>Retrieves the count of active objects.
+
+<P><B>static</B> <B>LONG</B> <B>ObjectsActive</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns the current number of active objects.
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

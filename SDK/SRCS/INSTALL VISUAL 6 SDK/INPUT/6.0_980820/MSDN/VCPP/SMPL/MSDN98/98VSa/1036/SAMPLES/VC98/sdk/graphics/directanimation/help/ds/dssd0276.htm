@@ -1,0 +1,260 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Debugging with DirectShow</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0275.htm','/dssd0000.htm','/dssd0275.htm','/index.htm','/dssd0277.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="debug_0001060401000000">Debugging with DirectShow</A></H2>
+<BR CLEAR=ALL>
+<P>This article discusses debugging practices in Microsoft&#174; DirectShow&#153; for the C and C++ languages. Many of these practices apply both to writing filters and to writing applications that use the DirectShow run time. The article provides some tips on writing code that can be easily debugged and tested. It also discusses the use of debug and performance builds, and the need to obtain symbols for use in debugging. It gives a warning about the difficulty of debugging real-time DirectShow code, and hints for debugging real-time code anyway. This article contains some general debugging topics and a section on debugging new filters. Finally, some hints are given on detecting leaks in the DirectShow environment, and dealing with memory corruption.
+
+
+
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0276.htm#debug_0001060401010000" TARGET="TEXT">Writing Code You Can Test and Debug</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401020000" TARGET="TEXT">Using Different Kinds of Builds</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401030000" TARGET="TEXT">Generating and Installing Debugging Information</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401040000" TARGET="TEXT">Real-Time Debugging Caveat</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401050000" TARGET="TEXT">First-Time DirectShow Debugging</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401060000" TARGET="TEXT">Debugging New Filters</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401070000" TARGET="TEXT">Detecting Leaks</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401080000" TARGET="TEXT">Debugging Addressing and Memory Corruption Problems</A>
+</UL>
+<A NAME="debug_0001060401010000"></A><P><B>Writing Code You Can Test and Debug</B>
+<P>Debugging code in the DirectShow environment can be easier if it's written to be testable and debuggable in the first place. Some techniques that DirectShow supports include the following:
+
+<UL><LI>Use assertion checking.
+<LI>Pass debug names to class constructors.
+<LI>Add debug logging by module level.
+<LI>Use IOStream C++ sample code.
+
+
+<LI>Check critical section usage.
+<LI>Consider pointer validation.
+<LI>Avoid DLL base address conflicts.
+</UL>
+<P>This section contains the following topics:
+<UL><LI><A HREF="dssd0276.htm#debug_0001060401010100" TARGET="TEXT">Assertion Checking</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401010200" TARGET="TEXT">Pass Debugging Names</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401010300" TARGET="TEXT">Debug Logging</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401010400" TARGET="TEXT">IOStream Sample Code</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401010500" TARGET="TEXT">Critical Section Usage</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401010600" TARGET="TEXT">Pointer Validation</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401010700" TARGET="TEXT">DLL Base Address Conflicts</A>
+</UL>
+<A NAME="debug_0001060401010100"></A><P><B>Assertion Checking</B>
+<P>Use assertion checking liberally. If you're not familiar with asserts, they're a popular way to isolate potential programming errors. Some C implementations have had assert macros for over a decade. The Microsoft&#174; Foundation Classes (MFC) have an equivalent <A HREF="dssd0277.htm#fmdebug_0001060402000100" TARGET="TEXT">ASSERT</A> macro. DirectShow provides a number of assertion macros and functions, including <B>ASSERT</B>. For example:
+
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    ASSERT( First != NULL );
+</FONT></PRE>
+<P>For more information about assertion, see <A HREF="dssd0277.htm" TARGET="TEXT">Assert Macros and Functions</A>.
+
+<A NAME="debug_0001060401010200"></A><P><B>Pass Debugging Names</B>
+<P>Pass the debugging name to the constructors that support it. Tracking object creation and destruction is provided in debugging builds for the <A HREF="dssd0198.htm" TARGET="TEXT">CBaseObject</A> class and classes derived from it. The <I>object register</I> is the list of objects that have been created but not yet destroyed in those classes. The debugging name that is passed to the constructors of those classes is stored in the object register.
+For more information about debugging object registers and the <A HREF="dssd0284.htm#fmdebug_0001060409000100" TARGET="TEXT">DbgDumpObjectRegister</A> function, see <A HREF="dssd0284.htm" TARGET="TEXT">Object Register Debugging</A>.
+
+<A NAME="debug_0001060401010300"></A><P><B>Debug Logging</B>
+<P>Use DirectShow's extensive debug logging abilities, especially <A HREF="dssd0283.htm#fmdebug_0001060408020300" TARGET="TEXT">DbgLog</A>, in your code.
+(DirectShow is perhaps unique in the fine detail at which logging can be enabled or disabled while the code is running.)
+
+
+Here's an example from the bouncing ball source filter:
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    DbgLog(( LOG_TRACE, 1, TEXT("New time: %d, Proportion: %d"),
+        m_iRepeatTime, q.Proportion));
+</FONT></PRE>
+<P>If enabled this example logs the given data. This would only be enabled in a debug build, when the <A HREF="dssd0283.htm#fmdebug_0001060408010002" TARGET="TEXT">LOG_TRACE</A> logging level for that module is less than or equal to 1. In other builds or at other times, that call would simply be ignored.
+
+<P>See the <A HREF="dssd0283.htm" TARGET="TEXT">Debug Logging by Module Level</A> for more information on the following topics:
+<UL><LI>The macros and functions you can call to do debugging logging from
+code you write.
+<LI>How to enable and disable debugging logging by module level at run time.
+<LI>How to indicate the destination of the output of the debugging log.
+</UL>
+<A NAME="debug_0001060401010400"></A><P><B>IOStream Sample Code</B>
+<P>The C and C++ helpers provided in the IOStream helper library, SampIOS.lib, provide text output of the <A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A> interface
+and other DirectShow objects. The output from these helpers might be useful during debugging, to help understand the details of a given pin or filter. You can use these helpers in your DirectShow filters and applications. For more information about this library, see 
+<A HREF="dssd0355.htm#samples_000107020a000000" TARGET="TEXT">IOStream Helper Library</A>.
+
+<A NAME="debug_0001060401010500"></A><P><B>Critical Section Usage</B>
+<P>To make deadlocks easier to track, insert assertions in the code that determine whether or not a critical section is owned
+by the calling code. The <A HREF="dssd0260.htm#fmutil_0001060304000100" TARGET="TEXT">CritCheckIn</A> and <A HREF="dssd0260.htm#fmutil_0001060304000200" TARGET="TEXT">CritCheckOut</A> functions indicate whether or not the calling thread owns the given
+critical sections, and are generally called in <A HREF="dssd0277.htm#fmdebug_0001060402000100" TARGET="TEXT">ASSERT</A> macros. For more information about these functions, see 
+<A HREF="dssd0260.htm" TARGET="TEXT">CCritSec Debug Functions</A>.
+
+<P>For debug logging of each lock and unlock of a given critical section, you might want to use the DirectShow <A HREF="dssd0260.htm#fmutil_0001060304000300" TARGET="TEXT">DbgLockTrace</A> function.
+
+<P><B>Note</B>  Logging can affect performance.<A NAME="debug_0001060401010600"></A><P><B>Pointer Validation</B>
+<P>Consider using the pointer validation macros. For example, you can call <A HREF="dssd0281.htm#fmdebug_0001060406000200" TARGET="TEXT">ValidateReadPtr</A> to ensure that the given pointer actually points to readable memory. Note the performance cost of each of these calls. Currently, the DirectShow <B>ValidateXxxPtr</B> macros are built on top of the Win32 <B>IsBadXxxPtr</B> functions. On some systems, the <B>IsBadXxxPtr</B> functions swap in every page in the range specified.
+
+For more information about validation macros, see <A HREF="dssd0281.htm" TARGET="TEXT">Pointer Validation Macros</A>.
+
+<A NAME="debug_0001060401010700"></A><P><B>DLL Base Address Conflicts</B>
+<P>If you copy any sample makefile to create any new DLL, including filters and plug-in distributors (PIDs), ensure you change the base address to avoid collisions with other DLLs. A <I>collision</I> of DLL load address results in one of the DLLs having to be 
+relocated during the time of loading. This increases the load time for that DLL.
+
+<P>In the sample makefiles, the DLL base address is set in DLL_BASE, which is used in ActiveX.mak. Do not let ActiveX.mak use the default value for DLL_BASE, because this will cause collisions.
+
+
+<A NAME="debug_0001060401020000"></A><P><B>Using Different Kinds of Builds</B>
+<P>DirectShow can be built for three kinds of builds: retail, debug, and performance. See <A HREF="dssd0388.htm#reserved_00010a0108000000" TARGET="TEXT">Reserved Identifiers</A> for information on the kinds of builds. Debugging has varying degrees of difficulty for the three kinds of builds, depending on the situation. For instance, the debug build can provide much more information, but it can run so slowly as to make real-time debugging impossible.
+
+<P>The binaries you create must match the kind of build you're using. The makefiles provided for each sample use ActiveX.mak, which comes with the DirectShow SDK. Comments at the head of ActiveX.mak explain the various nmake command-line parameters to use to obtain binaries compatible with the different DirectShow builds. Some of these parameters define identifiers like <A HREF="dssd0388.htm#reserved_00010a0108000001" TARGET="TEXT">DEBUG</A> and <A HREF="dssd0388.htm#reserved_00010a0108000002" TARGET="TEXT">PERF</A> when compiling the C or C++ code.
+
+<P>If you must have build-dependent code, you can conditionally compile with the same identifiers that the DirectShow headers use for that purpose. See <A HREF="dssd0388.htm#reserved_00010a0108000000" TARGET="TEXT">Reserved Identifiers</A> for a list of the identifiers reserved for that purpose.
+
+<P>For instance, in C or C++, you can conditionally compile code like this:
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    ...   /* normal processing */
+#ifdef DEBUG
+    ...   /* debug only code */
+#endif
+    ...   /* resume normal processing */
+</FONT></PRE>
+<A NAME="debug_0001060401030000"></A><P><B>Generating and Installing Debugging Information</B>
+<P>Any debugger will need access to the debug information for the code you're debugging. (Debug information might include symbols or source line numbers.) The means of requesting the debug information depends on your compiler and operating system. On some systems, the debug information is added to the object files themselves; other systems can have separate files. Refer to your compiler and debugger documentation for explanations of the location and format of the debug information.
+
+<P>For effective debugging in the DirectShow environment, you should have access to the debug information for the following
+components when you're debugging problems.
+<UL><LI>Your own code (filters and/or applications)
+<LI>The operating system code itself
+<LI>The C/C++ run-time library
+</UL>
+<A NAME="debug_0001060401040000"></A><P><B>Real-Time Debugging Caveat</B>
+<P>After you get a Run command, DirectShow becomes a real-time system, and at that point any normal debug output is liable to upset things. You cannot step through the code and expect it to reproduce a bug.
+
+<P>If you run into this condition, you should consider these ways to work around it:
+<UL><LI>Turn down one or more debug output levels. For more information about setting output levels, see 
+<A HREF="dssd0283.htm" TARGET="TEXT">Debug Logging by Module Level</A>.
+<LI>If your clock source supports it, turn down (or turn off) the clock.
+
+
+
+</UL>
+<A NAME="debug_0001060401050000"></A><P><B>First-Time DirectShow Debugging</B>
+<P>If you have problems the first time you link to or call DirectShow code from your code, you should check the following things:
+
+<UL><LI>The calling convention must be compatible. DirectShow uses the same calling convention as OLE.
+
+
+Different calling conventions might cause link errors or errors at run time.
+<LI>On x86 systems, the memory model must be compatible.
+<LI>For C++ code, the "name mangling" must be done the same way. "Name mangling" refers to the way some C++ compilers turn possibly overloaded class, method, and operator names into unique flat names suitable for linking. Different C++ compilers do this differently.
+</UL>
+<A NAME="debug_0001060401060000"></A><P><B>Debugging New Filters</B>
+<P>This section contains the following topics:
+<UL><LI><A HREF="dssd0276.htm#debug_0001060401060100" TARGET="TEXT">Avoid GUID Conflicts</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401060200" TARGET="TEXT">Test With Filter Graph Editor and Other Sample Filters</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401060300" TARGET="TEXT">Associate the Filter File Type (.ax) in MSDEV Debugger</A>
+</UL>
+<A NAME="debug_0001060401060100"></A><P><B>Avoid GUID Conflicts</B>
+<P>DirectShow uses globally unique identifiers (<A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A>s) to find each filter, pin, and property page. Avoid reusing any of the same <B>GUID</B>s when copying from the DirectShow sample code. Multiple use of the same <B>GUID</B> for different things can cause trouble in the registry and at run time. Use Guidgen.exe (or Uuidgen.exe) and avoid this. The Guidgen.exe and Uuidgen.exe utilities generate unique <B>GUID</B>s, which by definition are different from the ones given in the DirectShow samples.
+
+<P>On the other hand, media types and subtypes are also indicated by <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A>s. If you are supporting the same kind of media as any
+
+
+
+sample code, then using the same <B>GUID</B> for the media type and subtype is probably correct.
+
+
+
+<A NAME="debug_0001060401060200"></A><P><B>Test With Filter Graph Editor and Other Sample Filters</B>
+<P>The DirectShow SDK includes a tool called the Filter Graph Editor (Graphedt.exe). Once you have your new filter's registry information set, you can use the Filter Graph Editor to interactively test your filter.
+
+<P>When the Filter Graph Editor is unable to create an instance of the filter, it displays the following error message:
+"The filter could not be created. Resources used by this filter may already be in use." Ensure that the class ID and path in the registry
+match those for your filter, and that you re-register your filter after modifying any <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> it uses.
+
+<P>If you are debugging an audio filter, there are two sample filters you might consider debugging with.
+For overviews on those code samples, see <A HREF="dssd0349.htm#samples_0001070203020000" TARGET="TEXT">Audio Synthesizer Filter</A> and <A HREF="dssd0351.htm#samples_0001070205020000" TARGET="TEXT">Oscilloscope Filter</A>.
+
+
+
+<P>After you have the Filter Graph Editor successfully loading your new filter, you can use the File Dump Filter (Dump.ax) as a useful debugging tool. For instance, it can be used to verify, bit by bit, the results of a transform filter. Build a graph manually using the Filter Graph Editor and hook the File Dump Filter onto the output of a transform or any other pin. You can also hook up a Sample Tee Filter (InfTee.ax),
+and put the File Dump Filter on one leg of the tee and the "normal" output on another to monitor what happens in the real-time case.
+For more information, see <A HREF="dssd0351.htm#samples_0001070205010000" TARGET="TEXT">File Dump Filter</A>.
+
+
+<A NAME="debug_0001060401060300"></A><P><B>Associate the Filter File Type (.ax) in MSDEV Debugger</B>
+<P>If you're going to debug your filter with Microsoft Developer Studio (MSDEV), you must tell the debugger about the new file type (.ax).
+Here are the MSDEV steps you should follow to identify the filter file type (.ax) as being a debuggable DLL:
+
+<OL><LI>Go to Build.Settings.Debug.
+
+
+<LI>Choose "additional DLLs".
+<LI>Add "whatever.ax" to the list, where "whatever" is the name of your filter.
+</OL>
+<A NAME="debug_0001060401070000"></A><P><B>Detecting Leaks</B>
+<P>Leaks of any sort (no matter how small) can cause problems over the long run. Imagine a DirectShow-based application as a "video kiosk," running 24 hours a day. What if it has a bug that leaks a <A HREF="dssd0389.htm#external_00010a0109000036" TARGET="TEXT">HANDLE</A> value for each customer? Even if the first 10,000 customers are happy, the ones after that will be denied service. To avoid all those potential unhappy customers, it is important to be thorough in stamping out all leaks.
+<P>This section contains the following topics:
+<UL><LI><A HREF="dssd0276.htm#debug_0001060401070100" TARGET="TEXT">Use Memory Leak Tools</A>
+<LI><A HREF="dssd0276.htm#debug_0001060401070200" TARGET="TEXT">Find COM Object Reference Leaks</A>
+</UL>
+<A NAME="debug_0001060401070100"></A><P><B>Use Memory Leak Tools</B>
+<P>Unfortunately, C++ has lots of potential for leaking memory. Code written in C can also leak memory, although there are fewer opportunities for problems. In either language, detecting memory leaks "by hand" is not trivial. You should use tools to help detect memory leaks while you're debugging and testing the code. Visual C++ has an optional debug heap, which can be useful in tracking down memory leaks. (See the "Using the Debug Heap" section of the Visual C++ documentation for more information.) For example, the Visual C++ <A HREF="dssd0389.htm#external_00010a0109000001" TARGET="TEXT">_CrtSetDbgFlag</A> function enables you to turn on the memory-leak-checking flag bit.
+
+<P>Other providers of memory leak tools can be found in the Microsoft Enterprise Development Partners directory.
+
+
+
+<A NAME="debug_0001060401070200"></A><P><B>Find COM Object Reference Leaks</B>
+<P>Another kind of leak is of COM object references. You can track down object reference leaks by performing the following steps.
+
+<OL><LI>Put a break point on the <A HREF="dssd0253.htm#Lib_0001060249030300" TARGET="TEXT">NonDelegatingAddRef</A> and <A HREF="dssd0253.htm#Lib_0001060249030500" TARGET="TEXT">NonDelegatingRelease</A> methods of that object.
+<LI>Use MSDEV (or another debugger) and step through every reference count change, trying to pair them up.
+<LI>Look at the call stack for each change.
+</OL>
+<P>There are often a few hundred reference count changes. With luck you can spot the unpaired one.
+
+
+
+<A NAME="debug_0001060401080000"></A><P><B>Debugging Addressing and Memory Corruption Problems</B>
+<P>Debugging memory addressing and corruption problems can be quite difficult. The DirectShow environment is not immune to those problems. Fortunately, there are tools that can help.
+
+<P>The debug heap manager supplied with Microsoft Visual C++ version 4.<I>x</I>
+
+
+ can be quite useful when used to debug DirectShow code. Knowing the kinds of addresses that can be generated can help track down the source of a given problem. Using the Visual C++ debug heap manager can result in the following addresses being generated by buggy code.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Address </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">0xFDFDFDFD
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Illegal access before or after an allocated area.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">0xDDDDDDDD
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Access to memory after it has been freed.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">0xCDCDCDCD
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Uninitialized access within an allocated area.
+</FONT></TD></TR></TABLE>
+<P>Use the address values given in the preceding list to determine the class of bug to look for.
+
+<P>For more information, see the "Memory Management and the Debug Heap" section of the Visual C++ documentation.
+
+<P>Other debug heap managers can also be valuable for detecting memory corruption.
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

@@ -1,0 +1,248 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>IMediaEvent Interface</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0149.htm','/dssd0000.htm','/dssd0088.htm','/index.htm','/dssd0151.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="If_000106013e000000">IMediaEvent Interface</A></H2>
+<BR CLEAR=ALL>
+<P>This interface supports event notification from the filter graph and filters within it to the application. It is decoupled
+
+ by using a queuing scheme rather than callbacks, because events can be notified from worker threads that cannot safely call back into application code.
+
+<P>An event code and two <A HREF="dssd0389.htm#external_00010a010900002b" TARGET="TEXT">DWORD</A> values represent event notification information. Your application can use this for typical completion of asynchronous operations, errors that occur during asynchronous
+operation, or user-initiated events, such as when a user clicks a hot spot.
+
+<P>Filters within the filter graph and the filter graph itself raise event notifications. Possible events include playback completion or asynchronous playback errors. In addition, the filter graph provides
+a method to generate events at specific reference clock times. The filter graph exposes an <A HREF="dssd0152.htm" TARGET="TEXT">IMediaEventSink</A> interface that the filters within the graph can call to pass event notifications to the application.
+
+<P>Event notifications are placed in a queue.
+
+ An application calls the <A HREF="dssd0150.htm#If_000106013e030300" TARGET="TEXT">IMediaEvent::GetEvent</A> method to retrieve the next notification from the queue. This method blocks until there is an event to return. The <A HREF="dssd0150.htm#If_000106013e030300" TARGET="TEXT">GetEvent</A> time-out parameter (<I>msTimeout</I>)
+allows the application to specify the time, in milliseconds, to wait for an event, including values of zero and INFINITE. After calling <B>GetEvent</B>, applications should always call 
+<A HREF="dssd0150.htm#If_000106013e030200" TARGET="TEXT">FreeEventParams</A> to release any resource associated with the event.
+
+<P>In addition, applications can retrieve the event handle. <A HREF="dssd0150.htm#If_000106013e030400" TARGET="TEXT">IMediaEvent::GetEventHandle</A> returns a handle to a manual-reset event created by the Microsoft&#174; Win32&#174; <A HREF="dssd0389.htm#external_00010a0109000014" TARGET="TEXT">CreateEvent</A> function. This event is in a signaled state as long as there are event notifications to collect. The <A HREF="dssd0150.htm#If_000106013e030300" TARGET="TEXT">IMediaEvent::GetEvent</A> method clears the event when there are no more event notifications to collect. This allows an application to use an application programming interface (API), such as <A HREF="dssd0389.htm#external_00010a01090000b4" TARGET="TEXT">MsgWaitForMultipleObjects</A>, to wait for events and other occurrences at the same time. This event handle will be closed when the filter graph is released;
+
+ therefore, applications should ensure that they are not using it after this point.
+
+<P>The filter graph manager handles some events raised by filters that are not passed to the application. One example of this is the <A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A> event notification. By default the filter graph manager handles this event by pausing the filter graph and repainting the video renderer's static images.
+ An application can override default handling for a specific event by calling the <A HREF="dssd0150.htm#If_000106013e030100" TARGET="TEXT">IMediaEvent::CancelDefaultHandling</A> method with the event value as a parameter. The <A HREF="dssd0150.htm#If_000106013e030500" TARGET="TEXT">IMediaEvent::RestoreDefaultHandling</A> method reinstates default handling for the specified event value. These methods have no effect on events that have no default handling.
+
+<P>If an error occurs during the transition to a running state on any filter, the <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">IMediaControl::Run</A> method returns an error value. In this case, some filters within the graph might be running successfully. The filter graph leaves it up to the application to determine whether to stop the graph in case of an error. After the <B>IMediaControl::Run</B> method has returned, event notifications report any additional errors. The <A HREF="dssd0291.htm#events_0001060801000700" TARGET="TEXT">EC_ERRORABORT</A> and <A HREF="dssd0291.htm#events_0001060801001700" TARGET="TEXT">EC_USERABORT</A> event notifications indicate that playback has probably stopped in the graph (certainly in the filter that reported it). Other errors and events indicate that it is still running. Note, however, that in all cases the graph remains in running mode until the application explicitly changes it to stopped or paused mode.
+
+<P>If the streams in the filter graph detect the end of the stream, the streams report this by using the <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> event notification. The filter graph manager asks filters if they can report <B>EC_COMPLETE</B> by means of seekable renderers.
+
+<P>A seekable renderer is one that supports the <A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A> interface from the filter and that has only input pins, or whose input pins report through <A HREF="dssd0165.htm#If_000106014d030d00" TARGET="TEXT">IPin::QueryInternalConnections</A> that they are rendered.
+ The filter graph uses <B>IPin::QueryInternalConnections</B> and <B>IMediaPosition</B> to detect seekable renderers. A seekable renderer should report <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> when all seekable streams on that filter have reached the stream's end.
+
+<P>A renderer can produce <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> (and a regular filter produce <A HREF="dssd0165.htm#If_000106014d030700" TARGET="TEXT">EndOfStream</A>) for one of four reasons as follows:
+<UL><LI>The typical case: Whether there is data arriving or not if it succeeds all calls to <A HREF="dssd0203.htm#Lib_0001060217062b00" TARGET="TEXT">Receive</A> it will eventually get <A HREF="dssd0165.htm#If_000106014d030700" TARGET="TEXT">EndOfStream</A>. If the end of the media is reached and when all data and <B>EndOfStream</B> has been processed it will signal <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A>.
+<LI>The filter can never produce any data. In that case it just passes <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> immediately when a Run method is called. For example, a filter would pass <B>EC_COMPLETE</B> if none if its input pins is connected.
+<LI>The complicated case, sometimes used by the wave renderer: It can't render data right now even though it's getting it but it may be able to later. In that case it fails the first <A HREF="dssd0203.htm#Lib_0001060217062b00" TARGET="TEXT">Receive</A>, schedules an <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> for a time <I>tStop</I> minus <I>tStart</I> in the future (based on the <A HREF="dssd0165.htm#If_000106014d030900" TARGET="TEXT">NewSegment</A> parameters). If it finds it can start sending data it signals an <A HREF="dssd0291.htm#events_0001060801000900" TARGET="TEXT">EC_NEED_RESTART</A>. A better approach could be to use stream control for this to avoid stopping and starting the graph.
+<LI>It detects an unrecoverable error. Then, like any filter, it signals end of stream which for a renderer means signalling <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A>.
+</UL>
+<P>The filter graph manager will not pass <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> to the application until an <B>EC_COMPLETE</B> event notification has been received from each stream. For example, if a live camera stream is playing as the background for a video playing from a file, the application will be notified about <B>EC_COMPLETE</B> when the video and audio streams from the file have come to the stream's end, even though the live source is still playing. In this case, too, the filter graph remains in running mode until the application explicitly calls the <A HREF="dssd0149.htm#If_000106013d030500" TARGET="TEXT">IMediaControl::Pause</A> or <A HREF="dssd0149.htm#If_000106013d030800" TARGET="TEXT">IMediaControl::Stop</A> method.
+
+<P>Your application can disable the aggregation of <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> messages 
+ by calling <A HREF="dssd0150.htm#If_000106013e030100" TARGET="TEXT">IMediaEvent::CancelDefaultHandling</A> with <B>EC_COMPLETE</B> as the parameter. In this case, all <B>EC_COMPLETE</B> events raised by the filters will be passed directly to the application.
+
+<P>For a list of system-defined event notifications, see <A HREF="dssd0291.htm#events_0001060801000000" TARGET="TEXT">Event Notification Codes</A>.
+
+<P><B>Note</B>  All events must be handled if a handle to an <B>IMediaEvent</B> interface is obtained otherwise events will pile up and cause the heap to be used up.<A NAME="If_000106013e010000"></A><P><B>When to Implement</B>
+<P>The filter graph manager implements this interface.
+
+<P>You can use the <A HREF="dssd0226.htm#Lib_000106022e000000" TARGET="TEXT">CMediaEvent</A> class, which handles the <A HREF="dssd0389.htm#external_00010a010900007d" TARGET="TEXT">IDispatch</A> implementation for Automation, to help implement this interface.
+
+<A NAME="If_000106013e020000"></A><P><B>When to Use</B>
+<P>Applications use this interface to retrieve event notifications or event handles from the filter graph manager. For example, an application can retrieve the <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> notification to find out when a media stream has been rendered completely.
+
+<A NAME="If_000106013e030000"></A><P><B>Methods in Vtable Order</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IUnknown methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns pointers to supported interfaces.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">AddRef</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Increments the reference count.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Decrements the reference count.
+</FONT></TD></TR></TABLE>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IDispatch methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0389.htm#external_00010a0109000080" TARGET="TEXT">GetTypeInfoCount</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines whether there is type information available for this dispinterface.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0389.htm#external_00010a010900007f" TARGET="TEXT">GetTypeInfo</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the type information for this dispinterface if
+ <A HREF="dssd0389.htm#external_00010a0109000080" TARGET="TEXT">GetTypeInfoCount</A> returned
+successfully.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0389.htm#external_00010a010900007e" TARGET="TEXT">GetIDsOfNames</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Converts text names of properties and methods (including arguments) to
+their corresponding DISPIDs.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0389.htm#external_00010a0109000081" TARGET="TEXT">Invoke</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Calls a method or accesses a property in this dispinterface if given a DISPID
+and any other necessary parameters.
+</FONT></TD></TR></TABLE>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IMediaEvent methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0150.htm#If_000106013e030400" TARGET="TEXT">GetEventHandle</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves a handle to a manual-reset event that will be signaled.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0150.htm#If_000106013e030300" TARGET="TEXT">GetEvent</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the next notification event.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0150.htm#If_000106013e030600" TARGET="TEXT">WaitForCompletion</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Blocks execution of the application thread until the graph's operation finishes.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0150.htm#If_000106013e030100" TARGET="TEXT">CancelDefaultHandling</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Cancels any default handling of the specified event by the filter graph.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0150.htm#If_000106013e030500" TARGET="TEXT">RestoreDefaultHandling</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Restores default handling for this event.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0150.htm#If_000106013e030200" TARGET="TEXT">FreeEventParams</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Frees resources associated with the parameters to an event.
+ </FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="If_000106013e030100">IMediaEvent::CancelDefaultHandling</A></H3>
+<A HREF="dssd0150.htm" TARGET="TEXT">IMediaEvent Interface</A>
+<P>Cancels any default handling by the filter graph of the specified event and ensures
+that it is passed to the application.
+
+<P><B>HRESULT</B> <B>CancelDefaultHandling</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>lEvCode</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>lEvCode</I>
+ </DT><DD>Event code for which to cancel default handling.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns S_OK if successful, or S_FALSE if the event does not have any default handling.
+
+
+<H5>Remarks</H5>
+<P> Currently the filter graph manager applies default handling only to <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> and <A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A>.
+<H3><HR COLOR=#0000FF><A NAME="If_000106013e030200">IMediaEvent::FreeEventParams</A></H3>
+<A HREF="dssd0150.htm" TARGET="TEXT">IMediaEvent Interface</A>
+<P>Frees resources associated with the parameters of an event.
+
+<P><B>HRESULT</B> <B>FreeEventParams</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>lEventCode</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>lParam1</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>lParam2</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>lEventCode</I>
+ </DT><DD>[in] Next event notification.
+</DD><DT><I>lParam1</I>
+ </DT><DD>[in] First parameter of the event.
+</DD><DT><I>lParam2</I>
+ </DT><DD>[in] Second parameter of the event.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>Event parameters can be of type <A HREF="dssd0389.htm#external_00010a01090000aa" TARGET="TEXT">LONG</A> or <A HREF="dssd0389.htm#external_00010a0109000006" TARGET="TEXT">BSTR</A>. If a <B>BSTR</B> is passed as an event, it will have been allocated by the task allocator and
+should be freed using this method.
+
+No reference-counted interfaces are passed to an application using <A HREF="dssd0150.htm#If_000106013e030300" TARGET="TEXT">IMediaEvent::GetEvent</A>
+because these cannot be overridden by <A HREF="dssd0150.htm#If_000106013e030100" TARGET="TEXT">IMediaEvent::CancelDefaultHandling</A>. Therefore,
+this method is not used to release interfaces.
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106013e030300">IMediaEvent::GetEvent</A></H3>
+<A HREF="dssd0150.htm" TARGET="TEXT">IMediaEvent Interface</A>
+<P>Retrieves the next notification event.
+
+<P><B>HRESULT</B> <B>GetEvent</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <B>*</B> <I>lEventCode</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <B>*</B> <I>lParam1</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <B>*</B> <I>lParam2</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>msTimeout</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>IEventCode</I>
+ </DT><DD>[out] Next event notification.
+</DD><DT><I>lParam1</I>
+ </DT><DD>[out] First parameter of the event.
+</DD><DT><I>lParam2</I>
+ </DT><DD>[out] Second parameter of the event.
+</DD><DT><I>msTimeout</I>
+ </DT><DD>[in] Time, in milliseconds, to wait before assuming that there are no events.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. If the time-out is zero and no event is waiting, or if the time-out elapses before an event appears, this method returns E_ABORT.
+
+
+<H5>Remarks</H5>
+<P>The application can pass a time-out value of INFINITE to indicate that the method should block until there is an event; however, applications should avoid using INFINITE. Threads cannot process any messages while waiting in <B>GetEvent</B>. If you call <B>GetEvent</B> from the thread that processes Windows messages, specify only small wait times on the call in order to remain responsive to user input. This is most important when streaming data from a source such as the Internet, because state transitions can take significantly more time to complete.
+
+<P>After calling <B>GetEvent</B>, applications should always call 
+<A HREF="dssd0150.htm#If_000106013e030200" TARGET="TEXT">FreeEventParams</A> to release any resource associated with the event.
+<P>For a list of notification codes and event parameter values, see <A HREF="dssd0291.htm#events_0001060801000000" TARGET="TEXT">Event Notification Codes</A>.
+<H3><HR COLOR=#0000FF><A NAME="If_000106013e030400">IMediaEvent::GetEventHandle</A></H3>
+<A HREF="dssd0150.htm" TARGET="TEXT">IMediaEvent Interface</A>
+<P>Retrieves a handle to a manual-reset event that will be signaled as long as there are event notifications to deliver.
+
+<P><B>HRESULT</B> <B>GetEventHandle</B><B>(</B><BR>&nbsp;&nbsp;<B>OAEVENT</B> <B>*</B> <I>hEvent</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>hEvent</I>
+ </DT><DD>[out] Handle for the event.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>You can monitor events (including the retrieved event) and messages on a single thread; to do this, declare a HANDLE variable, cast it to an OAEVENT pointer, then pass it to GetEventHandle. You must cast the pointer to an OAEVENT pointer because HANDLE is not a valid OLE Automation type. The following code fragment demonstrates how to cast and use the HANDLE.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+HANDLE hEvent;
+GetEventHandle( (OAEVENT*) &amp;hEvent );
+</FONT></PRE>
+<P>You can pass the retrieved event handle to the Microsoft Win32 <A HREF="dssd0389.htm#external_00010a01090000d9" TARGET="TEXT">WaitForMultipleObjects</A> or <A HREF="dssd0389.htm#external_00010a01090000b4" TARGET="TEXT">MsgWaitForMultipleObjects</A> functions to wait for event notifications at the same time as other messages and events on a single thread. The implementation of <A HREF="dssd0150.htm#If_000106013e030300" TARGET="TEXT">GetEvent</A> sets and resets the handle within the application, so applications should not reset the handle themselves.
+<H3><HR COLOR=#0000FF><A NAME="If_000106013e030500">IMediaEvent::RestoreDefaultHandling</A></H3>
+<A HREF="dssd0150.htm" TARGET="TEXT">IMediaEvent Interface</A>
+<P>Reinstates the normal default handling by a filter graph for the specified event, if there is one.
+
+<P><B>HRESULT</B> <B>RestoreDefaultHandling</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>lEvCode</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>lEvCode</I>
+ </DT><DD>[in] Event to restore.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns S_OK if successful, or S_FALSE if there is no default handling for this event.
+
+
+<H5>Remarks</H5>
+<P>Events that have default handling in place, such as <A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A>, are not typically
+passed to the application.
+<H3><HR COLOR=#0000FF><A NAME="If_000106013e030600">IMediaEvent::WaitForCompletion</A></H3>
+<A HREF="dssd0150.htm" TARGET="TEXT">IMediaEvent Interface</A>
+<P>Blocks execution of the application thread until the graph's operation finishes.
+
+<P><B>HRESULT</B> <B>WaitForCompletion</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>msTimeout</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <B>*</B> <I>pEvCode</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>msTimeout</I>
+ </DT><DD>[in] Duration of the time-out, in milliseconds. Pass zero to return immediately. To block indefinitely, pass INFINITE.
+</DD><DT><I>pEvCode</I>
+ </DT><DD>[out] Event that terminated the wait. This value can be one of the following:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">EC_COMPLETE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Operation completed.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">EC_ERRORABORT </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Error. Playback can't continue.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">EC_USERABORT </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">User terminated the operation.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Zero (0) </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Operation has not completed.
+</FONT></TD></TR></TABLE>
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns one of the following <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> values.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">E_ABORT </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Function timed out before the operation completed. This is equivalent to a zero <I>pEvCode</I> value.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">S_OK </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Operation completed.
+</FONT></TD></TR></TABLE>
+
+<H5>Remarks</H5>
+<P>This method is the equivalent of blocking until the event notification <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A>, <A HREF="dssd0291.htm#events_0001060801000700" TARGET="TEXT">EC_ERRORABORT</A>, or <A HREF="dssd0291.htm#events_0001060801001700" TARGET="TEXT">EC_USERABORT</A> is received, or the time-out occurs.
+
+<P>When this method returns, the filter graph is still running. This method assumes that separate calls to the <A HREF="dssd0150.htm" TARGET="TEXT">IMediaEvent</A> interface are not being made. This method
+fails if the graph is not in or transitioning into a running state. 
+
+<P>The time-out parameter (<I>msTimeout</I>) specifies the length of time to wait for completion. To test if the operation completed, specify a zero <I>msTimeout</I> value and check the event code value (<I>pEvCode</I>) for zero, indicating that the operation is not completed.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

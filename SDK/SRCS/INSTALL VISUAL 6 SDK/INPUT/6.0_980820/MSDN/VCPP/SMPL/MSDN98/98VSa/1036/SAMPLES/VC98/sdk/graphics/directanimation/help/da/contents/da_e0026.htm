@@ -1,0 +1,662 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>The Basics</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/DA_E0025.htm','/DA_E0000.htm','/DA_E0024.htm','/index.htm','/DA_E0027.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="proguide_0001050102000000">The Basics</A></H2>
+<BR CLEAR=ALL>
+<P>This section covers a variety of concepts and techniques useful to many types of DirectAnimation authors: website builders, script writers, and application developers. The following topics are discussed in this section:
+
+<UL><LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102010000" TARGET="TEXT">Thinking About DirectAnimation</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102020000" TARGET="TEXT">Media Files Supported by DirectAnimation</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102030000" TARGET="TEXT">Scripting</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102040000" TARGET="TEXT">The Statics Class</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102050000" TARGET="TEXT">Naming Conventions in DirectAnimation</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102060000" TARGET="TEXT">Viewing DirectAnimation Functions in Visual Basic</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102070000" TARGET="TEXT">A Simple JScript Example</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102080000" TARGET="TEXT">A Simple Java Example</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102090000" TARGET="TEXT">Coordinates in DirectAnimation</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_00010501020a0000" TARGET="TEXT">Scripting Timelines Using Duration</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_00010501020b0000" TARGET="TEXT">Arrays and Tuples</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_00010501020c0000" TARGET="TEXT">URLs and Paths</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_00010501020d0000" TARGET="TEXT">The Drawing Surface</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_00010501020e0000" TARGET="TEXT">Splines</A>
+</UL>
+<H3><A NAME="proguide_0001050102010000">Thinking About DirectAnimation</A></H3>
+<P>This section introduces the basic elements of the DirectAnimation model, including media expressions in DirectAnimation, and suggests analogies to number expressions and spreadsheets.
+<A NAME="proguide_0001050102010100"></A><P><B>Media Expressions</B>
+<P>DirectAnimation can be explained in terms of the familiar concept of expressions on numbers in programming languages (Fortran, C++, Visual Basic, Java, and so on). Such expressions are based on operations that construct new numbers from existing numbers. For example, (5 + 7) * 4 + 3 constructs the number 51.
+<P>Before expressions were introduced into programming languages, it took the following tedious steps to evaluate this expression:
+<PRE><FONT FACE="Courier" SIZE="2">
+  Load 5 -&gt; x
+  Load 7 -&gt; y
+  Add  x,y -&gt; x
+  Load 4 -&gt; y
+  Mult x,y -&gt; x
+  Load 3 -&gt; y
+  Add x,y -&gt; x
+</FONT></PRE>
+<P>DirectAnimation uses an expression-based approach to construct more complex media values based on simpler media values and operations working on these values. For example, the expression
+<PRE><FONT FACE="Courier" SIZE="2">frontImage*rotation + backImage
+</FONT></PRE>
+<P>Evaluates to a rotating image overlaying a second image, just like the above expression evaluates to 51.
+
+<P>Just as in number algebra a set of operations and numbers combines to return a result according to certain rules, in DirectAnimation a set of operations on animation and media elements combine to produce interesting interactive, animate and mixed-media content. You can apply many of the concepts of algebra to constructing interesting animation in DirectAnimation. 
+
+<P>DirectAnimation has a set of abstract data types, for example, a number behavior (NumberBvr) or a color behavior (ColorBvr). Abstract types are described in terms of the high-level operations they support without exposing implementation or representation details. Since it is typical to have thousands of behaviors in an animation, thinking of behaviors as operations on abstract data types can help make the complexity manageable. Operations create composite behaviors; for example, angle = sin(NumberBvr theta), or redGeo = geo.diffuseColor(ColorBvr red), applies the color constant red to a geometry. 
+
+<P>As in algebra, where an expression such as angle = sin(t* 2*pi/period) t is time, behaviors in DirectAnimation can be time-varying. DirectAnimation generalizes time-varying values beyond numbers. For example, you can construct a time-varying image as follows: 
+<PRE><FONT FACE="Courier" SIZE="2">
+ImageBvr image3 = overlay(image1.transform(rotate(localTime)), image2)
+</FONT></PRE>
+<P>This expression sets image3 to be image1 rotating at one radian per second and overlaying image2. 
+
+<A NAME="proguide_0001050102010200"></A><P><B>Behaviors Are Retained</B>
+<P>Time-varying behaviors in DirectAnimation are retained, in the sense that executing a behavior expression (such as the one in the previous section) constructs a data structure that is retained after the execution concludes. This is unlike traditional number expressions in programing languages where the expression evaluates conclusively into a result at the time of execution. In this respect, DirectAnimation expressions are more like cells in a spreadsheet; they don't execute just once, but are retained and their value changes as their parameters (other behaviors) change.
+
+<P>Using behavior expressions relieves the developer of significant maintenance work. For example, assume you have defined a path behavior (<A HREF="DA_E0149.htm#dxmref_0001070121000000" TARGET="TEXT">Path2Bvr</A> ) called <I>line</I> and a transformation behavior (<A HREF="DA_E0205.htm#dxmref_0001070159000000" TARGET="TEXT">Transform2Bvr</A>) called <I>wiggle</I> that is a sinusoidal translation. You can then combine them into a time-varying image behavior (<A HREF="DA_E0139.htm#dxmref_0001070117000000" TARGET="TEXT">ImageBvr</A> ) called <I>wigglingLine</I>. You can then import an image (perhaps a JPEG from a file) and call it <I>background</I>, and overlay <I>wigglingLine</I> on <I>background</I>. Call this time-varying image <I>myImage</I>.
+
+<P>Now, assume you have imported or synthesized a 3-D cube and assigned it a path to traverse or a rate at which to expand. You can texture the animated cube with <I>myImage</I> and get a cube that is both animated and has an animated texture. Once you have joined the texture to the cube, since this joining is retained, the texturing operation keeps checking the time-varying value of its wiggling line, calculating the result, and applying the new texture to the cube. The programmer constructs the relation between the texture and the cube, and then doesn't need to intervene any further. If, on the other hand, the line is fixed and not wiggling, DirectAnimation is optimized not to calculate texture values over and over and thus saves CPU cycles. 
+<A NAME="proguide_0001050102010300"></A><P><B>Reactive Behaviors</B>
+<P>There are two key concepts in DirectAnimation: continuous behaviors and events. These are combined into reactive behaviors. A reactive behavior varies continuously with time and reacts to specific events by switching to new behaviors. For example, a ball bouncing (moving on its path) in a room is a continuous behavior. The ball colliding with the wall or floor is an event. 
+
+<P>For example, say you have imported two geometries (from two .X files, for example) that are 3-D balls, with radii r1 and r2, separated by a time-varying distance d. You can define a collision event as:
+
+<PRE><FONT FACE="Courier" SIZE="2">Collide = Predicate(leq(d, add(r1, r2))
+</FONT></PRE>
+<P>That is, when the distance between the two balls is less than or equal to the sum of their radii, they collide.
+
+<P>This event can be used as follows:
+<PRE><FONT FACE="Courier" SIZE="2">bvr1 = until (initial_behavior, Collide, bounce_behavior)
+</FONT></PRE>
+<P>The <A HREF="DA_E0158.htm#dxmref_000107012a000300" TARGET="TEXT">until</A> operation constructs a behavior which starts as an initial behavior (such as "parabolic path") until the event occurs, then switches to a bounce behavior. The behavior switched to after the event can be constant (the ball stops) or calculated from parameters at the time of the event (a new path calculated from the ball's position and direction of the two balls at the time of the collision). Thus, <B>until</B> creates a new reactive behavior (bvr1) that is the first behavior until the event occurs, and then becomes the second behavior.
+
+<P>Similarly, it is possible to define an event based on the user selecting one of the balls by pointing and clicking:
+<PRE><FONT FACE="Courier" SIZE="2">Grab= andEvent(Pick, leftButtonDown)
+</FONT></PRE>
+<P>And used as follows:
+<PRE><FONT FACE="Courier" SIZE="2">bvr2= until(parabolic_path_behavior, Grab, follow_mouse_position_behavior)
+</FONT></PRE>
+<P>Or you can make the ball explode on either event as follows:
+<PRE><FONT FACE="Courier" SIZE="2">Explosion = orEvent(Collide, Grab)
+Explosion_Bvr = until(parabolic_path_behavior, Explosion, flying_ball_fragments_behavior)
+</FONT></PRE>
+<P>DirectAnimation supports both arrays and tuples. An array is a homogeneous list of behaviors (behaviors that are all of the same type, such as all colors or all images). A tuple is a heterogeneous list of behaviors (behaviors that can be different, such as a color behavior and an image behavior). Tuples are especially useful for grouping behaviors that all switch at the same event. For example:
+<PRE><FONT FACE="Courier" SIZE="2">Synch_tuple = until(tuple1, event, tuple2)
+</FONT></PRE>
+<P>This helps to synchronize the switching of different behaviors at one event. 
+
+<A NAME="proguide_0001050102010400"></A><P><B>Interactive Versus Reactive Behaviors</B>
+<P>Reactivity is the notion of switching from one behavior to another based on some event. Interactivity is the notion of user input and how it influences the progression of the animation. Events can be based on user input (such as a button press) or they can be synthetic (based on computations, such as the collision event discussed previously). User input can be in the form of an event or it can be in the form of a continuous behavior such as moving the mouse cursor. For example, a user can drag the ball with a mouse to give it continuous motion, or click on the ball and stop it with an event. Both plain behaviors and events can be either interactive or computed (synthetically generated). 
+<A NAME="proguide_0001050102010500"></A><P><B>Media Graphs</B>
+<P>DirectAnimation supports rich operations on media types that result in expressions producing composite media values. These expressions construct retained structures that are called a media graph that operates on time-varying entities. Media graphs are akin to scene graphs in 3-D graphics systems, but they differ in that they are mixed-media based and contain combinations of behaviors, events, and user input. User input (as both continuous behaviors and events) feeds into constructed media graphs, which in turn produce visual and audible media behaviors that get presented through a display and speakers.
+
+
+<H3><A NAME="proguide_0001050102020000">Media Files Supported by DirectAnimation</A></H3>
+<P>DirectAnimation supports the following media file types:
+<UL><LI>3-D images: .wrl and .x files
+<LI>2-D images: .gif, .png, .jpg, and .bmp files
+<LI>Video: .avi, .mpg, .mpeg, .mpv, .mp2, .mpe, .mov, and .qt files
+<LI>Audio: .mid and .wav files
+</UL>
+<P>DirectAnimation supports all the audio and video file types supported in DirectShow. If the user has a DirectShow filter installed for a particular format, such as DV or Line 21 (for closed captions), then this format will also be supported.
+
+
+
+<H3><A NAME="proguide_0001050102030000">Scripting</A></H3>
+<P>The DirectAnimation scripting interfaces make it easy to use DirectAnimation from an HTML environment. The library provides a set of methods for animating multimedia elements such as images, sprites, movies, sound as well as 2-D and 3-D objects. It includes support for animation paths, rotations, and other transformations. A timeline sequencing feature makes it possible to build lifelike animations using simple components as modular building blocks. 
+<P>The library works in cooperation with the DirectAnimation integrated-media control (<A HREF="DA_E0115.htm#vref_0001060155000000" TARGET="TEXT">DAViewerControl</A>). Library calls are made through a scripting language, such as JScript or VBScript, to construct an animation and play it in the Dynamic HTML compositing space. 
+<P>Typically, you declare your <A HREF="DA_E0115.htm#vref_0001060155000000" TARGET="TEXT">DAViewerControl</A> object as shown in the following JScript sample. The object's name can be anything. Here it is <I>DAControl</I>. The CLSID must be as shown:
+<PRE><FONT FACE="Courier" SIZE="2">
+&lt;DIV ID=controlDiv&gt;
+&lt;OBJECT ID="DAControl"
+        STYLE="position:absolute; left:10; top:10;width:500;height:450"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D"&gt;
+&lt;/OBJECT&gt;
+&lt;/DIV&gt;
+
+&lt;SCRIPT LANGUAGE="JScript"&gt;
+&lt;!--
+   m = DAControl.PixelLibrary;
+   ...
+//--&gt;
+&lt;/SCRIPT&gt;
+</FONT></PRE>
+<P>The variable "m" is shorthand for the <A HREF="DA_E0061.htm#vref_000106011f000000" TARGET="TEXT">DAStatics</A> Library. Every function and property that is in that library needs to be preceded by an "m" so the interpreter knows where to find them. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+  myImage = m.SolidColorImage(m.Red);
+</FONT></PRE>
+<P>In this example, <A HREF="DA_E0078.htm#vref_0001060130001f00" TARGET="TEXT">SolidColorImage</A> is a <A HREF="DA_E0061.htm#vref_000106011f000000" TARGET="TEXT">DAStatics</A> function that creates a <A HREF="DA_E0045.htm#vref_000106010f000000" TARGET="TEXT">DAImage</A> object and <A HREF="DA_E0038.htm#vref_0001060108010500" TARGET="TEXT">Red</A> is a <B>DAStatics</B> property that defines the color red.
+<P>Once you have constructed the renderable media type (an image or sound), you tell the <A HREF="DA_E0115.htm#vref_0001060155000000" TARGET="TEXT">DAViewerControl</A> object what to display, as shown in the following JScript code: 
+<PRE><FONT FACE="Courier" SIZE="2">
+   DAControl.Image = myImage;
+   DAControl.Sound = mySound;
+</FONT></PRE>
+<P>Then tell the object to start the model with the <A HREF="DA_E0115.htm#vref_0001060155010600" TARGET="TEXT">Start</A> subroutine, as shown in the following JScript code:
+<PRE><FONT FACE="Courier" SIZE="2">
+   DAControl.Start();
+</FONT></PRE>
+<P>The <A HREF="DA_E0115.htm#vref_0001060155000000" TARGET="TEXT">DAViewerControl</A> has the CLSID B6FFC24C-7E13-11D0-9B47-00C04FC2F51D and is a windowless control, so it can be used with Dynamic HTML, and it can be used over or under other objects on the screen. DirectAnimation also provides the more traditional windowed control (class <B>DAViewerControlWindowed</B>) with the CLSID 69AD90EF-1C20-11D1-8801-00C04FC29D46. If you are working in a traditional environment, such as Visual Basic, it is recommended that you use the windowed control.
+
+
+<H3><A NAME="proguide_0001050102040000">The Statics Class</A></H3>
+<P>The <A HREF="DA_E0061.htm#vref_000106011f000000" TARGET="TEXT">DAStatics</A> class (<B>com.ms.dxmedia.Statics</B> Java class) collects all the static functions and constants provided by the other classes and makes them available as static methods on the <B>DAStatics</B> (Java <A HREF="DA_E0157.htm#dxmref_0001070129000000" TARGET="TEXT">Statics</A> class. In scripting languages, this means all the static functions and constants are available through the control object. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+&lt;DIV ID=controlDiv&gt;
+&lt;OBJECT ID="DAControl"
+        STYLE="position:absolute; left:10; top:10;width:500;height:450"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D"&gt;
+&lt;/OBJECT&gt;
+&lt;/DIV&gt;
+
+&lt;SCRIPT LANGUAGE="JScript"&gt;
+&lt;!--
+   m = DAControl.PixelLibrary;
+   ...
+//--&gt;
+&lt;/SCRIPT&gt;
+</FONT></PRE>
+<P>After this declaration, every function, property, and constant that is in the <A HREF="DA_E0061.htm#vref_000106011f000000" TARGET="TEXT">DAStatics</A> library needs to be preceded by an "m" so the interpreter knows where to find them. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+  myImage = m.SolidColorImage(m.Red);
+</FONT></PRE>
+<P>In Java, all of the static methods in the <A HREF="DA_E0157.htm#dxmref_0001070129000000" TARGET="TEXT">Statics</A> library become available without qualification. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+ImageBvr im = solidColorImage(blue);
+</FONT></PRE>
+<P>If programmers want to write DirectAnimation code outside of a <B>Model</B> class and not have to qualify their static method invocations, they can do so by having their own class that extends the <A HREF="DA_E0061.htm#vref_000106011f000000" TARGET="TEXT">DAStatics</A> class. If this is not feasible (because the class already extends another class) then explicit name qualifications will be required.
+
+
+
+<H3><A NAME="proguide_0001050102050000">Naming Conventions in DirectAnimation</A></H3>
+<P>This section discusses the naming conventions used in the COM API, which are exposed to JScript and VBScript users. In COM and thus in scripting when two similar methods differ only in the type of at least one of their parameters, then these two methods must have different names. This is in contrast to other languages such as Java and C++, which make it possible to use the same method name in such a case. For this reason, in the <I>Scripting Reference</I> you'll find different variations of essentially the same method, with slightly adapted names. The different suffixes that are used are as follows:
+<UL><LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102050100" TARGET="TEXT">Anim</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102050200" TARGET="TEXT">Rate</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102050300" TARGET="TEXT">Degrees</A>
+</UL>
+<A NAME="proguide_0001050102050100"></A><P><B>Anim Naming Convention</B>
+<P>The functions with <I>Anim</I> in the name, such as <A HREF="DA_E0092.htm#vref_000106013e000500" TARGET="TEXT">Point2Anim</A>, are counterparts of the non-<I>Anim</I> versions, such as <A HREF="DA_E0092.htm#vref_000106013e000600" TARGET="TEXT">Point2</A>. The difference is that the <I>Anim</I> versions take time-varying parameters, and produce animated results. Functions with <I>Anim</I> take animated parameters of type <A HREF="DA_E0054.htm#vref_0001060118000000" TARGET="TEXT">DANumber</A> or <A HREF="DA_E0108.htm#vref_000106014e000000" TARGET="TEXT">DAString</A>. Functions without <I>Anim</I> take parameters that are doubles, integers, and regular strings. For example the following two statements are equivalent:
+<PRE><FONT FACE="Courier" SIZE="2">
+   M = DAControl.PixelLibrary;
+   P1 = m.Point2(34, 100);
+   P2 = m.Point2Anim(m.DANumber(34), m.DANumber(100));
+</FONT></PRE>
+<P>(Note that <B>DANumber</B>(<I>x</I>) converts the regular number <I>x</I> into a number behavior.)
+<P>Since the second form is longer, what is its value? It is necessary if you want to construct a time varying point. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+   //constructs a number that varies between 34 and 50 in 3 secs.
+   xNum = m.SlowInSlowOut(34, 50, 3, 0);&#009;
+   // constructs a point that travels on the Y = 100 line, between the two X values in 3 secs.
+   P2 = m.Point2Anim(xNum, m.DANumber(100));
+</FONT></PRE>
+<P><I>P2</I> is a time-varying point that can be used to build other time-varying entities. For example, it can be used as a parameter to <A HREF="DA_E0099.htm#vref_0001060145001800" TARGET="TEXT">Translate2Point</A>. Note that in cases where there is no non-<I>Anim</I> version of a certain function then the <I>Anim</I> suffix is omitted even if the function's parameters are time-varying, as is the case with <B>Translate2Point</B>. 
+
+<A NAME="proguide_0001050102050200"></A><P><B>Rate Naming Convention</B>
+<P>Sometimes to construct time-varying values it is easier to specify the rate of change of the value than to specify the value itself. DirectAnimation provides variations to functions that accept rate-of-change parameters as a convenience. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+   RotXf = m.Rotate2Rate(Math.PI/3);
+</FONT></PRE>
+<P> This code constructs a time varying 2-D rotation of PI/3 per second, and is equivalent to:
+<PRE><FONT FACE="Courier" SIZE="2">
+   RotXf = m.Rotate2Anim(m.Mul(m.LocalTime, m.DANumber(Math.PI/3)));
+</FONT></PRE>
+<P>Note that <A HREF="DA_E0089.htm#vref_000106013b001900" TARGET="TEXT">Mul</A> is for multiplying two <A HREF="DA_E0054.htm#vref_0001060118000000" TARGET="TEXT">DANumber</A>s together, and <A HREF="DA_E0090.htm#vref_000106013c000200" TARGET="TEXT">LocalTime</A> is time, which increases by one unit per second.
+
+<A NAME="proguide_0001050102050300"></A><P><B>Degrees Naming Convention</B>
+<P>Methods with the <I>Degrees</I> suffix take their angle parameters in degrees as opposed to radians. These are, again, convenience functions that spare the user from doing the conversion explicitly, if the user chooses to specify angle parameters in degrees. For example, consider the following statement with radian parameters:
+<PRE><FONT FACE="Courier" SIZE="2">
+   RotXf = m.Rotate2Rate(Math.PI/3);
+</FONT></PRE>
+<P>This can be expressed with degrees as:
+<PRE><FONT FACE="Courier" SIZE="2">
+   RotXf = m.Rotate2RateDegrees(60);
+</FONT></PRE>
+<H3><A NAME="proguide_0001050102060000">Viewing DirectAnimation Functions in Visual Basic</A></H3>
+<P>To view the DirectAnimation library functions in Visual Basic, follow these steps:
+<OL><LI>Install DirectAnimation.
+<LI>In Visual Basic, choose <B>Components</B> from the <B>Project</B> menu. A <B>Components</B> dialog box appears.
+<LI>On the <B>Controls</B> tab, check the box next to <B>DirectAnimation Library</B>, and click the <B>OK</B> button. The DAViewerControl will appear as a choice in the Toolbox.
+<LI>Click on the control in the Toolbox, then draw the control onto a form.
+<LI>Choose <B>Object Browser</B> from the <B>View</B> menu. The object browser appears.
+<LI>At the top left of the object browser (where it says <B>All Libraries</B>), choose <B>DirectAnimationCtl</B> from the drop-down list.
+<LI>Click a class or interface to display its functions.
+<LI>Click a function to display its Visual Basic syntax (at the bottom of the object browser).
+</OL>
+<H3><A NAME="proguide_0001050102070000">A Simple JScript Example</A></H3>
+<P>The following code creates a red oval and spins it around. To create this JScript example, follows these steps:
+<OL><LI>Declare the <A HREF="DA_E0115.htm#vref_0001060155000000" TARGET="TEXT">DAViewerControl</A> windowless control with an &#060;OBJECT&#062; tag. 
+<P>
+You can use any name for the control. You can set the control's position and size on the HTML page by specifying the value of the left position, the value of the top position, and the height and width of the control. You can also specify whether the windowless control appears underneath other images and text on the page, by specifying z-index: -1.
+<PRE><FONT FACE="Courier" SIZE="2">&lt;OBJECT ID="DAControl"
+  STYLE="position:absolute; left:30%; top:100;width:300;height:300;z-index: -1" 
+  CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D"&gt;
+&lt;/OBJECT&gt;
+</FONT></PRE>
+<LI>In the scripting section of your HTML file, declare a <A HREF="DA_E0061.htm#vref_000106011f000000" TARGET="TEXT">DAStatics</A> library object (<I>m</I> in the example below) and attach it to either the <A HREF="DA_E0115.htm#vref_0001060155020e00" TARGET="TEXT">PixelLibrary</A> or <A HREF="DA_E0115.htm#vref_0001060155020a00" TARGET="TEXT">MeterLibrary</A>. 
+<PRE><FONT FACE="Courier" SIZE="2">
+  m = DAControl.PixelLibrary;
+</FONT></PRE>
+<LI>Access functions and subroutines in the <A HREF="DA_E0061.htm#vref_000106011f000000" TARGET="TEXT">DAStatics</A> library through the object (<I>m</I> in the example below) to create or import your media types (such as images, movies, and sound) and animate them.
+<PRE><FONT FACE="Courier" SIZE="2">
+  fillImg = m.SolidColorImage(m.Red);
+</FONT></PRE>
+<LI>Set the media to be displayed as a property of the <A HREF="DA_E0115.htm#vref_0001060155000000" TARGET="TEXT">DAViewerControl</A> object, either the <A HREF="DA_E0115.htm#vref_0001060155020700" TARGET="TEXT">Image</A> property or <A HREF="DA_E0115.htm#vref_0001060155020f00" TARGET="TEXT">Sound</A> property. 
+<PRE><FONT FACE="Courier" SIZE="2">
+  DAControl.Image = finalImg; 
+</FONT></PRE>
+<LI>Invoke rendering of the control with <A HREF="DA_E0115.htm#vref_0001060155010600" TARGET="TEXT">Start()</A>. Whatever <A HREF="DA_E0115.htm#vref_0001060155020700" TARGET="TEXT">Image</A> property or <A HREF="DA_E0115.htm#vref_0001060155020f00" TARGET="TEXT">Sound</A> property the <A HREF="DA_E0115.htm#vref_0001060155000000" TARGET="TEXT">DAViewerControl</A> object has when started determines what will be rendered. 
+<PRE><FONT FACE="Courier" SIZE="2">
+  DAControl.Start()
+</FONT></PRE>
+</OL>
+<P>Click the <B>Show</B> button to display the JScript example. To see the code, right-click the title "Simple Sample" and choose <B>View Source</B> from the shortcut menu.
+
+<center><iframe name="exampleframe" src="../DocSamps/simple.htm"
+height=300 width=900 align=center FRAMEBORDER=20 FRAMESPACING=5
+scrolling="no">
+</iframe></center>
+<BR CLEAR=ALL><P>You can add interaction to this sample by changing the code to respond to a user-initiated event. You can make an image red until the left mouse button is clicked, then turn it green with the following statement:
+<PRE><FONT FACE="Courier" SIZE="2">
+  fillImg = m.Until(m.SolidColorImage(m.Red), m.LeftButtonDown, m.SolidColorImage(m.Green));
+</FONT></PRE>
+<P>The <A HREF="DA_E0063.htm#vref_0001060121000400" TARGET="TEXT">Until</A> function causes <I>fillImg</I> to be red until the <A HREF="DA_E0072.htm#vref_000106012a000200" TARGET="TEXT">LeftButtonDown</A> event occurs, then turns <I>fillImg</I> green. 
+
+
+
+<H3><A NAME="proguide_0001050102080000">A Simple Java Example</A></H3>
+<P>The following "Hello, World" example demonstrates some of the basic steps involved in developing a DirectAnimation application. The first step uses DirectAnimation for Java to construct an applet that, when displayed, results in a rendered text string that says "Hello, World." There is no animation and no interaction. 
+<PRE><FONT FACE="Courier" SIZE="2">
+import com.ms.dxmedia.*;
+public class MyModel extends Model {
+  public void createModel(BvrsToRun blist) {
+    FontStyleBvr fs = defaultFont.family(toBvr("Arial").color(blue).bold();
+    ImageBvr tx = (toBvr("Hello, World"), fs);
+    setImage(tx);
+  }
+}
+public class MyApplet extends DXMApplet {
+  public void init(){
+     // Always call the superclass's init() first to ensure codeBase is set
+     super.init();
+     // Now set the model
+     setModel(new MyModel());
+  }
+}  
+</FONT></PRE>
+<P>This DirectAnimation applet simply renders a piece of static text. You can make this example more interesting by adding just a few more lines of code. First, however, you must understand how the initial example works. 
+<P>The DirectAnimation <A HREF="DA_E0144.htm#dxmref_000107011c000000" TARGET="TEXT">Model</A> class includes the abstract <A HREF="DA_E0144.htm#dxmref_000107011c020700" TARGET="TEXT">createModel</A> method. MyModel subclasses <B>Model</B> and implements <B>createModel</B> to build behaviors; this example has a string behavior and an image behavior. The <B>createModel</B> method then calls the <A HREF="DA_E0144.htm#dxmref_000107011c020400" TARGET="TEXT">setImage</A> method to set the model's image behavior. 
+ 
+<P>The DirectAnimation <A HREF="DA_E0139.htm#dxmref_0001070117000000" TARGET="TEXT">ImageBvr</A> type is constructed by converting a character string ("Hello, World") into a <B>ImageBvr</B> behavior with the <A HREF="DA_E0193.htm#dxmref_000107014d000200" TARGET="TEXT">toBvr</A> method. The <B>toBvr</B> method converts the literal string "Hello, World" into an image of the text with the font style specified in the <A HREF="DA_E0170.htm#dxmref_0001070136000001" TARGET="TEXT">defaultFont</A> method.
+
+<P>Next, MyApplet subclasses the DirectAnimation <A HREF="DA_E0130.htm#dxmref_000107010e000000" TARGET="TEXT">DXMApplet</A> subclass of the Abstract Windows Toolkit (AWT) Applet class. This initializes its superclass <B>DXMApplet</B> to take an instance of the MyModel class. When the applet is invoked, DirectAnimation builds the model (by invoking <A HREF="DA_E0144.htm#dxmref_000107011c020700" TARGET="TEXT">createModel</A>) and displays it in the applet. 
+
+
+
+<H4><A NAME="proguide_0001050102080100">Adding Animation</A></H4>
+<P>A small addition to the previous code causes the text to change color continuously as it is rendered. The MyApplet class doesn't change at all, while the MyModel class is changed to the following: 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+public class MyModel extends Model {
+  public void createModel(BvrsToRun blist) {
+    ColorBvr col = colorHsl(localTime, toBvr(0.5), toBvr(0.5));  
+    FontStyleBvr fs = defaultFont.family(toBvr("Arial")).color(col).bold();
+    ImageBvr tx = (toBvr("Hello, World"), fs);
+    setImage(tx);
+    
+  }
+}
+</FONT></PRE>
+<P>One line was added to the <B>createModel</B> method. It defines a color, using the <A HREF="DA_E0162.htm#dxmref_000107012e000100" TARGET="TEXT">colorHsl</A> method. This method allows you to define a color using the Hue, Saturation, Lightness (HSL) model. The <B>colorHsl</B> method takes 0.5 for its saturation and lightness arguments, but uses the built-in behavior called <A HREF="DA_E0185.htm#dxmref_0001070145000002" TARGET="TEXT">localTime</A> for the hue. The <B>localTime</B> behavior is a time-varying value of type <A HREF="DA_E0147.htm#dxmref_000107011f000000" TARGET="TEXT">NumberBvr</A> that increases at the rate of one unit per second. Values of all the defined DirectAnimation types are potentially time-varying and interactive.
+<P>Using <A HREF="DA_E0185.htm#dxmref_0001070145000002" TARGET="TEXT">localTime</A> in a color-producing method such as <A HREF="DA_E0162.htm#dxmref_000107012e000100" TARGET="TEXT">colorHsl</A> yields a time-varying color. Using this time-varying color as an argument in the font style <I>color(col)</I> method yields a time-varying font color. Attaching the time-varying color value to text that is converted into an image produces a time-varying image. Because <A HREF="DA_E0144.htm#dxmref_000107011c020400" TARGET="TEXT">setImage</A> now sets a time-varying image, the result of this code is an image that is animated. 
+<P>Note that the entire applet is as you see it. No other methods are required and, in particular, there is no need for a frame loop, even though the applet is displaying an animation. For programmers who have been using the awt.Graphics package to do animation, this means you do not need to worry about threads, <B>while()</B> loops, or repainting the screen.
+
+<H4><A NAME="proguide_0001050102080200">Adding Simple Interaction</A></H4>
+<P>The next step is to add some simple interactivity. The new version of MyModel, listed below, uses the time-varying color until the left mouse button is pressed. It then changes the color to red. 
+<PRE><FONT FACE="Courier" SIZE="2">
+public class MyModel extends Model {
+  public void createModel(BvrsToRun blist) {
+    ColorBvr col = colorHsl(localTime, toBvr(0.5), toBvr(0.5));  
+    ColorBvr mouseCol = (ColorBvr)until(col, leftButtonDown, red);
+    FontStyleBvr fs = defaultFont.family(toBvr("Arial")).color(mouseCol).bold();
+    ImageBvr tx = (toBvr("Hello, World"), fs);
+    setImage(tx);
+  }
+}
+</FONT></PRE>
+<P>A single line of code adds the ability to be respond to the mouse:
+<PRE><FONT FACE="Courier" SIZE="2">
+until(col, leftButtonDown, red);
+</FONT></PRE>
+<P>This expression produces a color behavior that is initially <I>col</I> and remains so until the <B>leftButtonDown</B> event occurs. When this happens, <I>col</I> changes to red. There is still no need to provide a frameloop.
+
+
+ In addition, there is no need to provide an event detection/response loop (to wait for the <B>leftButtonDown</B>), because this is dealt with explicitly in the implementation of the <B>until</B> method.
+<P>As this simple shows, time-varying, interactive behaviors are constructed out of media data types and operations. The DirectAnimation run-time system then takes on the task of animation, event detection, and media presentation. 
+
+
+<H3><A NAME="proguide_0001050102090000">Coordinates in DirectAnimation</A></H3>
+<P>The DirectAnimation API uses continuous temporal and spatial 2-D and 3-D coordinate systems. The basic unit of time is the second. The basic unit of space is the meter. The x-axis is the horizontal axis, increasing to the right. The y-axis is the vertical axis, increasing upward. Three-dimensional coordinates are y-axis up, positive z-axis near, and negative z-axis far.
+<P>The following diagram demonstrates these coordinate systems. 
+
+<P><IMG SRC="../art/xyaxes.gif" WIDTH="411" HEIGHT="154" ALT="Image coordinate systems" >
+
+
+<P>DirectAnimation provides several mechanisms for handling these differences. Fundamentally, the DirectAnimation coordinate system is a meter-based system. When PARAM tags are used to specify all or part of the model, the coordinate system will implicitly be that of HTML. When the library mode of the DirectAnimation control is set to pixel mode the coordinate system is converted from the DirectAnimation default to the pixel convention. With these methods, the scripter can construct models in resolution-independent units. For example, in JScript:
+<PRE><FONT FACE="Courier" SIZE="2">
+  m = DAControl.PixelLibrary;
+</FONT></PRE>
+<P>- or -
+<PRE><FONT FACE="Courier" SIZE="2">
+  m = DAControl.MeterLibrary; 
+</FONT></PRE>
+<P>This section discusses the following topics:
+<UL><LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102090100" TARGET="TEXT">HTML and Pixel Coordinates</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102090200" TARGET="TEXT">Units</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102090300" TARGET="TEXT">Working with Pixel Values</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102090400" TARGET="TEXT">Continuous Coordinate Systems</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102090500" TARGET="TEXT">Image Coordinate System</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102090600" TARGET="TEXT">Geometry Coordinate System</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102090700" TARGET="TEXT">Meter-Based Space</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102090800" TARGET="TEXT">Pixel-Based Space</A>
+<LI><A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102090900" TARGET="TEXT">Center-Based Positioning</A>
+</UL>
+<A NAME="proguide_0001050102090100"></A><P><B>HTML and Pixel Coordinates
+</B>
+<P>HTML uses device pixels as the standard unit of measure with a left-handed coordinate system with the y-axis down and the origin in the upper left corner. When PARAM tags are used to specify animations the coordinate system is that of HTML. The DirectAnimation client controls use a pixel-coordinate system with the y-axis down and the origin in the center of the window. 
+
+<P>DirectAnimation is fundamentally a meter-based coordinate system, which is preferred for resolution independent animation. However, DirectAnimation provides the <I>pixel construction mode</I> as a convenience for users who are familiar with the HTML coordinate system and would like their animation coordinates to match that as closely as possible. 
+<P>When using the <A HREF="DA_E0115.htm#vref_0001060155020e00" TARGET="TEXT">PixelLibrary</A> (as opposed to the <A HREF="DA_E0115.htm#vref_0001060155020a00" TARGET="TEXT">MeterLibrary</A>) the 2-D coordinate system is left handed with the positive Y axis going downward, and has a centered origin (not an origin in the upper-left-corner, as in the HTML coordinate system). See the sample in Samples\DirectAnimation\JScript\Templates\CoordsAndPath.html for a detailed example of the <I>pixel construction mode</I>. Also, compare the PixelMode.html and MeterMode.html samples in Samples\DirectAnimation\JScript\Exercises. All 2-D coordinate references such as points, paths, and translation factors in this construction mode are interpreted as pixel-valued. Note that this is a construction mode only, so when you extract information back, like extents, you get them in meters, since these are the units in the internal representation. For advanced animations, the meter mode is strongly recommended, especially since the conversion from meter to HTML coordinate space is a single transform.
+
+
+<A NAME="proguide_0001050102090200"></A><P><B>Units</B>
+<P>The DirectAnimation API tries to ensure that one unit is actually 1 meter in physical space, but variables such as monitor curvature and monitor controls that change the display area prevent complete accuracy. 
+
+<P>DirectAnimation provides predefined constants that you can use as multipliers to convert to other units, including <A HREF="DA_E0086.htm#vref_0001060138000300" TARGET="TEXT">cm</A>, <A HREF="DA_E0086.htm#vref_0001060138000400" TARGET="TEXT">foot</A>, <A HREF="DA_E0086.htm#vref_0001060138000500" TARGET="TEXT">inch</A>, <A HREF="DA_E0086.htm#vref_0001060138000600" TARGET="TEXT">meter</A>, <A HREF="DA_E0086.htm#vref_0001060138000700" TARGET="TEXT">mm</A>, and <A HREF="DA_E0086.htm#vref_0001060138000800" TARGET="TEXT">pixel</A>. 
+
+
+<A NAME="proguide_0001050102090300"></A><P><B>Working with Pixel Values</B>
+<P>Given that pixel size differs from one display to another and even across different settings of the same display device, DirectAnimation provides a built-in number behavior, <A HREF="DA_E0086.htm#vref_0001060138000800" TARGET="TEXT">pixel</A>, which is the dimension of a pixel in meters. The <B>pixel</B> is a scalar because the pixel is a square. 
+
+<P>The <A HREF="DA_E0086.htm#vref_0001060138000800" TARGET="TEXT">pixel</A> constant allows an author to coordinate synthetic imagery precisely with imported bitmaps regardless of the display resolution. 
+
+
+<A NAME="proguide_0001050102090400"></A><P><B>Continuous Coordinate Systems</B>
+<P>Continuous coordinate systems, such as those used by DirectAnimation, provide some key advantages. They remove problems of device- and resolution-dependence, allow for more portable content, and provide more flexibility to the implementation. However, continuous coordinate systems do not always meet the needs of programmers. For example, in addition to continuous time, DirectAnimation also provides the mechanism for applications to control frame generation through application-generated time ticks. Similarly, in spatial coordinates, it is generally the case that a programmer who imports a GIF or JPEG file wants it displayed at the same resolution at which it was authored and stored. For this reason, DirectAnimation supports pixels. 
+
+<A NAME="proguide_0001050102090500"></A><P><B>Image Coordinate System</B>
+<P>The image coordinate system is called the <I>image plane</I>. Depending on whether the PixelLibrary or MeterLibrary is used, or if PARAM tags are used, the default unit of measure is pixels or meters, and the coordinate system is in pixel coordinates (origin centered, y down), meter coordinates (origin centered, y up), or HTML coordinates (origin in the upper left, y down).
+
+<P>All image and 2-D geometric primitives live in this same continuous coordinate system. This includes all of the <B>Vector2</B>, <B>Point2</B>, <B>Transform2</B>, <B>Path2</B>, <B>Matte</B>, <B>Text</B>, <B>Montage</B>, and <B>Image</B> values. 
+
+<P>On its own, the image plane extends infinitely, with an origin and x- and y-axes. DirectAnimation images are constructed in this abstract coordinate system. However, when it is time to display a DirectAnimation image, a certain section of the infinite plane is mapped on a region of a display device called a viewport, as shown in the following illustration.
+ 
+<P><IMG SRC="../art/2Dspace.gif" WIDTH="186" HEIGHT="136" ALT="Image plane" >
+
+<P>The programmer decides what the display region or viewport will be. The mapping from the image plane into the viewport is straightforward. The origin of the image plane is mapped to the center of the viewport, and then the mapping happens in like units of measure. For example, if there is a red point 2 centimeters above the origin in the image plane, this point would map to a red pixel 2 centimeters above the center of the viewport. (Note that windowless controls commonly don't occupy their full viewports.)
+
+
+<A NAME="proguide_0001050102090600"></A><P><B>Geometry Coordinate System</B>
+<P>The geometry coordinate system is a 3-D coordinate system of infinite extent where geometric models are specified and transformed. The default unit of measure is the meter. It has an origin and x-, y-, and z-axes. The coordinate system is a right-handed one, as shown in the following illustration.
+ 
+<P><IMG SRC="../art/3Daxes.gif" WIDTH="132" HEIGHT="119" ALT="Geometry coordinate system" >
+
+<P>The following illustration shows the direction of positive rotation along an axis of rotation (the arrow points in the positive direction).
+ 
+<P><IMG SRC="../art/arrow3.gif" WIDTH="167" HEIGHT="67" ALT="Positive rotation" >
+
+<P>DirectAnimation geometric models are constructed in this abstract coordinate system. However, you must have a camera to display a model. The camera projects infinite space into an infinite plane, which is the image plane discussed in the <A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102090500" TARGET="TEXT">Image Coordinate System</A> section. In other words, the 2-D image plane is the 3-D projection plane, because the result of projecting geometry through a camera is an image. The resulting abstract image is amenable to the same operations and rules as other images, including the display through a viewport. 
+
+
+<A NAME="proguide_0001050102090700"></A><P><B>Meter-Based Space</B>
+<P>In a meter-based 2-D-composition space, 3-D models are authored to a certain size in meters, which is to be preserved in all renderings, and images are imported and scaled into a predetermined size, also in meters, independent of the pixel resolution. You can determine how much to scale an image by determining the bounding box of the imported image, comparing the desired size to the bounding box, and using that factor to scale the image. This effectively compensates for pixel size variability. 
+
+<P>While this technique has the advantage of being independent of the device resolution, you need to scale images before displaying them. It thus requires more processing than simple pixel blitting and is prone to pixel aliasing. 
+
+
+<A NAME="proguide_0001050102090800"></A><P><B>Pixel-Based Space</B>
+<P>In a pixel-based composition space, images are imported and displayed in a pixel-to-pixel mapping onto the screen, which is the traditional method in 2-D sprite systems and content (for example, 2-D sprite-based games and Director content). While the result is device-resolution dependent, there are several benefits. One is the large amount of legacy material written in this method. The reuse of this content requires using this pixel-based space. 
+
+<P>In addition, because the pixels are mapped pixel-to-pixel, without any transformations, this method tends to be very fast and avoids pixel aliasing. The 3-D parts must be scaled based on the pixel size, so that when they are projected into the image plane they have consistent proportionality and coordination with the 2-D images. 
+
+
+<A NAME="proguide_0001050102090900"></A><P><B>Center-Based Positioning</B>
+<P>When DirectAnimation imports or constructs an image, it is centered on the origin in the image plane. Similarly, when an image is created by rendering text (which takes no coordinates as parameters), it also is centered on the origin. The center of a camera's field of view coincides with the origin of the image plane. This means that scenes, when rendered into images, are centered on the origin. 
+
+
+
+<H3><A NAME="proguide_00010501020a0000">Scripting Timelines Using Duration</A></H3>
+<P>A key concept behind DirectAnimation is the idea of "video editing" or "media timelines." Editing a video sequence and moving a sprite (subimage) along an animation path are conceptually very similar. Both scripted animation, such as that used in multimedia applications, and natural media, such as recorded sound and video, are sequences of clips. Each clip has a local timeline. Each can be used in more than one place on the screen (compositing) or in more than one place in time (sequencing). DirectAnimation uses the term behavior to denote these fundamental building blocks of media presentation. 
+<P>A DirectAnimation behavior is a subsequence of media with its own timeline. You build an animated presentation by sequencing and compositing (overlaying or rendering) the behavior subsequences. 
+DirectAnimation behaviors support a range of media types. For instance, there are image behaviors that treat video, cel animation, sprite (subimage) animation, and animated line graphics uniformly. There is a sound behavior for mixed, parameterized audio. Animated light behaviors illuminate three dimensional scenes. 
+<P>Timelines are animation fragments of (typically) fixed duration that can be sequenced together to form complex behaviors. Timelines are a flexible mechanism for constructing, manipulating, and running sequences of animation. For example, consider the following JScript code:
+<PRE><FONT FACE="Courier" SIZE="2">
+ startPt = m.Point2(25, 50);
+ endPt = m.Point2(150, 50);
+ myPath = m.Line(startPt, endPt);
+ followPath = m.FollowPath(myPath, 5);
+</FONT></PRE>
+<P>The <A HREF="DA_E0099.htm#vref_0001060145000400" TARGET="TEXT">FollowPath</A> method creates a behavior of fixed duration that represents movement along a geometric path (<I>myPath</I>) that lasts five seconds. There are several ways to create timelines. The most general way is to construct an animation fragment by setting a <A CLASS=tctop HREF="DA_E0035.htm#vref_0001060105010100" TARGET="TEXT">Duration</A> for a behavior. For example, in the following JScript example, colors are given a duration of 5 seconds:
+<PRE><FONT FACE="Courier" SIZE="2">
+color1 = m.Red.Duration(5);
+color2 = m.Green.Duration(5);
+myImage = m.SolidColorImage(m.Sequence(color1, color2));
+</FONT></PRE>
+<P>In general, you can think of behaviors as animations (movies, sounds, sprite animations, 3-D animations, and so on) that run forever. 
+
+<P>Consider the following JScript sample:
+
+<center><iframe name="exampleframe" src="../DocSamps/moveCir.htm"
+height=250 width=500 align=center FRAMEBORDER=20 FRAMESPACING=5
+scrolling="no">
+</iframe></center>
+<BR CLEAR=ALL><P>This script draws a red circle that moves in a straight line. It starts at the beginning of the line, waits 1 second, and then starts to move. It goes from the beginning of the line to end in 4 seconds. It repeats these actions 3 times and then stops at the end. To view the source code, right-click anywhere on the title "Sequencing" title and select <B>View Source</B> from the menu that appears. All measurements are in pixels, so the code uses the <A HREF="DA_E0115.htm#vref_0001060155020e00" TARGET="TEXT">PixelLibrary</A>. Because the control is windowless, the red circle can pass on top of or below the button. It passes below the button if you specify z-index: -1 in the &#060;STYLE&#062; tag within the &#060;OBJECT&#062; tag.
+
+
+
+<H3><A NAME="proguide_00010501020b0000">Arrays and Tuples</A></H3>
+<P>A common way to construct behaviors is to loop through a sequence of other behaviors over time. Examples include flipping through pre-rendered images or a list of colors. DirectAnimation supports this through the <A HREF="DA_E0032.htm#vref_0001060102000000" TARGET="TEXT">DAArray</A> and Java <A HREF="DA_E0119.htm#dxmref_0001070103000000" TARGET="TEXT">ArrayBvr</A> types. 
+
+<P>The following JScript sample constructs a <A HREF="DA_E0032.htm#vref_0001060102000000" TARGET="TEXT">DAArray</A> object from an array and uses the <A HREF="DA_E0032.htm#vref_0001060102010200" TARGET="TEXT">NthAnim</A> function with a time-varying parameter to cycle through the array. Click on the title "Array Sample" and choose <B>View Source</B> to see the source code: 
+
+<center><iframe name="exampleframe" src="../DocSamps/array.htm"
+height=200 width=900 align=top FRAMEBORDER=20 FRAMESPACING=5
+scrolling="no">
+</iframe></center>
+<BR CLEAR=ALL><P>The following Java code constructs an <A HREF="DA_E0119.htm#dxmref_0001070103000000" TARGET="TEXT">ArrayBvr</A> out of a Java array, and uses the <B>nth</B> method with a time-varying parameter to cycle through that list.
+<PRE><FONT FACE="Courier" SIZE="2">
+ColorBvr[] arr = { red, green, blue, yellow, green, cyan, magenta };
+ArrayBvr arrBvr = new ArrayBvr(arr);
+// build an indexer to go from 0 to length - 1, then back to 0, etc.
+// going at a rate of one unit per second.
+NumberBvr indexer = mod(localTime, toBvr(arr.length -1));
+// Use this to index into the ArrayBvr.
+ColorBvr cyclingCol = (ColorBvr)arrBvr.nth(indexer);
+</FONT></PRE>
+<P>Note that while <B>nth</B> takes a NumberBvr, it uses the greatest integer value less than the number's value to determine the index. The array's index starts at base 0 and any attempt to index beyond its length generates a run-time error.
+<P>Tuple behaviors (<A HREF="DA_E0111.htm#vref_0001060151000000" TARGET="TEXT">DATuple</A> and Java <A HREF="DA_E0207.htm#dxmref_000107015b000000" TARGET="TEXT">TupleBvr</A>) are the same as array behaviors, except that a tuple object can contain behaviors of different types(such as a <A HREF="DA_E0038.htm#vref_0001060108000000" TARGET="TEXT">DAColor</A> and a <A HREF="DA_E0045.htm#vref_000106010f000000" TARGET="TEXT">DAImage</A>), while the behaviors in an array object must all be the same type. Tuple objects are useful for grouping behaviors that all switch at the same event. For example:
+<PRE><FONT FACE="Courier" SIZE="2">SynchTuple = m.Until(tuple1, event, tuple2);
+</FONT></PRE>
+<P>This helps to synchronize many different behaviors to one event.
+<P>Note that unlike array behaviors, a tuple behavior cannot have an animated index.
+
+<H3><A NAME="proguide_00010501020c0000">URLs and Paths</A></H3>
+<P>
+
+<P>Paths in DirectAnimation are created by building a URL base, and then adding relative paths to the base. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+  mediaBase = "..\\..\\..\\..\\media\\";
+  sndBase = mediaBase + "sound\\";
+  imgBase = mediaBase + "image\\";
+  geoBase = mediaBase + "geometry\\";
+
+  mySnd = m.ImportSound(sndBase + "clock1.mp2").Sound;
+  myImage = m.ImportImage(imgBase + "bird.gif");
+  cubeGeo = m.ImportGeometry(geoBase + "cube.x");
+</FONT></PRE>
+<P>When you install the DirectX Media SDK, geometry, image, and sound files are installed by default in DXMedia\Media\geometry, DXMedia\Media\image, and DXMedia\Media\sound directories, respectively. Your path should be the relative path to your media files from where your HTML file resides. 
+<P>Alternatively, you can specify the URL absolutely. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+ mySnd = m.ImportSound("file://c:/dxmedia/media/sound/clock1.mp2").Sound;
+ myImage = m.ImportImage("file://c:/dxmedia/media/image/bird.gif");
+</FONT></PRE>
+<P>In Java, a base URL is set for you automatically. When you build a Java applet, the base URL is set by default to the directory from which your class files are loaded. If you are creating an application instead of an applet, the base URL is set by default to the current working directory. You can also set the base URL explicitly with the <A HREF="DA_E0144.htm#dxmref_000107011c020500" TARGET="TEXT">setImportBase</A> method, as shown in the following Java code: 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+try {
+   setImportBase(new URL("file:/c:/dx/dxm/media/image/"));
+} catch (MalformedURLException exc){
+   System.out.println("Bad URL - " + exc);
+  }
+</FONT></PRE>
+<P>The URL you specify in <B>setImportBase</B> can be any fully-qualified URL. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+setImportBase(new URL("http:/www.mycompany.com/MediaLib/"));
+</FONT></PRE>
+<P>To build your full URL relative to the URL base, you retrieve the URL base with the <A HREF="DA_E0144.htm#dxmref_000107011c020200" TARGET="TEXT">getImportBase</A> method, and then complete your path relative to this base. For example, if your applet was built in the directory C:\Dxm\Samples\DirectAnimation\Java\MyApp, the following code would set the URL <I>mediaBase</I> to C:\Dxm\Media.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+URL mediaBase = buildURL(getImportBase(),"../../../Media/");
+</FONT></PRE>
+<P>You then use the URL base as shown in the following code:
+<PRE><FONT FACE="Courier" SIZE="2">
+   ImageBvr image1 = importImage(buildURL(mediaBase, "image/apple.gif"));
+   ImageBvr image2 = importImage(buildURL(mediaBase,"../../MyMediaLibrary/MyImages/peach.gif");
+</FONT></PRE>
+<P>You can also override the base URL and specify a fully-qualified URL. Note that the URL does not become the default base URL.
+<PRE><FONT FACE="Courier" SIZE="2">
+URL altURL = buildURL(getImportBase(),"file:/c:/dx/dxm/media/image/);
+URL anotherURL = buildURL(getImportBase(),"http:/www.mycompany/MediaLib/");
+</FONT></PRE>
+<P>You could then import images as show in the following code:
+<PRE><FONT FACE="Courier" SIZE="2">
+ImageBvr img1 = importImage(buildURL(altURL, "apple.gif"));
+ImageBvr img2 = importImage(buildURL(anotherURL, "pictures/orange.gif"));
+</FONT></PRE>
+<P>You can also import from absolute URLs without building a URL base. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+ImageBvr img1 = importImage(buildURL(getImportBase(), "file:/c:/dx/dxm/media/image/apple.gif"));
+ImageBvr img2 = importImage(buildURL(getImportBase(), "http:/www.mycompany/MediaLib/pictures/orange.gif"));
+</FONT></PRE>
+<H3><A NAME="proguide_00010501020d0000">The Drawing Surface</A></H3>
+<P>The core DirectAnimation API is based on values and expressions. In contrast, the Drawing Surface API provides an alternative style in which methods are used to set a context and then primitives are rendered based on this context. The context can be saved into a stack and restored. The Drawing Surface API is limited to constructing 2-D vector models, so to get to broader features such as sound, images, and 3-D, use the core API. 
+<P>
+You can use the Drawing Surface API in conjunction with the core API. After a 2-D vector model is constructed, it can be rendered into an image and then combined with images based on the core API. In the VBScript sample Runners (\Samples\DirectAnimation\VBScript\Showcase\Runners.html), the runner model is constructed using the Drawing Surface API, while the animation is constructed using the core API. For basic Drawing Surface samples, see Samples\DirectAnimation\JScript\Templates\BasicDS.html and Samples\DirectAnimation\VBScript\Templates\BasicDS.html. 
+
+
+<P>The <A HREF="DA_E0040.htm#vref_000106010a000000" TARGET="TEXT">DADrawingSurface</A> class uses a style of drawing that depends on a <I>graphics context</I>. This is in contrast to the other DirectAnimation classes that use a <I>constructive</I> approach. The constructive approach combines primitive data types into a more complex model, in a hierarchical fashion.
+
+<P>The graphics context approach is analagous to a pen plotter, where the pen acts as the mechanical extension of a hand and the plotter acts as a piece of paper. To draw something, the pen is directed to a location on the plotter and then draws the shape. Many people find this approach to be more familiar than hierarchical modeling. For example, to draw the sun in the sky, it may seem more obvious to simply draw a yellow circle exactly where you want it, instead of first drawing a circle, then creating a yellow circle, and then, with a transform, creating yet another yellow circle that is now correctly placed. The difference is in the approach rather than in capabilities.
+
+<P>A <A HREF="DA_E0040.htm#vref_000106010a000000" TARGET="TEXT">DADrawingSurface</A> object maintains a <I>graphics state</I> object for 2-D graphics. This state includes attributes such as line style, fill style, border style, font style, and 2-D transformations. The drawing commands (such as <A HREF="DA_E0040.htm#vref_000106010a012200" TARGET="TEXT">Oval</A> and <A HREF="DA_E0040.htm#vref_000106010a012b00" TARGET="TEXT">RoundRect</A> are always interpreted in terms of the current state. See <B>DADrawingSurface</B> in the <I>Scripting Reference</I> for details about the subroutines and functions.
+
+<P>To use a <A HREF="DA_E0040.htm#vref_000106010a000000" TARGET="TEXT">DADrawingSurface</A> functions and subroutines, create a <A HREF="DA_E0115.htm#vref_0001060155000000" TARGET="TEXT">DAViewerControl</A> object in your HTML as usual, then use the <A HREF="DA_E0061.htm#vref_000106011f000000" TARGET="TEXT">DAStatics</A> subroutine <A HREF="DA_E0070.htm#vref_0001060128000200" TARGET="TEXT">NewDrawingSurface</A> to create the <B>DADrawingSurface</B> object, as shown in the following JScript code: 
+<PRE><FONT FACE="Courier" SIZE="2">
+&lt;DIV ID=controlDiv&gt;
+&lt;OBJECT ID="DAControl"
+        STYLE="position:absolute; left:10; top:10;width:450;height:450"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D"&gt;
+&lt;/OBJECT&gt;
+&lt;/DIV&gt;
+
+&lt;SCRIPT LANGUAGE="JScript"&gt;
+  m  = DAControl.MeterLibrary;
+  ds = m.NewDrawingSurface();
+</FONT></PRE>
+<P>Once you have the <A HREF="DA_E0040.htm#vref_000106010a000000" TARGET="TEXT">DADrawingSurface</A> object <I>ds</I>, you can use its functions and subroutines. For example, the following JScript code draws a line between the specified x and y coordinates.
+<PRE><FONT FACE="Courier" SIZE="2">
+  ds.Line(-0.1,.04, 0.01,.04);
+  DAControl.Image = ds.Image;
+  DAControl.Start();
+
+&lt;/SCRIPT&gt;
+</FONT></PRE>
+<P>Consider the following JScript sample:
+
+<center><iframe name="exampleframe" src="../DocSamps/dsline.htm"
+height=500 width=1000 align=center FRAMEBORDER=20 FRAMESPACING=5
+scrolling="no">
+</iframe></center>
+<BR CLEAR=ALL><P>This script draws two static lines and a rotating line, as well as text. To view the source code, right-click anywhere on the title "Drawing Surface" title and select <B>View Source</B> from the menu that appears. 
+
+
+<P>You can use the Structured Graphics control with the Drawing Surface interface. For example, the following VBScript code uses the Drawing Surface methods with the Structured Graphics control's drawing surface: 
+<PRE><FONT FACE="Courier" SIZE="2">
+&lt;OBJECT ID=SG1
+STYLE="POSITION: absolute; HEIGHT:200;WIDTH:200;TOP:130;LEFT:215;VISIBILITY;VISIBLE; ZINDEX:1" 
+CLASSID="CLSID:369303C2-D7AC-11d0-89D5-00A0C90833E6"&gt;
+...
+&lt;/OBJECT&gt;
+&lt;SCRIPT LANGUAGE=VBSCRIPT&gt;
+...
+Sub renderNew
+&#009;Set Lib = SG1.Library
+&#009;Set DRS = SG1.DrawSurface
+&#009;Call DRS.LineDashStyle(0)
+&#009;Call DRS.FillColor(Lib.green)
+&#009;Call DRS.SecondaryFillColor(Lib.red)
+&#009;Call DRS.GradientExtent(0,0,200,0)
+&#009;Call DRS.GradientRolloffPower(1)
+&#009;Call DRS.FillStyle(9)
+&#009;Call DRS.Rect(-75,-75,100,100)
+&#009;SG1.DrawSurface = DRS
+End Sub
+&lt;/SCRIPT&gt;
+</FONT></PRE>
+<P>The statement <I>SG1.DrawSurface = DRS</I> resets the Structured Graphics control's drawing surface to what's been created in <I>DRS</I>. 
+
+<P><B>Note on using the DirectAnimation Structured Graphics control with the Drawing Surface interface in the</B> <A HREF="DA_E0115.htm#vref_0001060155020e00" TARGET="TEXT">Pixel</A> <B>construction mode:</B>
+<P>Although the positive y axis goes downward, angles in the arc and pie functions are interpreted as counter-clockwise. For example, a pie shape created by calling <A HREF="DA_E0040.htm#vref_000106010a012400" TARGET="TEXT">PieDegrees</A> with a starting angle of 0 degrees and an ending angle of 90 degrees will be above the x axis (negative y), while a pie created with a starting angle of 0 degrees and an ending angle of -90 degrees will be below the x axis (positive y). 
+
+
+<H3><A NAME="proguide_00010501020e0000">Splines</A></H3>
+<P>DirectAnimation supports animation splines. These are effectively animation paths for numbers, 2-D points and vectors, and 3-D points and vectors. The paths can be linear, quadratic, or cubic b-splines, both rational and non-rational. In DirectAnimation, an animation spline is constructed by supplying an array of knots, control points, and, possibly, weights (all of which themselves are behaviors and are potentially time varying). This creates either a <A HREF="DA_E0054.htm#vref_0001060118000000" TARGET="TEXT">DANumber</A>, <A HREF="DA_E0058.htm#vref_000106011c000000" TARGET="TEXT">DAPoint2</A>, <A HREF="DA_E0059.htm#vref_000106011d000000" TARGET="TEXT">DAPoint3</A>, <A HREF="DA_E0113.htm#vref_0001060153000000" TARGET="TEXT">DAVector2</A>, or <A HREF="DA_E0114.htm#vref_0001060154000000" TARGET="TEXT">DAVector3</A> behavior. 
+<P>The <A HREF="DA_E0091.htm#vref_000106013d000600" TARGET="TEXT">CubicBSplinePath</A> function is a form of spline that constructs a 2-D cubic b-spline polynomial path (other forms construct numbers, points and vectors). This path, like any other path, can be stroked as a line, filled by any fill style, or used for extracting a motion path with the <A HREF="DA_E0099.htm#vref_0001060145000300" TARGET="TEXT">FollowPath</A>, <A HREF="DA_E0099.htm#vref_0001060145000500" TARGET="TEXT">FollowPathAngle</A>, and <A HREF="DA_E0099.htm#vref_0001060145000700" TARGET="TEXT">FollowPathAngleUpright</A>
+functions. See the JScript sample AnnotatedLogo.html in Samples\DirectAnimation\JScript\Templates where this spline is used as both the shape of the logo and as an animation path for HTML text in a DIV tag.
+
+<P>You need a knot vector and a list of control elements to construct a spline. The control elements (numbers, points, or vectors) relate intuitively to the shape of the spline, while the knots don't. If you want to construct your spline in terms of control elements and not in terms of the knot vector, chose a uniform knot vector with standard end conditions (interpolate first and last points). This means the first and last knots are repeated <I>d</I> times where <I>d</I> is the degree of the spline, and intermediate knots are 1 unit apart. For example, the following JScript function (used in the sample CoordsAndPaths.html in Samples\DirectAnimation\JScript\Templates) takes a list of 2-D control points, generates the uniform knot vector automatically, and constructs and returns a <A HREF="DA_E0091.htm#vref_000106013d000600" TARGET="TEXT">CubicBSplinePath</A>.
+<PRE><FONT FACE="Courier" SIZE="2">
+function SimpleSpline(pts) {
+    // divide by 2 since 2D coordinates.
+    numPts = pts.length/2;
+    // We need 2 more knots (since cubic spline) than control points.
+    knts = new Array(numPts + 2);
+    // Set the uniform knots. Note that the knot vector doesn't need
+    // to start from 0, only the relative spacing between knots is significant.
+    for (i=2; i &lt; numPts; i++) knts[i] = i;
+    // first knot must have duplicity 3 (the degree) to interpolate first point
+    knts[0] = knts[1] = knts[2];
+    // last knot must have duplicity 3 (the degree) to interpolate last point
+    knts[numPts+1] = knts[numPts] = knts[numPts-1];
+    // finally construct and return the spline path.
+    return(m.cubicBSplinePath(pts, knts));
+}
+</FONT></PRE>
+<P>In the absence of a visual authoring tool for creating splines, it may be easiest to create them by using a pencil and paper with a square grid. Draw the X and Y axes and draw the desired spline, then place points that follow the general shape of the spline, starting and ending with the same point that needs to be on the spline. You need to pick either the <A CLASS=tctop HREF="DA_E0115.htm#vref_0001060155020e00" TARGET="TEXT">PixelLibrary</A> or the <A CLASS=tctop HREF="DA_E0115.htm#vref_0001060155020a00" TARGET="TEXT">MeterLibrary</A>. If you use pixels, place the spline points only on the grid points and map each square length to 25 pixels.
+
+
+
+
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

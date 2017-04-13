@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Stream Control Architecture</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0033.htm','/dssd0000.htm','/dssd0030.htm','/index.htm','/dssd0035.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="filgraf_0001030104000000">Stream Control Architecture</A></H2>
+<BR CLEAR=ALL>
+<P>The stream architecture allows applications to communicate with the filter graph manager; it also allows
+ the filter graph manager to communicate with individual filters to control the movement of the 
+data through the filter graph. Using the stream architecture, filters can post events that the application can retrieve, so an application can, for example, retrieve status information about a special filter it 
+has installed.
+
+<P>The filter graph manager exposes media control and media positioning interfaces to the 
+application. The media control interface, <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A>, allows the application to issue commands 
+to run, pause, and stop the stream. The positioning interface, <A HREF="dssd0158.htm#If_0001060146000000" TARGET="TEXT">IMediaSeeking</A>, lets the application specify which section of the stream 
+to play. 
+
+<P>Individual filters expose an <A HREF="dssd0116.htm#If_000106011c000000" TARGET="TEXT">IBaseFilter</A> interface so that the filter graph manager can issue 
+the run, pause, and stop control commands. The filter graph manager is responsible for calling 
+these methods in the correct order on all the filters in the filter graph. (The application should 
+not do this directly.)
+
+<P>For position commands, the filter graph manager is called by the 
+application to, for example, play a specified length of media stream starting at some specified stream 
+time. However, unlike the <A HREF="dssd0116.htm#If_000106011c000000" TARGET="TEXT">IBaseFilter</A> interface, only the renderer filter exposes an <A HREF="dssd0158.htm#If_0001060146000000" TARGET="TEXT">IMediaSeeking</A> interface. Therefore, the filter graph manager calls only the renderer filter with positioning information. 
+The renderer then passes this position control information upstream through <B>IMediaSeeking</B> interfaces
+exposed on the pins, which simply pass it on. The positioning of the media stream is actually handled 
+by the output pin on the filter that is able to seek to a particular position, usually a parser filter such as the AVI splitter.
+<P>Position information is passed serially upstream because there might be filters between the 
+renderer and the source filter that require position information. Consider 
+a transform filter that is written to perform some video or audio modification only during the first 
+10 seconds of a video clip (for example, increasing the volume or fading in the video). This filter 
+probably needs to have information about where the stream is starting so that it can determine its 
+correct behavior. For example, it should not perform if the start time is after the first 10 seconds, 
+or it should adjust accordingly if the start time is within this duration.
+<P>Filters also get position information from the <A HREF="dssd0165.htm#If_000106014d030900" TARGET="TEXT">IPin::NewSegment</A> method which provides the media start and stop times for the next set of samples and the rate to be associated with those samples.
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

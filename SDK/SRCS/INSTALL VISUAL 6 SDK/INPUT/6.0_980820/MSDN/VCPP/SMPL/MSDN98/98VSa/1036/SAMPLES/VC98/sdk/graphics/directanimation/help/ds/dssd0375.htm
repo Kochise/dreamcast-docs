@@ -1,0 +1,410 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Multimedia Streaming Sample Code</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0374.htm','/dssd0000.htm','/dssd0357.htm','/index.htm','/dssd0376.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="mm_code_0001080501000000">Multimedia Streaming Sample Code</A></H2>
+<BR CLEAR=ALL>
+<P>This article provides sample code that implements the Multimedia Streaming interfaces. The video streaming sample code demonstrates how to read a file and render it to a primary Microsoft&#174; DirectDraw&#174; surface. This code has no error checking; see <A HREF="dssd0050.htm" TARGET="TEXT">Use Multimedia Streaming in DirectShow Applications</A> for a more thorough, line by line, description of the video streaming code.
+
+<P>The second code sample demonstrates how to use the audio streaming interfaces to stream audio data.
+
+<P><B>Contents of this article:</B>
+
+<UL><LI><A HREF="dssd0375.htm#mm_code_0001080501010000" TARGET="TEXT">Video Streaming Sample Code</A>
+ <LI><A HREF="dssd0375.htm#mm_code_0001080501020000" TARGET="TEXT">Audio Streaming Sample Code</A>
+</UL>
+<A NAME="mm_code_0001080501010000"></A><P><B>Video Streaming Sample Code</B>
+<P>This sample code reads a file and renders it to a primary DirectDraw surface.
+<PRE><FONT FACE="Courier" SIZE="2">
+#include &lt;stdio.h&gt;
+#include "ddraw.h"&#009;// DirectDraw interfaces
+#include "mmstream.h"&#009;// Multimedia stream interfaces
+#include "amstream.h"&#009;// DirectShow multimedia stream interfaces
+#include "ddstream.h"&#009;// DirectDraw multimedia stream interfaces
+
+
+
+void RenderStreamToSurface(IDirectDrawSurface *pSurface, IMultiMediaStream *pMMStream)
+{    
+&#009;IMediaStream *pPrimaryVidStream;    
+&#009;IDirectDrawMediaStream *pDDStream;
+ &#009;IDirectDrawStreamSample *pSample;
+&#009;RECT rect;
+ &#009;DDSURFACEDESC ddsd;
+
+ &#009;pMMStream-&gt;GetMediaStream(MSPID_PrimaryVideo, &amp;pPrimaryVidStream);
+ &#009;pPrimaryVidStream-&gt;QueryInterface(IID_IDirectDrawMediaStream, (void **)&amp;pDDStream);
+ &#009;ddsd.dwSize = sizeof(ddsd);
+ &#009;pDDStream-&gt;GetFormat(&amp;ddsd, NULL, NULL, NULL);
+ &#009;rect.top = rect.left = 0;
+ &#009;rect.bottom = ddsd.dwHeight;
+ &#009;rect.right = ddsd.dwWidth;
+ &#009;pDDStream-&gt;CreateSample(pSurface, &amp;rect, 0, &amp;pSample);
+
+&#009;pMMStream-&gt;SetState(STREAMSTATE_RUN);
+&#009;while (pSample-&gt;Update(0, NULL, NULL, NULL) == S_OK);
+&#009;pMMStream-&gt;SetState(STREAMSTATE_STOP);
+
+&#009;pSample-&gt;Release();    
+&#009;pDDStream-&gt;Release();
+ &#009;pPrimaryVidStream-&gt;Release();
+}
+
+void RenderFileToMMStream(const char * szFileName, IMultiMediaStream **ppMMStream, IDirectDraw *pDD)
+{&#009;
+&#009;IAMMultiMediaStream *pAMStream;
+ &#009;CoCreateInstance(CLSID_AMMultiMediaStream, NULL, CLSCTX_INPROC_SERVER,
+                      IID_IAMMultiMediaStream, (void **)&amp;pAMStream);
+&#009;WCHAR&#009;wPath[MAX_PATH];&#009;&#009;// Wide (32-bit) string name
+&#009;MultiByteToWideChar(CP_ACP, 0, szFileName, -1, wPath,
+&#009;&#009;&#009;&#009;sizeof(wPath)/sizeof(wPath[0]));    
+
+ &#009;pAMStream-&gt;Initialize(STREAMTYPE_READ, AMMSF_NOGRAPHTHREAD, NULL);
+ &#009;pAMStream-&gt;AddMediaStream(pDD, &amp;MSPID_PrimaryVideo, 0, NULL);
+ &#009;pAMStream-&gt;AddMediaStream(NULL, &amp;MSPID_PrimaryAudio, AMMSF_ADDDEFAULTRENDERER, NULL);
+ &#009;pAMStream-&gt;OpenFile(wPath, 0);    
+&#009;*ppMMStream = pAMStream;
+}
+
+int _CRTAPI1 main(int argc, char *argv[])&#009;
+{    
+&#009;if (argc &lt; 2) {
+&#009;printf("Usage : showstrm movie.ext\n");
+&#009;exit(0);}&#009;
+
+&#009;DDSURFACEDESC ddsd;
+ &#009;IDirectDraw *pDD;    
+&#009;IDirectDrawSurface *pPrimarySurface;
+ &#009;IMultiMediaStream *pMMStream;
+
+&#009;CoInitialize(NULL);
+&#009;
+ &#009;DirectDrawCreate(NULL, &amp;pDD, NULL);
+ &#009;pDD-&gt;SetCooperativeLevel(GetDesktopWindow(), DDSCL_NORMAL);
+ &#009;ddsd.dwSize = sizeof(ddsd);
+  ddsd.dwFlags = DDSD_CAPS;
+ &#009;ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
+ &#009;pDD-&gt;CreateSurface(&amp;ddsd, &amp;pPrimarySurface, NULL);
+&#009;RenderFileToMMStream(argv[1], &amp;pMMStream, pDD);
+ &#009;RenderStreamToSurface(pPrimarySurface, pMMStream);    
+&#009;pMMStream-&gt;Release();
+&#009;pPrimarySurface-&gt;Release();    
+&#009;pDD-&gt;Release(); 
+&#009;
+&#009;CoUninitialize();
+&#009;return 0;
+}
+</FONT></PRE>
+<A NAME="mm_code_0001080501020000"></A><P><B>Audio Streaming Sample Code</B>
+<P>The following code sample demonstrates how to stream audio data using the <A HREF="dssd0366.htm" TARGET="TEXT">IAudioMediaStream</A>, <A HREF="dssd0367.htm" TARGET="TEXT">IAudioStreamSample</A>, <A HREF="dssd0368.htm" TARGET="TEXT">IMemoryData</A>, and <A HREF="dssd0369.htm" TARGET="TEXT">IAudioData</A> interfaces.
+<PRE><FONT FACE="Courier" SIZE="2">#include &lt;windows.h&gt;
+#include &lt;mmsystem.h&gt;
+#include &lt;amstream.h&gt;
+
+/********************************************************************
+
+   Trivial wave player stuff
+
+ ********************************************************************/
+
+class CWaveBuffer;
+
+class CWaveBuffer {
+    public:
+        CWaveBuffer();
+        ~CWaveBuffer();
+        BOOL Init(HWAVEOUT hWave, int Size);
+        void Done();
+        BOOL Write(PBYTE pData, int nBytes, int&amp; BytesWritten);
+        void Flush();
+
+    private:
+        WAVEHDR      m_Hdr;
+        HWAVEOUT     m_hWave;
+        int          m_nBytes;
+};
+
+class CWaveOut {
+    public:
+        CWaveOut(LPCWAVEFORMATEX Format, int nBuffers, int BufferSize);
+        ~CWaveOut();
+        void Write(PBYTE Data, int nBytes);
+        void Flush();
+        void Wait();
+        void Reset();
+    private:
+        const HANDLE       m_hSem;
+        const int          m_nBuffers;
+        int          m_CurrentBuffer;
+        BOOL         m_NoBuffer;
+        CWaveBuffer *m_Hdrs;
+        HWAVEOUT     m_hWave;
+};
+
+/*
+    CWaveBuffer
+*/
+
+CWaveBuffer::CWaveBuffer()
+{
+}
+
+BOOL CWaveBuffer::Init(HWAVEOUT hWave, int Size)
+{
+    m_hWave  = hWave;
+    m_nBytes = 0;
+
+    /*  Allocate a buffer and initialize the header */
+    m_Hdr.lpData = (LPSTR)LocalAlloc(LMEM_FIXED, Size);
+    if (m_Hdr.lpData == NULL) {
+        return FALSE;
+    }
+    m_Hdr.dwBufferLength  = Size;
+    m_Hdr.dwBytesRecorded = 0;
+    m_Hdr.dwUser = 0;
+    m_Hdr.dwFlags = 0;
+    m_Hdr.dwLoops = 0;
+    m_Hdr.lpNext = 0;
+    m_Hdr.reserved = 0;
+
+    /*  Prepare it */
+    waveOutPrepareHeader(hWave, &amp;m_Hdr, sizeof(WAVEHDR));
+
+    return TRUE;
+}
+
+CWaveBuffer::~CWaveBuffer() {
+    if (m_Hdr.lpData) {
+        waveOutUnprepareHeader(m_hWave, &amp;m_Hdr, sizeof(WAVEHDR));
+        LocalFree(m_Hdr.lpData);
+    }
+}
+
+void CWaveBuffer::Flush()
+{
+    //ASSERT(m_nBytes != 0);
+    m_nBytes = 0;
+    waveOutWrite(m_hWave, &amp;m_Hdr, sizeof(WAVEHDR));
+}
+
+BOOL CWaveBuffer::Write(PBYTE pData, int nBytes, int&amp; BytesWritten)
+{
+    //ASSERT((DWORD)m_nBytes != m_Hdr.dwBufferLength);
+    BytesWritten = min((int)m_Hdr.dwBufferLength - m_nBytes, nBytes);
+    CopyMemory((PVOID)(m_Hdr.lpData + m_nBytes), (PVOID)pData, BytesWritten);
+    m_nBytes += BytesWritten;
+    if (m_nBytes == (int)m_Hdr.dwBufferLength) {
+        /*  Write it! */
+        m_nBytes = 0;
+        waveOutWrite(m_hWave, &amp;m_Hdr, sizeof(WAVEHDR));
+        return TRUE;
+    }
+    return FALSE;
+}
+
+void CALLBACK WaveCallback(HWAVEOUT hWave, UINT uMsg, DWORD dwUser, DWORD dw1, DWORD dw2)
+{
+    if (uMsg == WOM_DONE) {
+        ReleaseSemaphore((HANDLE)dwUser, 1, NULL);
+    }
+}
+
+/*
+    CWaveOut
+*/
+
+CWaveOut::CWaveOut(LPCWAVEFORMATEX Format, int nBuffers, int BufferSize) :
+    m_nBuffers(nBuffers),
+    m_CurrentBuffer(0),
+    m_NoBuffer(TRUE),
+    m_hSem(CreateSemaphore(NULL, nBuffers, nBuffers, NULL)),
+    m_Hdrs(new CWaveBuffer[nBuffers]),
+    m_hWave(NULL)
+{
+    /*  Create wave device */
+    waveOutOpen(&amp;m_hWave,
+                WAVE_MAPPER,
+                Format,
+                (DWORD)WaveCallback,
+                (DWORD)m_hSem,
+                CALLBACK_FUNCTION);
+
+    /*  Initialize the wave buffers */
+    for (int i = 0; i &lt; nBuffers; i++) {
+        m_Hdrs[i].Init(m_hWave, BufferSize);
+    }
+}
+
+CWaveOut::~CWaveOut()
+{
+    /*  First get our buffers back */
+    waveOutReset(m_hWave);
+
+    /*  Free the buffers */
+    delete [] m_Hdrs;
+
+    /*  Close the wave device */
+    waveOutClose(m_hWave);
+
+    /*  Free our semaphore */
+    CloseHandle(m_hSem);
+}
+
+void CWaveOut::Flush()
+{
+    if (!m_NoBuffer) {
+        m_Hdrs[m_CurrentBuffer].Flush();
+        m_NoBuffer = TRUE;
+        m_CurrentBuffer = (m_CurrentBuffer + 1) % m_nBuffers;
+    }
+}
+
+void CWaveOut::Reset()
+{
+    waveOutReset(m_hWave);
+}
+
+
+void CWaveOut::Write(PBYTE pData, int nBytes)
+{
+    while (nBytes != 0) {
+        /*  Get a buffer if necessary */
+        if (m_NoBuffer) {
+            WaitForSingleObject(m_hSem, INFINITE);
+            m_NoBuffer = FALSE;
+        }
+
+        /*  Write into a buffer */
+        int nWritten;
+        if (m_Hdrs[m_CurrentBuffer].Write(pData, nBytes, nWritten)) {
+            m_NoBuffer = TRUE;
+            m_CurrentBuffer = (m_CurrentBuffer + 1) % m_nBuffers;
+            nBytes -= nWritten;
+            pData += nWritten;
+        } else {
+            //ASSERT(nWritten == nBytes);
+            break;
+        }
+    }
+}
+
+void CWaveOut::Wait()
+{
+    /*  Send any remaining buffers */
+    Flush();
+
+    /*  Wait for our buffers back */
+    for (int i = 0; i &lt; m_nBuffers; i++) {
+        WaitForSingleObject(m_hSem, INFINITE);
+    }
+    LONG lPrevCount;
+    ReleaseSemaphore(m_hSem, m_nBuffers, &amp;lPrevCount);
+}
+
+/**************************************************************************
+
+  End of wave player stuff
+
+ **************************************************************************/
+
+
+HRESULT RenderStreamToDevice(IMultiMediaStream *pMMStream)
+{
+    WAVEFORMATEX wfx;
+    #define DATA_SIZE 5000
+    PBYTE pBuffer = (PBYTE)LocalAlloc(LMEM_FIXED, DATA_SIZE);
+
+    IMediaStream *pStream;
+    IAudioStreamSample *pSample;
+    IAudioMediaStream *pAudioStream;
+    IAudioData *pAudioData;
+
+    pMMStream-&gt;GetMediaStream(MSPID_PrimaryAudio, &amp;pStream);
+    pStream-&gt;QueryInterface(IID_IAudioMediaStream, (void **)&amp;pAudioStream);
+    pAudioStream-&gt;GetFormat(&amp;wfx);
+    CoCreateInstance(CLSID_AMAudioData, NULL, CLSCTX_INPROC_SERVER,
+                                    IID_IAudioData, (void **)&amp;pAudioData);
+    pAudioData-&gt;SetBuffer(DATA_SIZE, pBuffer, 0);
+    pAudioData-&gt;SetFormat(&amp;wfx);
+    pAudioStream-&gt;CreateSample(pAudioData, 0, &amp;pSample);
+    HANDLE hEvent = CreateEvent(FALSE, NULL, NULL, FALSE);
+    CWaveOut WaveOut(&amp;wfx, 4, 2048);
+    int iTimes;
+    for (iTimes = 0; iTimes &lt; 3; iTimes++) {
+        DWORD dwStart = timeGetTime();
+        for (; ; ) {
+            HRESULT hr = pSample-&gt;Update(0, hEvent, NULL, 0);
+            if (FAILED(hr) || MS_S_ENDOFSTREAM == hr) {
+                break;
+            }
+            WaitForSingleObject(hEvent, INFINITE);
+            DWORD dwTimeDiff = timeGetTime() - dwStart;
+            //  We'll get bored after about 10 seconds
+            if (dwTimeDiff &gt; 10000) {
+                break;
+            }
+            DWORD dwLength;
+            pAudioData-&gt;GetInfo(NULL, NULL, &amp;dwLength);
+            WaveOut.Write(pBuffer, dwLength);
+        }
+        pMMStream-&gt;Seek(0);
+    }
+
+    pAudioData-&gt;Release();
+    pSample-&gt;Release();
+    pStream-&gt;Release();
+    pAudioStream-&gt;Release();
+    LocalFree((HLOCAL)pBuffer);
+
+    return S_OK;
+}
+
+HRESULT RenderFileToMMStream(WCHAR * pszFileName, IMultiMediaStream **ppMMStream)
+{
+    IAMMultiMediaStream *pAMStream;
+    CoCreateInstance(CLSID_AMMultiMediaStream, NULL, CLSCTX_INPROC_SERVER,
+ &#009;&#009;     IID_IAMMultiMediaStream, (void **)&amp;pAMStream);
+    pAMStream-&gt;Initialize(STREAMTYPE_READ, AMMSF_NOGRAPHTHREAD, NULL);
+    pAMStream-&gt;AddMediaStream(NULL, &amp;MSPID_PrimaryAudio, 0, NULL);
+    pAMStream-&gt;OpenFile(pszFileName, AMMSF_RUN);
+    *ppMMStream = pAMStream;
+    return S_OK;
+}
+
+int _CRTAPI1 main(int argc, char *argv[])
+{
+    IMultiMediaStream *pMMStream;
+    CoInitialize(NULL);
+    WCHAR wszName[1000];
+    MultiByteToWideChar(CP_ACP, 0, argv[1], -1, wszName,
+                        sizeof(wszName) / sizeof(wszName[0]));
+    RenderFileToMMStream(wszName, &amp;pMMStream);
+    RenderStreamToDevice(pMMStream);
+    pMMStream-&gt;Release();
+    CoUninitialize();
+    return 0;
+}
+</FONT></PRE>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

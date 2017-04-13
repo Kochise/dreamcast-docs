@@ -1,0 +1,640 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>DV Data in the AVI File Format</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0074.htm','/dssd0000.htm','/dssd0073.htm','/index.htm','/dssd0076.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="avispec_0001050502000000">DV Data in the AVI File Format</A></H2>
+<BR CLEAR=ALL>
+<P>Microsoft has specified the format for storage of digital video (DV) data in AVI files. Conforming to this specification will ensure that the AVI files authored in this format will be compatible with future versions of the Microsoft&#174; DirectShow&#153; digital video architecture for the Microsoft Windows&#174; platform.
+<P>This article provides background information to understand the format of audio-video interleaved (AVI) files containing DV audio and video data, or information for programmers who use DV-AVI files on other platforms. Applications that read or write AVI files should use the File Reader (async) filter with the AVI Splitter filter and the AVI Mux filter with the File Writer filter and their associated interfaces provided in the DirectShow architecture, rather than developing the routines to perform these services. These filters simplify the programming requirements for accessing these files.
+<P>This article also describes the format of AVI files containing DV data. Specific four-character codes for interleaved DV data streams and DV compressor/decompressor stream handlers are defined. The stream format structure for DV data is defined. Specifications for two methods of storing DV data in the AVI file format are specified.
+<P>It is assumed that the reader is familiar with the DV data format. (This format is defined in the <I>Specification of Consumer-use Digital VCRs</I>, also called the Blue Book). 
+
+
+<P>For additional information about resource interchange file format (RIFF) files, see the Windows Software Development Kit (SDK) Multimedia <I>Programmer's Guide</I> and <I>Multimedia Programmer's Reference</I>.
+<P>For additional information about AVI files see Chapter 6 of the Microsoft Video for Windows Development Kit version 1.1 <I>Programmer's Guide</I> and version 1.02 of the <I>OpenDML AVI File Format Extensions</I> published by the OpenDML AVI M-JPEG File Format Subcommittee, February 28, 1996.
+<P>For additional information on compressors and decompressors, see the <I>Video Compression and Decompression Drivers</I> section of the Windows DDK Documentation in the MSDN library.
+
+<P><B>Contents of this article:</B>
+<UL><LI><A HREF="dssd0075.htm#avispec_0001050502010000" TARGET="TEXT">Types of DV AVI Files</A>
+<LI><A HREF="dssd0075.htm#avispec_0001050502020000" TARGET="TEXT">AVI File Background Information</A>
+<LI><A HREF="dssd0075.htm#avispec_0001050502030000" TARGET="TEXT">AVI 2.0 File Format Extensions</A>
+</UL>
+<A NAME="avispec_0001050502010000"></A><P><B>Types of DV AVI Files
+
+</B>
+<P>There are two types of DV AVI files:
+<UL><LI><A HREF="dssd0075.htm#avispec_0001050502010100" TARGET="TEXT">AVI Files Containing One DV Data Stream</A>
+<LI><A HREF="dssd0075.htm#avispec_0001050502010200" TARGET="TEXT">AVI Files Containing DV Video as a 'vids' Stream and DV Audio as 'auds' Streams</A>
+</UL>
+<A NAME="avispec_0001050502010100"></A><P><B>AVI Files Containing One DV Data Stream
+</B>
+<P>Interleaved DV data can be stored in its native format as a single stream within an AVI RIFF file. This has the advantage of using the minimum amount of data storage for DV. The primary disadvantage is that this file format is not backward compatible with Video for Windows, because it doesn't contain either a video 'vids' or an audio 'auds' stream. Support is provided for the interleaved DV stream through the <A HREF="dssd0309.htm#filteref_000107010f000000" TARGET="TEXT">DV Muxer</A> and <A HREF="dssd0310.htm#filteref_0001070110000000" TARGET="TEXT">DV Splitter</A> filters provided with DirectShow.
+<P>DV data can be stored in a single stream within an AVI RIFF file by specifying the 'ivas' (interleaved video and audio stream) four-character code in the <B>fccType</B> member and either of the 'dvsd', 'dvhd', or 'dvsl' four-character codes in the <B>fccHandler</B> member of the 'strh' stream header chunk. The frames per second of the video stream must be specified in the <B>dwRate</B> and <B>dwScale</B> members and the total number of video blocks in the 'movi' chunk in the dwLength member.
+<P>The 'dvsd' stream handler four-character code specifies that the DV data is as defined in Part 2 of the <I>Specification of Consumer-use Digital VCRs</I>. Video is in the format of 525 lines at 29.97 Hz (525-60) or 625 lines at 25.00 Hz (625-50).
+<P>The 'dvhd' stream handler four-character code specifies that the DV data is as defined in Part 3 of the <I>Specification of Consumer-use Digital VCRs</I>. Video is in the format of 1125 lines at 30.00 Hz (1125-60) or 1250 lines at 25.00 Hz (1250-50).
+<P>The 'dvsl' stream handler four-character code specifies that the DV data is as defined in Part 6 of <I>Specification of Consumer-use Digital VCRs</I>. Video is in the format of high-compression SD (SDL).
+
+<P><B>Note</B>  The remainder of this article provides definitions for 'dvsd' streams. Definitions for 'dvhd' and 'dvsl' will be provided in later releases.<P>The stream header chunk must be followed by DVINFO stream format chunk. The <B><A NAME="avispec_0001050502010101">DVINFO</A></B> stream format has the following data structure defined for it:
+<PRE><FONT FACE="Courier" SIZE="2">
+typedef struct tag_DVINFO {
+&#009;DWORD dwDVAAuxSrc;
+&#009;DWORD dwDVAAuxCtl;
+&#009;DWORD dwDVAAuxSrc1;
+&#009;DWORD dwDVAAuxCtl1;
+&#009;DWORD dwDVVAuxSrc;
+&#009;DWORD dwDVVAuxCtl;
+&#009;DWORD dwDVReserved[2];
+} DVINFO, *PDVINFO;
+</FONT></PRE>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwDVAAuxSrc</B> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the Audio Auxiliary Data Source Pack for the first audio block (first 5 DV DIF sequences for 525-60 systems or 6 DV DIF sequences for 625-50 systems) of a frame. The Audio Auxiliary Data Source Pack is defined in section D.7.1 of Part 2, Annex D, "The Pack Header Table and Contents of Packs" of the <I>Specification of Consumer-use Digital VCRs</I>.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwDVAAuxCtl</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the Audio Auxiliary Data Source Control Pack for the first audio block of a frame. The Audio Auxiliary Data Control Pack is defined in section D.7.2 of Part 2, Annex D, "The Pack Header Table and Contents of Packs" of the <I>Specification of Consumer-use Digital VCRs</I>.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwDVAAuxSrc1</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the Audio Auxiliary Data Source Pack for the second audio block (second 5 DV DIF sequences for 525-60 systems or 6 DV DIF sequences for 625-50 systems) of a frame.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwDVAAuxCrl1</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the Audio Auxiliary Data Source Control Pack for the second audio block of a frame.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwDVVAuxSrc</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the Video Auxiliary Data Source Pack as defined in section D.8.1 of Part 2, Annex D, "The Pack Header Table and Contents of Packs" of the <I>Specification of Consumer-use Digital VCRs</I>.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwDVVAuxCtl</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the Video Auxiliary Data Source Control Pack as defined in section D.8.2 of Part 2, Annex D, "The Pack Header Table and Contents of Packs" of the <I>Specification of Consumer-use Digital VCRs</I>.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>DwDVReserved[2]</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Reserved. Set this array to zero.
+</FONT></TD></TR></TABLE>
+<P>The actual DV data is stored as '##dc' chunks in the 'movi' chunk (the ## in the format represents the stream identifier). Each chunk contains one frame of data, either 10 or 12 DV DIF sequences for 525-60 or 625-50 systems, respectively. The DV SD ('dvsd') DIF sequence format is defined in Part 2 of the <I>Specification of Consumer-use Digital VCRs</I>. 
+
+<P>The following diagram illustrates the playback of an AVI file with one DV data stream using a DirectShow filter graph (the DV Splitter and DV Video decoder filters are included in DirectShow specifically to deal with DV data). The table that follows the diagram defines the media types.
+
+
+<P><IMG SRC="art/dvavi1.gif" WIDTH="517" HEIGHT="135" ALT="Playback of an AVI file with one DV data stream" >
+
+<A NAME="avispec_0001050502010102"></A><P><B>DV Media Types Table</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Media </B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Major type </B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Subtype </B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Format structure
+</B></FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">A</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">MEDIATYPE_Stream</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">MEDIASUBTYPE_AVI</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">none
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">B</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">MEDIATYPE_iavs</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">MEDIASUBTYPE_dvsd, MEDIASUBTYPE_dvhd, or MEDIASUBTYPE_dvsl</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0075.htm#avispec_0001050502010101" TARGET="TEXT">DVINFO</A> 
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">C</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">MEDIATYPE_VIDEO</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">MEDIASUBTYPE_dvsd, MEDIASUBTYPE_dvhd, or MEDIASUBTYPE_dvsl</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0075.htm#avispec_0001050502010101" TARGET="TEXT">DVINFO</A> 
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">D</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">MEDIATYPE_AUDIO</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">NULL</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0075.htm#avispec_0001050502020900" TARGET="TEXT">WAVEFORMATEX</A> 
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">E</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">MEDIATYPE_VIDEO</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">standard video types</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0287.htm#structs_0001060501001d00" TARGET="TEXT">VIDEOINFO</A>
+</FONT></TD>
+</TR>
+</TABLE>
+<P>The following diagram illustrates the creation of an AVI file with one DV data stream by using a DirectShow filter graph (the DV Video encoder and DV MUX filters are included in DirectShow specifically to deal with DV data). The preceding table defines the media types. Upstream filters (not shown) can be of any combination to produce the proper media types, D and E. 
+
+
+<P><IMG SRC="art/dvavi2.gif" WIDTH="424" HEIGHT="103" ALT="Creation of an AVI file with one DV data stream" >
+
+<P>The following diagram illustrates the creation of an AVI file with one DV data stream using a source filter that communicates through hardware device drivers with a DV device (such as a 1394-based DV camcorder) for DV data input, by using a DirectShow filter graph (the source filter is included in DirectShow specifically to deal with DV data). The preceding table defines the media types. 
+
+<P><IMG SRC="art/dvavi3.gif" WIDTH="295" HEIGHT="100" ALT="DV capture to an AVI file with one DV data stream" >
+
+<P>The following diagram illustrates the output of an AVI file with one DV data stream using a sink filter that communicates through hardware device drivers with a DV device (such as a 1394-based DV camcorder) for DV data output, by using a DirectShow filter graph (the sink filter is included in DirectShow specifically to deal with DV data). The preceding table defines the media types. 
+
+<P><IMG SRC="art/dvavi4.gif" WIDTH="295" HEIGHT="100" ALT="Output of an AVI file with one DV data stream" >
+
+<P>The following example shows the AIFF RIFF form for an AVI file with one DV data stream, expanded with completed header chunks:
+<PRE><FONT FACE="Courier" SIZE="2">
+00000000 RIFF (0FAE35D4) 'AVI '
+0000000C     LIST (00000106) 'hdrl'
+00000018         avih (00000038)
+                     dwMicroSecPerFrame    : 33367
+                     dwMaxBytesPerSec      : 3728000
+                     dwPaddingGranularity  : 0
+                     dwFlags               : 0x810 HASINDEX | TRUSTCKTYPE
+                     dwTotalFrames         : 2192
+                     dwInitialFrames       : 0
+                     dwStreams             : 1
+                     dwSuggestedBufferSize : 120000
+                     dwWidth               : 720
+                     dwHeight              : 480
+                     dwReserved            : 0x0
+00000058         LIST (0000006C) 'strl'
+00000064             strh (00000038)
+                         fccType               : 'ivas'
+                         fccHandler            : 'dvsd'
+                         dwFlags               : 0x0
+                         wPriority             : 0
+                         wLanguage             : 0x0 undefined
+                         dwInitialFrames       : 0
+                         dwScale               : 100 (29.970 Frames/Sec)
+                         dwRate                : 2997
+                         dwStart               : 0
+                         dwLength              : 2192
+                         dwSuggestedBufferSize : 120000
+                         dwQuality             : 0
+                         dwSampleSize          : 0
+                         rcFrame               : 0,0,720,480
+000000A4             strf (00000020)
+                         dwDVAAuxSrc     : 0x........
+                         dwDVAAuxCtl     : 0x........
+                         dwDVAAuxSrc1    : 0x........
+                         dwDVAAuxCtl1    : 0x........
+                         dwDVVAuxSrc     : 0x........
+                         dwDVVAuxCtl     : 0x........
+                         dwDVReserved[2] : 0,0
+000000CC     LIST (0FADAC00) 'movi'
+0FADACD4     idx1 (00008900)
+</FONT></PRE>
+<A NAME="avispec_0001050502010200"></A><P><B>AVI Files Containing DV Video as a 'vids' Stream and DV Audio as 'auds' Streams
+
+
+</B>
+<P>Interleaved DV data can be split into a video stream and one to four audio streams within an AVI RIFF file. This has the advantage of being backward compatible with Video for Windows, because it contains a standard video 'vids' stream and at least one standard audio 'auds' stream The primary disadvantage is that this file format requires the audio data to be redundantly stored as audio streams. The "video" stream is actually the native interleaved DV data stream. However, as a standard 'vids' stream with a handler type of 'dvsd', the <A HREF="dssd0311.htm#filteref_0001070111000000" TARGET="TEXT">DV Video Decoder</A> is used. This format also requires that "captured" files are split by using the <A HREF="dssd0310.htm#filteref_0001070110000000" TARGET="TEXT">DV Splitter</A> filter before they are written as AVI files.
+<P>DV data can be stored as a video stream with a separate number of audio streams in an AVI RIFF file. The video stream is specified with a standard video stream header (the <B>fccType</B> member value is 'vids'). The <B>fccHandler</B> member is specified as 'dvsd', 'dvhd', or 'dvsl'. The frames per second of the video stream must be specified in the <B>dwRate</B>/<B>dwScale</B> members and the total number of video blocks in the 'movi' chunk in the <B>dwLength</B> member.
+<P>In this AVI file containing DV video as a 'vids' stream and DV audio as 'auds' streams form of DV, the video stream format chunk is a standard <A HREF="dssd0075.htm#avispec_0001050502020800" TARGET="TEXT">BITMAPINFOHEADER</A> structure. The stream format chunk can be optionally extended to include the DVINFO structure, by increasing the stream format chunk size from 40 bytes (size of the <B>BITMAPINFOHEADER</B> structure) to 72 bytes (size of <B>BITMAPINFOHEADER</B> plus <A HREF="dssd0075.htm#avispec_0001050502010101" TARGET="TEXT">DVINFO</A> structures) and immediately following the <B>BITMAPINFOHEADER</B> data structure with a <B>DVINFO</B> data structure.
+<P>The audio stream(s) is specified with a standard audio stream header (the <B>fccType</B> member value is 'auds'). The <B>fccHandler</B> member is not used for audio streams.
+<P>The DV video data is stored as '##dc' chunks, as defined in the preceding description of an AVI file with one DV data, and the audio data is stored as '##wb' chunks in the 'movi' chunk.
+<P>The following diagram illustrates the playback of an AVI file containing DV video as a 'vids' stream and DV audio as 'auds' streams, by using a DirectShow filter graph (the <A HREF="dssd0311.htm#filteref_0001070111000000" TARGET="TEXT">DV Video Decoder</A> filter is included in DirectShow specifically to deal with DV data). The <A HREF="dssd0075.htm#avispec_0001050502010102" TARGET="TEXT">DV Media Types Table</A> defines the media types. 
+
+<P><IMG SRC="art/dvavi5.gif" WIDTH="409" HEIGHT="135" ALT="Creation of an AVI file with one DV data stream" >
+
+<P>The following diagram illustrates the creation of an AVI file containing DV video as a 'vids' stream and DV audio as 'auds' streams, using a DirectShow filter graph (the <A HREF="dssd0311.htm#filteref_0001070111000000" TARGET="TEXT">DV Video Decoder</A> is included in DirectShow specifically to deal with DV data). The <A HREF="dssd0075.htm#avispec_0001050502010102" TARGET="TEXT">DV Media Types Table</A> defines the media types. Upstream filters (not shown) can be of any combination to produce the proper media types, D and E.
+
+<P><IMG SRC="art/dvavi6.gif" WIDTH="348" HEIGHT="103" ALT="Creation of an AVI file containing DV video as a 'vids' stream and DV audio as 'auds' streams" >
+
+<P>The following diagram illustrates the creation of an AVI file containing DV video as a 'vids' stream and DV audio as 'auds' streams using a source filter that communicates through hardware device drivers with a DV device (such as a 1394-based DV camcorder) for DV data input, by using a DirectShow filter graph (the source and <A HREF="dssd0310.htm#filteref_0001070110000000" TARGET="TEXT">DV Splitter</A> filters are included in DirectShow specifically to deal with DV data). The <A HREF="dssd0075.htm#avispec_0001050502010102" TARGET="TEXT">DV Media Types Table</A> defines the media types. 
+
+<P><IMG SRC="art/dvavi7.gif" WIDTH="401" HEIGHT="105" ALT="DV capture to an AVI file containing DV video as a 'vids' stream and DV audio as 'auds' streams" >
+
+<P>The following diagram illustrates the output of an AVI file containing DV video as a 'vids' stream and DV audio as 'auds' streams using a sink filter that communicates through hardware device drivers with a DV device (such as a 1394-based DV camcorder) for DV data output, by using a DirectShow filter graph (the <A HREF="dssd0309.htm#filteref_000107010f000000" TARGET="TEXT">DV Muxer</A> and sink filters are included in DirectShow specifically to deal with DV data). The <A HREF="dssd0075.htm#avispec_0001050502010102" TARGET="TEXT">DV Media Types Table</A> defines the media types. 
+
+<P><IMG SRC="art/dvavi8.gif" WIDTH="401" HEIGHT="105" ALT="Output of an AVI file containing DV video as a 'vids' stream and DV audio as 'auds' streams" >
+
+
+<P>The following example shows the AIFF RIFF form for an AVI file containing DV video as a 'vids' stream and DV audio as 'auds' streams expanded with completed header chunks (including optional <A HREF="dssd0075.htm#avispec_0001050502010101" TARGET="TEXT">DVINFO</A> data following the <A HREF="dssd0075.htm#avispec_0001050502020801" TARGET="TEXT">BITMAPINFO</A> in the 'strf' sub-chunk for the 'vids' stream):
+<PRE><FONT FACE="Courier" SIZE="2">
+00000000 RIFF (103E2920) 'AVI '
+0000000C     LIST (00000146) 'hdrl'
+00000018         avih (00000038)
+                     dwMicroSecPerFrame    : 33367
+                     dwMaxBytesPerSec      : 3728000
+                     dwPaddingGranularity  : 0
+                     dwFlags               : 0x810 HASINDEX | TRUSTCKTYPE
+                     dwTotalFrames         : 2192
+                     dwInitialFrames       : 0
+                     dwStreams             : 2
+                     dwSuggestedBufferSize : 120000
+                     dwWidth               : 720
+                     dwHeight              : 480
+                     dwReserved            : 0x0
+00000058         LIST (00000094) 'strl'
+00000064             strh (00000038)
+                         fccType               : 'vids'
+                         fccHandler            : 'dvsd'
+                         dwFlags               : 0x0
+                         wPriority             : 0
+                         wLanguage             : 0x0 undefined
+                         dwInitialFrames       : 0
+                         dwScale               : 100 (29.970 Frames/Sec)
+                         dwRate                : 2997
+                         dwStart               : 0
+                         dwLength              : 2192
+                         dwSuggestedBufferSize : 120000
+                         dwQuality             : 0
+                         dwSampleSize          : 0
+                         rcFrame               : 0,0,720,480
+000000A4             strf (00000048)
+                         biSize          : 40
+                         biWidth         : 720
+                         biHeight        : 480
+                         biPlanes        : 1
+                         biBitCount      : 24
+                         biCompression   : 0x64737664 'dvsd'
+                         biSizeImage     : 120000
+                         biXPelsPerMeter : 0
+                         biYPelsPerMeter : 0
+                         biClrUsed       : 0
+                         biClrImportant  : 0
+                         dwDVAAuxSrc     : 0x........
+                         dwDVAAuxCtl     : 0x........
+                         dwDVAAuxSrc1    : 0x........
+                         dwDVAAuxCtl1    : 0x........
+                         dwDVVAuxSrc     : 0x........
+                         dwDVVAuxCtl     : 0x........
+                         dwDVReserved[2] : 0,0
+000000F4         LIST (0000005E) 'strl'
+00000100             strh (00000038)
+                         fccType               : 'auds'
+                         fccHandler            : '    '
+                         dwFlags               : 0x0
+                         wPriority             : 0
+                         wLanguage             : 0x0 undefined
+                         dwInitialFrames       : 0
+                         dwScale               : 1 (32000.000 Samples/Sec)
+                         dwRate                : 32000
+                         dwStart               : 0
+                         dwLength              : 2340474
+                         dwSuggestedBufferSize : 4272
+                         dwQuality             : 0
+                         dwSampleSize          : 4
+                         rcFrame               : 0,0,0,0
+00000140             strf (00000012)
+                         wFormatTag      : 1 PCM
+                         nChannels       : 2
+                         nSamplesPerSec  : 32000
+                         nAvgBytesPerSec : 128000
+                         nBlockAlign     : 4
+                         wBitsPerSample  : 16
+                         cbSize          : 0
+00000814     LIST (103D0EF4) 'movi'
+103D1710     idx1 (00011210)
+</FONT></PRE>
+<A NAME="avispec_0001050502020000"></A><P><B>AVI File Background Information
+</B>
+<P>The Microsoft audio-video interleaved (AVI) file format is a RIFF file specification used with applications that capture, edit, and play back audio-video sequences. In general, AVI files contain multiple streams of different types of data. Most AVI sequences use both audio and video streams. A simple variation for an AVI sequence uses video data and does not require an audio stream.
+<P>Modifications to the original AVI file specification made in the OpenDML AVI File Format Extensions are not discussed in this section. For further information on these extensions, see version 1.02 of the <I>OpenDML AVI File Format Extensions</I> published by the OpenDML AVI M-JPEG File Format Subcommittee, February 28, 1996.
+<P>This section contains the following topics:
+<UL><LI><A HREF="dssd0075.htm#avispec_0001050502020100" TARGET="TEXT">AVI RIFF Form</A>
+<LI><A HREF="dssd0075.htm#avispec_0001050502020200" TARGET="TEXT">Main AVI Header Chunk</A>
+<LI><A HREF="dssd0075.htm#avispec_0001050502020300" TARGET="TEXT">Stream Header ('strl') List Chunk</A>
+<LI><A HREF="dssd0075.htm#avispec_0001050502020400" TARGET="TEXT">LIST 'movi' Chunk</A>
+<LI><A HREF="dssd0075.htm#avispec_0001050502020500" TARGET="TEXT">AVI RIFF File Reference</A>
+</UL>
+<A NAME="avispec_0001050502020100"></A><P><B>AVI RIFF Form
+</B>
+<P>AVI files use the AVI RIFF form. The AVI RIFF form is identified by the four-character code 'AVI '. All AVI files include two mandatory LIST chunks. These chunks define the format of the stream and stream data. AVI files might also include an index chunk. This optional chunk specifies the location of data chunks within the file. An AVI file with these components has the following form:
+<PRE><FONT FACE="Courier" SIZE="2">
+RIFF ('AVI '
+      LIST ('hdrl'
+              .
+              .
+              .
+           )
+      LIST ('movi'
+              .
+              .
+              .
+           )
+      ['idx1'&lt;AVI Index&gt;]
+     )
+</FONT></PRE>
+<P>The LIST chunks and the index chunk are subchunks of the RIFF 'AVI ' chunk. The 'AVI ' chunk identifies the file as an AVI RIFF file. The LIST 'hdrl' chunk defines the format of the data and is the first required LIST chunk. The LIST 'movi' chunk contains the data for the AVI sequence and is the second required LIST chunk. The 'idx1' chunk is the index chunk. AVI files must keep these three components in the proper sequence.
+<P>The LIST 'hdrl' and LIST 'movi' chunks use subchunks for their data. The following example shows the AVI RIFF form expanded with the chunks needed to complete the LIST 'hdrl' and LIST 'movi' chunks:
+<PRE><FONT FACE="Courier" SIZE="2">
+RIFF ('AVI '
+      LIST ('hdrl'
+            'avih'(&lt;Main AVI Header&gt;)
+            LIST ('strl'
+                  'strh'(&lt;Stream header&gt;)
+                  'strf'(&lt;Stream format&gt;)
+                  'strd'(&lt;additional header data&gt;)
+                  'strn'(&lt;Stream name&gt;)
+                  ...
+                 )
+             .
+             .
+             .
+           )
+
+      LIST ('movi'
+            {SubChunk | LIST ('rec '
+                              SubChunk1
+                              SubChunk2
+                                .
+                                .
+                                .
+                             )
+               .
+               .
+               .
+            }
+            .
+            .
+            .
+           )
+
+      ['idx1'&lt;AVI Index&gt;]
+     )
+</FONT></PRE>
+<A NAME="avispec_0001050502020200"></A><P><B>Main AVI Header Chunk
+</B>
+<P>This and following sections describe the chunks contained in the LIST 'hdrl' and LIST 'movi' chunks. The 'idx1' chunk is not described in this document. For more information on the 'idx1' chunk and indexes in AVI files, see version 1.02 of the <I>OpenDML AVI File Format Extensions</I> published by the OpenDML AVI M-JPEG File Format Subcommittee, February 28, 1996.
+<P>The file begins with the main header. In the AVI file, this header is identified by the 'avih' four-character code. The header contains general information about the file, such as the number of streams within the file and the width and height of the AVI sequence. The main header has the following data structure defined for it:
+<PRE><FONT FACE="Courier" SIZE="2">
+typedef struct {
+&#009;DWORD dwMicroSecPerFrame;
+&#009;DWORD dwMaxBytesPerSec;
+&#009;DWORD dwReserved1;
+&#009;DWORD dwFlags;
+&#009;DWORD dwTotalFrames;
+&#009;DWORD dwInitialFrames;
+&#009;DWORD dwStreams;
+&#009;DWORD dwSuggestedBufferSize;
+&#009;DWORD dwWidth;
+&#009;DWORD dwHeight;
+&#009;DWORD dwReserved[4];
+} MainAVIHeader;
+</FONT></PRE>
+<P>The <B>dwMicroSecPerFrame</B> member specifies the period between video frames. This value indicates the overall timing for the file.
+<P>The <B>dwMaxBytesPerSec</B> member specifies the approximate maximum data rate of the file. This value indicates the number of bytes per second the system must handle to present an AVI sequence as specified by the other parameters contained in the main header and stream header chunks.
+<P>The <B>dwFlags</B> member contains any flags for the file. The AVIF_HASINDEX, AVIF_MUSTUSEINDEX, AVIF_ISINTERLEAVED, AVIF_COPYRIGHTED, and AVIF_WASCAPTUREFILE flags are defined.
+<P>The AVIF_HASINDEX and AVIF_MUSTUSEINDEX flags apply to files with an index chunk. The AVI_HASINDEX flag indicates an index is present. The AVIF_MUSTUSEINDEX flag indicates the index should be used to determine the order of the presentation of the data. When this flag is set, it implies the physical ordering of the chunks in the file does not correspond to the presentation order.
+<P>The AVIF_ISINTERLEAVED flag indicates the AVI file has been interleaved. The system can stream interleaved data from a CD-ROM more efficiently than noninterleaved data. For more information about interleaved files, see "Special Information for Interleaved Files" in the Video for Windows Programmer's Guide.
+<P>The AVIF_COPYRIGHTED flag indicates the AVI file contains copyrighted data. When this flag is set, applications should not let users duplicate the file or the data in the file.
+<P>The AVIF_WASCAPTUREFILE flag indicates the AVI file is a specially allocated file used for capturing real-time video. Typically, capture files have been defragmented by the user so video capture data can be efficiently streamed into the file. If this flag is set, an application should warn the user before writing over the file.
+<P>The <B>dwTotalFrames</B> member of the main header specifies the total number of frames of data in the file.
+<P>The <B>dwInitialFrames</B> member is used for interleaved files. If you are creating interleaved files, specify the number of frames in the file prior to the initial frame of the AVI sequence in this member. For more information about the contents of this member, see "Special Information for Interleaved Files" in the Video for Windows Programmer's Guide.
+<P>The <B>dwStreams</B> member specifies the number of streams in the file. For example, a file with audio and video has two streams.
+<P>The <B>dwSuggestedBufferSize</B> member specifies the suggested buffer size for reading the file. Generally, this size should be large enough to contain the largest chunk in the file. If set to zero, or if it is too small, the playback software will have to reallocate memory during playback, which will reduce performance. For an interleaved file, the buffer size should be large enough to read an entire record, and not just a chunk.
+<P>The <B>dwWidth</B> and <B>dwHeight</B> members specify the width and height of the AVI file in pixels.
+
+<A NAME="avispec_0001050502020300"></A><P><B>Stream Header ('strl') List Chunk
+</B>
+<P>The main header is followed by one or more 'strl' chunks. (A 'strl' chunk is required for each data stream.) These chunks contain information about the streams in the file. Each 'strl' chunk must contain a stream header and stream format chunk. Stream header chunks are identified by the four-character code 'strh' and the stream format chunks are identified by the four-character code 'strf'. In addition to the stream header and stream format chunks, the 'strl' chunk might also contain a stream-header data chunk and a stream name chunk. Stream-header data chunks are identified by the four-character code 'strd'. Stream name chunks are identified by the four-character code 'strn'.
+<P>The stream header has the following data structure defined for it:
+<PRE><FONT FACE="Courier" SIZE="2">
+typedef struct {
+&#009;FOURCC fccType;
+&#009;FOURCC fccHandler;
+&#009;DWORD  dwFlags;
+&#009;DWORD  dwPriority;
+&#009;DWORD  dwInitialFrames;
+&#009;DWORD  dwScale;
+&#009;DWORD  dwRate;
+&#009;DWORD  dwStart;
+&#009;DWORD  dwLength;
+&#009;DWORD  dwSuggestedBufferSize;
+&#009;DWORD  dwQuality;
+&#009;DWORD  dwSampleSize;
+&#009;RECT   rcFrame;
+} AVIStreamHeader;
+</FONT></PRE>
+<P>The stream header specifies the type of data the stream contains, such as audio or video, by means of a four-character code. The <B>fccType</B> member is set to 'vids' if the stream it specifies contains video data. It is set to 'auds' if it contains audio data. It is set to 'TXTS' if it contains text data.
+<P>The <B>fccHandler</B> member contains a four-character code describing the stream handler for the data. For audio and video streams, this specifies the installable compressor or decompressor.
+<P>The <B>dwFlags</B> member contains any flags for the data stream. The AVISF_DISABLED flag indicates that the stream data should be rendered only when explicitly enabled by the user. The AVISF_VIDEO_PALCHANGES flag indicates palette changes are embedded in the file.
+<P>The <B>dwInitialFrames</B> member is used for interleaved files. If you are creating interleaved files, specify the number of frames in the file prior to the initial frame of the AVI sequence in this member. For more information about the contents of this member, see "Special Information for Interleaved Files" in the Video for Windows Programmer's Guide.
+<P>The remaining members describe the playback characteristics of the stream. These factors include the playback rate (<B>dwScale</B> and <B>dwRate</B>), the starting time of the sequence (<B>dwStart</B>), the length of the sequence (<B>dwLength</B>), the size of the playback buffer (<B>dwSuggestedBuffer</B>), an indicator of the data quality (<B>dwQuality</B>), and the sample size (<B>dwSampleSize</B>). For more information about these members, see <A HREF="dssd0075.htm#avispec_0001050502020500" TARGET="TEXT">AVI RIFF File Reference</A>.
+<P>Some of the members in the stream header structure are also present in the main header structure. The data in the main header applies to the whole file, while the data in the stream header structure applies only to a stream.
+<P>A stream format ('strf') chunk must follow a stream header ('strh') chunk. The stream format chunk describes the format of the data in the stream. For video streams, the information in this chunk is a <A HREF="dssd0075.htm#avispec_0001050502020801" TARGET="TEXT">BITMAPINFO</A> structure (including palette information if appropriate). For audio streams, the information in this chunk is a <A HREF="dssd0075.htm#avispec_0001050502020900" TARGET="TEXT">WAVEFORMATEX</A> or <A HREF="dssd0389.htm#external_00010a01090000ba" TARGET="TEXT">PCMWAVEFORMAT</A> structure. (The <B>WAVEFORMATEX</B> structure is an extended version of the <A HREF="dssd0389.htm#external_00010a01090000db" TARGET="TEXT">WAVEFORMAT</A> structure.) For more information about this structure and other stream types, see the <I>New Multimedia Data Types and Data Techniques Standards Update</I>.
+<P>The 'strl' chunk might also contain an additional stream-header data ('strd') chunk. If used, this chunk follows the stream format chunk. The format and content of this chunk is defined by installable compression or decompression drivers. Typically, drivers use this information for configuration. Applications that read and write RIFF files do not need to decode this information. They transfer this data to and from a driver as a memory block.
+<P>The optional 'strn' stream name chunk provides a zero-terminated text string describing the stream. (The AVIFile functions can use this chunk to let applications identify the streams they want to access by their names.)
+<P>An AVI player associates the stream headers in the LIST 'hdrl' chunk with the stream data in the LIST 'movi' chunk by using the order of the 'strl' chunks. The first 'strl' chunk applies to stream 0, the second applies to stream 1, and so forth.
+<P>For example, if the first 'strl' chunk describes the wave audio data, the wave audio data is contained in stream 0. Similarly, if the second 'strl' chunk describes video data, then the video data is contained in stream 1.
+
+<A NAME="avispec_0001050502020400"></A><P><B>LIST 'movi' Chunk
+</B>
+<P>Following the header information is a LIST 'movi' chunk that contains chunks of the actual data in the streams &#151; that is, the pictures and sounds themselves. The data chunks can reside directly in the LIST 'movi' chunk or they might be grouped into 'rec ' chunks. The 'rec ' grouping implies that the grouped chunks should be read from disk all at once. This is used only for files specifically interleaved to play from CD-ROM.
+<P>Like any RIFF chunk, the data chunks contain a four-character code to identify the chunk type. The four-character code that identifies each chunk consists of the stream number and a two-character code that defines the type of information encapsulated in the chunk. For example, a waveform chunk is identified by a two-character code of 'wb'. If a waveform chunk corresponded to the second LIST 'hdrl' stream description, it would have a four-character code of '01wb'.
+
+<P><B>Note</B>  While two-character codes are a convenient way to describe a stream, do not expect them to be recognized by other applications. Use four-character codes when creating a stream or transferring the information to other applications.<P>Because all the format information is in the header, the audio data contained in these data chunks does not contain any information about its format. An audio data chunk has the following format (the ## in the format represents the stream identifier):
+<PRE><FONT FACE="Courier" SIZE="2">
+WAVE Bytes '##wb'
+     BYTE  abBytes[];
+</FONT></PRE>
+<P>Video data can be compressed or uncompressed DIBs. An uncompressed DIB has BI_RGB specified for the <B>biCompression</B> member in its associated <A HREF="dssd0075.htm#avispec_0001050502020801" TARGET="TEXT">BITMAPINFO</A> structure. A compressed DIB has a value other than BI_RGB specified in the <B>biCompression</B> member. For more information about compression formats, see the description of the <A HREF="dssd0075.htm#avispec_0001050502020800" TARGET="TEXT">BITMAPINFOHEADER</A> data structure in the Microsoft Windows Programmer's Reference.
+<P>A data chunk for an uncompressed DIB contains RGB video data. These chunks are identified by a two-character code of 'db' (db is an abbreviation for DIB bits). Data chunks for a compressed DIB are identified by a two-character code of 'dc' (dc is an abbreviation for DIB compressed). Neither data chunk will contain any header information about the DIBs. The data chunk for an uncompressed DIB has the following form:
+<PRE><FONT FACE="Courier" SIZE="2">
+DIB  Bits  '##db'
+     BYTE  abBits[];
+</FONT></PRE>
+<P>The data chunk for a compressed DIB has the following form.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+Compressed DIB  Bits  '##dc'
+                BYTE  abBits[];
+</FONT></PRE>
+<P>Video data chunks can also define new palette entries used to update the palette during an AVI sequence. For more information on specifying palette information, see <I>Video for Windows Programmer's Guide</I>.
+<P>Text streams can use arbitrary two-character codes.
+
+<A NAME="avispec_0001050502020500"></A><P><B>AVI RIFF File Reference
+</B>
+<P>This topic lists data structures used to support AVI RIFF files. The structure definition is given, followed by a description of each member.
+<P>The header structures described are:
+<UL><LI><A HREF="dssd0075.htm#avispec_0001050502020600" TARGET="TEXT">MainAVIHeader Structure</A>
+<LI><A HREF="dssd0075.htm#avispec_0001050502020700" TARGET="TEXT">AVIStreamHeader Structure</A>
+<LI><A HREF="dssd0075.htm#avispec_0001050502020800" TARGET="TEXT">BITMAPINFOHEADER Structure</A>
+<LI><A HREF="dssd0075.htm#avispec_0001050502020900" TARGET="TEXT">WAVEFORMATEX Structure</A>
+</UL>
+<A NAME="avispec_0001050502020600"></A><P><B>MainAVIHeader Structure
+</B>
+<P>The <B>MainAVIHeader</B> structure contains global information for the entire AVI file. It is contained within an 'avih' chunk within the LIST 'hdrl' chunk at the beginning of an AVI RIFF file.
+<PRE><FONT FACE="Courier" SIZE="2">
+typedef struct {
+&#009;DWORD dwMicroSecPerFrame;
+&#009;DWORD dwMaxBytesPerSec;
+&#009;DWORD dwReserved1;
+&#009;DWORD dwFlags;
+&#009;DWORD dwTotalFrames;
+&#009;DWORD dwInitialFrames;
+&#009;DWORD dwStreams;
+&#009;DWORD dwSuggestedBufferSize;
+&#009;DWORD dwWidth;
+&#009;DWORD dwHeight;
+&#009;DWORD dwReserved[4];
+} MainAVIHeader;
+</FONT></PRE>
+<P>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwMicroSecPerFrame</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the number of microseconds between frames.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwMaxBytesPerSec</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the approximate maximum data rate of a file.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwReserved1</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Reserved. Set this to zero.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwFlags</B>
+
+
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies any applicable flags. The following flags are defined:
+
+</FONT></TD></TR><TR><TD></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AVIF_HASINDEX &#151; Indicates the AVI file has an 'idx1' chunk containing an index at the end of the file. For good performance, all AVI files should contain an index.
+</FONT></TD></TR><TR><TD></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AVIF_MUSTUSEINDEX &#151; Indicates that the index, rather than the physical ordering of the chunks in the file, should be used to determine the order of presentation of the data. For example, this could be used for creating a list of frames for editing.
+</FONT></TD></TR><TR><TD></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AVIF_ISINTERLEAVED &#151; Indicates the AVI file is interleaved.
+</FONT></TD></TR><TR><TD></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AVIF_WASCAPTUREFILE &#151; Indicates the AVI file is a specially allocated file use for capturing real-time video. Applications should warn the user before writing over a file with this flag set because the user probably defragmented this file.
+</FONT></TD></TR><TR><TD></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AVIF_COPYRIGHTED &#151;Indicates the AVI file contains copyrighted data and software. When this flag is used, software should not permit the data to be duplicated.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwTotalFrames</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the number of frames of data in file.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwInitialFrames</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the initial frame for interleaved files. Noninterleaved files should specify zero.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwStreams</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the number of streams in the file. For example, a file with audio and video has two streams.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwSuggestedBufferSize</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the suggested buffer size for reading the file. Generally, this size should be large enough to contain the largest check in the file. If set to zero, or if it is too small, the playback software will have to reallocate memory during playback, which will reduce performance. For an interleaved file, this buffer size should be large enough to read and entire record, and not just a chunk.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwWidth</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the width of the AVI file in pixels.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwHeight</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the height of the AVI file in pixels.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwReserved[4]</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Reserved. Set this array to zero.
+</FONT></TD></TR></TABLE>
+<A NAME="avispec_0001050502020700"></A><P><B>AVIStreamHeader Structure
+</B>
+<P>The <B>AVIStreamHeader</B> structure contains header information for a single stream of a file. It is contained within an 'strh' chunk within a LIST 'strl' chunk that is itself contained with the LIST 'hdrl' chunk at the beginning of an AVI RIFF file.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+typedef struct {
+&#009;FOURCC fccType;
+&#009;FOURCC fccHandler;
+&#009;DWORD  dwFlags;
+&#009;DWORD  dwPriority;
+&#009;DWORD  dwInitialFrames;
+&#009;DWORD  dwScale;
+&#009;DWORD  dwRate;
+&#009;DWORD  dwStart;
+&#009;DWORD  dwLength;
+&#009;DWORD  dwSuggestedBufferSize;
+&#009;DWORD  dwQuality;
+&#009;DWORD  dwSampleSize;
+&#009;RECT   rcFrame;
+} AVIStreamHeader;
+</FONT></PRE>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>fccType</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Contains a four-character code that specifies the type of the data contained in the stream. The following standard AVI values for video and audio are defined:
+</FONT></TD></TR><TR><TD></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">'vids' &#151; Indicates the stream contains video data. The stream format chunk contains a <A HREF="dssd0075.htm#avispec_0001050502020801" TARGET="TEXT">BITMAPINFO</A> structure that can include palette information.
+</FONT></TD></TR><TR><TD></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">'auds' &#151; Indicates the stream contains audio data. The stream format chunk contains a <A HREF="dssd0075.htm#avispec_0001050502020900" TARGET="TEXT">WAVEFORMATEX</A> or <A HREF="dssd0389.htm#external_00010a01090000ba" TARGET="TEXT">PCMWAVEFORMAT</A> structure.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>fccHandler</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Optionally, contains a four-character code that identifies a specific data handler. The data handler is the preferred handler for the stream.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwFlags</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies any applicable flags. The bits in the high-order word of these flags are specific to the type of data contained in the stream. The following standard flags are defined:
+</FONT></TD></TR><TR><TD></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AVISF_DISABLED &#151; Indicates this stream should not be enabled by default.
+</FONT></TD></TR><TR><TD></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AVISF_VIDEO_PALCHANGES &#151; Indicates this video stream contains palette changes. This flag warns the playback software that it will need to animate the palette.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwPriority</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies priority of a stream type. For example, in a file with multiple audio streams, the one with the highest priority might be the default stream.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwInitialFrames</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies how far audio data is skewed ahead of the video frames in interleaved files. Typically, this is about 0.75 seconds.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwScale</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Used together with <B>dwRate</B> to specify the time scale that this stream will use. Dividing <B>dwRate</B> by <B>dwScale</B> gives the number of samples per second. For video streams, this rate should be the frame rate. For audio streams, this rate should correspond to the time needed for <B>nBlockAlign</B> bytes of audio, which for PCM audio simply reduces to the sample rate.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwRate</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">See <B>dwScale</B>.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwStart</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the starting time of the AVI file. The units are defined by the <B>dwRate</B> and <B>dwScale</B> members in the main file header. Usually, this is zero, but it can specify a delay time for a stream that does not start concurrently with the file.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwLength</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the length of this stream. The units are defined by the <B>dwRate</B> and <B>dwScale</B> members of the stream's header.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwSuggestedBufferSize</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies how large a buffer should be used to read this stream. Typically, this contains a value corresponding to the largest chunk present in the stream. Using the correct buffer size make playback more efficient. Use zero if you do not know the correct buffer size.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwQuality</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies an indicator of the quality of the data in the stream. Quality is represented as a number between 0 and 10,000. For compressed data, this typically represents the value of the quality parameter passed to the compression software. If set to &#150;1, drivers use the default quality value.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>dwSampleSize</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the size of a single sample of data. This is set to zero if the samples can vary in size. If this number is nonzero, then multiple samples of data can be grouped into a single chunk within the file. If it is zero, each sample of data (such as a video frame) must be in a separate chunk. For video streams, this number is typically zero, although it can be nonzero if all video frames are the same size. For audio streams, this number should be the same as the <B>nBlockAlign</B> member of the <A HREF="dssd0075.htm#avispec_0001050502020900" TARGET="TEXT">WAVEFORMATEX</A> structure describing the audio.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>rcFrame</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Specifies the destination rectangle for a text or video stream within the movie rectangle specified by the <B>dwWidth</B> and <B>dwHeight</B> members of the <A HREF="dssd0075.htm#avispec_0001050502020600" TARGET="TEXT">MainAVIHeader</A> structure. The <B>rcFrame</B> member is typically used in support of multiple video streams. Set this rectangle to the coordinates corresponding to the movie rectangle to update the whole movie rectangle. Units for this member are pixels. The upper-left corner of the destination rectangle to relative to the upper-left corner of the movie rectangle.
+</FONT></TD></TR></TABLE>
+<A NAME="avispec_0001050502020800"></A><P><B>BITMAPINFOHEADER Structure
+</B>
+<P>The <B>BITMAPINFOHEADER</B> structure contains information for the video stream of an AVI RIFF file. This structure has the following members:
+<PRE><FONT FACE="Courier" SIZE="2">
+typedef struct tagBITMAPINFOHEADER {
+&#009;DWORD  biSize;
+&#009;LONG   biWidth;
+&#009;LONG   biHeight;
+&#009;WORD   biPlanes;
+&#009;WORD   biBitCount;
+&#009;DWORD  biCompression;
+&#009;DWORD  biSizeImage;
+&#009;LONG   biXPelsPerMeter;
+&#009;LONG   biYPelsPerMeter;
+&#009;DWORD  biClrUsed;
+&#009;DWORD  biClrImportant;
+} BITMAPINFOHEADER;
+</FONT></PRE>
+<P>Information about the compression format is specified in the <B>biCompression</B> and <B>biBitCount</B> members. The <B>biCompression</B> member specifies the type of compression used or requested. Both existing and new compression formats use this member.
+<P>The <B>biBitCount</B> member specifies the number of bits per pixel. Some compression formats need this information to properly decode the colors in the pixel.
+<P>When the value in the <B>biBitCount</B> member is set to greater than eight, video drivers can assume bitmaps are true color and they do not use a color table. For more information about these data structures, see the <I>Microsoft Windows Programmer's Reference</I>.
+
+<P>When the value in the <B>biBitCount</B> member is set to less than or equal to eight, video drivers can assume the bitmap uses a palette or color table defined in the <B><A NAME="avispec_0001050502020801">BITMAPINFO</A></B> data structure. This data structure has the following members:
+<PRE><FONT FACE="Courier" SIZE="2">
+typedef struct tagBITMAPINFO {
+&#009;BITMAPINFOHEADER bmiHeader;
+&#009;RGBQUAD          bmiColors[1];
+} BITMAPINFO;
+</FONT></PRE>
+<P>The BITMAPINFO <B>bmiheader</B> member specifies a <B>BITMAPINFOHEADER</B> structure. The BITMAPINFO <B>bmiColors</B> member specifies an array of RGBQUAD or double-word data types that define the colors in the bitmap. 
+
+
+
+<A NAME="avispec_0001050502020900"></A><P><B>WAVEFORMATEX Structure
+</B>
+<P>The <B>WAVEFORMATEX</B> structure contains information for the audio stream(s) of an AVI RIFF file. This structure has the following members:
+<PRE><FONT FACE="Courier" SIZE="2">
+typedef struct waveformat_extended_tag {
+&#009;WORD  wFormatTag;      /* format type */
+&#009;WORD  nChannels;       /* number of channels (i.e. mono, stereo...) */
+&#009;DWORD nSamplesPerSec;  /* sample rate */
+&#009;DWORD nAvgBytesPerSec; /* for buffer estimation */
+&#009;WORD  nBlockAlign;     /* block size of data */
+&#009;WORD  wBitsPerSample;  /* Number of bits per sample of mono data */
+&#009;WORD  cbSize;          /* The count in bytes of the extra size */
+} WAVEFORMATEX;
+</FONT></PRE>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>wFormatTag</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Defines the type of WAVE file.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>nChannels</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Number of channels in the wave, 1 for mono, 2 for stereo.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>nSamplesPerSec</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Frequency of the sample rate of the wave file. Examples are 11,025, 22,050, or 44,100. This rate is also used by the sample size entry in the fact chunk to determine the length in time of the data.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>nAvgBytesPerSec</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Average data rate. Playback software can estimate the buffer size using the <B>nAvgBytesPerSec</B> value.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>nBlockAlign</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The block alignment (in bytes) of the data. Playback software needs to process a multiple of nBlockAlign bytes of data at a time, so that the value of nBlockAlign can be used for buffer alignment.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>wBitsPerSample</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">This is the number of bits per sample per channel data. Each channel is assumed to have the same sample resolution. If this field is not needed, then it should be set to zero.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>cbSize</B>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The size (in bytes) of the extra information in the WAVE format header, not including the size of the <B>WAVEFORMATEX</B> structure. As an example, in the IMA ADPCM format, <B>cbSize</B> is calculated as sizeof(IMAADPCMWAVEFORMAT) - sizeof(WAVEFORMATEX) which yields two.
+</FONT></TD></TR></TABLE>
+<H3><A NAME="avispec_0001050502030000">AVI 2.0 File Format Extensions</A></H3>
+<P>This section lists the portions of the AVI 2.0 file format spec that DirectShow supports. See the specification in version 1.02 of the <I>OpenDML AVI File Format Extensions</I> published by the OpenDML AVI M-JPEG File Format Subcommittee, February 28, 1996.
+
+
+<P>DirectShow currently supports the following:
+
+<UL><LI>Increased AVI file size (greater than 1 GB)
+<LI>Hierarchical indexing
+<UL><LI>Incremental growth of files
+<LI>Minimal disk seeks
+</UL>
+</UL>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

@@ -1,0 +1,273 @@
+$ENGINE={B54F3741-5B07-11cf-A4B0-00AA004A55E8}
+$OBJECT=ShipClass
+$OBJECT=BubbleClass
+$OBJECT=AmmoClass
+$OBJECT=ExtraClass
+
+Option Explicit
+
+'---------------------------------------------------------------
+' GameFull.txt
+'---------------------------------------------------------------
+' Use path to this file as parameter to Sprite.exe.  E.g.:
+'    Sprite C:\Tmp\FameFull.txt
+' See "SpruuidP.Pix" for list of images available, numbered 0-n.
+'---------------------------------------------------------------
+
+Dim sShip               'Player's ship
+
+
+'------------
+' GAME events
+'
+Sub Game_NewGame()
+'   ------------
+    'Sprites Bounce on inner border:
+    ShipClass.Border   = 15
+    BubbleClass.Border = 15
+    AmmoClass.Border   = 15
+    ExtraClass.Border  = 15 * 16   'Outer border for this class
+
+    'Setup Collision possibilities.  Bit 1 is reserved for hitting same-kind objects.
+    ShipClass.Collide   = 2
+    BubbleClass.Collide = 2 + 4
+    AmmoClass.Collide   =     4
+
+    'Setup Standard images for the different classes of sprites
+    ShipClass.Image   = 32        'Ship
+    BubbleClass.Image = 60        'Small bubble
+    AmmoClass.Image   = 35        'Ammo
+    ExtraClass.Image  = 53        '200
+
+    'Extra Ship Info
+    ScoreFirst1Up  = 250
+    ScoreSecond1Up = 500
+    DScoreNext1Up  = 500
+
+    'Set up main window
+    Caption = "Bubbles - Microsoft Spruuids"
+    Width  = 372
+    Height = 282
+
+    ShipClass.Friction = 0.981
+    Set sShip = ShipClass.CreateSprite(Game.Width / 2, Game.Height / 2, 0)
+    BubbleClass.CreateSprite 0, 0, 0
+    Level = 0   'Use Level marker to count # of bubbles destroyed
+    StatusText = "Press Any Key To Start"
+End Sub
+
+
+Sub Game_KeyDown(ByVal ch)
+'   ------------
+    Dim sT
+
+    'Too many shots on screen already?
+    If AmmoClass.SpriteCount > 5 Then StatusText = "Only Get 6 Shots At A Time" : Exit Sub
+
+    'Game Over?
+    If ShipCount <= 0 Then Exit Sub
+
+    'Don't allow Player to start until all shots are off screen
+    If sShip.Image = 32 and AmmoClass.SpriteCount <> 0 Then  StatusText = "Press Any Key *After* All Bullets Disappear" : Exit Sub
+
+    'Give simple help if wrong key pressed
+    If ch < 37 or ch > 40 Then StatusText = "Press Arrow Keys To Fire And Move" : Exit Sub
+
+    StatusText = "Blow-Up Bubbles By Shooting Them Many Times"
+
+    'Up
+    If ch = 38 Then
+        sShip.Image = 24
+        Set sT = AmmoClass.CreateSprite(sShip.Left + sShip.Width / 2, sShip.Top, 0)
+        sT.Vx = 0 : sT.Vy = -5
+        sShip.Vy = sShip.Vy + 1
+    End If
+
+    'Down
+    If ch = 40 Then
+        sShip.Image = 8
+        Set sT = AmmoClass.CreateSprite(sShip.Left + sShip.Width / 2, sShip.Top + sShip.Height, 0)
+        sT.Vx = 0 : sT.Vy = 5
+        sShip.Vy = sShip.Vy - 1
+    End If
+
+    'Left
+    If ch = 37 Then
+        sShip.Image = 16
+        Set sT = AmmoClass.CreateSprite(sShip.Left, sShip.Top + sShip.Height / 2, 0)
+        sT.Vx = -5 : sT.Vy = 0
+        sShip.Vx = sShip.Vx + 1
+    End If
+
+    'Right
+    If ch = 39 Then
+        sShip.Image = 0
+        Set sT = AmmoClass.CreateSprite(sShip.Left + sShip.Width, sShip.Top + sShip.Height / 2, 0)
+        sT.Vx = 5 : sT.Vy = 0
+        sShip.Vx = sShip.Vx - 1
+    End If
+End Sub
+
+
+Sub DoShipHit()      'Decrease # ships, end game if none left
+'   ---------
+    sShip.Image = 32
+    ShipCount = ShipCount - 1
+    If ShipCount <= 0 Then
+        EndGame
+    Else
+        sShip.Vx = 0
+        sShip.Vy = 0
+        sShip.MoveTo Game.Width / 2, Game.Height / 2
+        StatusText = "Press Any Key To Start"
+    End If
+End Sub
+
+
+Sub DoNewBubble(ByVal left, ByVal top, ByVal vx, ByVal vy, ByVal fAllowGold)
+'   -----------
+    Dim sT
+
+    Set sT = BubbleClass.CreateSprite(left, top, 1)
+    sT.Vx  = vx * 0.5 + 4 * Rnd() - 2
+    sT.Vy  = vy * 0.5 + 4 * Rnd() - 2
+    If fAllowGold <> 0 And Rnd() < 0.15 + 0.01 * BubbleClass.SpriteCount Then sT.Image = 44 : StatusText = "Catch Gold Ball For Bonus"
+End Sub
+
+
+Sub Game_Collide(ByVal sLowId, ByVal sHighId, ByVal coll)
+'   ------------
+    Dim ship
+    Dim bubble
+    Dim ammo
+    Dim sT
+
+    Select Case coll
+        Case 2
+            Set ship   = sLowId
+            Set bubble = sHighId
+            If ship.Image <> 32 Then
+                If bubble.Image = 44 Then
+                    'Score Bonus
+                    AddScore 200
+                    ExtraClass.CreateSprite ship.Left, ship.Top, 0
+                    bubble.Remove
+                Else
+                    'Ship Hit Bubble
+                    Call DoShipHit
+                End If
+            End If
+        Case 4
+            Set bubble = sLowId
+            Set ammo   = sHighId
+            ammo.Remove
+            If bubble.Image <= 57 Then
+                AddScore 50
+                bubble.Remove
+
+                'Create bursting bubble image
+                If bubble.Image = 57 Then
+                    Set sT = ExtraClass.CreateSprite(bubble.Left, bubble.Top, 2)
+                    sT.Vx = bubble.Vx
+                    sT.Vy = bubble.Vy
+                End If
+
+                Level = Level + 1   'Use Level marker to count # of bubbles destroyed
+
+                'Create two new bubbles. Don't create gold bubbles if a gold bubble was hit
+                DoNewBubble bubble.Left, bubble.Top, bubble.Vx - ammo.Vx, bubble.Vy - ammo.Vy, bubble.Image = 57
+                DoNewBubble bubble.Left, bubble.Top, bubble.Vx + ammo.Vx, bubble.Vy + ammo.Vy, bubble.Image = 57
+            Else
+                bubble.Image = bubble.Image - 1
+                'bubble.Vx = bubble.Vx + ammo.Vx / 3
+                'bubble.Vy = bubble.Vy + ammo.Vy / 3
+                AddScore 5
+            End If
+    End Select
+End Sub
+
+
+Sub Game_NewShip()
+'   ------------
+    ExtraClass.CreateSprite sShip.Left, sShip.Top, 1
+    ExtraClass.CreateSprite sShip.Left, sShip.Top, 1
+    ExtraClass.CreateSprite sShip.Left, sShip.Top, 1
+    ExtraClass.CreateSprite sShip.Left, sShip.Top, 1
+End Sub
+
+
+
+'-----------------
+' ShipClass events
+'
+Sub ShipClass_Border(ByVal s, ByVal brd)
+'   ----------------
+    'Randomize velocity, then bounce ship
+    s.Vx = s.Vx + 6 * Rnd() - 3
+    s.Vy = s.Vy + 6 * Rnd() - 3
+    StdBorderBounce s, brd
+End Sub
+
+
+'-------------------
+' BubbleClass events
+'
+Sub BubbleClass_Init(ByVal s, ByVal u)
+'   ----------------
+    If s.Left = 0 Then
+        'New Bubble, so start it at an edge, and give it a random direction
+        Game.StdInitEdge s, u
+        s.Vx = 12 * Rnd() - 6
+        s.Vy = 12 * Rnd() - 6
+    End If
+End Sub
+
+Sub BubbleClass_Border(ByVal s, ByVal brd)
+'   ------------------
+    StdBorderBounce s, brd
+End Sub
+
+'If no more enemies, create some
+Sub BubbleClass_LastTerm()
+'   --------------------
+    BubbleClass.CreateSprite 0, 0, 0
+End Sub
+
+
+'-----------------
+' AmmoClass events
+'
+Sub AmmoClass_Border(ByVal s, ByVal brd)
+'   ----------------
+    s.Remove
+End Sub
+
+
+'------------------
+' ExtraClass events
+'
+Sub ExtraClass_Init(ByVal s, ByVal u)
+'   ---------------
+    Select Case u
+        Case 0
+            s.Vy = -5               'Make the "200" go up
+        Case 1
+            s.Image = 49            'Animated +
+            s.Ay = .15              'Mild gravity
+            s.Vy = -6 * Rnd()       'Make these start going up, left gravity pull down
+            s.Vx = 6 * Rnd() - 3    'Rand horz velocity
+            s.TickEvent = 50        'Destroy in 50 ticks
+        Case 2
+            s.Image = 65            'Bursting bubble
+    End Select
+End Sub
+
+Sub ExtraClass_Tick(ByVal s)
+    s.Remove
+End Sub
+
+Sub ExtraClass_Border(ByVal s, ByVal brd)
+    If brd <> &h20 Then s.Remove
+End Sub
+
+'--- EOF ---

@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>INonDelegatingUnknown Interface</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0264.htm','/dssd0000.htm','/dssd0256.htm','/index.htm','/dssd0266.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="fmutil_0001060309000000">INonDelegatingUnknown Interface</A></H2>
+<BR CLEAR=ALL>
+<P>To enable a class to support both nondelegating and delegating <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> interfaces in the same COM object, the Combase.h header file declares the <A HREF="dssd0265.htm#fmutil_0001060309000100" TARGET="TEXT">INonDelegatingUnknown</A> interface. This interface is a version of <B>IUnknown</B> and has three methods: 
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="fmutil_0001060309000001">INonDelegatingUnknown::NonDelegatingQueryInterface</A></B>
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="fmutil_0001060309000002">INonDelegatingUnknown::NonDelegatingAddRef</A></B>
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="fmutil_0001060309000003">INonDelegatingUnknown::NonDelegatingRelease</A></B>
+</FONT></TD></TABLE>
+<P>For sample implementations of these methods, see <A HREF="dssd0253.htm#Lib_0001060249030400" TARGET="TEXT">CUnknown::NonDelegatingQueryInterface</A>, <A HREF="dssd0253.htm#Lib_0001060249030300" TARGET="TEXT">CUnknown::NonDelegatingAddRef</A>, and <A HREF="dssd0253.htm#Lib_0001060249030500" TARGET="TEXT">CUnknown::NonDelegatingRelease</A>. 
+
+
+ 
+
+<H3><HR COLOR=#0000FF><A NAME="fmutil_0001060309000100">INonDelegatingUnknown</A></H3>
+<P>A version of <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> renamed to enable a class to support both nondelegating and delegating <B>IUnknown</B> interfaces in the same COM object. The interface supports the following three methods, in vtable order:
+<P><B>HRESULT</B> <B>NonDelegatingQueryInterface</B><B>(</B><BR>&nbsp;&nbsp;<B>REFIID</B> <I>iid</I><B>,</B><BR>&nbsp;&nbsp;<B>void**</B> <I>ppvObject</I> <B>)</B><B>;</B><BR><P><B>ULONG</B> <B>NonDelegatingAddRef</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><P><B>ULONG</B> <B>NonDelegatingRelease</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><H5>Remarks</H5>
+<P>To use <B>INonDelegatingUnknown</B> for multiple inheritance, perform the following steps:
+<OL><LI>Derive your class from an interface, for example, IMyInterface.
+<LI>Include <A HREF="dssd0264.htm#fmutil_0001060308000100" TARGET="TEXT">DECLARE_IUNKNOWN</A> in your class definition to declare implementations of <B>QueryInterface</B>, <B>AddRef</B>, and <B>Release</B> that call the outer unknown.
+<LI>Override <B>NonDelegatingQueryInterface</B> to expose IMyInterface with code such as the following:
+<PRE><FONT FACE="Courier" SIZE="2">
+     if (riid == IID_IMyInterface) {
+         return GetInterface((IMyInterface *) this, ppv);
+     } else {
+         return CUnknown::NonDelegatingQueryInterface(riid, ppv);
+     }
+</FONT></PRE>
+<LI>Declare and implement the member functions of IMyInterface.
+</OL>
+<P>To use <B>INonDelegatingUnknown</B> for nested interfaces, perform the following steps:
+
+<OL><LI> Declare a class derived from <A HREF="dssd0253.htm" TARGET="TEXT">CUnknown</A>.
+<LI>Include <A HREF="dssd0264.htm#fmutil_0001060308000100" TARGET="TEXT">DECLARE_IUNKNOWN</A> in your class definition.
+<LI>Override <B>NonDelegatingQueryInterface</B> to expose IMyInterface with the code such as the following:
+<PRE><FONT FACE="Courier" SIZE="2">
+     if (riid == IID_IMyInterface) {
+         return GetInterface((IMyInterface *) this, ppv);
+     } else {
+         return CUnknown::NonDelegatingQueryInterface(riid, ppv);
+     }
+</FONT></PRE>
+<LI>Implement the member functions of IMyInterface. Use <A HREF="dssd0253.htm#Lib_0001060249030200" TARGET="TEXT">CUnknown::GetOwner</A> to access the COM object class.
+
+<LI>In your COM object class, make the nested class a friend of the COM object class, and declare an instance of the nested class as a member of the COM object class.
+<P>Because you must always pass the outer unknown and an <B>HRESULT</B> to the <A HREF="dssd0253.htm" TARGET="TEXT">CUnknown</A> constructor, you can't use a default constructor. You have to make the member variable a pointer to the class and make a new call in your constructor to actually create it.
+
+<LI>Override the <B>NonDelegatingQueryInterface</B> with code such as the following:
+<PRE><FONT FACE="Courier" SIZE="2">
+
+     if (riid == IID_IMyInterface) {
+         return m_pImplFilter-&gt;
+            NonDelegatingQueryInterface(IID_IMyInterface, ppv);
+     } else {
+         return CUnknown::NonDelegatingQueryInterface(riid, ppv);
+     }
+</FONT></PRE>
+</OL>
+<P>You can have mixed classes that support some interfaces through multiple inheritance and some interfaces through nested classes.
+<H5>See Also</H5>
+<P><A HREF="dssd0268.htm#fmutil_000106030c000200" TARGET="TEXT">GetInterface</A>, <A HREF="dssd0253.htm" TARGET="TEXT">CUnknown</A>, <A HREF="dssd0264.htm" TARGET="TEXT">IUnknown Macro</A> 
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

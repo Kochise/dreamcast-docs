@@ -1,0 +1,120 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>IAMDroppedFrames Interface</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0098.htm','/dssd0000.htm','/dssd0088.htm','/index.htm','/dssd0100.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="If_000106010b000000">IAMDroppedFrames Interface</A></H2>
+<BR CLEAR=ALL>
+<P>The <B>IAMDroppedFrames</B> interface provides information to an application from a capture filter about frames that the filter dropped (that is, did not send), the frame rate achieved (the length of time the graph ran divided by the number of frames not dropped), and the data rate achieved (the length of time the graph ran divided by the average frame size). A high number of dropped frames can detract from the smoothness of the video clip.
+
+
+
+<A NAME="If_000106010b010000"></A><P><B>When to Implement</B>
+<P>A capture filter's video output pin should always implement this interface.
+
+<P>When a capture filter runs, it sends frame numbers beginning with the sequence 0, 1, 2, 3 (numbers will be missing if frames were dropped). The time stamp of each frame sent corresponds to the filter graph clock's time when the image was digitized. The end time is the start time plus the video frame's duration.
+
+<P>Set the media time of each sample by using <A HREF="dssd0228.htm#Lib_0001060230051100" TARGET="TEXT">CMediaSample::SetMediaTime</A> and using frame numbers for the start and end times. For example, the start-time and end-time sequence might appear as follows: (0,1) (1,2) (2,3).
+A downstream filter can easily tell that a frame was dropped by checking for gaps in the frame number sequence rather than by looking for gaps in the regular time stamps. The following start-time and end-time sequence reveals that frame number 3 was dropped: (1,2) (2,3) (4,5) (5,6).
+
+<P>Every time a capture filter goes from <A HREF="dssd0288.htm#dtypes_0001060601001801" TARGET="TEXT">State_Stopped</A> to <A HREF="dssd0288.htm#dtypes_0001060601001802" TARGET="TEXT">State_Paused</A>, it should reset all counts to zero.
+
+<P>If your filter runs, pauses, and then runs again, you must continue to deliver frames as if it never paused. The first frame after the second run can't be time stamped earlier than the last frame sent before the pause. That is, your filter must always increment the media time of each sample sent. Never send the same frame number twice, and never go back in time. 
+
+
+
+<A NAME="If_000106010b020000"></A><P><B>When to Use</B>
+<P>Applications should use this interface all the time when capturing to update the current capture status. After capturing is done, applications should use this interface to determine the final capture results.
+
+<A NAME="If_000106010b030000"></A><P><B>Methods in Vtable Order</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IUnknown methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+ </B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves pointers to supported interfaces.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">AddRef</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Increments the reference count.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Decrements the reference count.
+</FONT></TD></TR></TABLE>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IAMDroppedFrames methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+ </B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0099.htm#If_000106010b030300" TARGET="TEXT">GetNumDropped</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"> Retrieves the total number of frames that the pin dropped since it last started streaming.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0099.htm#If_000106010b030400" TARGET="TEXT">GetNumNotDropped</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"> Retrieves the total number of frames that the pin delivered downstream (did not drop).
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0099.htm#If_000106010b030200" TARGET="TEXT">GetDroppedInfo</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves an array of frame numbers that were dropped.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0099.htm#If_000106010b030100" TARGET="TEXT">GetAverageFrameSize</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the average size of frames that were not dropped.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="If_000106010b030100">IAMDroppedFrames::GetAverageFrameSize</A></H3>
+<A HREF="dssd0099.htm" TARGET="TEXT">IAMDroppedFrames Interface</A>
+<P>Retrieves the average size of frames that the pin dropped.
+<P><B>HRESULT</B> <B>GetAverageFrameSize</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <B>*</B> <I>plAverageSize</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>plAverageSize</I>
+ </DT><DD>[out, retval] Average size of frames sent out the pin since the pin started streaming, in bytes.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106010b030200">IAMDroppedFrames::GetDroppedInfo</A></H3>
+<A HREF="dssd0099.htm" TARGET="TEXT">IAMDroppedFrames Interface</A>
+<P>Retrieves an array of frame numbers that the pin dropped.
+<P><B>HRESULT</B> <B>GetDroppedInfo</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>lSize</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <B>*</B> <I>plArray</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <B>*</B> <I>plNumCopied</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>lSize</I>
+ </DT><DD>[in] Requested number of elements in the array.
+</DD><DT><I>plArray</I>
+ </DT><DD>[out] Pointer to the array.
+</DD><DT><I>plNumCopied</I>
+ </DT><DD>[out, retval] Pointer to the number of array elements filled in. This number can
+differ from <I>lSize</I> because the filter determines an arbitrary number of elements to save and it might not save this information for as many frames as you requested. 
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>Remarks</H5>
+<P>The filter will fill the array with the frame numbers of up to the first <I>lSize</I> number of frames dropped, and it will set <I>plNumCopied</I> accordingly.
+ 
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106010b030300">IAMDroppedFrames::GetNumDropped</A></H3>
+<A HREF="dssd0099.htm" TARGET="TEXT">IAMDroppedFrames Interface</A>
+<P>Retrieves the total number of frames that the pin dropped since it last started streaming.
+<P><B>HRESULT</B> <B>GetNumDropped</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <B>*</B> <I>plDropped</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>plDropped</I>
+ </DT><DD>[out] Pointer to the total number of dropped frames.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106010b030400">IAMDroppedFrames::GetNumNotDropped</A></H3>
+<A HREF="dssd0099.htm" TARGET="TEXT">IAMDroppedFrames Interface</A>
+<P>Retrieves the total number of frames that the pin delivered downstream (did not drop).
+<P><B>HRESULT</B> <B>GetNumNotDropped</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <B>*</B> <I>plNotDropped</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>plNotDropped</I>
+ </DT><DD>[out] Pointer to the total number of frames that weren't dropped.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

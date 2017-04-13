@@ -1,0 +1,58 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>COM Overview</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0041.htm','/dssd0000.htm','/dssd0030.htm','/index.htm','/dssd0043.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="ovcom_000103010c000000">COM Overview</A></H2>
+<BR CLEAR=ALL>
+<P>The Component Object Model (COM) is a binary standard that defines how objects are created and destroyed and, most importantly, how they interact with each other. As long as applications follow the COM standard, different applications from different sources can communicate with each other across process boundaries. People use COM to make communication with other applications easy.
+
+<P>Because COM is a binary standard, it is language independent. You do not have to use C++ to implement COM. You can use any language that supports tables of function pointers. 
+
+<P>A COM <I>interface</I> is a collection of logically related methods that express a single functionality. For example, the <A HREF="dssd0114.htm#If_000106011a000000" TARGET="TEXT">IAsyncReader</A> interface enables reading of MEDIATYPE_Stream data. All COM interfaces derive from <A HREF="dssd0175.htm#If_0001060157000000" TARGET="TEXT">IUnknown</A>, and all are named by a globally unique interface identifier (IID).
+
+<P>A COM <I>class</I> is an implementation of one or more COM interfaces, and a COM object is an instance of a COM class. A Microsoft&#174; DirectShow&#153; filter, for example, is a COM object. Each object has a globally unique class identifier (CLSID). 
+
+<P>Globally unique identifiers (<A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A>s) are extremely long integers that identify COM interfaces and objects, and are used to eliminate name collisions across applications. 
+
+<P>All access to a COM object is through pointers to its interfaces. Interface methods are purely virtual and are stored in a table called a <I>vtable</I>. The interface pointer points to the vtable's beginning. A COM interface defines the parameter types and the syntax for each of its methods. The COM class provides an implementation for each method of the interface. 
+
+<P>Once a COM class has been defined and assigned a CLSID, you can create an instance of the object. There are several ways to create an instance of the class, including using the COM <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A> or <A HREF="dssd0389.htm#external_00010a010900003d" TARGET="TEXT">IClassFactory::CreateInstance</A> methods , or the C++ 
+<B>new</B> operator. 
+
+<P>When you create an instance of an object, the call returns a pointer to one of the object's interfaces. Once you have an initial pointer to an interface on the object, you can use the <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">IUnknown::QueryInterface</A> method to find out whether the object supports another specific interface, and, if so, to get a pointer to that interface. COM supplies many standard interfaces that support data storage and transfer, notification, and basic connectivity with other objects, including <A HREF="dssd0389.htm#external_00010a01090000a5" TARGET="TEXT">IStream</A>, <A HREF="dssd0389.htm#external_00010a0109000095" TARGET="TEXT">IPropertyPage</A>, and <A HREF="dssd0389.htm#external_00010a0109000085" TARGET="TEXT">IMoniker</A>. DirectShow, in turn, adds its own COM interfaces, such as <A HREF="dssd0098.htm#If_000106010a000000" TARGET="TEXT">IAMDirectSound</A>, that clients of DirectShow objects can query for to determine if the object supports a particular functionality. To use COM interfaces, clients must know the interface definitions and the IID to query for (IID_<I>interfacename</I>). For example, assume you have a pointer to a COM object's <A HREF="dssd0175.htm#If_0001060157000000" TARGET="TEXT">IUnknown</A> interface in the <I>pUnknown</I> variable. You can query to see if the object supports <B>IAMDirectSound</B> with the following code.
+
+<PRE><FONT FACE="Courier" SIZE="2">hr=pUnknown-&gt;QueryInterface(IID_IAMDirectSound, (void **)&amp;pIAMDSound);
+</FONT></PRE>
+<P><A HREF="dssd0175.htm#If_0001060157000000" TARGET="TEXT">IUnknown</A> is the basic COM interface on which all others are based. <B>IUnknown</B> has three methods&#151;<A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A>, <A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">AddRef</A>, and <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A>&#151;that implement interface querying and reference counting. All COM interfaces inherit these three methods from <B>IUnknown</B>.
+
+<P><I>Reference counting</I> is the technique by which an object (or, strictly, an interface) decides when it is no longer being used and can therefore destroy itself. COM objects are dynamically allocated from within the object and multiple clients can use them simultaneously. To avoid wasting memory, the COM object must keep track of the number of clients using it, and destroy itself when clients no longer need it. The number of clients using the object is maintained in the reference count. Every time a new interface pointer to the COM object is created, the client using the object must increase the reference count by calling <A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">AddRef</A> on the interface pointer. Every time a client destroys an interface pointer to the object, it must first decrease the reference count by calling <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A> on the interface pointer. 
+
+<P>Binding associates a method with a pointer to its memory location. At compile time, a COM object's client is bound to the vtable locations of the object's interface methods. This is called <I>early binding</I>. With some languages, such as Microsoft&#174; Visual Basic&#174;, a vtable interface is difficult to access. Dispatch interfaces, identified by dispatch identifiers (DISPIDs), allow clients to access member functions not by position in a vtable, but by a human-readable name. Dispatch interfaces are accessed through the COM <A HREF="dssd0389.htm#external_00010a010900007d" TARGET="TEXT">IDispatch</A> interface and its <B>Invoke</B> method, which converts the names of the dispatch interface's functions to DISPIDs. The client retrieves the DISPIDs at run time. This is called <I>late binding</I>. To allow late binding, a COM object must implement the <B>IDispatch</B> interface and a mapping of function names and function parameters to a set of DISPIDs. In DirectShow, <A HREF="dssd0193.htm#Lib_000106020d000000" TARGET="TEXT">CBaseDispatch</A> implements the <B>IDispatch</B> interface.
+
+<P>Marshaling is the process of passing function arguments and return values among processes and machines. An in-process proxy packages arguments for the member function of an object in another process, and generates a remote procedure call to the other process. In the other process, a stub receives the call and unpacks the data, and calls the object through its interface. Dispatch interfaces do not need proxies and stubs and so are easier to use than vtable interfaces in out-of-process applications. Vtable interfaces, however, can be considerably faster, particularly in in-process applications. You can also write dual interfaces that have both tables of function pointers and dispatch interfaces. Dual interfaces can be nearly as fast as vtable interfaces, while allowing the flexibility of dispatch interfaces.
+
+<P>For more information about how DirectShow uses COM, see <A HREF="dssd0072.htm#com_0001050401000000" TARGET="TEXT">DirectShow and COM</A>. For general information about COM, see the "COM" section in the Microsoft Platform SDK, or an introductory book such as <I>ActiveX OLE</I> by David Chappell.
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

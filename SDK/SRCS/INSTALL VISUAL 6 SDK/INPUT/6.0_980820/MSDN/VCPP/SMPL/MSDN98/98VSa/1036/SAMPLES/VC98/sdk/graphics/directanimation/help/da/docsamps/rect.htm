@@ -1,0 +1,127 @@
+<HTML> 
+<HEAD>
+<TITLE>DirectAnimation SDK, JScript sample</TITLE>
+</HEAD>	 
+
+<BODY BGCOLOR=WHITE TOPMARGIN=15 LEFTMARGIN=10>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2> 
+          
+
+<DIV ID=controlDiv>
+<OBJECT ID="DAViewer"
+        STYLE="position:absolute; left:10; top:50;width:800;height:800;z-index: -1"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D">
+</OBJECT>
+</DIV>
+<FORM NAME="form1" ACTION="">
+<CENTER>
+<H2>Rectangles</H2>
+<INPUT TYPE=BUTTON VALUE="" NAME=StartBtn OnClick="start()"> 
+</CENTER>
+
+
+
+<SCRIPT LANGUAGE="JAVASCRIPT">
+<!--
+
+  var m_frm = document.form1;
+  m_frm.StartBtn.value = "Show";
+  var FlagNotStarted = true;
+  
+
+ 
+  function start()
+  {
+ 
+    if (FlagNotStarted)
+    {
+     m_frm.StartBtn.value = "         ";
+     rect();
+     FlagNotStarted = false;
+    }
+  }
+
+
+
+
+   function rect ()
+    {
+
+     m = DAViewer.MeterLibrary;
+  ls = m.DefaultLineStyle;
+
+  // This is a simple rectangle, drawn using the DAStatics.Rect function.
+  // Notice that this function returns a DAPath2 object. To render it (make it visible)
+  // we must generate an image (a DAImage object). In this first example we do this with the DAPath2.Draw function.
+
+  // This rectangle will have a width of .04 meters and a height of .02 meters
+  // It is a DAPath2 object
+  rectPath = m.Rect(.04,.02);
+  // This is an image that can be displayed (we're also moving it to the left, away from the origin)
+  rectImage1 = rectPath.Draw(ls).Transform(m.Translate2(-.06,.06));
+  // This is the text
+  rect1String = "An outlined rectangle.";
+  rect1TextImage = m.StringImage(rect1String, m.DefaultFont).Transform(m.Translate2(-.06,.08));
+  // Combine rectangle and text
+  rectImage1 = m.Overlay(rect1TextImage, rectImage1);
+ 
+  // This is the same rectangle, using the DAPath2.Fill function
+  rectImage2 = rectPath.Fill(ls, m.SolidColorImage(m.Blue)).Transform(m.Translate2(-.01,.06));
+  // This is the text
+  rect2String = "A filled-in rectangle.";
+  rect2TextImage = m.StringImage(rect2String, m.DefaultFont).Transform(m.Translate2(-.01,.08));
+  // Combine rectangle and text
+  rectImage2 = m.Overlay(rect2TextImage, rectImage2);
+
+  // For a square, create a rectangle with its width equal to its height
+  sqPath = m.Rect(.04,.04);
+  // And make it an image
+  sqImage1 = sqPath.Fill(ls, m.SolidColorImage(m.Green)).Transform(m.Translate2(.04,.06));
+  sq1String = "A square.";
+  sq1TextImage = m.StringImage(sq1String, m.DefaultFont).Transform(m.Translate2(.04,.09));
+  sqImage1 = m.Overlay(sq1TextImage, sqImage1);
+
+  // Now we'll create a rectangle whose width changes over time
+  // Make a number that goes from 0 to 10, over and over
+  // and scale it down to centimeters
+  changeWidth = m.Mul(m.Mod(m.LocalTime, m.DANumber(10)), m.DANumber(.01));
+    
+  // Because the width is changing, use the RectAnim function 
+  stretchRect = m.RectAnim(changeWidth, m.DANumber(.02));
+  stretchRectImage = stretchRect.Fill(ls, m.SolidColorImage(m.Fuchsia));
+  // Add the text
+  stretchRectString = "An animated rectangle.";
+  stretchRectTextImage = m.StringImage(stretchRectString, m.DefaultFont).Transform(m.Translate2(-.06,0));
+  stretchRectImage = m.Overlay(stretchRectTextImage, stretchRectImage);
+
+  // Here we make a square, but instead of using it as an image it is a path for the text
+
+  // The text
+  pathString = "A rectangle as a path.";
+  pathStringImage = m.StringImage(pathString, m.DefaultFont);
+
+  // Make a square path
+  sqPath = m.Rect(.04,.04);
+  xf = m.FollowPath(sqPath, 5).RepeatForever();
+  pathStringImage = pathStringImage.Transform(xf);
+
+  // Because of the order of the overlays, the text appears behind the stretching rectangle
+  // (depending, of course, on its width)
+  finalImg = m.Overlay(rectImage1, 
+                       m.Overlay(rectImage2, 
+                         m.Overlay(sqImage1,
+                           m.Overlay(stretchRectImage, pathStringImage))));
+
+  DAViewer.Image = finalImg;
+  DAViewer.Start();
+  }
+
+
+
+//-->
+</script>
+
+</FORM>
+</FONT>
+</BODY>
+</HTML>

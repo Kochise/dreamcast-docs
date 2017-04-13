@@ -1,0 +1,229 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Write a Transform Filter in C/C++</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0065.htm','/dssd0000.htm','/dssd0063.htm','/index.htm','/dssd0067.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="writetr_0001050103000000">Write a Transform Filter in C/C++</A></H2>
+<BR CLEAR=ALL>
+<P>A transform filter takes media input and alters it in some way. When you design a transform filter, your filter class derives from one of the transform base classes, <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A>, <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A>, or <A HREF="dssd0254.htm#Lib_000106024a000000" TARGET="TEXT">CVideoTransformFilter</A>, or from the more generic <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A> class. Which base class you choose depends on whether your filter must copy media samples or can transform them in place. See <A HREF="dssd0078.htm#tfilt_0001050601030000" TARGET="TEXT">Determine Which Base Classes to Use</A> for more information.
+
+<P>The filter graph manager can use the functions of the base classes your filter derives from to fit your filter into the filter graph and automatically create the connections between your filters. The filter mapper uses your filter's registry information to configure the filter graph. 
+
+<P>For the simplest transform filter (for example, one that has only one input pin and one output pin), you can derive your filter class from <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A> and override only the <B>Transform</B> and <B>CheckInputType</B> functions. If you need custom features, you can override additional functions to create your own connections, pins, and other filter features and capabilities. See <A HREF="dssd0078.htm#tfilt_0001050601060000" TARGET="TEXT">Override the Base Class Member Functions</A>
+for more information. You can also derive your filter class from <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A> and override its methods.
+
+<P>This section discusses how to:
+<UL><LI><A HREF="dssd0066.htm#writetr_0001050103010000" TARGET="TEXT">Define and Instantiate Your Filter Class</A>
+<LI><A HREF="dssd0066.htm#writetr_0001050103020000" TARGET="TEXT">Override CheckInputType</A> (does not apply to filter classes derived from <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A>)
+<LI><A HREF="dssd0066.htm#writetr_0001050103030000" TARGET="TEXT">Override the Transform Function</A>(does not apply to filter classes derived from <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A>)
+<LI><A HREF="dssd0066.htm#writetr_0001050103040000" TARGET="TEXT">Access Additional Interfaces</A>
+<LI><A HREF="dssd0066.htm#writetr_0001050103050000" TARGET="TEXT">Create Registry Information</A>
+</UL>
+<P>Every transform filter must implement code to perform all the preceding steps except access additional interfaces. 
+
+<P>For background information about transform filters, see:
+<UL><LI><A HREF="dssd0078.htm#tfilt_0001050601030000" TARGET="TEXT">Determine Which Base Classes to Use</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601060000" TARGET="TEXT">Override the Base Class Member Functions</A>
+</UL>
+<P>For information on building a filter, see <A HREF="dssd0051.htm" TARGET="TEXT">Build a Filter or Application with Visual C++ 5.x</A>. For information on registering a filter or making it self-registering, see <A HREF="dssd0053.htm" TARGET="TEXT">Register DirectShow Objects</A>.
+
+
+<A NAME="writetr_0001050103010000"></A><P><B>Define and Instantiate Your Filter Class</B>
+<P>The following steps show you how to define and instantiate your filter class. 
+
+<OL><LI>Determine the base classes from which to derive your filter class (and pin classes, if necessary). Typically, your transform filter class derives from the <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A>, <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A>, or <A HREF="dssd0254.htm#Lib_000106024a000000" TARGET="TEXT">CVideoTransformFilter</A> transform base classes, or from the more generic <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A> class. If you want to transform video media (especially AVI data), derive from <B>CVideoTransformFilter</B>. If your filter must copy the input media samples, derive from <B>CTransformFilter</B>. If you filter can transform the sampled media in place, derive from <B>CTransInPlaceFilter</B>. If you don't want the simple transform filter support provided in the transform base classes, but prefer to implement your own member functions, derive from <B>CBaseFilter</B>. See <A HREF="dssd0078.htm#tfilt_0001050601030000" TARGET="TEXT">Determine Which Base Classes to Use</A> for more information.
+
+<P>In the following example, the filter class derives from <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A>.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;class CMyFilter  : public CTransInPlaceFilter
+</FONT></PRE>
+<LI>Implement the <A HREF="dssd0175.htm#If_0001060157000000" TARGET="TEXT">IUnknown</A> interface for your object.
+
+<P>In the public section of your filter class definition, create an instance of <A HREF="dssd0253.htm#Lib_0001060249000000" TARGET="TEXT">CUnknown</A>, and then call the <A HREF="dssd0264.htm#fmutil_0001060308000100" TARGET="TEXT">DECLARE_IUNKNOWN</A> macro.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;public:
+&#009;&#009;static CUnknown *WINAPI CreateInstance(LPUNKNOWN punk, HRESULT 
+&#009;*phr);
+&#009;&#009;DECLARE_IUNKNOWN;
+</FONT></PRE>
+<LI>Define your constructor. Also, define your <A HREF="dssd0250.htm#Lib_0001060246030c00" TARGET="TEXT">Transform</A> and 
+<A HREF="dssd0247.htm#Lib_0001060243040500" TARGET="TEXT">CheckInputType</A> functions (this does not apply if your filter class is derived from <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A>).
+
+<P>In the private section of your filter class definition, define your constructor by calling the constructor of the transform filter class you derived from, and then add code to perform the transform and check the input type. For example:
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;//Define your constructor by calling the constructor of 
+&#009;//CTransInPlaceFilter
+&#009;CMyFilter(TCHAR *tszName, LPUNKNOWN punk, HRESULT *phr)
+&#009;: CTransInPlaceFilter (tszName, punk, CLSID_MyFilter, phr)
+&#009;{ }
+
+&#009;//Add the transform code
+&#009;HRESULT Transform(IMediaSample *pSample){ 
+&#009;//Transform code here
+&#009;}
+
+&#009;//Add code to check the input type
+&#009;HRESULT CheckInputType(const CMediaType* mtIn) { 
+&#009;//Input checking code here
+&#009;}
+</FONT></PRE>
+<LI>Implement <B>CreateInstance</B> for your filter object. Typically, <B>CreateInstance</B> calls the constructor of your filter class. For example:
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;CUnknown * WINAPI CMyFilter::CreateInstance(LPUNKNOWN punk, HRESULT *phr) {
+&#009;CMyFilter *pNewObject = new CMyFilter(NAME("Description of My Filter"), punk, phr );
+&#009;if (pNewObject == NULL) {
+&#009;&#009;*phr = E_OUTOFMEMORY;
+&#009;}
+&#009;return pNewObject;
+&#009;} 
+</FONT></PRE>
+<LI>Declare a global array g_Templates of <A HREF="dssd0217.htm#Lib_0001060225000000" TARGET="TEXT">CFactoryTemplate</A> objects to inform the default class factory code how to access the <B>CreateInstance</B> function:
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;CFactoryTemplate g_Templates[]=
+      {   { L"My Filter"          
+&#009;&#009;, &amp;CLSID_MyFilter
+&#009;&#009;, CMyFilter::CreateInstance //Function called by class factory
+&#009;&#009;, NULL
+&#009;&#009;, &amp;sudMyFilter } //Address of the AMOVIESETUP_FILTER structure,
+&#009;&#009;&#009;&#009;     //or NULL if no structure exists
+&#009;};
+    int g_cTemplates = sizeof(g_Templates)/sizeof(g_Templates[0]);  
+</FONT></PRE>
+<P>The g_cTemplates variable defines the number of class factory templates for the filter. Each of these templates provides a link between COM and the filter and are used to create the base object for the filter. At a minimum, the filter has one template that provides the address of its own <B>CreateInstance</B> function, which, when called, creates the base object.
+
+<P>You can add additional parameters to the <A HREF="dssd0217.htm#Lib_0001060225000000" TARGET="TEXT">CFactoryTemplate</A> templates to add property pages. See the Gargle sample for example code. See <A HREF="dssd0053.htm" TARGET="TEXT">Register DirectShow Objects</A> for information about using <B>CFactoryTemplate</B> in registration. 
+
+<LI>Generate a <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> for your filter object. 
+<P>For information about generating <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A>s in general, see "GUID Creation and Optimizations" and "The uuidgen Utility" in the Platform SDK. 
+<P>To generate a <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> in Microsoft&#174; Visual C++&#174; 5.<I>x</I>, choose <B>Create GUID</B> from the <B>Tools</B> menu. By default, the <B>GUID</B> is in DEFINE_GUID format, which is the format you want. Click the <B>Copy</B> button. Put the cursor in your source file beneath the include statements, and choose <B>Paste</B> from the <B>Edit</B> menu. The inserted code will look like the following example, except that it will have its own unique number and CLSID. Insert the code before your class definition in the header file or main file. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;// {3FA5D260-AF2F-11d0-AE9C-00A0C91F0841}
+&#009;DEFINE_GUID(CLSID_MyFilter, 
+&#009;0x3fa5d260, 0xaf2f, 0x11d0, 0xae, 0x9c, 0x0, 0xa0, 0xc9, 0x1f, 0x8, 0x41);
+</FONT></PRE>
+</OL>
+<A NAME="writetr_0001050103020000"></A><P><B>Override CheckInputType</B>
+<P>You must override the <B>CheckInputType</B> function to determine if the proposed input to your filter is valid. (This does not apply to filter classes derived from <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A>.) Your implementation should return an error for media types it can't support. The media types your filter supports are listed in the <A HREF="dssd0287.htm#structs_0001060501000600" TARGET="TEXT">AMOVIESETUP_MEDIATYPE</A> structure. For example:
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;HRESULT CMyFilter::CheckInputType(const CMediaType *pmt)
+&#009;{
+   &#009;if (pmt-&gt;majortype != MEDIATYPE_Video) {
+   &#009;&#009;return S_FALSE;
+   &#009;} 
+   &#009;&#009;else return S_OK;
+   &#009;}
+</FONT></PRE>
+<A NAME="writetr_0001050103030000"></A><P><B>Override the Transform Function</B>
+<P>To perform the desired transformation on your input media, your must override the <B>Transform</B> function of your transform base class, or implement your own transformation functions. (This does not apply to filter classes derived from <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A>.) Examples of transformations are MPEG audio/video decoders (see the <A HREF="dssd0350.htm#samples_0001070204040000" TARGET="TEXT">MPGAudio</A> and
+<A HREF="dssd0350.htm#samples_0001070204050000" TARGET="TEXT">MPGVideo</A> samples), visual effects (see the <A HREF="dssd0350.htm#samples_0001070204010000" TARGET="TEXT">Contrast</A> and <A HREF="dssd0350.htm#samples_0001070204020000" TARGET="TEXT">EzRGB24</A> samples), and audio effects (see the <A HREF="dssd0350.htm#samples_0001070204030000" TARGET="TEXT">Gargle</A> sample). 
+
+<P>For example, consider the following code from the Contrast sample. You override the CContrast::Transform function as follows:
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;HRESULT CContrast::Transform(IMediaSample *pIn, IMediaSample *pOut)
+&#009;{
+    &#009;&#009;HRESULT hr = Copy(pIn, pOut);
+    &#009;if (FAILED(hr)) {
+        &#009;return hr;
+    &#009;}
+    &#009;&#009;return Transform(pOut);
+
+&#009;}
+</FONT></PRE>
+<P>The first CContrast::Transform function copies the media data, and then passes the copy (pointed to by the <I>pOut</I> parameter) to a second Transform function. The first Transform function in the Contrast sample is an overloaded function, and the second form of the Transform function performs an in-place transform on the copy of the input media, as shown in the following code fragment.
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;HRESULT CContrast::Transform(IMediaSample *pMediaSample)
+&#009;{
+    &#009;signed char ContrastLevel;
+    &#009;ContrastLevel = m_ContrastLevel;&#009;
+    &#009;AM_MEDIA_TYPE *pAdjustedType = NULL;
+
+    &#009;pMediaSample-&gt;GetMediaType(&amp;pAdjustedType);
+  &#009;HRESULT hr = Transform(&amp;AdjustedType, ContrastLevel);
+    &#009;pMediaSample-&gt;SetMediaType(&amp;AdjustedType);
+    &#009;return NOERROR;
+&#009;}
+</FONT></PRE>
+<P>Note that the second form of the overloaded Transform function calls a third form of the overloaded Transform function. 
+
+
+<A NAME="writetr_0001050103040000"></A><P><B>Access Additional Interfaces</B>
+<P>If your filter implements any interfaces that aren't implemented in the base classes, you must override the <B>NonDelegatingQueryInterface</B> function and return pointers to the implemented interfaces. 
+<OL><LI>In the public section of your filter class definition, declare <B>NonDelegatingQueryInterface</B>: 
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void ** ppv);
+</FONT></PRE>
+<LI>In the implementation section of your class, implement the <B>NonDelegatingQueryInterface</B> function. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;//Reveal persistent stream and property pages
+&#009;STDMETHODIMP CMyFilter::NonDelegatingQueryInterface(REFIID riid, void **ppv)
+&#009;{
+    &#009;if (riid == IID_IPersistStream) {
+      &#009;AddRef( );   // Add a reference count. Be sure to release when done.
+     &#009;*ppv = (void *) (IPersistStream *) this; 
+      &#009;return NOERROR;
+   &#009;}
+   &#009;else if (riid == IID_ISpecifyPropertyPages) {
+     &#009;&#009;return GetInterface((ISpecifyPropertyPages *) this, ppv);
+   &#009;}  
+   &#009;else {
+      &#009;return CTransInPlaceFilter::NonDelegatingQueryInterface(riid, ppv);
+   &#009;}
+&#009;}
+</FONT></PRE>
+</OL>
+<A NAME="writetr_0001050103050000"></A><P><B>Create Registry Information</B>
+<P>The filter graph manager uses your filter's registry entries to configure your filter and its connections. You provide your filter's registry information in the <A HREF="dssd0287.htm#structs_0001060501000600" TARGET="TEXT">AMOVIESETUP_MEDIATYPE</A>, <A HREF="dssd0287.htm#structs_0001060501000700" TARGET="TEXT">AMOVIESETUP_PIN</A>, and <A HREF="dssd0287.htm#structs_0001060501000500" TARGET="TEXT">AMOVIESETUP_FILTER</A> structures. Typically, these structures are at the beginning of your filter implementation code. See <A HREF="dssd0053.htm" TARGET="TEXT">Register DirectShow Objects</A> for more information about using these structures.
+
+<P>Perform the following steps to provide the three structures you need for filter registration. 
+
+<OL><LI>Provide the <A HREF="dssd0287.htm#structs_0001060501000600" TARGET="TEXT">AMOVIESETUP_MEDIATYPE</A>structure. This structure holds registry information about the media types your filter supports. For example:
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;const AMOVIESETUP_MEDIATYPE sudPinTypes = 
+                &#009;{ &amp;MEDIATYPE_Video             // MajorType
+                &#009;, &amp;MEDIASUBTYPE_NULL}  ;       // MinorType
+</FONT></PRE>
+<P>The possible major types are MEDIATYPE_Stream, MEDIATYPE_Video, and MEDIATYPE_Audio. 
+
+
+<LI>Provide the <A HREF="dssd0287.htm#structs_0001060501000700" TARGET="TEXT">AMOVIESETUP_PIN</A> structure. This structure holds registry information about the pins your filter supports. 
+
+<LI>Provide the <A HREF="dssd0287.htm#structs_0001060501000500" TARGET="TEXT">AMOVIESETUP_FILTER</A> structure. This structure holds registry information about your filter object: its CLSID, description, number of pins, the pin structure's name, and your filter's merit. The <I>merit</I> controls the order in which the filter graph manager accesses your filter. Possible merit values are MERIT_PREFERRED, MERIT_NORMAL, MERIT_UNLIKELY, and MERIT_DO_NOT_USE. See <A HREF="dssd0143.htm#If_0001060137030200" TARGET="TEXT">IFilterMapper::RegisterFilter</A> for a description of merit values. The following code shows an example of an <B>AMOVIESETUP_FILTER</B> structure.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;const AMOVIESETUP_FILTER
+&#009;sudMyFilter = { &amp;CLSID_MyFilter&#009;&#009;&#009;// clsID
+            &#009;, L"My Filter Description"&#009;&#009;// strName
+            &#009;, MERIT_UNLIKELY&#009;&#009;&#009;&#009;// dwMerit
+            &#009;, 2&#009;&#009;&#009;&#009;&#009;&#009;// nPins
+            &#009;, sudpPins };&#009;&#009;&#009;&#009;// lpPin
+</FONT></PRE>
+</OL>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

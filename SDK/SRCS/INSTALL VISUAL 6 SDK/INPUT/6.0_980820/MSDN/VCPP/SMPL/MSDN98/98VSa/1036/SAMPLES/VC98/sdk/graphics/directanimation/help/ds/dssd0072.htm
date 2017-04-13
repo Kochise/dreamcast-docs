@@ -1,0 +1,275 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>DirectShow and COM</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0071.htm','/dssd0000.htm','/dssd0062.htm','/index.htm','/dssd0073.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="com_0001050401000000">DirectShow and COM</A></H2>
+<BR CLEAR=ALL>
+<P>Microsoft&#174; DirectShow&#153; provides a framework that simplifies the creation of Component Object Model (COM) objects. This article describes this 
+framework and most of what you need to know about COM to create a filter or plug-in distributor using the C++ class library. The article assumes the reader is familiar with C++. 
+An understanding of COM would be helpful, but is not essential. 
+
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0072.htm#com_0001050401010000" TARGET="TEXT">COM Objects in DirectShow</A>
+<LI><A HREF="dssd0072.htm#com_0001050401010100" TARGET="TEXT">Reviewing the Instantiation Process</A>
+<LI><A HREF="dssd0072.htm#com_0001050401010200" TARGET="TEXT">Creating Filters</A>
+<LI><A HREF="dssd0072.htm#com_0001050401010300" TARGET="TEXT">Creating Plug-in Distributors</A>
+<LI><A HREF="dssd0072.htm#com_0001050401010400" TARGET="TEXT">Implementing the Class Factory</A>
+<LI><A HREF="dssd0072.htm#com_0001050401020000" TARGET="TEXT">Using an Object-Oriented Model</A>
+
+</UL>
+<A NAME="com_0001050401010000"></A><P><B>COM Objects in DirectShow</B>
+<P>DirectShow filters, the filter graph manager, plug-in distributors, and enumerators are all COM 
+objects. A general design has been adopted for the way in which DirectShow implements COM objects. 
+This design is available to help you implement your own filters and plug-in distributors (or any COM 
+object). 
+ 
+<P>DirectShow components are supplied as in-process servers; that is, servers that run in the 
+same address space as your application. They are packaged in a single dynamic-link library (DLL), Quartz.dll. 
+Use the COM framework of DirectShow to build your own in-process COM servers, which you can 
+package in your own DLL(s). 
+ 
+<P>Typically, a single C++ class implements a single COM class. The DirectShow COM framework requires that C++ classes implementing COM objects conform to a few simple rules. One of these rules is that the developer provides a class factory template for each such class. The <I>class factory template</I> contains information about the class that is vital to the framework. Class factory templates are defined in the DLL using two global variables (g_Templates and g_cTemplates) as shown in the following example. 
+ 
+<PRE><FONT FACE="Courier" SIZE="2"> 
+CFactoryTemplate g_Templates[]= 
+{   {L"My class name", &amp;CLSID_MyClass,   CMyClass::CreateInstance,  CMyClass::Init}, 
+{L"My class name2", &amp;CLSID_MyClass2,   CMyClass2::CreateInstance} 
+}; 
+int g_cTemplates = sizeof(g_Templates)/sizeof(g_Templates[0]); 
+ 
+</FONT></PRE>
+<P>The names and types of these variables must be as they appear in the previous example. Because any 
+DLL might contain several COM classes, each of which will require a class factory template, the factory 
+templates are defined in an array and the number of elements in the array is recorded in another variable. 
+Each element of the array contains the following fields. 
+ 
+<UL><LI>A textual description of the class (using wide characters, therefore the "L" prefix). 
+<LI>A pointer to the class identifier of the class (CLSID). 
+<LI>A pointer to a static method of the class that can create instances of the class (<A HREF="dssd0217.htm#Lib_0001060225020100" TARGET="TEXT">CFactoryTemplate::CreateInstance</A>). 
+<LI>A pointer to a static method of the class. This method is called when the DLL is loading or unloading 
+and can perform one-time initialization and termination. If this method is not required, this can be 
+omitted, will default to NULL, and will be ignored. 
+<LI>A pointer to an <A HREF="dssd0287.htm#structs_0001060501000500" TARGET="TEXT">AMOVIESETUP_FILTER</A> structure. This is required when using filter 
+self-registration services.
+</UL>
+<P>The DirectShow COM framework uses the information in these class factory templates to create instances of the specific class, and to register and unregister the COM classes. 
+ 
+<P>The following example demonstrates a simple C++ class implementing a COM class using the 
+DirectShow framework. 
+ 
+<PRE><FONT FACE="Courier" SIZE="2"> 
+class CMyClass : public IMyInterface, public CUnknown 
+{ 
+private: 
+&#009;/* private attributes */ 
+protected: 
+&#009;~CMyClass() 
+&#009;{ /* release private attributes */ } 
+&#009;CMyClass(TCHAR *pName, LPUNKNOWN pUnk, HRESULT *phr) 
+&#009;: CUnknown( pName, pUnk, phr ) 
+&#009;{ /* set up private attributes */ } 
+public: 
+&#009;DECLARE_IUNKNOWN 
+static CUnknown *CreateInstance(LPUNKNOWN pUnk, HRESULT *phr) 
+{ 
+CUnknown * result = 0; 
+result = new CMyClass( NAME("CMyClass"), pUnk, phr ); 
+if ( !result ) *phr = E_OUTOFMEMORY; 
+return result; 
+} 
+ 
+STDMETHODIMP NonDelegatingQueryInterface(REFIID iid, void ** ppv) 
+{ 
+if ( iid == IID_IMyInterface ) 
+{ 
+return GetInterface(static_cast&lt;IMyInterface *&gt;(this), ppv ); 
+} 
+&#009;   else 
+&#009;&#009;{ 
+&#009;&#009;&#009;return CUnknown::NonDelegatingQueryInterface(iid, ppv); 
+&#009;&#009;} 
+} 
+ 
+&#009;/* My interface methods */ 
+}; 
+</FONT></PRE>
+<P>This is not a typical filter example, because filters will normally derive from more specialized base 
+classes than <A HREF="dssd0253.htm#Lib_0001060249000000" TARGET="TEXT">CUnknown</A>. However, because all base filter classes eventually derive from 
+<B>CUnknown</B>, this example demonstrates what is essential in a more generic manner. 
+
+(The example is probably more typical for a DirectShow plug-in distributor (PID), which extends the 
+functionality of the filter graph manager, or for a framework for implementing an arbitrary COM object.) 
+
+<P>In this example, the <A HREF="dssd0253.htm#Lib_0001060249030400" TARGET="TEXT">NonDelegatingQueryInterface</A> 
+method is implemented. The more specialized filter base classes that derive from <B>CUnknown</B> are responsible for implementing <B>NonDelegatingQueryInterface</B> for the
+required interfaces; this is only necessary in the derived filter class if it adds some interfaces that are not in the base classes. In this case, it adds its own interface, IMyInterface. 
+ 
+<P><A HREF="dssd0265.htm#fmutil_0001060309000001" TARGET="TEXT">INonDelegatingUnknown::NonDelegatingQueryInterface</A> is a method that allows other objects to access interfaces on the COM object. All COM objects support <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">IUnknown::QueryInterface</A> to do this, and the DirectShow class library supplies the <A HREF="dssd0264.htm#fmutil_0001060308000100" TARGET="TEXT">DECLARE_IUNKNOWN</A> macro to enable the <A HREF="dssd0175.htm#If_0001060157000000" TARGET="TEXT">IUnknown</A> interface. The DirectShow framework goes one step further and makes it easy to aggregate objects (make them part of a larger COM object) by implementing an <A HREF="dssd0265.htm#fmutil_0001060309000100" TARGET="TEXT">INonDelegatingUnknown</A> interface. Even if your object is not aggregated, it uses the 
+<B>INonDelegatingUnknown</B> interface, which is mapped to the 
+<B>IUnknown</B> interface by the base classes. 
+ 
+<P>Although aggregation is handled for all objects by the DirectShow class framework, it is typically not 
+used by filters in current DirectShow filter graphs. Plug-in distributors do, however, require aggregation 
+(as is described later in this article), and future filter graphs might incorporate filter objects that are 
+composed of collections of aggregated filters. 
+ 
+<P>With this in mind, it might be helpful to explore more of the details of the previous example. 
+First, a brief review of some COM basics might be helpful. 
+
+
+COM objects are created by their class factories, are reference counted during their lifetimes, and self-destruct when their reference counts drop to zero. COM objects can be created in isolation, or can be aggregated with an already existing COM 
+object. In this second case, the existing object (referred to as the outer object) maintains the reference count. The created object (referred to as the inner object) is not reference counted, but will be destroyed by the outer object during the destruction of the outer object. The application cannot directly manipulate COM objects; an application can only invoke the methods, which the object chooses to expose through its interfaces. Typically, COM objects make several interfaces 
+available. All COM objects must support the <A HREF="dssd0175.htm#If_0001060157000000" TARGET="TEXT">IUnknown</A> interface. 
+ 
+<P>All classes using the DirectShow framework must inherit from <A HREF="dssd0253.htm#Lib_0001060249000000" TARGET="TEXT">CUnknown</A> either directly (as in the previous example) or indirectly, through one of the other supplied base classes. <B>CUnknown</B>, with the <A HREF="dssd0264.htm#fmutil_0001060308000100" TARGET="TEXT">DECLARE_IUNKNOWN</A> macro and the 
+<A HREF="dssd0253.htm#Lib_0001060249030400" TARGET="TEXT">NonDelegatingQueryInterface</A> method,
+provide the <A HREF="dssd0175.htm#If_0001060157000000" TARGET="TEXT">IUnknown</A> interface with the required reference counting and support for COM aggregation. 
+ 
+<P><A HREF="dssd0253.htm#Lib_0001060249030400" TARGET="TEXT">NonDelegatingQueryInterface</A> is a method on <A HREF="dssd0265.htm#fmutil_0001060309000100" TARGET="TEXT">INonDelegatingUnknown</A>, which is supported by <A HREF="dssd0253.htm#Lib_0001060249000000" TARGET="TEXT">CUnknown</A>. 
+<B>NonDelegatingQueryInterface</B>
+
+ is overridden in derived classes that support new interfaces, such as IMyInterface in the previous example. The method should check for all the interfaces known to be implemented on the object and return appropriate pointers to these interfaces. Requests for unrecognized interfaces should be passed to the 
+<B>NonDelegatingQueryInterface</B> of <B>CUnknown</B>. The call to the <A HREF="dssd0268.htm#fmutil_000106030c000200" TARGET="TEXT">GetInterface</A> method (of <B>CUnknown</B>) copies the interface into the <I>ppv</I> parameter and ensures that the correct reference count is incremented. 
+ 
+ <P>The methods in <A HREF="dssd0265.htm#fmutil_0001060309000100" TARGET="TEXT">INonDelegatingUnknown</A> mirror those in <A HREF="dssd0175.htm#If_0001060157000000" TARGET="TEXT">IUnknown</A>. For more information about <A HREF="dssd0253.htm#Lib_0001060249000000" TARGET="TEXT">CUnknown</A>, the <B>INonDelegatingUnknown</B> interface, and the 
+<A HREF="dssd0253.htm#Lib_0001060249030400" TARGET="TEXT">NonDelegatingQueryInterface</A> method, 
+see the <B>CUnknown</B> section in the reference material. <B>INonDelegatingUnknown</B> is defined in Combase.h; <B>CUnknown</B> is implemented in Combase.cpp. 
+
+ 
+ <P>When an instance of the class is required, the framework, using the information in the class factory 
+template, calls the derived class's <B>CreateInstance</B> member function. The framework passes a 
+pointer to an outer unknown (if the object will be part of an aggregate object) through the <I>pUnk</I>parameter, and passes a pointer to an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value through the <I>phr</I> 
+parameter.
+ 
+
+
+
+
+The constructor of an inherited class can set this value if an error occurs. The <I>phr</I> parameter should 
+not be initialized; this is the calling application's responsibility. The <B>CreateInstance</B> member 
+function constructs an instance of the class by calling the constructor. The name passed to the 
+constructor is wrapped with the <A HREF="dssd0282.htm#fmdebug_0001060407000100" TARGET="TEXT">NAME</A> macro supplied by DirectShow. When building debugging versions, <B>NAME</B> passes the textual name on to the constructor. When building nondebugging versions, <B>NAME</B> results in a null pointer, thus saving space in versions that are not for debugging purposes. 
+ 
+<P>The class constructor and destructor are declared protected. This prohibits the creation of the object using C++ language constructs. Instances of this class can be created only by calling the <B>CreateInstance</B> member function. 
+ 
+ <P>The class constructor needs to construct the inherited <A HREF="dssd0253.htm#Lib_0001060249000000" TARGET="TEXT">CUnknown</A>. The <I>pName</I> parameter points to a string that is available for debugging purposes. It is vital that the string referenced by <I>pName</I> is in static storage, because the constructor for <B>CUnknown</B> will not copy it. 
+
+
+ 
+<A NAME="com_0001050401010100"></A><P><B>Reviewing the Instantiation Process</B>
+<P>It might be helpful at this point to consider the normal process of instantiating a COM object, and examine how the DirectShow COM framework supports this process. First, a look at the entry points required of an in-process server DLL (such as a filter or plug-in distributor) is in order.
+
+<P>In-process server DLLs must export certain standard functions so that COM can interact with them. The DirectShow framework provides these functions for you. The module definition file for the DLL must list these functions in its EXPORTS section, and link to Strmbase.lib. The functions are: <A HREF="dssd0389.htm#external_00010a0109000027" TARGET="TEXT">DllGetClassObject</A> and <A HREF="dssd0389.htm#external_00010a0109000026" TARGET="TEXT">DllCanUnloadNow</A>. (The source code for these functions is supplied in Dllentry.cpp.)
+ 
+<P>A DirectShow object can define DLL entry points that facilitate the automatic registration of COM classes. These entry points are DllRegisterServer and DllUnregisterServer. Although the framework does not directly provide these entry points, it does provide a function, called <A HREF="dssd0262.htm#fmutil_0001060306000300" TARGET="TEXT">AMovieDllRegisterServer2</A>, that can implement these entry point functions. These functions take care of registering and unregistering all COM objects for which you have provided class factory templates in the g_Templates array. You can add a DllRegisterServer function to your module that simply calls <B>AMovieDllRegisterServer2</B>, or you could do the same for DllUnregisterServer. For more information on self-registering DirectShow COM objects, see <A HREF="dssd0053.htm" TARGET="TEXT">Register DirectShow Objects</A>.
+
+<P>Registry entries are required to link the class identifier (CLSID) of the COM object to the DLL in which the class is implemented. The framework provides entry points in the DLL that support the automatic registration of class identifiers in the registry, using the information provided in the class factory templates. 
+
+<P>Following are the steps that occur during initialization, which require the entry points mentioned previously.
+ 
+<OL><LI>When the DLL is loaded, the DllMain entry point is called to perform any initialization. The framework provides this function. During its execution, any initialization routines referenced in the class factory templates will be called. 
+ 
+<LI>When an application calls <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A> or <A HREF="dssd0389.htm#external_00010a010900000c" TARGET="TEXT">CoGetClassObject</A>, COM calls the 
+<A HREF="dssd0389.htm#external_00010a0109000027" TARGET="TEXT">DllGetClassObject</A> function in the appropriate DLL to obtain a pointer to a class factory that can 
+instantiate objects of the CLSID requested by the application. The framework supplies this function. 
+Using the information in the class factory template, the framework creates a class factory. (If the requested 
+CLSID cannot be found in the array of class factory templates, an error is returned to the application.) 
+ 
+<LI>The class factory is called to instantiate an object that supports the interface identifier (IID) requested 
+by the application. At this point, the class factory will call the static method referenced in the class factory 
+template. 
+ 
+<LI>During the DLL's lifetime, the <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> method
+might be called on the <A HREF="dssd0175.htm#If_0001060157000000" TARGET="TEXT">IUnknown</A> interface of the object (or owning object if aggregated), 
+requesting some interface on that object. By deriving the object class from <A HREF="dssd0253.htm#Lib_0001060249000000" TARGET="TEXT">CUnknown</A>, overriding 
+<A HREF="dssd0253.htm#Lib_0001060249030400" TARGET="TEXT">NonDelegatingQueryInterface</A>, 
+and using the DEFINE_IUNKNOWN macro
+
+
+ to declare the <B>IUnknown</B> interface, both COM 
+aggregation and reference counting are addressed. 
+ 
+<LI>During the life of the DLL, <A HREF="dssd0389.htm#external_00010a0109000026" TARGET="TEXT">DllCanUnloadNow</A> might be called to see if it is safe to unload the DLL. Typically, this returns S_FALSE if any class factory is locked, or if any of the objects that have been created still exist. The framework implements <B>DllCanUnloadNow</B>. 
+</OL>
+<A NAME="com_0001050401010200"></A><P><B>Creating Filters</B>
+<P>When creating filters, you can take advantage of one of the richer classes that DirectShow provides, such as <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A> or <A HREF="dssd0203.htm#Lib_0001060217000000" TARGET="TEXT">CBaseRenderer</A>, instead of deriving from <A HREF="dssd0253.htm#Lib_0001060249000000" TARGET="TEXT">CUnknown</A>. These supplied classes are derived from <B>CUnknown</B>, but provide additional functionality specific to various types of filters. However, building filters also requires an understanding of the DirectShow connection model (see <A HREF="dssd0070.htm" TARGET="TEXT">Connection Model</A>) and the 
+pin classes. For more information about creating filters, see <A HREF="dssd0078.htm#tfilt_0001050601000000" TARGET="TEXT">Creating a Transform Filter</A>. 
+ 
+<A NAME="com_0001050401010300"></A><P><B>Creating Plug-in Distributors</B>
+<P>The filter graph manager can perform operations at a high level, treating the filter graph as a single entity. These operations can be distributed across an entire filter graph, or perhaps confined to just a single filter in the filter graph. The filter graph manager, of itself, only exposes a few interfaces. A feature called a plug-in distributor allows the filter graph manager to be extended with additional interfaces. When the filter graph manager receives a request for an interface which it does not support, it tries to find a plug-in distributor (PID) that does support it. If it succeeds in finding such a PID, then that 
+PID is instantiated as an aggregate object within the filter graph manager. By doing so, the filter graph manager appears to support many more interfaces. Plug-in distributors are aggregated with the filter graph manager, but all the aggregation logic is provided by <A HREF="dssd0253.htm#Lib_0001060249000000" TARGET="TEXT">CUnknown</A>, allowing you to concentrate on the PID logic. 
+
+<P>A PID is designed to be aggregated into a filter graph manager; it will call on the services of its owning filter graph manager. Because the PID is unlikely to function correctly without an owning filter graph, it checks for an outer unknown in the constructor of the PID. To make this determination, add the following line to the body of the constructor illustrated in the previous example. 
+ 
+ <PRE><FONT FACE="Courier" SIZE="2">if (!pUnk) *phr = VFW_E_NEED_OWNER; </FONT></PRE>
+<P>To be even more defensive against being used without an owner, the PID could also request an <A HREF="dssd0140.htm#If_0001060134000000" TARGET="TEXT">IFilterGraph</A> or 
+<A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A> interface from the outer unknown during construction, because these interfaces are known to be only on the filter graph manager. 
+ 
+<P>If the PID obtains any interface pointers from the filter graph manager, the pointers should be released immediately. Because the PID is an aggregate object, its lifetime is within the lifetime of its containing object, the filter graph manager, so there is no need to maintain a lock on it. Furthermore, maintaining a lock introduces a circular reference count that would not allow the destruction of the filter graph manager. 
+ 
+ 
+<A NAME="com_0001050401010400"></A><P><B>Implementing the Class Factory</B>
+<P>The concept of a class factory is not specific to DirectShow; it is a common design that appears when 
+the underlying type of the object being created is not known to the client that requests its creation. With 
+COM objects, clients request interface pointers but know little about the underlying objects that implement 
+that interface. 
+
+<P>In C++, there are two means of implementing a class factory. One is to implement it as a genuine 
+class, the other is to implement it as a static method on the class that the class factory will manage. The 
+first method provides better separation of responsibilities and data hiding, and is the approach adopted by 
+COM. The second method allows for a simpler implementation. 
+ 
+<P>The DirectShow COM framework provides the best of both worlds. It exposes a genuine COM 
+factory class to its clients while allowing the developer to implement the body of the class factory as a 
+static method of your class. The bridge between these two approaches is two global variables, 
+g_Templates and g_cTemplates, which were described previously.
+
+<P>The DirectShow framework defines two classes for implementing the class factory: 
+<A HREF="dssd0217.htm#Lib_0001060225000000" TARGET="TEXT">CFactoryTemplate</A> and <A HREF="dssd0389.htm#external_00010a010900000a" TARGET="TEXT">CClassFactory</A>. A <B>CFactoryTemplate</B> object holds information regarding a specific class, including a pointer to the static factory method of the class. When <B>CClassFactory</B> is instantiated, it must be given reference to a <B>CFactoryTemplate</B> instance. The <B>CClassFactory</B> instance will then act as a class factory for the class described in its associated <B>CFactoryTemplate</B> instance. The following illustration demonstrates the relationship between these classes, their instances, and the objects they create. 
+ 
+<P><IMG SRC="art/com01.gif" WIDTH="429" HEIGHT="210" ALT="Diagram showing CFactoryTemplate/CClassFactory relationship" > 
+ 
+<P>The DirectShow SDK includes a module, DllEntry.cpp, which provides the <A HREF="dssd0389.htm#external_00010a0109000027" TARGET="TEXT">DllGetClassObject</A> function. This function uses the process described previously to create a class factory that can produce instances of a class. 
+ 
+ 
+
+<A NAME="com_0001050401020000"></A><P><B>Using an Object-Oriented Model</B>
+<P>All components of the DirectShow filter graph architecture are implemented as COM objects. This includes the filters through which data is passed, and filter components 
+that serve as a connection between filters or allocate memory. Each object implements one or more interfaces, each of which contains a predefined set of functions, called 
+<I>methods</I>. An application calls a method, or other component objects, to communicate with the object exposing the interface. For example, the application calls
+methods on the <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A> interface on the object of the filter graph manager, such as the <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">Run</A> method, which starts a media stream. The filter graph manager, in turn, calls the <A HREF="dssd0153.htm#If_0001060141030400" TARGET="TEXT">Run</A> method on the <A HREF="dssd0116.htm#If_000106011c000000" TARGET="TEXT">IBaseFilter</A> interface exposed by each of the filters.
+
+<P>Filter graph architecture uses COM interfaces because they have the following properties.
+
+<UL><LI>COM interfaces are publicly defined. This means that any filter that implements the correct predefined interfaces will work in a filter graph without any knowledge about the other filters, because all filters are built with the same interface specifications.
+<LI>COM interfaces do not change after definition. A base set of interfaces are guaranteed to work; additional interfaces can be introduced to cover additional services. This definition prevents version problems. 
+<LI>COM interfaces must have all methods implemented by any object that exposes them (even if the implemented method simply returns E_NOTIMPL). This assures that calling a method on the interface of an object will not generate an error.
+<LI>COM interfaces are discoverable. All COM objects support a method called <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> that allows an external component to discover if an interface is present and retrieve a pointer to it.
+<LI>COM interfaces are implemented by the object that exposes the interface (they do not contain an implementation themselves). The interface is essentially a contract for the 
+functionality. Objects like the filter graph manager, or Microsoft filters, have implemented interfaces that can be accessed. When you write a filter, you implement the interfaces.
+</UL>
+<P>To make filter development easier, DirectShow provides a set of C++ classes that help you implement the interfaces required by the objects you create.
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

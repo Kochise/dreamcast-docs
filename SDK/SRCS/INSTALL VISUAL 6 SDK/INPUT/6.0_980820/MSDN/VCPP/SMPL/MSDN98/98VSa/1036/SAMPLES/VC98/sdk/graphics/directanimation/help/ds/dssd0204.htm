@@ -1,0 +1,297 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>CBaseStreamControl Class</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0203.htm','/dssd0000.htm','/dssd0180.htm','/index.htm','/dssd0205.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Lib_0001060218000000">CBaseStreamControl Class</A></H2>
+<BR CLEAR=ALL>
+<P><IMG SRC="art/strmctl1.gif" WIDTH="205" HEIGHT="56" ALT="CBaseStreamControl class hierarchy" >
+<P>The <B>CBaseStreamControl</B> class implements the <A HREF="dssd0106.htm" TARGET="TEXT">IAMStreamControl</A> interface on input and output pins in a filter graph. This class provides control of the starting and stopping of various components of the stream. Various streams can
+
+
+
+
+ be turned on or off without affecting the rest of the graph. For example, an audio stream can be turned off while a video stream continues, for muting. Or perhaps a capture stream can be turned off while preview continues to flow. This could be used to assist in frame accuracy when exact capture start or stop times are important.
+
+<P><B>CBaseStreamControl</B> enables you to specify start and stop times in the <A HREF="dssd0204.htm#Lib_0001060218010800" TARGET="TEXT">StartAt</A> and <A HREF="dssd0204.htm#Lib_0001060218010900" TARGET="TEXT">StopAt</A> member functions and provides stream information in the <A HREF="dssd0204.htm#Lib_0001060218010400" TARGET="TEXT">GetInfo</A> member function. <B>CBaseStreamControl</B> uses the <A HREF="dssd0288.htm#dtypes_0001060601001f00" TARGET="TEXT">StreamControlState</A> enumerated data type to describe the various states a stream is in. If a stream is flowing it is indicated by the STREAM_FLOWING setting, otherwise it is in a discarding state indicated by the STREAM_DISCARDING setting. 
+
+<P>Filters that need to implement the interface on their own should typically inherit from <B>CBaseStreamControl</B> to obtain an implementation of the <A HREF="dssd0204.htm#Lib_0001060218010800" TARGET="TEXT">StartAt</A>, <A HREF="dssd0204.htm#Lib_0001060218010900" TARGET="TEXT">StopAt</A>, and <A HREF="dssd0204.htm#Lib_0001060218010400" TARGET="TEXT">GetInfo</A> methods. The <B>CBaseStreamControl</B> class also maintains state information and decides what to do with the sample. To implement your own filter with pins that support <B>CBaseStreamControl</B> you must:
+<UL><LI>Inform the filter object of all state changes through the <A HREF="dssd0204.htm#Lib_0001060218010500" TARGET="TEXT">NotifyFilterState</A> member function.
+<LI>Inform the filter object of all <A HREF="dssd0204.htm#Lib_0001060218010700" TARGET="TEXT">SetSyncSource</A> calls to the filter.
+<LI>Inform the filter object when in a flushing state.
+
+
+
+
+ and when flushing has completed, in the <A HREF="dssd0204.htm#Lib_0001060218010300" TARGET="TEXT">CBaseStreamControl::Flushing</A> member function.
+<LI>Use the <A HREF="dssd0204.htm#Lib_0001060218010200" TARGET="TEXT">CheckStreamState</A> function to make decisions about discarding or passing along samples.
+<LI>Make sure output pins set discontinuity flags on the first sample flowed after samples have been discarded.
+<P>Tell your pin what the sink is when your filter joins a filter graph, as shown in the following example.
+</UL>
+<PRE><FONT FACE="Courier" SIZE="2">STDMETHODIMP CMyFilter::JoinFilterGraph(IFilterGraph * pGraph, LPCWSTR pName)
+{
+   HRESULT hr = CBaseFilter::JoinFilterGraph(pGraph, pName);
+   if (hr == S_OK)
+      m_pMyPin-&gt;SetFilterGraph(m_pSink);
+   return hr;
+}
+</FONT></PRE>
+<P>If you are implementing the <A HREF="dssd0106.htm" TARGET="TEXT">IAMStreamControl</A> interface without using <B>CBaseStreamControl</B>, the last two preceding points do not apply.
+
+<P>For sample code see the video capture sample at DXmedia\Samples\DS\vidcap.
+
+<A NAME="Lib_0001060218010000"></A><P><B>Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0204.htm#Lib_0001060218010100" TARGET="TEXT">CBaseStreamControl</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Constructs a <A HREF="dssd0204.htm" TARGET="TEXT">CBaseStreamControl</A> object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0204.htm#Lib_0001060218010200" TARGET="TEXT">CheckStreamState</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves a stream's current state.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0204.htm#Lib_0001060218010300" TARGET="TEXT">Flushing</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Notifies the pin when the filter is flushing.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0204.htm#Lib_0001060218010400" TARGET="TEXT">GetInfo</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves information about the current streaming settings.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0204.htm#Lib_0001060218010500" TARGET="TEXT">NotifyFilterState</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Notifies the pin of what state your filter is in.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0204.htm#Lib_0001060218010600" TARGET="TEXT">SetFilterGraph</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the event sink notification that your filter graph is using.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0204.htm#Lib_0001060218010700" TARGET="TEXT">SetSyncSource</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Identifies the reference clock being used by the graph your filter is in.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0204.htm#Lib_0001060218010800" TARGET="TEXT">StartAt</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Informs the pin when to start sending streaming data.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0204.htm#Lib_0001060218010900" TARGET="TEXT">StopAt</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Informs the pin when to stop processing data and discard any new samples.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060218010100">CBaseStreamControl::CBaseStreamControl</A></H3>
+<A HREF="dssd0204.htm" TARGET="TEXT">CBaseStreamControl Class</A>
+<P>Constructs a <A HREF="dssd0204.htm" TARGET="TEXT">CBaseStreamControl</A> object.
+
+<P><B>CBaseStreamControl</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+
+<H5>Remarks</H5>
+<P>This method initializes start time and stop time to MAX_TIME, which implies that times are unspecified.<H3><HR COLOR=#0000FF><A NAME="Lib_0001060218010200">CBaseStreamControl::CheckStreamState</A></H3>
+<A HREF="dssd0204.htm" TARGET="TEXT">CBaseStreamControl Class</A>
+<P>Retrieves a stream's current state.
+
+<PRE><FONT FACE="Courier" SIZE="2">enum StreamControlState CheckStreamState( IMediaSample * pSample );
+</FONT></PRE>
+<H5>Values</H5>
+<DL><DT><I>pSample</I>
+</DT><DD>Pointer to an <A HREF="dssd0156.htm" TARGET="TEXT">IMediaSample</A> interface.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns a <A HREF="dssd0288.htm#dtypes_0001060601001f00" TARGET="TEXT">StreamControlState</A> enumeration type.
+
+<H5>Remarks</H5>
+<P>Your filter calls this member function when your pin receives a sample that it is about to forward. The first sample you forward after throwing one or more away should be marked as a discontinuity. 
+
+<P>If your filter implements the <A HREF="dssd0099.htm" TARGET="TEXT">IAMDroppedFrames</A> interface and is counting how many frames are dropped, it should not count a frame that is discarded as dropped. 
+
+<P>The following example shows what you should include if your filter inherits from <A HREF="dssd0204.htm" TARGET="TEXT">CBaseStreamControl</A>.
+
+
+<PRE><FONT FACE="Courier" SIZE="2">//Pin has been given a sample to pass on, pSample
+//m_fLastSampleDiscarded is initialized to TRUE when streaming starts
+
+int iStreamState = CheckStreamState(pSample);
+if (iStreamState == STREAM_FLOWING) {
+   if (m_fLastSampleDiscarded)
+      pSample-&gt;SetDiscontinuity(TRUE);
+   m_fLastSampleDiscarded = FALSE;
+   //now deliver it or put it o a queue to be delivered, or whatever.
+} else {
+   m_fLastSampleDiscarded = TRUE;     //next one is discontinuity
+   //do NOT deliver this sample. Just throw it away
+}
+</FONT></PRE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060218010300">CBaseStreamControl::Flushing</A></H3>
+<A HREF="dssd0204.htm" TARGET="TEXT">CBaseStreamControl Class</A>
+<P>Notifies the pin that the filter is flushing.
+
+<P><B>void</B> <B>Flushing</B><B>(</B><BR>&nbsp;&nbsp;<B>BOOL</B> <I>bInProgress</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>bInProgress</I>
+</DT><DD>TRUE indicates flushing in progress; FALSE indicates not flushing.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+
+<H5>Remarks</H5>
+<P>If you are implementing your own filter, your pin must call this member function on <A HREF="dssd0165.htm#If_000106014d030100" TARGET="TEXT">BeginFlush</A> and <A HREF="dssd0165.htm#If_000106014d030600" TARGET="TEXT">EndFlush</A> (<A HREF="dssd0199.htm#Lib_0001060213040a00" TARGET="TEXT">DeliverBeginFlush</A> and <A HREF="dssd0199.htm#Lib_0001060213040b00" TARGET="TEXT">DeliverEndFlush</A> for output pins) to say when it is flushing, as shown in the following example.
+
+<PRE><FONT FACE="Courier" SIZE="2">HRESULT CMyPin::BeginFlush()
+{   
+   Flushing(TRUE);
+   //or CBaseInputPin for input pins
+   return CBaseOutputPin::BeginFlush();
+}
+
+HRESULT CMyPin::EndFlush()
+{   
+   Flushing(FALSE);
+   //or CBaseInputPin for input pins
+   return CBaseOutputPin::EndFlush();
+}
+</FONT></PRE>
+<P>Note, capture filters that do not support seeking do not call this method.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060218010400">CBaseStreamControl::GetInfo</A></H3>
+<A HREF="dssd0204.htm" TARGET="TEXT">CBaseStreamControl Class</A>
+<P>Retrieves information about the current streaming settings.
+
+<P><B>HRESULT</B> <B>GetInfo</B><B>(</B><BR>&nbsp;&nbsp;<B>AM_STREAM_INFO</B> <I>*pInfo</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pInfo</I>
+</DT><DD>Pointer to an <A HREF="dssd0287.htm#structs_0001060501000800" TARGET="TEXT">AM_STREAM_INFO</A> structure.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns S_OK.
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0106.htm" TARGET="TEXT">IAMStreamControl</A> interface and is called by the user to find out if a pin is streaming and to obtain the stream's attributes.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060218010500">CBaseStreamControl::NotifyFilterState</A></H3>
+<A HREF="dssd0204.htm" TARGET="TEXT">CBaseStreamControl Class</A>
+<P>Notifies the pin of your filter's state.
+
+<P><B>void</B> <B>NotifyFilterState</B><B>(</B><BR>&nbsp;&nbsp;<B>FILTER_STATE</B> <I>new_state</I><B>,</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <I>tStart</I> <B>=</B> <B>0</B> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>new_state</I>
+</DT><DD>Filter's new state.
+</DD><DT><I>tStart</I>
+</DT><DD>Time at which streaming starts (only valid when <I>new_state</I> is in <I>State_Running</I>).
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+
+<H5>Remarks</H5>
+<P>This member function notifies the pin of a filter's new state by setting a <A HREF="dssd0288.htm#dtypes_0001060601001800" TARGET="TEXT">FILTER_STATE</A> enumeration type variable. 
+<P>If you are implementing your own filter, inform your pin's <B>CBaseStreamControl::NotifyFilterState</B> member function what state your filter is in every time your filter changes state, as shown in the following example.
+
+<PRE><FONT FACE="Courier" SIZE="2">STDMETHODIMP CMyFilter::Run(REFERENCE_TIME tStart)
+{
+   //once error check is successful
+   m_pMyPin-&gt;NotifyFilterState(State_Running, tStart);
+   
+   //now continue with whatever should occur next, for example...
+   return CBaseFilter::Run(tStart);
+}
+
+STDMETHODIMP CMyFilter::Pause()
+{
+   //once error check is successful
+   m_pMyPin-&gt;NotifyFilterState(State_Paused, 0);
+   
+   //now continue with whatever should occur next, for example...
+   return CBaseFilter::Pause();
+}
+
+STDMETHODIMP CMyFilter::Stop()
+{
+   //once error check is successful
+   m_pMyPin-&gt;NotifyFilterState(State_Stopped, 0);
+   
+   //now continue with whatever should occur next, for example...
+   return CBaseFilter::Stop(tStart);
+}
+</FONT></PRE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060218010600">CBaseStreamControl::SetFilterGraph</A></H3>
+<A HREF="dssd0204.htm" TARGET="TEXT">CBaseStreamControl Class</A>
+<P>Sets the event sink notification your filter graph is using.
+
+<P><B>void</B> <B>SetFilterGraph</B><B>(</B><BR>&nbsp;&nbsp;<B>IMediaEventSink</B> <I>*pSink</I> <B>)</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSink</I>
+</DT><DD>Pointer to an <A HREF="dssd0152.htm" TARGET="TEXT">IMediaEventSink</A> interface.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+
+<H5>Remarks</H5>
+<P>A filter calls this member function in its <A HREF="dssd0194.htm#Lib_000106020e080e00" TARGET="TEXT">JoinFilterGraph</A> member function after it creates the <A HREF="dssd0152.htm" TARGET="TEXT">IMediaEventSink</A>.
+
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060218010700">CBaseStreamControl::SetSyncSource</A></H3>
+<A HREF="dssd0204.htm" TARGET="TEXT">CBaseStreamControl Class</A>
+<P>Identifies the reference clock being used by the graph your filter is in.
+
+<P><B>void</B> <B>SetSyncSource</B><B>(</B><BR>&nbsp;&nbsp;<B>IReferenceClock</B> <B>*</B> <I>pRefClock</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pRefClock</I>
+</DT><DD>Pointer to the <A HREF="dssd0170.htm" TARGET="TEXT">IReferenceClock</A> interface.
+</DD></DL>
+<H5>Return Values</H5>
+<P>No return value.
+
+<H5>Remarks</H5>
+<P>Filters with pins that use this class should ensure that they pass sync source information
+
+
+ to this member function, as shown in the following example.
+
+
+<PRE><FONT FACE="Courier" SIZE="2">STDMETHODIMP CMyFilter::SetSyncSource(IReferenceClock *pClock)
+{
+   m_pMyPin-&gt;SetSyncSource(pClock);
+   return CBaseFilter::SetSyncSource(pClock);
+}
+</FONT></PRE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060218010800">CBaseStreamControl::StartAt</A></H3>
+<A HREF="dssd0204.htm" TARGET="TEXT">CBaseStreamControl Class</A>
+<P>Tells the pin when to start sending streaming data.
+
+<P><B>HRESULT</B> <B>StartAt</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>REFERENCE_TIME</B> <B>*</B> <I>ptStart</I> <B>=</B> <B>NULL</B><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>dwCookie</I> <B>=</B> <B>0</B> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>ptStart</I>
+</DT><DD><A HREF="dssd0170.htm#If_0001060152030301" TARGET="TEXT">REFERENCE_TIME</A> at which to start streaming. If NULL, start immediately (no notification). If MAX_TIME, start canceled or will have no effect.
+</DD><DT><I>dwCookie</I>
+</DT><DD>Specifies a particular value, other than 0, to be sent with the notification when the start occurs. (Only used if <I>ptStart</I> is non-NULL or MAX_TIME).
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns NOERROR.
+
+<H5>Remarks</H5>
+<P>Streams are enabled by default, so this member function will have no effect unless you have previously called <A HREF="dssd0204.htm#Lib_0001060218010900" TARGET="TEXT">StopAt</A>.
+
+<P>After the stream is in a STREAM_FLOWING state, the filter will send an <A HREF="dssd0291.htm#events_0001060801001200" TARGET="TEXT">EC_STREAM_CONTROL_STARTED</A> event notification to the filter graph manager.
+
+<P><B>Note</B>  If start and stop are scheduled for a single point in time, the effect is as if the start occurred an infinitesimal time before the stop. You can use this effect to capture a single frame.
+<H3><HR COLOR=#0000FF><A NAME="Lib_0001060218010900">CBaseStreamControl::StopAt</A></H3>
+<A HREF="dssd0204.htm" TARGET="TEXT">CBaseStreamControl Class</A>
+<P>Informs the pin when to stop processing data and to discard any new samples.<P><B>HRESULT</B> <B>StopAt</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>REFERENCE_TIME</B> <B>*</B> <I>ptStop</I> <B>=</B> <B>NULL</B><B>,</B><BR>&nbsp;&nbsp;<B>BOOL</B> <I>bSendExtra</I> <B>=</B> <B>FALSE</B><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>dwCookie</I> <B>=</B> <B>0</B> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>ptStop</I>
+</DT><DD><A HREF="dssd0170.htm#If_0001060152030301" TARGET="TEXT">REFERENCE_TIME</A>at which to stop streaming. If NULL, stop immediately (no notification). If MAX_TIME, cancels stop.
+</DD><DT><I>bSendExtra</I>
+</DT><DD>Indicates whether to send an extra sample after scheduled <I>ptStop</I> time.
+</DD><DT><I>dwCookie</I>
+</DT><DD>Specifies a particular value to be sent with the notification when the stop occurs. (Only used if <I>ptStart</I> if not NULL or MAX_TIME).
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns NOERROR.
+
+<H5>Remarks</H5>
+<P>This member function implements the <A HREF="dssd0106.htm#If_0001060112030200" TARGET="TEXT">IAMStreamControl::StopAt</A> method and is used by pins and filters that must support the stopping of streams. It sets the <A HREF="dssd0288.htm#dtypes_0001060601001f00" TARGET="TEXT">StreamControlState</A> enumeration type to STREAM_DISCARDING.
+
+<P>In a video capture scenario, specify <A HREF="dssd0106.htm#If_0001060112030200" TARGET="TEXT">StopAt</A> on both the output pin of a capture filter and an input pin of a multiplexer and have the multiplexer send notification of completion. This ensures that the capture filter doesn't needlessly capture extra frames, while also guaranteeing that the multiplexer has written the last frame to disk.
+
+<P>In addition, the capture output pin should specify TRUE for the <I>bSendExtra</I> variable while all other pins specify FALSE. If an extra frame is not sent the multiplexer will end up waiting for the stop time indefinitely and not realize it already has received all the capture information.
+
+<P>If you are using <A HREF="dssd0119.htm" TARGET="TEXT">ICaptureGraphBuilder</A>, the <A HREF="dssd0119.htm#If_000106011f030200" TARGET="TEXT">ICaptureGraphBuilder::ControlStream</A> method will accomplish all this for you automatically.
+
+<P><B>Note</B>  If a stop time is given in the middle of a packet, the filter will deliver the whole packet before going into a discarding state. Also, if start and stop are scheduled for a single point in time, the effect is as if the start occurred an infinitesimal time before the stop. You can use this effect to capture a single frame. 
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

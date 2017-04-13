@@ -1,0 +1,157 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>IOverlayNotify Interface</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0163.htm','/dssd0000.htm','/dssd0088.htm','/index.htm','/dssd0165.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="If_000106014c000000">IOverlayNotify Interface</A></H2>
+<BR CLEAR=ALL>
+<P>The <B>IOverlayNotify</B> interface provides an upstream filter, such as a decoder, with
+notifications of changes to the rendering window. This includes notifications
+of changes to the palette, color key, and window position, and visible region
+(clipping) changes.
+
+<P>Most software video decoders let the video renderer draw the decompressed
+images they produce by passing the media samples to the <A HREF="dssd0161.htm" TARGET="TEXT">IMemInputPin</A>
+interface on the renderer's input pin.
+
+<P>However, some video decoding filters (typically hardware decompression boards)
+handle the drawing of the images themselves, perhaps by using a VGA connector.
+These filters do not need to use <A HREF="dssd0161.htm" TARGET="TEXT">IMemInputPin</A>, but can instead use the
+<A HREF="dssd0163.htm" TARGET="TEXT">IOverlay</A> interface provided by the renderer input pin.
+Through this interface, the decoder can be notified when the window position
+or size changes, or when the current system palette changes
+in order to install and change color keys and palettes.
+
+<A NAME="If_000106014c010000"></A><P><B>When to Implement</B>
+<P>To get notifications of when the window size or position changes, when the current
+system palette changes, or when a different color key is used, decoders that
+do their own drawing should implement an <A HREF="dssd0164.htm" TARGET="TEXT">IOverlayNotify</A> interface.
+A pointer to this interface can then be passed to the <A HREF="dssd0163.htm" TARGET="TEXT">IOverlay</A> interface on the renderer's input pin, through the <A HREF="dssd0163.htm#If_000106014b030100" TARGET="TEXT">IOverlay::Advise</A> method, to set up an advise link (essentially a callback mechanism).
+After the advise link is established, the renderer calls the decoder's <B>IOverlayNotify</B> methods when the appropriate events occur. An advise link can be canceled by calling <A HREF="dssd0163.htm#If_000106014b030a00" TARGET="TEXT">IOverlay::Unadvise</A>.
+
+<A NAME="If_000106014c020000"></A><P><B>When to Use</B>
+<P>The video renderer is the only filter that calls the methods on this
+interface. This is done automatically by the default video renderer. If you
+are writing a replacement video renderer, you will need to use the
+methods on this interface if your filter supports <A HREF="dssd0163.htm" TARGET="TEXT">IOverlay</A> and
+this interface is passed to your filter in an <A HREF="dssd0163.htm#If_000106014b030100" TARGET="TEXT">IOverlay::Advise</A>
+call.
+
+<A NAME="If_000106014c030000"></A><P><B>Methods in Vtable Order</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IUnknown methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns pointers to supported interfaces.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">AddRef</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Increments the reference count.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Decrements the reference count.
+</FONT></TD></TR></TABLE>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IOverlayNotify methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0164.htm#If_000106014c030300" TARGET="TEXT">OnPaletteChange</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provides notification that the palette of the window has changed.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0164.htm#If_000106014c030100" TARGET="TEXT">OnClipChange</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provides notification that the visible region of the window has changed.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0164.htm#If_000106014c030200" TARGET="TEXT">OnColorKeyChange</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provides notification that the chroma key has changed.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0164.htm#If_000106014c030400" TARGET="TEXT">OnPositionChange</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provides notification that the position has changed.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="If_000106014c030100">IOverlayNotify::OnClipChange</A></H3>
+<A HREF="dssd0164.htm" TARGET="TEXT">IOverlayNotify Interface</A>
+<P>Provides notification that the window's visible region has changed. It is
+essential that any overlay hardware be updated to reflect the change
+to the visible region before returning from this method.
+
+<P><B>HRESULT</B> <B>OnClipChange</B><B>(</B><BR>&nbsp;&nbsp;<B>RECT</B> <I>*pSourceRect</I><B>,</B><BR>&nbsp;&nbsp;<B>RECT</B> <I>*pDestinationRect</I><B>,</B><BR>&nbsp;&nbsp;<B>RGNDATA</B> <I>*pRgnData</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSourceRect</I>
+</DT><DD>[in] Region of the video to use.
+</DD><DT><I>pDestinationRect</I>
+</DT><DD>[in] Video destination.
+</DD><DT><I>pRgnData</I>
+</DT><DD>[in] Clipping information.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>The calls to <B>OnClipChange</B> happen in synchronization with the window. It is
+called with an empty clip list to freeze the video before the window moves, and then called again
+when the window has stabilized with the new clip list.
+
+<P>If the window rectangle is all zeros, the window is invisible. The
+filter must take a copy of the information if it needs to store it.
+
+
+
+
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106014c030200">IOverlayNotify::OnColorKeyChange</A></H3>
+<A HREF="dssd0164.htm" TARGET="TEXT">IOverlayNotify Interface</A>
+<P>Provides notification that the window's color key has changed.
+
+<P><B>HRESULT</B> <B>OnColorKeyChange</B><B>(</B><BR>&nbsp;&nbsp;<B>COLORKEY</B> <B>*</B> <I>pColorKey</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pColorKey</I>
+</DT><DD>[in] Defines the new chroma key.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106014c030300">IOverlayNotify::OnPaletteChange</A></H3>
+<A HREF="dssd0164.htm" TARGET="TEXT">IOverlayNotify Interface</A>
+<P>Provides notification that the palette of the window has changed.
+
+<P><B>HRESULT</B> <B>OnPaletteChange</B><B>(</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>dwColors</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>PALETTEENTRY</B> <B>*</B> <I>pPalette</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>dwColors</I>
+</DT><DD>[in] Number of colors present.
+</DD><DT><I>pPalette</I>
+</DT><DD>[in] Array of palette colors.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>Before returning, the filter should copy the array of <A HREF="dssd0389.htm#external_00010a01090000c1" TARGET="TEXT">RGBQUAD</A> values, if necessary.
+<H3><HR COLOR=#0000FF><A NAME="If_000106014c030400">IOverlayNotify::OnPositionChange</A></H3>
+<A HREF="dssd0164.htm" TARGET="TEXT">IOverlayNotify Interface</A>
+<P>Provides notification that the position has changed.
+
+<P><B>HRESULT</B> <B>OnPositionChange</B><B>(</B><BR>&nbsp;&nbsp;<B>const</B> <B>RECT</B> <I>*pSourceRect</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>RECT</B> <I>*pDestinationRect</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSourceRect</I>
+</DT><DD>[in] Source video rectangle.
+</DD><DT><I>pDestinationRect</I>
+</DT><DD>[in] Destination video rectangle. Note that this is not
+clipped to the visible display area.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>This method is a callback intended for use by hardware overlay cards
+that do not want the expense of synchronous clipping updates, and just want to know
+when the source or destination video positions change.
+
+<P>Unlike the <A HREF="dssd0164.htm#If_000106014c030100" TARGET="TEXT">IOverlayNotify::OnClipChange</A> method, this method is not
+called in synchronization with the window changing but, rather, at some point after the window
+has changed (basically in time with WM_SIZE messages received).
+This is therefore suitable for overlay cards that do not inlay their data to the frame buffer.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

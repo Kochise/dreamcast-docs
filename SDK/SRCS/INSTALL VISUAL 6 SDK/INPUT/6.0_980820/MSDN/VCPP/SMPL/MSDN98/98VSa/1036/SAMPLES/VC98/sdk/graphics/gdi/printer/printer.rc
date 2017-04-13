@@ -1,0 +1,365 @@
+
+//-----------------------------------------------------------------------------
+// This is a part of the Microsoft Source Code Samples. 
+// Copyright (C) 1993-1997 Microsoft Corporation.
+// All rights reserved. 
+//  
+// This source code is only intended as a supplement to 
+// Microsoft Development Tools and/or WinHelp documentation.
+// See these sources for detailed information regarding the 
+// Microsoft samples programs.
+//-----------------------------------------------------------------------------
+
+
+#include <windows.h>
+#include <winspool.h>
+#include "printer.h"
+#include "common.h"
+
+printer   BITMAP printer.bmp
+
+MAIN_ICON ICON   printer.ico
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+LANGUAGE LANG_ENGLISH, SUBLANG_NEUTRAL
+
+Menu MENU
+{
+  POPUP         "&Options"
+  {
+     MENUITEM   "&Print (via GetDC)"       IDM_PRINT
+     MENUITEM   "Print&Dlg..."             IDM_PRINTDLG
+     MENUITEM   "&GetDeviceCaps..."        IDM_GETDEVICECAPS
+     MENUITEM   "&EnumPrinters..."         IDM_ENUMPRINTERS
+     MENUITEM   "Ge&tPrinterDriver..."     IDM_GETPRINTERDRIVER
+     MENUITEM   "EnumPrinterDriver&s..."   IDM_ENUMPRINTERDRIVERS
+     MENUITEM   "&Refresh"                 IDM_REFRESH
+     MENUITEM   SEPARATOR
+     MENUITEM   "&About...",               IDM_ABOUT
+  }
+  POPUP         "&Mapping Modes"
+  {
+    MENUITEM    "MM_&HIENGLISH"            IDM_HIENGLISH
+    MENUITEM    "MM_HI&METRIC"             IDM_HIMETRIC
+    MENUITEM    "MM_&LOENGLISH"            IDM_LOENGLISH
+    MENUITEM    "MM_L&OMETRIC"             IDM_LOMETRIC
+    MENUITEM    "MM_T&WIPS"                IDM_TWIPS
+    MENUITEM    SEPARATOR
+    MENUITEM    "MM_&ISOTROPIC"            IDM_ISOTROPIC
+    MENUITEM    "MM_&ANISOTROPIC"          IDM_ANISOTROPIC
+    MENUITEM    SEPARATOR
+    MENUITEM    "MM_&TEXT"                 IDM_TEXT, CHECKED
+  }
+  POPUP         "&Graphics"
+  {
+    MENUITEM    "A&rc()"                   IDM_ARC
+    MENUITEM    "E&llipse()"               IDM_ELLIPSE
+    MENUITEM    "LineT&o()"                IDM_LINETO
+    MENUITEM    "P&ie()"                   IDM_PIE
+    MENUITEM    "PlgBl&t()"                IDM_PLGBLT
+    MENUITEM    "Poly&Bezier()"            IDM_POLYBEZIER
+    MENUITEM    "Poly&gon()"               IDM_POLYGON
+    MENUITEM    "Pol&yLine()"              IDM_POLYLINE
+    MENUITEM    "&PolyPolygon()"           IDM_POLYPOLYGON
+    MENUITEM    "Re&ctangle()"             IDM_RECTANGLE
+    MENUITEM    "Ro&undRect()"             IDM_ROUNDRECT
+    MENUITEM    "&StrectBlt()"             IDM_STRETCHBLT
+    MENUITEM    "&All"                     IDM_ALLGRAPHICS
+    MENUITEM    "&None"                    IDM_NOGRAPHICS
+    MENUITEM    SEPARATOR
+    MENUITEM    "&EnumFonts()"             IDM_ENUMFONTS
+    MENUITEM    SEPARATOR
+    MENUITEM    "&Draw axis"               IDM_DRAWAXIS, CHECKED
+  }
+  POPUP         "&Pen"
+  {
+    MENUITEM    "&Color..."                IDM_SETPENCOLOR
+
+    POPUP       "&Width"
+    {
+      MENUITEM  "&1"                       IDM_PENWIDTH_1, CHECKED
+      MENUITEM  "&2"                       IDM_PENWIDTH_2
+      MENUITEM  "&3"                       IDM_PENWIDTH_3
+      MENUITEM  "&4"                       IDM_PENWIDTH_4
+      MENUITEM  "&5"                       IDM_PENWIDTH_5
+      MENUITEM  "&6"                       IDM_PENWIDTH_6
+      MENUITEM  "&7"                       IDM_PENWIDTH_7
+      MENUITEM  "&8"                       IDM_PENWIDTH_8
+    }
+    POPUP       "&Style"
+    {
+      MENUITEM  "PS_&SOLID"                IDM_PENCOLOR_SOLID, CHECKED
+      MENUITEM  "PS_&DASH"                 IDM_PENCOLOR_DASH
+      MENUITEM  "PS_D&OT"                  IDM_PENCOLOR_DOT
+      MENUITEM  "PS_D&ASHDOT"              IDM_PENCOLOR_DASHDOT
+      MENUITEM  "PS_DASHDO&TDOT"           IDM_PENCOLOR_DASHDOTDOT
+      MENUITEM  "PS_&NULL"                 IDM_PENCOLOR_NULL
+      MENUITEM  "PS_&INSIDEFRAME"          IDM_PENCOLOR_INSIDEFRAME
+    }
+  }
+  POPUP         "&Brush"
+  {
+    MENUITEM    "&Color..."                IDM_SETBRUSHCOLOR
+
+    POPUP       "&Style"
+    {
+      MENUITEM  "HS_&HORIZONTAL"           IDM_BRUSHSTYLE_HORIZONTAL
+      MENUITEM  "HS_&VERTICAL"             IDM_BRUSHSTYLE_VERTICAL
+      MENUITEM  "HS_&FDIAGONAL"            IDM_BRUSHSTYLE_FDIAGONAL
+      MENUITEM  "HS_&BDIAGONAL"            IDM_BRUSHSTYLE_BDIAGONAL
+      MENUITEM  "HS_&CROSS"                IDM_BRUSHSTYLE_CROSS
+      MENUITEM  "HS_&DIAGCROSS"            IDM_BRUSHSTYLE_DIAGCROSS
+    }
+  }
+  MENUITEM      "&Text color..."           IDM_TEXTCOLOR
+}
+
+
+About DIALOG 30, 14, 136, 90
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "About Printer"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    ICON            MAIN_ICON, 101, 8, 22, 18, 20
+    CTEXT           "Microsoft Developer Support", 104, 0, 63, 136, 8
+    CTEXT           "Copyright \251 1992-1995 Microsoft Corporation", 105, 0, 74,
+                    136, 8
+    LTEXT           "Printer Win32 SDK sample ", 103, 40, 25, 95, 8
+    LTEXT           "version 1.0", 106, 40, 35, 95, 8
+    DEFPUSHBUTTON   "OK", IDOK, 95, 6, 40, 14
+    CONTROL         "", 108, "Static", SS_BLACKRECT, 0, 53, 136, 2
+END
+
+
+List DIALOG 40, 30, 360, 193
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+FONT 8, "MS Shell Dlg"
+BEGIN
+    PUSHBUTTON      "OK", DID_OK, 6, 174, 40, 14
+    LISTBOX         DID_LISTBOX, 6, 7, 348, 160,
+                    LBS_SORT | WS_VSCROLL | WS_TABSTOP | LBS_USETABSTOPS
+END
+
+
+Abort DIALOG 66, 41, 160, 80
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+FONT 8, "MS Shell Dlg"
+BEGIN
+    LTEXT           "Printing in progress...", 101, 40, 20, 80, 8
+    PUSHBUTTON      "Cancel print job", DID_CANCEL, 41, 50, 78, 14
+END
+
+
+EnumPrtOpt DIALOG 191, 100, 195, 151
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "EnumPrinters options:"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    AUTOCHECKBOX    "PRINTER_ENUM_DEFAULT", PRINTER_ENUM_DEFAULT, 20, 10, 120, 10
+    AUTOCHECKBOX    "PRINTER_ENUM_LOCAL", PRINTER_ENUM_LOCAL, 20, 26, 121, 10
+    AUTOCHECKBOX    "PRINTER_ENUM_FAVORITE", PRINTER_ENUM_FAVORITE, 20, 42, 118, 10
+    AUTOCHECKBOX    "PRINTER_ENUM_NAME", PRINTER_ENUM_NAME, 20, 58, 120, 10
+    AUTOCHECKBOX    "PRINTER_ENUM_REMOTE", PRINTER_ENUM_REMOTE, 20, 90, 122, 10
+    AUTOCHECKBOX    "PRINTER_ENUM_SHARED", PRINTER_ENUM_SHARED, 20, 106, 113, 10
+    DEFPUSHBUTTON   "OK", DID_OK,  20, 128, 40, 14
+    PUSHBUTTON      "Cancel", DID_CANCEL, 94, 128, 40, 14
+    EDITTEXT        DID_EDITTEXT, 32, 73, 150, 12, ES_AUTOHSCROLL | WS_DISABLED
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+	IDS_ERR_PRINTER	"Error: PRINTER.EXE (PRINTER.C)"
+	IDS_ERR_PAINT		"Error: PRINTER.EXE (PAINT.C)"
+	IDS_ERR_GETCAPS	"Error: PRINTER.EXE (GETCAPS.C)"
+	IDS_ERR_ENUMPRT	"Error: PRINTER.EXE (ENUMPRT.C)"
+	IDS_ERR_GETPDRIV	"Error: PRINTER.EXE (GETPDRIV.C)"
+	IDS_MAINWNDTITLE	"Printer Sample Application"
+	IDS_FMT_OPNPRTFAIL     	"OpenPrinter (%s) failed"
+	IDS_LALLOCFAIL         	"LocalAlloc failed"
+	IDS_GETPRTDRVFAIL      	"GetPrinterDriver failed"
+	IDS_ASKDOMSRVNM        	"Please enter a valid domain/server name"
+	IDS_ENUMPRTLALLOCFAIL  	"EnumPrinters/LocalAlloc failed"
+	IDS_ENUMPRT1FAIL       	"EnumPrinters 1 failed"
+	IDS_ENUMPRTDRVRET0     	"EnumPrinterDrivers returned 0 drivers"
+	IDS_FMT_MOREDSPFNTNL   	"%ld more display fonts (not listed)"
+	IDS_GETDCFAIL          	"GetDC failed"
+	IDS_FMT_CREDCFAIL      	"CreateDC (%s, %s, %s, NULL) failed"
+	IDS_ASKSELPRT          	"Please select a printer"
+	IDS_ENUMPRTFAIL        	"EnumPrinters failed"
+	IDS_NOPRTLST           	"No printers listed"
+	IDS_PRTDLGFAIL         	"PrintDlg (PD_RETURNDC) failed"
+	IDS_PRTTST             	"print test"
+	IDS_BLANKPG            	"A blank page!"
+END
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+#ifdef JAPAN
+LANGUAGE LANG_JAPANESE, SUBLANG_NEUTRAL
+
+Menu MENU
+{
+  POPUP         "ｵﾌﾟｼｮﾝ(&O)"
+  {
+     MENUITEM   "GetDCによる印刷(&P)"      IDM_PRINT
+     MENUITEM   "Print&Dlg..."             IDM_PRINTDLG
+     MENUITEM   "&GetDeviceCaps..."        IDM_GETDEVICECAPS
+     MENUITEM   "&EnumPrinters..."         IDM_ENUMPRINTERS
+     MENUITEM   "Ge&tPrinterDriver..."     IDM_GETPRINTERDRIVER
+     MENUITEM   "EnumPrinterDriver&s..."   IDM_ENUMPRINTERDRIVERS
+     MENUITEM   "ﾘﾌﾚｯｼｭ(&R)"               IDM_REFRESH
+     MENUITEM   SEPARATOR
+     MENUITEM   "バージョン情報(&A)...",   IDM_ABOUT
+  }
+  POPUP         "ﾏｯﾋﾟﾝｸﾞﾓｰﾄﾞ(&M)"
+  {
+    MENUITEM    "MM_&HIENGLISH"            IDM_HIENGLISH
+    MENUITEM    "MM_HI&METRIC"             IDM_HIMETRIC
+    MENUITEM    "MM_&LOENGLISH"            IDM_LOENGLISH
+    MENUITEM    "MM_L&OMETRIC"             IDM_LOMETRIC
+    MENUITEM    "MM_T&WIPS"                IDM_TWIPS
+    MENUITEM    SEPARATOR
+    MENUITEM    "MM_&ISOTROPIC"            IDM_ISOTROPIC
+    MENUITEM    "MM_&ANISOTROPIC"          IDM_ANISOTROPIC
+    MENUITEM    SEPARATOR
+    MENUITEM    "MM_&TEXT"                 IDM_TEXT, CHECKED
+  }
+  POPUP         "ｸﾞﾗﾌｨｯｸ(&G)"
+  {
+    MENUITEM    "A&rc()"                   IDM_ARC
+    MENUITEM    "E&llipse()"               IDM_ELLIPSE
+    MENUITEM    "LineT&o()"                IDM_LINETO
+    MENUITEM    "P&ie()"                   IDM_PIE
+    MENUITEM    "PlgBl&t()"                IDM_PLGBLT
+    MENUITEM    "Poly&Bezier()"            IDM_POLYBEZIER
+    MENUITEM    "Poly&gon()"               IDM_POLYGON
+    MENUITEM    "Pol&yLine()"              IDM_POLYLINE
+    MENUITEM    "&PolyPolygon()"           IDM_POLYPOLYGON
+    MENUITEM    "Re&ctangle()"             IDM_RECTANGLE
+    MENUITEM    "Ro&undRect()"             IDM_ROUNDRECT
+    MENUITEM    "&StrectBlt()"             IDM_STRETCHBLT
+    MENUITEM    "すべて(&A)"               IDM_ALLGRAPHICS
+    MENUITEM    "なし(&N)"                 IDM_NOGRAPHICS
+    MENUITEM    SEPARATOR
+    MENUITEM    "&EnumFonts()"             IDM_ENUMFONTS
+    MENUITEM    SEPARATOR
+    MENUITEM    "軸線の描画(&D)"           IDM_DRAWAXIS, CHECKED
+  }
+  POPUP         "ﾍﾟﾝ(&P)"
+  {
+    MENUITEM    "色(&C)..."                IDM_SETPENCOLOR
+
+    POPUP       "幅(&W)"
+    {
+      MENUITEM  "&1"                       IDM_PENWIDTH_1, CHECKED
+      MENUITEM  "&2"                       IDM_PENWIDTH_2
+      MENUITEM  "&3"                       IDM_PENWIDTH_3
+      MENUITEM  "&4"                       IDM_PENWIDTH_4
+      MENUITEM  "&5"                       IDM_PENWIDTH_5
+      MENUITEM  "&6"                       IDM_PENWIDTH_6
+      MENUITEM  "&7"                       IDM_PENWIDTH_7
+      MENUITEM  "&8"                       IDM_PENWIDTH_8
+    }
+    POPUP       "ｽﾀｲﾙ(&S)"
+    {
+      MENUITEM  "PS_&SOLID"                IDM_PENCOLOR_SOLID, CHECKED
+      MENUITEM  "PS_&DASH"                 IDM_PENCOLOR_DASH
+      MENUITEM  "PS_D&OT"                  IDM_PENCOLOR_DOT
+      MENUITEM  "PS_D&ASHDOT"              IDM_PENCOLOR_DASHDOT
+      MENUITEM  "PS_DASHDO&TDOT"           IDM_PENCOLOR_DASHDOTDOT
+      MENUITEM  "PS_&NULL"                 IDM_PENCOLOR_NULL
+      MENUITEM  "PS_&INSIDEFRAME"          IDM_PENCOLOR_INSIDEFRAME
+    }
+  }
+  POPUP         "ﾌﾞﾗｼ(&B)"
+  {
+    MENUITEM    "色(&C)..."                IDM_SETBRUSHCOLOR
+
+    POPUP       "ｽﾀｲﾙ(&S)"
+    {
+      MENUITEM  "HS_&HORIZONTAL"           IDM_BRUSHSTYLE_HORIZONTAL
+      MENUITEM  "HS_&VERTICAL"             IDM_BRUSHSTYLE_VERTICAL
+      MENUITEM  "HS_&FDIAGONAL"            IDM_BRUSHSTYLE_FDIAGONAL
+      MENUITEM  "HS_&BDIAGONAL"            IDM_BRUSHSTYLE_BDIAGONAL
+      MENUITEM  "HS_&CROSS"                IDM_BRUSHSTYLE_CROSS
+      MENUITEM  "HS_&DIAGCROSS"            IDM_BRUSHSTYLE_DIAGCROSS
+    }
+  }
+  MENUITEM      "文字色(&T)..."            IDM_TEXTCOLOR
+}
+
+
+About DIALOG 30, 14, 140, 90
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Printer のバージョン情報"
+BEGIN
+    ICON            MAIN_ICON, 101, 8, 22, 18, 20
+    CTEXT           "Microsoft Developer Support", 104, 0, 63, 140, 8
+    CTEXT           "Copyright (C) 1992-1997 Microsoft Corporation", 105, 0, 74,
+                    140, 8
+    LTEXT           "Printer Win32 SDK サンプル", 103, 40, 25, 98, 8
+    LTEXT           "version 1.0", 106, 40, 35, 95, 8
+    DEFPUSHBUTTON   "OK", IDOK, 95, 6, 40, 14
+    CONTROL         "", 108, "Static", SS_BLACKRECT, 0, 53, 140, 2
+END
+
+
+List DIALOG 40, 30, 260, 193
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+BEGIN
+    LISTBOX         DID_LISTBOX, 6, 7, 248, 160,
+                    LBS_SORT | WS_VSCROLL | WS_TABSTOP | LBS_USETABSTOPS
+    PUSHBUTTON      "OK", DID_OK, 6, 174, 40, 14
+END
+
+
+Abort DIALOG 66, 41, 160, 80
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+BEGIN
+    LTEXT           "印刷中...", 101, 40, 20, 80, 8
+    PUSHBUTTON      "ｷｬﾝｾﾙ", DID_CANCEL, 41, 50, 40, 14
+END
+
+
+EnumPrtOpt DIALOG 191, 100, 147, 151
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "EnumPrinters オプション:"
+BEGIN
+    AUTOCHECKBOX    "PRINTER_ENUM_DEFAULT", PRINTER_ENUM_DEFAULT, 20, 10, 120, 10
+    AUTOCHECKBOX    "PRINTER_ENUM_LOCAL", PRINTER_ENUM_LOCAL, 20, 26, 121, 10
+    AUTOCHECKBOX    "PRINTER_ENUM_FAVORITE", PRINTER_ENUM_FAVORITE, 20, 42, 118, 10
+    AUTOCHECKBOX    "PRINTER_ENUM_NAME", PRINTER_ENUM_NAME, 20, 58, 120, 10
+    AUTOCHECKBOX    "PRINTER_ENUM_REMOTE", PRINTER_ENUM_REMOTE, 20, 90, 122, 10
+    AUTOCHECKBOX    "PRINTER_ENUM_SHARED", PRINTER_ENUM_SHARED, 20, 106, 113, 10
+    DEFPUSHBUTTON   "OK", DID_OK,  20, 128, 40, 14
+    PUSHBUTTON      "ｷｬﾝｾﾙ", DID_CANCEL, 94, 128, 40, 14
+    EDITTEXT        DID_EDITTEXT, 32, 73, 102, 12, ES_AUTOHSCROLL | WS_DISABLED
+END
+
+STRINGTABLE DISCARDABLE
+BEGIN
+	IDS_ERR_PRINTER	"エラー: PRINTER.EXE (PRINTER.C)"
+	IDS_ERR_PAINT		"エラー: PRINTER.EXE (PAINT.C)"
+	IDS_ERR_GETCAPS	"エラー: PRINTER.EXE (GETCAPS.C)"
+	IDS_ERR_ENUMPRT	"エラー: PRINTER.EXE (ENUMPRT.C)"
+	IDS_ERR_GETPDRIV	"エラー: PRINTER.EXE (GETPDRIV.C)"
+	IDS_MAINWNDTITLE	"Printer サンプル アプリケーション"
+	IDS_FMT_OPNPRTFAIL     	"OpenPrinter (%s) に失敗しました"
+	IDS_LALLOCFAIL         	"LocalAlloc に失敗しました"
+	IDS_GETPRTDRVFAIL      	"GetPrinterDriver に失敗しました"
+	IDS_ASKDOMSRVNM        	"正しいドメイン、またはサーバー名を入力して下さい"
+	IDS_ENUMPRTLALLOCFAIL  	"EnumPrinters/LocalAlloc に失敗しました"
+	IDS_ENUMPRT1FAIL       	"EnumPrinters に失敗しました"
+	IDS_ENUMPRTDRVRET0     	"EnumPrinterDrivers は 0 のドライバ数を返しました"
+	IDS_FMT_MOREDSPFNTNL   	"%ld のフォントが表示しきれませんでした"
+	IDS_GETDCFAIL          	"GetDC に失敗しました"
+	IDS_FMT_CREDCFAIL      	"CreateDC (%s, %s, %s, NULL) に失敗しました"
+	IDS_ASKSELPRT          	"プリンタを選択して下さい"
+	IDS_ENUMPRTFAIL        	"EnumPrinters に失敗しました"
+	IDS_NOPRTLST           	"使用可能状態のプリンタがありません"
+	IDS_PRTDLGFAIL         	"PrintDlg (PD_RETURNDC) に失敗しました"
+	IDS_PRTTST             	"印刷テスト"
+	IDS_BLANKPG            	"空ページ!"
+END
+#endif

@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Write an Audio Capture Filter</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0064.htm','/dssd0000.htm','/dssd0063.htm','/index.htm','/dssd0066.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="audcap_0001050102000000">Write an Audio Capture Filter</A></H2>
+<BR CLEAR=ALL>
+<P>This article outlines important points to consider when writing an audio capture filter. The Microsoft&#174; DirectShow&#153; SDK includes a standard <A HREF="dssd0298.htm#filteref_0001070104000000" TARGET="TEXT">Audio Capture</A> filter. 
+
+<P><B>Contents of this article:</B>
+<UL><LI><A HREF="dssd0065.htm#audcap_0001050102010000" TARGET="TEXT">Audio Capture Pin Requirements</A>
+<LI><A HREF="dssd0065.htm#audcap_0001050102020000" TARGET="TEXT">Registering an Audio Capture Filter</A>
+<LI><A HREF="dssd0065.htm#audcap_0001050102030000" TARGET="TEXT">Producing Data</A>
+<LI><A HREF="dssd0065.htm#audcap_0001050102040000" TARGET="TEXT">Controlling Individual Streams</A>
+<LI><A HREF="dssd0065.htm#audcap_0001050102050000" TARGET="TEXT">Time Stamping</A>
+<LI><A HREF="dssd0065.htm#audcap_0001050102060000" TARGET="TEXT">Necessary Interfaces</A>
+</UL>
+<A NAME="audcap_0001050102010000"></A><P><B>Audio Capture Pin Requirements</B>
+<P>To be an official capture filter,
+
+
+ the capture filter's capture pin and preview pin (if there is one) must support the <A HREF="dssd0148.htm#If_000106013c000000" TARGET="TEXT">IKsPropertySet</A> interface. See <A HREF="dssd0064.htm#caprules_0001050101010000" TARGET="TEXT">Capture and Preview Pin Requirements</A> for more details and sample code for implementing <B>IKsPropertySet</B> on your capture pin.
+
+<P>You must have one input pin for every sound source that can be mixed
+
+
+ before the audio is digitized.
+
+
+ For instance, if your sound card has a line in, mic in,
+
+
+ and CD-ROM input, you would have three input pins. You don't typically connect these input pins to any other filters &#151; you just support the <A HREF="dssd0091.htm#If_0001060103000000" TARGET="TEXT">IAMAudioInputMixer</A> interface on each pin and an application will set recording levels, balance, treble, and so on, on each pin using that interface.
+
+<A NAME="audcap_0001050102020000"></A><P><B>Registering an Audio Capture Filter</B>
+<P>You must register your filter in the audio capture filter category. See the <A HREF="dssd0262.htm#fmutil_0001060306000300" TARGET="TEXT">AMovieDllRegisterServer2</A> function for more information. 
+
+
+<A NAME="audcap_0001050102030000"></A><P><B>Producing Data</B>
+<P>Produce data on the capture pin only when in a running state.
+
+
+ Do not send data out your pin when paused.
+
+
+ This will confuse the filter graph
+
+
+ unless you return <A HREF="dssd0293.htm#errcodes_0001060a01000087" TARGET="TEXT">VFW_S_CANT_CUE</A> from the <A HREF="dssd0194.htm#Lib_000106020e080a00" TARGET="TEXT">CBaseFilter::GetState</A> function,
+ which warns the filter graph that you do not send data when paused. The following code sample shows how to do this.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+CMyVidcapFilter::GetState(DWORD dw, FILTER_STATE *State)
+{
+&#009;*State = m_State;
+&#009;if (m_State == State_Paused)
+&#009;&#009;return VFW_S_CANT_CUE;
+&#009;else
+&#009;&#009;return S_OK;
+}
+</FONT></PRE>
+<A NAME="audcap_0001050102040000"></A><P><B>Controlling Individual Streams</B>
+<P>All output pins should support the <A HREF="dssd0106.htm#If_0001060112000000" TARGET="TEXT">IAMStreamControl</A> interface, so each pin can be turned on and off
+
+
+ individually (for instance, to preview without capturing). <B>IAMStreamControl</B> enables you to switch between preview and capture without rebuilding a different graph.
+
+
+<A NAME="audcap_0001050102050000"></A><P><B>Time Stamping</B>
+<P>When you capture audio samples and are sending them,
+
+
+ time stamp each group with a start time of the graph's clock time when the first sample in the packet was captured, and with an end time of the start time plus the duration that the audio packet represents.
+
+
+ If your audio capture filter is not providing the clock, the time stamps won't match up exactly (where the end of one package is the same as the beginning time stamp of the next package), but that's okay. See <A HREF="dssd0064.htm" TARGET="TEXT">Write a Video Capture Filter</A> for a time stamping example.
+
+<P>You should also set the MediaTime
+
+
+ of the CSample
+
+
+ you deliver, as well as the regular time stamp. The MediaTime is the sample numbers in the packet.
+
+
+ So if you are sending one-second packets of 44.1 kilohertz (kHz) audio, you would set MediaTime values of (0, 44100) (44100, 88200), and so on. This enables the downstream filters to know if any audio samples were dropped, even when the regular time stamps are a little random because the clock being used is not the audio digitizing clock.
+
+<P>One other thing: If you
+
+
+ are in a running state, and then pause, and then run again, you must not output
+
+
+ a sample with a time stamp less than the last one you output before pausing. Time stamps can never go back in time, not even across a pause.
+
+
+<A NAME="audcap_0001050102060000"></A><P><B>Necessary Interfaces</B>
+<P>Read about the following interfaces and consider implementing them. You should implement these interfaces to provide functionality that applications might rely on, so these interfaces are strongly recommended.
+
+<UL><LI><A HREF="dssd0099.htm#If_000106010b000000" TARGET="TEXT">IAMDroppedFrames</A> on your filter or on each output pin that sends data.
+<LI><A HREF="dssd0105.htm#If_0001060111000000" TARGET="TEXT">IAMStreamConfig</A> on each output pin that sends data.
+<LI><A HREF="dssd0106.htm#If_0001060112000000" TARGET="TEXT">IAMStreamControl</A> on each output pin that sends data.
+<LI><A HREF="dssd0091.htm#If_0001060103000000" TARGET="TEXT">IAMAudioInputMixer</A> on your filter and on each input pin.
+</UL>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

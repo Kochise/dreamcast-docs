@@ -1,0 +1,102 @@
+<HTML> 
+<HEAD>
+<TITLE>DirectAnimation SDK, JScript sample</TITLE>
+</HEAD>	 
+
+<BODY BGCOLOR=WHITE TOPMARGIN=15 LEFTMARGIN=10>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2> 
+          
+
+<DIV ID=controlDiv>
+<OBJECT ID="DAViewer"
+        STYLE="position:absolute; left:10; top:50;width:800;height:800;z-index: -1"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D">
+</OBJECT>
+</DIV>
+<FORM NAME="form1" ACTION="">
+<CENTER>
+<H2>3-D Cube</H2>
+<INPUT TYPE=BUTTON VALUE="" NAME=StartBtn OnClick="start()"> 
+</CENTER>
+
+
+
+<SCRIPT LANGUAGE="JAVASCRIPT">
+<!--
+
+  var m_frm = document.form1;
+  m_frm.StartBtn.value = "Show";
+  var FlagNotStarted = true;
+
+ 
+  function start()
+  {
+ 
+    if (FlagNotStarted)
+    {
+     m_frm.StartBtn.value = "         ";
+     cube();
+     FlagNotStarted = false;
+    }
+  }
+
+
+   function cube ()
+    {
+        m = DAViewer.MeterLibrary;
+
+    
+  // Import the geometry. This is a 1-meter cube
+ 
+  geo =   m.ImportGeometry("cube.x");
+   
+  // Let there be light.
+  pLight  = m.PointLight.Transform(m.Translate3(0,0,4));
+  dLight = m.DirectionalLight.Transform(m.Rotate3(m.YVector3, 0.5));
+    
+  // Scale the geometry down (the rest of the scaling is done with the camera)
+  geo = geo.Transform(m.Scale3Uniform(0.5));
+ 
+  // Create the cube and start the rotation. Rotating the cube makes it easier to see that it's a 3D object.
+  srate = m.Mul(m.LocalTime, m.DANumber(9));
+  // Offset the cube by 2 on the z-axis (this brings it closer) and  rotate it around the x-axis
+  cube1 = geo.Transform(m.Compose3(m.Translate3(0, 0, 2), m.Rotate3Anim(m.Vector3(1, 0, 0), m.Mul(m.DANumber(0.04), srate))));
+     
+   finalgeo= cube1;
+   // Set up the perspective camera
+   // The focal distance (first number) should be slightly larger than the near clip number
+   // For an object around .5 to 1 meters in size, set the camera around 5 meters away
+   // The scaling is to fit a very large cube into the the very small viewport
+   // The x and y axes are the same so that the cube isn't distorted
+   // As the scale numbers become smaller, the image becomes larger. This is because
+   // it is filling up more of the camera "lens"
+   Camera = m.PerspectiveCamera(5.5,4.5).Transform(m.Scale3(30, 30, 1));
+    
+   // Combine the lights and the geomery. There is no default lighting which means
+   // that every geometry must explicitly be combined with some sort of light
+   finalgeo = m.UnionGeometry(finalgeo, pLight);
+    
+  // Render and display the image.
+  rendered_geo = finalgeo.Render(Camera);
+
+
+  // Set the image.
+   DAViewer.Image = m.Overlay(rendered_geo, m.SolidColorImage(m.White));
+
+  // Set the background in case of a non-windowless browser (like IE3).
+  DAViewer.BackgroundImage = m.SolidColorImage(m.Blue);
+
+  // Start the animation.
+  DAViewer.Start();
+
+
+  }
+
+
+//-->
+</script>
+
+</FORM>
+</FONT>
+</BODY>
+</HTML>

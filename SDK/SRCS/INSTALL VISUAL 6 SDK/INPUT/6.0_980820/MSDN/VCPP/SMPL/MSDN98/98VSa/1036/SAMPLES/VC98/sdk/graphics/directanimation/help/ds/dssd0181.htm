@@ -1,0 +1,427 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Introduction to the DirectShow C++ Class Library</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0180.htm','/dssd0000.htm','/dssd0180.htm','/index.htm','/dssd0182.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="classes_0001060201000000">Introduction to the DirectShow C++ Class Library</A></H2>
+<BR CLEAR=ALL>
+<P>This article provides a general description of the Microsoft&#174; DirectShow&#153; class library, the relationship of the base classes to the DirectShow Component Object Model (COM) interfaces that they implement, and describes the utility classes that are not directly associated with interfaces. This article does not provide low-level descriptions of each class, nor does it provide specific instructions on how to use them to build a filter or run the filter graph manager. 
+
+<P>The DirectShow C++ class library can help you implement the required interfaces on filters that you write. Most base classes correspond directly to interfaces, while other utility classes allow integration of Microsoft Win32&#174; functionality, such as critical sections and thread management. 
+
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0181.htm#classes_0001060201010000" TARGET="TEXT">Base Classes</A>
+<UL><LI><A HREF="dssd0181.htm#classes_0001060201010100" TARGET="TEXT">CBaseObject and CUnknown Classes</A>
+<LI><A HREF="dssd0181.htm#classes_0001060201010200" TARGET="TEXT">Base Classes that Implement Interfaces</A>
+<UL><LI><A HREF="dssd0181.htm#classes_0001060201010201" TARGET="TEXT">Filter Base Classes</A>
+<LI><A HREF="dssd0181.htm#classes_0001060201010202" TARGET="TEXT">Pin Base Classes</A>
+<LI><A HREF="dssd0181.htm#classes_0001060201010203" TARGET="TEXT">Enumerator Base Classes</A>
+<LI><A HREF="dssd0181.htm#classes_0001060201010204" TARGET="TEXT">Transport Base Classes</A>
+<LI><A HREF="dssd0181.htm#classes_0001060201010205" TARGET="TEXT">Media Control and Positioning Classes</A>
+<LI><A HREF="dssd0181.htm#classes_0001060201010300" TARGET="TEXT">Clock Base Classes</A>
+</UL>
+</UL>
+<LI><A HREF="dssd0181.htm#classes_0001060201020000" TARGET="TEXT">Utility Classes</A>
+<UL><LI><A HREF="dssd0181.htm#classes_0001060201020100" TARGET="TEXT">Win32 Classes</A>
+<LI><A HREF="dssd0181.htm#classes_0001060201020200" TARGET="TEXT">List and Queue Classes</A>
+<LI><A HREF="dssd0181.htm#classes_0001060201020300" TARGET="TEXT">Multimedia Data Type Classes</A>
+<LI><A HREF="dssd0181.htm#classes_0001060201020400" TARGET="TEXT">OLE Classes</A>
+<LI><A HREF="dssd0181.htm#classes_0001060201020500" TARGET="TEXT">Debugging Classes</A>
+</UL>
+</UL>
+<A NAME="classes_0001060201010000"></A><P><B>Base Classes</B>
+<P>Most of the base classes in the DirectShow class library implement DirectShow COM interfaces. These classes produce C++ objects that provide an <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> interface so external components can access the interfaces the objects support.
+
+<A NAME="classes_0001060201010100"></A><P><B>CBaseObject and CUnknown Classes</B>
+<P>The <A HREF="dssd0198.htm" TARGET="TEXT">CBaseObject</A> class is the root of all base classes. It exists primarily to provide debugging assistance by keeping a count of all DirectShow objects that are active. All derived base class constructors provide a debugging object name as the first parameter and call the <B>CBaseObject</B> constructor. You can view the debugging object name sent to this base class on a debugging monitor.
+
+<P><IMG SRC="art/cbase01.gif" WIDTH="219" HEIGHT="83" ALT="CUnknown class hierarchy" > 
+
+<P>All DirectShow classes that implement interfaces derive from a base class called <A HREF="dssd0253.htm" TARGET="TEXT">CUnknown</A>, which is derived from <A HREF="dssd0198.htm" TARGET="TEXT">CBaseObject</A>. <B>CUnknown</B> implements the <A HREF="dssd0265.htm#fmutil_0001060309000100" TARGET="TEXT">INonDelegatingUnknown</A> interface which, like the <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> interface, provides methods to request an interface, and to add or release references to that interface. 
+
+<P>Why are there two interfaces that implement the services of <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A>? Because of <I>aggregation</I>. Aggregation is the COM term for the combining of more than one object into a single larger object. Although filter graph objects, such as filters and pins, are rarely aggregated, the design is available for future extensibility and also for implementing plug-in distributors (PID), which are objects that are aggregated with the filter graph manager. In an aggregated object, the <I>outer object</I> (the one containing the other objects) uses the <B>IUnknown</B> interface to communicate outside the object. The <B>IUnknown</B> interface on the outer object passes out references to the <B>IUnknown</B> interfaces of its internal objects. That is, when an application calls the <B>IUnknown</B> interface on the outer object and asks for the interface belonging to one of its internal objects, the outer object calls the <B>IUnknown</B> interface of the internal object to retrieve the requested interface. 
+
+<P>Because the internal objects must delegate <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> interfaces to the <B>IUnknown</B> of the outer object, the <B>IUnknown</B> interface of the internal object should not be accessed privately (that is, without going through the outer object's <B>IUnknown</B> interface). The internal object's <B>IUnknown</B> is reserved exclusively for communicating through the outer object. However, it is possible that objects will want to connect to other objects privately, without knowledge of the outer object. For example, pins on filters are likely to need to query interfaces on pins of 
+other objects privately. 
+
+<P>The <A HREF="dssd0265.htm#fmutil_0001060309000100" TARGET="TEXT">INonDelegatingUnknown</A> interface provides direct, private access to interfaces, regardless of whether or not the object is aggregated. Direct access is important in most of the communication between the DirectShow objects such as pins, allocators, and filters, and is the default method of communication. In fact, the base classes implement the <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> interface on 
+nonaggregated objects (which includes almost every object in the filter graph) to call the nondelegating interface directly. 
+
+<A NAME="classes_0001060201010200"></A><P><B>Base Classes that Implement Interfaces</B>
+<P>The majority of classes in the DirectShow class library implement COM interfaces and can be categorized as follows:
+<UL><LI>Filter base classes implement the <A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A> interface, and include <A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A> and classes derived from it. 
+ <LI>Pin classes implement the <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> interface, and include <A HREF="dssd0200.htm" TARGET="TEXT">CBasePin</A> and derived classes.
+ <LI>Enumerator classes include <A HREF="dssd0216.htm" TARGET="TEXT">CEnumPins</A> and <A HREF="dssd0215.htm" TARGET="TEXT">CEnumMediaTypes</A>. 
+ <LI>Memory classes include <A HREF="dssd0228.htm" TARGET="TEXT">CMediaSample</A>, <A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator</A>, <A HREF="dssd0230.htm" TARGET="TEXT">CMemAllocator</A>, and their derived classes.
+ <LI>Control and position classes include <A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A>, <A HREF="dssd0227.htm" TARGET="TEXT">CMediaPosition</A>, <A HREF="dssd0225.htm" TARGET="TEXT">CMediaControl</A>, and <A HREF="dssd0197.htm" TARGET="TEXT">CBaseMediaFilter</A>. 
+</UL>
+<A NAME="classes_0001060201010201"></A><P><B>Filter Base Classes</B>
+<P>The DirectShow stream architecture is based on filters and pins. Filters communicate with the filter graph manager and with the pins on the filter. Pins connect filters and handle transporting 
+the data down the stream.
+
+<P><IMG SRC="art/basecl1.gif" WIDTH="355" HEIGHT="443" ALT="Hierarchy of filter base classes" > 
+
+<P><A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A> is the base class for all filter classes. It implements the <A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A> interface, which specifies methods that allow the filter graph manager to create and enumerate pins, retrieve filter information, and notify the filter that it has been added to a filter graph. <B>CBaseFilter</B> also implements the <A HREF="dssd0153.htm" TARGET="TEXT">IMediaFilter</A> interface (from which <B>IBaseFilter</B> derives) to allow the filter to receive run, pause, and stop commands from the filter graph manager. This base class adds member functions to retrieve the pin count, retrieve pointers to individual pins, and retrieve the pin version.
+
+<P>The <A HREF="dssd0197.htm" TARGET="TEXT">CBaseMediaFilter</A> class also implements the <A HREF="dssd0153.htm" TARGET="TEXT">IMediaFilter</A> interface. However, because <B>IMediaFilter</B> is also implemented by <A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A>, this class is seldom used except to write a plug-in distributor (PID). 
+
+<P>Several classes are derived directly from <A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A>. Each of these classes provides a base class for implementing a specific type of filter. These include:
+
+<UL><LI><A HREF="dssd0243.htm" TARGET="TEXT">CSource</A>, a base class for source filters.
+ <LI><A HREF="dssd0247.htm" TARGET="TEXT">CTransformFilter</A>, a base class for transform filters.
+ <LI><A HREF="dssd0203.htm" TARGET="TEXT">CBaseRenderer</A>, a base class for renderer filters.
+
+</UL>
+<P>The <A HREF="dssd0243.htm" TARGET="TEXT">CSource</A> filter class works in conjunction with the <A HREF="dssd0245.htm" TARGET="TEXT">CSourceStream</A> pin class to help create a source filter. Most of the work is done in the pin class, and <B>CSource</B> adds pin creation and deletion member functions. The <A HREF="dssd0244.htm" TARGET="TEXT">CSourcePosition</A> class implements a source filter.
+
+<P>The <A HREF="dssd0247.htm" TARGET="TEXT">CTransformFilter</A> class implements a transform filter. Derive your transform class from <B>CTransformFilter</B> if you want to make a copy of the data. The <A HREF="dssd0250.htm" TARGET="TEXT">CTransInPlaceFilter</A> class, derived from <B>CTransformFilter</B>, allows in-place transforms that do not copy the data. These transform filter classes work in conjunction with similarly named pin classes (for example, <A HREF="dssd0249.htm" TARGET="TEXT">CTransformOutputPin</A> and <A HREF="dssd0248.htm" TARGET="TEXT">CTransformInputPin</A>). Most member functions in the pin classes are implemented to call member functions in the transform filter class, so typically you need only to derive your filter from the filter class and override a few member functions to implement a transform filter.
+
+<P><A HREF="dssd0247.htm" TARGET="TEXT">CTransformFilter</A> adds several member functions to those inherited from <A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A>. Some of these are pure virtual member functions that the derived class must override. One example is the <A HREF="dssd0247.htm#Lib_0001060243041800" TARGET="TEXT">CTransformFilter::Transform</A> member function, which is called when the input pin receives a sample and provides the core of the transform functionality. 
+
+
+
+Other member functions to be overridden also involve implementations that are specific to the derived class, such as verifying media types on pins and allocating the correct amount of memory. Additionally, several <B>CTransformFilter</B> member functions are called at various points in the connection or streaming process; the derived class can override these to handle requirements such as adding or releasing references to interfaces.
+
+<P>The <A HREF="dssd0254.htm" TARGET="TEXT">CVideoTransformFilter</A> class derives from the <A HREF="dssd0247.htm" TARGET="TEXT">CTransformFilter</A> class and is used as a base class for filters that can affect the quality of a rendered video by dropping frames when the video renderer sends quality-control messages. This class is primarily used by video decompressors in the DirectShow run time. 
+
+<P>The <A HREF="dssd0203.htm" TARGET="TEXT">CBaseRenderer</A> class and its derived class, <A HREF="dssd0205.htm" TARGET="TEXT">CBaseVideoRenderer</A>, are the base filter classes that implement a video renderer filter. The video renderer filter used in DirectShow is derived from <B>CBaseVideoRenderer</B>. There are other renderer classes that work in conjunction with these classes but are not derived from <A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A>. These classes are:
+
+<UL><LI><A HREF="dssd0241.htm" TARGET="TEXT">CRendererInputPin</A>
+<LI><A HREF="dssd0191.htm" TARGET="TEXT">CBaseControlVideo</A> and its base class <A HREF="dssd0190.htm" TARGET="TEXT">CBaseBasicVideo</A> 
+<LI><A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow</A>, and its base classes <A HREF="dssd0206.htm" TARGET="TEXT">CBaseVideoWindow</A> and <A HREF="dssd0207.htm" TARGET="TEXT">CBaseWindow</A>
+<LI><A HREF="dssd0182.htm" TARGET="TEXT">CAggDirectDraw</A>
+<LI><A HREF="dssd0183.htm" TARGET="TEXT">CAggDrawSurface</A>
+</UL>
+<P>The following illustration shows all the classes that support renderers that are not derived from either <A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A> or <A HREF="dssd0200.htm" TARGET="TEXT">CBasePin</A>.
+
+<P><IMG SRC="art/basecl6.gif" WIDTH="520" HEIGHT="361" ALT="Hierarchy of classes that support renderers that aren't derived from CBaseFilter or CBasePin" >
+
+<A NAME="classes_0001060201010202"></A><P><B>Pin Base Classes</B>
+<P>Pins have a greater share of the work than filters. A pin must expose methods so that the filter graph manager can connect it with a pin on another filter. Pins also expose methods so that connected pins can negotiate what media type they will pass between them, and which pin will provide the shared memory allocator for transporting the media sample. Additionally, the output pin is responsible for passing each media sample to its connected input pin; the input pin is responsible for receiving it. Finally, pins must support interfaces so that quality-control messages and position information can be passed through the stream from pin to pin.
+
+<P>The following illustration shows the pin classes. All pin classes are derived from <A HREF="dssd0200.htm" TARGET="TEXT">CBasePin</A>, a base class derived from <A HREF="dssd0253.htm" TARGET="TEXT">CUnknown</A>.
+
+<P><IMG SRC="art/basecl2.gif" WIDTH="365" HEIGHT="507" ALT="Hierarchy of pin base classes" > 
+
+<P><A HREF="dssd0200.htm" TARGET="TEXT">CBasePin</A> implements the <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> interface. The <B>IPin</B> interface specifies methods for connecting to other pins, negotiating the media type to be used with the connected pin, querying internal connections on the pin, and informing the pin of stream activity.
+
+<P>Besides implementing the <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> methods, <A HREF="dssd0200.htm" TARGET="TEXT">CBasePin</A> also implements 
+<A HREF="dssd0167.htm" TARGET="TEXT">IQualityControl</A> methods so that quality-control messages can be passed through the filter graph 
+from one pin to the next. Quality-control messages allow a filter, such as a renderer, to request another filter to adjust its sample rate. Typically, quality-control messages travel upstream from renderer to source filter. However, in cases such as a video capture filter, the source filter (for example, a VCR reader) can 
+send quality-control messages downstream to the renderer filter to adjust its rate.
+
+<P>The <A HREF="dssd0200.htm" TARGET="TEXT">CBasePin</A> class provides several virtual member functions that can be overridden 
+to provide handling of the connection, media type negotiation, and disconnection processes. 
+Two base classes derive from <B>CBasePin</B> to provide default handling for many of these tasks:
+
+<UL><LI><A HREF="dssd0199.htm" TARGET="TEXT">CBaseOutputPin</A> implements an output pin.
+<LI><A HREF="dssd0195.htm" TARGET="TEXT">CBaseInputPin</A> implements an input pin.
+</UL>
+<P><A HREF="dssd0199.htm" TARGET="TEXT">CBaseOutputPin</A> is the base class for the <A HREF="dssd0249.htm" TARGET="TEXT">CTransformOutputPin</A> 
+and <A HREF="dssd0245.htm" TARGET="TEXT">CSourceStream</A> classes.
+Likewise, <A HREF="dssd0195.htm" TARGET="TEXT">CBaseInputPin</A> is the base class for the <A HREF="dssd0248.htm" TARGET="TEXT">CTransformInputPin</A> class. 
+Before looking at these derived base pin classes, it 
+is helpful to understand the basic model the <B>CBaseOutputPin</B> and 
+<B>CBaseInputPin</B> classes use.
+
+<P>In the connection and transport model used by two pins, the input pin supports the 
+<A HREF="dssd0161.htm" TARGET="TEXT">IMemInputPin</A> interface so that it can receive a media sample. 
+ The <A HREF="dssd0195.htm" TARGET="TEXT">CBaseInputPin</A> class implements the <B>IMemInputPin</B> interface. 
+Also, one of the two pins must supply a shared memory allocator object, which is an object that contains 
+the <A HREF="dssd0160.htm" TARGET="TEXT">IMemAllocator</A> interface that generates media sample objects passed between pins. 
+An <B>IMemInputPin</B> method, implemented by the <B>CBaseInputPin</B> class, supplies this allocator object, 
+implemented by the <A HREF="dssd0230.htm" TARGET="TEXT">CMemAllocator</A> class. The connected output 
+pin also has the option of supplying its own allocator; if this is the case, it notifies the input pin 
+(through another <B>IMemInputPin</B> method) of the final decision of which allocator is used.
+
+<P>The <A HREF="dssd0199.htm" TARGET="TEXT">CBaseOutputPin</A> class provides extra member functions 
+to set the size and count of samples in the allocator, retrieve a media sample from the allocator, 
+deliver that media sample to the connected input pin, and deliver end-of-stream and end-flush 
+messages downstream. It also implements many of the <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> methods.
+
+<P><A HREF="dssd0237.htm" TARGET="TEXT">CPullPin</A> is a class that is used on the input pin of a parser filter. It is derived from the 
+<A HREF="dssd0187.htm" TARGET="TEXT">CAMThread</A> class as shown in the following illustration.
+
+<P><IMG SRC="art/pulpin01.gif" WIDTH="205" HEIGHT="56" ALT="CPullPin class hierarchy" >
+
+<P>A <I>parser filter</I> pulls information from the disk, 
+using the asynchronous file reader filter, or from the Internet, using the URL moniker filter. 
+<A HREF="dssd0237.htm" TARGET="TEXT">CPullPin</A> works with the <A HREF="dssd0114.htm" TARGET="TEXT">IAsyncReader</A>
+interface, which is implemented on the source reader filter upstream. 
+<B>CPullPin</B> starts the thread, pulls data from the upstream filter, and then 
+pushes the data downstream. That is, it can simply call its own <A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">IMemInputPin::Receive</A> 
+method after pulling the sample from the source (or perform the equivalent routines elsewhere). 
+
+<A NAME="classes_0001060201010203"></A><P><B>Enumerator Base Classes</B>
+<P>An <I>enumerator</I> is an interface that provides methods for traversing a list of elements. 
+Enumerators are used in OLE programming, and the DirectShow model follows the OLE model in enumerating objects. Two enumerator classes are provided in the class library: <A HREF="dssd0216.htm" TARGET="TEXT">CEnumPins</A>, which implements the <A HREF="dssd0133.htm" TARGET="TEXT">IEnumPins</A> interfaces, and <A HREF="dssd0215.htm" TARGET="TEXT">CEnumMediaTypes</A>, which implements the <A HREF="dssd0132.htm" TARGET="TEXT">IEnumMediaTypes</A> interface. Two other DirectShow enumerator interfaces, <A HREF="dssd0131.htm" TARGET="TEXT">IEnumFilters</A> and <A HREF="dssd0134.htm" TARGET="TEXT">IEnumRegFilters</A>, are not represented by base classes because they are implemented only by the filter graph manager.
+
+<P><IMG SRC="art/basecl3.gif" WIDTH="195" HEIGHT="111" ALT="Hierarchy of enumerator base classes" > 
+
+<P>The <A HREF="dssd0216.htm" TARGET="TEXT">CEnumPins</A> class creates an enumerator when the <A HREF="dssd0116.htm#If_000106011c030100" TARGET="TEXT">IBaseFilter::EnumPins</A> 
+method is called. The enumerator returned by this method is a pointer to the <A HREF="dssd0133.htm" TARGET="TEXT">IEnumPins</A> interface, which is implemented by the <B>CEnumPins</B> class. The <B>CEnumPins</B> member functions can 
+then be called to retrieve pointers to each of the pins on the filter, which this enumerator accomplishes 
+by calling the <A HREF="dssd0194.htm#Lib_000106020e080600" TARGET="TEXT">CBaseFilter::GetPin</A> member function on the filter. The filter must override the base class <B>CBaseFilter::GetPin</B> member function to supply the enumerator with the next
+pin in the list each time it is called.
+
+<P>The <A HREF="dssd0215.htm" TARGET="TEXT">CEnumMediaTypes</A> class creates an enumerator when the 
+<A HREF="dssd0165.htm#If_000106014d030800" TARGET="TEXT">IPin::EnumMediaTypes</A> method is called. Pins store a list of the media types that they 
+support. During negotiation of the media type, one pin typically calls the 
+<A HREF="dssd0165.htm#If_000106014d030800" TARGET="TEXT">EnumMediaTypes</A> method on its connected pin, retrieves the enumerator, and uses it to select a media type. Both of these enumerator classes support the <B>Next</B>, <B>Skip</B>, <B>Reset</B>, and <B>Clone</B> methods familiar to OLE programmers. The media type enumerators call the <A HREF="dssd0200.htm#Lib_0001060214061500" TARGET="TEXT">CBasePin::GetMediaType</A> member function, which must be overridden by the derived pin class, to return the next media type in a list of media types accepted by the pin.
+
+<P>Enumerators operate as threads, and must have synchronized access to the pin media 
+type list. For this reason, the classes that implement enumerators inherit (through multiple inheritance) 
+from the <A HREF="dssd0210.htm" TARGET="TEXT">CCritSec</A> class, which provides critical section management. For more information about the <B>CCritSec</B> class, 
+see <A HREF="dssd0181.htm#classes_0001060201020100" TARGET="TEXT">Win32 Classes</A>.
+
+<A NAME="classes_0001060201010204"></A><P><B>Transport Base Classes</B>
+<P>Transport classes share 
+memory between pins and pass media samples using that memory. DirectShow provides four
+classes to help implement shared memory transports:
+
+<UL><LI><A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator</A> 
+<LI><A HREF="dssd0230.htm" TARGET="TEXT">CMemAllocator</A> 
+<LI><A HREF="dssd0228.htm" TARGET="TEXT">CMediaSample</A> 
+<LI><A HREF="dssd0223.htm" TARGET="TEXT">CImageSample</A> 
+</UL>
+<P><A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator</A> is a class that provides member functions to implement the 
+<A HREF="dssd0160.htm" TARGET="TEXT">IMemAllocator</A> interface, as shown in the following illustration.
+
+<P><IMG SRC="art/basecl4.gif" WIDTH="315" HEIGHT="233" ALT="Hierarchy of transport base classes" > 
+
+<P>The <A HREF="dssd0160.htm" TARGET="TEXT">IMemAllocator</A> interface on the input pin specifies methods to set the number and size of the buffers to allocate, allocates that memory, frees that memory, and returns a single buffer that contains 
+an <A HREF="dssd0156.htm" TARGET="TEXT">IMediaSample</A> interface. The output pin connected to the input pin calls the <B>IMemAllocator</B> methods. <A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator</A> provides the member functions 
+<A HREF="dssd0189.htm#Lib_0001060209050100" TARGET="TEXT">Alloc</A> and <A HREF="dssd0189.htm#Lib_0001060209050500" TARGET="TEXT">Free</A> 
+that are called from the <A HREF="dssd0160.htm#If_0001060148030100" TARGET="TEXT">Commit</A> and 
+<A HREF="dssd0160.htm#If_0001060148030200" TARGET="TEXT">Decommit</A> methods. Derived classes override the 
+<B>Alloc</B> and <B>Free</B> member functions 
+to provide their own routines to allocate and free memory.
+
+<P>Because <A HREF="dssd0189.htm" TARGET="TEXT">CBaseAllocator</A> performs very little implementation by itself, most pins use the 
+<A HREF="dssd0230.htm" TARGET="TEXT">CMemAllocator</A> class, which is derived from <B>CBaseAllocator</B>. 
+<B>CMemAllocator</B> overrides the <A HREF="dssd0189.htm#Lib_0001060209050500" TARGET="TEXT">CBaseAllocator::Free</A> member function to provide allocation of media samples based on system memory. It provides its own member function, called 
+<A HREF="dssd0230.htm#Lib_0001060232030500" TARGET="TEXT">ReallyFree</A>, to be called when the allocator is finally released.
+
+<P><A HREF="dssd0228.htm" TARGET="TEXT">CMediaSample</A> is a class that contains the media sample data and also provides member 
+functions to access properties on the media sample, such as data type or beginning and ending 
+time stamps. This class implements the <A HREF="dssd0156.htm" TARGET="TEXT">IMediaSample</A> interface, which provides the 
+method specification. <A HREF="dssd0223.htm" TARGET="TEXT">CImageSample</A> derives from <B>CMediaSample</B> and is used
+by the video renderer when the renderer's allocator is being used. It uses all the
+<B>CMediaSample</B> interface 
+methods and adds two methods to set and retrieve the 
+<A HREF="dssd0389.htm#external_00010a0109000020" TARGET="TEXT">DIBSECTION</A> information. This makes it easy for the renderer to cast the 
+<B>CMediaSample</B> pointer it receives from an upstream filter to a <B>CImageSample</B>
+pointer, and obtain a handle to the bitmap of the video frame.
+
+<A NAME="classes_0001060201010205"></A><P><B>Media Control and Positioning Classes</B>
+<P>Media control interfaces pass commands such as <B>run</B>, <B>stop</B>, or <B>pause</B>
+
+ from an 
+application through the filter graph manager to the individual filters. From the filter's perspective, 
+the only control interface necessary is <A HREF="dssd0153.htm" TARGET="TEXT">IMediaFilter</A>, which exposes methods to accept 
+and implement these commands. The <A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A> class 
+implements this interface. All other interfaces that expose media control methods are handled by 
+the filter graph manager and are therefore already implemented. Although a <A HREF="dssd0225.htm" TARGET="TEXT">CMediaControl</A> 
+class exists and implements the <A HREF="dssd0149.htm" TARGET="TEXT">IMediaControl</A> interface, it is not often used because 
+the filter graph manager is responsible for this functionality. The following illustration shows the relationship between these classes and interfaces.
+
+<P><IMG SRC="art/basecl5.gif" WIDTH="323" HEIGHT="489" ALT="Hierarchy of media control and positioning base classes" >
+
+<P>Media positioning interfaces start the media stream at a specified position, play the stream
+ for a specified period of time, or change the rate of the media stream. The <A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A> 
+interface is the primary interface supporting this functionality. The <A HREF="dssd0227.htm" TARGET="TEXT">CMediaPosition</A> class 
+implements this interface and serves as a base class for two other classes: <A HREF="dssd0236.htm" TARGET="TEXT">CPosPassThru</A> and <A HREF="dssd0244.htm" TARGET="TEXT">CSourcePosition</A>.
+
+<P>Typically, the filter graph manager calls the <A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A> interface on the renderer 
+filters when it wants to position the media stream. The renderer acknowledges the sample times that 
+it will be expected to display and then passes the media positioning data upstream, destined for a 
+seekable filter, such as a source file filter, that can provide the properly positioned source stream. 
+To pass that information upstream, output pins must be able to receive the positioning information. 
+
+<P>The <A HREF="dssd0236.htm" TARGET="TEXT">CPosPassThru</A> class implements the <A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A> interface
+and the <A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking</A> interface on the output pins of filters and, for the most part, does nothing but call the corresponding interface on the output pin of the next upstream filter, thereby passing through the positioning data. <B>IMediaSeeking</B> is different than <B>IMediaPosition</B> in that it allows the media stream to be seeked to units other than time, such as frames, samples, or indexed fields in an 
+MPEG format. The <A HREF="dssd0242.htm" TARGET="TEXT">CRendererPosPassThru</A> class, implemented on a video renderer, 
+sets the start and end reference times on individual samples, so that samples can be queried at any time for this information. This is helpful when dealing with seeking using <B>IMediaSeeking</B>, which seeks to <I>media time</I>, and does not keep track of the sample's reference time. 
+
+<P>The reason for serially informing every filter in the graph of the new position is to allow filters that might be concerned with media positioning to be prepared for the new position. Certain stream splitters, for example, might be splitting off streams with media positions relative to the main media stream. This is why the filter graph manager does not simply call the source filter's <A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A> or <A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking</A> interface directly.
+
+<P><A HREF="dssd0244.htm" TARGET="TEXT">CSourcePosition</A> is the class that helps the source filter implement its <A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A> interface.
+
+
+<A NAME="classes_0001060201010300"></A><P><B>Clock Base Classes</B>
+<P><IMG SRC="art/dclock01.gif" WIDTH="323" HEIGHT="229" ALT="Hierarchy of clock base classes" > 
+
+<P>DirectShow provides two classes to help implement clocks in the filter graph. 
+
+
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implements <A HREF="dssd0170.htm" TARGET="TEXT">IReferenceClock</A>, and so provides the ability to return the correct
+reference time when requested, and to advise registered objects of specific times or
+time intervals through event notification and semaphores. 
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0246.htm" TARGET="TEXT">CSystemClock</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implements a system clock that provides time information and
+timing signals to an application. It uses the <A HREF="dssd0202.htm" TARGET="TEXT">CBaseReferenceClock</A> base 
+class to provide most of that functionality, overriding the actual time calls. 
+</FONT></TD></TR></TABLE>
+<A NAME="classes_0001060201020000"></A><P><B>Utility Classes</B>
+<P>The DirectShow SDK includes several utility classes that provide C++ class encapsulation 
+of many of the required Win32 functions, multimedia data structures, and object list and queue 
+manipulation. These classes are briefly described in this section.
+
+<A NAME="classes_0001060201020100"></A><P><B>Win32 Classes</B>
+<P><IMG SRC="art/miscl1.gif" WIDTH="205" HEIGHT="216" ALT="Hierarchy of Win32 utility classes" > 
+
+<P>Several classes have been implemented to handle Win32 threads, events, and critical sections. 
+These include the following classes.
+
+
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0184.htm" TARGET="TEXT">CAMEvent</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Handles a Win32 event as a C++ object. The methods in this class 
+allow events to be put into the signaled 
+state or reset to a nonsignaled state, and also allow a caller to block
+until an event is signaled. 
+Events can also be cast to handles and passed to the Win32 <A HREF="dssd0389.htm#external_00010a01090000d9" TARGET="TEXT">WaitForMultipleObjects</A> function.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0210.htm" TARGET="TEXT">CCritSec</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Handles a Win32 critical section as a C++ object to provide intraprocess synchronization. 
+Methods of this class allow you to create, lock, and unlock a critical section. 
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0188.htm" TARGET="TEXT">CAutoLock</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Holds a critical section (a <A HREF="dssd0210.htm" TARGET="TEXT">CCritSec</A> object) for the scope of a block or function. The 
+critical section is locked in the constructor and unlocked in the destructor.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0187.htm" TARGET="TEXT">CAMThread</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provides an abstract worker thread class enabling creation, synchronization, and communication with 
+a worker thread.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0232.htm" TARGET="TEXT">CMsgThread</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provides support for a worker thread to which requests can be posted asynchronously instead 
+of being sent directly. Messages, in the form of a <A HREF="dssd0231.htm" TARGET="TEXT">CMsg</A> object, can be posted to a 
+<A HREF="dssd0232.htm" TARGET="TEXT">CMsgThread</A> object.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0231.htm" TARGET="TEXT">CMsg</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Creates an object containing a message to be passed to a <A HREF="dssd0232.htm" TARGET="TEXT">CMsgThread</A> object.
+</FONT></TD></TR></TABLE>
+<A NAME="classes_0001060201020200"></A><P><B>List and Queue Classes</B>
+<P><IMG SRC="art/miscl3.gif" WIDTH="227" HEIGHT="184" ALT="Hierarchy of list and queue utility classes" >
+
+
+<P>The following classes are available for handling lists and queues.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0196.htm" TARGET="TEXT">CBaseList</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Represents a linked list data structure
+ of typeless pointers to objects 
+derived from <A HREF="dssd0198.htm" TARGET="TEXT">CBaseObject</A>. 
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0218.htm" TARGET="TEXT">CGenericList</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implements a template class derived from <A HREF="dssd0196.htm" TARGET="TEXT">CBaseList</A> that calls <B>CBaseList</B> member functions and adds type checking for the type specified in the template.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Supports the queuing of media samples from the output pin of a filter. The output pin calls 
+member functions of this class instead of calling methods on the connected input pin to receive 
+the media sample. The output pin is then free to continue without blocking, while the 
+<A HREF="dssd0234.htm" TARGET="TEXT">COutputQueue</A> class handles the passing of the media samples downstream. 
+</FONT></TD></TR></TABLE>
+<A NAME="classes_0001060201020300"></A><P><B>Multimedia Data Type Classes</B>
+<P><IMG SRC="art/miscl2.gif" WIDTH="205" HEIGHT="183" ALT="Hierarchy of multimedia data type classes" > 
+
+
+<P>The following multimedia data type classes are provided in the DirectShow SDK.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provides a C++ class object containing the media type data structure 
+and methods that provide access to each of the members of the structure. 
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0239.htm" TARGET="TEXT">CRefTime</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provides a C++ class object containing the methods used 
+to access the reference time, and operators used to perform Boolean tests or arithmetical operations
+on two <A HREF="dssd0239.htm" TARGET="TEXT">CRefTime</A> objects.
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0255.htm" TARGET="TEXT">FOURCCMap</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provides conversion between the older-style <A HREF="dssd0389.htm#external_00010a0109000030" TARGET="TEXT">FOURCC</A> media tags used to identify and 
+register media types and the <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A> media subtypes used by DirectShow.
+</FONT></TD></TR></TABLE>
+<A NAME="classes_0001060201020400"></A><P><B>OLE Classes</B>
+<P><IMG SRC="art/miscl4.gif" WIDTH="259" HEIGHT="358" ALT="Hierarchy of OLE utility classes" > 
+
+
+
+<P>OLE interface classes in DirectShow fall into two groups: object creation and 
+interface implementation. Class factory classes are provided for object creation, and 
+other classes are provided to implement existing OLE interfaces. 
+
+
+<A HREF="dssd0389.htm#external_00010a010900000a" TARGET="TEXT">CClassFactory</A> and <A HREF="dssd0217.htm" TARGET="TEXT">CFactoryTemplate</A> are implemented by the base classes to handle automatic instantiation of filters, pins, and other DirectShow COM objects. 
+
+These classes provide a scaffolding for object construction which wraps the actual COM elements required to construct an object.
+
+<A HREF="dssd0235.htm" TARGET="TEXT">CPersistStream</A> and <A HREF="dssd0201.htm" TARGET="TEXT">CBasePropertyPage</A> are provided to help with implementing OLE persistent storage and property page interfaces.
+
+
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0389.htm#external_00010a010900000a" TARGET="TEXT">CClassFactory</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Located in dllentry.cpp, this class inherits from <A HREF="dssd0198.htm" TARGET="TEXT">CBaseObject</A> and implements the OLE <A HREF="dssd0389.htm#external_00010a010900003c" TARGET="TEXT">IClassFactory</A> interface. This interface is used by <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A>, which instantiates a COM object by calling <A HREF="dssd0389.htm#external_00010a010900003d" TARGET="TEXT">IClassFactory::CreateInstance</A>, which, in turn, calls the static <B>CreateInstance</B> member function in your derived class. 
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0217.htm" TARGET="TEXT">CFactoryTemplate</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Used by the base classes to provide <A HREF="dssd0389.htm#external_00010a010900000a" TARGET="TEXT">CClassFactory</A> with a template containing the CLSID of your object and a pointer to the static <B>CreateInstance</B> function for your object class. 
+ 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0235.htm" TARGET="TEXT">CPersistStream</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implements OLE <A HREF="dssd0389.htm#external_00010a010900008f" TARGET="TEXT">IPersistStream</A> for the storage and retrieval of filter properties in a saved filter graph. This allows a stored filter graph to have filters set to predefined property values. This class also provides a special member function to handle versioning of data in a stream. 
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0201.htm" TARGET="TEXT">CBasePropertyPage</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implements OLE <A HREF="dssd0389.htm#external_00010a0109000095" TARGET="TEXT">IPropertyPage</A> interface, which provides a framework for a property page associated with a filter. 
+</FONT></TD></TR></TABLE>
+<A NAME="classes_0001060201020500"></A><P><B>Debugging Classes</B>
+<P><IMG SRC="art/debug01.gif" WIDTH="205" HEIGHT="88" ALT="Hierarchy of debugging utility classes" > 
+
+
+<P>DirectShow provides many debugging functions and macros as described in the "Debugging Functions and Macros" reference section. It also includes two classes that aid in debugging filter development:
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>CDispBasic</B> 
+
+
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Converts the <B>m_pString</B> data member to the proper string size. 
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0212.htm" TARGET="TEXT">CDisp</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provides a constructor that sets the <B>CDispBasic::m_pString</B>
+ 
+data member to a string describing some relevant debugging information about the object used as a parameter to the constructor. For example, when constructed with an <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> pointer, <B>CDispBasic::m_pString</B> returns the name of the pin; when constructed with a CLSID, 
+<B>CDispBasic::m_pString</B> returns a string representation of it, and so on. 
+
+The class also provides an <A HREF="dssd0212.htm#Lib_0001060220020200" TARGET="TEXT">LPCTSTR</A> cast operator that returns the value of 
+<B>CDispBasic::m_pString</B>, so the class can simply be cast as an <A HREF="dssd0389.htm#external_00010a0109000000" TARGET="TEXT">LPCTSTR</A> value to return the string when constructed. 
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0219.htm" TARGET="TEXT">CGuidNameList</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implements an array of globally unique identifier (<A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A>) names in the Uuids.h include file. This allows you to retrieve the <B>GUID</B> name for a media type, for example. 
+</FONT></TD></TR></TABLE>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

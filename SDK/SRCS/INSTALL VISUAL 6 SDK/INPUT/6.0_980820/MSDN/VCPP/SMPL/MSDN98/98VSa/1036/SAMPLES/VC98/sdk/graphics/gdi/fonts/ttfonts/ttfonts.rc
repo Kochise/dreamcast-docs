@@ -1,0 +1,446 @@
+
+//-----------------------------------------------------------------------------
+// This is a part of the Microsoft Source Code Samples. 
+// Copyright (C) 1992-1997 Microsoft Corporation.
+// All rights reserved. 
+//  
+// This source code is only intended as a supplement to 
+// Microsoft Development Tools and/or WinHelp documentation.
+// See these sources for detailed information regarding the 
+// Microsoft samples programs.
+//-----------------------------------------------------------------------------
+
+
+#include "windows.h"
+#include "ttfonts.h"
+
+#define FONTDIALOG FONT 10, "Helv"
+
+ttfontsIcon  ICON       ttfonts.ico
+bmtt         BITMAP     bmtt.bmp
+bmdevice     BITMAP     bmdevice.bmp
+
+
+
+
+
+
+
+ttfontsMenu MENU
+BEGIN
+
+    POPUP "&Control"
+    BEGIN
+        MENUITEM "EnumFonts (&Display) \tF2" ,       TBID_ENUM
+        MENUITEM "&CreateFont \tEnter",              TBID_CREATE
+        MENUITEM "&GetMetrics \tF4",                 TBID_GETTM
+        MENUITEM "Get&FontData \tF5",                TBID_GETFONTDATA
+        MENUITEM "EnumFonts (P&rinter) \tF6",        TBID_PRINT
+        MENUITEM SEPARATOR
+        MENUITEM "GetObject \tF7",                   IDM_GETOBJECT
+        MENUITEM "ChooseFont \tF8",                  IDM_CHOOSEFONT
+        POPUP    "GetStockObject"
+
+        BEGIN
+            MENUITEM "ANSI_FIXED_FONT",              IDM_ANSI_FIXED_FONT
+            MENUITEM "ANSI_VAR_FONT",                IDM_ANSI_VAR_FONT
+            MENUITEM "DEVICE_DEFAULT_FONT",          IDM_DEVICE_DEFAULT_FONT
+            MENUITEM "OEM_FIXED_FONT",               IDM_OEM_FIXED_FONT
+            MENUITEM "SYSTEM_FIXED_FONT",            IDM_SYSTEM_FIXED_FONT
+            MENUITEM "SYSTEM_FONT",                  IDM_SYSTEM_FONT
+        END
+
+        MENUITEM SEPARATOR
+        MENUITEM "&Print",                           IDM_PRINT
+    END
+
+    POPUP "&Display"
+    BEGIN
+        MENUITEM "&Centered string 'Hello'",          IDM_MODEHELLO
+        MENUITEM "&Range [tmFirstChar, tmLastChar]",  IDM_MODETMRANGE
+        MENUITEM "&All Glyphs from FontData",         IDM_MODEALL
+    END
+
+    POPUP "&Window"
+    BEGIN
+        MENUITEM "&Cascade",                 IDM_CASCADE
+        MENUITEM "&Tile",                    IDM_TILE
+        MENUITEM "&Arrange",                 IDM_ARRANGE
+    END
+
+    POPUP "&Options"
+    BEGIN
+        MENUITEM "&Flying rectangles",                IDM_FLYWINWIN
+    END
+
+    POPUP "&Help"
+    BEGIN
+        MENUITEM "Help &Contents \tF1",     IDM_HELP
+        MENUITEM SEPARATOR
+        MENUITEM "&About",                  IDM_ABOUT
+    END
+END
+
+
+ttfontsAccel ACCELERATORS
+BEGIN
+  VK_F1    , IDM_HELP        , VIRTKEY
+  VK_F2    , TBID_ENUM       , VIRTKEY
+  VK_F3    , TBID_CREATE     , VIRTKEY
+  VK_RETURN, TBID_CREATE     , VIRTKEY
+  VK_F4    , TBID_GETTM      , VIRTKEY
+  VK_F5    , TBID_GETFONTDATA, VIRTKEY
+  VK_F6    , TBID_PRINT      , VIRTKEY
+  VK_F7    , IDM_GETOBJECT   , VIRTKEY
+  VK_F8    , IDM_CHOOSEFONT  , VIRTKEY
+END
+
+
+logfontDlg DIALOG 0,0, DLGWIDTH, DLGHEIGHT
+STYLE WS_MINIMIZEBOX | WS_CHILD | WS_VISIBLE | WS_CAPTION
+                     | WS_SYSMENU | WS_CLIPSIBLINGS
+CAPTION "LOGFONT"
+FONTDIALOG
+BEGIN
+    RTEXT           "lfHeight",        DID_X+1  , 00,  03, 64,  8
+    EDITTEXT                           DIDHEIGHT, 70,  02, 24, 11
+
+    RTEXT           "lfWidth",         DID_X+2  , 00,  14, 64,  8
+    EDITTEXT                           DIDWIDTH , 70,  13, 24, 11
+
+    RTEXT           "lfEscapement",    DID_X+3  , 00,  25, 64,  8
+    EDITTEXT                           DIDESCAPE, 70,  24, 24, 11
+
+    RTEXT           "lfOrientation",   DID_X+4  , 00,  36, 64,  8
+    EDITTEXT                           DIDORIENT, 70,  35, 24, 11
+
+    RTEXT           "lfWeight",        DID_X+5  , 00,  47, 64,  8
+    EDITTEXT                           DIDWEIGHT, 70,  46, 24, 11
+
+    RTEXT           "lfItalic",        DID_X+6  , 00,  59, 64,  8
+    EDITTEXT                           DIDITALIC, 70,  58, 18, 11
+
+    RTEXT           "lfUnderline",     DID_X+7  , 00,  70, 64,  8
+    EDITTEXT                           DIDUNDERL, 70,  69, 18, 11
+
+    RTEXT           "lfStrikeOut",     DID_X+8  , 00,  81, 64,  8
+    EDITTEXT                           DIDSTRIKE, 70,  80, 18, 11
+
+    RTEXT           "lfCharSet",       DID_X+9  , 00,  92, 64,  8
+    EDITTEXT                           DIDCHARSE, 70,  91, 18, 11
+
+    RTEXT           "lfOutPrecision",  DID_X+10 , 00, 103, 64,  8
+    EDITTEXT                           DIDOUTPRE, 70, 102, 18, 11
+
+    RTEXT           "lfClipPrecision", DID_X+11 , 00, 114, 64,  8
+    EDITTEXT                           DIDCLIPPR, 70, 113, 18, 11
+
+    RTEXT           "lfQuality",       DID_X+12 , 00, 125, 64,  8
+    EDITTEXT                           DIDQUALIT, 70, 124, 18, 11
+
+    RTEXT           "lfPitchAndFamily",DID_X+13 , 00, 136, 64,  8
+    EDITTEXT                           DIDPITCHA, 70, 135, 18, 11
+
+    RTEXT           "lfFaceName",      DID_X+14 , 00, 149, 38,  8
+    EDITTEXT                           DIDFACENA, 40, 148, 68, 11, ES_AUTOHSCROLL
+END
+
+
+
+textmetricDlg DIALOG 0,0, DLGWIDTH, DLGHEIGHT
+STYLE WS_MINIMIZEBOX | WS_CHILD | WS_VISIBLE | WS_CAPTION
+                     | WS_SYSMENU | WS_CLIPSIBLINGS
+CAPTION "TEXTMETRIC"
+FONTDIALOG
+BEGIN
+    LISTBOX    DID_LISTBOX, 0, 0, DLGWIDTH, DLGHEIGHT,
+               LBS_USETABSTOPS | LBS_NOINTEGRALHEIGHT | WS_VSCROLL
+END
+
+oltextmetricDlg DIALOG 0,0, 170, DLGHEIGHT
+STYLE WS_MINIMIZEBOX | WS_CHILD | WS_VISIBLE | WS_CAPTION
+                     | WS_SYSMENU | WS_CLIPSIBLINGS
+CAPTION "OUTLINE TEXTMETRIC"
+FONTDIALOG
+BEGIN
+    LISTBOX    DID_LISTBOX, 0, 0, 170,160,
+               LBS_USETABSTOPS | LBS_NOINTEGRALHEIGHT | WS_VSCROLL
+END
+
+
+getfontdataDlg DIALOG 45, 18, 170, DLGHEIGHT
+STYLE WS_MINIMIZEBOX | WS_CHILD | WS_VISIBLE | WS_CAPTION
+                     | WS_SYSMENU | WS_CLIPSIBLINGS
+CAPTION "GetFontData"
+FONTDIALOG
+BEGIN
+    RTEXT           "dwTable", -1,  0, 5, 35, 8
+    COMBOBOX        DID_DWTABLE,  41, 3, 50, 100, CBS_DROPDOWN | CBS_HASSTRINGS |
+                    WS_VSCROLL
+    RTEXT           "dwOffset",-1,  0, 20, 35, 8
+    EDITTEXT         DID_DWOFFSET, 41, 18, 50, 12
+    RTEXT           "cbData",  -1,  0, 35, 35, 8
+    EDITTEXT         DID_CBDATA,   41, 33, 50, 12
+    LISTBOX          DID_LISTBOX,  0, 50, 170, 110,
+                     LBS_USETABSTOPS | LBS_NOINTEGRALHEIGHT | WS_VSCROLL
+    DEFPUSHBUTTON   "GetFontData", DID_DOIT, 100, 14, 60, 15
+    CTEXT           "all values in Hex", -1, 100, 30, 60, 15
+END
+
+
+
+aboutBox DIALOG 30, 14, 136, 90
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "About TTFonts"
+BEGIN
+    ICON            "ttfontsIcon", 101, 8, 20, 18, 20
+    LTEXT           "TTFonts Win32 SDK sample ", 103, 40, 25, 95, 8
+    LTEXT           "version 1.6", 106, 40, 35, 95, 8
+    DEFPUSHBUTTON   "OK", IDOK, 95, 6, 40, 14
+    CONTROL         "", 108, "Static", SS_BLACKRECT, 0, 53, 136, 2
+    CTEXT           "Microsoft Developer Support",      105, 0, 62, 136, 8
+    CTEXT           "Copyright \251 1992-1995 Microsoft", 107, 0, 74,
+                    136, 8
+END
+
+
+
+STRINGTABLE
+BEGIN
+     1, "cmap"
+     2, "glyf"
+     3, "head"
+     4, "hhea"
+     5, "hmtx"
+     6, "loca"
+     7, "maxp"
+     8, "name"
+     9, "post"
+    10, "OS/2"
+    11, "cvt"
+    12, "fpgm"
+    13, "hdmx"
+    14, "kern"
+    15, "LTSH"
+    16, "prep"
+    17, "WIN"
+    18, "VDMX"
+    19, "FOCA"
+    20, "PCLT"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_MBERROR          "Application Error."
+    IDS_INITSTRING       "Please wait. Initializing data structures."
+    IDS_ALLOCFAILED      "LocalAlloc Failed."
+    IDS_RESETDISPLAY     "Resetting display."
+    IDS_NOCMAPTABLE      "No 'cmap' table."
+    IDS_CBDATATOOBIG     "cbData > NBYTES."
+    IDS_NOTABLE          "Can not find 3,1 subtable."
+    IDS_FORMATNOT4       "format != 4."
+    IDS_FONTDATAERR      "Not a scalable font."
+    IDS_ENUMPRINTERR     "EnumPrinters() returned FALSE"
+END
+
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+#ifdef JAPAN
+LANGUAGE LANG_JAPANESE, SUBLANG_NEUTRAL
+
+
+
+ttfontsMenu MENU
+BEGIN
+
+    POPUP "コントロール(&C)"
+    BEGIN
+        MENUITEM "EnumFonts (&Display) \tF2",        TBID_ENUM
+        MENUITEM "&CreateFont \tEnter",              TBID_CREATE
+        MENUITEM "&GetMetrics \tF4",                 TBID_GETTM
+        MENUITEM "Get&FontData \tF5",                TBID_GETFONTDATA
+        MENUITEM "EnumFonts (P&rinter) \tF6",        TBID_PRINT
+        MENUITEM SEPARATOR
+        MENUITEM "GetObject \tF7",                   IDM_GETOBJECT
+        MENUITEM "ChooseFont \tF8",                  IDM_CHOOSEFONT
+        POPUP    "GetStockObject"
+
+        BEGIN
+            MENUITEM "ANSI_FIXED_FONT",              IDM_ANSI_FIXED_FONT
+            MENUITEM "ANSI_VAR_FONT",                IDM_ANSI_VAR_FONT
+            MENUITEM "DEVICE_DEFAULT_FONT",          IDM_DEVICE_DEFAULT_FONT
+            MENUITEM "OEM_FIXED_FONT",               IDM_OEM_FIXED_FONT
+            MENUITEM "SYSTEM_FIXED_FONT",            IDM_SYSTEM_FIXED_FONT
+            MENUITEM "SYSTEM_FONT",                  IDM_SYSTEM_FONT
+        END
+
+        MENUITEM SEPARATOR
+        MENUITEM "印刷(&P)",                         IDM_PRINT
+    END
+
+    POPUP "表示(&D)"
+    BEGIN
+        MENUITEM "文字列 'Hello'(&C)",                IDM_MODEHELLO
+        MENUITEM "範囲(&R) [tmFirstChar, tmLastChar]",IDM_MODETMRANGE
+        MENUITEM "GetFontData の全データ(&A)",        IDM_MODEALL
+    END
+
+    POPUP "ウィンドウ(&W)"
+    BEGIN
+        MENUITEM "重ねて表示(&C)",           IDM_CASCADE
+        MENUITEM "並べて表示(&T)",           IDM_TILE
+        MENUITEM "アイコンの整列(&A)",       IDM_ARRANGE
+    END
+
+    POPUP "オプション(&O)"
+    BEGIN
+        MENUITEM "矩形の浮遊表示(&F)",      IDM_FLYWINWIN
+    END
+
+    POPUP "ヘルプ(&H)"
+    BEGIN
+        MENUITEM "目次(&C) \tF1",         IDM_HELP
+        MENUITEM SEPARATOR
+        MENUITEM "バージョン情報(&A)",    IDM_ABOUT
+    END
+END
+
+
+ttfontsAccel ACCELERATORS
+BEGIN
+  VK_F1    , IDM_HELP        , VIRTKEY
+  VK_F2    , TBID_ENUM       , VIRTKEY
+  VK_F3    , TBID_CREATE     , VIRTKEY
+  VK_RETURN, TBID_CREATE     , VIRTKEY
+  VK_F4    , TBID_GETTM      , VIRTKEY
+  VK_F5    , TBID_GETFONTDATA, VIRTKEY
+  VK_F6    , TBID_PRINT      , VIRTKEY
+  VK_F7    , IDM_GETOBJECT   , VIRTKEY
+  VK_F8    , IDM_CHOOSEFONT  , VIRTKEY
+END
+
+
+logfontDlg DIALOG 0,0, DLGWIDTH, DLGHEIGHT
+STYLE WS_MINIMIZEBOX | WS_CHILD | WS_VISIBLE | WS_CAPTION
+                     | WS_SYSMENU | WS_CLIPSIBLINGS
+CAPTION "LOGFONT"
+BEGIN
+    RTEXT           "lfHeight",        DID_X+1  , 00,  03, 64,  8
+    EDITTEXT                           DIDHEIGHT, 70,  02, 24, 11
+
+    RTEXT           "lfWidth",         DID_X+2  , 00,  14, 64,  8
+    EDITTEXT                           DIDWIDTH , 70,  13, 24, 11
+
+    RTEXT           "lfEscapement",    DID_X+3  , 00,  25, 64,  8
+    EDITTEXT                           DIDESCAPE, 70,  24, 24, 11
+
+    RTEXT           "lfOrientation",   DID_X+4  , 00,  36, 64,  8
+    EDITTEXT                           DIDORIENT, 70,  35, 24, 11
+
+    RTEXT           "lfWeight",        DID_X+5  , 00,  47, 64,  8
+    EDITTEXT                           DIDWEIGHT, 70,  46, 24, 11
+
+    RTEXT           "lfItalic",        DID_X+6  , 00,  59, 64,  8
+    EDITTEXT                           DIDITALIC, 70,  58, 18, 11
+
+    RTEXT           "lfUnderline",     DID_X+7  , 00,  70, 64,  8
+    EDITTEXT                           DIDUNDERL, 70,  69, 18, 11
+
+    RTEXT           "lfStrikeOut",     DID_X+8  , 00,  81, 64,  8
+    EDITTEXT                           DIDSTRIKE, 70,  80, 18, 11
+
+    RTEXT           "lfCharSet",       DID_X+9  , 00,  92, 64,  8
+    EDITTEXT                           DIDCHARSE, 70,  91, 18, 11
+
+    RTEXT           "lfOutPrecision",  DID_X+10 , 00, 103, 64,  8
+    EDITTEXT                           DIDOUTPRE, 70, 102, 18, 11
+
+    RTEXT           "lfClipPrecision", DID_X+11 , 00, 114, 64,  8
+    EDITTEXT                           DIDCLIPPR, 70, 113, 18, 11
+
+    RTEXT           "lfQuality",       DID_X+12 , 00, 125, 64,  8
+    EDITTEXT                           DIDQUALIT, 70, 124, 18, 11
+
+    RTEXT           "lfPitchAndFamily",DID_X+13 , 00, 136, 64,  8
+    EDITTEXT                           DIDPITCHA, 70, 135, 18, 11
+
+    RTEXT           "lfFaceName",      DID_X+14 , 00, 149, 38,  8
+    EDITTEXT                           DIDFACENA, 40, 148, 68, 11, ES_AUTOHSCROLL
+END
+
+
+
+textmetricDlg DIALOG 0,0, DLGWIDTH, DLGHEIGHT
+STYLE WS_MINIMIZEBOX | WS_CHILD | WS_VISIBLE | WS_CAPTION
+                     | WS_SYSMENU | WS_CLIPSIBLINGS
+CAPTION "TEXTMETRIC"
+BEGIN
+    LISTBOX    DID_LISTBOX, 0, 0, DLGWIDTH, DLGHEIGHT,
+               LBS_USETABSTOPS | LBS_NOINTEGRALHEIGHT | WS_VSCROLL
+END
+
+oltextmetricDlg DIALOG 0,0, 170, DLGHEIGHT
+STYLE WS_MINIMIZEBOX | WS_CHILD | WS_VISIBLE | WS_CAPTION
+                     | WS_SYSMENU | WS_CLIPSIBLINGS
+CAPTION "OUTLINE TEXTMETRIC"
+BEGIN
+    LISTBOX    DID_LISTBOX, 0, 0, 170,160,
+               LBS_USETABSTOPS | LBS_NOINTEGRALHEIGHT | WS_VSCROLL
+END
+
+
+getfontdataDlg DIALOG 45, 18, 170, DLGHEIGHT
+STYLE WS_MINIMIZEBOX | WS_CHILD | WS_VISIBLE | WS_CAPTION
+                     | WS_SYSMENU | WS_CLIPSIBLINGS
+CAPTION "GetFontData"
+BEGIN
+    RTEXT           "dwTable", -1,  0, 5, 35, 8
+    COMBOBOX        DID_DWTABLE,  41, 3, 50, 100, CBS_DROPDOWN | CBS_HASSTRINGS |
+                    WS_VSCROLL
+    RTEXT           "dwOffset",-1,  0, 20, 35, 8
+    EDITTEXT         DID_DWOFFSET, 41, 18, 50, 12
+    RTEXT           "cbData",  -1,  0, 35, 35, 8
+    EDITTEXT         DID_CBDATA,   41, 33, 50, 12
+    LISTBOX          DID_LISTBOX,  0, 50, 170, 110,
+                     LBS_USETABSTOPS | LBS_NOINTEGRALHEIGHT | WS_VSCROLL
+    DEFPUSHBUTTON   "GetFontData", DID_DOIT, 100, 14, 60, 15
+    CTEXT           "全ての値は16進です", -1, 100, 30, 60, 17
+END
+
+
+
+aboutBox DIALOG 30, 14, 136, 90
+STYLE DS_MODALFRAME | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "TTFonts のバージョン情報"
+BEGIN
+    ICON            "ttfontsIcon", 101, 8, 20, 18, 20
+    LTEXT           "TTFonts Win32 SDK ｻﾝﾌﾟﾙ", 103, 40, 25, 95, 8
+    LTEXT           "version 1.6", 106, 40, 35, 95, 8
+    DEFPUSHBUTTON   "OK", IDOK, 95, 6, 40, 14
+    CONTROL         "", 108, "Static", SS_BLACKRECT, 0, 53, 136, 2
+    CTEXT           "Microsoft Developer Support",      105, 0, 62, 136, 8
+    CTEXT           "Copyright (C) 1992-1997 Microsoft", 107, 0, 74,
+                    136, 8
+END
+
+
+
+
+STRINGTABLE
+BEGIN
+    IDS_MBERROR          "アプリケーション エラー"
+    IDS_INITSTRING       "データ構造の初期化中です.しばらくお待ちください."
+    IDS_ALLOCFAILED      "LocalAlloc が失敗しました。"
+    IDS_RESETDISPLAY     "表示の再設定"
+    IDS_NOCMAPTABLE      "'cmap' テーブルがありません。"
+    IDS_CBDATATOOBIG     "cbData > NBYTES."
+    IDS_NOTABLE          "Can not find 3,1 subtable."
+    IDS_FORMATNOT4       "format != 4."
+    IDS_FONTDATAERR      "スケーラブル フォントではありません。"
+    IDS_ENUMPRINTERR     "EnumPrinters() returned FALSE"
+END
+#endif

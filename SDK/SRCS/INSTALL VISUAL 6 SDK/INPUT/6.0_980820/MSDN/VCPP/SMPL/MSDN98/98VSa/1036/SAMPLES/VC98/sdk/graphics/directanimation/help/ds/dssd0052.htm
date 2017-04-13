@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Recompress an AVI File</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0051.htm','/dssd0000.htm','/dssd0045.htm','/index.htm','/dssd0053.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="capbuild_0001040107000000">Recompress an AVI File</A></H2>
+<BR CLEAR=ALL>
+<P>Following is sample code to recompress the file c:\Foo.avi to c:\Bar.avi, where the output file will be Cinepak with CD-quality audio. (Maybe foo.avi is
+currently RGB uncompressed with 22 kilohertz (kHz) sound). The <A HREF="dssd0353.htm#samples_0001070207020000" TARGET="TEXT">DirectShow Capture</A> sample in \dxmedia\Samples\DS\Capture demonstrates a capture application; this code
+demonstrates a recompression application.
+
+<P><B>Note</B>: This sample code introduces concepts only. Don't try to compile it. A real application would perform error checking as well.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    // First we need a graph builder
+    hr = CoCreateInstance((REFCLSID)CLSID_CaptureGraphBuilder,
+&#009;&#009;&#009;NULL, CLSCTX_INPROC, (REFIID)IID_ICaptureGraphBuilder,
+&#009;&#009;&#009;(void **)&amp;pBuild);
+
+    // next we need a filtergraph, and tell the builder what it is
+    hr = CoCreateInstance((REFCLSID)CLSID_FilterGraph,
+&#009;&#009;&#009;NULL, CLSCTX_INPROC, (REFIID)IID_IGraphBuilder,
+&#009;&#009;&#009;(void **)&amp;pFg);
+    hr = pBuild-&gt;SetFiltergraph(pFg);
+
+    // we need a source for c:\foo.avi
+    hr = CoCreateInstance((REFCLSID)CLSID_AsyncReader,
+&#009;&#009;&#009;NULL, CLSCTX_INPROC, (REFIID)IID_IBaseFilter,
+&#009;&#009;&#009;(void **)&amp;pSrc);
+    hr = pSrc-&gt;QueryInterface(IID_IFileSourceFilter, (void **)&amp;pI);
+    hr = pI-&gt;Load(L"c:\\foo.avi", NULL);
+    pI-&gt;Release();
+    hr = pFg-&gt;AddFilter(pSrc, NULL);
+
+    // we need a rendering section to create c:\bar.avi
+    hr = pBuild-&gt;SetOutputFileName(&amp;MEDIASUBTYPE_Avi, L"c:\\bar.avi", &amp;pRender,
+&#009;&#009;&#009;&#009;&#009;&#009;&#009;&#009;NULL);
+
+    // make the ACM filter produce CD quality format
+    set up a WAVEFORMATEX structure to describe 44.1kHz 16bit stereo, say wfx
+    cmt.SetType(&amp;MEDIATYPE_Audio);
+    cmt.SetFormatType(&amp;FORMAT_WaveFormatEx);
+    cmt.SetTemporalCompression(FALSE);
+    cmt.SetSubtype(&amp;GUID_NULL);
+    cmt.AllocFormatBuffer(sizeof(w));
+    CopyMemory(cmt.Format(), &amp;wfx, sizeof(wfx));
+    hr = pBuild-&gt;FindCompressorInterface(pCAud, IID_IAMStreamConfig,
+&#009;&#009;&#009;&#009;&#009;&#009;&#009;(void **)&amp;pASC);
+    hr = pASC-&gt;SetFormat(&amp;cmt);
+    pASC-&gt;Release();
+
+    // Now we render the recompressed audio stream
+    hr = pBuild-&gt;RenderCompressionStream(pSrc, pCAud, pRender);
+
+    // Now we use device enumeration (see the \sdk\samples\capture sample
+    // code to see how) to pick a video compressor. Use the
+    "VideoCompressorCategory" for video compression filters
+    pCVid = IBaseFilter pointer of the cinepak compressor we picked
+    hr = pFg-&gt;AddFilter(pCVid, NULL);
+
+    // now tell it to compress at 100k/second data rate
+    // to set the data rate we use the current format, but change the data
+    // rate item in the media type
+    hr = pBuild-&gt;FindCompressorInterface(pCVid, IID_IAMStreamConfig,
+&#009;&#009;&#009;&#009;&#009;&#009;&#009;(void **)&amp;pVSC);
+    hr = pVSC-&gt;GetFormat(&amp;cmt);
+    ((VIDEOINFOHEADER)(cmt.Format()))-&gt;dwBitRate = 100000;
+    hr = pVSC-&gt;SetFormat(&amp;cmt);
+    pVSC-&gt;Release();
+
+    // now tell it we want key frames every 4 frames
+    hr = pBuild-&gt;FindCompressorInterface(pCVid, IID_IAMVideoCompression,
+&#009;&#009;&#009;&#009;&#009;&#009;&#009;(void **)&amp;pVC);
+    hr = pVC-&gt;put_KeyFrameRate(4);
+    pVC-&gt;Release();
+
+    // Now we render the recompressed video stream
+    hr = pBuild-&gt;RenderCompressionStream(pSrc, pCVid, pRender);
+
+    // all done with these objects now
+    pSrc-&gt;Release();
+    pRender-&gt;Release();
+    pCAud-&gt;Release();
+    pCVid-&gt;Release();
+
+    // now run the graph
+    hr = FG-&gt;QueryInterface(IID_IMediaControl, &amp;MC);
+    MC-&gt;Run();
+
+    // app now waits for EC_COMPLETE, and it's all done!
+    wait for EC_COMPLETE event... see amcap sample
+
+    pFg-&gt;Release();
+    pBuild-&gt;Release();
+</FONT></PRE>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

@@ -1,0 +1,810 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>IAMExtTransport Interface</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0100.htm','/dssd0000.htm','/dssd0088.htm','/index.htm','/dssd0102.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="If_000106010d000000">IAMExtTransport Interface</A></H2>
+<BR CLEAR=ALL>
+<P>The <B>IAMExtTransport</B> interface provides methods which control specific behaviors of an external
+
+
+
+ VCR. 
+
+These methods generally set and get the <A HREF="dssd0408.htm#gloss_00010b0113000005" TARGET="TEXT">transport</A> properties which relate to how the VCR and the computer exchange data. Since this interface controls specific behaviors of <A HREF="dssd0408.htm#gloss_00010b0113000005" TARGET="TEXT">transport</A>, it must be implemented in combination with the <A HREF="dssd0100.htm" TARGET="TEXT">IAMExtDevice</A> interface, which controls an external device's general behaviors. If you want to control an external device other than a VCR, two options are available. Either use the methods you need and return E_NOTIMPL for the rest, or design a new interface and aggregate it with <B>IAMExtDevice</B>.
+
+<P>This interface also provides methods that enable developers to define <I>edit events</I> which assist in the content authoring process. Edit events are made up of individual edit properties that are grouped together into <I>edit property sets</I>. These edit property sets can define an actual recording sequence on the transport or a simple positional command.
+
+
+
+ They can, for example, specify certain modes of editing, record inpoints and outpoints, or memorize positions called bookmarks.
+
+
+ The <A HREF="dssd0101.htm#If_000106010d041800" TARGET="TEXT">SetEditPropertySet</A> method creates or registers a group of edit properties, called an edit property set, while the <A HREF="dssd0101.htm#If_000106010d041a00" TARGET="TEXT">SetEditProperty</A> enables the application to define parameters and values of individual edit properties. Since these are relatively sophisticated situations, their implementation is left to the advanced developer.
+
+<P>For a description of a sample filter which controls a VCR through DirectShow, see <A HREF="dssd0350.htm#samples_0001070204080000" TARGET="TEXT">VCR Device Control Filter</A>.
+
+
+
+<A NAME="If_000106010d010000"></A><P><B>When to Implement
+</B>
+<P>Implement this interface if you want to build a filter or application that controls an external device, such as a VCR. Because this interface controls specific information about a device, you should implement it with the <A HREF="dssd0100.htm" TARGET="TEXT">IAMExtDevice</A> interface.
+
+<P>An application can directly instantiate and control external device control filters, such as those for VCRs, but it is strongly recommended that you always instantiated them within the context of a filter graph, even if they are the only filter within the graph.
+
+<P>Implementations can vary depending on the type of external device being controlled. With certain devices, methods can return E_NOTIMPL if they are not applicable.
+
+
+
+
+
+
+<A NAME="If_000106010d020000"></A><P><B>When to Use
+</B>
+<P>Use this interface if you want a filter to control video and audio tape machines that are external to the computer. Typical uses for this interface include the applications that implement "batch capture" and "print to tape" of audio and video.
+
+<P>Applications should use the filter graph to enumerate the filters and then get the <A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport</A> interface directly from the appropriate filter.
+
+<A NAME="If_000106010d030000"></A><P><B>Hardware Requirements
+</B>
+<P>To control an external VCR, certain hardware requirements are recommended. VCRs with an RS-422 serial interface require a special serial port card or an external RS-232-to-RS-422 adapter. In addition, for best performance, your computer should have a serial port card built with a 16,550 high-performance UART to sustain higher baud rates, such as 38.4 baud.
+
+
+
+
+
+
+<A NAME="If_000106010d040000"></A><P><B>Methods in Vtable Order
+
+</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IUnknown methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+ </B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves pointers to supported interfaces.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">AddRef</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Increments the reference count.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Decrements the reference count.
+</FONT></TD></TR></TABLE>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IAMExtTransport methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+ </B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040100" TARGET="TEXT">GetCapability</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the general capabilities of an external transport.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040200" TARGET="TEXT">put_MediaState</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the current state of the media.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040300" TARGET="TEXT">get_MediaState</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current state of the media.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040400" TARGET="TEXT">put_LocalControl</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the state of the external device to local or remote control.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040500" TARGET="TEXT">get_LocalControl</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the state of the external device.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040600" TARGET="TEXT">GetStatus</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines the status of the external transport.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040700" TARGET="TEXT">GetTransportBasicParameters</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the external transport's basic parameter settings.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040800" TARGET="TEXT">SetTransportBasicParameters</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the external transport's basic parameters.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040900" TARGET="TEXT">GetTransportVideoParameters</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the external transport's video parameter settings.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040a00" TARGET="TEXT">SetTransportVideoParameters</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the video parameters for the external transport.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040b00" TARGET="TEXT">GetTransportAudioParameters</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the external transport's audio parameter settings.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040c00" TARGET="TEXT">SetTransportAudioParameters</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets audio parameter setting for the external transport.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040d00" TARGET="TEXT">put_Mode</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the movement of the transport to a new mode (play, stop, record, edit, and so on).
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040e00" TARGET="TEXT">get_Mode</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the mode of the transport (play, stop, record, edit, and so on).
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d040f00" TARGET="TEXT">put_Rate</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the playback rate for variable-speed external devices.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d041000" TARGET="TEXT">get_Rate</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the playback rate set in <A HREF="dssd0101.htm#If_000106010d040f00" TARGET="TEXT">put_Rate</A> for variable speed external devices.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d041100" TARGET="TEXT">GetChase</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the status of chase mode.
+
+
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d041200" TARGET="TEXT">SetChase</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Enables or disables chase mode.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d041300" TARGET="TEXT">GetBump</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves status of bump mode.
+
+
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d041400" TARGET="TEXT">SetBump</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Temporarily changes the speed of playback for synchronization of multiple external devices.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d041500" TARGET="TEXT">get_AntiClogControl</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines if the anti-headclog control is enabled or disabled.
+
+
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d041600" TARGET="TEXT">put_AntiClogControl</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Enables or disables the transport's anti-headclog control.
+
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d041700" TARGET="TEXT">GetEditPropertySet</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the current state of an edit property set.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d041800" TARGET="TEXT">SetEditPropertySet</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Registers an edit property set that describes a group of edit properties.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d041900" TARGET="TEXT">GetEditProperty</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves individual parameters and values associated with a particular edit property set.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d041a00" TARGET="TEXT">SetEditProperty</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Defines individual parameters and values associated with a particular edit property set.
+
+
+
+
+
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d041b00" TARGET="TEXT">get_EditStart</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines if the external transport's edit control is active.
+ </FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm#If_000106010d041c00" TARGET="TEXT">put_EditStart</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Activates edit control on a capable transport.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="If_000106010d040100">IAMExtTransport::GetCapability</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Retrieves the general capabilities of an external transport.
+
+<P><B>HRESULT</B> <B>GetCapability</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Capability</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pValue</I><B>,</B><BR>&nbsp;&nbsp;<B>double</B> <I>*pdblValue</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Capability</I>
+ </DT><DD>[in] Capability to query for. Specify one of the following:
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSCAP_CAN_BUMP_PLAY </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks whether transport can vary speed for synchronizing.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSCAP_CAN_DELAY_AUDIO_IN </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks whether transport does delayed-in audio edits.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSCAP_CAN_DELAY_AUDIO_OUT </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks whether transport does delayed-out audio edits.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSCAP_CAN_DELAY_VIDEO_IN </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks whether transport does delayed-in video edits.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSCAP_CAN_DELAY_VIDEO_OUT </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks whether transport does delayed-out video edits.
+
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSCAP_CAN_EJECT </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks whether transport can eject its media.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSCAP_CAN_PLAY_BACKWARDS </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks whether transport can play media in reverse (negative rate).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSCAP_CAN_SET_EE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks whether transport can show its input on its output.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSCAP_CAN_SET_PB </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks whether transport can show media playback on its output.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSCAP_FWD_VARIABLE_MAX </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Maximum forward speed (multiple of play speed) in <I>pdblValue</I>.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSCAP_LTC_TRACK </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Track number of linear timecode (LTC) in <I>pValue</I>.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSCAP_NUM_AUDIO_TRACKS </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Number of audio tracks in <I>pValue</I>.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSCAP_REV_VARIABLE_MAX </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Maximum reverse speed (multiple of play speed) in <I>pdblValue</I>.
+</FONT></TD></TR></TABLE>
+</DD><DT><I>pValue</I>
+ </DT><DD>[out] Indicates whether the capability specified in <I>Capability</I> is supported or not. Returns either OATRUE if it is supported or OAFALSE if not.
+
+
+
+
+
+
+</DD><DT><I>pdblValue</I>
+ </DT><DD>[out] Indicates the capabilities of the property specified in <I>Capability</I>.
+
+
+
+
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>Remarks</H5>
+<P>All OATRUE and OAFALSE values are returned in <I>pValue</I>; numerical values are returned in <I>pValue</I> or <I>pdblValue</I>. Use the <I>pdblValue</I> parameter to return double values if the <I>pValue</I> parameter is insufficient. Return NULL if one of the parameters is not needed. 
+
+
+
+
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106010d040200">IAMExtTransport::put_MediaState</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Sets the current state of the media.
+<P><B>HRESULT</B> <B>put_MediaState</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>State</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>State</I>
+ </DT><DD>[in] Value specifying the state. Use one of the following:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MEDIA_SPIN_DOWN </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Stop spinning (for disc media); unthread the tape (for tape media).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MEDIA_SPIN_UP </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Start spinning (for disc media); thread the tape (for tape media).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MEDIA_UNLOAD </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Eject the media from the drive (if device supports it).
+</FONT></TD></TR></TABLE>
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>Remarks</H5>
+<P>Use the preceding parameters for disk and tape media. For other devices, you might need to specify new parameters.
+
+ <H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d040300" TARGET="TEXT">IAMExtTransport::get_MediaState</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d040300">IAMExtTransport::get_MediaState</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Retrieves the current state of the media set in <A HREF="dssd0101.htm#If_000106010d040200" TARGET="TEXT">put_MediaState</A>.
+<P><B>HRESULT</B> <B>get_MediaState</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pState</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pState</I>
+ </DT><DD>[out] Returns the current state or the media. Values will be device specific but can include the following:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MEDIA_SPIN_DOWN </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Stop spinning (for disk media); unthread the tape (for tape media).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MEDIA_SPIN_UP </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Start spinning (for disk media); thread the tape (for tape media).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MEDIA_UNLOAD </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Eject the media from the drive (if device supports it).
+</FONT></TD></TR></TABLE>
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106010d040400">IAMExtTransport::put_LocalControl</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Sets the state of the external device to local or remote control.
+<P><B>HRESULT</B> <B>put_LocalControl</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>State</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>State</I>
+ </DT><DD>[in] Current state; pass OATRUE for local, OAFALSE for remote.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d040500" TARGET="TEXT">IAMExtTransport::get_LocalControl</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d040500">IAMExtTransport::get_LocalControl</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Retrieves the state of the external device.
+<P><B>HRESULT</B> <B>get_LocalControl</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pState</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pState</I>
+ </DT><DD>[out] Returns either OATRUE for local control or OAFALSE for remote.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>Remarks</H5>
+<P>To control an external device, it must be in remote mode. 
+
+<H5>See Also</H5>
+<P>IAMExtTransport::put_LocalControl<H3><HR COLOR=#0000FF><A NAME="If_000106010d040600">IAMExtTransport::GetStatus</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Determines the external transport's status.
+<P><B>HRESULT</B> <B>GetStatus</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>StatusItem</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pValue</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>StatusItem</I>
+ </DT><DD>[in] Item you want to determine the status of; can include one of the following:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_EDIT_CUE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if device is cueing for an active edit event.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_FF </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if device is fast forwarding.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_FREEZE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if device is paused.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_LINK_OFF </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if transport control isn't linked to filter graph's run, stop, and pause controls.
+
+
+
+
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_LINK_ON </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if transport control is linked to filter graph's run, stop, pause controls.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_PLAY </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if device is playing.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_RECORD </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if device is recording.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_RECORD_STROBE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if device is recording single-frame.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_REW </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if device is rewinding.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_SHUTTLE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if device is shuttling (high-speed movement with visible picture).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_STEP </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if device is single-stepping.
+
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_STOP </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if device is stopped.
+</FONT></TD></TR></TABLE>
+</DD><DT><I>pValue</I>
+ </DT><DD>[out] Returns OATRUE if <I>StatusItem</I> is active or OAFALSE if not.
+
+
+
+
+
+
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface.
+
+<H5>Remarks</H5>
+<P>When implementing this interface, be aware that transport <I>StatusItem</I> parameters are more extensive than most Microsoft&#174; DirectShow&#153; interfaces and code should reflect this variety and feel free to check the <A HREF="dssd0408.htm#gloss_00010b0113000005" TARGET="TEXT">transport</A> status of appropriate parameters.
+
+
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106010d040700">IAMExtTransport::GetTransportBasicParameters</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Retrieves the transport's basic parameter settings.
+<P><B>HRESULT</B> <B>GetTransportBasicParameters</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Param</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pValue</I><B>,</B><BR>&nbsp;&nbsp;<B>LPOLESTR</B> <I>*ppszData</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Param</I>
+</DT><DD>[in] Parameter you want to receive the setting for (see Edevdefs.h for possible parameters under "IAMExtTransport Basic Parms").
+</DD><DT><I>pValue</I>
+ </DT><DD>[out] Setting of the parameter if it is numeric.
+</DD><DT><I>ppszData</I>
+ </DT><DD>[out] Setting of the parameter if it is a string .
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d040800" TARGET="TEXT">IAMExtTransport::SetTransportBasicParameters</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d040800">IAMExtTransport::SetTransportBasicParameters</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Sets basic parameters of external transport.
+
+<P><B>HRESULT</B> <B>SetTransportBasicParameters</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Param</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>Value</I><B>,</B><BR>&nbsp;&nbsp;<B>LPCOLESTR</B> <I>pszData</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Param</I>
+</DT><DD>[in] Parameter you want to set (see Edevdefs.h for possible parameters under "IAMExtTransport Basic Parms").
+</DD><DT><I>Value</I>
+ </DT><DD>[in] Setting of the parameter if it is numeric.
+</DD><DT><I>pszData</I>
+ </DT><DD>[in] Setting of the parameter if it is a string.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>Remarks</H5>
+<P>Basic settings include time formats, record formats, <A HREF="dssd0404.htm#gloss_00010b010f000006" TARGET="TEXT">preroll</A> setting, <A HREF="dssd0407.htm#gloss_00010b0112000002" TARGET="TEXT">servo</A> setting, and others (see Edevdefs.h).
+
+
+
+
+
+
+ <H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d040700" TARGET="TEXT">IAMExtTransport::GetTransportBasicParameters</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d040900">IAMExtTransport::GetTransportVideoParameters</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Retrieves video parameter settings for external transport.
+<P><B>HRESULT</B> <B>GetTransportVideoParameters</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Param</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pValue</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Param</I>
+ </DT><DD>[in] Video parameter you want to receive the settings for. Can be either ED_TRANSVIDEO_SET_OUTPUT (video transport output parameters) or ED_TRANSVIDEO_SET_SOURCE (video transport source).
+
+
+
+
+</DD><DT><I>pValue</I>
+ </DT><DD>[out] Set the ED_TRANSVIDEO_SET_SOURCE flag to retrieve the active video input, or set the ED_TRANSVIDEO_SET_OUTPUT flag to retrieve one of the following values:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_E2E </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Input video is visible on device's output regardless of transport mode.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_OFF </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Video output is disabled.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_PLAYBACK </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Video playing from media is displayed on the screen.
+
+
+
+
+
+
+</FONT></TD></TR></TABLE>
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface.
+
+<H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d040a00" TARGET="TEXT">IAMExtTransport::SetTransportVideoParameters</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d040a00">IAMExtTransport::SetTransportVideoParameters</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Sets video parameters for external transport.
+<P><B>HRESULT</B> <B>SetTransportVideoParameters</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Param</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>Value</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Param</I>
+ </DT><DD>[in] Video parameter you want to set. Specify either ED_TRANSVIDEO_SET_OUTPUT (video transport output parameters) or ED_TRANSVIDEO_SET_SOURCE (video transport source).
+</DD><DT><I>Value</I>
+ </DT><DD>[in] Set the ED_TRANSVIDEO_SET_SOURCE flag to set the active video input, or set the ED_TRANSVIDEO_SET_OUTPUT flag to one of the following values.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_E2E </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Input video is visible on device's output regardless of transport mode.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_OFF </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Video output is disabled.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_PLAYBACK </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Video playing from media is displayed on the screen.
+
+
+
+
+
+
+
+</FONT></TD></TR></TABLE>
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface.
+
+<H5>Remarks</H5>
+<P>For the ED_TRANSVIDEO_SET_SOURCE flag, an external device filter uses physical pins to describe its inputs. Calls to the filter's pin enumerator will return an index value. The value is passed to this method as its as its <I>Value</I> parameter.
+
+
+
+ <H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d040900" TARGET="TEXT">IAMExtTransport::GetTransportVideoParameters</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d040b00">IAMExtTransport::GetTransportAudioParameters</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Retrieves audio parameter setting for external transport.
+
+<P><B>HRESULT</B> <B>GetTransportAudioParameters</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Param</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pValue</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Param</I>
+ </DT><DD>[in] Audio parameter whose value you want to get. Specify one of the following:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSAUDIO_ENABLE_OUTPUT </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Audio output channel(s)
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSAUDIO_ENABLE_RECORD </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Audio recording channel(s)
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSAUDIO_ENABLE_SELSYNC </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Audio selsync recording channel(s)
+
+
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSAUDIO_SET_MONITOR </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Monitor output audio channel(s)
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSAUDIO_SET_SOURCE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Audio source channel(s)
+</FONT></TD></TR></TABLE>
+</DD><DT><I>pValue</I>
+ </DT><DD>[out] Channel or channels set in the <A HREF="dssd0101.htm#If_000106010d040c00" TARGET="TEXT">IAMExtTransport::SetTransportAudioParameters</A> method.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106010d040c00">IAMExtTransport::SetTransportAudioParameters</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Sets audio parameter setting for external transport.
+<P><B>HRESULT</B> <B>SetTransportAudioParameters</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Param</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>Value</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Param</I>
+ </DT><DD>[in] Audio parameter you want to set. Specify one of the following.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSAUDIO_ENABLE_OUTPUT </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Enable audio channel(s) for output.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSAUDIO_ENABLE_RECORD </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Enable audio channel(s) for recording.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSAUDIO_ENABLE_SELSYNC </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Enable audio channel(s) for selsync recording.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSAUDIO_SET_MONITOR </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Set the monitor output source.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_TRANSAUDIO_SET_SOURCE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Set the active audio input.
+</FONT></TD></TR></TABLE>
+</DD><DT><I>Value</I>
+ </DT><DD>[in] Audio channel or channels to set the parameter on.
+
+
+
+
+
+
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface.
+
+<H5>Remarks</H5>
+<P>Specify an exact channel or channels in <I>Value</I> by selecting ED_AUDIO_1 through ED_AUDIO_24 (use an <B>or</B> switch to combine), or all channels by selecting ED_AUDIO_ALL.
+ 
+<H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d040b00" TARGET="TEXT">IAMExtTransport::GetTransportAudioParameters</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d040d00">IAMExtTransport::put_Mode</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Sets the movement of the transport to a new mode (play, stop, record, edit, and so on).
+<P><B>HRESULT</B> <B>put_Mode</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Mode</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Mode</I>
+ </DT><DD>[in] Transport mode. Specify one of the following:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_PLAY </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Play
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_STOP </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Stop
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_FREEZE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Freeze (pause)
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_THAW </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Resume
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_FF </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Fast forward
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_REW </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Rewind
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_RECORD </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Record
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_RECORD_STROBE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Record single frame
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_STEP </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Single step
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_SHUTTLE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Shuttle (high-speed movement with visible picture)
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_EDIT_CUE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Cue for an edit event
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_LINK_ON </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Link this method to the graph's <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">IMediaControl::Run</A>, <A HREF="dssd0149.htm#If_000106013d030800" TARGET="TEXT">Stop</A>, and <A HREF="dssd0149.htm#If_000106013d030500" TARGET="TEXT">Pause</A> methods
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">ED_MODE_LINK_OFF </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Disengage this method from the graph's <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">IMediaControl::Run</A>, <A HREF="dssd0149.htm#If_000106013d030800" TARGET="TEXT">Stop</A>, <A HREF="dssd0149.htm#If_000106013d030500" TARGET="TEXT">Pause</A> methods.
+
+
+
+
+
+</FONT></TD></TR></TABLE>
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d040e00" TARGET="TEXT">IAMExtTransport::get_Mode</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d040e00">IAMExtTransport::get_Mode</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Retrieves the mode of the transport (play, stop, record, edit, and so on).
+<P><B>HRESULT</B> <B>get_Mode</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pMode</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pMode</I>
+ </DT><DD>[out] Current transport mode (see <A HREF="dssd0101.htm#If_000106010d040d00" TARGET="TEXT">IAMExtTransport::put_Mode</A> for possible modes).
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106010d040f00">IAMExtTransport::put_Rate</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Sets the playback rate for variable-speed external devices.
+<P><B>HRESULT</B> <B>put_Rate</B><B>(</B><BR>&nbsp;&nbsp;<B>double</B> <I>dblRate</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>dblRate</I>
+ </DT><DD>[in] Multiple of play speed where .5=half, 1=normal, 2=double, 3=triple and so forth.
+
+
+
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>Remarks</H5>
+<P>This method enables an application to speed up or slow down playback relative to the normal default playback speed. A rate of 1.0 indicates normal playback speed. Specifying 2.0 causes playback at twice the normal rate.
+
+<P>You can also link this method to the <A HREF="dssd0154.htm#If_0001060142030a00" TARGET="TEXT">IMediaPosition::put_Rate</A> method as an alternate means of setting rates of playback relative to normal speed. 
+
+
+
+
+<H5>See Also</H5>
+<P>IAMExtTransport::get_Rate<H3><HR COLOR=#0000FF><A NAME="If_000106010d041000">IAMExtTransport::get_Rate</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Retrieves the playback rate for variable-speed external devices.
+<P><B>HRESULT</B> <B>get_Rate</B><B>(</B><BR>&nbsp;&nbsp;<B>double</B> <I>*pdblRate</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pdblRate</I>
+ </DT><DD>[out] Pointer to the playback rate set in <A HREF="dssd0101.htm#If_000106010d040f00" TARGET="TEXT">IAMExtTransport::put_Rate</A>.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface.
+<H3><HR COLOR=#0000FF><A NAME="If_000106010d041100">IAMExtTransport::GetChase</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Retrieves the status of chase mode.
+<P><B>HRESULT</B> <B>GetChase</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pEnabled</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pOffset</I><B>,</B><BR>&nbsp;&nbsp;<B>HEVENT</B> <I>*phEvent</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pEnabled</I>
+ </DT><DD>[out] OATRUE specifies chase enabled; OAFALSE specifies chase disabled.
+</DD><DT><I>pOffset</I>
+ </DT><DD>[out] Offset from the present time to which the transport will maintain while playing.
+
+
+</DD><DT><I>phEvent</I>
+ </DT><DD>[out] Pointer to the completion notification that will signal chase offset is established.
+
+
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>Remarks</H5>
+<P>The time for <I>pOffset</I> is given in the current time format (see "IAMExtTransport Basic Parms" in DXMedia\Include\Edevdefs.h for supported time formats).
+
+ <H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d041200" TARGET="TEXT">IAMExtTransport::SetChase</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d041200">IAMExtTransport::SetChase</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Enables or disables chase mode.
+<P><B>HRESULT</B> <B>SetChase</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Enable</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>Offset</I><B>,</B><BR>&nbsp;&nbsp;<B>HEVENT</B> <I>hEvent</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Enable</I>
+ </DT><DD>[in] Enables or disables chase. Specify OATRUE to enable chase; OAFALSE to disable.
+
+
+
+
+
+</DD><DT><I>Offset</I>
+ </DT><DD>[in] Offset from the time reference that the transport will maintain. Specify in current time format.
+</DD><DT><I>hEvent</I>
+ </DT><DD>[in] Event to signal offset established.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface.
+
+<H5>Remarks</H5>
+<P>Use the <B>SetChase</B> method when you want an external transport to continuously follow a timecode signal with a fixed offset. For example, if your computer is generating timecode, a VCR capable of chasing can be told by the computer
+
+
+
+
+
+ to put itself in play mode and keep its media a fixed offset from the reference timecode. You determine the offset
+
+
+ by comparing the timecode on the playback media to the reference (generated) timecode.
+
+<P>This method will stay in effect until canceled or complete and requires the filter to verify (by periodically reading the transport's timecode) that the transport is indeed maintaining the fixed offset.
+
+<P>Time for <I>Offset</I>
+
+
+
+ is specified in current time format (see "IAMExtTransport Basic Parms" in DXMedia\Include\Edevdefs.h for supported time formats).
+
+
+<H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d041100" TARGET="TEXT">IAMExtTransport::GetChase</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d041300">IAMExtTransport::GetBump</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Retrieves the status of bump mode.
+<P><B>HRESULT</B> <B>GetBump</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pSpeed</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pDuration</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSpeed</I>
+ </DT><DD>[out] Temporary speed (a multiple of normal speed).
+</DD><DT><I>pDuration</I>
+ </DT><DD>[out] Pointer to the duration of a bump in current time format.
+
+
+
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface.
+
+<H5>Remarks</H5>
+<P>This method will cause a temporary speed variation of transport used during the physical
+
+
+
+ synchronization process. It will stay in effect until <I>pDuration</I> time has expired.
+
+<P>See "IAMExtTransport Basic Parms" in DXMedia\Include\Edevdefs.h for supported time formats.
+
+
+<H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d041400" TARGET="TEXT">IAMExtTransport::SetBump</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d041400">IAMExtTransport::SetBump</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Temporarily changes the speed of playback for synchronization of multiple external devices.
+<P><B>HRESULT</B> <B>SetBump</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Speed</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>Duration</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Speed</I>
+ </DT><DD>[in] Temporary speed (a multiple of normal speed).
+</DD><DT><I>Duration</I>
+ </DT><DD>[in] Duration of a bump in current time format.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>Remarks</H5>
+<P>This method will stay in effect until <I>Duration</I> time has expired.
+
+
+
+
+<P>See "IAMExtTransport Basic Parms" in DXMedia\Include\Edevdefs.h for supported time formats.
+
+
+<H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d041300" TARGET="TEXT">IAMExtTransport::GetBump</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d041500">IAMExtTransport::get_AntiClogControl</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Determines if the anti-headclog control is enabled or disabled.
+<P><B>HRESULT</B> <B>get_AntiClogControl</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pEnabled</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pEnabled</I>
+ </DT><DD>[out] OATRUE indicates anti-headclog is enabled; OAFALSE indicates disabled.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface.
+
+<H5>See Also</H5>
+<P>IAMExtTransport::put_AntiClogControl<H3><HR COLOR=#0000FF><A NAME="If_000106010d041600">IAMExtTransport::put_AntiClogControl</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Enables or disables transport anti-headclog control.
+<P><B>HRESULT</B> <B>put_AntiClogControl</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Enable</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Enable</I>
+ </DT><DD>[in] Value indicating whether to enable anti-headclog control; set OATRUE to enable, OAFALSE to disable.
+
+
+
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface.
+
+<H5>Remarks</H5>
+<P>Use this method to unclog video heads on VCRs that have an automatic head-cleaning feature. 
+
+<H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d041500" TARGET="TEXT">get_AntiClogControl</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d041700">IAMExtTransport::GetEditPropertySet</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Retrieves individual parameters and values associated with a particular edit property set.
+<P><B>HRESULT</B> <B>GetEditPropertySet</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>EditID</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pState</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>EditID</I>
+ </DT><DD>[in] Identification number of the edit property set.
+</DD><DT><I>pState</I>
+ </DT><DD>[out] State of the edit property set. Retrieves one of the following:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DC_SET_ACTIVE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Activates edit property set.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DC_SET_DELETE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Deletes edit property set.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DC_SET_INACTIVE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Deactivates edit property set.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DC_SET_REGISTER </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Registers edit property set.
+</FONT></TD></TR></TABLE>
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d041800" TARGET="TEXT">IAMExtTransport::SetEditPropertySet</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d041800">IAMExtTransport::SetEditPropertySet</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Registers an edit property set that describes a group of edit properties.
+<P><B>HRESULT</B> <B>SetEditPropertySet</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pEditID</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>State</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pEditID</I>
+ </DT><DD>[in, out] Identification number of the edit property set.
+</DD><DT><I>State</I>
+ </DT><DD>[in] State of the edit property set. Specify one of the following:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Meaning
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DC_SET_ACTIVE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Activates edit property set.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DC_SET_DELETE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Deletes edit property set.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DC_SET_INACTIVE </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Inactivates edit property set.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DC_SET_REGISTER </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Registers edit property set.
+</FONT></TD></TR></TABLE>
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface.
+
+<H5>Remarks</H5>
+<P>Edit events refer to a group of predefined properties that define an actual recording sequence on the transport or a simple positional command. They can, for example, specify certain modes of editing, record inpoints and outpoints, or memorize positions called bookmarks. The <B>SetEditPropertySet</B> method defines and registers a group of edit properties, called an edit property set, while the <A HREF="dssd0101.htm#If_000106010d041a00" TARGET="TEXT">SetEditProperty</A> enables the user to define parameters and values of individual edit event properties.
+
+<P>To define a set of edit properties, first register an edit property set and get an <I>EditID</I>
+
+
+
+ with the <B>SetEditPropertySet</B> method.
+
+
+
+ Then use the <A HREF="dssd0101.htm#If_000106010d041a00" TARGET="TEXT">SetEditProperty</A> method to define specific parameters and values of individual edit properties. Finally, use the <B>SetEditPropertySet</B> method to activate the edit property set.
+
+<P>For a complete listing of possible parameters and values for edit property sets see Edevdefs.h in the DirectShow SDK's DXMedia\Include folder.
+
+ <H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d041700" TARGET="TEXT">IAMExtTransport::GetEditPropertySet</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d041900">IAMExtTransport::GetEditProperty</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Retrieves the parameters and values associated with a particular edit event.
+<P><B>HRESULT</B> <B>GetEditProperty</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>EditID</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>Param</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pValue</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>EditID</I>
+ </DT><DD>[in] Identification number of the edit property set.
+</DD><DT><I>Param</I>
+ </DT><DD>[in] Edit event parameter to determine the value of. 
+
+
+
+</DD><DT><I>pValue</I>
+ </DT><DD>[out] Returns the value of the parameter specified in <I>Param</I>: OATRUE, OAFALSE, or a specific value. 
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d041a00" TARGET="TEXT">IAMExtTransport::SetEditProperty</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d041a00">IAMExtTransport::SetEditProperty</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Defines individual parameters and values associated with a particular edit property set.
+<P><B>HRESULT</B> <B>SetEditProperty</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>EditID</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>Param</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>Value</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>EditID</I>
+ </DT><DD>[in] Identification number of the edit property set.
+</DD><DT><I>Param</I>
+ </DT><DD>[in] Edit event parameter to define.
+</DD><DT><I>Value</I>
+ </DT><DD>[in] Value of the parameter specified in <I>Param</I>. Use OATRUE, OAFALSE, or a specific value.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface.
+
+<H5>Remarks</H5>
+<P>Edit events can either refer to a group of predefined properties that define an actual recording sequence, or they can refer to simple positional commands.
+
+
+
+ They can, for example, specify certain modes of editing, record inpoints and outpoints, or memorize positions called bookmarks. The <A HREF="dssd0101.htm#If_000106010d041800" TARGET="TEXT">SetEditPropertySet</A> method defines and registers a group of edit events, called an edit property set, while the <B>SetEditProperty</B> method enables the user to define parameters and values of individual edit events.
+
+<P>To define a set of edit properties, first register an edit property set and get an <I>EditID</I> with the <A HREF="dssd0101.htm#If_000106010d041800" TARGET="TEXT">SetEditPropertySet</A> method. Then use the <B>SetEditProperty</B> method to define specific parameters and values of individual edit properties. Finally, use the <B>SetEditPropertySet</B> method to activate the edit property set.
+
+<P>For a complete listing of possible parameters and values for edit property sets see Edevdefs.h in the DirectShow SDK's DXMedia\Include folder.
+ 
+<H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d041900" TARGET="TEXT">IAMExtTransport::GetEditProperty</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d041b00">IAMExtTransport::get_EditStart</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Determines if the external transport's edit control is active.
+<P><B>HRESULT</B> <B>get_EditStart</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>*pValue</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pValue</I>
+ </DT><DD>[out] Returns OATRUE if edit control is active; OAFALSE if inactive.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface. 
+
+<H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d041c00" TARGET="TEXT">IAMExtTransport::put_EditStart</A><H3><HR COLOR=#0000FF><A NAME="If_000106010d041c00">IAMExtTransport::put_EditStart</A></H3>
+<A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport Interface</A>
+<P>Activates the edit control on a capable transport.
+<P><B>HRESULT</B> <B>put_EditStart</B><B>(</B><BR>&nbsp;&nbsp;<B>long</B> <I>Value</I> <B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Value</I>
+</DT><DD>[in] OATRUE activates the edit control; OAFALSE deactivates it.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value that depends on the implementation of the interface.
+
+<H5>Remarks</H5>
+<P>Use this method to manually enable edit control. Edit control is defined as the precise enabling of individual, or a set of, record tracks on a VCR; for example, a video-only insert edit, where only the video record head is enabled and a new video signal is recorded &#151; the audio signal is left as is. Use this method to control "on the fly" editing on machines that have this feature.
+
+
+
+
+<H5>See Also</H5>
+<P><A HREF="dssd0101.htm#If_000106010d041b00" TARGET="TEXT">IAMExtTransport::get_EditStart</A><P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

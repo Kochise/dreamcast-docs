@@ -1,0 +1,259 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Creating a Transform Filter</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0077.htm','/dssd0000.htm','/dssd0077.htm','/index.htm','/dssd0079.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="tfilt_0001050601000000">Creating a Transform Filter</A></H2>
+<BR CLEAR=ALL>
+<P>Transform filters transform the media data that comes into their input pins and send the transformed data out their output pins. Transform filters can be used to compress and decompress data, to split audio and visual data, or to apply effects, such as contrast or warbling, to media data. DirectShow contains several sample transform filters that perform different kinds of transformations. See <A HREF="dssd0295.htm#filteref_0001070101000000" TARGET="TEXT">DirectShow Filters</A> for a description of the transform filters supplied by DirectShow. See <A HREF="dssd0066.htm" TARGET="TEXT">Write a Transform Filter in C/C++</A> for instructions on how to write your own transform filters in C++. See <A HREF="dssd0079.htm" TARGET="TEXT">Using the CTransformFilter and CTransInPlaceFilter Transform Base Classes</A> for a discussion of the <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A> and <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A> transform filter base classes. See <A HREF="dssd0080.htm" TARGET="TEXT">Connecting Transform Filters</A> for a discussion of connecting to a transform filter. 
+
+<P>This article steps through the process of creating a transform filter for a 
+Microsoft&#174; DirectShow&#153; filter graph that uses the DirectShow C++ class library. It covers five basic steps, and in the last step shows how to override the required member functions in your derived class to implement the transform filter. It answers two common questions that arise when creating transform filters: Which base class do I use? and How do I override member functions? 
+
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0078.htm#tfilt_0001050601010000" TARGET="TEXT">Writing a Transform Filter</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601020000" TARGET="TEXT">Determine if the Filter Must Copy Media Samples</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601030000" TARGET="TEXT">Determine Which Base Classes to Use</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601040000" TARGET="TEXT">Instantiate the Filter</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601050000" TARGET="TEXT">Make Added Interfaces Available Through NonDelegatingQueryInterface</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601060000" TARGET="TEXT">Override the Base Class Member Functions</A>
+<UL><LI><A HREF="dssd0078.htm#tfilt_0001050601060100" TARGET="TEXT">Overriding the Transform Member Function</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601060200" TARGET="TEXT">Overriding the CheckInputType Member Function</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601060300" TARGET="TEXT">Overriding the CheckTransform Member Function</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601060400" TARGET="TEXT">Overriding the DecideBufferSize Member Function</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601060500" TARGET="TEXT">Overriding the GetMediaType Member Function</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601060600" TARGET="TEXT">Overriding Pin Member Functions</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601060700" TARGET="TEXT">Overriding the CBaseOutput::DecideAllocator Member Function</A>
+</UL>
+</UL>
+<A NAME="tfilt_0001050601010000"></A><P><B>Writing a Transform Filter</B>
+<P>Writing a transform filter can be broken into the following discrete steps.
+<OL><LI>Determine if the filter must copy media samples or can handle them in place. 
+<P>The fewer copies in the media stream, the better. However, some filters require a copy 
+operation; this influences the choice of base classes. 
+
+<LI>Determine which base classes to use and derive the filter class (and pin classes, if necessary) from the base classes.
+<P>In this step, create the header or headers for your filter. In many cases, you can use the transform base 
+classes, derive your class from the correct transform filter class, and override a few member functions. In 
+other cases, you can use the more generic base classes. These classes implement most of the connection 
+and negotiation mechanism; but these classes also allow more flexibility at the cost of overriding more 
+member functions.
+
+<LI>Add the code necessary to instantiate the filter.
+<P>This step requires adding a static <B>CreateInstance</B> member function to your derived class and also a global array that contains the name of the filter, a CLSID, and a pointer to that member function.
+
+
+<LI>Add a <B>NonDelegatingQueryInterface</B> member function to pass out any unique interfaces in your filter. 
+<P>This step addresses the Component Object Model (COM) aspects of implementing interfaces, other than those in the base classes. 
+
+<LI>Override the appropriate base class member functions. 
+<P>This includes writing the transform function that is unique to your filter and overriding a few member 
+functions that are necessary for the connection process, such as setting the allocator size or providing 
+media types.
+</OL>
+<A NAME="tfilt_0001050601020000"></A><P><B>Determine if the Filter Must Copy Media Samples</B>
+<P>Because every copy operation uses valuable CPU cycles, filter developers are encouraged to avoid 
+copying the media samples, if possible. It is best to write the filter to modify media samples in place on an 
+allocator acquired from another filter. In some cases, this is not possible, and a copy operation must be 
+performed. 
+
+<P>Where no copy is needed, the run-time overhead of a transform-inplace filter is scarcely more than that of a function; however, by packaging the transform as a filter, you get the full flexibility of the filter graph architecture.
+
+<P>Some reasons that a filter might be written as a copy transform filter rather than a transform-inplace 
+filter
+ include the following:
+<UL><LI>If the transformation generates more data on output than space provided in the allocator of the 
+ input (for example, a decompressor filter), or if the transformation generates less data on output and 
+ must consolidate memory.
+
+<LI>If the original media data must be preserved; this is the case with the splitter, 
+where the transform filter splits off a stream of data.
+
+<LI>If a decompressor filter is performing temporal compression, relying on adjacent frames for delta 
+information. In this case, a separate copy must be made, primarily because the decompressor cannot 
+allow another filter to have access to the original data to modify it. 
+
+<LI>If the filter relies on a queue; for example, a filter that creates a queue to help smooth the delivery of irregularly spaced video frames would need to copy the samples.
+</UL>
+<A NAME="tfilt_0001050601030000"></A><P><B>Determine Which Base Classes to Use</B>
+<P>Before choosing a base class for your transform filter, you must first decide whether your filter needs more than one input and output pin. If it does, you should derive your filter class from <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A>.
+
+<P>If your filter needs to perform a video transform, you should derive your filter class from <A HREF="dssd0254.htm#Lib_000106024a000000" TARGET="TEXT">CVideoTransformFilter</A>.
+
+<P>Otherwise, you should derive your filter class from <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A> or <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A>. To determine which one to use, you must decide whether your filter must copy media samples or can transform them in place. Because every copy operation uses valuable CPU cycles, filter developers should avoid copying media samples, if possible. It is best to write a filter to modify media samples in place on an allocator acquired from another filter. In some cases, this isn't possible, and you must perform a copy operation.
+
+<P>Where no copy is needed, the run-time overhead of a transform-inplace filter isn't much more than that of a function. However, by packaging the transform as a filter, you get the full flexibility of the filter graph architecture.
+
+<P>Some reasons that you might write a filter as a copy transform filter rather than a transform-inplace filter are:
+
+<UL><LI>If the transformation generates more data on output than there is space already allocated for the input (for example, a decompressor filter), or if the transformation generates less data on output and must consolidate memory.
+<LI>If the original media data must be preserved. This is the case with the splitter, where the transform filter splits off a stream of data.
+<LI>If a decompressor filter is performing temporal compression, relying on adjacent frames for information about what has changed frame to frame. In this case, you must make a separate copy, primarily because the decompressor can't allow another filter to have access to the original data to modify it. 
+<LI>If the filter relies on a queue; for example, a filter that creates a queue to help smooth the delivery of irregularly spaced video frames would need to copy the samples.
+</UL>
+<P>Once you determine whether the transform filter will copy media samples or transform them in place, you must decide which base class or classes to use and which member functions you must override and implement. You can then define your derived classes. 
+
+<P>Some member functions in the base classes must be overridden in your derived class because they are either declared as pure virtual in the base classes (they have no implementation), or have default implementations that do nothing but return an error value.
+
+<P>You derive your filter class from the transform base classes <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A>, <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A>, or <A HREF="dssd0254.htm#Lib_000106024a000000" TARGET="TEXT">CVideoTransformFilter</A>, or from the more generic <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A> filter class. Most of the connection, media type, and allocator negotiation code is handled in the base classes and inherited by the transform classes. The transform classes make it possible to create a filter by deriving just one filter class (no pin classes). The transform classes make assumptions about the workings of transform filters that make the process of creating a transform filter easier. 
+
+<P>To learn more about <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A> and <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A> and which of their member functions are typically overridden by the derived class, see <A HREF="dssd0079.htm" TARGET="TEXT">Using the CTransformFilter and CTransInPlaceFilter Transform Base Classes</A>.
+<A NAME="tfilt_0001050601040000"></A><P><B>Instantiate the Filter</B>
+<P>All filters must add code to let the base classes instantiate the filter. To instantiate a filter, 
+you must include two pieces of code in your filter: a static <B>CreateInstance</B> member function 
+in the derived filter class, and a means of informing the class factory in the base classes 
+how to access this function. 
+
+<P>Typically, the <B>CreateInstance</B> member function calls the constructor for the derived 
+filter class. The following is the <B>CreateInstance</B> member function from the Gargle sample filter.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+CUnknown *CGargle::CreateInstance(LPUNKNOWN punk, HRESULT *phr) {
+
+    CGargle *pNewObject = new CGargle(NAME("Gargle Filter"), punk, phr);
+    if (pNewObject == NULL) {
+        *phr = E_OUTOFMEMORY;
+    }
+
+    return pNewObject;
+} // CreateInstance
+
+</FONT></PRE>
+<P>To communicate with the class factory, declare a global array of <A HREF="dssd0217.htm#Lib_0001060225000000" TARGET="TEXT">CFactoryTemplate</A> objects as 
+g_Templates and provide the name of your filter, the class identifier (CLSID) of your filter, and a pointer 
+to the static <B>CreateInstance</B> member function that creates your filter object. The Gargle sample 
+filter does this as follows:
+<PRE><FONT FACE="Courier" SIZE="2">
+// Needed for the CreateInstance mechanism
+CFactoryTemplate g_Templates[2]=
+    { { L"Gargle filter"              , &amp;CLSID_Gargle , CGargle::CreateInstance          }
+    , { L"Gargle filter Property Page", &amp;CLSID_GargProp, CGargleProperties::CreateInstance}
+    };
+
+int g_cTemplates = sizeof(g_Templates)/sizeof(g_Templates[0]);
+
+</FONT></PRE>
+<P>You can add additional parameters to the <A HREF="dssd0217.htm#Lib_0001060225000000" TARGET="TEXT">CFactoryTemplate</A> templates if you want your 
+filter to be self-registering. For more information on this, see <A HREF="dssd0053.htm" TARGET="TEXT">Register DirectShow Objects</A>. 
+
+
+<P>Finally, link your filter to strmbase.lib and export <A HREF="dssd0389.htm#external_00010a0109000027" TARGET="TEXT">DllGetClassObject</A> and 
+<A HREF="dssd0389.htm#external_00010a0109000026" TARGET="TEXT">DllCanUnloadNow</A> using a .def file.
+
+<A NAME="tfilt_0001050601050000"></A><P><B>Make Added Interfaces Available Through NonDelegatingQueryInterface</B>
+<P> Only filters that add interfaces that are not in the base classes, such as those 
+required for creating property pages, need implement the <A HREF="dssd0175.htm#If_0001060157000000" TARGET="TEXT">IUnknown</A> member 
+functions (called <A HREF="dssd0265.htm#fmutil_0001060309000100" TARGET="TEXT">INonDelegatingUnknown</A> in the base classes). The base classes 
+provide default implementations of the <B>IUnknown</B> methods. <B>IUnknown</B> 
+methods in any COM-based code retrieve interfaces from an object, and increment and 
+decrement the reference counts of those interfaces. For example, the 
+<A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">IUnknown::QueryInterface</A> method retrieves interfaces from an object. 
+
+<P>DirectShow defines a special <A HREF="dssd0175.htm#If_0001060157000000" TARGET="TEXT">IUnknown</A> class called <A HREF="dssd0265.htm#fmutil_0001060309000100" TARGET="TEXT">INonDelegatingUnknown</A>, 
+whose methods do the same thing as <B>IUnknown</B>. (The reason for the name change is so that 
+objects can be aggregated.) The <A HREF="dssd0265.htm#fmutil_0001060309000001" TARGET="TEXT">NonDelegatingQueryInterface</A> 
+method is called whenever some object or application wants to query a pin or filter for any interfaces
+ it implements. If your filter implements any interface outside those listed in the base class 
+implementation, you will need to override the <B>NonDelegatingQueryInterface</B> method
+ to return a pointer to the implemented interface. For example, the following code example illustrates how 
+the Gargle sample overrides the member function to distribute references to the 
+<A HREF="dssd0389.htm#external_00010a01090000a2" TARGET="TEXT">ISpecifyPropertyPages</A> and <A HREF="dssd0389.htm#external_00010a010900008f" TARGET="TEXT">IPersistStream</A> interfaces. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+// Reveal our persistent stream, property pages, and IGargle interfaces
+STDMETHODIMP CGargle::NonDelegatingQueryInterface(REFIID riid, void **ppv) {
+
+    if (riid == IID_IGargle) {
+        return GetInterface((IGargle *) this, ppv);
+    } else if (riid == IID_ISpecifyPropertyPages) {
+        return GetInterface((ISpecifyPropertyPages *) this, ppv);
+    } else if (riid == IID_IPersistStream) {
+        AddRef();     // Add a reference count to ourselves
+        *ppv = (void *)(IPersistStream *)this;
+        return NOERROR;
+
+    } else {
+        return CTransInPlaceFilter::NonDelegatingQueryInterface(riid, ppv);
+    }
+} // NonDelegatingQueryInterface
+</FONT></PRE>
+<P><B>Note</B>  This sample calls the <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A> implementation of the member 
+function to finish up.<A NAME="tfilt_0001050601060000"></A><P><B>Override the Base Class Member Functions</B>
+<P>When you determine which base class to use( see <A HREF="dssd0078.htm#tfilt_0001050601030000" TARGET="TEXT">Determine Which Base Classes to Use</A>), you write the header and define which member function to 
+implement. You decide either to derive your filter class from the transform base classes 
+(<A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A> or 
+<A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A>), or from the more generic <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A> filter class. 
+In this section, you learn how to override the following member functions.
+<UL><LI><A HREF="dssd0078.htm#tfilt_0001050601060100" TARGET="TEXT">Overriding the Transform Member Function</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601060200" TARGET="TEXT">Overriding the CheckInputType Member Function</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601060300" TARGET="TEXT">Overriding the CheckTransform Member Function</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601060400" TARGET="TEXT">Overriding the DecideBufferSize Member Function</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601060500" TARGET="TEXT">Overriding the GetMediaType Member Function</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601060600" TARGET="TEXT">Overriding Pin Member Functions</A>
+<LI><A HREF="dssd0078.htm#tfilt_0001050601060700" TARGET="TEXT">Overriding the CBaseOutput::DecideAllocator Member Function</A>
+</UL>
+<A NAME="tfilt_0001050601060100"></A><P><B>Overriding the Transform Member Function</B>
+<P>The <B>Transform</B> member function in your derived class is called each time the 
+<A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">IMemInputPin::Receive</A> method on the input pin of the filter is called to transfer another sample. 
+Place the code that performs the actual purpose of the filter in this member function, or in the functions 
+called from here. Copy transform filters will likely have a private <A HREF="dssd0250.htm#Lib_0001060246030300" TARGET="TEXT">Copy</A> member function associated with the transform code, while transform-inplace functions will simply modify the code in one buffer.
+
+<A NAME="tfilt_0001050601060200"></A><P><B>Overriding the CheckInputType Member Function</B>
+<P>During the pin connection, the <A HREF="dssd0248.htm#Lib_0001060244050400" TARGET="TEXT">CheckMediaType</A> 
+member function of the input pin is called to determine whether the proposed media type is acceptable. The 
+<A HREF="dssd0248.htm#Lib_0001060244050400" TARGET="TEXT">CTransformInputPin::CheckMediaType</A> member function is implemented to call the 
+<A HREF="dssd0247.htm#Lib_0001060243040500" TARGET="TEXT">CheckInputType</A> member function of the derived filter 
+class with the media type. You must implement this to accommodate the media types your filter can handle. The following code sample outlines part of the <FONT FACE="Courier New">CGargle::CheckInputType</FONT> member function, which rejects any media type but MEDIATYPE_Audio.
+
+<PRE><FONT FACE="Courier" SIZE="2">HRESULT CGargle::CheckInputType(const CMediaType *pmt) {    
+&#009;...
+    // reject non-Audio type
+    if (pmt-&gt;majortype != MEDIATYPE_Audio) {
+        return E_INVALIDARG;
+    }</FONT></PRE>
+<A NAME="tfilt_0001050601060300"></A><P><B>Overriding the CheckTransform Member Function</B>
+<P>Copy transform filters can transform the media type from the input pin to output pin. Therefore, if the output pin is connected (so its media type is known), when the <A HREF="dssd0248.htm#Lib_0001060244050400" TARGET="TEXT">CTransformInputPin::CheckMediaType</A> member function is called during connection, the <B>CheckTransform</B> member function of the derived class is called to verify that the transform from the input type to the output type is valid. It is also called when <A HREF="dssd0249.htm#Lib_0001060245070300" TARGET="TEXT">CTransformOutputPin::CheckMediaType</A> is called.
+
+<P>In the <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A> class, this member function is implemented in the base class header file to simply return S_OK, because the functions from <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A> that call this member function are overridden in <B>CTransInPlaceFilter</B> to call <B>CheckInputType</B> instead. This assumes that the media type doesn't change in a transform-inplace filter, as it might in a copy transform filter. 
+
+
+<A NAME="tfilt_0001050601060400"></A><P><B>Overriding the DecideBufferSize Member Function</B>
+<P>Copy transform filters might be required to set the properties of the allocator into which they are copying. This is likely if the downstream filter has provided a newly created allocator (that is, one that hasn't passed an allocator from farther downstream), or if the output pin is forced to create its own allocator. In this case, the pure virtual <A HREF="dssd0199.htm#Lib_0001060213040800" TARGET="TEXT">CBaseOutputPin::DecideBufferSize</A> member function is called from the <A HREF="dssd0199.htm#Lib_0001060213040700" TARGET="TEXT">CBaseOutputPin::DecideAllocator</A> member function, and the derived class fills in the requirements for the buffer by calling the <A HREF="dssd0160.htm#If_0001060148030600" TARGET="TEXT">IMemAllocator::SetProperties</A> method on the allocator object to which it has a reference.
+
+<P>The <A HREF="dssd0250.htm#Lib_0001060246030500" TARGET="TEXT">CTransInPlaceFilter::DecideBufferSize</A> method is never called, because the allocator of another filter is always in use. It is implemented in the base class header file to return E_UNEXPECTED. 
+
+<A NAME="tfilt_0001050601060500"></A><P><B>Overriding the GetMediaType Member Function</B>
+<P>Pins provide enumerators to enable other objects to determine the pin's media type. A pin provides the media type enumerator (the <A HREF="dssd0132.htm#If_000106012c000000" TARGET="TEXT">IEnumMediaTypes</A> interface), which the pin base classes implement to call the <B>GetMediaType</B> member function in the pin class. In the copy transform filter classes, each pin's <A HREF="dssd0249.htm#Lib_0001060245070800" TARGET="TEXT">CTransformOutputPin::GetMediaType</A> member function simply calls the virtual <A HREF="dssd0247.htm#Lib_0001060243040d00" TARGET="TEXT">CTransformFilter::GetMediaType</A> member function in the filter class. Your derived class must implement this member function to provide each supported media type in a list of media types. 
+
+<P>In the transform-inplace classes, the enumerators form a transparent channel between the filters upstream and downstream from the transform filter. If the transform filter's input pin must perform an enumeration, it obtains an enumerator from the downstream filter's input pin. If the output pin must perform an enumeration, it obtains an enumerator from the upstream filter's output pin. One consequence of this is that transform-inplace filters can't connect to each other unless at least one of them is connected to something else, because neither of the transform-inplace filters can propose any media type for the connection.
+
+<H3><A NAME="tfilt_0001050601060600">Overriding Pin Member Functions</A></H3>
+<P>If you derived your filter class from the transform classes and want more than one input or output pin, you must override the pin class (for example, <A HREF="dssd0248.htm#Lib_0001060244000000" TARGET="TEXT">CTransformInputPin</A> or <A HREF="dssd0249.htm#Lib_0001060245000000" TARGET="TEXT">CTransformOutputPin</A>). If you override the pin class, you must also override the <B>GetPin</B> member function of <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A> or <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A>, so that you can create pin objects from your derived classes. If you override one of the pin classes (for example, <B>CTransformInputPin</B>) and override <B>GetPin</B> to create the pin object, you must also override <B>GetPin</B> to create the other pin object of the same base class (for example, <B>CTransformOutputPin</B>). 
+<P>If you want more than one input or output pin, it is often simpler to derive your filter from <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A> rather than from one of the transform classes.
+
+<H3><A NAME="tfilt_0001050601060700">Overriding the CBaseOutput::DecideAllocator Member Function</A></H3>
+<P>The base classes implement <A HREF="dssd0199.htm#Lib_0001060213040700" TARGET="TEXT">CBaseOutputPin::DecideAllocator</A> to let the output pin automatically use the downstream pin's allocator. One of the most common alterations in the derived class is to force the use of an object's own allocator (or one from an upstream filter). In the DirectShow model, for example, a source filter pushes media samples onto the next filter and requires its own allocator. For example, if you write a transform-inplace filter and insert it between a source filter and a decompressor filter, the transform filter must present the source filter's allocator to the decompressor. Therefore, you must override the <B>CBaseOutputPin::DecideAllocator</B> member function. 
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

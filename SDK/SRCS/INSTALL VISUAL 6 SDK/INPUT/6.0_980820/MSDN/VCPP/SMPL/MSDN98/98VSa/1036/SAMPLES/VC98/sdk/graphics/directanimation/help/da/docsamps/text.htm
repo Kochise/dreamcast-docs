@@ -1,0 +1,130 @@
+<HTML> 
+<HEAD>
+<TITLE>DirectAnimation SDK, JScript sample</TITLE>
+</HEAD>	 
+
+<BODY BGCOLOR=WHITE TOPMARGIN=15 LEFTMARGIN=10>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2> 
+          
+
+<DIV ID=controlDiv>
+<OBJECT ID="DAViewer"
+        STYLE="position:absolute; left:50; top:50;width:800;height:800;z-index: -1"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D">
+</OBJECT>
+</DIV>
+<FORM NAME="form1" ACTION="">
+<CENTER>
+<H2>Text</H2>
+<INPUT TYPE=BUTTON VALUE="" NAME=StartBtn OnClick="start()"> 
+</CENTER>
+
+
+
+<SCRIPT LANGUAGE="JAVASCRIPT">
+<!--
+
+  var m_frm = document.form1;
+  m_frm.StartBtn.value = "Show";
+  var FlagNotStarted = true;
+  
+
+ 
+  function start()
+  {
+ 
+    if (FlagNotStarted)
+    {
+     m_frm.StartBtn.value = "         ";
+     text();
+     FlagNotStarted = false;
+    }
+  }
+
+
+
+
+   function text ()
+    {
+
+     m = DAViewer.MeterLibrary;
+
+  // Text in DirectAnimation is treated as an image, which means it must be rendered. This 
+  // is done with the StringImage function, which requires the text string and a font style.
+  // Fonts (other than the default font style) are defined with the Font function, which requires the name of the font, its size, 
+  // in points, and its color.
+  // The Font function returns a DAFontStyle object, and this contains functions for setting
+  // attributes such as bold or italic.
+
+  // This is a text string rendered with the default font style.
+
+  myText = "This is the default font style.";
+  defaultFS = m.DefaultFont;
+
+  myTextImage = m.StringImage(myText, defaultFS);
+ 
+  // Translate it because it's originally centered at the origin, just like any other image.
+  myTextImage = myTextImage.Transform(m.Translate2(-.08, .08));
+
+  // Here we define a font style
+  fs1 = m.Font("Verdana", 24, m.Black);
+  verdText = "This is Verdana, 24pt, black.";
+
+  // Render it
+  verdTextImage = m.TextImage(verdText, fs1);
+
+  // Translate it
+  verdTextImage = verdTextImage.Transform(m.Translate2(-.055, .06));
+
+  // Italicized text
+  italText = "Italicized with DAFontStyle.Italic function";
+  italTextImage = m.StringImage(italText, fs1.Italic());
+
+  italTextImage = italTextImage.Transform(m.Translate2(-.03, .04));
+
+  
+  // This example cycles through 3 different fonts. The font switches every 2 seconds.
+
+  // When the timer fires, we go to the next font.
+  fontChange = m.Timer(2);
+
+  // Create an object to hold our cycling fonts. Fonts are defined as DAStrings
+  cycFont = new ActiveXObject("DirectAnimation.DAString");
+  
+  // Initialize the object 
+  // We use recursion to keep repeating the cycle
+  cycFont.Init(m.Until(m.DAString("Verdana"), fontChange,
+                       m.Until(m.DAString("Comic Sans MS Bold"), fontChange,
+                         m.Until(m.DAString("Arial Italic"), fontChange, cycFont))));
+
+  // Define an animated font style
+  fs2 = m.FontAnim(cycFont, m.DANumber(24), m.Red);
+  
+  // This is the text that will be displayed in different fonts
+  changeFontText = "Font changes every 2 seconds."
+
+  // Render and place the image.
+  changeFontImage = m.StringImage(changeFontText, fs2).Transform(m.Translate2(-.05, .02));
+
+  // Construct the image that will be displayed
+  finalImg = m.Overlay(myTextImage, m.Overlay(verdTextImage, 
+                                        m.Overlay(italTextImage, changeFontImage)));
+  
+  
+  // And display it 
+  DAViewer.Image = finalImg;
+  
+  DAViewer.Start(); 
+
+
+  }
+
+
+
+//-->
+</script>
+
+</FORM>
+</FONT>
+</BODY>
+</HTML>

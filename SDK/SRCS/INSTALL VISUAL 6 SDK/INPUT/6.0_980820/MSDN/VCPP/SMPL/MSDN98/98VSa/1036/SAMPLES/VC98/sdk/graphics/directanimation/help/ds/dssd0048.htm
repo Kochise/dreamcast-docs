@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Display a Filter's Property Page from C++</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0047.htm','/dssd0000.htm','/dssd0045.htm','/index.htm','/dssd0049.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Play_ContC_0001040103000000">Display a Filter's Property Page from C++</A></H2>
+<BR CLEAR=ALL>
+<P>This article walks through a simple C++ program designed to demonstrate how to request a filter to display its property page. It is based on the MPegProp function code in the MPegProp.cpp file, which you can find in the MPegProp sample in the Samples\ds\player directory. 
+
+<P>This code displays the property page of the MPEG video decoder. This filter has a property page that enables you to play MPEG files in color or monochrome. You can see this filter's property page by opening the Filter Graph Editor, choosing the <B>Insert Filters</B> command from the <B>Graph</B> menu, selecting <B>MPEG Video Decoder</B> from the <B>DirectShow Filters</B> list, and clicking the <B>Insert Filters</B> button. After you've inserted the filter, right-click anywhere on it to display its property page.
+
+<P>See these related sections if you want to play back media files or specify the video playback window:
+<UL><LI><A HREF="dssd0046.htm" TARGET="TEXT">Play a Movie from C++</A> &#151; demonstrates the basic code for playing back a media file.
+<LI><A HREF="dssd0046.htm#Play_ContC_0001040101020000" TARGET="TEXT">Adding Media Seeking</A> &#151; shows the code needed to seek to a particular location in the media file.
+<LI><A HREF="dssd0047.htm" TARGET="TEXT">Control the Video Playback Window from C++</A> &#151; demonstrates how to display a filter's property page, so the user can change how media files are played back.
+</UL>
+<P>Perform the following steps to control the MPEG video decoder's property page in C/C++. You don't necessarily have to perform the steps in the order presented. 
+<OL><LI>Include the necessary headers.
+<PRE><FONT FACE="Courier" SIZE="2">
+  #include &lt;windows.h&gt;
+  #include &lt;mmsystem.h&gt;
+  #include &lt;streams.h&gt;
+  #include "playfile.h"
+</FONT></PRE>
+<LI>Define a windows message constant and the HELPER_RELEASE macro, which will be used to release the interfaces from the WndMainProc callback (see the MPegProp code for generic window code).
+<PRE><FONT FACE="Courier" SIZE="2">
+ #define WM_GRAPHNOTIFY  WM_USER+13
+ #define HELPER_RELEASE(x) { if (x) x-&gt;Release(); x = NULL; }
+</FONT></PRE>
+<LI>Declare variables. 
+<PRE><FONT FACE="Courier" SIZE="2">
+ HWND      ghApp;
+ HINSTANCE ghInst;
+ HRESULT   hr;
+ LONG      evCode;
+ LONG      evParam1;
+ LONG      evParam2;
+</FONT></PRE>
+<P>The <I>ghApp</I> variable is the handle of window to notify when the graph signals an event. The <I>ghInst</I> variable is the HINSTANCE of the window. The <I>evCode</I> variable will hold the event code, and the <I>evParam1</I> and <I>evParam2</I> variables will hold the event parameters.
+
+<LI>Declare and initialize the necessary interfaces. The reference count of the interfaces is automatically incremented on initialization, so you don't need to call the <A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">IUnknown::AddRef</A> method on them. For this example, you need only the four interfaces shown in the following code. For more information, see the documentation for the <A HREF="dssd0151.htm#If_000106013f000000" TARGET="TEXT">IMediaEventEx</A>, <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A>, <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A>, and <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> interfaces. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+ 
+  IGraphBuilder *pigb  = NULL;
+  IMediaControl *pimc  = NULL;
+  IMediaEventEx *pimex = NULL;
+  IVideoWindow  *pivw  = NULL;
+  IFilterGraph  *pifg  = NULL;
+  IBaseFilter   *pifPP = NULL;
+  ISpecifyPropertyPages *pispp = NULL;
+
+</FONT></PRE>
+<LI>Define the function and declare variables. The <I>szFile</I> parameter is the name of the MPEG video file that will be played.
+<PRE><FONT FACE="Courier" SIZE="2">
+   void MpegProp (LPSTR szFile)
+   {   
+     
+</FONT></PRE>
+<LI>Create a Unicode (wide character) string from the input file name.
+<PRE><FONT FACE="Courier" SIZE="2">
+        WCHAR wFile[MAX_PATH];
+        MultiByteToWideChar( CP_ACP, 0, szFile, -1, wFile, MAX_PATH );
+</FONT></PRE>
+<LI>Instantiate the filter graph manager, asking for the <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A> interface.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+        hr = CoCreateInstance(CLSID_FilterGraph,
+        NULL,
+        CLSCTX_INPROC_SERVER,
+        IID_IGraphBuilder,
+        (void **)&amp;pigb);
+</FONT></PRE>
+<LI>Query for the <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A> interface (provides the methods to run, pause, and stop the playback), the <A HREF="dssd0151.htm#If_000106013f000000" TARGET="TEXT">IMediaEventEx</A> interface (so you can receive event notifications), and the <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> interface to hide the window when the movie is finished playing.
+ 
+<PRE><FONT FACE="Courier" SIZE="2">
+   pigb-&gt;QueryInterface(IID_IMediaControl, (void **)&amp;pimc);
+   pigb-&gt;QueryInterface(IID_IMediaEventEx, (void **)&amp;pimex);
+   pigb-&gt;QueryInterface(IID_IVideoWindow, (void **)&amp;pivw);
+</FONT></PRE>
+<LI>Ask the filter graph manager to build the filter graph that renders the input file. This does not play the media file. (When you play the file with <B>Run</B>, the filter graph will automatically render the input file's media type. You do not have to specify a renderer filter.) 
+<PRE><FONT FACE="Courier" SIZE="2">
+   hr = pigb-&gt;RenderFile(wFile, NULL);
+</FONT></PRE>
+<LI>Use a window to capture graph signal events. This not only improves performance, but allows your application to run in any threading model. 
+<PRE><FONT FACE="Courier" SIZE="2">
+   pimex-&gt;SetNotifyWindow((OAHWND)ghApp, WM_GRAPHNOTIFY, 0);
+</FONT></PRE>
+<P>The window specified by <I>ghApp</I> will handle messages in response to all events from the graph. If an event occurs, DirectShow posts a WM_GRAPHNOTIFY message to the window. 
+<LI>Query for the <A HREF="dssd0140.htm#If_0001060134000000" TARGET="TEXT">IFilterGraph</A> interface. Through <B>IFilterGraph</B>, you will retrieve a pointer to the <A HREF="dssd0116.htm#If_000106011c000000" TARGET="TEXT">IBaseFilter</A> interface on the MPEG Video Codec filter. The easiest way to find the single MPEG video codec in the graph is through <A HREF="dssd0140.htm#If_0001060134030500" TARGET="TEXT">IFilterGraph::FindFilterByName</A>.
+
+
+<PRE><FONT FACE="Courier" SIZE="2">
+  pigb-&gt;QueryInterface(IID_IFilterGraph, (void **)&amp;pifg);
+</FONT></PRE>
+<LI>Use <A HREF="dssd0140.htm#If_0001060134030500" TARGET="TEXT">FindFilterByName</A> to find the MPEG Video Codec. This method returns a pointer (<I>&amp;pifPP</I>) to the <A HREF="dssd0116.htm#If_000106011c000000" TARGET="TEXT">IBaseFilter</A> interface on the MPEG Video Codec.
+<PRE><FONT FACE="Courier" SIZE="2">
+   hr = pifg-&gt;FindFilterByName(L"MPEG Video Codec", &amp;pifPP);
+</FONT></PRE>
+<LI>Retrieve the <A HREF="dssd0389.htm#external_00010a01090000a2" TARGET="TEXT">ISpecifyPropertyPages</A> interface for the MPEG Video Codec. This filter has a property page that enables you to play MPEG files in color or monochrome. 
+<PRE><FONT FACE="Courier" SIZE="2">
+   pif-&gt;QueryInterface(IID_ISpecifyPropertyPages, (void **)&amp;pispp);
+</FONT></PRE>
+<LI>Allocate a counted array of <A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A>s for the property page. The <A HREF="dssd0389.htm#external_00010a01090000a3" TARGET="TEXT">ISpecifyPropertyPages::GetPages</A> method uses the COM <B>CAUUID</B> structure to receive an array of CLSIDs from the filter for each of its property pages. The structure has two members, <B>cElems</B>, which holds the number of property pages, and 
+<B>pElems</B>, which points to an array holding the property page CLSIDs.
+<PRE><FONT FACE="Courier" SIZE="2">
+   CAUUID caGUID;
+</FONT></PRE>
+<LI>Using the pointer to the MPEG Video Decoder filter's property page, <I>pispp</I>, call the COM <A HREF="dssd0389.htm#external_00010a01090000a3" TARGET="TEXT">ISpecifyPropertyPages::GetPages</A> method to fill the caGUID structure with a counted array of UUIDs, where each UUID specifies a property page CLSID. 
+<PRE><FONT FACE="Courier" SIZE="2">
+   pispp-&gt;GetPages(&amp;caGUID);
+</FONT></PRE>
+<LI>Release the <A HREF="dssd0389.htm#external_00010a01090000a2" TARGET="TEXT">ISpecifyPropertyPages</A> interface.
+<PRE><FONT FACE="Courier" SIZE="2">
+  HELPER_RELEASE(pispp);
+</FONT></PRE>
+<LI>Create a modal dialog box to display the MPEG Video Decoder filter's property page. This dialog box appears before the video is played, enabling the user to choose to play back in color or monochrome. 
+<PRE><FONT FACE="Courier" SIZE="2">
+   OleCreatePropertyFrame(NULL,
+            0,
+            0,
+            L"Filter",          // Caption for the dialog box
+            1,                  // Number of filters
+            (IUnknown **)&amp;pifPP,  // Pointer to the filter whose property 
+                                // Pages are being displayed. This can 
+                                // be an array of pointers if more than
+                                // one filter's property pages are to 
+                                // be displayed. Note that only 
+                                // properties common to all the filters 
+                                // can be displayed on the same modal 
+                                // dialog.
+            caGUID.cElems,      // Number of property pages
+            caGUID.pElems,      // Pointer to property page CLSIDs
+            0,
+            0,
+            NULL);
+</FONT></PRE>
+<LI>Release the <A HREF="dssd0116.htm#If_000106011c000000" TARGET="TEXT">IBaseFilter</A> interface.
+<PRE><FONT FACE="Courier" SIZE="2">
+  HELPER_RELEASE(pifPP);
+</FONT></PRE>
+</OL>
+<P>The MPegProp sample uses the same WndMainProc callback function to handle the filter graph messages, the same GetClipFileName function to get the movie to be played, and the same the WinMain function to create the window as the Playfile sample. These are all generic windows functions.
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

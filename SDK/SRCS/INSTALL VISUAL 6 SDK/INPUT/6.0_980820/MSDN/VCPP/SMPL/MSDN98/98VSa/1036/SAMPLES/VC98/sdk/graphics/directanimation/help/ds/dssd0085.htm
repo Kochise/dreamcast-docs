@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Alternative Video Renderers</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0084.htm','/dssd0000.htm','/dssd0083.htm','/index.htm','/dssd0086.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="vidrendr_0001050802000000">Alternative Video Renderers</A></H2>
+<BR CLEAR=ALL>
+<P>This article describes some of the more complicated implementation requirements of a renderer; these apply to most renderers, although some aspects are video-specific (such as <A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A> and other notifications). In particular, it discusses how to handle various notifications, state changes, and format changes. It also provides a summary of the notifications that a renderer is responsible for sending to the filter graph manager. 
+ 
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0085.htm#vidrendr_0001050802010000" TARGET="TEXT">Writing an Alternative Renderer</A>
+<LI><A HREF="dssd0085.htm#vidrendr_0001050802020000" TARGET="TEXT">Handling End-of-stream and Flushing Notifications</A>
+<LI><A HREF="dssd0085.htm#vidrendr_0001050802030000" TARGET="TEXT">Handling State Changes and Pause Completion</A>
+<LI><A HREF="dssd0085.htm#vidrendr_0001050802040000" TARGET="TEXT">Handling Termination</A>
+<LI><A HREF="dssd0085.htm#vidrendr_0001050802050000" TARGET="TEXT">Handling Dynamic Format Changes</A>
+<LI><A HREF="dssd0085.htm#vidrendr_0001050802060000" TARGET="TEXT">Handling Persistent Properties</A>
+<LI><A HREF="dssd0085.htm#vidrendr_0001050802070000" TARGET="TEXT">Handling EC_REPAINT Notifications</A>
+<LI><A HREF="dssd0085.htm#vidrendr_0001050802080000" TARGET="TEXT">Handling Notifications in Full-Screen Mode</A>
+<LI><A HREF="dssd0085.htm#vidrendr_0001050802090000" TARGET="TEXT">Summary of Notifications</A>
+</UL>
+<A NAME="vidrendr_0001050802010000"></A><P><B>Writing an Alternative Renderer</B>
+<P>Microsoft&#174; DirectShow&#153; provides a window-based video renderer; it also provides a full-screen renderer in the run-time installation. You can use the C++ classes in the DirectShow SDK to write alternative video renderers. For alternative renderers to interact correctly with DirectShow-based applications, the renderers must adhere to the guidelines outlined in this article. You can use the <A HREF="dssd0203.htm#Lib_0001060217000000" TARGET="TEXT">CBaseRenderer</A> and <A HREF="dssd0205.htm#Lib_0001060219000000" TARGET="TEXT">CBaseVideoRenderer</A> classes to help follow these guidelines when implementing an alternative video render. Consult the SampVid sample in the DirectShow SDK for an example of an alternative video renderer that uses these classes. Because of the ongoing development of DirectShow, review your implementation periodically to ensure that the renderers are compatible with the most recent version of DirectShow.
+
+<P>This article discusses many notifications that a renderer is responsible for handling. A brief review of DirectShow notifications might help to set the stage. There are essentially three kinds of notifications that occur in DirectShow: 
+
+<UL><LI><I>Stream notifications</I>, which are events that occur in the media stream and are passed from one filter to the next. These can be begin-flushing, end-flushing or end-of-stream notifications and are sent by calling the appropriate method on the downstream filter's input pin (for example <A HREF="dssd0165.htm#If_000106014d030100" TARGET="TEXT">IPin::BeginFlush</A>).
+
+<LI><I>Filter graph manager notifications</I>, which are events sent from a filter to the filter graph manager such as <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A>. This is accomplished by calling the <A HREF="dssd0152.htm#If_0001060140030100" TARGET="TEXT">IMediaEventSink::Notify</A> method on the filter graph manager.
+
+<LI><I>Application notifications</I>, which are retrieved from the filter graph manager by the controlling application. An application calls the <A HREF="dssd0150.htm#If_000106013e030300" TARGET="TEXT">IMediaEvent::GetEvent</A> method on the filter graph manager to retrieve these events. Often, the filter graph manager passes through the events it receives to the application. 
+</UL>
+<P>This article discusses the responsibility of the renderer filter in handling stream notifications it receives and in sending appropriate filter graph manager notifications. 
+
+
+
+<A NAME="vidrendr_0001050802020000"></A><P><B>Handling End-of-stream and Flushing Notifications</B>
+<P>An end-of-stream notification begins at an upstream filter (such as the source filter) when that filter detects that it can send no more data. It is passed through every filter in the graph and eventually ends at the renderer, which is responsible for subsequently sending an <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> notification to the filter graph manager. Renderers have special responsibilities when it comes to handling these notifications.
+
+<P>A renderer receives an end-of-stream notification when its input pin's <A HREF="dssd0165.htm#If_000106014d030700" TARGET="TEXT">IPin::EndOfStream</A> method is called by the upstream filter. A renderer should note this notification and continue to render any data it has already received. Once all remaining data has been received, the renderer should send an <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> notification to the filter graph manager. The <B>EC_COMPLETE</B> notification should be sent only once by a renderer each time it reaches the end of a stream. Furthermore, <B>EC_COMPLETE</B> notifications must never be sent except when the filter graph is running. Therefore, if the filter graph is paused when a source filter sends an end-of-stream notification, then <B>EC_COMPLETE</B> should not be sent until the filter graph is finally run.
+
+<P>Any calls to the <A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">IMemInputPin::Receive</A> or <A HREF="dssd0161.htm#If_0001060149030600" TARGET="TEXT">IMemInputPin::ReceiveMultiple</A> methods after an end-of-stream notification is signaled should be rejected. E_UNEXPECTED is the most appropriate error message to return in this case. 
+
+<P>When a filter graph is stopped, any cached end-of-stream notification should be cleared and not resent when next started. This is because the filter graph manager always pauses all filters just before running them so that proper flushing occurs. So, for example, if the filter graph is paused and an end-of-stream notification is received, and then the filter graph is stopped, the renderer should not send an <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> notification when it is subsequently run. If no seeks have occurred, 
+the source filter will automatically send another end-of-stream notification during the pause state that precedes a run state. 
+If, on the other hand, a seek has occurred while the filter graph is stopped, then the source filter might have data to send, so it won't send an end-of-stream notification.
+
+<P>Video renderers often depend on end-of-stream notifications for more than the sending of <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> notifications. For example, if a stream has finished playing (that is, an end-of-stream notification is sent) and another window is dragged over a video renderer window, a number of WM_PAINT window messages will be generated. The typical practice for running video renderers is to refrain from repainting the current frame upon receipt of WM_PAINT messages (based on the assumption that another frame to be drawn will be received). However, when the end-of-stream notification has been sent, the renderer is in a waiting state; it is still running but is aware that it will not receive any additional data. Under these circumstances, the renderer customarily draws the playback area black.
+
+<P>Handling flushing is an additional complication for renderers. Flushing is carried out through a pair of <A HREF="dssd0165.htm#If_000106014d000000" TARGET="TEXT">IPin</A> methods called <A HREF="dssd0165.htm#If_000106014d030100" TARGET="TEXT">BeginFlush</A> and <A HREF="dssd0165.htm#If_000106014d030600" TARGET="TEXT">EndFlush</A>. Flushing is essentially an additional state that the renderer must handle. It is illegal for a source filter to call <B>BeginFlush</B> without calling <B>EndFlush</B>, so hopefully the state is short and discrete; however, the renderer must correctly handle data or notifications it receives during the flush transition.
+
+<P>Any data received after calling <A HREF="dssd0165.htm#If_000106014d030100" TARGET="TEXT">BeginFlush</A> should be rejected immediately by returning E_UNEXPECTED. Furthermore, any cached end-of-stream notification should also be cleared when a renderer is flushed. A renderer will typically be flushed in response to a seek. The flush ensures that old data is cleared from the filter graph before fresh samples are sent. (Typically, the playing of two sections of a stream, one after another, is best handled through deferred commands rather than waiting for one section to finish and then issuing a seek command.) 
+
+<A NAME="vidrendr_0001050802030000"></A><P><B>Handling State Changes and Pause Completion</B>
+<P>A renderer filter behaves the same as any other filter in the filter graph when its state is changed, with the following exception. After being paused, the renderer will have some data queued, ready to be rendered when subsequently run. When the video renderer is stopped, it holds on to this queued data. This is an exception to the DirectShow rule that no resources should be held by filters while the filter graph is stopped.
+
+<P>The reason for this exception is that by holding resources, the renderer will always have an image with which to repaint the window if it receives a WM_PAINT message. It also has an image to satisfy methods, such as <A HREF="dssd0191.htm#Lib_000106020b041700" TARGET="TEXT">CBaseControlVideo::GetStaticImage</A>, that request a copy of the current image. Another effect of holding resources is that holding on to the image stops the allocator from being decommitted, which in turn makes the next state change occur much faster because the image buffers are already allocated.
+
+<P>A video renderer should render and release samples only while running. While paused, the filter might render them (for example, when drawing a static poster image in a window), but should not release them. Audio renderers will do no rendering 
+while paused (although they may
+ 
+perform other activities, such as preparing the wave device, for example). The time at which the samples should be rendered 
+is obtained by combining the stream time in the sample with the reference time passed as a parameter to the <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">IMediaControl::Run</A> method. Renderers should reject samples with start times less than or equal to end times.
+
+<P>When an application pauses a filter graph, the filter graph does not return from its <A HREF="dssd0149.htm#If_000106013d030500" TARGET="TEXT">IMediaControl::Pause</A> method until there is data queued at the renderers. In order to ensure this, when a renderer is paused, it should return S_FALSE if there is no data waiting to be rendered. If it has data queued, then it can return S_OK. 
+
+<P>The filter graph manager checks all return values when pausing a filter graph, to ensure that the renderers have data queued. If one or more filters are not ready, then the filter graph manager polls the filters in the graph by calling 
+<A HREF="dssd0153.htm#If_0001060141030100" TARGET="TEXT">GetState</A>. The <B>GetState</B> method takes a time-out parameter. A filter (typically a renderer) that is still waiting for data to arrive before completing the state change returns <A HREF="dssd0293.htm#errcodes_0001060a01000060" TARGET="TEXT">VFW_S_STATE_INTERMEDIATE</A> if the <B>GetState</B> method expires. Once data arrives at the renderer, <B>GetState</B> should be returned immediately with S_OK.
+
+<P>In both the intermediate and completed state, the reported filter state will be <A HREF="dssd0288.htm#dtypes_0001060601001802" TARGET="TEXT">State_Paused</A>. Only the return value indicates whether the filter is really ready or not. If, while a renderer is waiting for data to arrive, its source filter sends an end-of-stream notification, then that should also complete the state change.
+
+<P>Once all filters actually have data waiting to be rendered, the filter graph will complete its pause state change.
+
+
+<A NAME="vidrendr_0001050802040000"></A><P><B>Handling Termination</B>
+<P>Video renderers must correctly handle termination events from the user. This implies correctly hiding the window and knowing what to do if a window is subsequently forced to be displayed. Also, video renderers must notify the filter graph manager when its window is destroyed (or more accurately, when the renderer is removed from the filter graph) to free resources.
+
+<P>If the user closes the video window (for instance by pressing <SMALL>ALT+F4</SMALL>), the convention is to hide the window immediately and send an <A HREF="dssd0291.htm#events_0001060801001700" TARGET="TEXT">EC_USERABORT</A> notification to the filter graph manager. This notification is passed through to the application, which will stop the graph playing. After sending <B>EC_USERABORT</B>, a video renderer should reject any additional samples delivered to it. 
+
+
+
+<P>The abort flag should be left on by the renderer until it is subsequently stopped, at which point it should be reset so that an 
+application can override the user action and continue playing the graph if it desires. If <SMALL>ALT+F4</SMALL> is pressed while the video is running, the window will be hidden and all further samples delivered will be rejected. If the window is subsequently shown (perhaps through <A HREF="dssd0177.htm#If_0001060159032100" TARGET="TEXT">IVideoWindow::put_Visible</A>), then no <A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A> notifications should be generated.
+
+<P>The video renderer should also send the <A HREF="dssd0291.htm#events_0001060801001900" TARGET="TEXT">EC_WINDOW_DESTROYED</A> notification to the filter graph when the video renderer is terminating. In fact, it is best to handle this when the renderer's <A HREF="dssd0116.htm#If_000106011c030300" TARGET="TEXT">IBaseFilter::JoinFilterGraph</A> method is called with a null parameter (indicating that the renderer is about to be removed from the filter graph), rather than waiting until the actual video window is destroyed. Sending this notification allows the plug-in distributor in the filter graph manager
+to pass on resources that depend on window focus to other filters (such as audio devices).
+
+
+<A NAME="vidrendr_0001050802050000"></A><P><B>Handling Dynamic Format Changes</B>
+<P>Video renderers in DirectShow accept only video formats that can be drawn efficiently. For example, the window-based run-time renderer will accept only the RGB format that matches the current display device mode (for example, RGB565 when the display is set to 65,536 colors). As a last resort, it also accepts 8-bit palettized formats, as most display cards can draw this format efficiently. When the renderer has Microsoft&#174; DirectDraw&#174; loaded, it might later ask the source filter to switch to something that can be written onto a DirectDraw surface and drawn directly through display hardware.
+In some cases, the renderer's upstream filter might try to change the video format while the video is playing. This often occurs when a video stream has a palette change. It is most often the video decompressor that initiates a dynamic
+format change. 
+
+<P>An upstream filter attempting to change formats dynamically should always call the <A HREF="dssd0165.htm#If_000106014d030a00" TARGET="TEXT">IPin::QueryAccept</A> method on the renderer input pin (for filters based on <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A>, this is implemented in 
+<A HREF="dssd0247.htm#Lib_0001060243040500" TARGET="TEXT">CTransformFilter::CheckInputType</A>). It is undefined as to which formats a renderer will allow an upstream filter to change dynamically.
+
+ However, at a very minimum, it should allow the upstream filter to change palettes. When an upstream filter changes media types, it will attach the format to the first sample delivered in that new type. If the renderer holds many samples in a queue waiting to be rendered, it should delay changing the format until the sample with the type change is actually about to be rendered.
+
+<P>Whenever a format change is detected by the video renderer, it should send an <A HREF="dssd0291.htm#events_0001060801000500" TARGET="TEXT">EC_DISPLAY_CHANGED</A> notification. Most video renderers pick a format during connection so that the format can be drawn efficiently through GDI. If the user changes the current display mode without restarting the computer, a renderer might find itself with a bad image format connection and should send this notification. The first parameter should be the pin that needs reconnecting. The filter graph manager will arrange for the filter graph to be stopped and the pin reconnected. During the subsequent reconnection, the renderer can accept a more appropriate format.
+
+<P>Whenever a video renderer detects a palette change in the stream it should send the <A HREF="dssd0291.htm#events_0001060801000d00" TARGET="TEXT">EC_PALETTE_CHANGED</A> notification to the filter graph manager. The DirectShow video renderers detect whether a palette has really changed in dynamic format or not. The video renderers do this not only to filter out the number 
+of <B>EC_PALETTE_CHANGED</B> notifications sent but also to reduce the amount of palette creation, installation, and deletion required.
+
+<P>Finally, the video renderer might also detect that the size of the video has changed, in which case, it should send the <A HREF="dssd0291.htm#events_0001060801001800" TARGET="TEXT">EC_VIDEO_SIZE_CHANGED</A> notification. An application might use this notification to negotiate space in a compound document. The actual video dimensions are available through the <A HREF="dssd0118.htm#If_000106011e000000" TARGET="TEXT">IBasicVideo</A> control interface. The DirectShow renderers detect whether the video has actually changed size or not prior to sending these events.
+
+
+<A NAME="vidrendr_0001050802060000"></A><P><B>Handling Persistent Properties</B>
+<P>All properties set through the <A HREF="dssd0118.htm#If_000106011e000000" TARGET="TEXT">IBasicVideo</A> and <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> interfaces are meant to be persistent across connections. Therefore, disconnecting and reconnecting a renderer should show no effects on the window size, position, or styles. However, if the video dimensions change between connections, the renderer should reset the source 
+and destination rectangles to their defaults. The source and destination positions are set through the <B>IBasicVideo</B> interface.
+
+<P>Both <A HREF="dssd0118.htm#If_000106011e000000" TARGET="TEXT">IBasicVideo</A> and <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> provide enough access to properties to allow an application to save and restore all the data in the interface in a persistent format. This will be useful to applications that must save the exact configuration and properties of filter graphs during an editing session and restore them later.
+
+
+<A NAME="vidrendr_0001050802070000"></A><P><B>Handling EC_REPAINT Notifications</B>
+<P>The <A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A> notification is sent only when the renderer is either paused or stopped. This notification signals to the filter graph manager that the renderer needs data. If the filter graph is stopped when it receives one of these notifications, it will pause the filter graph, wait for all filters to receive data (by calling 
+<A HREF="dssd0153.htm#If_0001060141030100" TARGET="TEXT">GetState</A>), and then stop it again. When stopped, a video renderer should hold on to the image so that subsequent WM_PAINT messages can be handled.
+
+<P>Therefore, if a video renderer receives a WM_PAINT message when stopped or paused, and it has nothing with which to paint its window, then it should send <A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A> to the filter graph manager. If an <B>EC_REPAINT</B> notification is received while paused, then the filter graph manager calls <A HREF="dssd0154.htm#If_0001060142030800" TARGET="TEXT">IMediaPosition::put_CurrentPosition</A> with the current position (that is, seeks to the current position). This causes the source filters to flush the filter graph and causes new data to be sent through the filter graph.
+
+<P>A renderer must send only one of these notifications at a time. Therefore, once the renderer sends a notification, it should ensure no more are sent until some samples are delivered. The conventional way to do this is to have a flag to signify that a repaint can be sent, which is turned off after an <A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A> notification is sent. This flag should be reset once data is delivered or when the input pin is flushed, but not if end-of-stream is signaled on the input pin.
+
+<P>If the renderer does not monitor its <A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A> notifications, it will flood the filter graph manager with <B>EC_REPAINT</B> requests (which are relatively expensive to process). For example, if a renderer has no image to draw, and another window is dragged across the window of the renderer in a full-drag operation, the renderer receives multiple WM_PAINT messages. Only the first of these should generate an <B>EC_REPAINT</B> event notification from the renderer to the filter graph manager.
+
+<P>A renderer should send its input pin as the first parameter to the <A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A> notification. By doing this, the attached output pin will be queried for <A HREF="dssd0152.htm#If_0001060140000000" TARGET="TEXT">IMediaEventSink</A>, and if supported, the <B>EC_REPAINT</B> notification will be sent there first. This allows output pins to handle repaints before the filter graph must be touched. This will not be done if the filter graph is stopped, because no buffers would be available from the decommitted renderer allocator.
+
+<P>If the output pin cannot handle the request and the filter graph is running, then the <A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A> notification is ignored. An output pin must return NOERROR (S_OK) from <A HREF="dssd0152.htm#If_0001060140030100" TARGET="TEXT">IMediaEventSink::Notify</A> to signal that it processed 
+the repaint request successfully. The output pin will be called on the filter graph manager worker thread, which avoids having the renderer call the output pin directly, and so sidesteps any deadlock issues. If the filter graph is stopped or paused and the output doesn't handle the request, then the default processing is done.
+
+
+<A NAME="vidrendr_0001050802080000"></A><P><B>Handling Notifications in Full-Screen Mode</B>
+<P>The <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> plug-in distributor (PID) in the filter graph manages full-screen playback. It will swap a video renderer out for a specialist full-screen renderer, stretch a window of a renderer to full screen, or have the renderer 
+implement full-screen playback directly. To interact in full-screen protocols, a video renderer should send an <A HREF="dssd0291.htm#events_0001060801000100" TARGET="TEXT">EC_ACTIVATE</A> notification whenever its window is either activated or deactivated. In other words, an <B>EC_ACTIVATE</B> notification should be sent for each WM_ACTIVATEAPP message a renderer receives.
+
+<P>When a renderer is being used in full-screen mode, these notifications manage the switching into and out of that full-screen mode. Window deactivation typically occurs when a user presses <SMALL>ALT+TAB</SMALL> to switch to another window, which the DirectShow full-screen renderer uses as a cue to return to typical rendering mode.
+
+<P>When the <A HREF="dssd0291.htm#events_0001060801000100" TARGET="TEXT">EC_ACTIVATE</A> notification is sent to the filter graph manager upon switching out of full-screen mode, the filter graph manager sends an <A HREF="dssd0291.htm#events_0001060801000800" TARGET="TEXT">EC_FULLSCREEN_LOST</A> notification to the controlling application. The application might use this notification to restore the state of a full-screen button, for example. The <B>EC_ACTIVATE</B> notifications are used internally by DirectShow to manage full-screen switching on cues from the video renderers. 
+
+
+<A NAME="vidrendr_0001050802090000"></A><P><B>Summary of Notifications</B>
+<P>This section lists the filter graph notifications that a renderer can send.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Event notification </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000100" TARGET="TEXT">EC_ACTIVATE</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sent by video renderers in full-screen rendering mode for each WM_ACTIVATEAPP message received. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sent by renderers after all data has been rendered. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000500" TARGET="TEXT">EC_DISPLAY_CHANGED</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sent by video renderers when a display format changes.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000d00" TARGET="TEXT">EC_PALETTE_CHANGED</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sent whenever a video renderer detects a palette change in the stream. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sent by stopped or paused video renderers when a WM_PAINT message is received and there is no data to display. This causes the filter graph manager to generate a frame to paint to the display. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801001700" TARGET="TEXT">EC_USERABORT</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sent by video renderers to signal a closure that the user requested (for example, a user closing the video window). 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801001800" TARGET="TEXT">EC_VIDEO_SIZE_CHANGED</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sent by video renderers whenever a change in native video size is detected. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801001900" TARGET="TEXT">EC_WINDOW_DESTROYED</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sent by video renderers when the filter is removed or destroyed so that resources that depend on window focus can be passed to other filters.
+</FONT></TD></TR></TABLE>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

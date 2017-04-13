@@ -1,0 +1,204 @@
+<HTML> 
+<HEAD>
+<TITLE>DirectAnimation SDK, JScript sample</TITLE>
+</HEAD>	 
+
+<BODY BGCOLOR=WHITE TOPMARGIN=15 LEFTMARGIN=10>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2> 
+          
+
+<DIV ID=controlDiv>
+<OBJECT ID="DAViewer"
+        STYLE="position:absolute; left:10; top:50;width:860;height:800;z-index: -1"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D">
+</OBJECT>
+</DIV>
+<FORM NAME="form1" ACTION="">
+<CENTER>
+<H2>Rotations</H2>
+<INPUT TYPE=BUTTON VALUE="" NAME=StartBtn OnClick="start()"> 
+</CENTER>
+
+<p>View the source to see what each example does.
+
+<SCRIPT LANGUAGE="JAVASCRIPT">
+<!--
+
+  var m_frm = document.form1;
+  m_frm.StartBtn.value = "Show";
+  var FlagNotStarted = true;
+  
+
+ 
+  function start()
+  {
+ 
+    if (FlagNotStarted)
+    {
+     m_frm.StartBtn.value = "         ";
+     rotations();
+     FlagNotStarted = false;
+    }
+  }
+
+
+
+
+   function rotations ()
+{
+
+  // These examples show what various rotations look like, 
+  // and use a variety of function calls to implement these rotations. 
+  // The translation transforms are for placement on the page.
+
+  // Our measurements will be in meters
+  m = DAViewer.MeterLibrary;
+
+
+  // This is the line style for the square (it will not have a border)
+  ls = m.EmptyLineStyle;
+
+  // Use the default font style for the labels
+  fs = m.DefaultFont;
+
+  // We'll use a blue square, with no border, for all the examples 
+  myRect = m.Rect(.02,.02).Fill(ls, m.SolidColorImage(m.Blue));
+
+  // Create an angle that will cause the first square to rock back and forth,
+  // between + and - 30 degrees, every 2 seconds
+  angle = m.Mul(m.Sin(m.LocalTime), m.DANumber(Math.PI/6));  
+  
+  
+  // EXAMPLE 1
+  // This square rocks back and forth by "angle"
+  myRectBF = myRect.Transform(m.Rotate2Anim(angle)).Transform(m.Translate2(-.06, .06));
+
+  // Label
+  label1String = "Example 1";
+  label1Image = m.StringImage(label1String, fs).Transform(m.Translate2(-.06, .04));
+
+  // Combine the rectangle with the label
+  myRectBF = m.Overlay(myRectBF, label1Image); 
+
+
+  // EXAMPLE 2
+  // This square rocks back and forth by "angle", but does it 8 times faster
+  // Here, we used the SubstituteTime function, rather than redefining "angle", to 
+  // increase the rate
+  // It substitutes the original definition of time (LocalTime) with a new version which is faster
+  myRectBFfast = myRect.Transform(m.Rotate2Anim(angle)).SubstituteTime(m.Mul(m.LocalTime, m.DANumber(8))).Transform(m.Translate2(-.02, .06));
+
+  // Label
+  label2String = "Example 2";
+  label2Image = m.StringImage(label2String, fs).Transform(m.Translate2(-.02, .04));
+
+  // Combine the square with the label
+  myRectBFfast = m.Overlay(myRectBFfast, label2Image); 
+  
+  // EXAMPLE 3
+  // This square rotates in a counterclockwise direction, at 60 degrees/second
+  // The *Rate functions multiply the given amount by LocalTime
+  myRectCCW = myRect.Transform(m.Rotate2RateDegrees(60)).Transform(m.Translate2(.02, .06));
+
+  // Label
+  label3String = "Example 3";
+  label3Image = m.StringImage(label3String, fs).Transform(m.Translate2(.02, .04));
+
+  // Combine the square with the label
+  myRectCCW = m.Overlay(myRectCCW, label3Image);
+
+  // EXAMPLE 4
+  // This square rotates in a clockwise direction, at -120 degrees/second
+  myRectCW =  myRect.Transform(m.Rotate2RateDegrees(-120)).Transform(m.Translate2(.06, .06));
+
+  // Label
+  label4String = "Example 4";
+  label4Image = m.StringImage(label4String, fs).Transform(m.Translate2(.06, .04));
+
+  // Combine the square with the label
+  myRectCW = m.Overlay(myRectCW, label4Image);
+
+  // EXAMPLE 5
+
+  // If you want to use a *Rate function, but don't want to use LocalTime,
+  // modify it with the SubstituteTime function
+  myRectsin = myRect.Transform(m.Rotate2Rate(Math.PI)).SubstituteTime(m.Sin(m.LocalTime)).Transform(m.Translate2(.1, .06));
+
+  // Label
+  label5String = "Example 5";
+  label5Image = m.StringImage(label5String, fs).Transform(m.Translate2(.1, .04));
+
+  // Combine the square with the label
+  myRectsin = m.Overlay(myRectsin, label5Image);
+
+  // The next three examples rotate a two-dimensional object in a three-dimensional space
+  // Use the ParallelTransform function to convert a 3D transform into a 2D transform
+
+  // EXAMPLE 6
+  // Rotate around the X-axis at 180 degrees/second
+  rotxXf = m.Rotate3RateDegrees(m.Vector3(1,0,0), 180);
+  myRectx = myRect.Transform(rotxXf.ParallelTransform2()).Transform(m.Translate2(-.06, 0));
+
+  // Label
+  label6String = "Example 6";
+  label6Image = m.StringImage(label6String, fs).Transform(m.Translate2(-.06, -.02));
+
+  // Combine the square with the label
+  myRectx = m.Overlay(myRectx, label6Image);
+
+  // EXAMPLE 7
+  // Rotate around the Y-axis at 180 degrees/second
+  rotyXf = m.Rotate3RateDegrees(m.Vector3(0,1,0), 180);
+  myRecty = myRect.Transform(rotyXf.ParallelTransform2()).Transform(m.Translate2(-.02, 0));
+
+  // Label
+  label7String = "Example 7";
+  label7Image = m.StringImage(label7String, fs).Transform(m.Translate2(-.02, -.02));
+
+  // Combine the square with the label
+  myRecty = m.Overlay(myRecty, label7Image);
+
+  // EXAMPLE 8
+  // Rotate around the Z-axis at pi radians (or 180 degrees)
+  rotzXf = m.Rotate3Rate(m.Vector3(0,0,1), Math.PI);
+  myRectz = myRect.Transform(rotzXf.ParallelTransform2()).Transform(m.Translate2(.02, 0));
+
+  // Label
+  label8String = "Example 8";
+  label8Image = m.StringImage(label8String, fs).Transform(m.Translate2(.02, -.02));
+
+  // Combine the square with the label
+  myRectz = m.Overlay(myRectz, label8Image);
+
+  // EXAMPLE 9
+  // Rotate around all three at 180 degrees/second
+  rotxyzXf = m.Rotate3RateDegrees(m.Vector3(1,1,1), 180);
+  myRectxyz = myRect.Transform(rotxyzXf.ParallelTransform2()).Transform(m.Translate2(.06, 0));
+
+  // Label
+  label9String = "Example 9";
+  label9Image = m.StringImage(label9String, fs).Transform(m.Translate2(.06, -.02));
+
+  // Combine the square with the label
+  myRectxyz = m.Overlay(myRectxyz, label9Image);
+
+  
+  // Put the images in an array instead of using a series of nested Overlay's
+  finalArray = new Array(myRectBF, myRectBFfast, myRectCCW, myRectCW, myRectsin, myRecty, myRectx, myRecty, myRectz, myRectxyz);
+  finalImg = m.OverlayArray(finalArray);
+  
+  DAViewer.Image = finalImg;
+  DAViewer.Start();
+  
+
+  }
+
+
+
+//-->
+</script>
+
+</FORM>
+</FONT>
+</BODY>
+</HTML>

@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Connection Model</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0069.htm','/dssd0000.htm','/dssd0068.htm','/index.htm','/dssd0071.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="connect_0001050202000000">Connection Model</A></H2>
+<BR CLEAR=ALL>
+<P>This article provides an overview of the filter connection architecture in a Microsoft&#174; DirectShow&#153; filter graph by examining the behavior of the base classes that implement connection. Because filters connect to other filters using pins, the architecture describes pin connection. Consequently, the <A HREF="dssd0200.htm#Lib_0001060214000000" TARGET="TEXT">CBasePin</A>, <A HREF="dssd0199.htm#Lib_0001060213000000" TARGET="TEXT">CBaseOutputPin</A>, and <A HREF="dssd0195.htm#Lib_000106020f000000" TARGET="TEXT">CBaseInputPin</A> base classes and the <A HREF="dssd0165.htm#If_000106014d000000" TARGET="TEXT">IPin</A> interface are discussed. This article describes the connection process and the default functionality built into these classes.
+
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0070.htm#connect_0001050202010000" TARGET="TEXT">Connection Process</A>
+<LI><A HREF="dssd0070.htm#connect_0001050202020000" TARGET="TEXT">How the Base Classes Implement Connection</A>
+<UL><LI><A HREF="dssd0070.htm#connect_0001050202020100" TARGET="TEXT">The Filter Graph Manager Starts the Connection</A>
+<LI><A HREF="dssd0070.htm#connect_0001050202020200" TARGET="TEXT">Negotiating Media Types with CBasePin::AgreeMediaType</A>
+<LI><A HREF="dssd0070.htm#connect_0001050202020300" TARGET="TEXT">Determining a Media Type with CBasePin::TryMediaTypes</A>
+</UL>
+<LI><A HREF="dssd0070.htm#connect_0001050202030000" TARGET="TEXT">When a Reconnection Should Occur</A>
+</UL>
+<A NAME="connect_0001050202010000"></A><P><B>Connection Process</B>
+<P>When building a filter graph, the filter graph manager connects pins between filters. It also selects filters based on the media type in the file it has been given to render or selects a predetermined configuration for the filter graph it is assembling. The filter graph manager can be asked specifically to add a filter by using the <A HREF="dssd0140.htm#If_0001060134030100" TARGET="TEXT">IFilterGraph::AddFilter</A> method. The filter graph manager calls the <A HREF="dssd0116.htm#If_000106011c030300" TARGET="TEXT">IBaseFilter::JoinFilterGraph</A> method on the filter to notify it that it has joined the filter graph. The added filter can then be connected like any other filter. When connecting filters, the filter graph manager requests the filters to enumerate their pins and then, for each connection required, requests that an output pin connect to an input pin.
+
+<P>The base classes handle much of the connection mechanism. However, it is important to understand the connection process when writing a filter so that you can identify what to override and what is expected of your filter. Before two connected filters are prepared to pass media between them, the following connection and negotiation processes must occur in this order.
+
+<OL><LI>The initial pin connection occurs.
+<LI>The output pin of one filter retrieves interfaces from the connected input pin.
+<LI>Both pins negotiate for a common media type.
+<LI>Both pins negotiate for an appropriate transport to pass the media.
+</OL>
+<P>In the first step, the filter graph manager informs the output pin of one filter to connect to a specified input pin of another filter. This results in an exchange of <A HREF="dssd0165.htm#If_000106014d000000" TARGET="TEXT">IPin</A> interface pointers. Filters should never connect to other filters by themselves. The filter graph manager must always be the agent that initiates a connection, because deadlocks can occur otherwise. A filter or an application can instruct the filter graph manager to connect two pins (through the <A HREF="dssd0146.htm#If_000106013a030200" TARGET="TEXT">IGraphBuilder::Connect</A> or <A HREF="dssd0140.htm#If_0001060134030200" TARGET="TEXT">IFilterGraph::ConnectDirect</A> method), or the filter graph manager can determine to connect filters when rendering a filter by using the <A HREF="dssd0146.htm#If_000106013a030300" TARGET="TEXT">IGraphBuilder::Render</A> or <A HREF="dssd0146.htm#If_000106013a030400" TARGET="TEXT">IGraphBuilder::RenderFile</A> method.
+
+
+<P>In the second step, the output pin may
+ 
+request the <A HREF="dssd0161.htm#If_0001060149000000" TARGET="TEXT">IMemInputPin</A> interface from the connected input pin. This is in preparation for the fourth step, where the output pin will use <B>IMemInputPin</B> to retrieve a memory allocator from the input pin. If the output pin already has a memory allocator (or some other transport in the case of hardware filters), it can skip this step or can request some other interface in a proprietary design.
+
+<P>In the third step, media types are tried until one is found that is acceptable to both pins or the pins run out of types to try (in which case the connection fails). First, the output pin asks the connected input pin to propose its list of media types. If none of these are acceptable to the output pin, the output pin proposes its own types.
+
+<P>In the fourth step, the output pin asks the connected input pin for an allocator interface. The output pin then either accepts the allocator, or proposes its own allocator and notifies the input pin of the selection. The output pin makes the final determination. 
+
+<A NAME="connect_0001050202020000"></A><P><B>How the Base Classes Implement Connection</B>
+<P>The <A HREF="dssd0200.htm#Lib_0001060214000000" TARGET="TEXT">CBasePin</A> class and its derived base classes, <A HREF="dssd0199.htm#Lib_0001060213000000" TARGET="TEXT">CBaseOutputPin</A> and <A HREF="dssd0195.htm#Lib_000106020f000000" TARGET="TEXT">CBaseInputPin</A>, implement most of the mechanism for the most common connection scenarios, much of which can be overridden by the derived filter class for more control of the process. 
+
+<P>The connection procedure relies on the implementation of four interfaces:
+<OL><LI><A HREF="dssd0165.htm#If_000106014d000000" TARGET="TEXT">IPin</A>, which is implemented by the <A HREF="dssd0200.htm#Lib_0001060214000000" TARGET="TEXT">CBasePin</A> class and inherited by the <A HREF="dssd0195.htm#Lib_000106020f000000" TARGET="TEXT">CBaseInputPin</A> and 
+<A HREF="dssd0199.htm#Lib_0001060213000000" TARGET="TEXT">CBaseOutputPin</A> classes.
+
+<LI><A HREF="dssd0132.htm#If_000106012c000000" TARGET="TEXT">IEnumMediaTypes</A>, which is implemented by the <A HREF="dssd0215.htm#Lib_0001060223000000" TARGET="TEXT">CEnumMediaTypes</A> class and passed out by the <A HREF="dssd0165.htm#If_000106014d030800" TARGET="TEXT">IPin::EnumMediaTypes</A> method. 
+<LI><A HREF="dssd0161.htm#If_0001060149000000" TARGET="TEXT">IMemInputPin</A>, which is implemented by the <A HREF="dssd0195.htm#Lib_000106020f000000" TARGET="TEXT">CBaseInputPin</A> class.
+<LI><A HREF="dssd0160.htm#If_0001060148000000" TARGET="TEXT">IMemAllocator</A>, which is implemented by the <A HREF="dssd0189.htm#Lib_0001060209000000" TARGET="TEXT">CBaseAllocator</A> class and passed out by the <A HREF="dssd0161.htm#If_0001060149030100" TARGET="TEXT">IMemInputPin::GetAllocator</A> method.
+</OL>
+<P>The <A HREF="dssd0161.htm#If_0001060149000000" TARGET="TEXT">IMemInputPin</A> and <A HREF="dssd0160.htm#If_0001060148000000" TARGET="TEXT">IMemAllocator</A> interfaces are necessary only if the filter belonging to the connecting input pin (called the <I>downstream filter</I>) is expected to provide a shared memory allocator for transporting samples between the pins. 
+However, the base class implementation in <A HREF="dssd0195.htm#Lib_000106020f000000" TARGET="TEXT">CBaseInputPin</A> assumes this condition and implements <B>IMemInputPin</B> to provide an allocator object to a connected output pin that requests it.
+
+<P>In the connection scenario of the default base class, the pin classes derived from <A HREF="dssd0195.htm#Lib_000106020f000000" TARGET="TEXT">CBaseInputPin</A> and <A HREF="dssd0199.htm#Lib_0001060213000000" TARGET="TEXT">CBaseOutputPin</A> need only to override and implement a few member functions and can let the base classes do the remaining work. Base classes 
+derived from these classes, such as <A HREF="dssd0248.htm#Lib_0001060244000000" TARGET="TEXT">CTransformInputPin</A> and <A HREF="dssd0249.htm#Lib_0001060245000000" TARGET="TEXT">CTransformOutputPin</A>, do much of the required implementation to provide a default connection scheme.
+
+<P>Pin classes derived from <A HREF="dssd0195.htm#Lib_000106020f000000" TARGET="TEXT">CBaseInputPin</A> and <A HREF="dssd0199.htm#Lib_0001060213000000" TARGET="TEXT">CBaseOutputPin</A> need only to override the following member functions to enable pin connection.
+
+<UL><LI><A HREF="dssd0200.htm#Lib_0001060214060700" TARGET="TEXT">CBasePin::CheckMediaType</A>, which is called for every media type proposed by the media type enumerator. The overriding member function must accept or reject the proposed media type.
+<LI><A HREF="dssd0200.htm#Lib_0001060214061500" TARGET="TEXT">CBasePin::GetMediaType</A>, which is called by the media type of the output pin enumerator to suggest media types already agreed on by the input pin for transform filters. This member function also presents the type of media a source filter will produce.
+</UL>
+<P>Additionally, the output pin derived from the <A HREF="dssd0199.htm#Lib_0001060213000000" TARGET="TEXT">CBaseOutputPin</A> class must override the <A HREF="dssd0199.htm#Lib_0001060213040800" TARGET="TEXT">CBaseOutputPin::DecideBufferSize</A> member function. This is called by the base classes to let the output pin inform any acquired allocator of the size and type of media samples that the output pin will provide. This is done by the output pin of the filter because the derived filter class should know the type and size of the data it will send to the input pin of the connected filter.
+
+<P>To see the context of these overriding functions, it is helpful to step through the execution of the connection code in the class library. All connection takes place in the scope of one <A HREF="dssd0200.htm#Lib_0001060214060900" TARGET="TEXT">CBasePin::Connect</A> member function.
+
+<A NAME="connect_0001050202020100"></A><P><B>The Filter Graph Manager Starts the Connection</B>
+<P>The connection starts when the filter graph manager calls the <A HREF="dssd0165.htm#If_000106014d030200" TARGET="TEXT">IPin::Connect</A> method on the output pin, passing it a pointer to the input pin to which it is connecting. The filter graph manager has previously retrieved pointers to the <A HREF="dssd0165.htm#If_000106014d000000" TARGET="TEXT">IPin</A> interfaces of both filters, for example, by calling the <A HREF="dssd0116.htm#If_000106011c030100" TARGET="TEXT">IBaseFilter::EnumPins</A> method on each connecting filter. The 
+<A HREF="dssd0116.htm#If_000106011c030100" TARGET="TEXT">EnumPins</A> method creates a <A HREF="dssd0216.htm#Lib_0001060224000000" TARGET="TEXT">CEnumPins</A> object to enumerate the pins, which the enumerator does by repeatedly calling the <A HREF="dssd0194.htm#Lib_000106020e080600" TARGET="TEXT">CBaseFilter::GetPin</A> member function of the derived filter, which the derived filter must implement.
+
+<P>The <A HREF="dssd0200.htm#Lib_0001060214060900" TARGET="TEXT">CBasePin::Connect</A> implementation of <A HREF="dssd0165.htm#If_000106014d030200" TARGET="TEXT">IPin::Connect</A> does much of the work in this case. It calls the following functions.
+<UL><LI><A HREF="dssd0199.htm#Lib_0001060213040500" TARGET="TEXT">CheckConnect</A>, which is overridden by <A HREF="dssd0199.htm#Lib_0001060213000000" TARGET="TEXT">CBaseOutputPin</A>.
+<LI><A HREF="dssd0200.htm#Lib_0001060214060200" TARGET="TEXT">AgreeMediaType</A>, which is implemented by <A HREF="dssd0200.htm#Lib_0001060214000000" TARGET="TEXT">CBasePin</A>.
+</UL>
+<P>The <A HREF="dssd0200.htm#Lib_0001060214060600" TARGET="TEXT">CBasePin::CheckConnect</A> implementation simply determines that the pin directions are different. The overriding <A HREF="dssd0199.htm#Lib_0001060213040500" TARGET="TEXT">CBaseOutputPin::CheckConnect</A> member function calls the <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">IUnknown::QueryInterface</A> method of the connected input pin to retrieve a pointer to the <A HREF="dssd0161.htm#If_0001060149000000" TARGET="TEXT">IMemInputPin</A> interface of that pin. This will be used later in the connection process to request an allocator from the connected input pin. (Your derived class can override <B>CBaseOutputPin::CheckConnect</B> and omit retrieving the 
+<B>IMemInputPin</B> interface if the output pin already has an allocator; for example, it might want to use the allocator from an upstream filter to eliminate copying.)
+
+<A NAME="connect_0001050202020200"></A><P><B>Negotiating Media Types with CBasePin::AgreeMediaType</B>
+<P>The <A HREF="dssd0200.htm#Lib_0001060214060200" TARGET="TEXT">CBasePin::AgreeMediaType</A> member function is called next and attempts to negotiate a media type that both pins agree on. It does this by trying to find a media type presented by the connected input pin with which the output pin agrees. If that fails, 
+it tries to find a media type preferred by the output pin that the connected input pin agrees with.
+
+<P><A HREF="dssd0200.htm#Lib_0001060214060200" TARGET="TEXT">CBasePin::AgreeMediaType</A> calls the following member functions and methods.
+<UL><LI><A HREF="dssd0165.htm#If_000106014d030800" TARGET="TEXT">IPin::EnumMediaTypes</A> on the connected pin.
+<LI><A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">CBasePin::TryMediaTypes</A> in the derived output pin class.
+</UL>
+<P>The <A HREF="dssd0165.htm#If_000106014d030800" TARGET="TEXT">IPin::EnumMediaTypes</A> method of the connected input pin is called to return a media type enumerator (<A HREF="dssd0132.htm#If_000106012c000000" TARGET="TEXT">IEnumMediaTypes</A>). This allows the output pin to examine the list of preferred media types belonging to the input pin.
+
+<P>The <A HREF="dssd0132.htm#If_000106012c030200" TARGET="TEXT">IEnumMediaTypes::Next</A> method of the enumerator calls the <A HREF="dssd0200.htm#Lib_0001060214061500" TARGET="TEXT">GetMediaType</A> member function of the derived input pin to retrieve each media type. If <B>GetMediaType</B> is not implemented, the base class implementation returns an error but this does not necessarily break the connection. (Pins are not required to have a preferred media type if one pin or the other can propose a type that they both accept. If neither pin can propose types, the connection will fail.)
+
+<A NAME="connect_0001050202020300"></A><P><B>Determining a Media Type with CBasePin::TryMediaTypes</B>
+<P><A HREF="dssd0200.htm#Lib_0001060214060200" TARGET="TEXT">CBasePin::AgreeMediaType</A> calls <A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">CBasePin::TryMediaTypes</A> next. The 
+<A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">TryMediaTypes</A> member function cycles through the preferred media types of the connected input pin and calls the <A HREF="dssd0200.htm#Lib_0001060214060700" TARGET="TEXT">CBasePin::CheckMediaType</A> member function of the derived output pin class for each one it finds. 
+<A HREF="dssd0200.htm#Lib_0001060214060700" TARGET="TEXT">CheckMediaType</A> must be implemented by your derived output pin class. If 
+<B>CheckMediaType</B> accepts the media type, the <A HREF="dssd0165.htm#If_000106014d030f00" TARGET="TEXT">IPin::ReceiveConnection</A> method of the connected input pin is called with the media type to determine if the connected input pin accepts this media type. If so, 
+<B>TryMediaTypes</B> calls the <A HREF="dssd0199.htm#Lib_0001060213040600" TARGET="TEXT">CBaseOutputPin::CompleteConnect</A> member function to finish the connection to the input pin. 
+
+<P>If the input pin has no media types that the output type can use, <A HREF="dssd0200.htm#Lib_0001060214060200" TARGET="TEXT">CBasePin::AgreeMediaType</A> repeats the entire process, using the enumerator for the media types of the output pin. (That is, it gets its own enumerator and calls 
+<A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">TryMediaTypes</A> with each of its preferred media types.) Again, the enumerator calls 
+<A HREF="dssd0200.htm#Lib_0001060214061500" TARGET="TEXT">GetMediaType</A> for each media type in the list. In this case, 
+<B>GetMediaType</B> should be implemented to provide a media type. If the filter is a source filter, it will have a definite media type to export. If the filter is a transform filter, the media type will be established between the filter's input pin and its connected pin; the transform filter should query for that media type or simply use the enumerator of the upstream filter (unless the transform filter changes the media type from input pin to output pin).
+
+<P><A HREF="dssd0200.htm#Lib_0001060214060700" TARGET="TEXT">CheckMediaType</A> is called by <A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">CBasePin::TryMediaTypes</A>, even when
+ <A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">TryMediaTypes</A> enumerates the list of the preferred media types of the output pin. This is because the owning filter might be a transform-inplace filter that is simply using the media type (and enumerator) of an upstream filter; this is the point at which the filter determines if the media type is compatible. The input pin of this transform filter might defer selecting a media type when it is connected, in which case it would be up to the output pin of the transform filter to ensure the media type is compatible with its transform.
+
+<P>If a media type can be established, <A HREF="dssd0200.htm#Lib_0001060214062a00" TARGET="TEXT">TryMediaTypes</A> eventually calls the <A HREF="dssd0199.htm#Lib_0001060213040600" TARGET="TEXT">CBaseOutputPin::CompleteConnect</A> member function to negotiate a memory allocator.
+
+<P>First, the <A HREF="dssd0199.htm#Lib_0001060213040600" TARGET="TEXT">CBaseOutputPin::CompleteConnect</A> member function calls the <A HREF="dssd0199.htm#Lib_0001060213040700" TARGET="TEXT">CBaseOutputPin::DecideAllocator</A> member function. This member function negotiates a shared memory allocator with the input pin. It does this by first calling the 
+<A HREF="dssd0161.htm#If_0001060149030100" TARGET="TEXT">IMemInputPin::GetAllocator</A> method of the connected input pin, which retrieves a pointer to an <A HREF="dssd0160.htm#If_0001060148000000" TARGET="TEXT">IMemAllocator</A> interface provided by the input pin. 
+
+<P>Then, <A HREF="dssd0199.htm#Lib_0001060213040600" TARGET="TEXT">CompleteConnect</A> calls the pure virtual <A HREF="dssd0199.htm#Lib_0001060213040800" TARGET="TEXT">CBaseOutputPin::DecideBufferSize</A> member function, which your derived output pin class must override and implement because only the derived class can determine the required buffer size for its media type.
+
+<P>Finally, <A HREF="dssd0199.htm#Lib_0001060213040600" TARGET="TEXT">CompleteConnect</A> calls the <A HREF="dssd0161.htm#If_0001060149030300" TARGET="TEXT">IMemInputPin::NotifyAllocator</A> method of the connected pin to inform the input pin of the allocator to use and to provide a pointer to it. The input pin can reject this allocator, in which case the output pin can retry with a different allocator or fail the connection. If your derived class is not using the allocator of the connected input pin, override <A HREF="dssd0199.htm#Lib_0001060213040700" TARGET="TEXT">CBaseOutputPin::DecideAllocator</A> in your derived class to call the 
+<A HREF="dssd0161.htm#If_0001060149030300" TARGET="TEXT">NotifyAllocator</A> member function with an allocator.
+
+<A NAME="connect_0001050202030000"></A><P><B>When a Reconnection Should Occur</B>
+<P>Reconnection is always performed through the <A HREF="dssd0140.htm#If_0001060134000000" TARGET="TEXT">IFilterGraph</A> interface on the filter graph manager. Reconnect by calling the <A HREF="dssd0141.htm#If_0001060135030200" TARGET="TEXT">IFilterGraph2::ReconnectEx</A> method or the <A HREF="dssd0140.htm#If_0001060134030600" TARGET="TEXT">IFilterGraph::Reconnect</A> method, both of which pass the <A HREF="dssd0165.htm#If_000106014d000000" TARGET="TEXT">IPin</A> interfaces of the two pins to be reconnected. The <A HREF="dssd0141.htm#If_0001060135030200" TARGET="TEXT">ReconnectEx</A> method specifies a media type and thus removes the burden of remembering what type to reconnect with from the pins, which makes the reconnection more likely to succeed. 
+
+<P>Filters are typically connected with the upstream filter first and the downstream filter second. Therefore, the filter negotiates the connection on its input pin before information is available about the filter being connected to its output pin. When the output pin of the filter 
+connects, it may
+ 
+become clear that the media type or allocator that was established for the input pin of the filter are not appropriate. In this case, the input connection can be broken and reconnected. 
+
+<P>For example, consider the following connection scenario. An audio effects filter (for example, a reverberation effect) is inserted between an MPEG-audio decompressor filter and another audio effects filter. During the upstream connection to the decompressor filter, a media type is chosen&#151;for example, 22.05 kHz, 16-bit mono. However, in this scenario, when the reverberation filter connects its output pin, the downstream filter will accept only an 11.025 kHz, 16-bit mono media type. Therefore, after connecting with the downstream filter, the reverberation effects filter must then reconnect with the upstream filter and negotiate for an 11.025 kHz media type. 
+
+<P>But media types are not the only reason for reconnection. In many cases, the filter is a <I>transform-inplace filter</I>; that is, a filter that does not require that it either alters the media type or copies the data. Such a filter can be designed to use an allocator of some other 
+ filter (upstream or downstream), and likewise use the media type of another filter. That is, the filter is doing its transform "in place" in the buffer of another filter (for example, in the file buffer of the source filter or the video buffer of the rendering filter). 
+
+<P>The general rule is that filters of this type should offer the allocator of the downstream filter to the upstream filter, once the allocator has been established for the output pin. This requires a reconnection of the input pin so that, when the input pin is asked for an allocator (in <A HREF="dssd0161.htm#If_0001060149030100" TARGET="TEXT">IMemInputPin::GetAllocator</A>) by the upstream output pin, it can offer the allocator retrieved from the downstream filter by the output pin of the transform filter. Therefore, in-place transforms always reconnect.
+
+<P>There are a couple of important rules to follow when requesting a reconnection.
+
+<P>First, a filter must never request a reconnection unless it is certain that the reconnection will succeed. If the reconnection fails, it causes an asynchronous error in the filter graph for which there is no obvious cleanup. Any error that occurs (for example, from incompatible media types) should occur when the pins are connected the first time, when there are ample retry options available at more than one level (by the filter graph manager or the application at least). 
+
+<P>Second, a filter should request a reconnection on the same thread as the call to <A HREF="dssd0165.htm#If_000106014d030200" TARGET="TEXT">IPin::Connect</A>. For example, the following scenario attempts reconnection on a separate thread and will cause problems. 
+<OL><LI>The filter graph manager calls <A HREF="dssd0165.htm#If_000106014d030200" TARGET="TEXT">Connect</A> on a pin.
+<LI>The filter pin carries out the <A HREF="dssd0165.htm#If_000106014d030200" TARGET="TEXT">Connect</A> method and creates a thread, which starts to determine whether everything is okay for the connection.
+<LI><A HREF="dssd0165.htm#If_000106014d030200" TARGET="TEXT">Connect</A> returns to the filter graph manager.
+<LI>The filter graph manager returns to the application.
+<LI>The application calls the <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">IMediaControl::Run</A> method of the filter graph manager to start the filter graph, and the filters start running.
+<LI>The thread from the initial connection calls the <A HREF="dssd0141.htm#If_0001060135030200" TARGET="TEXT">IFilterGraph2::ReconnectEx</A> or <A HREF="dssd0140.htm#If_0001060134030600" TARGET="TEXT">IFilterGraph::Reconnect</A> method and the filter graph manager attempts to carry out reconnection.
+<LI>Failure occurs because the filters cannot reconnect while in the running state.
+</OL>
+<P>The filter graph has code to prevent this failure as long as the <A HREF="dssd0141.htm#If_0001060135030200" TARGET="TEXT">IFilterGraph2::ReconnectEx</A> or <A HREF="dssd0140.htm#If_0001060134030600" TARGET="TEXT">IFilterGraph::Reconnect</A> method takes effect while the filter graph is still processing the <A HREF="dssd0146.htm#If_000106013a030200" TARGET="TEXT">IGraphBuilder::Connect</A> method. Calling the filter graph to reconnect before returning from the <A HREF="dssd0165.htm#If_000106014d030200" TARGET="TEXT">IPin::Connect</A> method is the best way to ensure this problem does not occur. The best way to achieve this is to perform
+all of this on the same thread.
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

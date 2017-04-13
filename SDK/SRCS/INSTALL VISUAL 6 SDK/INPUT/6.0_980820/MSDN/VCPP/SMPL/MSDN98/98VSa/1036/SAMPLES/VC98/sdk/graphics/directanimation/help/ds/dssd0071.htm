@@ -1,0 +1,66 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Plug-in Distributors</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0070.htm','/dssd0000.htm','/dssd0062.htm','/index.htm','/dssd0072.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="plugin_0001050301000000">Plug-in Distributors</A></H2>
+<BR CLEAR=ALL>
+<P>This article describes the plug-in distributor architecture and provides some rules assumed by the default Microsoft&#174; DirectShow&#153; control distributors. 
+
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0071.htm#plugin_0001050301010000" TARGET="TEXT">Plug-in Distributors and Extensibility</A>
+<LI><A HREF="dssd0071.htm#plugin_0001050301020000" TARGET="TEXT">Control Distributors</A>
+</UL>
+<A NAME="plugin_0001050301010000"></A><P><B>Plug-in Distributors and Extensibility</B>
+<P>The filter graph manager exports control interfaces; it also distributes the actions of interface methods to the appropriate filters. For example, the <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">IMediaControl::Run</A> method on the filter graph manager is called by an application to run the filter graph; this command is distributed to the <A HREF="dssd0153.htm#If_0001060141030400" TARGET="TEXT">IMediaFilter::Run</A> method of each filter method by the filter graph manager. This distribution allows applications to have a single point of control to perform the basic operations.
+
+<P>To allow the filter graph manager to be extensible, a mechanism known as a <I>plug-in distributor</I> (PID) is used. This is a Component Object Model (COM) object that exposes a particular control interface and implements it by calling the enumerator of the filter graph manager, finding which filters expose the control interface and communicating directly with those filters. PIDs are supplied for the standard control interfaces; independent software vendors (ISVs) can replace these supplied PIDs and also add others.
+
+<P>When the filter graph manager is asked for an interface that it does not recognize, it searches the registry for a PID. This is an unnamed value under the following key.
+
+<PRE><FONT FACE="Courier" SIZE="2">HKEY_CLASSES_ROOT\Interface\&lt;IID&gt;\Distributor
+</FONT></PRE>
+<P>This value provides the class identifier (CLSID) of an object that can distribute the interface identifier (IID). The filter graph manager then instantiates that object as an aggregated object, specifying the <A HREF="dssd0175.htm#If_0001060157000000" TARGET="TEXT">IUnknown</A> implementation of the 
+filter graph manager as the outer <B>IUnknown</B>, and asking for the IID. The object will then be able to use its outer <B>IUnknown</B> pointer to obtain an <A HREF="dssd0140.htm#If_0001060134000000" TARGET="TEXT">IFilterGraph</A> interface. With this interface, it can enumerate the filters to implement its control interface methods and properties; it will also be able to use the <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A> implementation of the filter graph manager for correctly ordered and synchronized state changes (run, pause, stop, and so on).
+
+
+<A NAME="plugin_0001050301020000"></A><P><B>Control Distributors</B>
+<P>A control distributor is a PID that is used to control the data flow in the filter graph; for example, starting or stopping playback of a media stream. The standard control distributors supplied with DirectShow directly implement their distribution. These distributors make the following assumptions.
+
+<UL><LI>Applications that connect filters directly without informing the filter graph manager will get unexpected results if they also use the distributors of the filter graph manager. For example, a deadlock might occur if an application calls a filter's 
+<A HREF="dssd0153.htm#If_0001060141030400" TARGET="TEXT">IBaseFilter::Run</A> method directly, because the filter graph manager contains a distributor that implements <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">IMediaControl::Run</A> and passes calls on to each filter's <B>IBaseFilter::Run</B> 
+method. 
+<LI>Properties that can be aggregated directly can be read and written to through the control interface, even when exposed by multiple filters. For example, duration can be reported as the longest of all individual durations, with all streams treated as running in parallel.
+<LI>Where a property is exposed by several different filters, applications will either use the filter graph manager to set and get the property or will communicate with the individual filters, but will not mix the two methods. An application that communicates with two audio renderers to reset the volume and then queries the <A HREF="dssd0117.htm#If_000106011d000000" TARGET="TEXT">IBasicAudio</A> implementation of the filter graph manager for the volume, will get undefined results. (In practice, it will probably retrieve the <B>Volume</B> property of the first audio renderer with no attempt to combine this with the other stream.) If the application sets the 
+property through the interface of the filter graph manager, the same value will be set to all the individual filters that expose it.
+
+<LI>The filter graph manager will expose the <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A> interface (through a non-replaceable distributor) as the main application method for starting and stopping graphs. This is a slightly higher-level, more simplified interface than <A HREF="dssd0153.htm#If_0001060141000000" TARGET="TEXT">IMediaFilter</A> and is suitable for OLE Automation (OA) clients and applications. The <B>IMediaFilter</B>
+implementation on the filter graph manager should not be called by applications. <B>IMediaControl</B> is implemented by calling the <B>IMediaFilter</B> interface implemented by the filter graph manager and by individual filters. Individual filters expose <B>IMediaFilter</B> through the <A HREF="dssd0116.htm#If_000106011c000000" TARGET="TEXT">IBaseFilter</A> interface, which inherits it. 
+</UL>
+<P>PIDs must keep track of the filters in the filter graph. This is done by implementing the <A HREF="dssd0127.htm#If_0001060127000000" TARGET="TEXT">IDistributorNotify</A> interface on the distributor. <B>IDistributorNotify</B> has the same <A HREF="dssd0127.htm#If_0001060127030300" TARGET="TEXT">Run</A>, 
+<A HREF="dssd0127.htm#If_0001060127030200" TARGET="TEXT">Pause</A>, and <A HREF="dssd0127.htm#If_0001060127030500" TARGET="TEXT">Stop</A> methods as <A HREF="dssd0153.htm#If_0001060141000000" TARGET="TEXT">IMediaFilter</A>, all of which are called before the calling the filter. It also has a <A HREF="dssd0127.htm#If_0001060127030100" TARGET="TEXT">IDistributorNotify::NotifyGraphChange</A> method, which notifies the distributor when any filters are added or removed from the filter graph, or connections change. 
+
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

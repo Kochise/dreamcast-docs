@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Full-Screen Video Renderer</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0083.htm','/dssd0000.htm','/dssd0083.htm','/index.htm','/dssd0085.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="fullscrn_0001050801000000">Full-Screen Video Renderer</A></H2>
+<BR CLEAR=ALL>
+<P>This article explains the logic used by the default Microsoft&#174; <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> plug-in distributor (PID), when an application instructs it to render the video in full-screen mode. Substitute renderer filters can use the <B>IVideoWindow</B> PID for communication with applications. Developers of substitute renderers should be aware of how this PID searches the filter graph for the best means of representing full-screen video, when requested to render in full-screen mode. 
+
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0084.htm#fullscrn_0001050801010000" TARGET="TEXT">Using the IVideoWindow PID to Implement Full-Screen Support</A>
+<LI><A HREF="dssd0084.htm#fullscrn_0001050801020000" TARGET="TEXT">Finding a Filter That Supports Full-Screen Mode</A>
+<LI><A HREF="dssd0084.htm#fullscrn_0001050801030000" TARGET="TEXT">Finding a Filter That Can Be Stretched Full-Screen at No Cost</A>
+<LI><A HREF="dssd0084.htm#fullscrn_0001050801040000" TARGET="TEXT">Supplying a Full-Screen Renderer Filter</A>
+<LI><A HREF="dssd0084.htm#fullscrn_0001050801050000" TARGET="TEXT">Stretching the Output of a Renderer Full-Screen</A>
+<LI><A HREF="dssd0084.htm#fullscrn_0001050801060000" TARGET="TEXT">Implications of Full-Screen Support for the Application</A>
+</UL>
+<A NAME="fullscrn_0001050801010000"></A><P><B>Using the IVideoWindow PID to Implement Full-Screen Support</B>
+<P>Microsoft&#174; DirectShow&#153; implements full-screen support in a number of ways that depend on what hardware resources are available. An application can support full-screen video playback through the <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> interface provided by the filter graph manager. An application can have its own implementation of full-screen playback, but it can probably make better use of resources by using the <B>IVideoWindow</B> implementation.
+ 
+<P>The <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> plug-in distributor (PID) tries three different options for implementing full-screen support when an application requests full-screen mode. The option is typically chosen the first time the filter graph enters full-screen mode. While in full-screen mode, no <B>IVideoWindow</B> methods can be called (apart from accessing the full-screen property). Any attempts to do so will return the <A HREF="dssd0293.htm#errcodes_0001060a01000064" TARGET="TEXT">VFW_E_IN_FULLSCREEN_MODE</A> message. The PID searches in the following order for a filter that supports <B>IVideoWindow</B> and that has one of these characteristics: 
+ 
+<OL><LI>The filter supplies full-screen mode directly. 
+<LI>The filter allows its window to be stretched to full screen without penalty. 
+<LI>The filter can be replaced by a full-screen renderer. 
+</OL>
+<P>If none of these three options are found, the default is to simply stretch the video of a filter that supports <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> to full-screen, ignoring the performance penalties. 
+ 
+
+<A NAME="fullscrn_0001050801020000"></A><P><B>Finding a Filter That Supports Full-Screen Mode</B>
+<P>The first option is to search for a filter in the filter graph that supports full-screen mode directly. When asked to go into full-screen mode, the <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> PID first scans all filters supporting <B>IVideoWindow</B> in the filter graph. The PID calls <A HREF="dssd0177.htm#If_0001060159030500" TARGET="TEXT">IVideoWindow::get_FullScreenMode</A> on each filter and, if the filter returns E_NOTIMP (the default), assumes that the filter has no inherent support for full-screen playback. If the filter returns anything else, then that filter becomes the nominated filter for full-screen playback. This means that any calls to the filter graph manager to set the full-screen mode on or off will be sent directly to that nominated filter. This mechanism allows filters to be extended to support full-screen support directly. Most normal window-based renderers do not need to support this feature. 
+ 
+
+<A NAME="fullscrn_0001050801030000"></A><P><B>Finding a Filter That Can Be Stretched Full-Screen at No Cost</B>
+<P>If a full-screen rendering filter can't be found, then the PID tries to find a filter supporting the <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> interface that can have its window stretched full-screen without penalty. The PID does this by scanning the list of filters in the filter graph that support <B>IVideoWindow</B>. For each filter found, the PID calls <A HREF="dssd0177.htm#If_0001060159031000" TARGET="TEXT">IVideoWindow::GetMaxIdealImageSize</A>. If a filter indicates that its window can be stretched full-screen at no cost, then that becomes the nominated filter. 
+
+<P>If that nominated filter is then requested to render full-screen, the PID resets a number of the filter's <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> properties and stretches the window to full-screen. This typically means setting a null owner, changing the window styles to not show the border or the caption, and updating the window position to match the current display size. When full-screen mode is switched off, the properties on the filter will be reset to the state prior to the full-screen mode.
+ 
+<P>Most video renderers supporting <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> cannot return the maximum ideal image size until they have been activated (either paused or running), because that is when they allocate their resources. For this reason, when scanning the list of filters while the filter graph is in a stopped state, the PID pauses each filter before calling <A HREF="dssd0177.htm#If_0001060159031000" TARGET="TEXT">IVideoWindow::GetMaxIdealImageSize</A>. After calling this method, the filter is stopped again.
+ 
+
+<A NAME="fullscrn_0001050801040000"></A><P><B>Supplying a Full-Screen Renderer Filter</B>
+<P>If neither of the previous options were successful, then the PID finds the first available filter in the filter graph that supports an <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> interface, and assumes that it is the current video renderer filter. 
+
+<P>If no filters that support <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> are available, the call to change to full-screen mode will return <A HREF="dssd0293.htm#errcodes_0001060a01000063" TARGET="TEXT">VFW_E_NO_FULLSCREEN</A>. When asked to change into full-screen mode, the PID stops the filter graph, if it is not already stopped, disconnects the current renderer, and reconnects the DirectShow full-screen renderer in its place. If the 
+connection succeeds, then the filter graph is restored to its original state. 
+
+ 
+
+When switching out of full-screen mode, the opposite occurs. That is, the full-screen renderer is disconnected and the original filter is reconnected. The state of the filter graph is likewise restored. The full-screen renderer is a specialized renderer that uses the display changing capabilities provided by DirectDraw&#174;. For example, it might switch the full-screen display 320 &#215; 240 when it might have been in, for example, 1024 &#215; 768. By switching to lower resolution modes, it can cheaply implement full-screen rendering without having to stretch images. 
+ 
+<P>The full-screen renderer currently implements 320 &#215; 200 &#215; 8/16 bits per pixel, 320 &#215; 240 &#215; 8/16, 
+640 &#215; 400 &#215; 8/16, 640 &#215; 400 &#215; 8/16, 640 &#215; 480 &#215; 8/16, 800 &#215; 600 &#215; 8/16, 1024 &#215; 768 &#215; 8/16, 1152 &#215; 864 &#215; 8/16, and 1280 &#215; 1024 &#215; 8/16 display modes. The Modex renderer supports the <A HREF="dssd0145.htm#If_0001060139000000" TARGET="TEXT">IFullScreenVideo</A> interface. When the modex renderer is connected, it loads the display modes DirectDraw has made available. The number of modes available can be obtained through <A HREF="dssd0145.htm#If_0001060139030100" TARGET="TEXT">IFullScreenVideo::CountModes</A>. Information on each mode is available by calling <A HREF="dssd0145.htm#If_0001060139030600" TARGET="TEXT">IFullScreenVideo::GetModeInfo</A> and <A HREF="dssd0145.htm#If_0001060139030a00" TARGET="TEXT">IFullScreenVideo::IsModeAvailable</A>. An application can enable and disable any modes
+by calling the SetEnabled flag with OATRUE or OAFALSE. The current value can be queried for with <A HREF="dssd0145.htm#If_0001060139030b00" TARGET="TEXT">IFullScreenVideo::IsModeEnabled</A>.
+<P>Another way to set the modes enabled is to use the clip loss factor. This defines the
+amount of video that can be lost when deciding which display mode to use. Assuming the decoder cannot compress the video, then playing, for example, an MPEG file that is 352 &#215; 288 pixels into a 320 &#215; 200 display will lose over 40 percent of the image. The clip loss factor specifies the upper range of clipping loss that is permissible. To allow typical MPEG video to be played in 320 &#215; 200 it defaults to 50 percent. You can set the clip loss factor with <A HREF="dssd0145.htm#If_0001060139030d00" TARGET="TEXT">IFullScreenVideo::SetClipFactor</A>.
+
+
+
+<A NAME="fullscrn_0001050801050000"></A><P><B>Stretching the Output of a Renderer Full-Screen</B>
+<P>After trying the first three options, the final option for implementing full-screen support is to pick any filter enabled by <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> and stretch its window full-screen, regardless of the resulting poor performance. Essentially, the first filter in the filter graph that is enabled by the <B>IVideoWindow</B> interface becomes the nominated filter. This filter is then used in the same manner as if it was a filter that could be stretched full-screen without sacrificing performance (that is, the owner is reset, the styles changed, and the window position changed to match the display extents). 
+ 
+<P>The cost of stretching a window full-screen where there is an implicit performance penalty varies, depending on the resolution currently displayed. The worst scenario is one in which the user is using a relatively high resolution (for example, 1024 &#215; 768) and the images must be stretched by the renderer using GDI. This is likely to provide very low frame throughput and is used only as a last resort. 
+ 
+
+<A NAME="fullscrn_0001050801060000"></A><P><B>Implications of Full-Screen Support for the Application</B>
+<P>While the interface exposed to applications is relatively simple, the underlying implementation can be more complex. The full-screen renderer has some special properties that application developers should be aware of. In particular, the renderer changes display modes only when activated (either paused or running). Therefore, if the filter graph is stopped when switching to full-screen mode, no change might be obviously visible until the filter graph is started again. When the filter 
+ graph is subsequently run, the display mode will change and the full-screen rendering will start. 
+
+<P>If a window is being stretched full-screen (that is, no full-screen renderer is being used), the change will be viewable when the full-screen mode is set, regardless of state. If full-screen playback is being supported directly by a filter in the filter graph, it might elect to copy the behavior of the full-screen renderer and switch to full-screen only when activated. The filter supporting full-screen playback might have to do this, because the resources they require to play full-screen might not be available until then. Therefore, an application should avoid setting full-screen mode when stopped.
+
+<P>This makes sense in a user interface context as well, because if full-screen mode is set when the filter graph is stopped, users are unlikely to be able to start the graph running without switching out of full-screen mode (that is, tabbing back to the original application). 
+ 
+<P>All renderers that implement <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> send event codes to the filter graph manager when their windows are activated or deactivated. When in full-screen mode, the PID watches for these event codes. When it sees a window that it made full-screen being deactivated, it will automatically switch out of full-screen mode and send an <A HREF="dssd0291.htm#events_0001060801000800" TARGET="TEXT">EC_FULLSCREEN_LOST</A> notification to the application event queue. This is the only interference caused by the PID; all other user interface is left open to the application as described in the remainder of this article. 
+
+<P>One of the most important aspects of full-screen playback is that when in full-screen mode, no window can be displayed on top of the full-screen window. In fact, when the full-screen renderer switches display modes, it disables all GDI output for 
+other applications, so displaying a window on top of a full-screen window is actually impossible. Any user interactions with the computer must be done through hot keys. 
+ 
+<P>Whatever mechanism the PID ultimately uses to implement full-screen playback, it always ensures that the message drain property is set on the window executing the playback. (The message drain specifies a window that will be forwarded all Windows&#174; messages sent to the renderer.) So, even if the full-screen renderer is used, as long as a message drain has previously been set on the filter graph manager's <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> interface, all messages will be passed on to that renderer. 
+ 
+<P>Because the message drain is set on the appropriate window, an application can rely on receiving all mouse and keyboard messages when in full-screen mode, regardless of which filter is implementing it. An application can use this fact to implement hot-key support for seeking, for example. However, properties can be set only when not in full-screen mode, so if the only time an application is required to catch messages is when it is in full-screen mode, it must set the message drain before setting full-screen on. Likewise, the message drain can be reset only after setting full-screen mode off.
+ 
+<P>One other application consideration is that, when in full-screen mode, any source and destination rectangles set through <A HREF="dssd0118.htm#If_000106011e000000" TARGET="TEXT">IBasicVideo</A> will not be adhered to. The PID resets these rectangles when switching to full-screen mode. It does this because not all filters implementing full-screen support can guarantee to support <B>IBasicVideo</B> as well. 
+ 
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

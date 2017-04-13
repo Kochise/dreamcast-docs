@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Renderer Filters</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0350.htm','/dssd0000.htm','/dssd0294.htm','/index.htm','/dssd0352.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="samples_0001070205000000">Renderer Filters</A></H2>
+<BR CLEAR=ALL>
+<P>This article describes sample renderer filters. The filters render video output, audio output, text output, and raw file output. 
+<P><B>Contents of this article:</B>
+<UL><LI><A HREF="dssd0351.htm#samples_0001070205010000" TARGET="TEXT">File Dump Filter</A>
+<LI><A HREF="dssd0351.htm#samples_0001070205020000" TARGET="TEXT">Oscilloscope Filter</A>
+<LI><A HREF="dssd0351.htm#samples_0001070205030000" TARGET="TEXT">Sample Video Renderer Filter</A>
+<LI><A HREF="dssd0351.htm#samples_0001070205040000" TARGET="TEXT">Text Display Filter</A>
+</UL>
+<A NAME="samples_0001070205010000"></A><P><B>File Dump Filter</B>
+<P>The file dump filter, Dump, illustrates the use of the base filter class <A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A> and the rendered input pin class <A HREF="dssd0240.htm" TARGET="TEXT">CRenderedInputPin</A>. This sample also uses the <A HREF="dssd0137.htm" TARGET="TEXT">IFileSinkFilter</A> interface. The Dump filter demonstrates how to override the <A HREF="dssd0241.htm#Lib_000106023d040c00" TARGET="TEXT">Receive</A> method of the rendered input pin class to process actual media samples. The filter is also a "renderer" of its input stream. (That is, this filter doesn't fit the traditional definition of rendering audibly or visibly, although it is a "renderer filter.") The Dump filter delivers the <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> notification to the filter graph when it receives a call to CDumpInputPin::EndOfStream on its input pin.
+
+<P>This filter is available through the Filter Graph Editor when you choose <B>Insert Filters</B> from the <B>Graph</B> menu, and select the DirectShow Filters category. 
+
+<P>This filter is a useful debugging tool. For example, you can verify, bit by bit, the results of a transform filter.
+
+
+
+You can build a graph manually using the Filter Graph Editor and connect the Dump filter to the output of a transform filter or any other output pin. You can also connect a tee filter and put the Dump filter on one leg of the tee filter and the typical output on another leg to monitor the results in a real-time scenario. 
+
+<P>The Dump filter has a single input pin, which is dumped to a file. The filter prompts the user for a file name when it is instantiated and closes the file when it is freed.
+
+
+
+<A NAME="samples_0001070205020000"></A><P><B>Oscilloscope Filter</B>
+<P>The Oscilloscope filter, Scope, illustrates the use of the base filter class <A HREF="dssd0194.htm" TARGET="TEXT">CBaseFilter</A> and the base input pin class <A HREF="dssd0195.htm" TARGET="TEXT">CBaseInputPin</A>. 
+
+<P>Other than the video renderer sample, Scope is the only sample filter that has a constantly active window. 
+
+<P><B>Note</B>  The Scope window is implemented as a dialog box, not as an actual window.
+<P>Developers creating control panels to alter filter parameters in real time might want to use a technique like this rather than property pages.
+
+<P>The Scope filter demonstrates setting up a separate thread to process data. In this case, the data is just copied to a separate buffer on the <A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">IMemInputPin::Receive</A> method, and is then drawn on the Scope window
+ on the separate thread.
+
+<P>The filter demonstrates how to apply DirectShow&#153; outside the rather narrow domain of multimedia playback. DirectShow has wide application in the diverse areas of:
+<UL><LI>Process control
+<LI>Factory automation
+<LI>Image processing and analysis
+<LI>Virtual lab instrumentation
+</UL>
+<P>All of these areas have semi real-time requirements, but additionally emphasize user interaction and the display of gauges, monitors, signal generators, alarms, and other forms of graphical display of analyzed results.
+
+<P>The Scope filter also enables you to monitor audio output to determine if you are clipping so you can adjust the gain.
+
+<P>This filter is available through the Filter Graph Editor when you choose <B>Insert Filters</B> from the <B>Graph</B> menu, and select the DirectShow Filters category. 
+
+
+
+
+<A NAME="samples_0001070205030000"></A><P><B>Sample Video Renderer Filter</B>
+<P>The sample video renderer filter, SampVid, displays video in a window. The SampVid filter demonstrates the implementation of a special memory allocator, the <A HREF="dssd0220.htm" TARGET="TEXT">CImageAllocator</A> class, which uses buffers based on the Microsoft Win32 <A HREF="dssd0389.htm#external_00010a0109000020" TARGET="TEXT">DIBSECTION</A> structure. This sample shows use of the <A HREF="dssd0205.htm" TARGET="TEXT">CBaseVideoRenderer</A> class, which handles all the seeking, synchronization and quality management necessary for video renderers. Other base classes used include (in alphabetical order):
+<A HREF="dssd0191.htm" TARGET="TEXT">CBaseControlVideo</A>,
+<A HREF="dssd0192.htm" TARGET="TEXT">CBaseControlWindow</A>,
+<A HREF="dssd0214.htm" TARGET="TEXT">CDrawImage</A>,
+<B>CImageAllocator</B>,
+<A HREF="dssd0221.htm" TARGET="TEXT">CImageDisplay</A>,
+<A HREF="dssd0222.htm" TARGET="TEXT">CImagePalette</A>,
+<A HREF="dssd0229.htm" TARGET="TEXT">CMediaType</A>,
+and various others.
+
+This sample also shows the use of the property page interface <A HREF="dssd0168.htm" TARGET="TEXT">IQualProp</A>, which addresses quality management.
+
+<P>This video renderer creates a simple pop-up window and displays the video inside it.
+
+
+
+<A NAME="samples_0001070205040000"></A><P><B>Text Display Filter</B>
+<P>The text renderer filter, TextOut, serves as an example of a renderer filter that is for a user-defined type. It can render text data found in an AVI file or other source. The TextOut filter demonstrates the use of the <A HREF="dssd0203.htm" TARGET="TEXT">CBaseRenderer</A> class which handles all the synchronization and seeking although it doesn't have any quality management implementation. To get quality management you'd inherit from <A HREF="dssd0205.htm" TARGET="TEXT">CBaseVideoRenderer</A> instead. This sample also uses the <A HREF="dssd0207.htm" TARGET="TEXT">CBaseWindow</A> class.
+
+<P>This renderer creates and uses a simple window to display each piece of text it receives.
+
+<P>This filter is available through the Filter Graph Editor when you choose <B>Insert Filters</B> from the <B>Graph</B> menu, and select the DirectShow Filters category. 
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

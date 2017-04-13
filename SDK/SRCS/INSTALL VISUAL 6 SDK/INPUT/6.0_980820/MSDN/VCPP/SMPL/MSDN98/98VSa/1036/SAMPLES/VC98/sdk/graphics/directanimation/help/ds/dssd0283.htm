@@ -1,0 +1,212 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Debug Logging by Module Level</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0282.htm','/dssd0000.htm','/dssd0275.htm','/index.htm','/dssd0284.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="fmdebug_0001060408000000">Debug Logging by Module Level</A></H2>
+<BR CLEAR=ALL>
+<P>Some of the more conventional debug logging techniques provided by Microsoft&#174; DirectShow&#153; (like <A HREF="dssd0279.htm#fmdebug_0001060404000100" TARGET="TEXT">DbgOutString</A>) are monolithic. That is, they are either all on (in a debug build) or all off (in other builds). DirectShow provides other debug logging techniques that
+give much finer control in turning logging on and off. These pinpoint techniques make it easy to isolate and debug individual modules without seeing other people's extraneous debug output, or suffering the possible performance hit when too much information is logged. You can control the pinpoint DirectShow debug routines by module, by type, and by level, as defined in the following list.
+
+
+<UL><LI>A <I>module</I> is used in the Win32 sense, as in a .dll or .exe file that the Win32 <A HREF="dssd0389.htm#external_00010a01090000a7" TARGET="TEXT">LoadLibrary</A> API can read. Thus, you can specify that you want debug output from your filter (for example, NewFilter.ax) and not any other.
+
+<LI>A <I>type</I> is a bitmask that defines the kind(s) of informational string being presented. For example, timing information, errors, and memory allocations are some of the types of logging that can be individually controlled. For the complete list of types, see <A HREF="dssd0283.htm#fmdebug_0001060408010000" TARGET="TEXT">Types of Logging Information</A>. You can combine types by using a bitwise-OR of their bitmasks; for example, (LOG_TRACE | LOG_ERROR).
+
+
+<LI>A <I>level</I> is a <A HREF="dssd0389.htm#external_00010a010900002b" TARGET="TEXT">DWORD</A> value indicating the relative importance of this output, where zero is the most important level. A debug level of zero means that output is always sent to the debugger. Using zero as the debug logging level is encouraged only for major errors or events; otherwise, the logging of too much information might slow down the system. A request to log at a nonzero logging level is checked with the current debug level for this module; if it is less than or equal to the current
+level, it will be logged.
+</UL>
+<P>You can set the initial debug levels for a given test run.
+For each module you want to control, you can store a debugging level
+for each of the types in the registry.
+For a list of the registry names to use, see 
+<A HREF="dssd0283.htm#fmdebug_0001060408020000" TARGET="TEXT">Registry Setting of Debug Levels by Type</A>.
+
+<P>You call the <A HREF="dssd0283.htm#fmdebug_0001060408020300" TARGET="TEXT">DbgLog</A> macro to attempt to log some piece of data,
+which might or might not actually be logged, depending on the current debug levels.
+When you call <B>DbgLog</B>, you supply one or more type flags (possibly
+combined by bitwise-OR), the debug level, and the data to be logged in the
+form of a <A HREF="dssd0389.htm#external_00010a01090000bd" TARGET="TEXT">printf</A>-style format string, which can refer to optional
+parameters. (By definition, C/C++ macros allow only a fixed number of parameters.
+In your call to <B>DbgLog</B>, you enclose all parameters in an extra set of
+parentheses. This is a common C/C++ idiom.)
+
+<P>Following are some examples of calling <A HREF="dssd0283.htm#fmdebug_0001060408020300" TARGET="TEXT">DbgLog</A>. The first example is a simple
+call with one type and no optional parameters; the second call gives two types and no optional parameters; 
+the third call has two types and includes an optional parameter.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+DbgLog((LOG_TRACE, 1, TEXT("CVidCap created")));
+DbgLog((LOG_ERROR|LOG_TRACE, 1, TEXT("Driver failed to connect") ) );
+DbgLog(( LOG_ERROR|LOG_TRACE, 2
+       , TEXT("Driver disconnect: %x"), bDriverDisconnected) );
+</FONT></PRE>
+<P>Each module has its own current debug level for each type.
+These current levels are initialized from the registry
+by <A HREF="dssd0283.htm#fmdebug_0001060408020200" TARGET="TEXT">DbgInitialise</A>.
+For dynamic-link libraries (DLLs) linking to strmbase.lib, the
+<B>DbgInitialise</B> function is called automatically when the DLL is loaded.
+Executables must call <B>DbgInitialise</B> explicitly, with the module instance
+handle given to them through the <A HREF="dssd0389.htm#external_00010a01090000dc" TARGET="TEXT">WinMain</A> entry point. An executable must
+also call <A HREF="dssd0283.htm#fmdebug_0001060408020600" TARGET="TEXT">DbgTerminate</A> when finished to clean up the resources
+the debug library uses. This cleanup is also done automatically for DLLs.
+
+<P>For more information about how the debug output location is chosen, see 
+<A HREF="dssd0286.htm" TARGET="TEXT">Debug Output Location</A>.
+
+
+<A NAME="fmdebug_0001060408010000"></A><P><B>Types of Logging Information</B>
+<P>A <A HREF="dssd0389.htm#external_00010a010900002b" TARGET="TEXT">DWORD</A> value is used to indicate types of information to be logged,
+as indicated by the following bitmasks. Some operations can be performed on multiple types simultaneously, by using bitwise-OR
+ 
+to combine the bitmasks; for example, (LOG_TRACE | LOG_ERROR).
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="fmdebug_0001060408010001">LOG_TIMING</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Timing and performance measurements.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="fmdebug_0001060408010002">LOG_TRACE</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">General step and call tracing.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="fmdebug_0001060408010003">LOG_MEMORY</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Memory and object allocation/destruction.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="fmdebug_0001060408010004">LOG_LOCKING</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Locking/unlocking of critical sections.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="fmdebug_0001060408010005">LOG_ERROR</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Debug error notification.
+</FONT></TD></TR></TABLE>
+<A NAME="fmdebug_0001060408020000"></A><P><B>Registry Setting of Debug Levels by Type</B>
+<P>For every module and executable, Microsoft DirectShow will load a debugging level key for each of the five types. The level keys are stored in the registry under the HKEY_LOCAL_MACHINE\SOFTWARE\Debug\&lt;Module Name&gt;\&lt;KeyName&gt;
+key values. The allowable values for &lt;KeyName&gt; in the registry are: "TIMING", "TRACE", "MEMORY", "LOCKING", and "ERROR". Note that the values read from the registry are all read during
+initialization; DirectShow does not look for update notifications while it runs. If the values change, you must restart the application to pick them up.
+
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0283.htm#fmdebug_0001060408020100" TARGET="TEXT">DbgCheckModuleLevel</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Checks if given types and level are being logged.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0283.htm#fmdebug_0001060408020200" TARGET="TEXT">DbgInitialise</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Initializes the debug library with the module handle and sets the current logging levels
+accordingly.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0283.htm#fmdebug_0001060408020300" TARGET="TEXT">DbgLog</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Logs a message for given types and level. (Ignored except in debug builds.)
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0283.htm#fmdebug_0001060408020400" TARGET="TEXT">DbgLogInfo</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Logs a message for given types and level. (Provided only in debug builds.)
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0283.htm#fmdebug_0001060408020500" TARGET="TEXT">DbgSetModuleLevel</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Changes the logging level for given types.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0283.htm#fmdebug_0001060408020600" TARGET="TEXT">DbgTerminate</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Cleans up the debug library.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0283.htm#fmdebug_0001060408020700" TARGET="TEXT">DisplayType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Displays the given media type.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_0001060408020100">DbgCheckModuleLevel</A></H3>
+<P>Checks whether logging is enabled for the given message types and level.
+If logging is enabled for any of the given types at the level given,
+<B>DbgCheckModuleLevel</B> indicates that the message should be logged.
+<P><B>BOOL</B> <B>WINAPI</B> <B>DbgCheckModuleLevel</B><B>(</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>Types</I><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>Level</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Types</I>
+ </DT><DD>One or more types of message, such as <A HREF="dssd0283.htm#fmdebug_0001060408010001" TARGET="TEXT">LOG_TIMING</A>, masked together.
+</DD><DT><I>Level</I>
+ </DT><DD>Logging level for this message, where zero means always log.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns TRUE if these module types and level are to be logged;
+otherwise, returns FALSE.
+
+<H5>Remarks</H5>
+<P><B>DbgCheckModuleLevel</B> is ignored unless <A HREF="dssd0388.htm#reserved_00010a0108000001" TARGET="TEXT">DEBUG</A>
+is defined when the Microsoft DirectShow headers are included.
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_0001060408020200">DbgInitialise</A></H3>
+<P>Initializes the debug library. Among other things,
+it sets the current logging levels to correspond to the
+levels that are appropriate for the indicated module.
+<P><B>void</B> <B>WINAPI</B> <B>DbgInitialise</B><B>(</B><BR>&nbsp;&nbsp;<B>HINSTANCE</B> <I>hInst</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>hInst</I>
+ </DT><DD>Module instance handle.
+</DD></DL>
+<H5>Remarks</H5>
+<P><B>DbgInitialise</B> is ignored unless <A HREF="dssd0388.htm#reserved_00010a0108000001" TARGET="TEXT">DEBUG</A>
+is defined when the Microsoft DirectShow headers are included.
+<B>DbgInitialise</B> also opens the debug output location,
+as described in 
+<A HREF="dssd0286.htm" TARGET="TEXT">Debug Output Location</A>.
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_0001060408020300">DbgLog</A></H3>
+<P>Invokes the <A HREF="dssd0283.htm#fmdebug_0001060408020400" TARGET="TEXT">DbgLogInfo</A> function.
+<P><B>void</B> <B>WINAPI</B> <B>DbgLog</B><B>(</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>Types</I><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>Level</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>TCHAR</B> <I>*pFormat</I><B>,</B><BR>&nbsp;&nbsp;<I>...</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Types</I>
+ </DT><DD>One or more types of message, such as <A HREF="dssd0283.htm#fmdebug_0001060408010001" TARGET="TEXT">LOG_TIMING</A>, masked together.
+</DD><DT><I>Level</I>
+ </DT><DD>Logging level for this message, where zero means always log.
+</DD><DT><I>pFormat</I>
+ </DT><DD>A <A HREF="dssd0389.htm#external_00010a01090000bd" TARGET="TEXT">printf</A>-style format string, which must be in quotation marks.
+</DD></DL>
+<H5>Remarks</H5>
+<P><B>DbgLog</B> is ignored unless <A HREF="dssd0388.htm#reserved_00010a0108000001" TARGET="TEXT">DEBUG</A>
+is defined when the Microsoft DirectShow headers are included.
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_0001060408020400">DbgLogInfo</A></H3>
+<P>Formats and sends a message to the debugger, if debug logging is enabled for the given message type and level.
+<P><B>void</B> <B>WINAPI</B> <B>DbgLogInfo</B><B>(</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>Types</I><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>Level</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>TCHAR</B> <I>*pFormat</I><B>,</B><BR>&nbsp;&nbsp;<I>...</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Types</I>
+ </DT><DD>One or more types of message, such as <A HREF="dssd0283.htm#fmdebug_0001060408010001" TARGET="TEXT">LOG_TIMING</A>, masked together.
+</DD><DT><I>Level</I>
+ </DT><DD>Logging level for this message, where zero means always log.
+</DD><DT><I>pFormat</I>
+ </DT><DD>A <A HREF="dssd0389.htm#external_00010a01090000bd" TARGET="TEXT">printf</A>-style format string, which must be in quotation marks.
+</DD></DL>
+<H5>Remarks</H5>
+<P><B>DbgLogInfo</B> exists only in debug builds.
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_0001060408020500">DbgSetModuleLevel</A></H3>
+<P>Changes the current logging level for message types whose bits are set in the <I>Types</I> parameter to <I>Level</I>. Other logging levels are unchanged.
+<P><B>void</B> <B>WINAPI</B> <B>DbgSetModuleLevel</B><B>(</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>Types</I><B>,</B><BR>&nbsp;&nbsp;<B>DWORD</B> <I>Level</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>Types</I>
+ </DT><DD>One or more types of message, such as <A HREF="dssd0283.htm#fmdebug_0001060408010001" TARGET="TEXT">LOG_TIMING</A>, masked together.
+</DD><DT><I>Level</I>
+ </DT><DD>Logging level that will be set for future messages. That is, future messages must have
+a level less than or equal to this value in order for the debug routines to log them.
+</DD></DL>
+<H5>Remarks</H5>
+<P>The DirectShow debug routines ignore <B>DbgSetModuleLevel</B> 
+ 
+unless <A HREF="dssd0388.htm#reserved_00010a0108000001" TARGET="TEXT">DEBUG</A>
+is defined when the Microsoft DirectShow headers are included.
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_0001060408020600">DbgTerminate</A></H3>
+<P>Cleans the debug library.
+<P><B>void</B> <B>WINAPI</B> <B>DbgTerminate</B><B>(</B> <B>)</B><B>;</B><BR><H5>Remarks</H5>
+<P>This is called to clean up the
+ 
+resources the debug library uses. If you called <A HREF="dssd0283.htm#fmdebug_0001060408020200" TARGET="TEXT">DbgInitialise</A>, then you should call <B>DbgTerminate</B>. For example, <B>DbgTerminate</B> deletes the object register list. (For more information about using that aspect of debugging, see 
+<A HREF="dssd0284.htm" TARGET="TEXT">Object Register Debugging</A>.) <B>DbgTerminate</B> also closes the debug output location, as described in <A HREF="dssd0286.htm" TARGET="TEXT">Debug Output Location</A>.
+<B>DbgTerminate</B> is ignored unless <A HREF="dssd0388.htm#reserved_00010a0108000001" TARGET="TEXT">DEBUG</A> is defined when the Microsoft DirectShow headers are included.
+<H3><HR COLOR=#0000FF><A NAME="fmdebug_0001060408020700">DisplayType</A></H3>
+<P>Displays the media type details on the debug log.<P><B>void</B> <B>WINAPI</B> <B>DisplayType</B><B>(</B><BR>&nbsp;&nbsp;<B>LPSTR</B> <I>label</I><B>,</B><BR>&nbsp;&nbsp;<B>const</B> <B>AM_MEDIA_TYPE</B> <I>*pmtIn</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>label</I>
+ </DT><DD>Short message to be logged with the media type.
+</DD><DT><I>pmtIn</I>
+ </DT><DD>Pointer to the media type to be displayed.
+</DD></DL>
+<H5>Remarks</H5>
+<P>The major types and subtypes are converted into strings for display. <B>DisplayType</B> also asks the base classes for a string description of the subtype, so MEDIASUBTYPE_RGB565 becomes RGB 565 16-bit. In addition, it displays the fields in the <A HREF="dssd0075.htm#avispec_0001050502020800" TARGET="TEXT">BITMAPINFOHEADER</A> structure; this should
+succeed because input types are not accepted unless the format is big enough. 
+<P><B>DisplayType</B> is ignored unless <A HREF="dssd0388.htm#reserved_00010a0108000001" TARGET="TEXT">DEBUG</A>
+is defined when the Microsoft DirectShow headers are included.<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

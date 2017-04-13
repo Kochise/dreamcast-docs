@@ -1,0 +1,194 @@
+$OBJECT=ShipClass
+$OBJECT=BubbleClass
+$OBJECT=AmmoClass
+
+Option Explicit
+
+'----------------------------------------------------------------------------
+' Game3.txt
+'----------------------------------------------------------------------------
+' Use path to this file as parameter to Sprite.exe.  E.g.:
+'    Sprite C:\Tmp\Game3.txt
+' See "Game.Pix" for list of images available, numbered 0-n.
+'----------------------------------------------------------------------------
+
+Dim sShip               'Player's ship
+
+
+'----------------------------------------------------------------------------
+' GAME events
+'
+Sub Game_NewGame()
+'   ------------
+    'Sprites Bounce on inner border:
+    ShipClass.Border   = 15
+    BubbleClass.Border = 15
+    AmmoClass.Border   = 15
+
+    'Setup Collision possibilities.  Bit 1 is reserved for hitting same-kind objects.
+    ShipClass.Collide   = 2
+    BubbleClass.Collide = 2 + 4
+    AmmoClass.Collide   =     4
+
+    'Setup Standard images for the different classes of sprites
+    ShipClass.Image   = 32		'Ship
+    BubbleClass.Image = 60		'Small bubble
+    AmmoClass.Image   = 35		'Ammo
+
+    'Extra Ship Info
+    Game.ScoreFirst1Up = 250
+    Game.DScoreNext1Up = 500
+
+    ShipClass.Friction = 0.981
+    Set sShip = ShipClass.CreateSprite(Game.Width / 2, Game.Height / 2, 0)
+    BubbleClass.CreateSprite 0, 0, 0
+End Sub
+
+
+Sub Game_KeyDown(ByVal ch)
+'   ------------
+    Dim sT
+
+    'Too many shots on screen already?
+    If AmmoClass.SpriteCount > 5 Then Exit Sub
+
+    'Game Over?
+    If Game.ShipCount <= 0 Then Exit Sub
+
+    'Up
+    If ch = 38 Then
+        sShip.Image = 24
+        Set sT = AmmoClass.CreateSprite(sShip.Left + sShip.Width / 2, sShip.Top, 0)
+        sT.Vx = 0 : sT.Vy = -5
+        sShip.Vy = sShip.Vy + 1
+    End If
+
+    'Down
+    If ch = 40 Then
+        sShip.Image = 8
+        Set sT = AmmoClass.CreateSprite(sShip.Left + sShip.Width / 2, sShip.Top + sShip.Height, 0)
+        sT.Vx = 0 : sT.Vy = 5
+        sShip.Vy = sShip.Vy - 1
+    End If
+
+    'Left
+    If ch = 37 Then
+        sShip.Image = 16
+        Set sT = AmmoClass.CreateSprite(sShip.Left, sShip.Top + sShip.Height / 2, 0)
+        sT.Vx = -5 : sT.Vy = 0
+        sShip.Vx = sShip.Vx + 1
+    End If
+
+    'Right
+    If ch = 39 Then
+        sShip.Image = 0
+        Set sT = AmmoClass.CreateSprite(sShip.Left + sShip.Width, sShip.Top + sShip.Height / 2, 0)
+        sT.Vx = 5 : sT.Vy = 0
+        sShip.Vx = sShip.Vx - 1
+    End If
+End Sub
+
+
+Sub DoShipHit()      'Decrease # ships, end game if none left
+'   ---------
+    sShip.Image = 32
+    Game.ShipCount = Game.ShipCount - 1
+    If Game.ShipCount <= 0 Then
+        Game.EndGame
+    Else
+        sShip.Vx = 0
+        sShip.Vy = 0
+        sShip.MoveTo Game.Width / 2, Game.Height / 2
+    End If
+End Sub
+
+
+Sub DoNewBubble(ByVal left, ByVal top, ByVal vx, ByVal vy)
+'   -----------
+    Dim sT
+
+    Set sT = BubbleClass.CreateSprite(left, top, 1)
+    sT.Vx  = vx * 0.5 + 4 * Rnd() - 2
+    sT.Vy  = vy * 0.5 + 4 * Rnd() - 2
+End Sub
+
+
+Sub Game_Collide(ByVal sLowId, ByVal sHighId, ByVal coll)
+'   ------------
+    Dim ship
+    Dim bubble
+    Dim ammo
+    Dim sT
+
+    Select Case coll
+        Case 2
+            Set ship   = sLowId
+            Set bubble = sHighId
+            If ship.Image <> 32 Then
+                'Ship Hit Bubble
+                Call DoShipHit
+            End If
+
+	Case 4
+            Set bubble = sLowId
+            Set ammo   = sHighId
+            ammo.Remove
+            If bubble.Image <= 57 Then
+                Game.AddScore 50
+                bubble.Remove
+                DoNewBubble bubble.Left, bubble.Top, bubble.Vx - ammo.Vx, bubble.Vy - ammo.Vy
+                DoNewBubble bubble.Left, bubble.Top, bubble.Vx + ammo.Vx, bubble.Vy + ammo.Vy
+            Else
+                bubble.Image = bubble.Image - 1
+                Game.AddScore 5
+            End If
+    End Select
+End Sub
+
+
+'----------------------------------------------------------------------------
+' ShipClass events
+'
+Sub ShipClass_Init(ByVal s, ByVal u)
+    s.TickEvent = 5
+End Sub
+
+Sub ShipClass_Border(ByVal s, ByVal brd)
+    'Randomize velocity, then bounce ship
+    s.Vx = s.Vx + 6 * Rnd() - 3
+    s.Vy = s.Vy + 6 * Rnd() - 3
+    Game.StdBorderBounce s, brd
+End Sub
+
+
+'----------------------------------------------------------------------------
+' BubbleClass events
+'
+Sub BubbleClass_Init(ByVal s, ByVal u)
+    If s.Left = 0 Then
+        'New Bubble, so start it at an edge, and give it a random direction
+        Game.StdInitEdge s, u
+        s.Vx = 12 * Rnd() - 6
+        s.Vy = 12 * Rnd() - 6
+    End If
+End Sub
+
+Sub BubbleClass_Border(ByVal s, ByVal brd)
+    Game.StdBorderBounce s, brd
+End Sub
+
+'If no more enemies, create some
+Sub BubbleClass_LastTerm()
+'   --------------------
+    BubbleClass.CreateSprite 0, 0, 0
+End Sub
+
+
+'----------------------------------------------------------------------------
+' AmmoClass events
+'
+Sub AmmoClass_Border(ByVal s, ByVal brd)
+    s.Remove
+End Sub
+
+'--- EOF ---

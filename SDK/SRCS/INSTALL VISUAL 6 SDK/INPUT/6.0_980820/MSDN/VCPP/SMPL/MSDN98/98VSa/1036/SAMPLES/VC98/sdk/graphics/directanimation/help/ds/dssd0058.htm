@@ -1,0 +1,485 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Controlling Filter Graphs Using C</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0057.htm','/dssd0000.htm','/dssd0044.htm','/index.htm','/dssd0059.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="cdemo_0001040301000000">Controlling Filter Graphs Using C</A></H2>
+<BR CLEAR=ALL>
+<P>This article describes how to use the interfaces and methods exposed by the Microsoft&#174; DirectShow&#153; dynamic-link library to communicate with the Filter Graph Manager and the filters in a graph. These interfaces and methods render a stream of time-stamped video data in applications that are based in Microsoft Windows&#174;. This article provides an overview of the interfaces and methods to use, and then describes their use in the DirectShow <A HREF="dssd0353.htm#samples_0001070207010000" TARGET="TEXT">CPlay sample</A> application. 
+
+
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0058.htm#cdemo_0001040301010000" TARGET="TEXT">Interfaces that Access the Filter Graph Manager</A>
+<LI><A HREF="dssd0058.htm#cdemo_0001040301020000" TARGET="TEXT">CPlay Tutorial</A>
+<LI><A HREF="dssd0058.htm#cdemo_0001040301030000" TARGET="TEXT">Using the Filter Graph Manager</A>
+</UL>
+<A NAME="cdemo_0001040301010000"></A><P><B>Interfaces that Access the Filter Graph Manager </B>
+<P>The stream architecture enables applications to communicate with the filter graph manager, and the filter graph manager to communicate with individual filters to control the movement of data through the filter graph. It also enables filters to post events that an application can retrieve, so an application can, for example, retrieve status information about a special filter it has installed. 
+
+<P>This section contains the following topics.
+<UL><LI><A HREF="dssd0058.htm#cdemo_0001040301010100" TARGET="TEXT">Implementing Dual Interfaces</A>
+<LI><A HREF="dssd0058.htm#cdemo_0001040301010200" TARGET="TEXT">Installing and Registering Quartz.dll</A>
+<LI><A HREF="dssd0058.htm#cdemo_0001040301010300" TARGET="TEXT">Instantiating the Filter Graph Manager</A>
+<LI><A HREF="dssd0058.htm#cdemo_0001040301010400" TARGET="TEXT">Invoking Methods on the Interfaces</A>
+</UL>
+<P>An application communicates with the filter graph manager and the filters in a specific graph by using the interfaces exposed by either the filter graph manager or the filters. The following table identifies these interfaces.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Interface </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0093.htm#If_0001060105000000" TARGET="TEXT">IAMCollection</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Represents a collection of objects of type <A HREF="dssd0142.htm#If_0001060136000000" TARGET="TEXT">IFilterInfo</A>, <A HREF="dssd0171.htm#If_0001060153000000" TARGET="TEXT">IRegFilterInfo</A>, <A HREF="dssd0159.htm#If_0001060147000000" TARGET="TEXT">IMediaTypeInfo</A>, and <A HREF="dssd0166.htm#If_000106014e000000" TARGET="TEXT">IPinInfo</A>.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0117.htm#If_000106011d000000" TARGET="TEXT">IBasicAudio</A> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Controls and retrieves current volume setting.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0118.htm#If_000106011e000000" TARGET="TEXT">IBasicVideo</A> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Controls a generic video renderer.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0125.htm#If_0001060125000000" TARGET="TEXT">IDeferredCommand</A> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Used in conjunction with <A HREF="dssd0169.htm#If_0001060151000000" TARGET="TEXT">IQueueCommand</A> methods to defer the execution of methods and properties.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0142.htm#If_0001060136000000" TARGET="TEXT">IFilterInfo</A> 
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Enables an Automation client to set and retrieve filter properties.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Builds the filter graph manager.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Instantiates the filter graph and controls media flow (running, paused, stopped).
+
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0150.htm#If_000106013e000000" TARGET="TEXT">IMediaEvent</A> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Enables customized event handling for events such as repainting, user termination, completion, and so on.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0154.htm#If_0001060142000000" TARGET="TEXT">IMediaPosition</A> and <A HREF="dssd0158.htm#If_0001060146000000" TARGET="TEXT">IMediaSeeking</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Controls or retrieves start time, stop time, preroll rate, and current position.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0159.htm#If_0001060147000000" TARGET="TEXT">IMediaTypeInfo</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Enables an Automation client to retrieve a media type's major type and subtype. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0169.htm#If_0001060151000000" TARGET="TEXT">IQueueCommand</A> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Enables an application to queue methods and properties so that the filter invokes them during rendering of a video stream.
+
+
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0166.htm#If_000106014e000000" TARGET="TEXT">IPinInfo</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Enables an Automation client to set and retrieve filter properties.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0171.htm#If_0001060153000000" TARGET="TEXT">IRegFilterInfo</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Enables an Automation client to retrieve the name of a registered filter and add a filter to the filter graph. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Controls window aspects of a video renderer, such as the window's position and size.
+
+
+</FONT></TD></TR></TABLE>
+<P>Of all the interfaces for the filter graph manager, C and C++ programmers use the following most effectively.
+
+<UL><LI><A HREF="dssd0117.htm#If_000106011d000000" TARGET="TEXT">IBasicAudio</A> 
+<LI><A HREF="dssd0118.htm#If_000106011e000000" TARGET="TEXT">IBasicVideo</A>
+<LI><A HREF="dssd0125.htm#If_0001060125000000" TARGET="TEXT">IDeferredCommand</A>
+<LI><A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A>
+<LI><A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A>
+<LI><A HREF="dssd0150.htm#If_000106013e000000" TARGET="TEXT">IMediaEvent</A>
+<LI><A HREF="dssd0158.htm#If_0001060146000000" TARGET="TEXT">IMediaSeeking</A>
+<LI><A HREF="dssd0169.htm#If_0001060151000000" TARGET="TEXT">IQueueCommand</A>
+<LI><A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A>
+</UL>
+<P>The remainder are collection interfaces, which enable Automation clients, such as Microsoft Visual Basic&#174;, to access the properties of filters, pins, and media types that are not otherwise exposed to Automation clients. 
+
+
+
+<A NAME="cdemo_0001040301010100"></A><P><B>Implementing Dual Interfaces</B>
+<P>Most of the interfaces that communicate with the Filter Graph Manager
+
+
+ are implemented as dual interfaces. This means that an application can call the methods in each interface 
+
+
+ directly or through Automation (by using the <A HREF="dssd0389.htm#external_00010a0109000081" TARGET="TEXT">IDispatch::Invoke</A> method). DirectShow provides Automation support for the developer using Visual Basic.
+
+
+ The developer using C or C++ can avoid the indirection (and accompanying overhead) associated with Automation by calling the methods directly. 
+
+<P>DirectShow doesn't implement all interfaces as dual interfaces. An application must call the methods in these interfaces directly. For example, the following interfaces are not dual interfaces:
+
+
+
+ <A HREF="dssd0169.htm#If_0001060151000000" TARGET="TEXT">IQueueCommand</A>, <A HREF="dssd0125.htm#If_0001060125000000" TARGET="TEXT">IDeferredCommand</A>, and <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A>. 
+
+
+
+<A NAME="cdemo_0001040301010200"></A><P><B>Installing and Registering Quartz.dll</B>
+<P>Before you begin using the filter graph manager, you must install and register the Quartz.dll dynamic-link library. Currently, the DirectShow SDK setup program automates this process. Run Setup.exe and choose the Runtime option. This program copies Quartz.dll to your Windows\System directory and adds the appropriate entries to your system's registration database.
+
+<A NAME="cdemo_0001040301010300"></A><P><B>Instantiating the Filter Graph Manager</B>
+<P>After you have registered Quartz.dll, you can begin using the filter graph manager in your Windows-based application. First, initialize the COM library by calling the COM <A HREF="dssd0389.htm#external_00010a010900000d" TARGET="TEXT">CoInitialize</A> function.
+
+
+ The sample application calls <B>CoInitialize</B> within its InitApplication function in the Cplay.c file of the CPlay sample application. 
+
+<P>Next, instantiate the filter graph manager. Most applications should use the <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A> function to instantiate the filter graph. Both <B>CoCreateInstance</B> and <A HREF="dssd0389.htm#external_00010a010900000c" TARGET="TEXT">CoGetClassObject</A> can instantiate an object; however, applications typically use the former to instantiate a single object and the latter to instantiate multiple instances of an object.
+
+<P>The complete call to <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A> appears as follows:
+
+<PRE><FONT FACE="Courier" SIZE="2">hr = CoCreateInstance( &amp;CLSID_FilterGraph,          // Get this document's graph object
+&#009;&#009;&#009;  NULL,
+&#009;&#009;&#009;  CLSCTX_INPROC_SERVER,
+&#009;&#009;&#009;  &amp; IID_IGraphBuilder,
+&#009;&#009;&#009;  (void **) &amp;media.pGraph);
+</FONT></PRE>
+<P>The first parameter, CLSID_FilterGraph,
+
+
+ is the class identifier (CLSID) for the filter graph manager. This CLSID is defined in the Uuids.h file, which is installed as part of the DirectShow SDK. The CLSID is a 128-bit value that the registration database uses to identify the dynamic-link library (DLL or in-process server). Using this value, COM can locate and then load the appropriate DLL.
+<P>The second parameter is a pointer to the outer IUnknown and is NULL since the Filter Graph object is not part of an aggregate. 
+<P>The third parameter is the context in which the code that manages the Filter Graph will run, which is in the same process as the caller of the <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A> function.
+
+<P>The fourth parameter
+
+
+ passed to the <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A> function identifies the interface that the application will use to communicate with the object. This interface identifier should be IID_IGraphBuilder; this value is defined internally in the DirectShow sources and then exposed in the Strmif.h file.
+
+<P>If the call to <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A> succeeds, this function returns a pointer to a filter graph manager object in the media.pGraph variable.
+
+
+ After this pointer is returned, the application begins to call the methods in the <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A> interface. Typically, the application first calls the <A HREF="dssd0146.htm#If_000106013a030400" TARGET="TEXT">IGraphBuilder::RenderFile</A> method. This method creates a filter graph for the type of file that was supplied as one of the parameters. In addition, the application can use the <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder::QueryInterface</A> method to retrieve pointers to any of the interfaces exposed by the filter graph manager. The <B>IGraphBuilder</B> interface derives from <A HREF="dssd0175.htm#If_0001060157000000" TARGET="TEXT">IUnknown</A>.
+
+<P>If you are writing your application in C (rather than C++), you must use a vtable pointer to call the methods exposed by <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A>. The following example illustrates a call to the <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">QueryInterface</A> method on the <B>IGraphBuilder</B> interface from within an application written in C.
+
+<PRE><FONT FACE="Courier" SIZE="2">hr = media.pGraph-&gt;lpVtbl-&gt;QueryInterface(media.pGraph, 
+    &amp;IID_IMediaEvent, (void **) &amp;pME);
+</FONT></PRE>
+<P>If you are writing your application in C++, the function is simpler; it requires less indirection and one less parameter:
+
+<PRE><FONT FACE="Courier" SIZE="2">hr = m_pGraph-&gt;QueryInterface(IID_IMediaEvent, (void **) &amp;pME);
+</FONT></PRE>
+<A NAME="cdemo_0001040301010400"></A><P><B>Invoking Methods on the Interfaces</B>
+<P>An application can retrieve a pointer to any of the other interfaces exposed by the filter graph manager by calling the
+<A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder::QueryInterface</A> method and supplying a REFIID for the corresponding interface.
+
+
+ After retrieving this interface pointer, the application can begin calling the interface's methods
+
+
+ by using the interface's vtable pointer (just as the <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A>'s vtable pointer called the <B>IGraphBuilder::QueryInterface</B> method in the previous example). The application must release an acquired interface by calling the <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">IUnknown::Release</A> method on that interface. 
+
+
+
+
+<A NAME="cdemo_0001040301020000"></A><P><B>CPlay Tutorial</B>
+<P>This section's tutorial describes CPlay, a sample included in the DirectShow SDK that plays a media file. The source files for this application are in the Samples\DS\Player\CPlay subdirectory of the DirectShow SDK project. 
+
+<P>This section contains the following topics.
+<UL><LI><A HREF="dssd0058.htm#cdemo_0001040301020100" TARGET="TEXT">CPlay Sample Application</A>
+<LI><A HREF="dssd0058.htm#cdemo_0001040301020200" TARGET="TEXT">Files in CPlay</A>
+</UL>
+<P>This tutorial does not describe the Microsoft Windows&#174; API code found in the source files. Instead, it focuses almost exclusively on the code that shows:
+
+<UL><LI>How to instantiate a filter graph for a particular file type. 
+<LI>How to process media events. 
+<LI>How to run, pause, and stop the media stream. 
+<LI>How to set a global variable to indicate the valid media state (running, paused, or stopped).
+<LI>How to release the resources and clean up the variables used by the filter graph.
+
+</UL>
+<A NAME="cdemo_0001040301020100"></A><P><B>CPlay Sample Application</B>
+<P>You can use the CPlay sample application to open a media file and then run, pause, or stop the corresponding media stream. The application's user interface consists of menus and a toolbar. The menus include File, Media, and Help. The toolbar includes Play, Pause, and Stop buttons. 
+
+<P><IMG SRC="art/cplay1.gif" WIDTH="168" HEIGHT="92" ALT="CPlay sample application" >
+
+<P>After you open a file and click Play, the filter graph renders the video stream 
+
+
+ in its default window.
+
+<A NAME="cdemo_0001040301020200"></A><P><B>Files in CPlay</B>
+<P>The sample application consists of six source files. Each file contains source code that accomplishes a specific set of tasks. For example, the About.c module contains the code that displays the About dialog box. The following table identifies each source file and describes its purpose.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>File </B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">About.c </FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Displays the About dialog box.
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Assert.c </FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Displays a message box with debugging information.
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Cplay.c </FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Processes user input.
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">File.c </FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Displays the File Open dialog box.
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Media.c </FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Instantiates the filter graph; invokes the filter graph methods to run, pause, and stop the video rendering.
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Toolbar.c </FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Draws the toolbar buttons.
+</FONT></TD>
+</TR>
+</TABLE>
+<P>The remainder of this article focuses primarily on the code found in the Media.c file; however, references to other files appear when describing some of the tasks accomplished by this application.
+
+<A NAME="cdemo_0001040301030000"></A><P><B>Using the Filter Graph Manager</B>
+<P>The Media.c file contains initialization, destruction and cleanup, command handling, and state change code. The initialization code instantiates a filter graph for a particular file type. The destruction code releases the resources and cleans up the variables used by the filter graph. The command handling code invokes the methods required to play, pause, or stop the video rendering. The state change code sets a global variable that indicates valid media states (that is, can stop, can pause, can play). 
+
+<P>This section contains the following topics.
+<UL><LI><A HREF="dssd0058.htm#cdemo_0001040301030100" TARGET="TEXT">Initializing the Filter Graph Manager and the Filter Graph</A>
+<LI><A HREF="dssd0058.htm#cdemo_0001040301030200" TARGET="TEXT">Playing, Pausing, and Stopping the Video Stream</A>
+<LI><A HREF="dssd0058.htm#cdemo_0001040301030300" TARGET="TEXT">Handling Events</A>
+</UL>
+<A NAME="cdemo_0001040301030100"></A><P><B>Initializing the Filter Graph Manager and the Filter Graph</B>
+<P>The following code illustrates how to create the filter graph manager and the filter graph, including including how to enable event handling, and how to open the media file that the filter graph will render.
+
+
+<P> First, instantiate the filter graph manager. The CreateFilterGraph function in Media.c instantiates the filter graph manager by calling the COM <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A> function. It saves the pointer returned by <B>CoCreateInstance</B> in the pGraph member
+
+
+ of a global media structure (defined in Media.h in the CPlay sample included in the SDK).
+
+<PRE><FONT FACE="Courier" SIZE="2">
+BOOL CreateFilterGraph()
+{
+    HRESULT hr;
+    
+    hr = CoCreateInstance(&amp;CLSID_FilterGraph,  // CLSID of object
+           NULL,                         // Outer unknown
+           CLSCTX_INPROC_SERVER,         // Type of server
+           &amp;IID_IGraphBuilder,           // Interface wanted
+&#009;       (void **) &amp;media.pGraph);     // Pointer to IGraphBuilder
+...
+}
+</FONT></PRE>
+<P>Next, enable event handling. Using the pointer returned by <A HREF="dssd0389.htm#external_00010a010900000b" TARGET="TEXT">CoCreateInstance</A>, the CreateFilterGraph function retrieves a pointer to the <A HREF="dssd0150.htm#If_000106013e000000" TARGET="TEXT">IMediaEvent</A> interface by calling the <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">IUnknown::QueryInterface</A> method. The interface pointer retrieves an event notification handle by calling the <A HREF="dssd0150.htm#If_000106013e030400" TARGET="TEXT">IMediaEvent::GetEventHandle</A> method. The main message loop uses this handle (the DoMainLoop function in CPlay.c).
+
+
+ After <A HREF="dssd0150.htm#If_000106013e030400" TARGET="TEXT">GetEventHandle</A> obtains the handle,
+
+
+ the CreateFilterGraph releases the pointer to the <B>IMediaEvent</B> interface 
+
+
+ by calling the <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">IUnknown::Release</A> method. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+IMediaEvent *pME;
+
+hr = media.pGraph-&gt;lpVtbl-&gt;QueryInterface(media.pGraph, &amp;IID_IMediaEvent, (void **) &amp;pME);
+    if (FAILED(hr)) {
+&#009;  DeleteContents(); //Releases the pointer media.pGraph
+&#009;  return FALSE;
+    }
+
+    hr = pME-&gt;lpVtbl-&gt;GetEventHandle(pME, (OAEVENT*) &amp;media.hGraphNotifyEvent);
+    pME-&gt;lpVtbl-&gt;Release( pME );
+
+</FONT></PRE>
+<P> After instantiating the Filter Graph Manager
+
+
+ and enabling event handling, open the media file to be rendered. In the CPlay sample application, a user opens a multimedia file. The file name extension (for example, .avi or .mpg) is unimportant, because the DirectShow filter graph examines the file header to ensure that the file is a multimedia file. 
+
+<P>When the user opens a file by choosing Open from the File menu, this action calls the OpenMediaFile function in Media.c, which displays the File Open common dialog box. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+ void OpenMediaFile( HWND hwnd, LPSTR szFile ){
+// File..Open has been selected 
+    static char szFileName[ _MAX_PATH ];
+    static char szTitleName[ _MAX_FNAME + _MAX_EXT ];
+    // The user has already chosen a file. 
+    if( szFile!=NULL &amp;&amp; RenderFile( szFile ) ){
+        LPSTR szTitle;
+
+        // Work out the full path name and the file name from the
+        // specified file.
+        GetFullPathName( szFile, _MAX_PATH, szFileName, &amp;szTitle );
+        strncpy( szTitleName, szTitle, _MAX_FNAME + _MAX_EXT );
+        szTitleName[ _MAX_FNAME + _MAX_EXT -1 ] = '\0';
+
+        // Set the main window title and update the state.
+        SetTitle( hwnd, szTitleName );
+        ChangeStateTo( Stopped );
+// The user hasn't already chosen a file, so display the Open File
+// dialog box. The DoFileOpenDialog function is in file.c in the CPlay 
+// sample.
+    } else if( DoFileOpenDialog( hwnd, szFileName, szTitleName )
+               &amp;&amp; RenderFile( szFileName ) ){
+
+        // Set the main window title and update the state.
+        SetTitle( hwnd, szTitleName );
+        ChangeStateTo( Stopped );
+    }
+}
+</FONT></PRE>
+<P>After the file has been opened, render the file. The OpenMediaFile function passes the name of the user's chosen file to the RenderFile function in Media.c. The RenderFile function in turn calls the CreateFilterGraph function to instantiate the filter graph manager. After creating the filter graph manager, the RenderFile function calls the <A HREF="dssd0146.htm#If_000106013a030400" TARGET="TEXT">IGraphBuilder::RenderFile</A> method to create the actual filter graph: 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+BOOL RenderFile( LPSTR szFileName )
+{
+    HRESULT hr;
+    WCHAR wPath[MAX_PATH];
+    DeleteContents(); // Release the pointer media.pGraph if it exists
+                      // because the call to CreateFilterGraph will 
+                      // retrieve a new pointer.
+
+   //Create the filter graph manager
+    if ( !CreateFilterGraph() ) { 
+&#009;  PlayerMessageBox( IDS_CANT_INIT_QUARTZ );
+&#009;  return FALSE;
+    }
+
+    MultiByteToWideChar( CP_ACP, 0, szFileName, -1, wPath, MAX_PATH );
+    SetCursor( LoadCursor( NULL, IDC_WAIT ) ); // Put up the hour-glass 
+                                               // while the media file 
+                                               // loads.
+    // Create the actual filter graph
+    hr = media.pGraph-&gt;lpVtbl-&gt;RenderFile(media.pGraph, wPath, NULL);
+    SetCursor( LoadCursor( NULL, IDC_ARROW ) ); // Turn the cursor back
+                                                // to an arrow.
+    if (FAILED( hr )) {
+&#009;  PlayerMessageBox( IDS_CANT_RENDER_FILE );
+&#009;  return FALSE;
+    }
+    return TRUE;
+
+}
+</FONT></PRE>
+<A NAME="cdemo_0001040301030200"></A><P><B>Playing, Pausing, and Stopping the Video Stream</B>
+<P>After the application creates the filter graph manager and the filter graph,
+
+
+ it can expose the user interface, which enables the user to play, pause, and stop video rendering. In the case of CPlay, the toolbar buttons (Play, Pause, and Stop) are redrawn in color after the user chooses a valid file. 
+
+<P>When the user clicks Play, the OnMediaPlay function is called. This function accomplishes the following tasks sequentially. 
+
+<OL><LI>Examines the global state variable in the media structure to ensure that the video can be rendered.
+<LI>Retrieves a pointer to the <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A> interface.
+<LI>Invokes the <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">IMediaControl::Run</A> method.
+<LI>Releases the <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A> interface.
+<LI>Sets the global state variable.
+</OL>
+<P>The OnMediaPlay function appears as follows:
+
+<PRE><FONT FACE="Courier" SIZE="2">void OnMediaPlay( void ){
+    if( CanPlay() ){
+        HRESULT   hr;
+        IMediaControl *pMC;
+
+        // Obtain the interface to our filter graph.
+        hr = media.pGraph-&gt;lpVtbl-&gt;QueryInterface(media.pGraph, 
+            &amp;IID_IMediaControl, (void **) &amp;pMC);
+
+        if( SUCCEEDED(hr) ){
+            // Ask the filter graph to play and release the interface.
+            hr = pMC-&gt;lpVtbl-&gt;Run( pMC );
+            pMC-&gt;lpVtbl-&gt;Release( pMC );
+
+            if( SUCCEEDED(hr) ){
+                ChangeStateTo( Playing );
+                return;
+            }
+        }
+
+        // Inform the user that an error occurred.
+        PlayerMessageBox( IDS_CANT_PLAY );
+
+    }
+}
+</FONT></PRE>
+<P>The code that handles pausing and stopping the video stream is nearly identical to the code that plays the media stream. The actual functions that handle these tasks are OnMediaPause and OnMediaStop, respectively. You can find all this code in the Media.c file.
+
+<A NAME="cdemo_0001040301030300"></A><P><B>Handling Events</B>
+<P>The <A HREF="dssd0150.htm#If_000106013e000000" TARGET="TEXT">IMediaEvent</A> interface enables an application to receive events that the filter graph or individual filters within the graph raise. Following are some of the possible events and corresponding event notification messages.
+
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Event notification message </B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> 
+ </FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The video has finished rendering.
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801001700" TARGET="TEXT">EC_USERABORT</A> 
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">A user forced the termination of a requested operation.
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000700" TARGET="TEXT">EC_ERRORABORT</A> 
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">An error forced the termination of a requested operation.
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000d00" TARGET="TEXT">EC_PALETTE_CHANGED</A>
+ </FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The video palette changed.
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A>
+ </FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The display should be repainted.
+</FONT></TD>
+</TR>
+</TABLE>
+<P>The sample application tracks the <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A>, <A HREF="dssd0291.htm#events_0001060801001700" TARGET="TEXT">EC_USERABORT</A>, and <A HREF="dssd0291.htm#events_0001060801000700" TARGET="TEXT">EC_ERRORABORT</A> events by using the <A HREF="dssd0150.htm#If_000106013e030300" TARGET="TEXT">IMediaEvent::GetEvent</A> method. The application calls this method from within the OnGraphNotify function. 
+
+
+The application calls the OnGraphNotify function (in Media.c) from within the main message loop function (DoMainLoop) of the application, which you can find in the Cplay.c file. 
+
+
+<P>If any of these events are raised, OnGraphNotify immediately stops video rendering by calling the OnMediaStop function. 
+
+<P>The OnGraphNotify function accomplishes the following tasks sequentially.
+<OL><LI>Declares the <A HREF="dssd0150.htm#If_000106013e000000" TARGET="TEXT">IMediaEvent</A> interface pointer and the variables for the event code and event parameters. 
+<LI>Retrieves a pointer to the <A HREF="dssd0150.htm#If_000106013e000000" TARGET="TEXT">IMediaEvent</A> interface by calling <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">IUnknown::QueryInterface</A>.
+
+
+<LI>Calls the <A HREF="dssd0150.htm#If_000106013e030300" TARGET="TEXT">IMediaEvent::GetEvent</A> method to retrieve the next event notification. The retrieved event is stored in the lEventCode variable
+
+
+ and the event parameters are stored in the lParam1 and lParam2 variables. The time-out value is set to zero, which means that <A HREF="dssd0150.htm#If_000106013e030300" TARGET="TEXT">GetEvent</A> will not wait for an event to occur, but only return an already waiting event.
+
+
+<LI> Checks the event type stored in lEventCode and takes the appropriate action, if <A HREF="dssd0150.htm#If_000106013e030300" TARGET="TEXT">GetEvent</A> retrieves an event. See <A HREF="dssd0291.htm#events_0001060801000000" TARGET="TEXT">Event Notification Codes</A> for a list of the system-supplied events that DirectShow supports. Note that if the event parameters are declared as type BSTR instead of LONG, <A HREF="dssd0150.htm#If_000106013e030200" TARGET="TEXT">IMediaEvent::FreeEventParams</A> should be called free the BSTRs.
+</OL>
+<PRE><FONT FACE="Courier" SIZE="2">void OnGraphNotify(void) {
+    IMediaEvent *pME;
+
+    long lEventCode, lParam1, lParam2;
+
+    ASSERT( media.hGraphNotifyEvent != NULL );
+
+    if( SUCCEEDED(media.pGraph-&gt;lpVtbl-&gt;QueryInterface(media.pGraph, 
+            &amp;IID_IMediaEvent, (void **) &amp;pME))){
+        if( SUCCEEDED(pME-&gt;lpVtbl-&gt;GetEvent(pME, &amp;lEventCode, &amp;lParam1, 
+                &amp;lParam2, 0))
+            &amp;&amp; ( lEventCode == EC_COMPLETE
+                || lEventCode == EC_USERABORT
+                || lEventCode == EC_ERRORABORT
+                )
+          )
+            OnMediaStop();
+              pME-&gt;lpVtbl-&gt;Release( pME );
+              }
+}
+</FONT></PRE>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

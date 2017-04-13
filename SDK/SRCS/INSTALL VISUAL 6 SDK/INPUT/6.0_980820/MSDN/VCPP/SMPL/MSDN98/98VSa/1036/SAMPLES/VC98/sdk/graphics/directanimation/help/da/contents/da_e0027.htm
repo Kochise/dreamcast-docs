@@ -1,0 +1,405 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Using Media Behaviors</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/DA_E0026.htm','/DA_E0000.htm','/DA_E0024.htm','/index.htm','/DA_E0028.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="proguide_0001050103000000">Using Media Behaviors</A></H2>
+<BR CLEAR=ALL>
+<P>This section describes DirectAnimation media behaviors and how to use them. Behaviors that are rendered for presentation to the user are called <I>media behaviors</I> and include 2-D image behaviors (the <A HREF="DA_E0045.htm#vref_000106010f000000" TARGET="TEXT">DAImage</A> class and Java <A HREF="DA_E0139.htm#dxmref_0001070117000000" TARGET="TEXT">ImageBvr</A> class), 3-D geometry behaviors (the <A HREF="DA_E0044.htm#vref_000106010e000000" TARGET="TEXT">DAGeometry</A> class and Java <A HREF="DA_E0138.htm#dxmref_0001070116000000" TARGET="TEXT">GeometryBvr</A> class), and sound behaviors (the <A HREF="DA_E0060.htm#vref_000106011e000000" TARGET="TEXT">DASound</A> class and Java <A HREF="DA_E0156.htm#dxmref_0001070128000000" TARGET="TEXT">SoundBvr</A> class). Textures are also covered in this section since texturing often involves an image textured onto a geometry.
+<P>This section contains the following topics:
+<UL><LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103010000" TARGET="TEXT">Using Images</A>
+<LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103020000" TARGET="TEXT">Using Geometries</A>
+<LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103030000" TARGET="TEXT">Rendering Geometries into Images</A>
+<LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103040000" TARGET="TEXT">Applying Textures</A>
+<LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103050000" TARGET="TEXT">Using Sound</A>
+</UL>
+<H3><A NAME="proguide_0001050103010000">Using Images</A></H3>
+<P>DirectAnimation can construct or import 2-D images (<A HREF="DA_E0045.htm#vref_000106010f000000" TARGET="TEXT">DAImage</A> objects or Java <A HREF="DA_E0139.htm#dxmref_0001070117000000" TARGET="TEXT">ImageBvr</A> objects), and can perform sequences of operations on any source of animated images in any order. This section discusses the following topics.
+<UL><LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103010100" TARGET="TEXT">Empty Images</A>
+<LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103010200" TARGET="TEXT">Constructing Images</A>
+<LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103010a00" TARGET="TEXT">Operations on Images</A>
+</UL>
+<A NAME="proguide_0001050103010100"></A><P><B>Empty Images</B>
+<P>DirectAnimation has two types of empty images. An <A HREF="DA_E0079.htm#vref_0001060131000200" TARGET="TEXT">EmptyImage</A> is the null image. It is transparent and undetectable. A <A HREF="DA_E0079.htm#vref_0001060131000100" TARGET="TEXT">DetectableEmptyImage</A> has infinite extent and is transparent and detectable throughout its extent. The <B>DetectableEmptyImage</B> is useful for specifying hot spots in certain images. An image is said to be tangible at a certain point if it is either detectable or nontransparent at that point. Otherwise, the image at that point is said to be nontangible. 
+
+
+<A NAME="proguide_0001050103010200"></A><P><B>Constructing Images</B>
+<P>The following approaches can be used to construct 2-D images. 
+
+<UL><LI>Importing bitmaps from GIF, JPEG, and BMP formats. 
+<LI>Drawing lines and polygons. 
+<LI>Rendering 3-D geometry into an image.
+<LI>Rendering text into an image. 
+<LI>Creating polygons with potentially animated colors at the vertices and smooth color interpolation between vertices (gradient fills). 
+<LI>Combining two images.
+<LI>Giving images an explicit Z-order in montages.
+</UL>
+<P>This section includes the following:
+<UL><LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103010300" TARGET="TEXT">Importing Images</A>
+<LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103010400" TARGET="TEXT">Creating Images</A>
+</UL>
+<A NAME="proguide_0001050103010300"></A><P><B>Importing Images</B>
+<P>A basic way to create images is to import bitmaps represented in commonly used formats. This provides good leverage from the many image-authoring tools that currently exist. 
+<P>The following JScript code shows how to import an image:
+<PRE><FONT FACE="Courier" SIZE="2">
+ mediaBase = "..\\..\\..\\..\\media\\";
+ imgBase = mediaBase + "image\\";
+ myImage = m.ImportImage(imgBase + "bird.gif");
+</FONT></PRE>
+<P>The following Java code shows how to import an image: 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+   //Create a URL base
+   URL imageBase = buildURL(getImportBase(),"file:/c:/DxM/Media/image");
+   // Create an image behavior by importing an image file
+   ImageBvr img = importImage(buildURL(imageBase, "picture.jpg"));
+</FONT></PRE>
+<P>DirectAnimation supports the importation of bitmaps in the .jpg, .gif, and .bmp formats. The string reference to the image can be any valid URL. Importing an image has the following results. 
+
+<UL><LI>The bitmap is imported and returned to the user as a behavior of type <A HREF="DA_E0045.htm#vref_000106010f000000" TARGET="TEXT">DAImage</A> (or the Java type <A HREF="DA_E0139.htm#dxmref_0001070117000000" TARGET="TEXT">ImageBvr</A>). 
+<LI>The image is centered on the origin (0,0). 
+<LI>Only the bitmap portion of the image is detectable. 
+<LI>When displayed, the image will map to the display window in a one-to-one pixel correspondence with the bitmap in the file from which it was read. This is true provided the image has not been scaled, sheared, or rotated, although translations are acceptable. 
+<LI>A bounding-box (which you can extract with the <A HREF="DA_E0045.htm#vref_000106010f010100" TARGET="TEXT">BoundingBox</A> function or Java <A HREF="DA_E0139.htm#dxmref_0001070117010100" TARGET="TEXT">boundingBox</A> method) surrounds the tangible region of the image and is measured in meters. 
+</UL>
+<P>The relationship between pixels and meters changes depending on the display resolution. While one display might have a ratio of 18,000 pixels per meter, another display might have a ratio of 22,000 per meter. This means that the bounding box returned for an imported image varies depending on the specific display resolution. 
+
+<P>There are ways to work around the device dependency of imported bitmaps. They involve scaling the bitmap in a device-dependent way so that the resultant image size is of some fixed, desired value across the different device resolutions. See 
+<A CLASS=tctop HREF="DA_E0026.htm#proguide_0001050102090700" TARGET="TEXT">Meter-Based Space</A> for a description.
+
+<A NAME="proguide_0001050103010400"></A><P><B>Creating Images</B>
+<P>You can create several kinds of 2-D images: solid color, lines, text, geometric images, gradient filled images, and montages. For a discussion of geometric images, see <A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103020000" TARGET="TEXT">Using Geometries</A>.
+<P>This section discusses the following:
+<UL><LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103010500" TARGET="TEXT">Hatch Filled Boxes</A>
+<LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103010600" TARGET="TEXT">Text</A>
+<LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103010700" TARGET="TEXT">Gradient Fill Images</A>
+<LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103010800" TARGET="TEXT">Rendering Geometry into an Image</A>
+<LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103010900" TARGET="TEXT">Montages</A>
+</UL>
+<P>One of the simplest images to construct is a solid color image, as shown in the following example. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;im = m.solidColorImage(m.Blue);
+</FONT></PRE>
+<P>This results in an infinite-extent image with the <A HREF="DA_E0038.htm#vref_0001060108000000" TARGET="TEXT">DAColor</A> behavior <A HREF="DA_E0068.htm#vref_0001060126000300" TARGET="TEXT">Blue</A>. Typically, such an image is cropped or clipped before being used. Solid color images are commonly used to obtain solid-colored polygons or as viewport backgrounds, where the color can be time-varying. 
+
+
+<A NAME="proguide_0001050103010500"></A><P><B>Hatch Filled Boxes</B>
+<P>You can also construct images by creating hatch marks in boxes, as shown in the following example with <A HREF="DA_E0078.htm#vref_0001060130000800" TARGET="TEXT">HatchCross</A>:
+<PRE><FONT FACE="Courier" SIZE="2">
+   im = m.HatchCross(m.Green, 0.2);
+
+</FONT></PRE>
+<A NAME="proguide_0001050103010600"></A><P><B>Text</B>
+<P>You can construct images by rendering text, as shown in the following example with <A HREF="DA_E0078.htm#vref_0001060130002000" TARGET="TEXT">StringImageAnim</A> and <A HREF="DA_E0078.htm#vref_0001060130002100" TARGET="TEXT">StringImage</A> : 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+  myText = "This is the default font style.";
+  defaultFS = m.DefaultFont;
+  myTextImage = m.StringImage(myText, defaultFS);
+</FONT></PRE>
+<P>The text, which can have attributes such as font type, color, and style (bold or italic), is rendered into an image with its extent centered on the origin. By default, the text's color is black, its font family is Times-Roman, its size is 12 points, and it is neither bold nor italic. 
+<P>You can set the text attributes and where the text is displayed. The following code sample renders bold, red text to the screen centered on position <I>posX</I>, <I>posY</I>.
+
+
+<PRE><FONT FACE="Courier" SIZE="2">
+   im = m.TextImage("Hello, World!", m.Font("Arial", 10, m.Red).Bold;
+   im2 = im.Transform(m.Translate2(posX, posY));
+</FONT></PRE>
+<A NAME="proguide_0001050103010700"></A><P><B>Gradient Fill Images</B>
+<P>Gradient fills provide a very compact form of color images, where regions are filled with smoothly interpolated colors between specified colors at given vertices. For example, you can construct an image from a gradient-filled square, as shown in the following example with <A HREF="DA_E0078.htm#vref_0001060130000400" TARGET="TEXT">GradientSquare</A>: 
+<PRE><FONT FACE="Courier" SIZE="2">
+   im = m.GradientSquare(m.Red, m.Green, m.Blue, m.Yellow);
+</FONT></PRE>
+<P>You can obtain the most general form of a gradient fill through the <A HREF="DA_E0061.htm#vref_000106011f000000" TARGET="TEXT">DAStatics</A> function <A HREF="DA_E0078.htm#vref_0001060130000300" TARGET="TEXT">GradientPolygon</A>(<I>pts, colors</I>),
+
+
+
+ which specifies an array of points and a corresponding array of colors. The arrays specify a triangular mesh with one color per vertex. The resultant image is based on a linear interpolation of the colors across each triangle in the RGB color space. Although interpolation in other color spaces might be desired, DirectAnimation maps this CPU-intensive operation to hardware, which currently performs the interpolation only in RGB. 
+
+<P>Other more specialized forms of gradient fills, which are essentially shortcuts based on the general form described in this section, include the following <A HREF="DA_E0061.htm#vref_000106011f000000" TARGET="TEXT">DAStatics</A> methods: 
+
+<UL><LI><A HREF="DA_E0078.htm#vref_0001060130000400" TARGET="TEXT">GradientSquare</A>(<I>color1, color2, color3, color4</I>), 
+
+<P>which generates a unit square centered on the origin and with dimensions of 1 unit. The four colors are averaged into a color at the intersection of the diagonals, and then the four triangles delineated by the diagonals have their vertex colors interpolated. 
+
+<LI><A HREF="DA_E0078.htm#vref_0001060130000100" TARGET="TEXT">GradientHorizontalAnim</A>(<I>start, stop, power</I>)and <A HREF="DA_E0078.htm#vref_0001060130000200" TARGET="TEXT">GradientHorizontal</A>(<I>start, stop, power</I>) that creates an image that smoothly interpolates between the start and stop colors. Colors start on the left and go toward the right, based on the power specified by power. 
+</UL>
+<A NAME="proguide_0001050103010800"></A><P><B>Rendering Geometry into an Image</B>
+<P>You can construct 2-D images by rendering 3-D images (geometries) into two dimensions, as shown in the following example. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+   Geo = m.ImportGeometry("cube.x");
+   Camera =  m.PerspectiveCamera(projPointNum, maxZNum);
+   Img = Geo.Render(Camera);
+
+</FONT></PRE>
+<P>Note that the <I>Camera</I> parameters must be calculated from the size of the geometry and the display viewport.
+
+
+<A NAME="proguide_0001050103010900"></A><P><B>Montages</B>
+<P>An image can be the rendering of a montage (<A HREF="DA_E0053.htm#vref_0001060117000000" TARGET="TEXT">DAMontage</A>) object which consists of a group of <A HREF="DA_E0045.htm#vref_000106010f000000" TARGET="TEXT">DAImage</A> objects, each with a number that indicates its z-order in the list. The <A HREF="DA_E0087.htm#vref_0001060139000200" TARGET="TEXT">ImageMontage</A>(<I>Image, z-order</I>) and 
+<A HREF="DA_E0087.htm#vref_0001060139000100" TARGET="TEXT">ImageMontageAnim</A>(<I>Image, z-order</I>) functions can be used to add images to a montage. The z-order determines how the images will overlay each other. Images with larger z-values are always on top (in front) of images with smaller z-values. If the z-order number is animated (a <A HREF="DA_E0054.htm#vref_0001060118000000" TARGET="TEXT">DANumber</A> object), the order in which the images are layered changes with time. Montages are ideal for situations where the layering of the different images is dynamic. 
+
+
+<A NAME="proguide_0001050103010a00"></A><P><B>Operations on Images</B>
+<P>The set of DirectAnimation operations can generate new and more complex images from given images. Also, some of these operations generate useful data, such as the bounding-box around a given image. 
+
+<P>The operations for composing animated 2-D images include the following: 
+
+<UL><LI>Overlaying animated images. 
+<LI>Polygonal clipping of animated images. 
+<LI>Transformations such as scale, rotate, shear, and translate. 
+<LI>Animated tiling of animated images into a larger animated image. 
+<LI>Applying an animated transparency to an animated image.
+<LI>Applying an animated image as an animated texture map. 
+<LI>Creating a 2-D animation along a spline. 
+</UL>
+<P>You can perform any sequence of the above operations on any source of animated images in any order.
+
+
+<A NAME="proguide_0001050103010b00"></A><P><B>Transformations</B>
+<P>You can obtain a transformed version of an image by applying the <A HREF="DA_E0045.htm#vref_000106010f010b00" TARGET="TEXT">Transform</A>(<I>xf</I>)method, where <I>xf</I> is of type <A HREF="DA_E0109.htm#vref_000106014f000000" TARGET="TEXT">DATransform2</A> and can be an arbitrary 2-D affine transform. The <B>DATransform2</B> type has operations for constructing scales, translations, rotations, and shears from basic parameters such as <A HREF="DA_E0054.htm#vref_0001060118000000" TARGET="TEXT">DANumber</A> objects and <A HREF="DA_E0113.htm#vref_0001060153000000" TARGET="TEXT">DAVector2</A> objects. You also can construct transforms based on 2 &#215; 3 matrices. Additional operations can compose transforms, obtain their inverses, and check whether they are singular. 
+
+<P>You can use combinations of time-varying shears, scales, and translations to construct animation from a single image, for example, to move a sprite over a background image. 
+
+<H3><A NAME="proguide_0001050103020000">Using Geometries</A></H3>
+<P>In DirectAnimation, you can construct or import 3-D graphics (<A HREF="DA_E0044.htm#vref_000106010e000000" TARGET="TEXT">DAGeometry</A> objects), and perform sequences of operations on any source of animated images in any order.
+
+<P>This section discusses the following topics.
+<UL><LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103020100" TARGET="TEXT">Constructing Geometries</A>
+<LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103020200" TARGET="TEXT">Operations on Geometries</A>
+</UL>
+<A NAME="proguide_0001050103020100"></A><P><B>Constructing Geometries</B>
+<P>The simplest way to construct a geometry behavior is to import a geometry from a .wrl or .X formatted file by using <A HREF="DA_E0076.htm#vref_000106012e000200" TARGET="TEXT">ImportGeometryAsync</A> or <A HREF="DA_E0076.htm#vref_000106012e000100" TARGET="TEXT">ImportGeometry</A>(<I>URL</I>). You can also augment geometry with lights, including ambient, directional, point, and spot lights. You can attach a sound source to a geometry, which is used to give 3-D spatial characteristics to a sound by embedding it in other geometric models. Finally, <A HREF="DA_E0077.htm#vref_000106012f000300" TARGET="TEXT">EmptyGeometry</A> is a constant of the <A HREF="DA_E0138.htm#dxmref_0001070116000000" TARGET="TEXT">GeometryBvr</A> type and is empty. 
+
+<P><A HREF="DA_E0044.htm#vref_000106010e000000" TARGET="TEXT">DAGeometry</A> objects (and Java <A HREF="DA_E0138.htm#dxmref_0001070116000000" TARGET="TEXT">GeometryBvr</A> objects)can be: 
+<UL><LI>Given an opacity attribute. 
+<LI>Textured with an image. 
+<LI>Given diffuse attributes with color parameters. 
+</UL>
+<P>All of these attributes can vary with time. 
+
+
+<A NAME="proguide_0001050103020200"></A><P><B>Operations on Geometries</B>
+<P>The operations for composing 3-D geometric animations include: 
+
+<UL><LI>Aggregating animated 3-D geometry. You can combine two geometry values with the <A HREF="DA_E0171.htm#dxmref_0001070137000500" TARGET="TEXT">union</A> operation. 
+<LI>Applying animated images as animated textures. 
+<LI>Applying animated transparency and color attributes. 
+<LI>Transformations such as scale, rotate, shear, and translate. 
+<LI>Projection with animated perspective or parallel cameras to an animated image. 
+<LI>Animating 3-D attributes using splines (B-spline format). 
+</UL>
+<P>You can perform any sequence of the preceding operations on any source of animated geometry in any order. 
+
+
+<H3><A NAME="proguide_0001050103030000">Rendering Geometries into Images</A></H3>
+<P>DirectAnimation uses a camera to project a 3-D model (a <A HREF="DA_E0044.htm#vref_000106010e000000" TARGET="TEXT">DAGeometry</A> object) into a 2-D image (an <A HREF="DA_E0045.htm#vref_000106010f000000" TARGET="TEXT">DAImage</A> object) with the <B>DAGeometry</B> function <A HREF="DA_E0138.htm#dxmref_0001070116010600" TARGET="TEXT">render</A>. 
+
+<P>Using Direct3-D as the underlying 3-D mechanism, the <A HREF="DA_E0044.htm#vref_000106010e010800" TARGET="TEXT">Render</A> operation renders/projects a geometry through a camera. 
+
+<P>DirectAnimation supports two cameras: the <A HREF="DA_E0066.htm#vref_0001060124000300" TARGET="TEXT">PerspectiveCameraAnim</A> (and <A HREF="DA_E0066.htm#vref_0001060124000400" TARGET="TEXT">PerspectiveCamera</A>) type for perspective projection, and the <A HREF="DA_E0066.htm#vref_0001060124000100" TARGET="TEXT">ParallelCameraAnim</A> (and <A HREF="DA_E0066.htm#vref_0001060124000200" TARGET="TEXT">ParallelCamera</A>) type for parallel projection.
+
+<P>These cameras consist of the following three elements: 
+
+<UL><LI>The image plane, which is the XY plane. 
+<LI>A near clip plane that is parallel to the XY plane. 
+<LI>A projection point for <A HREF="DA_E0066.htm#vref_0001060124000400" TARGET="TEXT">PerspectiveCamera</A> that lies on the z-axis, and a projection direction for <A HREF="DA_E0066.htm#vref_0001060124000200" TARGET="TEXT">ParallelCamera</A>) that is in the z-direction. 
+
+</UL>
+<P>Rendering involves projecting the geometry located on the side of the near plane opposite the projection point into an image on the image plane. The resultant image extends infinitely. If you are interested in only a section of the image, you must use 2-D operations such as <A HREF="DA_E0045.htm#vref_000106010f010400" TARGET="TEXT">Crop</A> or <A HREF="DA_E0045.htm#vref_000106010f010200" TARGET="TEXT">Clip</A> on the image to extract that section. 
+<P>The following figure shows the relationship between the projection point, the near clip plane, and the image plane.
+
+<P><IMG SRC="../art/implane.gif" WIDTH="533" HEIGHT="268" ALT="Projection" > 
+
+<P>DirectAnimation cameras have an origin at (0,0,0) that can be transformed. Such transformations affect the placement of the projection point, the near clip plane, and the image plane. You can use translation and rotation for positioning the camera relative to the geometric model being projected. 
+
+<P>You can use the x- and y- scales to zoom in or out in relation to the rendered model. Increasing the XY scale results in a zoom out (the rendered image shrinks), while decreasing the XY scale results in a zoom in (the rendered image grows). Control the perspective effect by changing the distance of the projection point along the positive z-axis in relation to the origin (that is, the image plane). The closer the projection point is to the projected object, the more pronounced the perspective effect becomes. 
+
+
+<H3><A NAME="proguide_0001050103040000">Applying Textures</A></H3>
+<P>Just as you can project a 3-D object (a <A HREF="DA_E0044.htm#vref_000106010e000000" TARGET="TEXT">DAGeometry</A> object) as a 2-D image (an <A HREF="DA_E0045.htm#vref_000106010f000000" TARGET="TEXT">DAImage</A> object) through a camera, you can apply a 2-D image as a texture to a 3-D object through texture mapping. 
+
+<P>The <A HREF="DA_E0044.htm#vref_000106010e000000" TARGET="TEXT">DAGeometry</A> <A HREF="DA_E0044.htm#vref_000106010e010a00" TARGET="TEXT">Texture</A> function takes an image and an existing geometry, and returns a geometry textured with that image. Because images and geometries are such rich data types, this simple texture method is extremely powerful. The following example shows how to apply a texture to an imported sphere.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    Geo = m.ImportGeometry("sphere.wrl");
+    Marble = m.ImportImage("image/marble.jpg"));
+    MarbledSphere =  Geo.Texture(Marble);
+</FONT></PRE>
+<P>Often a geometry is constructed by importing an existing geometry file. These files usually have 2-D texture coordinates associated with the vertices, generally ranging from (0,0) to (1,1). When these geometries are texture-mapped with images, the texture coordinates are mapped to the identical image coordinates. 
+
+<P>Thus, texture map coordinates of (0.3, 0.7) in the geometry map directly to the (0.3, 0.7) point in texture image coordinate space. 
+
+<P>The correspondence between texture coordinate systems and image coordinate systems is simple, but also powerful and flexible. Consider the task of making an image wiggle along the first dimension as a texture on a cube. You can achieve this by texture mapping a horizontally wiggling image onto a static cube, as shown in the following example. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+   WiggleTexture = OrigTexture.Transform(m.Translate2(m.Sin(m.LocalTime), 0));
+   NewCube = OldCube.Texture(WiggleTexture);
+</FONT></PRE>
+<P>If you want to infinitely tile a small texture onto a geometry, you can create a tiled image using the <A HREF="DA_E0045.htm#vref_000106010f000000" TARGET="TEXT">DAImage</A> <A HREF="DA_E0045.htm#vref_000106010f010a00" TARGET="TEXT">Tile</A> function, then use that resultant image as a texture. 
+
+<H3><A NAME="proguide_0001050103050000">Using Sound</A></H3>
+<P>The <A HREF="DA_E0060.htm#vref_000106011e000000" TARGET="TEXT">DASound</A> object and the Java <A HREF="DA_E0156.htm#dxmref_0001070128000000" TARGET="TEXT">SoundBvr</A> behavior class implement sound in DirectAnimation. You can import sound from many audio formats, including WAV, MIDI, and MP2 files, or synthesize sound using built-in sythesizer sound sources. You can mix different sounds even if they originated from files of different audio formats. You can also spatialize sound by embedding sounds in 3-D objects and rendering them with a microphone (<A HREF="DA_E0052.htm#vref_0001060116000000" TARGET="TEXT">DAMicrophone</A> or <A HREF="DA_E0143.htm#dxmref_000107011b000000" TARGET="TEXT">MicrophoneBvr</A>). 
+
+<P>Currently, up to two channels are supported for sound in DirectAnimation. Sound also has infinite resolution and each sound wave is continuous, which means that in the abstract model there are no discrete sample values. 
+
+<P>This section gives an overview of the following topics:
+<UL><LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103050100" TARGET="TEXT">Constructing Sound</A>
+<LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103050200" TARGET="TEXT">Operations on Sound</A>
+<LI><A CLASS=tctop HREF="DA_E0027.htm#proguide_0001050103050600" TARGET="TEXT">Sound Layering Technique</A>
+</UL>
+<A NAME="proguide_0001050103050100"></A><P><B>Constructing Sound</B>
+<P>You can import sound from a file in the WAV, MIDI, and MP2 formats with the <A HREF="DA_E0061.htm#vref_000106011f000000" TARGET="TEXT">DAStatics</A> functions <A HREF="DA_E0096.htm#vref_0001060142000100" TARGET="TEXT">ImportSound</A> and <A HREF="DA_E0096.htm#vref_0001060142000200" TARGET="TEXT">ImportSoundAsync</A>, or with the Java method <A HREF="DA_E0191.htm#dxmref_000107014b000100" TARGET="TEXT">importSound</A>.
+<P>For example, to import and play a sound in JScript, you can use the following code:
+<PRE><FONT FACE="Courier" SIZE="2">
+  m = DAControl.PixelLibrary;
+  mySound = m.ImportSound("file://c:/dxmedia/media/sound/clock1.mp2").Sound;
+  DAControl.Sound = mySound.Loop();
+</FONT></PRE>
+<P>The <A HREF="DA_E0096.htm#vref_0001060142000100" TARGET="TEXT">ImportSound</A> function returns a <A HREF="DA_E0046.htm#vref_0001060110000000" TARGET="TEXT">DAImportationResult</A> object. To return a <A HREF="DA_E0060.htm#vref_000106011e000000" TARGET="TEXT">DASound</A> object you access the <A HREF="DA_E0046.htm#vref_0001060110010700" TARGET="TEXT">Sound</A> property of the <B>DAImportationResult</B> object by appending ".Sound". 
+
+<P>If you use the Java <A HREF="DA_E0156.htm#dxmref_0001070128000000" TARGET="TEXT">SoundBvr</A> method <A HREF="DA_E0191.htm#dxmref_000107014b000100" TARGET="TEXT">importSound</A>(<I>URL</I>, <I>length</I>), the length of the imported sound, in seconds, is returned as the <I>length</I> parameter. For example:
+<PRE><FONT FACE="Courier" SIZE="2">
+URL soundBase = buildURL(getImportBase(), "file:/c:/dxmedia/media/sound/");
+NumberBvr length[] = new NumberBvr[1];
+SoundBvr snd = importSound(buildURL(soundBase,"earth.wav"), length);
+</FONT></PRE>
+<P>You can then use the <I>length</I> parameter as follows:
+<PRE><FONT FACE="Courier" SIZE="2">
+SoundBvr twoSounds = (SoundBvr)until(snd, timer(length[0]), anotherSound);
+</FONT></PRE>
+<P>If you are not interested in the length, you can set the length to NULL. 
+
+
+<P>DirectAnimation currently has an internal standard for audio format. That format is a dynamic range of 16 bits and a sampling rate of of 22,050 Hz. For best results, you should import audio files with this format because DirectAnimation will convert the files to its internal standard, which may result in degradation if the files are not in the same format.
+
+<P>You can also synthesize sound. As an example, you can mix multiple sine waves. Each sine wave can have different attributes, so the resulting mix can produce many diverse sounds. The <A HREF="DA_E0061.htm#vref_000106011f000000" TARGET="TEXT">DAStatics</A> property and <A HREF="DA_E0156.htm#dxmref_0001070128000000" TARGET="TEXT">SoundBvr</A> type <A HREF="DA_E0192.htm#dxmref_000107014c000002" TARGET="TEXT">sinSynth</A> represents a constant tone. The <A HREF="DA_E0192.htm#dxmref_000107014c000001" TARGET="TEXT">silence</A> property and type represents complete silence. By default, <B>sinSynth</B> produces a 1 Hz tone which is subaudible, so you need to increase the frequency. For example, the following JScript code produces a tone:
+<PRE><FONT FACE="Courier" SIZE="2">
+ sndMidC = m.SinSynth.Rate(440);
+</FONT></PRE>
+<P>The following Java code also produces a tone.
+<PRE><FONT FACE="Courier" SIZE="2">
+SoundBvr sndMidC = sinSynth.rate(toBvr(440));
+</FONT></PRE>
+<A NAME="proguide_0001050103050200"></A><P><B>Operations on Sound</B>
+<P>You can obtain new sounds from other sounds by modifying sound parameters or by mixing. In DirectAnimation, the <A HREF="DA_E0060.htm#vref_000106011e000000" TARGET="TEXT">DASound</A> class functions <A HREF="DA_E0060.htm#vref_000106011e010300" TARGET="TEXT">Loop()</A>, functions <A HREF="DA_E0060.htm#vref_000106011e010100" TARGET="TEXT">GainAnim</A> and <A HREF="DA_E0060.htm#vref_000106011e010200" TARGET="TEXT">Gain</A>, <A HREF="DA_E0060.htm#vref_000106011e010800" TARGET="TEXT">RateAnim</A> and <A HREF="DA_E0060.htm#vref_000106011e010900" TARGET="TEXT">Rate</A>, <A HREF="DA_E0060.htm#vref_000106011e010600" TARGET="TEXT">PhaseAnim</A> and <A HREF="DA_E0060.htm#vref_000106011e010700" TARGET="TEXT">Phase</A>, <A HREF="DA_E0060.htm#vref_000106011e010400" TARGET="TEXT">PanAnim</A> and <A HREF="DA_E0060.htm#vref_000106011e010500" TARGET="TEXT">Pan</A> (and the Java <A HREF="DA_E0156.htm#dxmref_0001070128000000" TARGET="TEXT">SoundBvr</A> methods <A HREF="DA_E0156.htm#dxmref_0001070128010200" TARGET="TEXT">loop</A>, <A HREF="DA_E0156.htm#dxmref_0001070128010100" TARGET="TEXT">gain</A>, <A HREF="DA_E0156.htm#dxmref_0001070128010500" TARGET="TEXT">rate</A>, <A HREF="DA_E0156.htm#dxmref_0001070128010400" TARGET="TEXT">phase</A>, and <A HREF="DA_E0156.htm#dxmref_0001070128010300" TARGET="TEXT">pan</A>, and the <A HREF="DA_E0061.htm#vref_000106011f000000" TARGET="TEXT">DAStatics</A> <A HREF="DA_E0096.htm#vref_0001060142000300" TARGET="TEXT">Mix</A> function, allow creation of complex-sounding animations with few operations.
+
+<P>The <A HREF="DA_E0060.htm#vref_000106011e010300" TARGET="TEXT">Loop()</A> function takes a sound and repeats it continuously. If you have a sound whose composition changes with an event or user interaction and you tell the sound to loop, it will loop on its individual parts, not on the composition. For example, assume you have a sound that is <I>sound1</I> until the left mouse button is pressed, and then becomes <I>sound2</I>, and you loop this composite sound, as shown in the following JScript code:
+<PRE><FONT FACE="Courier" SIZE="2">
+snd =  m.Until(sound1, m.LeftButtonDown, sound2);
+loopsnd= snd.Loop();
+</FONT></PRE>
+<P>The resulting sound is a continuous loop of <I>sound1</I> until the left mouse button is pressed, then becomes a continuous loop of <I>sound2</I>. It does not loop the composite behavior in that it does not loop <I>sound1</I> until the button is pressed, then cycle through <I>sound2</I> once, then go back to playing <I>sound1</I> until the button is pressed again.
+
+<P>The <A HREF="DA_E0060.htm#vref_000106011e010200" TARGET="TEXT">Gain</A> (volume) function scales the amplitude of the sound wave. The <A HREF="DA_E0060.htm#vref_000106011e010900" TARGET="TEXT">Rate</A> function changes the rate of sample playback; for digital audio and synthesized sounds, this scales the frequency and changes the pitch. For audio in MIDI format, this changes the tempo. The <A HREF="DA_E0060.htm#vref_000106011e010700" TARGET="TEXT">Phase</A> function shifts the point in the sound cycle where the sound starts (all sound is cyclic except pure white noise). For positive phase values, the sound starts later in the sound cycle. For negative values, the sound starts earlier in the sound cycle. The <A HREF="DA_E0060.htm#vref_000106011e010100" TARGET="TEXT">GainAnim</A>, <A HREF="DA_E0060.htm#vref_000106011e010800" TARGET="TEXT">RateAnim</A>, and <A HREF="DA_E0060.htm#vref_000106011e010600" TARGET="TEXT">PhaseAnim</A> parameters are animated. The <A HREF="DA_E0060.htm#vref_000106011e010400" TARGET="TEXT">PanAnim</A> and <A HREF="DA_E0060.htm#vref_000106011e010500" TARGET="TEXT">Pan</A> (balance) functions vary the gain in the left and right channels of a stereo sound. 
+
+
+
+<P>Consider the following JScript sample:
+
+<center><iframe name="exampleframe" src="../DocSamps/pan.htm"
+height=250 width=500 align=center FRAMEBORDER=20 FRAMESPACING=5
+scrolling="no">
+</iframe></center>
+<BR CLEAR=ALL><P>This script draws a red circle that moves in a straight line. The pan parameter varies with the position of a moving ball. To view the source code, right-click anywhere on the title "Panning" title and select <B>View Source</B> from the menu that appears. 
+
+
+<P>You can perform any sequence of the preceding operations on any source of animated sounds in any order.
+<P>You can mimic sound effects by using these <A HREF="DA_E0060.htm#vref_000106011e000000" TARGET="TEXT">DASound</A> functions and <A HREF="DA_E0156.htm#dxmref_0001070128000000" TARGET="TEXT">SoundBvr</A> methods. For example, you can vary the distance between a moving sound source and a listener, by varying the parameter of <A HREF="DA_E0060.htm#vref_000106011e010100" TARGET="TEXT">GainAnim</A>. However, you can achieve much more realistic effects by embedding sounds in a geometry. This also relieves you of the overhead of tracking relative positions and modifying sounds yourself. For example, the following JScript code embeds the sound <I>Snd</I> in the geometry <I>Geo</I>:
+<PRE><FONT FACE="Courier" SIZE="2">
+//Get the sound and the geometry.
+Snd = m.ImportSound("bird.wav").Sound;
+Geo = m.ImportGeometry("sphere.x");
+
+//Embed the sound in a blank geometry.
+GeoSound = m.SoundSource(Snd);
+
+//Join the sound with the desired geometry.
+GeoWithSound= m.UnionGeometry(Geo, GeoSound);
+
+//Create a microphone at the origin.
+Mic = m.DefaultMicrophone;
+
+//Move the microphone somewhere else.
+Mic2 = Mic.Transform(m.Translate3(5, 4, 5); 
+
+//Render the geomtric sound.
+AmbSound = GeoWithSound.RenderSound(mic2);
+</FONT></PRE>
+<A NAME="proguide_0001050103050300"></A><P><B>Pan</B>
+<P>The <A HREF="DA_E0060.htm#vref_000106011e010400" TARGET="TEXT">PanAnim</A> and <A HREF="DA_E0060.htm#vref_000106011e010500" TARGET="TEXT">Pan</A> functions and <A HREF="DA_E0156.htm#dxmref_0001070128010300" TARGET="TEXT">pan</A> Java method take a sound and move the energy between the left and right channels according to a pan parameter. 
+
+The pan parameter varies between &#150;1 and +1. In the stereo case, negative values of the pan parameter increase the energy sent to the left channel and decrease the energy sent to the right channel. Positive values of the pan parameter increase the energy sent to the right channel and decrease the energy sent to the left channel. A value of 0 balances the energy between the two channels.
+
+
+<A NAME="proguide_0001050103050400"></A><P><B>Gain</B>
+<P>When authoring sounds in DirectAnimation you should use the full 16-bit dynamic range to provide the best resolution, then use the <A HREF="DA_E0060.htm#vref_000106011e010200" TARGET="TEXT">Gain</A> function or Java <A HREF="DA_E0156.htm#dxmref_0001070128010100" TARGET="TEXT">gain</A> method to scale the volume of the sounds in your animation. 
+<P>For example, the following JScript code varies the gain by the the sin of <A HREF="DA_E0090.htm#vref_000106013c000200" TARGET="TEXT">LocalTime</A>:
+<PRE><FONT FACE="Courier" SIZE="2">
+ DAControl.Sound = mySound.Loop().GainAnim(m.Sin(m.LocalTime));
+</FONT></PRE>
+<P>DirectAnimation assumes all sounds have been normalized to use the full 16-bit dyanmic range. Consequently, all sounds seem equally loud. For example, a jet plane and a whisper will sound as though they are the same volume. Sounds can be prescaled with the <A HREF="DA_E0060.htm#vref_000106011e010200" TARGET="TEXT">Gain</A> function. Because there is no way to change the actual gain of a personal computer's amplifier, sounds can only be attenuated. Attenuating a sound is the same as multiplying it by a value between 0 and 1. 
+
+<P>In the following Java example, two sounds, which are heard in the left and right channels respectively, will have an equal volume, even though their gains are 1 and 5 because the gain is clamped at 1: 
+<PRE><FONT FACE="Courier" SIZE="2">
+    URL soundBase = buildURL(getImportBase(), "file:/c:/DxM/Media/sound/");
+    SoundBvr snd1 = importSound(buildURL(soundBase, "seagull.wav"), null);
+    SoundBvr snd2 = importSound(buildURL(soundBase, "surf.wav"), null);
+&#009;setSound( mix( 
+&#009;&#009;snd1.gain( toBvr( 1  ) ).pan( toBvr( -1 ) ),
+&#009;&#009;snd2.gain( toBvr( 5 ) ).pan( toBvr( 1 ) ) ) );
+</FONT></PRE>
+<P>In the following example, the sound in the left channel is louder than the sound in the right channel because their gains are 1 and 0.2: 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+&#009;&#009;setSound(mix(
+&#009;&#009;snd1.gain(toBvr(1)).pan(toBvr(-1)),
+&#009;&#009;snd2.gain(toBvr(0.2)).pan(toBvr(1))));
+</FONT></PRE>
+<P>When sounds are embedded in a geometry and spatialized (using the Java <A HREF="DA_E0138.htm#dxmref_0001070116000000" TARGET="TEXT">GeometryBvr</A> method <A HREF="DA_E0171.htm#dxmref_0001070137000300" TARGET="TEXT">soundSource</A> and a <A HREF="DA_E0143.htm#dxmref_000107011b000000" TARGET="TEXT">MicrophoneBvr</A>), even though gains greater than 1 do not produce louder sounds, they do produce sounds that can be heard at a greater distance by increasing the spatial volume that is at maximum sound (for example, a small sphere of maximum sound or a large sphere of maximum sound).
+
+<P>In particular, loud sounds such as a jet engine should be scaled by a gain greater than 1. Unlike sounds in the real world, the sound only becomes louder as you approach until the gain equals 1. Once this limit is reached, there is no more amplification, and the sound's volume remains constant no matter how much closer you come. 
+
+<P>The following diagram shows that, for gains larger than 1, the volume is clamped at 1. 
+<P><IMG SRC="../art/gain2.gif" WIDTH="158" HEIGHT="120" ALT="Distance vs. gain of 2" >
+
+
+
+<A NAME="proguide_0001050103050500"></A><P><B>Mix</B>
+<P>The <A HREF="DA_E0061.htm#vref_000106011f000000" TARGET="TEXT">DAStatics</A> <A HREF="DA_E0096.htm#vref_0001060142000300" TARGET="TEXT">Mix</A> function and the Java <A HREF="DA_E0191.htm#dxmref_000107014b000300" TARGET="TEXT">mix</A> method merge two sound waves into one by adding the corresponding waves. You can mix any sounds, even if they originated from different audio formats. If mixing produces an overflow value, the result is clamped. 
+
+
+<A NAME="proguide_0001050103050600"></A><P><B>Sound Layering Techinque</B>
+<P>The operations provided by DirectAnimation on <A HREF="DA_E0060.htm#vref_000106011e000000" TARGET="TEXT">DASound</A> objects (and Java <A HREF="DA_E0156.htm#dxmref_0001070128000000" TARGET="TEXT">SoundBvr</A> objects) enable the generation of dynamic high-quality synthetic sounds from basic sound seeds by parameterization and layering (or mixing). These sounds can be always fresh and responsive to the action in the animation.
+<P>Traditionally, people have authored loops of compressed sounds for ambient noise. This reduces the size of the audio needed but also produces boring sounds, because a loop soon starts to sound repetitive and unrealistic. With DirectAnimation, you can produce much richer, more realistic sounds, for example, a wave sound that amplifies only when the wave actually breaks on the shore in your animation, a seagull cry that follows the motion of the seagull across the viewport, and wind levels that can be controlled by user interaction (see the Lighthouse sample included in the SDK). 
+
+<P>You create synthetic sounds by modifying seed sounds with parameters that are random or are related to your animation. These parameters are usually time-varying. You then mix the results together in a way suitable to your animation. Thus, sound can be as flexibly and synthetically generated as 3-D models are. Simple parts are transformed, colored, or textured and then combined together into more interesting models. 
+
+<P>For example, the <A HREF="DA_E0097.htm#vref_0001060143000200" TARGET="TEXT">SinSynth</A> function produces a sine-wave based sound, which can be given a variety of attributes to create a diverse set of synthetically generated sound waves. The Lighthouse sample in Samples\DirectAnimation\Java\Showcase\Lighthouse generates an ocean ambient sound modified by the weather condition parameter. The weather condition parameter is controlled by the user with the slider controls. The Lighthouse sample demonstrates two basic techniques for creating sound. One is the generation of parameterized cyclic sounds and the other is the generation of random periodic sounds (the latter has a silent period between the successive occurrences). 
+
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

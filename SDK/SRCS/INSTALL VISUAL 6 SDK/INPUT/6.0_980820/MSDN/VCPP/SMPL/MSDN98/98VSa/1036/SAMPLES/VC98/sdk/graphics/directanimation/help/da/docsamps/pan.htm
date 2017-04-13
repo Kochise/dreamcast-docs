@@ -1,0 +1,88 @@
+<HTML> 
+<HEAD>
+<TITLE>DirectAnimation SDK, JScript sample</TITLE>
+</HEAD>	 
+
+<BODY BGCOLOR=WHITE TOPMARGIN=15 LEFTMARGIN=10>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2> 
+          
+
+<DIV ID=controlDiv>
+<OBJECT ID="DAViewer"
+        STYLE="position:absolute; left:50; top:50;width:370;height:250;z-index: -1"
+        CLASSID="CLSID:B6FFC24C-7E13-11D0-9B47-00C04FC2F51D">
+</OBJECT>
+</DIV>
+
+
+<SCRIPT LANGUAGE="JAVASCRIPT">
+<!--
+  var FlagNotStarted = true;
+  function start ()
+  {
+ 
+    if (FlagNotStarted)
+    {
+      pan();
+     FlagNotStarted = false;
+    }
+  }
+
+  function pan()
+  {
+   l = DAViewer.PixelLibrary;
+
+   // Construct a red circle
+   fill = l.SolidColorImage(l.Red);
+
+   // Draw a circle. A circle is an oval whose radius along the x-axis is the same
+   // as its radius along the y-axis
+   ovalImg = l.Oval(50, 50).Fill(l.DefaultLineStyle, fill);
+
+   // Construct a straight path that the circle will travel along
+   startingPoint = l.Point2(-150, 50);
+   endingPoint = l.Point2(150, 50);
+   myPath = l.Line(startingPoint, endingPoint);
+
+   // Tell the circle to  go to the starting point and wait 2 seconds
+   goToStart = l.Translate2Point(startingPoint).Duration(2);
+
+   // Tell the circle to follow myPath and go from the beginning to end in 10 seconds. 
+   followRoute = l.FollowPath(myPath, 10);
+
+    // Combine the two circle instructions. 
+   combineMovements = l.Sequence(goToStart, followRoute);
+
+   // Transform the static drawing of a circle into one that moves along a path.
+   movingCircle = ovalImg.Transform(combineMovements);
+
+   // Put the circle's position in xArr and use the position to control the pan factor panFac
+   posPt2 = l.Origin2.Transform(combineMovements);
+   xArr = new Array(movingCircle, posPt2);
+   dim = 150;              // in pixels
+   dimMeters = l.mul(l.DANumber(dim), l.Pixel);
+   panFac = l.Div(xArr[1].X, dimMeters); 
+
+  // import a sound file
+  mySound = l.ImportSound("clock1.mp2").Sound;
+
+  // Loop the imported sound with the position-varying pan for 12 seconds.
+  DAViewer.Sound = l.Until(mySound.Loop().PanAnim(panFac),l.Timer(12),l.Silence);     
+     
+   
+   // Now tell the DAViewer what image to display (our moving circle)
+   DAViewer.Image = movingCircle;
+
+   // Finally, give it the go-ahead
+   DAViewer.Start();
+ }
+//-->
+</script>
+<CENTER>
+<H2>Panning</H2>
+<INPUT TYPE=BUTTON VALUE="Show" NAME="StartBtn" OnClick="start()">
+</CENTER>
+
+</FONT>
+</BODY>
+</HTML>

@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Control the Video Playback Window from C++</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0046.htm','/dssd0000.htm','/dssd0045.htm','/index.htm','/dssd0048.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Play_ContC_0001040102000000">Control the Video Playback Window from C++</A></H2>
+<BR CLEAR=ALL>
+<P>This article walks through a simple C++ program designed to demonstrate one way to play movies in a particular playback window. It is based on the PlayMovieInWindow function code taken from the InWindow.cpp file, which is available in the InWindow sample in the Samples\ds\player directory. This function is based on the Playfile sample, but has been expanded to show how an application can control the size and style of the video playback window. 
+
+<P>See these related sections if you want to play back media files or display a property page:
+<UL><LI><A HREF="dssd0046.htm" TARGET="TEXT">Play a Movie from C++</A> &#151; demonstrates the basic code for playing back a media file. 
+<LI><A HREF="dssd0046.htm#Play_ContC_0001040101020000" TARGET="TEXT">Adding Media Seeking</A> &#151; shows the code needed to seek to a particular location in the media file.
+<LI><A HREF="dssd0048.htm" TARGET="TEXT">Display a Filter's Property Page from C++</A> &#151; demonstrates how to display a filter's property page, so the user can change how media files are played back.
+</UL>
+<P>Perform the following steps to play a video file in a particular window from within C/C++. You don't necessarily have to perform the steps in the order presented. 
+
+<OL><LI>Include the necessary headers.
+<PRE><FONT FACE="Courier" SIZE="2">
+  #include &lt;windows.h&gt;
+  #include &lt;mmsystem.h&gt;
+  #include &lt;streams.h&gt;
+  #include "inwindow.h"
+</FONT></PRE>
+<LI>Define a windows message constant and the HELPER_RELEASE macro, which will be used to release the interfaces from the WndMainProc callback (see the InWindow code for generic window code).
+<PRE><FONT FACE="Courier" SIZE="2">
+ #define WM_GRAPHNOTIFY  WM_USER+13
+ #define HELPER_RELEASE(x) { if (x) x-&gt;Release(); x = NULL; }
+</FONT></PRE>
+<LI>Declare variables. 
+<PRE><FONT FACE="Courier" SIZE="2">
+ HWND      ghApp;
+ HINSTANCE ghInst;
+ HRESULT   hr;
+ LONG      evCode;
+ LONG      evParam1;
+ LONG      evParam2;
+ RECT      grc;
+</FONT></PRE>
+<P>The <I>ghApp</I> variable is the handle of window to notify when the graph signals an event. The <I>ghInst</I> variable is the HINSTANCE of the window. The <I>evCode</I> variable will hold the event code, and the <I>evParam1</I> and <I>evParam2</I> variables will hold the event parameters. The <I>grc</I> variable will hold the coordinates of the parent window's client area. 
+
+<LI>Declare and initialize the necessary interfaces. The reference count of the interfaces is automatically incremented on initialization, so you don't need to call the <A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">IUnknown::AddRef</A> method on them. For this example, you need only the four interfaces shown in the following code. For more information, see the documentation for the <A HREF="dssd0151.htm#If_000106013f000000" TARGET="TEXT">IMediaEventEx</A>, <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A>, <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A>, and <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> interfaces. 
+
+<PRE><FONT FACE="Courier" SIZE="2">
+  IGraphBuilder *pigb  = NULL;
+  IMediaControl *pimc  = NULL;
+  IMediaEventEx *pimex = NULL;
+  IVideoWindow  *pivw  = NULL;
+</FONT></PRE>
+<LI>Define the function and declare variables. The <I>szFile</I> parameter is the name of the video file that will be played.
+<PRE><FONT FACE="Courier" SIZE="2">
+void PlayMovieInWindow (LPCTSTR szFile)
+    {   
+</FONT></PRE>
+<LI>Create a Unicode (wide character) string from the input file name.
+<PRE><FONT FACE="Courier" SIZE="2">
+        WCHAR wFile[MAX_PATH];
+        MultiByteToWideChar( CP_ACP, 0, szFile, -1, wFile, MAX_PATH );
+</FONT></PRE>
+<LI>Instantiate the filter graph manager, asking for the <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A> interface.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+        hr = CoCreateInstance(CLSID_FilterGraph,
+        NULL,
+        CLSCTX_INPROC_SERVER,
+        IID_IGraphBuilder,
+        (void **)&amp;pigb);
+</FONT></PRE>
+<LI>Query for the <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A> interface (provides the methods to run, pause, and stop the playback), the <A HREF="dssd0151.htm#If_000106013f000000" TARGET="TEXT">IMediaEventEx</A> interface (so you can receive event notifications), and the <A HREF="dssd0177.htm#If_0001060159000000" TARGET="TEXT">IVideoWindow</A> interface to hide the window when the movie is finished playing.
+<PRE><FONT FACE="Courier" SIZE="2">
+   pigb-&gt;QueryInterface(IID_IMediaControl, (void **)&amp;pimc);
+   pigb-&gt;QueryInterface(IID_IMediaEventEx, (void **)&amp;pimex);
+   pigb-&gt;QueryInterface(IID_IVideoWindow, (void **)&amp;pivw);
+</FONT></PRE>
+<LI>Ask the filter graph manager to build the filter graph that renders the input file. This does not play the media file. (When you play the file with <B>Run</B>, the filter graph will automatically render the input file's media type. You do not have to specify a renderer filter.) 
+<PRE><FONT FACE="Courier" SIZE="2">
+   hr = pigb-&gt;RenderFile(wFile, NULL);
+</FONT></PRE>
+<LI>Set the ownership of the playback window. This sets <I>ghApp</I> as the owning parent.
+<PRE><FONT FACE="Courier" SIZE="2">
+   pivw-&gt;put_Owner((OAHWND)ghApp);
+</FONT></PRE>
+<LI>Set the style of the video window. This step is very important, and you must specify the WS_CHILD, WS_CLIPCHILDREN, and WS_CLIPSIBLINGS flags.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+   pivw-&gt;put_WindowStyle(WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS);
+</FONT></PRE>
+<LI>Get the coordinates of the parent window's client area. 
+<PRE><FONT FACE="Courier" SIZE="2">
+   GetClientRect(ghApp, &amp;grc);
+</FONT></PRE>
+<LI>Set the playback window's position within parent's client area. In this case, the playback window fills the client area. If the video being played is smaller than the playback window it will be stretched to fit the window. If the video is larger, it will be compressed to fit the window.
+<PRE><FONT FACE="Courier" SIZE="2">
+   pivw-&gt;SetWindowPosition(grc.left, grc.top, grc.right, grc.bottom);
+</FONT></PRE>
+<LI>Start playing the media file.
+<PRE><FONT FACE="Courier" SIZE="2">
+   hr = pimc-&gt;Run();
+</FONT></PRE>
+</OL>
+<P>The InWindow sample uses the same GetClipFileName function to get the movie to be played and the same the WinMain function to create the window as the Playfile sample. 
+<P>The InWindow WndMainProc callback function is similar to the Playfile WndMainProc used to handle the filter graph messages and release the interfaces when necessary, with one important difference. The WndMainProc function in InWindow calls the <A HREF="dssd0177.htm#If_0001060159031f00" TARGET="TEXT">IVideoWindow::put_Owner</A> method with a NULL value for its parameter. You must do this before releasing the <A HREF="dssd0146.htm#If_000106013a000000" TARGET="TEXT">IGraphBuilder</A> interface and before the video window is destroyed. Otherwise, messages will continue to be sent to the video playback window but it will have no parent to forward the messages to, so errors will likely occur.
+<PRE><FONT FACE="Courier" SIZE="2">
+pivw-&gt;put_Owner(NULL);   
+</FONT></PRE>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

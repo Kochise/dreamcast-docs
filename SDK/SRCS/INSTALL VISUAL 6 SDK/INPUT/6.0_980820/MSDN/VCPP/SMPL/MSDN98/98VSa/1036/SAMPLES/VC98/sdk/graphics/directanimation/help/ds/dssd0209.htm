@@ -1,0 +1,338 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>CCmdQueue Class</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0208.htm','/dssd0000.htm','/dssd0180.htm','/index.htm','/dssd0210.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="Lib_000106021d000000">CCmdQueue Class</A></H2>
+<BR CLEAR=ALL>
+<P><IMG SRC="art/cutil12.gif" WIDTH="0" HEIGHT="0" ALT="CCmdQueue class hierarchy" >
+
+<P>The <B>CCmdQueue</B> class is a base class that provides a queue of <A HREF="dssd0211.htm" TARGET="TEXT">CDeferredCommand</A>
+objects and member functions to add, remove, check status, and invoke the queued
+commands. A <B>CCmdQueue</B> object is a part of an object that
+implements <A HREF="dssd0169.htm" TARGET="TEXT">IQueueCommand</A> methods. The filter graph manager implements
+<B>IQueueCommand</B> methods so that applications can queue commands to the filter graph.
+Filters that implement the <B>IQueueCommand</B> interface directly use this class. 
+If you want to use <B>CDeferredCommand</B> objects, your queue must be derived from this class.
+
+
+
+<P>There are two modes of synchronization: coarse and accurate. In
+coarse mode, the application waits until a specified time arrives and then executes the command.
+In accurate mode, the application waits until processing begins on the sample that
+appears at the time, and then executes the command. The filter determines which one 
+it will implement. The filter graph manager always implements coarse mode for commands 
+that are queued at the filter graph manager.
+
+<P>If you want coarse synchronization, you probably want to wait until there is a
+command due, and then execute it. You can do this by calling
+<A HREF="dssd0209.htm#Lib_000106021d030500" TARGET="TEXT">CCmdQueue::GetDueCommand</A>. If you have several things to wait for, get the
+event handle from <A HREF="dssd0209.htm#Lib_000106021d030600" TARGET="TEXT">CCmdQueue::GetDueHandle</A> and then call
+<B>CCmdQueue::GetDueCommand</B> when this is signaled.
+Stream time will advance only between calls to the <A HREF="dssd0209.htm#Lib_000106021d030a00" TARGET="TEXT">CCmdQueue::Run</A> and
+<A HREF="dssd0209.htm#Lib_000106021d030300" TARGET="TEXT">CCmdQueue::EndRun</A> member functions. There is no guarantee that
+if the handle is set, there will be a command ready. Each time the
+event is signaled, call the <B>CCmdQueue::GetDueCommand</B> member function 
+(probably with a time-out of zero); this may
+ 
+return E_ABORT.
+
+<P>If you want accurate synchronization, call the <A HREF="dssd0209.htm#Lib_000106021d030400" TARGET="TEXT">CCmdQueue::GetCommandDueFor</A> 
+member function and pass the samples you are about to process as a parameter. This returns the 
+following:
+
+<UL><LI>A stream-time command due at or before that stream time.
+<LI>A presentation-time command due at or before the presentation of the stream time.
+Do this only between the <A HREF="dssd0209.htm#Lib_000106021d030a00" TARGET="TEXT">CCmdQueue::Run</A> and <A HREF="dssd0209.htm#Lib_000106021d030300" TARGET="TEXT">CCmdQueue::EndRun</A> member
+functions, because outside of this, the mapping from stream time to presentation
+time is not known.
+<LI>Any presentation-time command due now.
+</UL>
+<P>If you want accurate synchronization for samples that
+might be processed during paused mode, you must use
+stream-time commands.
+
+<P>In all cases, commands remain queued until called or canceled. The 
+setting and resetting of the event handle is managed entirely by this 
+queue object.
+
+<A NAME="Lib_000106021d010000"></A><P><B>Protected Data Members</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106021d010001">m_Lock</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Protects access to lists.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106021d010002">m_listPresentation</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Stores commands queued in presentation time.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106021d010003">m_listStream</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Stores commands queued in stream time.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106021d010004">m_evDue</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the time when any commands are due.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106021d010005">m_dwAdvise</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Advise identifier from the reference clock (zero if no outstanding advise).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106021d010006">m_tCurrentAdvise</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Advise time is for this presentation time.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106021d010007">m_pClock</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Current reference clock.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106021d010008">m_bRunning</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Flag for running state; set TRUE when running.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B><A NAME="Lib_000106021d010009">m_StreamTimeOffset</A></B>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Contains the stream time offset when <A HREF="dssd0209.htm#Lib_000106021d010008" TARGET="TEXT">m_bRunning</A> is true.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_000106021d020000"></A><P><B>Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0209.htm#Lib_000106021d030100" TARGET="TEXT">CCmdQueue</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Constructs a <A HREF="dssd0209.htm" TARGET="TEXT">CCmdQueue</A> object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0209.htm#Lib_000106021d030200" TARGET="TEXT">CheckTime</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determines if a given time is due.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0209.htm#Lib_000106021d030600" TARGET="TEXT">GetDueHandle</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns the event handle that will be signaled.
+</FONT></TD></TR></TABLE>
+<A NAME="Lib_000106021d030000"></A><P><B>Overridable Member Functions</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0209.htm#Lib_000106021d030300" TARGET="TEXT">EndRun</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Switches to stopped or paused mode.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0209.htm#Lib_000106021d030400" TARGET="TEXT">GetCommandDueFor</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns a pointer to a command that will be due for a given time.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0209.htm#Lib_000106021d030500" TARGET="TEXT">GetDueCommand</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns a pointer to the next command that is due.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0209.htm#Lib_000106021d030700" TARGET="TEXT">Insert</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Adds the <A HREF="dssd0211.htm" TARGET="TEXT">CDeferredCommand</A> object to the queue.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0209.htm#Lib_000106021d030800" TARGET="TEXT">New</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Initializes a command to be run and returns a new <A HREF="dssd0211.htm" TARGET="TEXT">CDeferredCommand</A> object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0209.htm#Lib_000106021d030900" TARGET="TEXT">Remove</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Removes the <A HREF="dssd0211.htm" TARGET="TEXT">CDeferredCommand</A> object from the queue.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0209.htm#Lib_000106021d030a00" TARGET="TEXT">Run</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Switches to running mode.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0209.htm#Lib_000106021d030b00" TARGET="TEXT">SetSyncSource</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the clock used for timing.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0209.htm#Lib_000106021d030c00" TARGET="TEXT">SetTimeAdvise</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Creates an advise for the earliest time required.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106021d030100">CCmdQueue::CCmdQueue</A></H3>
+<A HREF="dssd0209.htm" TARGET="TEXT">CCmdQueue Class</A>
+<P>Constructs a <A HREF="dssd0209.htm" TARGET="TEXT">CCmdQueue</A> object.
+
+<P><B>CCmdQueue</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106021d030200">CCmdQueue::CheckTime</A></H3>
+<A HREF="dssd0209.htm" TARGET="TEXT">CCmdQueue Class</A>
+<P>Determines if a specified time is due.
+
+<P><B>BOOL</B> <B>CheckTime</B><B>(</B><BR>&nbsp;&nbsp;<B>CRefTime</B> <I>time</I><B>,</B><BR>&nbsp;&nbsp;<B>BOOL</B> <I>bStream</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>time</I>
+ </DT><DD>Time to check.
+</DD><DT><I>bStream</I>
+ </DT><DD>TRUE if the <I>time</I> parameter is a stream-time value; FALSE if <I>time</I> is a 
+presentation-time value.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns TRUE if the specified time has not yet passed.
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106021d030300">CCmdQueue::EndRun</A></H3>
+<A HREF="dssd0209.htm" TARGET="TEXT">CCmdQueue Class</A>
+<P>Switches to the stopped or paused mode.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>EndRun</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>Time mapping between stream time and presentation time is not known after this 
+member function has been called. Call the <A HREF="dssd0209.htm#Lib_000106021d030a00" TARGET="TEXT">CCmdQueue::Run</A> member function to 
+carry out this mapping.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106021d030400">CCmdQueue::GetCommandDueFor</A></H3>
+<A HREF="dssd0209.htm" TARGET="TEXT">CCmdQueue Class</A>
+<P>Returns a deferred command that is scheduled at a specified time.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>GetCommandDueFor</B><B>(</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <I>tStream</I><B>,</B><BR>&nbsp;&nbsp;<B>CDeferredCommand</B> <I>**ppCmd</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>tStream</I>
+</DT><DD>Time for which the command is scheduled.
+</DD><DT><I>ppCmd</I>
+</DT><DD>Deferred command to be carried out at the time specified in the <I>tStream</I> parameter.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value. Returns <A HREF="dssd0293.htm#errcodes_0001060a0100003e" TARGET="TEXT">VFW_E_NOT_FOUND</A> if no commands are due.
+
+
+<H5>Remarks</H5>
+<P>This member function takes a stream time and returns the deferred
+command scheduled at that time. The actual stream-time offset
+is calculated when the command queue is run. Commands remain queued
+until run or canceled. This member function will not block.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106021d030500">CCmdQueue::GetDueCommand</A></H3>
+<A HREF="dssd0209.htm" TARGET="TEXT">CCmdQueue Class</A>
+<P>Returns a pointer to the next command that is due.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>GetDueCommand</B><B>(</B><BR>&nbsp;&nbsp;<B>CDeferredCommand</B> <B>**</B> <I>ppCmd</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>msTimeout</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>ppCmd</I>
+</DT><DD>Pointer to the deferred command.
+</DD><DT><I>msTimeout</I>
+</DT><DD>Amount of time to wait before carrying out the time-out.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns E_ABORT if a time-out occurs. Returns S_OK if successful; otherwise,
+returns an error.
+Returns an object that has been incremented using <A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">IUnknown::AddRef</A>.
+
+
+<H5>Remarks</H5>
+<P>This member function blocks until a pending command is due. The member function 
+blocks for the amount of time, in milliseconds, specified in the <I>msTimeout</I> parameter.
+Stream-time commands become due only between the <A HREF="dssd0209.htm#Lib_000106021d030a00" TARGET="TEXT">CCmdQueue::Run</A> and
+<A HREF="dssd0209.htm#Lib_000106021d030300" TARGET="TEXT">CCmdQueue::EndRun</A> member functions. The command remains queued until 
+run or canceled.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106021d030600">CCmdQueue::GetDueHandle</A></H3>
+<A HREF="dssd0209.htm" TARGET="TEXT">CCmdQueue Class</A>
+<P>Returns the event handle to be signaled.
+
+<P><B>HANDLE</B> <B>GetDueHandle</B><B>(</B> <B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>Return the event handle whenever there are deferred commands that are due for execution
+(when <A HREF="dssd0209.htm#Lib_000106021d030500" TARGET="TEXT">CCmdQueue::GetDueCommand</A> will not block).
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106021d030700">CCmdQueue::Insert</A></H3>
+<A HREF="dssd0209.htm" TARGET="TEXT">CCmdQueue Class</A>
+<P>The <A HREF="dssd0211.htm" TARGET="TEXT">CDeferredCommand</A> object calls this member function to add itself
+to the queue.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>Insert</B><B>(</B><BR>&nbsp;&nbsp;<B>CDeferredCommand*</B> <I>pCmd</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pCmd</I>
+ </DT><DD>Pointer to the <A HREF="dssd0211.htm" TARGET="TEXT">CDeferredCommand</A> object to add to the queue.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106021d030800">CCmdQueue::New</A></H3>
+<A HREF="dssd0209.htm" TARGET="TEXT">CCmdQueue Class</A>
+<P>Initializes a command to be run and returns a new <A HREF="dssd0211.htm" TARGET="TEXT">CDeferredCommand</A> object.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>New</B><B>(</B><BR>&nbsp;&nbsp;<B>CDeferredCommand</B> <I>**ppCmd</I><B>,</B><BR>&nbsp;&nbsp;<B>LPUNKNOWN</B> <I>pUnk</I><B>,</B><BR>&nbsp;&nbsp;<B>REFTIME</B> <I>time</I><B>,</B><BR>&nbsp;&nbsp;<B>GUID*</B> <I>iid</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>dispidMethod</I><B>,</B><BR>&nbsp;&nbsp;<B>short</B> <I>wFlags</I><B>,</B><BR>&nbsp;&nbsp;<B>long</B> <I>cArgs</I><B>,</B><BR>&nbsp;&nbsp;<B>VARIANT*</B> <I>pDispParams</I><B>,</B><BR>&nbsp;&nbsp;<B>VARIANT*</B> <I>pvarResult</I><B>,</B><BR>&nbsp;&nbsp;<B>short*</B> <I>puArgErr</I><B>,</B><BR>&nbsp;&nbsp;<B>BOOL</B> <I>bStream</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>ppCmd</I>
+ </DT><DD><A HREF="dssd0211.htm" TARGET="TEXT">CDeferredCommand</A> object by which an application can cancel the command, 
+set a new presentation time for it, or retrieve estimate information.
+</DD><DT><I>pUnk</I>
+ </DT><DD>Pointer to the object that will run the command. 
+</DD><DT><I>time</I>
+ </DT><DD>Time at which to run the queued command or commands.
+</DD><DT><I>iid</I>
+ </DT><DD>Globally unique identifier (<A HREF="dssd0397.htm#gloss_00010b0108000001" TARGET="TEXT">GUID</A>) of the interface to call.
+</DD><DT><I>dispidMethod</I>
+ </DT><DD>Method on the interface to be called.
+</DD><DT><I>wFlags</I>
+ </DT><DD>Flags describing the context of the call. This parameter supports the same flags as the 
+OLE <A HREF="dssd0389.htm#external_00010a0109000081" TARGET="TEXT">IDispatch::Invoke</A> method.
+</DD><DT><I>cArgs</I>
+ </DT><DD>Number of arguments passed. 
+</DD><DT><I>pDispParams</I>
+ </DT><DD>Pointer to the list of variant types associated with the dispatch parameters.
+</DD><DT><I>pvarResult</I>
+ </DT><DD>Pointer to the list where results, if any, are to be returned. 
+</DD><DT><I>puArgErr</I>
+ </DT><DD>Index within the <I>pDispParams</I> parameter list where the last error occurred.
+</DD><DT><I>bStream</I>
+ </DT><DD>TRUE if the <I>time</I> parameter is a stream-time value; FALSE if <I>time</I> is 
+a presentation-time value.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns S_OK if successful; otherwise, returns an error value and
+no object has been queued.
+
+<H5>Remarks</H5>
+<P>The new <A HREF="dssd0211.htm" TARGET="TEXT">CDeferredCommand</A> object will be initialized with
+the parameters and will be added to the queue during construction. This method is similar to the 
+OLE <A HREF="dssd0389.htm#external_00010a0109000081" TARGET="TEXT">IDispatch::Invoke</A> method.
+
+<P>Values for the <I>wFlags</I> parameter include the following:
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Value </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DISPATCH_METHOD
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The member is being run as a method. If a property has the
+same name, both this and the DISPATCH_PROPERTYGET flag may
+ 
+be set.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DISPATCH_PROPERTYGET
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The member is being retrieved as a property or data member.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DISPATCH_PROPERTYPUT
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The member is being changed as a property or data member.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DISPATCH_PROPERTYPUTREF
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The member is being changed via a reference assignment, rather than a value assignment. 
+This value is valid only when the property accepts a reference to an object.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106021d030900">CCmdQueue::Remove</A></H3>
+<A HREF="dssd0209.htm" TARGET="TEXT">CCmdQueue Class</A>
+<P>The <A HREF="dssd0211.htm" TARGET="TEXT">CDeferredCommand</A> object calls this member function to remove itself
+from the queue.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>Remove</B><B>(</B><BR>&nbsp;&nbsp;<B>CDeferredCommand*</B> <I>pCmd</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pCmd</I>
+ </DT><DD>Pointer to the <A HREF="dssd0211.htm" TARGET="TEXT">CDeferredCommand</A> object to remove from the queue.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106021d030a00">CCmdQueue::Run</A></H3>
+<A HREF="dssd0209.htm" TARGET="TEXT">CCmdQueue Class</A>
+<P>Switches to running mode so that commands that are deferred by the stream time can be run.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>Run</B><B>(</B><BR>&nbsp;&nbsp;<B>REFERENCE_TIME</B> <I>tStreamTimeOffset</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>tStreamTimeOffset</I>
+</DT><DD>Offset time.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H5>Remarks</H5>
+<P>During running mode, stream-time-to-presentation-time mapping is known.
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106021d030b00">CCmdQueue::SetSyncSource</A></H3>
+<A HREF="dssd0209.htm" TARGET="TEXT">CCmdQueue Class</A>
+<P>Sets the clock used for timing.
+
+<P><B>virtual</B> <B>HRESULT</B> <B>SetSyncSource</B><B>(</B><BR>&nbsp;&nbsp;<B>IReferenceClock*</B> <I>pIrc</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pIrc</I>
+</DT><DD>Pointer to the <A HREF="dssd0170.htm" TARGET="TEXT">IReferenceClock</A> interface.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+
+<H3><HR COLOR=#0000FF><A NAME="Lib_000106021d030c00">CCmdQueue::SetTimeAdvise</A></H3>
+<A HREF="dssd0209.htm" TARGET="TEXT">CCmdQueue Class</A>
+<P>Sets up a timer event with the reference clock.
+
+<P><B>void</B> <B>SetTimeAdvise</B><B>(</B><B>void</B><B>)</B><B>;</B><BR><H5>Return Values</H5>
+<P>No return value.
+<H5>Remarks</H5>
+<P>This member function calls the <A HREF="dssd0170.htm#If_0001060152030200" TARGET="TEXT">IReferenceClock::AdviseTime</A>
+method to set up a notification for the earliest time required in the
+queue. Presentation-time commands that are deferred are always checked. If the
+filter graph is in running mode, deferred commands using stream time are
+also checked.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

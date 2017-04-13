@@ -1,0 +1,225 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Data Flow in the Filter Graph</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0037.htm','/dssd0000.htm','/dssd0030.htm','/index.htm','/dssd0039.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="dataflow_0001030108000000">Data Flow in the Filter Graph</A></H2>
+<BR CLEAR=ALL>
+<P>This article examines the types of data, including samples, events, and notifications, that move through a filter graph, including where this data and information originates, where it is routed, and the protocols that must be followed for data to flow correctly. 
+
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0038.htm#dataflow_0001030108010000" TARGET="TEXT">How Data Moves in a Filter Graph</A>
+<LI><A HREF="dssd0038.htm#dataflow_0001030108020000" TARGET="TEXT">Media Sample Data Flow</A>
+<LI><A HREF="dssd0038.htm#dataflow_0001030108030000" TARGET="TEXT">Control Information Data</A>
+ <UL><LI><A HREF="dssd0038.htm#dataflow_0001030108030100" TARGET="TEXT">End-Of-Stream Notifications</A>
+ <LI><A HREF="dssd0038.htm#dataflow_0001030108030200" TARGET="TEXT">Flushing</A>
+ </UL>
+<LI><A HREF="dssd0038.htm#dataflow_0001030108040000" TARGET="TEXT">Event Notifications</A>
+<LI><A HREF="dssd0038.htm#dataflow_0001030108050000" TARGET="TEXT">Filter Graph Control Data</A>
+<LI><A HREF="dssd0038.htm#dataflow_0001030108060000" TARGET="TEXT">Quality Control Data</A>
+<LI><A HREF="dssd0038.htm#dataflow_0001030108070000" TARGET="TEXT">Serializing Data</A>
+<LI><A HREF="dssd0038.htm#dataflow_0001030108080000" TARGET="TEXT">IAsyncReader Transport</A>
+</UL>
+<A NAME="dataflow_0001030108010000"></A><P><B>How Data Moves in a Filter Graph</B>
+<P>Data flow in the filter graph can be viewed by examining the paths through which it flows, and
+also by examining the protocols that are used within those paths. Data flows primarily in the following paths. 
+
+<UL><LI>Media sample data flows from one filter to the next &#151; originating at a source filter and terminating, 
+ eventually, at a renderer filter.
+<LI>Control information, such as end-of-stream and flushing notifications, travels with the media data 
+ stream from filter to filter. 
+<LI>Event notification events flow from the filters to the filter graph manager and, 
+ optionally, to the application. 
+<LI>Filter graph control data flows from the application to the filter graph manager and finally to the 
+ filters themselves. 
+<LI>Quality control data originates in the renderer and flows upstream through the filters until it finds a
+ filter capable of increasing or decreasing the media data flow. It might also flow directly to a 
+ quality control manager if one is registered. 
+</UL>
+<P>This article describes each of these data paths. Data movement in a filter graph is enabled by 
+implementation of the following Microsoft&#174; DirectShow&#153; filter graph protocols. 
+
+<UL><LI><I>Media sample protocol</I>, which defines the way that media samples are allocated and passed between filters. 
+<LI><I>End-of-stream protocol</I>, which
+ defines how filters generate and process end-of-stream information and how the filter graph manager is notified. 
+<LI><I>Flushing protocol</I>, which
+ defines how filters flush data through the filter graph.
+<LI><I>Error detection and reporting protocol</I>, which
+ defines how errors are handled by filters and propagated to the filter graph manager. 
+<LI><I>New segment protocol</I>, which
+ defines a means to enable start and stop times and data rate information to be presented to
+ a filter in advance of the data, so that a filter can adjust its processing accordingly. 
+<LI><I>Quality management protocol</I>, which
+ defines how the filter graph adapts dynamically to hardware and network conditions to degrade or 
+ improve performance gracefully. 
+</UL>
+<A NAME="dataflow_0001030108020000"></A><P><B>Media Sample Data Flow</B>
+<P>DirectShow filters pass media data downstream, that is, from the output pin of one filter to the input pin of 
+the next filter. The flow and control of the data is effected
+
+by the interfaces on those pins and the filters 
+themselves. The filters serialize data streaming activity; all data streaming calls for a given pin are 
+explicitly serialized and usually originate from a single thread.
+
+<P>Data starts at a source filter and ends at a renderer filter. The source filter can either push the data down the graph (that is, originate the thread and send data to the <A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">IMemInputPin::Receive</A> method of the downstream pin), or implement the <A HREF="dssd0114.htm#If_000106011a000000" TARGET="TEXT">IAsyncReader</A> interface and let the downstream filter originate the thread, pull the data from the source filter, and send it downstream. For a description of how this latter case differs from other protocols, see 
+<A HREF="dssd0038.htm#dataflow_0001030108080000" TARGET="TEXT">IAsyncReader Transport</A>.
+
+<P>Every filter should accept and process data received by its input pins, with the following exceptions.
+
+<UL><LI>The filter is in a stopped state.
+<LI>The pin is in the middle of a flush operation. That is, the pin's <A HREF="dssd0165.htm#If_000106014d030100" TARGET="TEXT">IPin::BeginFlush</A> method has been called but its <A HREF="dssd0165.htm#If_000106014d030600" TARGET="TEXT">IPin::EndFlush</A> method has not been called yet (see <A HREF="dssd0038.htm#dataflow_0001030108030200" TARGET="TEXT">Flushing</A>).
+<LI>The input pin rejected some previous data and no flush or stop action has occurred since (in which case the connected output pin should have stopped sending data anyway).
+</UL>
+<P>There can be other conditions for a filter to reject data as well. For instance, a transform filter would reject data at its input pin if its output pin was not connected.
+
+<P>Media samples are data objects that support the <A HREF="dssd0156.htm#If_0001060144000000" TARGET="TEXT">IMediaSample</A> interface. They are usually obtained from an allocator, which is most likely represented by an object supporting the <A HREF="dssd0160.htm#If_0001060148000000" TARGET="TEXT">IMemAllocator</A> interface. The two connected pins of adjacent filters agree on a common method of exchanging data, called a transport. Many of the base classes for the DirectShow class library are used to implement objects that support the local memory transport. 
+
+<P>In the local memory transport, the input pin for a connection supports the <A HREF="dssd0161.htm#If_0001060149000000" TARGET="TEXT">IMemInputPin</A> interface. An output pin can determine that it can use the local memory transport if a call to the <A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">IUnknown::QueryInterface</A> method on the input pin to request the <B>IMemInputPin</B> interface succeeds. For this transport, data is passed from the output pin of one filter to the input pin of an adjacent filter in media samples. During connection, the output pin and input pin agree on the connection's allocator object, which is used to create the media samples.
+
+<P>Filters must follow protocols to pass and receive media samples. The connected pins must agree on the allocator to be used, must have a means of passing the data, and must follow the correct procedure for holding on to a sample or releasing it back to the sender. 
+
+<P>For the local memory transport, an output pin passes a media sample to the input pin it is connected to by calling the input pin's <A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">IMemInputPin::Receive</A> or <A HREF="dssd0161.htm#If_0001060149030600" TARGET="TEXT">IMemInputPin::ReceiveMultiple</A> methods, depending on whether it is passing single or multiple samples. Before it can pass this data, however, the output pin must obtain a media sample. The <A HREF="dssd0161.htm#If_0001060149000000" TARGET="TEXT">IMemInputPin</A> interface on the input pin provides an <A HREF="dssd0160.htm#If_0001060148000000" TARGET="TEXT">IMemAllocator</A> object when requested to provide an allocator. If the output pin is not using its own allocator, or one provided to it from further upstream, it calls the 
+<A HREF="dssd0160.htm#If_0001060148030300" TARGET="TEXT">IMemAllocator::GetBuffer</A> method on the input pin to retrieve one. 
+
+<P>The input pin can either process the data right away or save it for later processing. In the latter case, it must call the <A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">IUnknown::AddRef</A> method on the media sample to prevent the sample from being returned to the allocator. When the output pin has called the input pin's <A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">IMemInputPin::Receive</A> method, it must call the <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">IUnknown::Release</A> method to free the sample. If the input pin did not save the sample by calling <B>IUnknown::AddRef</B>, the sample is immediately returned to the allocator.
+
+<P>The output pin can decide not to pass the media sample on to the input, in which case it can just call the 
+sample's <A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">IUnknown::Release</A> method without calling the input pin's <A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">IMemInputPin::Receive</A> method.
+
+<A NAME="dataflow_0001030108030000"></A><P><B>Control Information Data</B>
+<P>There are two types of control information which are passed downstream filter to filter: 
+ <UL><LI>End-of-stream notifications
+ <LI>Flushing
+</UL>
+<A NAME="dataflow_0001030108030100"></A><P><B>End-Of-Stream Notifications</B>
+<P>It is important for filters to indicate when there will be no more data in the current set of data. 
+A filter does this by sending an end-of-stream notification to the next filter, which is accomplished by the output 
+pin calling the <A HREF="dssd0165.htm#If_000106014d030700" TARGET="TEXT">IPin::EndOfStream</A> method on the downstream filter's input pin. 
+
+<P>When a source filter (an originator of data) reaches the end of its data, it calls the <A HREF="dssd0165.htm#If_000106014d030700" TARGET="TEXT">IPin::EndOfStream</A> method 
+on all pins connected to its output pins. This mechanism is propagated down the filter graph so that each filter that processes its <A HREF="dssd0165.htm#If_000106014d030700" TARGET="TEXT">EndOfStream</A> method in turn calls <B>EndOfStream</B> on the pins connected to its output pins. When the notification reaches the end of the line in the filter graph, the renderer passes an 
+<A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> notification to the filter graph manager. The filter graph manager counts the <B>EC_COMPLETE</B> notifications it receives and when all renderer filters have completed, passes the notification to the application. The filter graph manager counts rendered streams by counting the number of filters (not pins) that support <A HREF="dssd0158.htm#If_0001060146000000" TARGET="TEXT">IMediaSeeking</A> or <A HREF="dssd0154.htm#If_0001060142000000" TARGET="TEXT">IMediaPosition</A> and have a rendered input pin. A rendered input pin is a pin with no corresponding outputs, which can be determined with <A HREF="dssd0165.htm#If_000106014d030d00" TARGET="TEXT">IPin::QueryInternalConnections</A>. input pins. A renderer input pin returns zero pins when its <B>IPin::QueryInternalConnections</B> is called. Note that the filter, not the pins, support <B>IMediaSeeking</B> in this case.
+
+<P>Although source filters usually originate the end-of-stream notification, it is also possible for other filters to detect this condition and generate the notification downstream. Most notably, this applies to parser filters that connect to asynchronous reader filters (filters implementing the <A HREF="dssd0114.htm#If_000106011a000000" TARGET="TEXT">IAsyncReader</A> interface). 
+
+<P>For example, the MPEG parser (in the MPEG splitter filter) can detect the end of the stream and when it does, return S_FALSE from the <A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">Receive</A> method, which signals the upstream filter to stop sending data until a seek occurs or the filter graph is stopped. In this case, the upstream filter does not need to call 
+<A HREF="dssd0165.htm#If_000106014d030700" TARGET="TEXT">EndOfStream</A>. Instead, <B>EndOfStream</B> should be called by the filter detecting the end-of-stream condition (the downstream splitter or parser) before returning from 
+<B>Receive</B> or <A HREF="dssd0161.htm#If_0001060149030600" TARGET="TEXT">ReceiveMultiple</A>. 
+
+<P>Note that <A HREF="dssd0165.htm#If_000106014d030700" TARGET="TEXT">EndOfStream</A> should be serialized with data passed in the stream. It is a single piece of information that must be passed after all the other data in the stream.
+
+<A NAME="dataflow_0001030108030200"></A><P><B>Flushing</B>
+<P>In the DirectShow filter graph architecture, flushing is a two-stage process. Flushing is not usually initiated as part of normal data flow, but rather as a result of a control action from the filter graph manager. As such, it is an asynchronous event which requires flushing of old data followed by a resynchronization and pushing of new data. 
+
+<P>In a flushing operation, first <A HREF="dssd0165.htm#If_000106014d030100" TARGET="TEXT">IPin::BeginFlush</A> is called by the source filter on all input pins connected to its output pins. This call is propagated down the graph by all filters to the rendering filter or filters. 
+<A HREF="dssd0165.htm#If_000106014d030100" TARGET="TEXT">BeginFlush</A> should flush any pending <A HREF="dssd0165.htm#If_000106014d030700" TARGET="TEXT">EndOfStream</A> calls or <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> notifications. After <B>BeginFlush</B> has been called, an input pin should reject all data until its <A HREF="dssd0165.htm#If_000106014d030600" TARGET="TEXT">IPin::EndFlush</A> method has been called (this includes end-of-stream notifications). It should also free any connected pins waiting for any of its resources. In the case of the local memory transport, this means that every filter should free any filter waiting for a sample from its allocator. This is usually done by calling <A HREF="dssd0160.htm#If_0001060148030200" TARGET="TEXT">IMemAllocator::Decommit</A> on the allocator.
+
+<P>After a filter has called <A HREF="dssd0165.htm#If_000106014d030100" TARGET="TEXT">BeginFlush</A> on the pins connected to its output pins, and when it can guarantee that all processing of samples by its pins is complete and no more samples will be processed, it should call 
+<A HREF="dssd0165.htm#If_000106014d030600" TARGET="TEXT">EndFlush</A>. For source filters this means shutting down data generation, then calling 
+<B>EndFlush</B> on the pins connected to its output pins. For other filters it means waiting for an 
+<B>EndFlush</B> call (which guarantees that no more samples will be sent) and then waiting for any queues it maintains itself to empty. Because calls can block on downstream filters for the local memory transport model, it is important to wait for queues to empty when <B>EndFlush</B> is called, rather than trying to do so when 
+<B>BeginFlush</B> is called.
+
+<A NAME="dataflow_0001030108040000"></A><P><B>Event Notifications</B>
+<P>Notification data goes from filters to the filter graph manager and can be passed on to the application. The <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> notification, which is sent from renderers at the end of a data stream, has already been mentioned.
+
+<P>The filter graph manager should not be notified of <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> until a <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">Run</A> command is issued. A renderer filter that has <A HREF="dssd0165.htm#If_000106014d030700" TARGET="TEXT">EndOfStream</A> called on its input pin while in a paused state must not notify the filter graph manager until its <A HREF="dssd0153.htm#If_0001060141030400" TARGET="TEXT">IMediaFilter::Run</A> method is called. 
+<A HREF="dssd0153.htm#If_0001060141030600" TARGET="TEXT">Stop</A> and <A HREF="dssd0165.htm#If_000106014d030600" TARGET="TEXT">EndFlush</A> calls cancel any such deferred notifications
+and allow more data to be subsequently processed by the pin. After notifying the filter graph manager once with <B>EC_COMPLETE</B>, the renderer must not generate another <B>EC_COMPLETE</B> notification before processing a <B>Stop</B> or <B>EndFlush</B> method.
+
+<P>If a running filter graph is paused while at the end of its stream and <A HREF="dssd0153.htm#If_0001060141030400" TARGET="TEXT">IMediaFilter::Run</A> is subsequently called, 
+renderers should notify the filter graph manager with <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> again.
+
+<P>Besides <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A>, there are many other event notifications, many of which are sent by specialized filters, such as the renderer, to communicate with a host application. Error notifications are another class of 
+notifications that are also sent from filters to the filter graph manager.
+
+<P>The convention for DirectShow filters is that when a filter detects an error, it passes a notification to the filter graph manager by calling the <A HREF="dssd0152.htm#If_0001060140030100" TARGET="TEXT">IMediaEventSink::Notify</A> method. Errors in processing data can generate several error events, including the following:
+<UL><LI><A HREF="dssd0291.htm#events_0001060801001500" TARGET="TEXT">EC_STREAM_ERROR_STOPPED</A>, if no more data can be processed.
+ <LI><A HREF="dssd0291.htm#events_0001060801001400" TARGET="TEXT">EC_STREAM_ERROR_STILLPLAYING</A>, if data can still be processed.
+</UL>
+<P>If processing can no longer continue, the filter graph manager should be notified with 
+<A HREF="dssd0291.htm#events_0001060801001500" TARGET="TEXT">EC_STREAM_ERROR_STOPPED</A> and the appropriate convention for the particular transport should be 
+used to notify the upstream output pin. In the case of the local memory transport, this involves returning an error value from <A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">IMemInputPin::Receive</A>. In addition to notifying the filter graph manager of the error, a filter should also either call
+<A HREF="dssd0165.htm#If_000106014d030700" TARGET="TEXT">EndOfStream</A> on all the pins connected to its output pins or, if it is a renderer, also notify the filter graph manager with <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A>. This ensures the play will complete gracefully.
+
+<P>Errors of this type can be caused by encountering events such as being out of memory or other resource problems.
+Or they might be caused by other events such as a failure to obtain a buffer when trying to pass data downstream.
+
+<P>On the other hand, when an error occurs but processing can still continue, <A HREF="dssd0291.htm#events_0001060801001400" TARGET="TEXT">EC_STREAM_ERROR_STILLPLAYING</A> should be sent to the filter graph manager. In this case, the 
+upstream output pin should not be notified. Specifically, for the local memory transport, the input pin's <A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">IMemInputPin::Receive</A> method should return NOERROR when this type of error occurs. 
+
+
+<A NAME="dataflow_0001030108050000"></A><P><B>Filter Graph Control Data</B>
+<P>Control data originates at the application and is passed to the filter graph manager. At the COM level, this is handled by filter graph manager interfaces in the Control.odl type definition library. Examples of control data are calls to the <A HREF="dssd0149.htm#If_000106013d000000" TARGET="TEXT">IMediaControl</A> interfaces, such as <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">IMediaControl::Run</A>, <A HREF="dssd0149.htm#If_000106013d030500" TARGET="TEXT">IMediaControl::Pause</A>, and <A HREF="dssd0149.htm#If_000106013d030800" TARGET="TEXT">IMediaControl::Stop</A>. The <A HREF="dssd0154.htm#If_0001060142000000" TARGET="TEXT">IMediaPosition</A> and <A HREF="dssd0158.htm#If_0001060146000000" TARGET="TEXT">IMediaSeeking</A> interfaces provide a means of moving 
+forward or backward in a media stream. 
+
+<P>The most important thing to understand about the flow of control data is that it should always pass through the filter graph manager first. This is because there is usually an order that must be followed in controlling the filters in the filter graph to make sure filters are called in the correct order and with regard for internal filter graph states. 
+
+<A NAME="dataflow_0001030108060000"></A><P><B>Quality Control Data</B>
+<P>The DirectShow stream architecture provides a means of gracefully adapting to load differences in the media stream so that rendering of the data is maintained at the highest possible resolution. The <A HREF="dssd0167.htm#If_000106014f000000" TARGET="TEXT">IQualityControl</A> interface is used to send quality-control notification messages from a renderer filter either upstream, to be acted on eventually by some filter in the graph, or directly to a designated location. For example, a renderer that is getting too many frames to process can try to get an upstream filter to cut down on the number of frames it is sending. This is usually more efficient than simply dropping frames at the renderer. (A video decompressor filter uses many CPU cycles to decompress frames, so it is better to discard 
+samples before processing them rather than after processing them.) Likewise, when the renderer filter can handle more data, it sends notifications to increase the number of samples.
+
+<P>Quality-control messages are passed upstream by default; if a filter has no registered quality sink, the default action passes the message to the <A HREF="dssd0167.htm#If_000106014f000000" TARGET="TEXT">IQualityControl</A> interface of the connected output pin. Internally, the output pin passes the quality-control message to its input pin, if it has one, and the message travels upstream until it reaches a filter that can affect the data stream quality in the requested manner. DirectShow handles this mechanism automatically in the transform base classes.
+
+<P>If a filter can handle the quality notification (by increasing or decreasing the flow) and if it is not appropriate for filters 
+further upstream to take any action, that filter will act on the notification and not pass it on. A filter must pass the quality-control message on if it does not act on the message. It can also pass it on even if it does act on the message. Silently accepting the message without acting on it or passing it on is considered bad behavior, and might damage the performance of the filter graph as a whole. 
+
+
+<P>A <I>quality sink</I> is a feature implemented by the <A HREF="dssd0167.htm#If_000106014f030200" TARGET="TEXT">IQualityControl::SetSink</A> method. When this method is called, the filter is instructed not to send messages upstream, but rather to send them to the object passed to the <A HREF="dssd0167.htm#If_000106014f030200" TARGET="TEXT">SetSink</A> method. Typically, this object would be a component called a quality-control manager. Such a component would set itself as the sink for all the filters to send the quality-control messages rather than anywhere else. It would then determine whether to route the messages upstream or to take some other action, such as cutting back the video stream to avoid breaking the audio. A quality-control manager can be implemented by using the <A HREF="dssd0167.htm#If_000106014f000000" TARGET="TEXT">IQualityControl</A> interface and should be anticipated when writing filters. 
+
+
+<A NAME="dataflow_0001030108070000"></A><P><B>Serializing Data</B>
+<P>A filter usually has to synchronize two contexts: filter state and data flow. Usually a filter will create a critical section for each context. 
+
+<P>The data flow critical section is held during streaming operations. For example, for the local memory transport, this critical section should be held while processing the following methods.
+<UL><LI><A HREF="dssd0165.htm#If_000106014d030900" TARGET="TEXT">IPin::NewSegment</A>
+<LI><A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">IMemInputPin::Receive</A>
+<LI><A HREF="dssd0161.htm#If_0001060149030600" TARGET="TEXT">IMemInputPin::ReceiveMultiple</A>
+<LI><A HREF="dssd0165.htm#If_000106014d030700" TARGET="TEXT">IPin::EndOfStream</A>
+</UL>
+<P>The filter state critical section is held while processing state changes when the following <A HREF="dssd0116.htm#If_000106011c000000" TARGET="TEXT">IBaseFilter</A> methods are called.
+<UL><LI><A HREF="dssd0153.htm#If_0001060141030600" TARGET="TEXT">Stop</A> 
+<LI><A HREF="dssd0153.htm#If_0001060141030300" TARGET="TEXT">Pause</A> 
+<LI><A HREF="dssd0153.htm#If_0001060141030400" TARGET="TEXT">Run</A> 
+</UL>
+<P>It is also held during <A HREF="dssd0165.htm#If_000106014d030100" TARGET="TEXT">BeginFlush</A> and <A HREF="dssd0165.htm#If_000106014d030600" TARGET="TEXT">EndFlush</A> streaming control operations.
+
+<P>During <A HREF="dssd0153.htm#If_0001060141030600" TARGET="TEXT">Stop</A> and <A HREF="dssd0165.htm#If_000106014d030600" TARGET="TEXT">EndFlush</A> calls, the stream state must be synchronized with the filter state. An example of how to do this is in the base class <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A>. In the case of implementing the <B>Stop</B> method for the local memory transport, for example, the stream must be "released" to avoid deadlocks by decommitting the input allocator pin. This is not required to process 
+<B>EndFlush</B>, because this will have already been done in <A HREF="dssd0165.htm#If_000106014d030100" TARGET="TEXT">BeginFlush</A> processing. Once the stream is released, the data flow critical section (as implemented in 
+<A HREF="dssd0161.htm#If_0001060149030400" TARGET="TEXT">Receive</A>) can also be locked to synchronize with the stream state.
+
+<P>Note that because <A HREF="dssd0153.htm#If_0001060141030600" TARGET="TEXT">Stop</A> requires access to the filter state before synchronizing with the data flow component, these two critical sections must be different.
+
+<P>A filter should not, in general, have its filter state critical section locked while calling methods on other filters. The filter graph synchronizes graph-wide operations such as setting the current position.
+
+<A NAME="dataflow_0001030108080000"></A><P><B>IAsyncReader Transport</B>
+<P>For source parsing filters, the <A HREF="dssd0114.htm#If_000106011a000000" TARGET="TEXT">IAsyncReader</A> interface helps implement a "pull" data flow model, as opposed to the "push" model, in which a thread in the source filter pushes data downstream. The parsing filter is connected downstream to the filter whose pin implements <B>IAsyncReader</B>. In this case, the downstream parsing filter initiates data transfer by calling <B>IAsyncReader</B> methods such as <A HREF="dssd0114.htm#If_000106011a030700" TARGET="TEXT">SyncReadAligned</A>. The parsing filter, in this case, creates the thread, pulls data from the source, and pushes it downstream.
+
+<P>Because all data flow activity in this transport is initiated by the downstream filter, several of the protocols mentioned previously operate in reverse. For example:
+
+<UL><LI>The downstream pin initiates <A HREF="dssd0165.htm#If_000106014d030100" TARGET="TEXT">BeginFlush</A> and 
+ <A HREF="dssd0165.htm#If_000106014d030600" TARGET="TEXT">EndFlush</A> upstream during seek operations.
+ <LI>The downstream pin reports errors to the filter graph manager.
+</UL>
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

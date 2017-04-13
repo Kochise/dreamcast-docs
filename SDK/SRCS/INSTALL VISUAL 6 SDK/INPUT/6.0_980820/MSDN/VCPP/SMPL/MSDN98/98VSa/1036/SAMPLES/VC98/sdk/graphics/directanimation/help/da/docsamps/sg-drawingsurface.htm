@@ -1,0 +1,55 @@
+<HTML>
+<HEAD>
+<TITLE></TITLE>
+</HEAD>
+
+<BODY BGCOLOR=WHITE>
+
+<OBJECT ID=SG1
+STYLE="Position:absolute; WIDTH:400; HEIGHT:400; top:10; left;10;Z-INDEX: -1"  
+CLASSID="CLSID:369303C2-D7AC-11d0-89D5-00A0C90833E6">
+</OBJECT> 
+
+<SCRIPT LANGUAGE="VBScript">
+
+dim ds
+
+Set lib = SG1.Library			' This sets up the DirectAnimation Library for 
+					'   DrawingSurface operations.
+Set ds = SG1.DrawSurface		' This sets up a container named "ds" as SG1's 															'   DrawingSurface property container; you use this
+					'   container to construct your shape with DrawingSurface
+call ds.fillcolor(lib.blue)		' This sets the color for the square
+
+call ds.rect(-50,-50,200,200)		' This draws the square
+call ds.fillcolor(lib.ColorRgb255(200,200,255))		' This sets the color for the Oval using RGB255 values
+call ds.oval(-60,-60, 120, 120)		' This draws the oval
+
+ds.SaveGraphicsState()			' This sets up a subsection marker inside of the shape
+					'   you are constructing; it tells the DrawingSurface that 
+					'   you want to perform an operation on the following shape 
+					'   independently of the rest of the shape already constructed.
+
+call ds.transform(lib.rotate2rate(5))	' This invokes a 2 dimensional rotation (z-axis rotation)
+					'   of the shape you're about to construct in the following
+					'   script calls
+call ds.fillcolor(lib.ColorRgb255(255,0,0))
+call ds.rect(-20, -100, 40,200)		' This draws the rectangle to be rotated
+ds.RestoreGraphicsState()		' This closes the subsection opened by pushgraphicstate
+					'    operations.
+
+SG1.DrawSurface = ds			' This returns the shape you have constructed to SG1
+					'   for painting to the screen
+
+Call RotateMe
+
+Sub RotateMe
+	call SG1.rotate(2,0,2)								' This rotates the structured graphic 2 degrees in X and Z axes.
+	DoTheWork=window.setTimeout("call RotateMe",50,"vbscript")			' This calls the subroutine to invoke the rotation again
+
+End Sub
+
+
+</SCRIPT>
+
+</BODY>
+</HTML>

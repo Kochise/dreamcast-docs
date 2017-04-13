@@ -1,0 +1,171 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Using the CTransformFilter and CTransInPlaceFilter Transform Base Classes</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0078.htm','/dssd0000.htm','/dssd0077.htm','/index.htm','/dssd0080.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="trans_0001050602000000">Using the CTransformFilter and CTransInPlaceFilter Transform Base Classes</A></H2>
+<BR CLEAR=ALL>
+<P>This article describes the classes provided for creating a transform filter. It is background information that you should read before reading the article <A HREF="dssd0078.htm" TARGET="TEXT">Creating a Transform Filter</A>, which walks through the steps of creating a transform filter. 
+
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0079.htm#trans_0001050602010000" TARGET="TEXT">Introducing the CTransformFilter and CTransInPlaceFilter Classes</A>
+<LI><A HREF="dssd0079.htm#trans_0001050602020000" TARGET="TEXT">What the Derived Class Must Provide</A>
+<LI><A HREF="dssd0079.htm#trans_0001050602030000" TARGET="TEXT">A Sample Transform Filter Declaration</A>
+</UL>
+<A NAME="trans_0001050602010000"></A><P><B>Introducing the CTransformFilter and CTransInPlaceFilter Classes</B>
+<P>The easiest solution for writing a transform filter is to use the transform filter classes, which work well for most types of transform filters. Typically, a noncopying transform filter is derived from the <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A> class and its associated pin classes; a copy transform filter is derived from the <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A> filter class and its associated pin classes.
+
+<P>Transform filter classes are hierarchical, with the transform-inplace classes at the bottom of the hierarchy tree. <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A> is derived from <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A>, which is derived from <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A>, as shown in the following illustration.
+
+<P><IMG SRC="art/tsip03.gif" WIDTH="323" HEIGHT="261" ALT="CTransInPlaceFilter class hierarchy" >
+
+<P>The <A HREF="dssd0251.htm#Lib_0001060247000000" TARGET="TEXT">CTransInPlaceInputPin</A> class is derived from the <A HREF="dssd0248.htm#Lib_0001060244000000" TARGET="TEXT">CTransformInputPin</A> class. The <B>CTransformInputPin</B> class is derived from the <A HREF="dssd0195.htm#Lib_000106020f000000" TARGET="TEXT">CBaseInputPin</A> class, as shown in the following illustration.
+
+<P><IMG SRC="art/tsip01.gif" WIDTH="363" HEIGHT="293" ALT="CTransInPlaceInputPin class hierarchy" >
+
+<P>The <A HREF="dssd0252.htm#Lib_0001060248000000" TARGET="TEXT">CTransInPlaceOutputPin</A> class is derived from the <A HREF="dssd0249.htm#Lib_0001060245000000" TARGET="TEXT">CTransformOutputPin</A> class. The <B>CTransformOutputPin</B> class is derived from the <A HREF="dssd0199.htm#Lib_0001060213000000" TARGET="TEXT">CBaseOutputPin</A> class, as shown in the following illustration.
+
+<P><IMG SRC="art/tsip02.gif" WIDTH="347" HEIGHT="265" ALT="CTransInPlaceOutputPin class hierarchy" >
+
+<P>Copy transform and transform-inplace classes share many features, because the transform-inplace classes derive almost all member functions from the copy transform classes. The principal additions made by the transform classes over the base classes is that all required pin member functions are implemented&#151;so for default implementation, you need only to derive a main filter class (from <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A> or <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A>).
+
+<A NAME="trans_0001050602020000"></A><P><B>What the Derived Class Must Provide</B>
+<P>The derived filter class must provide a few member functions, typically to:
+<UL><LI>Determine if the filter accepts the media type.
+<LI>Specify the count and size of any required allocators (for copy transforms only).
+<LI>Provide the transform functionality of the filter. 
+</UL>
+<P>All derived filter classes must implement a static <A HREF="dssd0217.htm#Lib_0001060225020100" TARGET="TEXT">CFactoryTemplate::CreateInstance</A> function. You can also choose to override the <A HREF="dssd0194.htm#Lib_000106020e080900" TARGET="TEXT">CBaseFilter::GetSetupData</A> member function to make your filter self-registering. Beyond this, your classes must override a few member functions in the transform base classes. For more information about instantiating the filter, see <A HREF="dssd0078.htm" TARGET="TEXT">Creating a Transform Filter</A>.
+
+<P>If your derived filter class is based on the <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A> class, you must override the following member functions.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Member function </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243041800" TARGET="TEXT">Transform</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implement transform.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243040500" TARGET="TEXT">CheckInputType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Verify support of media type.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243040600" TARGET="TEXT">CheckTransform</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Verify support for transforming this type (for debugging builds only).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243040900" TARGET="TEXT">DecideBufferSize</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Set size and count when copying. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243040d00" TARGET="TEXT">GetMediaType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Suggest media types for the output pin.
+</FONT></TD></TR></TABLE>
+<P>If your derived filter class is based on the <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A> class, override the following member functions.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Member function </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0250.htm#Lib_0001060246030c00" TARGET="TEXT">Transform</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implement transform.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243040500" TARGET="TEXT">CheckInputType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Verify support of media type.
+</FONT></TD></TR></TABLE>
+<P>Beyond providing your transform filter with a default implementation by providing the minimum overrides, you can override other member functions to provide more specialized behavior. Which member functions you override, of course, depends on what you want your filter to do. For example, you must override the <A HREF="dssd0247.htm#Lib_0001060243040e00" TARGET="TEXT">GetPin</A> and <A HREF="dssd0247.htm#Lib_0001060243040f00" TARGET="TEXT">GetPinCount</A> member functions if you want to have more than one input pin and one output pin on the filter. 
+
+<P>Also, several base class member functions, such as <A HREF="dssd0200.htm#Lib_0001060214060400" TARGET="TEXT">BreakConnect</A> or 
+<A HREF="dssd0200.htm#Lib_0001060214060800" TARGET="TEXT">CompleteConnect</A>, are called as notifications to your filter through the pins. Typically, most of these member functions exist only on the pins. In the classes based on <A HREF="dssd0247.htm#Lib_0001060243000000" TARGET="TEXT">CTransformFilter</A>, the pin functions are implemented to call similarly named functions in the filter class. This means that the member functions 
+you most likely will want to override are all collected into one filter class, so you can leave the pin classes unchanged, making implementation smaller and easier. These member functions are as follows:
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Member function </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Reason to override
+
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0265.htm#fmutil_0001060309000001" TARGET="TEXT">NonDelegatingQueryInterface</A> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">To distribute any interfaces added in the derived class.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243040f00" TARGET="TEXT">GetPinCount</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">If adding more pins to the transform filter.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243040e00" TARGET="TEXT">GetPin</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">If adding more pins to the transform filter.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243040400" TARGET="TEXT">CheckConnect</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">To obtain extra interfaces at connect time or for other reasons.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243040300" TARGET="TEXT">BreakConnect</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">To release extra interfaces when connection is broken or for other reasons.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243040700" TARGET="TEXT">CompleteConnect</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">To perform some action at the end of connection (such as reconnecting the input pin).
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243041400" TARGET="TEXT">SetMediaType</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">To be notified when the media type has been set.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243041500" TARGET="TEXT">StartStreaming</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">To be notified when entering the streaming state.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243041700" TARGET="TEXT">StopStreaming</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">To be notified when exiting the streaming state.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0247.htm#Lib_0001060243040100" TARGET="TEXT">AlterQuality</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">To do anything with quality-control messages other than passing them on.
+
+</FONT></TD></TR></TABLE>
+<A NAME="trans_0001050602030000"></A><P><B>A Sample Transform Filter Declaration</B>
+<P>An example of a filter derived from a transform class is the NullNull sample filter. This sample illustrates a true minimalist filter, which does nothing except demonstrate the least you must implement for a filter. It uses the transform-inplace classes and derives its filter class from the <A HREF="dssd0250.htm#Lib_0001060246000000" TARGET="TEXT">CTransInPlaceFilter</A> class. Following is the class declaration for the derived filter class CNullNull.
+
+
+<PRE><FONT FACE="Courier" SIZE="2">
+
+// CNullNull
+//
+class CNullNull
+    : public CTransInPlaceFilter
+{
+
+public:
+
+    static CUnknown *CreateInstance(LPUNKNOWN punk, HRESULT *phr);
+
+    DECLARE_IUNKNOWN;
+
+    LPAMOVIESETUP_FILTER GetSetupData()
+    {
+        return &amp;sudNullNull;
+    }
+
+private:
+
+    // Constructor - just calls the base class constructor
+    CNullNull(TCHAR *tszName, LPUNKNOWN punk, HRESULT *phr)
+        : CTransInPlaceFilter (tszName, punk, CLSID_NullNull, phr)
+    { }
+
+    // Overrides the PURE virtual Transform of CTransInPlaceFilter base class
+    // This is where the "real work" is done by altering *pSample.
+    // We do the Null transform by leaving it alone.
+    HRESULT Transform(IMediaSample *pSample){ return NOERROR; }
+
+    // We accept any input type.  We'd return S_FALSE for any we didn't like.
+    HRESULT CheckInputType(const CMediaType* mtIn) { return S_OK; }
+};
+
+</FONT></PRE>
+<P>This example illustrates the basic member functions required in the base class:
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>CreateInstance</B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Needed by every filter so that it can be instantiated as a COM object.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>GetSetupData</B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Overrides <A HREF="dssd0194.htm#Lib_000106020e080900" TARGET="TEXT">CBaseFilter::GetSetupData</A> and is used to provide the class with information required to register this particular filter. In this case, it provides the address of a structure defined in the Nullnull.cpp file included in the SDK.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>CNullNull</B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Class constructor, which typically just calls the base class constructor.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Transform</B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Overrides <A HREF="dssd0250.htm#Lib_0001060246030c00" TARGET="TEXT">CTransInPlaceFilter::Transform</A> and does the main work of CNullNull, which in this case is nothing.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>CheckInputType</B> 
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Overrides <A HREF="dssd0247.htm#Lib_0001060243040500" TARGET="TEXT">CTransInPlaceFilter::CheckInputType</A> to verify the media type during connection, and in this case accepts any media type offered, since it will simply pass it along to the next filter in line.
+</FONT></TD></TR></TABLE>
+<P>Note that, strictly speaking, <A HREF="dssd0194.htm#Lib_000106020e080900" TARGET="TEXT">GetSetupData</A> is required only if you want your filter to be self-registering. However, since the base classes implement this feature and it is easy to implement, it is a good idea to include this in your base class. 
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

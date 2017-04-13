@@ -1,0 +1,270 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>IMediaEvent Object</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0023.htm','/dssd0000.htm','/dssd0018.htm','/index.htm','/dssd0025.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="vbref_0001020206000000">IMediaEvent Object</A></H2>
+<BR CLEAR=ALL>
+<P>This object supports event notification from the filter graph and the filters within it to the 
+application. 
+ 
+<P>An event code and two parameters represent event notification information. This can 
+be used for typical completion of asynchronous operations, errors that occur during asynchronous 
+operation, or user-initiated events, such as when a user clicks a hot spot. 
+
+<P>Filters within the filter graph and the filter graph itself raise event notifications. Possible events 
+include playback completion or asynchronous playback errors. In addition, the filter graph provides 
+a method to generate events at specific reference clock times. 
+
+<P>Event notifications are placed in a queue. An application calls the 
+<B>IMediaEvent</B> object's 
+<A HREF="dssd0024.htm#vbref_0001020206010200" TARGET="TEXT">GetEvent</A> 
+method to retrieve the next notification from the queue. This method blocks until there is an 
+event to return. The <B>GetEvent</B> method's time-out 
+parameter allows the application to specify the time, in milliseconds, to wait for an event, 
+including values of zero (do not wait) and infinite (wait forever). 
+ 
+<P>In addition, applications can retrieve the event handle. 
+<A HREF="dssd0024.htm#vbref_0001020206010300" TARGET="TEXT">GetEventHandle</A> 
+returns a handle to a manual-reset event created by the Microsoft&#174; Win32&#174; 
+<A HREF="dssd0389.htm#external_00010a0109000014" TARGET="TEXT">CreateEvent</A> function. This event is in a signaled state as long as there are event 
+notifications to collect. The event is cleared by the <A HREF="dssd0024.htm#vbref_0001020206010200" TARGET="TEXT">GetEvent</A> 
+method when there are no more event notifications to collect. This allows an application to use 
+an application programming interface (API), such as <A HREF="dssd0389.htm#external_00010a01090000b4" TARGET="TEXT">MsgWaitForMultipleObjects</A>, 
+to wait for events and other occurrences at the same time. This event handle will be closed when 
+the filter graph is released; therefore, applications should ensure that they are not using it 
+after this point. 
+ 
+<P>The filter graph handles some events raised by filters that are not passed to the application. 
+One example of this is the <A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A> event notification. The default handling for this event 
+is to repaint the video renderer's static images by pausing the filter graph. An application can 
+override default handling for a specific event by calling the 
+<A HREF="dssd0024.htm#vbref_0001020206010100" TARGET="TEXT">CancelDefaultHandling</A>
+method with the event value as a parameter. The 
+<A HREF="dssd0024.htm#vbref_0001020206010400" TARGET="TEXT">RestoreDefaultHandling</A> method
+reinstates default handling for the specified event value. These methods have no effect on events 
+that have no default handling. 
+ 
+<P>If an error occurs during the transition to a running state on any filter, an error value is returned 
+by the <A HREF="dssd0023.htm#vbref_0001020205020700" TARGET="TEXT">Run</A> method. In this case, some filters within the graph 
+might be running successfully. The filter graph leaves it up to the application to determine whether 
+to stop the graph in case of an error. After the <B>Run</B> method has 
+returned, event notifications report any additional errors. The <A HREF="dssd0291.htm#events_0001060801000700" TARGET="TEXT">EC_ERRORABORT</A> and <A HREF="dssd0291.htm#events_0001060801001700" TARGET="TEXT">EC_USERABORT</A> event notifications indicate that playback has probably stopped in the graph 
+(certainly in the filter that reported it). Other errors and events indicate that it is still running. 
+Note, however, that in all cases the graph remains in running mode until the application 
+explicitly changes it to stopped or paused mode. 
+ 
+<P>If the streams in the filter graph detect the end of the stream, the streams report this by using 
+the <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> event notification. The filter graph asks filters if they can report <B>EC_COMPLETE</B> via <I>seekable renderers</I>. 
+ 
+<P>A seekable renderer is a renderer that supports the 
+<A HREF="dssd0025.htm" TARGET="TEXT">IMediaPosition</A> object from the 
+filter and has only input pins, or is a renderer whose 
+input pins report that they are rendered at that point. 
+The filter graph detects seekable renderers. A seekable renderer 
+reports <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> once when all seekable streams on that filter have reached the 
+end of the stream. 
+ 
+<P>The filter graph manager will then not pass <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> to the application until an 
+<B>EC_COMPLETE</B> event notification has been received from each stream. 
+For example, if a live camera stream is playing as the background to a video 
+playing out of a file, the application will be notified about <B>EC_COMPLETE</B> when the video 
+and audio streams from the file have come to the end of the stream, even though the live source 
+is still playing. In this case, too, the filter graph remains in running mode until the application 
+explicitly calls the <A HREF="dssd0023.htm#vbref_0001020205020500" TARGET="TEXT">Pause</A> or <A HREF="dssd0023.htm#vbref_0001020205020800" TARGET="TEXT">Stop</A> method. 
+
+<P>The aggregation of <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> messages can be disabled by calling 
+<A HREF="dssd0024.htm#vbref_0001020206010100" TARGET="TEXT">CancelDefaultHandling</A> with <B>EC_COMPLETE</B> as the parameter. In this case, all <B>EC_COMPLETE</B> events raised by the filters will be passed directly to the application. 
+
+<P>For a list of system-defined event notifications, see the <A HREF="dssd0024.htm#vbref_0001020206010200" TARGET="TEXT">GetEvent</A> method. 
+
+<A NAME="vbref_0001020206010000"></A><P><B>Methods</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Name </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0024.htm#vbref_0001020206010100" TARGET="TEXT">CancelDefaultHandling</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Cancels any default handling of the specified event by the filter graph. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0024.htm#vbref_0001020206010200" TARGET="TEXT">GetEvent</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves the next notification event. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0024.htm#vbref_0001020206010300" TARGET="TEXT">GetEventHandle</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieves a handle to a manual-reset event that will be signaled. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0024.htm#vbref_0001020206010400" TARGET="TEXT">RestoreDefaultHandling</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Restores default handling for this event. 
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0024.htm#vbref_0001020206010500" TARGET="TEXT">WaitForCompletion</A>
+ </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Waits until the filter graph's operation has completed. 
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="vbref_0001020206010100">CancelDefaultHandling Method (IMediaEvent Object)</A></H3>
+<A HREF="dssd0024.htm" TARGET="TEXT">IMediaEvent Object</A>
+<P>Cancels default handling of the specified event by the filter graph and ensures that the event 
+is passed to the application. 
+ 
+<P><I>objMediaEvent</I><B>.CancelDefaultHandling</B> <I>lEvCode</I><BR>
+<H5>Parts</H5>
+<DL><DT><I>objMediaEvent</I> 
+ </DT><DD>Object expression that evaluates to an 
+<A HREF="dssd0024.htm" TARGET="TEXT">IMediaEvent</A> object. 
+</DD><DT><I>lEvCode</I> 
+ </DT><DD>Long value specifying the event code which cancels default handling.
+
+
+The following values are valid.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> 
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000700" TARGET="TEXT">EC_ERRORABORT</A> 
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000d00" TARGET="TEXT">EC_PALETTE_CHANGED</A> 
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A> 
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801001700" TARGET="TEXT">EC_USERABORT</A> 
+</FONT></TD></TABLE>
+</DD></DL>
+<H5>Return Values</H5>
+<P>This method raises an error if the event does not have any default handling.
+ 
+
+<H5>Remarks</H5>
+<P>Currently the filter graph manager only applies default handling to <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> and <A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A>. 
+<H3><HR COLOR=#0000FF><A NAME="vbref_0001020206010200">GetEvent Method (IMediaEvent Object)</A></H3>
+<A HREF="dssd0024.htm" TARGET="TEXT">IMediaEvent Object</A>
+<P>Retrieves the next notification event. 
+ 
+<P><I>objMediaEvent</I><B>.GetEvent</B> <I>lEventCode</I><B>,</B> <I>lParam1</I><B>,</B> <I>lParam2</I><B>,</B> <I>msTimeout</I><BR>
+<H5>Parts</H5>
+<DL><DT><I>objMediaEvent</I> 
+ </DT><DD>Object expression that evaluates to an 
+<A HREF="dssd0024.htm" TARGET="TEXT">IMediaEvent</A> object. 
+</DD><DT><I>IEventCode</I> 
+ </DT><DD>Returns the next event notification. The following values are valid.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> 
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000700" TARGET="TEXT">EC_ERRORABORT</A> 
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000d00" TARGET="TEXT">EC_PALETTE_CHANGED</A> 
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A> 
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801001700" TARGET="TEXT">EC_USERABORT</A> 
+</FONT></TD></TABLE>
+</DD><DT><I>lParam1</I> 
+ </DT><DD>Long value specifying the first parameter of the event. 
+</DD><DT><I>lParam2</I> 
+ </DT><DD>Long value specifying the second parameter of the event. 
+</DD><DT><I>msTimeout</I> 
+ </DT><DD>Time, in milliseconds, to wait before assuming that there are no events. To return immediately, specify a time-out value of 0.
+</DD></DL>
+<H5>Remarks</H5>
+<P>This method removes the next event notification from the head of the queue and returns it. 
+It waits up to <I>msTimeout</I> milliseconds if there are no events.
+
+
+
+<H3><HR COLOR=#0000FF><A NAME="vbref_0001020206010300">GetEventHandle Method (IMediaEvent Object)</A></H3>
+<A HREF="dssd0024.htm" TARGET="TEXT">IMediaEvent Object</A>
+<P>Returns a handle to a manual-reset event that will be signaled as <A HREF="dssd0389.htm#external_00010a01090000a9" TARGET="TEXT">Long</A> 
+as there are event notifications to deliver. 
+ 
+<P><I>objMediaEvent</I><B>.GetEventHandle</B> <I>hEvent</I><BR>
+<H5>Parts</H5>
+<DL><DT><I>objMediaEvent</I> 
+ </DT><DD>Object expression that evaluates to an <A HREF="dssd0024.htm" TARGET="TEXT">IMediaEvent</A> 
+object. 
+</DD><DT><I>hEvent</I>
+ </DT><DD><A HREF="dssd0389.htm#external_00010a01090000a9" TARGET="TEXT">Long</A> value that will contain the event handle.
+</DD></DL>
+<H5>Remarks</H5>
+<P>The event can be passed to the Win32 <A HREF="dssd0389.htm#external_00010a01090000d9" TARGET="TEXT">WaitForMultipleObjects</A> or 
+<A HREF="dssd0389.htm#external_00010a01090000b4" TARGET="TEXT">MsgWaitForMultipleObjects</A> function to wait for event notifications at the same time 
+as other messages and events on a single thread. 
+<H3><HR COLOR=#0000FF><A NAME="vbref_0001020206010400">RestoreDefaultHandling Method (IMediaEvent Object)</A></H3>
+<A HREF="dssd0024.htm" TARGET="TEXT">IMediaEvent Object</A>
+<P>Reinstates the normal default handling by a filter graph for the specified event if there is one.
+ 
+<P><I>objMediaEvent</I><B>.RestoreDefaultHandling</B> <I>lEvCode</I><BR>
+<H5>Parts</H5>
+<DL><DT><I>objMediaEvent</I> 
+ </DT><DD>Object expression that evaluates to an 
+<A HREF="dssd0024.htm" TARGET="TEXT">IMediaEvent</A> object. 
+</DD><DT><I>lEvCode</I> 
+ </DT><DD>Event to restore. The following list contains system-defined event notifications.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A> 
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000700" TARGET="TEXT">EC_ERRORABORT</A> 
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000d00" TARGET="TEXT">EC_PALETTE_CHANGED</A> 
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A> 
+</FONT></TD><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0291.htm#events_0001060801001700" TARGET="TEXT">EC_USERABORT</A> 
+</FONT></TD></TABLE>
+</DD></DL>
+<H5>Remarks</H5>
+<P>Events that have default handling in place, such as <A HREF="dssd0291.htm#events_0001060801000f00" TARGET="TEXT">EC_REPAINT</A>, are not typically 
+passed to the application. 
+<H3><HR COLOR=#0000FF><A NAME="vbref_0001020206010500">WaitForCompletion Method (IMediaEvent Object)</A></H3>
+<A HREF="dssd0024.htm" TARGET="TEXT">IMediaEvent Object</A>
+<P>Waits until the filter graph's operation has completed. 
+
+<P><I>objMediaEvent</I><B>.WaitForCompletion</B> <I>msTimeout</I><B>,</B> <I>EvCode</I><BR>
+<H5>Parts</H5>
+<DL><DT><I>objMediaEvent</I> 
+ </DT><DD>Object expression that evaluates to an <A HREF="dssd0024.htm" TARGET="TEXT">IMediaEvent</A> object. 
+</DD><DT><I>msTimeout</I> 
+ </DT><DD><A HREF="dssd0389.htm#external_00010a01090000a9" TARGET="TEXT">Long</A> value that specifies the duration of the time-out, in milliseconds. To block indefinitely, pass &#150;1. To return immediately, pass zero. 
+
+</DD><DT><I>EvCode</I>
+ </DT><DD><A HREF="dssd0389.htm#external_00010a01090000a9" TARGET="TEXT">Long</A> value that will contain the value of the event completion code, such as <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A>. A value of zero indicates that the operation has not completed.
+</DD></DL>
+<H5>Remarks</H5>
+<P>This method performs the equivalent of blocking by calling <A HREF="dssd0024.htm#vbref_0001020206010200" TARGET="TEXT">GetEvent</A> repeatedly until the method receives the <A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A>, <A HREF="dssd0291.htm#events_0001060801000700" TARGET="TEXT">EC_ERRORABORT</A>, or <A HREF="dssd0291.htm#events_0001060801001700" TARGET="TEXT">EC_USERABORT</A> event notification, or until it reaches the time-out period, whichever comes first.
+
+
+
+<P>If the time-out value is reached, the method returns a completion code value of 0 and raises run-time error 287, "Application-defined or object-defined error."
+
+
+
+When setting the <I>msTimeOut</I> parameter to anything other than &#150;1 (infinite), you are likely to get this run-time error. You can handle this error with an <B>On Error Resume Next</B> statement and then check the value of <I>EvCode</I>, which will be 0 if a time-out has occurred or 1 (<A HREF="dssd0291.htm#events_0001060801000400" TARGET="TEXT">EC_COMPLETE</A>) or greater if completion has occurred. The following example illustrates using this method with a time-out of 0.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    Dim pME As IMediaEvent
+    Dim EventCode As Long
+    Set pME = pMC
+
+    On Error Resume Next
+
+    pME.WaitForCompletion 0, EventCode&#009;'Return from WaitForCompletion immediately
+    
+    Set pME = Nothing
+
+    If EventCode = 0 Then Exit Sub
+
+</FONT></PRE>
+<P>To use an infinite time-out, check for a returned event code of 1 as in the 
+following example.
+
+<PRE><FONT FACE="Courier" SIZE="2">
+    Dim pME As IMediaEvent
+    Dim EventCode As Long
+    Set pME = pMC
+
+    pME.WaitForCompletion -1, EventCode&#009;'Wait until EC_COMPLETE
+    
+    If EventCode = 1 Then Exit Sub
+
+</FONT></PRE>
+<P>When the method returns, 
+
+the filter graph is still in a running state. This method assumes that the application is not making separate calls to the <A HREF="dssd0024.htm" TARGET="TEXT">IMediaEvent</A> object. This method fails if the graph is not in or transitioning into a running state. 
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

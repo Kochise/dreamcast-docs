@@ -1,0 +1,184 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>IQualityControl Interface</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0166.htm','/dssd0000.htm','/dssd0088.htm','/index.htm','/dssd0168.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="If_000106014f000000">IQualityControl Interface</A></H2>
+<BR CLEAR=ALL>
+<P>The <B>IQualityControl</B> interface defines quality messages and allows a quality manager
+to install itself as the sink for these messages. The following structures are defined for quality management.
+
+<UL><LI><A HREF="dssd0288.htm#dtypes_0001060601001d00" TARGET="TEXT">QualityMessageType</A>
+<LI><A HREF="dssd0287.htm#structs_0001060501001700" TARGET="TEXT">Quality</A>
+</UL>
+<P>The <A HREF="dssd0167.htm#If_000106014f030100" TARGET="TEXT">IQualityControl::Notify</A> method receives a Quality message.
+A filter may call <B>IQualityControl::Notify</B> to send a Quality message to another filter
+to ask for help in managing the graph quality (typically to achieve graceful degradation on a
+processor that is not powerful enough to handle all the data). Quality messages usually flow
+upstream.
+
+
+<P>The <A HREF="dssd0167.htm#If_000106014f030200" TARGET="TEXT">IQualityControl::SetSink</A> method tells a filter where to send it.
+If no sink has been explicitly set or if the last <A HREF="dssd0167.htm#If_000106014f030200" TARGET="TEXT">SetSink</A> set the sink to NULL,
+the message should go upstream. The filter sends a message upstream by calling
+<A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> on the output pin to which its input pin is connected, in order to
+retrieve an <B>IQualityControl</B> interface. Filters export the <B>IQualityControl</B>
+interface through their pins.
+
+<P>Messages start with rendering filters, because these must run in real time. Other filters
+must run to keep the renderers supplied; these do not originate messages, but
+they can pass them on.
+
+<P>If a filter receives a quality message, it returns S_OK if it agrees to act
+on the quality message to handle the situation, or S_FALSE if it cannot handle it.
+For example, if the video renderer receives S_FALSE (or failure codes), it will readily
+drop frames to try to maintain synchronization. If it receives S_OK, it will trust the
+upstream filter; it also will allow frames to be played much earlier than their due time and
+will allow frames to be played much later without dropping them. Usually, the video renderer
+causes early frames to be blocked until their due time. But if this is the first frame after
+a dropped frame, the video renderer will play the frame as soon as possible so as not to lose time.
+
+<P>A reasonable implementation for a filter that cannot handle a message
+is to pass the message upstream and to pass on the result. For example:
+
+<PRE><FONT FACE="Courier" SIZE="2">HRESULT Notify(IBaseFilter * pSelf, QualityMessage qm)
+{
+    if (m_QualitySink!=NULL)
+        // note how pSelf has changed into Myself
+        return m_QualitySink-&gt;ChangeQuality(pMyself, qm);
+    else
+        return  m_Upstream-&gt;Notify(pMyself, qm);
+}
+</FONT></PRE>
+<P>A quality managing component would typically set the sink for all filters to itself.
+It can identify filters by their <A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A> interface pointers in the <I>Self</I> parameters.
+A filter must always supply the same value for its <B>IBaseFilter</B> interface. (The official
+COM way of determining if two filters are the same is to use
+<A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> on them both for their <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> interfaces and
+compare those. However, because DirectShow&#153; is a real-time system, and because
+these calls are made during streaming, it is implemented this way for efficiency.)
+
+<P>A quality managing component (for example, an application)
+typically returns S_OK when called upon to help. However, it should be prepared to
+find that when it sends a message to a filter requesting help from that filter, it immediately gets
+a request from that filter for help, and that whatever return code it gives to that filter in response to
+the request immediately comes back from the filter as the reply to its original message.
+This happens if the filter uses the suggested default implementation of passing
+the messages upstream, but with the <A HREF="dssd0287.htm#structs_0001060501001700" TARGET="TEXT">Quality</A> managing component intercepting all the traffic.
+
+<P> The <A HREF="dssd0287.htm#structs_0001060501001700" TARGET="TEXT">Quality</A> message structure is:
+
+<PRE><FONT FACE="Courier" SIZE="2">typedef enum {
+    Famine,
+    Flood
+} QualityMessageType;
+
+typedef struct {
+    QualityMessageType Type;
+    long               Proportion;
+    REFERENCE_TIME     Late;
+} Quality;
+</FONT></PRE>
+<P>The <A HREF="dssd0287.htm#structs_0001060501001701" TARGET="TEXT">Type</A> member of the structure indicates which filter appears to have the
+problem. If set to Famine, it indicates that the renderer is not getting enough samples and the receiver of the message should speed up by any means possible. If set to Flood, the sender of the message cannot keep up with the data being sent and the receiver must send less data. Other methods of degradation are not appropriate.
+
+<P>The <A HREF="dssd0287.htm#structs_0001060501001702" TARGET="TEXT">Proportion</A> member gives a rate (expressed in parts per thousand) to be
+used by a recipient that cannot seek (dropping frames is equivalent to seeking) but
+can only control its rate. For example, a proportion of 823 means that it should
+degrade enough to go faster by a factor of 1000/823. Likewise, a proportion of
+1200 means that it can improve its quality by 20 percent, even if this results in going slower.
+The numbers are not cumulative. In particular, if a filter can degrade only in steps of,
+say, 20 percent, and if it receives a series of <A HREF="dssd0287.htm#structs_0001060501001700" TARGET="TEXT">Quality</A> messages all with <B>Proportion</B> equal to
+990, it should ignore them all. It should not multiply them (for example, it should not deduce that a
+20 percent reduction is called for after the twenty-third message in this case).
+
+<P>The <A HREF="dssd0287.htm#structs_0001060501001703" TARGET="TEXT">Late</A> member says how late the application is running at the moment.
+Negative values mean that there is some slack (probably the renderer is waiting for this time before
+rendering the samples). A positive value from an audio renderer does not necessarily mean that
+there is an audio break; it means that the audio renderer's buffer queue is running low
+and is heading for a break.
+
+
+<A NAME="If_000106014f010000"></A><P><B>When to Implement</B>
+<P>Pins that are required to pass quality control messages upstream must implement this
+interface. The <A HREF="dssd0200.htm#Lib_0001060214000000" TARGET="TEXT">CBasePin</A> class inherits <A HREF="dssd0167.htm" TARGET="TEXT">IQualityControl</A> and provides a
+pass-through implementation for output pins. Any filter that can act on a quality control
+message to adjust the rate of data flow should implement this interface.
+Any quality management component external to the filter graph should implement this
+interface to receive quality control messages.
+
+<A NAME="If_000106014f020000"></A><P><B>When to Use</B>
+<P>The rendering filter (usually the video renderer) is the primary user of this
+interface because it originates the quality control messages. Because the messages
+pass from one filter to another upstream, each downstream filter calls the
+<A HREF="dssd0167.htm#If_000106014f030100" TARGET="TEXT">IQualityControl::Notify</A> method on the upstream output pin and so is a user.
+
+<A NAME="If_000106014f030000"></A><P><B>Methods in Vtable Order</B>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IUnknown methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030200" TARGET="TEXT">QueryInterface</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Returns pointers to supported interfaces.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030100" TARGET="TEXT">AddRef</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Increments the reference count.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm#If_0001060157030300" TARGET="TEXT">Release</A> </FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Decrements the reference count.
+</FONT></TD></TR></TABLE>
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>IQualityControl methods </B></FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Description
+</B></FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0167.htm#If_000106014f030100" TARGET="TEXT">Notify</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Notifies the recipient that a quality change is requested.
+</FONT></TD></TR><TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0167.htm#If_000106014f030200" TARGET="TEXT">SetSink</A>
+</FONT></TD><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Sets the <A HREF="dssd0167.htm" TARGET="TEXT">IQualityControl</A> object that will receive quality messages.
+</FONT></TD></TR></TABLE>
+<H3><HR COLOR=#0000FF><A NAME="If_000106014f030100">IQualityControl::Notify</A></H3>
+<A HREF="dssd0167.htm" TARGET="TEXT">IQualityControl Interface</A>
+<P>Receives a notification that a quality change is requested.
+
+<P><B>HRESULT</B> <B>Notify</B><B>(</B><BR>&nbsp;&nbsp;<B>IBaseFilter</B> <B>*</B> <I>pSelf</I><B>,</B><BR>&nbsp;&nbsp;<B>Quality</B> <I>q</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>pSelf</I>
+ </DT><DD>[in] Pointer to the filter that is sending the quality notification.
+</DD><DT><I>q</I>
+ </DT><DD>[in] Quality notification structure.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H3><HR COLOR=#0000FF><A NAME="If_000106014f030200">IQualityControl::SetSink</A></H3>
+<A HREF="dssd0167.htm" TARGET="TEXT">IQualityControl Interface</A>
+<P>Sets the <A HREF="dssd0167.htm" TARGET="TEXT">IQualityControl</A> object that will receive quality messages.
+
+<P><B>HRESULT</B> <B>SetSink</B><B>(</B><BR>&nbsp;&nbsp;<B>IQualityControl</B> <I>*piqc</I><BR>&nbsp;&nbsp;<B>)</B><B>;</B><BR><H5>Parameters</H5>
+<DL><DT><I>piqc</I>
+</DT><DD>Pointer to the <A HREF="dssd0167.htm" TARGET="TEXT">IQualityControl</A> object to which the notifications should be sent.
+</DD></DL>
+<H5>Return Values</H5>
+<P>Returns an <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> value.
+
+<H5>Remarks</H5>
+<P>The filter that receives a call to this method should record the
+<I>piqc</I> but should not add a reference count to it. The object pointed to
+will be a quality manager and will be a part of the filter graph (for example,
+a plug-in distributor). Adding a reference count to this could cause
+circular reference problems.
+
+<P>The reference to the object specified in <I>piqc</I> is guaranteed to be
+valid until this method is called with a null value.
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>

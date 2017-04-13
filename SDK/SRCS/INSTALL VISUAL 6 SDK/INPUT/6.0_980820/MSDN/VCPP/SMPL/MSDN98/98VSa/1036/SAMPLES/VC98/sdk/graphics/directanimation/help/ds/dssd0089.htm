@@ -1,0 +1,1140 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD><TITLE>Summary of DirectShow COM Interfaces</TITLE>
+<STYLE>
+<!--
+.tctop {color: blue}
+.cpslug {color: blue; text-decoration: none}
+-->
+</STYLE>
+<SCRIPT LANGUAGE="JAVASCRIPT">
+//<!--
+function ShowButtons() {
+    if (window.top.frames.length!=0 && window.top.frames[0].ShowButtons!=null)
+	window.top.frames[0].ShowButtons('/dssd0088.htm','/dssd0000.htm','/dssd0088.htm','/index.htm','/dssd0090.htm');
+}
+ShowButtons();
+//-->
+</SCRIPT>
+</HEAD>
+<BODY onLoad="ShowButtons()" TOPMARGIN=10 BGPROPERTIES="FIXED" BGCOLOR="#FFFFFF" LINK="#000000" VLINK="#808080" ALINK="#000000">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+<H2><A NAME="intrface_0001060101000000">Summary of DirectShow COM Interfaces</A></H2>
+<BR CLEAR=ALL>
+<P>This article groups the Microsoft&#174; DirectShow&#153; interfaces according to the objects that expose them. It explains which object implements each interface and who is likely to call the interface methods implemented on each type of object. The information is presented as a series of tables of COM interfaces relating to each object, and so provides a summary and quick reference for understanding the DirectShow interfaces. 
+
+<P><B>Contents of this article</B>:
+<UL><LI><A HREF="dssd0089.htm#intrface_0001060101010000" TARGET="TEXT">Introducing the DirectShow COM Interfaces</A>
+<LI><A HREF="dssd0089.htm#intrface_0001060101020000" TARGET="TEXT">Interfaces on a Typical Filter Graph</A>
+</UL>
+<A NAME="intrface_0001060101010000"></A><P><B>Introducing the DirectShow COM Interfaces</B>
+<P>The DirectShow COM interfaces comprise the schematic of an architecture for streaming time-stamped media. The filter graph, through which media flows, is composed of objects, such as filters, pins, media samples, allocators, and enumerators, that work together. COM interfaces are implemented on these objects and are called by other objects with which they interact. The filter is the only filter graph COM object that has a CLSID; all other objects in the filter graph support COM interfaces, and are created as needed by the filter. Filters and their supporting object must implement their COM interfaces and a class library is available for help in that task. The filter graph manager, on the other hand, has a CLSID and supports several fully implemented interfaces, as do plug-in distributors, which are aggregated by the filter graph manager. (Microsoft-provided plug-in distributors are referred to as the filter graph manager in this article.) 
+
+<P>This section contains the following topics.
+<UL><LI><A HREF="dssd0089.htm#intrface_0001060101010100" TARGET="TEXT">Filter Graph Manager Interfaces</A>
+<LI><A HREF="dssd0089.htm#intrface_0001060101010200" TARGET="TEXT">Filter and Pin Interfaces</A>
+<LI><A HREF="dssd0089.htm#intrface_0001060101010300" TARGET="TEXT">Media Sample and Enumerator Interfaces</A>
+<LI><A HREF="dssd0089.htm#intrface_0001060101010400" TARGET="TEXT">Control Interfaces</A>
+</UL>
+<P>The DirectShow COM interfaces can be categorized as follows:
+<UL><LI>Filter graph manager interfaces, which are fully implemented and used by applications to create, connect, and control filter graphs and by filters within the filter graph to post event notifications and to force reconnections when needed. 
+<LI>Filter and pin interfaces, which must be implemented by the filter. They comprise the methods exposed by filters for communicating with the filter graph manager, connecting with other filters, passing data downstream (from source filter to renderer filter) and passing quality control and media positioning information upstream (from renderer to source).
+<LI>Enumerator and media sample interfaces, which are interfaces on objects created temporarily 
+for passing information.
+<LI>Control interfaces, which are exposed by filters and the filter graph manager to enable the 
+starting, stopping, and positioning of media in the stream. The control interfaces on the filters 
+must be implemented when writing a filter, whereas they are already implemented on the filter graph manager.
+</UL>
+<A NAME="intrface_0001060101010100"></A><P><B>Filter Graph Manager Interfaces</B>
+<P>Most filter graph manager interfaces fall in the category of control interfaces, also listed separately in this 
+article; however, some are unique to the filter graph manager.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Interface
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What calls methods
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What methods do
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Comments
+
+</B></FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0140.htm" TARGET="TEXT">IFilterGraph</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Not normally called directly.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Add, connect, and reconnect filters in a filter graph.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Use <A HREF="dssd0146.htm" TARGET="TEXT">IGraphBuilder</A> instead, since it inherits from this interface.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0146.htm" TARGET="TEXT">IGraphBuilder</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Application.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Create filter graphs dynamically from stream media type or recreate stored filter graph. 
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Inherits from <A HREF="dssd0140.htm" TARGET="TEXT">IFilterGraph</A>. Also uses a filter mapper object to look up filters in the registry.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0147.htm" TARGET="TEXT">IGraphVersion</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Application and plug-in distributors in the filter graph manager.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return the current filter graph version. 
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Determine when a filter graph has had filters added, deleted, or reconnected.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0131.htm" TARGET="TEXT">IEnumFilters</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Application or possibly a filter that wants to know what other filters are in the graph.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return filters, skip filters, or clone the enumerator.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented in the filter graph manager.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0134.htm" TARGET="TEXT">IEnumRegFilters</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter mapper.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return filters, skip items, or clone the enumerator.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the filter graph manager.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0149.htm" TARGET="TEXT">IMediaControl</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Application.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Run, pause, and stop the filter graph, and return the state.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Has many of the same methods as the <A HREF="dssd0153.htm" TARGET="TEXT">IMediaFilter</A> interface, 
+which is implemented on filters.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0150.htm" TARGET="TEXT">IMediaEvent</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications that need to retrieve events passed to the filter graph manager from filters.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Get events, get event handles, block until completion, and block or unblock default handling 
+of events by the filter graph manager.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the filter graph manager.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0152.htm" TARGET="TEXT">IMediaEventSink</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filters that need to pass events to the application.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Receive event notifications from filters.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the filter graph manager.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Get duration and position properties, and get and set start time, stop time, preroll time, and 
+rate properties.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented on the filter graph manager and also on filters.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Set and retrieve current position and stop position in units other than time (such as sample or field).
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented on the filter graph manager and also on filters.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0169.htm" TARGET="TEXT">IQueueCommand</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Application wanting to send a deferred command.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Cue commands to run at stream time (offset from start) or presentation time.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the filter graph manager and used by applications. Filters can implement this.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0125.htm" TARGET="TEXT">IDeferredCommand</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">The application that sent a deferred command using <A HREF="dssd0169.htm" TARGET="TEXT">IQueueCommand</A>.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return confidence information, postpone, or cancel a deferred command, and return <A HREF="dssd0293.htm#errcodes_0001060a01000001" TARGET="TEXT">HRESULT</A> values from an invoked command.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the filter graph manager and returned to any application that calls <A HREF="dssd0169.htm" TARGET="TEXT">IQueueCommand</A> methods.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0093.htm" TARGET="TEXT">IAMCollection</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">An Automation client such as Microsoft&#174; Visual Basic&#174;.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieve the number of items in the collection and retrieve an indexed item.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the filter graph manager. Not used by C or C++
+ applications.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0171.htm" TARGET="TEXT">IRegFilterInfo</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">An Automation client such as Visual Basic.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return a filter name and add it to the filter graph.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the filter graph manager. Not used by C or C++ applications.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0142.htm" TARGET="TEXT">IFilterInfo</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">An Automation client such as Visual Basic.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return name, vendor information, <A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A> interface, file name (for source filters), specified pin object, or collection of associated pin objects. 
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the filter graph manager. Not used by C or C++ applications.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0166.htm" TARGET="TEXT">IPinInfo</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">An Automation client such as Visual Basic.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return pin information such as name, direction, connections, and collection of associated media type objects. Also includes methods to connect and disconnect pins.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the filter graph manager. Not used by C or C++ applications.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0159.htm" TARGET="TEXT">IMediaTypeInfo</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">An Automation client such as Visual Basic.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return the major and minor media types. 
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the filter graph manager. Not used by C or C++ applications.
+
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0141.htm" TARGET="TEXT">IFilterGraph2</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">C or C++ applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Extended filter graph functionality.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+</TABLE>
+<A NAME="intrface_0001060101010200"></A><P><B>Filter and Pin Interfaces</B>
+<P>Filters are composed of one filter object and one or more pin objects. Although only the <A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A> and <A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A> interfaces are strictly required on a filter, filters can support other filter and pin interfaces, as discussed in <A HREF="dssd0089.htm#intrface_0001060101010201" TARGET="TEXT">Filter Interfaces</A>.
+
+<P>This topic contains the following subtopics.
+<UL><LI><A HREF="dssd0089.htm#intrface_0001060101010201" TARGET="TEXT">Filter Interfaces</A>
+<LI><A HREF="dssd0089.htm#intrface_0001060101010202" TARGET="TEXT">Pin Interfaces</A>
+</UL>
+<A NAME="intrface_0001060101010201"></A><P><B>Filter Interfaces</B>
+<P>The following interfaces are exposed by filter objects in order to be integrated with the filter graph manager. The filter is the main COM object and has a class ID (CLSID) and name registered in the registry. Filters must provide access to their pins and otherwise communicate with the filter graph. They must also allow the filter graph manager to manage the data flow by accepting state change messages.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Interface
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What calls methods
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What methods do
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Comments
+
+</B></FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter graph manager.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return a pointer to the interface, add and delete references to the interface.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the <A HREF="dssd0253.htm#Lib_0001060249000000" TARGET="TEXT">CUnknown</A> base class.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0389.htm#external_00010a0109000089" TARGET="TEXT">IPersist</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter graph manager.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return the class identifier (CLSID) of the filter for saving the filter as part of a stored filter graph.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A> base class.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0153.htm" TARGET="TEXT">IMediaFilter</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Nothing directly.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Put the filter in run, stop, or pause state, get and set the reference clock and retrieve the filter state.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Inherited by the <A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A> interface, which should be used instead of referencing this directly.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter graph manager.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Same as <A HREF="dssd0153.htm" TARGET="TEXT">IMediaFilter</A> plus enumerate pins, retrieve filter and vendor information, and locate pins when rebuilding a persistent filter graph.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Inherits methods from the <A HREF="dssd0153.htm" TARGET="TEXT">IMediaFilter</A> interface. Implemented by the <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A> class.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0389.htm#external_00010a0109000089" TARGET="TEXT">IPersist</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter graph manager when loading preconfigured filter graph files.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Has one method that is used to retrieve the class identifier of the filter.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Inherited by <A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A> along with <A HREF="dssd0153.htm" TARGET="TEXT">IMediaFilter</A>.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0104.htm" TARGET="TEXT">IAMovieSetup</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Entry-point routines in Dllentry.cpp.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Two methods that register and unregister the object.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">This is implemented by the base classes for most of what is required to make a filter self-registerable. Need to override one base member function to provide setup structures.
+<P>
+</FONT></TD>
+</TR>
+</TABLE>
+<P>The following additional filter interfaces can be exposed by filters such as source filters, and by video and audio renderers. Source filters are notified by means of a quality control mechanism so that they can adjust the amount of data introduced to the stream according to the renderer's performance. Audio renderers are usually called upon to provide a reference clock, since audio hardware generates this. The video renderer filter supplied by Microsoft exposes interfaces to 
+handle both the video window and the transferring of video frames into video buffers.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Interface
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What calls methods
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What methods do
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Comments
+
+
+</B></FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0114.htm" TARGET="TEXT">IAsyncReader</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Downstream parser filter.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Perform synchronized reads, request data, request allocator, begin and end flushing and retrieve file's total length.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented on the <A HREF="dssd0349.htm#samples_0001070203010000" TARGET="TEXT">Asynchronous Reader Filter</A>, which reads media types with a major type of MEDIATYPE_Stream.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0139.htm" TARGET="TEXT">IFileSourceFilter</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Any application that needs to set the name of the file into which the file sink filter will write. 
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Set or retrieve the file name.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented on any source filter that needs a file name from the user.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0137.htm" TARGET="TEXT">IFileSinkFilter</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Any application that needs to set the name of the file from which the file source filter will read. 
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Set or retrieve the file name.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented on a file writer filter, as used in a video capture filter graph.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0167.htm" TARGET="TEXT">IQualityControl</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter graph manager, upstream filter, or pin.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Receive a quality message and receive the quality sink location.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Normally implemented on filters that can affect the quality when they receive the message.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0170.htm" TARGET="TEXT">IReferenceClock</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filters that need to be synchronous with a reference clock.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Register for time notifications from the filter, convert real to reference time, and return the current time.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented on a filter that can generate a reference clock, typically an audio renderer. Provides services similar to the <A HREF="dssd0389.htm#external_00010a01090000d3" TARGET="TEXT">timeBeginPeriod</A> and <A HREF="dssd0389.htm#external_00010a01090000d5" TARGET="TEXT">timeSetEvent</A> Win32&#174; functions.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0117.htm" TARGET="TEXT">IBasicAudio</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications and Automation clients such as Visual Basic.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Get and set the properties of the audio renderer filter.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Can be implemented on an audio renderer filter.
+<P>Supports Automation.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0118.htm" TARGET="TEXT">IBasicVideo</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications and Automation clients such as Visual Basic.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Get and set the source video rectangle, and retrieve video size and palette values as well as the current image.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Normally implemented on a video renderer filter.
+<P>Supports Automation.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0177.htm" TARGET="TEXT">IVideoWindow</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications and Automation clients such as Visual Basic.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Control the window aspects of a video renderer.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Normally implemented on a video renderer filter.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0126.htm" TARGET="TEXT">IDirectDrawVideo</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">C or C++ applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Set and retrieve DirectDraw&#174; hardware and emulated capabilities and surface types.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Normally implemented on a video renderer filter.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0145.htm" TARGET="TEXT">IFullScreenVideo</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">C or C++ applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Set and retrieve full-screen modes, message drain, icon caption and other information.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Normally implemented on a video renderer filter.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0163.htm" TARGET="TEXT">IOverlay</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filters upstream from the renderer that want to be notified of window changes.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Set and retrieve palette and color key information; get window handle, clip list, window position;
+setup advise link with upstream filter.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Normally implemented on a video renderer filter.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0168.htm" TARGET="TEXT">IQualProp</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Property page objects.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Retrieve rendering quality properties of the video renderer such as the number of frames drawn, jitter, and so on.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Supports Automation.
+<P>
+
+
+
+
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0095.htm" TARGET="TEXT">IAMCrossbar</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">C or C++ applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Crossbar functionality.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0100.htm" TARGET="TEXT">IAMExtDevice</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">C or C++ applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Device control.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0101.htm" TARGET="TEXT">IAMExtTransport</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">C or C++ applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Device control.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0107.htm" TARGET="TEXT">IAMTimecodeDisplay</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">C or C++ applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Time codes.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0108.htm" TARGET="TEXT">IAMTimecodeGenerator</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">C or C++ applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Time codes.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0109.htm" TARGET="TEXT">IAMTimecodeReader</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">C or C++ applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Time codes.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0110.htm" TARGET="TEXT">IAMTVTuner</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">C or C++ applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">TV Tuner.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0122.htm" TARGET="TEXT">ICreateDevEnum</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">C or C++ applications.
+
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Enumeration of hardware devices.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0138.htm" TARGET="TEXT">IFileSinkFilter2</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">C or C++ applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Options for file writer filters.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0155.htm" TARGET="TEXT">IMediaPropertyBag</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">C or C++ applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Copy right information.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0157.htm" TARGET="TEXT">IMediaSample2</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filters.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Exposes sample properties.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+</TABLE>
+<P>DirectShow provides filters that implement particular interfaces for you. Applications typically use those interfaces.
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Interface
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What calls methods
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What methods do
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Comments
+
+</B></FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0098.htm" TARGET="TEXT">IAMDirectSound</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DirectSound audio renderer.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provides access to DirectSound buffers.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DirectSound audio renderer implements and uses this interface.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0102.htm" TARGET="TEXT">IAMLine21Decoder</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications or video mixer filter.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provide access to closed caption settings.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Line21 decoder implements this interface.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0111.htm" TARGET="TEXT">IAMVfwCaptureDialogs</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provide access to dialog boxes exposed by Video for Windows capture drivers.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Video for Windows capture filter implements this interface.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0112.htm" TARGET="TEXT">IAMVfwCompressDialogs</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provide access to dialog boxes exposed by Video for Windows compressors.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Video for Windows installable compression manager (ICM) filter implements this interface.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0119.htm" TARGET="TEXT">ICaptureGraphBuilder</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Simplify building capture filter graphs.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Capture graph builder object implements this interface.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0120.htm" TARGET="TEXT">IConfigAviMux</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Control how the AVI multiplexer filter writes files to disk.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AVI multiplexer filter implements this interface on its property page.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0121.htm" TARGET="TEXT">IConfigInterleaving</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Control how the AVI multiplexer filter writes files to disk and set interleaving configuration information
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">AVI multiplexer filter implements this interface on its property page.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0128.htm" TARGET="TEXT">IDvdControl</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Control playback and searching on DVD discs.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DVD navigator filter implements this interface.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0129.htm" TARGET="TEXT">IDvdGraphBuilder</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Simplifies building DVD filter graphs.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DVD graph builder object implements this interface.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0130.htm" TARGET="TEXT">IDvdInfo</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Query for DVD attributes and DVD player status.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">DVD navigator filter implements this interface.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0178.htm" TARGET="TEXT">IVPConfig</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Video port mixer filter.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Allow a video port (VP) mixer filter to communicate with a VP driver.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Ksproxy filter implements this interface.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0179.htm" TARGET="TEXT">IVPNotify</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Control properties of a filter that uses a video port.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Video port mixer filter implements this interface.
+<P>
+</FONT></TD>
+</TR>
+</TABLE>
+<A NAME="intrface_0001060101010202"></A><P><B>Pin Interfaces</B>
+<P>Pin objects expose these interfaces. Pins do not normally have registered class identifiers and are usually created by the filter object on which they reside. They are exposed externally by the filter, which includes a method (<A HREF="dssd0116.htm#If_000106011c030100" TARGET="TEXT">IBaseFilter::EnumPins</A>) to hand out pointers to the <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> interfaces of its pins, normally to the filter graph manager. The filter graph manager is responsible for connecting pins by calling an <B>IPin</B> method on one of the pins 
+with a pointer to the other pin. Once pins are connected, each pin holds a pointer to the pin to which it is connected. 
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Interface
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What calls methods
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What methods do
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Comments
+
+</B></FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter graph manager, other pins, the owning filter.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return a pointer to the interface, add and delete references to the interface.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented on all pins by the <A HREF="dssd0253.htm#Lib_0001060249000000" TARGET="TEXT">CUnknown</A> base class.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0165.htm" TARGET="TEXT">IPin</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter graph manager, other pins, the owning filter.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Connect and disconnect the pin, return information on external and internal pin connections, 
+return preferred media types enumerator, negotiate preferred media types, receive flush and 
+end-of-stream notifications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented on all pins by the <A HREF="dssd0200.htm#Lib_0001060214000000" TARGET="TEXT">CBasePin</A> base class.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0161.htm" TARGET="TEXT">IMemInputPin</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter graph manager, output pin of a connected filter.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return a preferred allocator, receive the allocator provided by output pin, receive media samples, and tell whether the pin will block on receive.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Normally only on input pins. Implemented by the <A HREF="dssd0195.htm#Lib_000106020f000000" TARGET="TEXT">CBaseInputPin</A> base class.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0160.htm" TARGET="TEXT">IMemAllocator</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Owning filter and output pin of connected filter.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Allocate one or more buffers based on required size, retrieve a buffer for a media sample, commit memory when in use, and release it (decommit) when not in use.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Appears on allocator object normally created by <A HREF="dssd0161.htm" TARGET="TEXT">IMemInputPin</A>. Implemented by <A HREF="dssd0230.htm#Lib_0001060232000000" TARGET="TEXT">CMemAllocator</A> class.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0167.htm" TARGET="TEXT">IQualityControl</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Downstream filter or pin on downstream filter.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Receive a quality message and receive the quality sink to send quality messages to. 
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented on output pins by the <A HREF="dssd0199.htm#Lib_0001060213000000" TARGET="TEXT">CBaseOutputPin</A> base class, where it is used to pass the message upstream.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter graph manager or downstream filter.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Get duration and position properties, and get and set start time, stop time, preroll time, and rate properties.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Downstream filters call methods on output pins supporting this to pass a requested media position upstream. Implemented in <A HREF="dssd0236.htm#Lib_0001060238000000" TARGET="TEXT">CPosPassThru</A> on pins.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Set and retrieve current position and stop position in units other than time (such as sample or field).
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Downstream filters call methods on output pins supporting this to pass a requested media position upstream. Implemented in <A HREF="dssd0236.htm#Lib_0001060238000000" TARGET="TEXT">CPosPassThru</A> on pins.
+
+
+
+
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0091.htm" TARGET="TEXT">IAMAudioInputMixer</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Adjust audio input characteristics.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Input pin of an audio capture filter typically implements this interface.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0092.htm" TARGET="TEXT">IAMBufferNegotiation</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Set and retrieve buffer properties.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0096.htm" TARGET="TEXT">IAMDevMemoryAllocator</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provide creation of third-party memory allocators.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0097.htm" TARGET="TEXT">IAMDevMemoryControl</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Control and identify on-board codec memory.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0099.htm" TARGET="TEXT">IAMDroppedFrames</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provide information about the number of dropped frames, frame rate, and data rate.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Capture filters video output pin should implement this interface.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0105.htm" TARGET="TEXT">IAMStreamConfig</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications or filters.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Provide types of formats an output pin can be connected with.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Output pins of capture and compression filter typically implement this interface.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0106.htm" TARGET="TEXT">IAMStreamControl</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Allow control of streams in a filter graph.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by any input or output pins.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0113.htm" TARGET="TEXT">IAMVideoCompression</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Control compression parameters that aren't part of the media type.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Output pin of a video capture or compression filter typically implements this interface.
+<P>
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0148.htm" TARGET="TEXT">IKsPropertySet</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications or filters.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Expose device properties and allow an application or filter to change the properties.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+</FONT></TD>
+</TR>
+</TABLE>
+<P>In addition, the Microsoft video renderer's input pin supports the <A HREF="dssd0163.htm" TARGET="TEXT">IOverlay</A> interface, which allows the connected upstream pin to effectively register its <A HREF="dssd0164.htm" TARGET="TEXT">IOverlayNotify</A> interface in order to receive notifications of video window changes. Replacement video renderers can also implement this if they are intended to connect to the same filters as the video renderer provided with DirectShow.
+
+<A NAME="intrface_0001060101010300"></A><P><B>Media Sample and Enumerator Interfaces</B>
+<P>Media sample and enumerator interfaces are temporary objects created to pass information or data between objects. They do not have class identifiers.
+<P>This topic contains the following subtopics.
+<UL><LI><A HREF="dssd0089.htm#intrface_0001060101010301" TARGET="TEXT">Media Sample Interfaces</A>
+<LI><A HREF="dssd0089.htm#intrface_0001060101010302" TARGET="TEXT">Enumerator Interfaces</A>
+</UL>
+<A NAME="intrface_0001060101010301"></A><P><B>Media Sample Interfaces</B>
+<P>The media sample interface, <A HREF="dssd0156.htm" TARGET="TEXT">IMediaSample</A>, is created from the memory allocator, which uses the media 
+sample object as its unit of exchange. It has no class identifier. It is the unit of media data that is 
+passed from one filter to the next via the memory allocator shared by two connected pins.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Interface
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What calls methods
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What methods do
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Comments
+
+</B></FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0175.htm" TARGET="TEXT">IUnknown</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Pin or filter.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return pointer to the interface, add and delete references to the interface.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented on media samples by the <A HREF="dssd0253.htm#Lib_0001060249000000" TARGET="TEXT">CUnknown</A> base class.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0156.htm" TARGET="TEXT">IMediaSample</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Pins or filters that need to manipulate the media sample data or examine its properties.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return a pointer to data, and get and set properties on the media sample such as buffer size, time stamp, data length, type, synchronization point, preroll, and end-of-stream properties.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented on media samples by the <A HREF="dssd0228.htm#Lib_0001060230000000" TARGET="TEXT">CMediaSample</A> base class.
+</FONT></TD>
+</TR>
+</TABLE>
+<A NAME="intrface_0001060101010302"></A><P><B>Enumerator Interfaces</B>
+<P>Enumerators in DirectShow are based on the COM <A HREF="dssd0389.htm#external_00010a0109000084" TARGET="TEXT">IEnumXXXX</A> interfaces. They include the <B>Next</B> and <B>Prev</B> methods, which tell the enumerator what item or items to return; the <B>Skip</B> method, which skips one or more items; and the <B>Clone</B> method, which makes a copy of the enumerator. Enumerators are used to 
+present lists of items such as filters in a filter graph, pins on a filter, or media types that are preferred by a pin.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Interface
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What calls methods
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What methods do
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Comments
+
+</B></FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0133.htm" TARGET="TEXT">IEnumPins</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter graph manager.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return pins, skip pins, or clone the enumerator.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the <A HREF="dssd0216.htm#Lib_0001060224000000" TARGET="TEXT">CEnumPins</A> class.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0132.htm" TARGET="TEXT">IEnumMediaTypes</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter graph manager or connected pin negotiating a media type.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return media types, skip media types, or clone the enumerator.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the <A HREF="dssd0215.htm#Lib_0001060223000000" TARGET="TEXT">CEnumMediaTypes</A> class.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0131.htm" TARGET="TEXT">IEnumFilters</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Application or possibly a filter that wants to know what other filters are in the graph.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return filters, skip filters, or clone the enumerator.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented in the filter graph manager.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0134.htm" TARGET="TEXT">IEnumRegFilters</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter mapper.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Return filters, skip items, or clone the enumerator.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the filter graph manager.
+</FONT></TD>
+</TR>
+</TABLE>
+<A NAME="intrface_0001060101010400"></A><P><B>Control Interfaces</B>
+<P>Control interfaces allow the filter graph manager to coordinate the activities of the data stream with filters. Interfaces described previously in both the <A HREF="dssd0089.htm#intrface_0001060101010100" TARGET="TEXT">Filter Graph Manager Interfaces</A> and <A HREF="dssd0089.htm#intrface_0001060101010200" TARGET="TEXT">Filter and Pin Interfaces</A> sections are repeated here so that all control interfaces can be viewed together.
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Interface
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What calls methods
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>What methods do
+</B></FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><B>Comments
+
+</B></FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0149.htm" TARGET="TEXT">IMediaControl</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Application.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Run, pause, and stop the filter graph, and return the state.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented by the filter graph manager.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Application, when exposed on the filter graph manager; filter graph manager or downstream filter, when exposed on a filter.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Get duration and position properties, and get and set start time, stop time, preroll time, and 
+rate properties.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented on the filter graph manager and also on filters.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0158.htm" TARGET="TEXT">IMediaSeeking</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Applications.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Set and retrieve current position and stop position in units other than time (such as sample or field).
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Implemented on the filter graph manager and also on filters.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0153.htm" TARGET="TEXT">IMediaFilter</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Nothing directly.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Put the filter in run, stop, or pause state, get and set the reference clock and retrieve the filter state.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Inherited by <A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A>, which should be used instead of referencing this directly.
+
+</FONT></TD>
+</TR>
+<TR><TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2"><A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A>
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Filter graph manager.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Same as <A HREF="dssd0153.htm" TARGET="TEXT">IMediaFilter</A> plus enumerate pins, retrieve filter and vendor information and locate pins when rebuilding a persistent filter graph.
+</FONT></TD>
+<TD ALIGN=LEFT VALIGN=TOP><FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">Inherits methods from the <A HREF="dssd0153.htm" TARGET="TEXT">IMediaFilter</A> interface. Implemented by the <A HREF="dssd0194.htm#Lib_000106020e000000" TARGET="TEXT">CBaseFilter</A> class.
+
+
+</FONT></TD>
+</TR>
+</TABLE>
+<P>Because DirectShow objects are COM-based objects, it is a natural extension to use other COM interfaces published in the OLE specifications to perform functions such as listing property pages or accessing files. Following are some of the OLE interfaces that are commonly used in DirectShow filters. 
+
+<UL><LI><A HREF="dssd0389.htm#external_00010a010900008a" TARGET="TEXT">IPersistFile</A>
+<LI><A HREF="dssd0389.htm#external_00010a01090000a2" TARGET="TEXT">ISpecifyPropertyPages</A>
+</UL>
+<A NAME="intrface_0001060101020000"></A><P><B>Interfaces on a Typical Filter Graph</B>
+<P>Perhaps the best way to put the DirectShow interfaces into perspective is to look at the interfaces exposed in a simple filter graph. The example chosen here is a filter graph that plays back audio data stored on a disk. It is composed of a source filter and an audio renderer filter (no transforms are done, so this is a very simple graph).
+
+<P>The basic source filter consists of an <A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A> interface, and one output pin that can be found by using the 
+<A HREF="dssd0116.htm#If_000106011c030100" TARGET="TEXT">IBaseFilter::EnumPins</A> method. The OLE <A HREF="dssd0389.htm#external_00010a0109000089" TARGET="TEXT">IPersist</A> interface might also be present on the filter (not shown here) to enable the filter to be stored as part of a persistent filter graph. 
+
+<P>The output pin supports <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> and <A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A>, since the source filter is a seekable filter (that is, it can be told to move to a particular position in the media stream). The following illustration shows the interfaces on the source filter and its output pin. 
+
+<P>Note that quality management is not implemented in this example, but could be by including the <A HREF="dssd0167.htm" TARGET="TEXT">IQualityControl</A> interface on the output pin as well. 
+
+<P><IMG SRC="art/intr_00.gif" WIDTH="339" HEIGHT="131" ALT="Basic source filter" >
+
+<P>The basic renderer filter consists of a COM driver supporting the <A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A> (and, again, 
+<A HREF="dssd0153.htm" TARGET="TEXT">IMediaFilter</A> by inheritance) and <A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A> interfaces, as well as having one input pin 
+through the <A HREF="dssd0116.htm#If_000106011c030100" TARGET="TEXT">EnumPins</A> method of the <B>IBaseFilter</B> interface. 
+The OLE <A HREF="dssd0389.htm#external_00010a010900008a" TARGET="TEXT">IPersistFile</A> interface might also be present on the filter (not shown here) in order load the file. The renderer can support additional interfaces, such as <A HREF="dssd0170.htm" TARGET="TEXT">IReferenceClock</A> (as a master for synchronization) or <A HREF="dssd0117.htm" TARGET="TEXT">IBasicAudio</A>, for an audio renderer as shown here.
+
+<P>The input pin supports the <A HREF="dssd0165.htm" TARGET="TEXT">IPin</A> and <A HREF="dssd0161.htm" TARGET="TEXT">IMemInputPin</A> interfaces. Methods of the <A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A> interface on the renderer filter can call the <B>IMediaPosition</B> interface methods of the output pin that is connected to the renderer's input pin.
+
+<P><IMG SRC="art/intr_01.gif" WIDTH="303" HEIGHT="131" ALT="Basic renderer filter" >
+
+<P>A basic representation of the connection of a source filter to a renderer filter follows:
+
+<P><IMG SRC="art/intr_02.gif" WIDTH="634" HEIGHT="131" ALT="Source and renderer connection" >
+
+<P>Once the pins are enumerated and connected, it is the implementation of the output and input pins that defines the interactions of the two pins.
+
+<P>Once the filters are connected, the control available to the user (filter graph manager) is indicated through the bold interfaces. This continues with the example of connecting an audio source to an audio renderer. 
+
+<P><IMG SRC="art/intr_03.gif" WIDTH="612" HEIGHT="131" ALT="Illustration of filter connection, showing some bold interfaces" >
+
+<P>The following interfaces are those that would likely be used during a transport.
+
+<UL><LI><A HREF="dssd0154.htm" TARGET="TEXT">IMediaPosition</A> supports the ability to seek to a position and change the rate.
+<LI><A HREF="dssd0117.htm" TARGET="TEXT">IBasicAudio</A> supports the ability to set the volume.
+<LI><A HREF="dssd0116.htm" TARGET="TEXT">IBaseFilter</A> supports such methods as <A HREF="dssd0149.htm#If_000106013d030700" TARGET="TEXT">Run</A> and 
+<A HREF="dssd0149.htm#If_000106013d030500" TARGET="TEXT">Pause</A> (methods on the filter graph manager's <A HREF="dssd0149.htm" TARGET="TEXT">IMediaControl</A> interface).
+</UL>
+<P>Special (custom) interfaces that the filters would support must be obtained directly from the filters. Usage of these interfaces implies that the user is aware of their identifiers.
+
+
+
+<P><P><FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A CLASS=cpslug HREF="copyrite.htm" TARGET="TEXT">&#169; 1997 Microsoft Corporation. All rights reserved. Terms of Use.</A>
+</FONT>
+<BR CLEAR=ALL><P>
+</FONT><P>
+</BODY></HTML>
