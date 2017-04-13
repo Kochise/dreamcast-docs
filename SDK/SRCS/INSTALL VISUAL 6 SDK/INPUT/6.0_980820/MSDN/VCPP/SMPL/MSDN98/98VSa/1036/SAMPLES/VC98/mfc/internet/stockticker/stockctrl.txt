@@ -1,0 +1,171 @@
+Stock Ticker is an application that downloads stock information from the web
+and displays it in a control that scrolls the data from right to left.  The
+data is updated at set intervals (dertermined by the user).
+
+Stock Ticker contains 4 parts: Shared ATL component (stockquotes),
+ATL control (stocktickeratl), ISAPI Extension DLL (stocksourcemfc)
+and an MFC container app (containermfc).
+
+To use the Stock Ticker application first register (using regsvr32) the
+2 dlls (stockquotes.dll and stocktickeratl.dll).  Then just run
+containermfc.exe (you can rename this if you want).  You also may need to
+register ATL.DLL.
+
+The ISAPI Extension DLL acts like a stock data source and should be put on a
+machine that has IIS installed.
+
+Click the right mouse button in the client area of the application to bring up
+a popup menu that allows you to change the properties of Stock Ticker.
+
+"Stocks"
+	Brings up a dialog box that allows you to add or remove the stock symbols
+	to monitor.  The dialog will be initialized with the current list of
+	stock symbols.
+
+"Update Now"
+	Tells Stock Ticker to update the stock information from the web now.
+
+"Properties"
+	Brings up the properties dialog.  The properties dialog has 3 property
+	pages: color, font and a custom page for Stock Ticker.
+	The Stock Ticker page allows you to change the following properties:
+		o Ticker speed:  Move the slider to increase or decrease the
+		  rate at which the stock information scrolls from right to left.
+		o Update Interval:  This is the time in minutes between updates.
+		o ISAPI Extension DLL URL: Enter the full URL to the ISAPI Extension DLL.
+		  Append the following the the end (no quotes): "?QueryForStocks?Symbol=".
+		o MS Investor URL:  Enter the full URL (if different than the default)
+		  of Microsoft Investor web site.  When this application was developed
+		  the URL was: "http://investor.msn.com/quotes/quote.asp?Symbol="
+
+When specifying the URL for either the ISAPI Extension DLL or MS Investor you
+need to also include the component that is responsible for returning the HTML
+that contains the stock information. For example, MS Investor's component
+is "quote.asp".  The other part of the URL is the parameters to the component,
+such as "?Symbol=".
+
+The system menu has 2 addition menu items:
+	o "About Stock Ticker" : Brings up the about dialog box.
+	o "Stay On Top" : If checked Stock Ticker will stay on top of all other
+	  applications, otherwise it behaves like other applications (can be
+	  hidden by other apps).
+
+
+The following section describes in a little more detail each of the components
+that make up the Stock Ticker application.
+
+Features Used:
+---------------
+ATL COM object.
+ATL Dialog object.
+ATL control.
+MFC Internet (WinINet) classes.
+MFC ISAPI Extension DLL.
+Connection points.
+Persistence.
+Custom enumerators.
+Standard C++ Library.
+
+Stock Quotes Component:
+-----------------------
+Shared component (ATL object) created with the ATL wizard.  Uses MFC's WinINet
+support and other utility classes.  Stockquotes is responsible for keeping
+track of the stocks to be monitored and for updating the stock information from
+the web.  There are 2 ways an application can use this component: Synchronous and
+asynchronous updates.  If the StartUpdating() method is called then a child
+thread will be created and the function will return immediately.  The child
+thread creates a timer and waits until the update interval has elapsed.  It
+then asks the Stock Quotes component to update.  Subsequent calls to Update()
+will post a thread message to the child thread telling it that an update
+should occur now.  Update() then returns immediately.  In Synchronous mode
+Update() blocks until the download is complete.
+
+Stock Quotes keeps track of stock data source objects that represent the
+web sites the stock information is downloaded from.  When it comes time
+to update the stock information Stock Quotes will go through the list of stock
+data sources and attempt to download the information. If the attempt fails,
+then the next stock data source is tried.  If all the stock data sources
+failed to download the information "<NA>" will appear in the ticker window
+after the stock symbol.
+
+The default stock data sources are MS Investor and the ISAPI Extension DLL.
+See below for instruction on how to add your own.
+
+ISAPI Extension DLL:
+--------------------
+In the event that MS Investor can't be used you can use this DLL.  The ISAPI
+Extension DLL does not return "real" stock data.  Instead when you request
+data for a stock it checks whether the stock symbol is in its list of known
+stocks.  If so then it retrieves the data and adjusts (randomly) the
+current stock price up or down.  If the stock symbol is new it is added to
+the list and an initial stock price is set.
+
+Stock Ticker Control:
+---------------------
+This control was created with the ATL control wizard.  It uses MFC mostly to
+make some things easier.
+
+This control can be used outside of the Stock Ticker application.
+
+Uses the Stock Quotes component to handle the stock information and updates.
+
+When it comes time to save itself to a stream the control will also
+ask the Stock Quotes component to save itself.
+
+On startup the control will create the Stock Quotes component and ask it to
+start updating stock information.  The control then starts a timer that it
+uses for the draw/render loop.  When stock data has been updated the
+Stock Quotes component will notify the control (through a connection point).
+The control then gets all the stock information from the Stock Quotes component
+and creates a string out of it.  This string is what is drawn in the control
+and scrolls from right to left.
+
+Stock Ticker Container:
+------------------------
+An MFC ActiveX Control container create with the MFC AppWizard.  Will save its
+size and position when shutdown and restore its state when restarted.
+
+Other than persistence control and menu handling the container really doesn't do
+much else.
+
+How to add stock source web sites:
+-----------------------------------
+You may want to add your own stock source web site at some point, here is a step
+by step description of how to do it.
+
+The stock data comes from the web site in HTML form and must be parsed to
+find the current price and the price change since the last update.
+The Stock Quotes component handles this parsing by looking for 2 keywords
+(for example: "Current:", "Change:") and then reading the data that comes after
+that looks like a number (fractional or decimal).
+
+Because the web sites that you are using to get the stock data may change you
+may have to change the algorithm that the Stock Quotes component uses to
+get the stock information.
+
+Steps:
+1. Edit stockquotes\stockquotes_.h and find "CSQSMSInvestor" or "CSQSISAPIDll"
+   classes.  You can use these as examples.
+2. Create new classes derived from "CStockQuoteSource".
+3. In the constructor set the "m_strURL" data member to the full URL to the
+   web site to get the data from, including the command to retrieve the stock data.
+4. Depending on the format of the HTML sent back from the web site override
+   "SetStockInfo()" and/or "ParseStockInfo()".
+5. Rebuild component and register.
+
+If you get something like "ABC: <NA>", where "ABC" is the stock symbol, then
+either the site could not be connected to or the stock quotes source class
+you created could not find the stock information from the HTML.
+
+Miscellaneous:
+--------------
+It is possible that the format (decimial or fractional) of the stock data may
+be different among the various stocks you have chosen to monitor.  This can
+happen as a result of data being retrieved from different web sites, Stock
+Ticker makes no attempt to "normalize" the data to make it consistent.
+
+Troubleshooting:
+------------------
+PROBLEM:  The stock color and font property pages don't show up in the
+property dialog.
+SOLUTION:  Register msstkprp.dll.

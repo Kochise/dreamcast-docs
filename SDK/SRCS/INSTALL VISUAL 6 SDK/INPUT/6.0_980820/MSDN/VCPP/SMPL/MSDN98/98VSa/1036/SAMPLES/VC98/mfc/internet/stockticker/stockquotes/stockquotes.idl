@@ -1,0 +1,105 @@
+// stockquotes.idl : IDL source for stockquotes.dll
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (stockquotes.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+
+	[
+		uuid(F587F611-8D0D-11D0-9439-00A0C903487E),
+	
+		helpstring("IEnumStocks Interface"),
+		pointer_default(unique)
+	]
+	interface IEnumStocks : IUnknown
+	{
+		typedef struct tagSTOCKINFO
+		{
+			OLECHAR		m_rgSymbol[20];
+			OLECHAR		m_rgCurrent[20];
+			OLECHAR		m_rgChange[20];
+		} STOCKINFO;
+		
+		HRESULT Next(
+			[in] ULONG celt,
+			[out] STOCKINFO **rgelt,
+			[out] ULONG *pceltFetched);
+	
+		HRESULT Skip(
+			[in] ULONG celt);
+	
+		HRESULT Reset();
+	
+		HRESULT Clone(
+			[out] IEnumStocks **ppEnum);
+		
+	};
+
+	[
+		object,
+		uuid(039AB260-8602-11D0-9426-00A0C903487E),
+		dual,
+		helpstring("IStockQuotes Interface"),
+		pointer_default(unique)
+	]
+	interface IStockQuotes : IDispatch
+	{
+		[id(1), helpstring("update stock quote information")] HRESULT Update();
+		[id(2), helpstring("add stock symbol to be tracked")] HRESULT Add(BSTR bstrSymbol);
+		[id(3), helpstring("remove a stock")] HRESULT Remove(BSTR bstrSymbol);
+		[id(4), helpstring("method EnumAsString")] HRESULT EnumAsString([out]IEnumString** ppEnum);
+		[id(5), helpstring("method EnumStocks")] HRESULT EnumStocks(IEnumStocks** ppEnum);
+		[id(6), helpstring("method StockCount")] HRESULT StockCount(int* cnt);
+		[id(7), helpstring("method Save")] HRESULT Save(IStream* pIStream);
+		[id(8), helpstring("method Load")] HRESULT Load(IStream* pIStream);
+		[id(9), helpstring("method StartUpdating")] HRESULT StartUpdating(int nUpdateInterval);
+		[id(10), helpstring("method StopUpdating")] HRESULT StopUpdating();
+		[id(11), helpstring("method IsUpdating")] HRESULT IsUpdating(BOOL* b);
+		[id(12), helpstring("method PauseUpdating")] HRESULT PauseUpdating();
+		[id(13), helpstring("method SetMSInvestorURL")] HRESULT SetMSInvestorURL(BSTR newVal);
+		[id(14), helpstring("method GetStockSourceISAPIDllURL")] HRESULT GetStockSourceISAPIDllURL(BSTR* pVal);
+		[helpstring("method GetMSInvestorURL")] HRESULT GetMSInvestorURL(BSTR* pVal);
+		[helpstring("method SetStockSourceISAPIDllURL")] HRESULT SetStockSourceISAPIDllURL(BSTR newVal);
+	};
+
+[
+	uuid(039AB251-8602-11D0-9426-00A0C903487E),
+	version(1.0),
+	helpstring("stockquotes 1.0 Type Library")
+]
+library STOCKQUOTESLib
+{
+	importlib("stdole32.tlb");
+	importlib("stdole2.tlb");
+
+	[
+		uuid(AEAD5590-9E5C-11d0-9456-00A0C903487E),
+		helpstring("IStockEvents Interface")
+	]
+	interface IStockEvents : IUnknown
+	{
+		void InfoUpdate();
+	};
+
+
+	[
+		uuid(039AB261-8602-11D0-9426-00A0C903487E),
+		helpstring("StockQuotes Class")
+	]
+	coclass CoStockQuotes
+	{
+		[default] interface IStockQuotes;
+//!:		[default, source] dispinterface IStockEvents;
+	};
+	[
+		uuid(F587F612-8D0D-11D0-9439-00A0C903487E),
+		helpstring("EnumStocks Class")
+	]
+	coclass EnumStocks
+	{
+		[default] interface IEnumStocks;
+	};
+};
