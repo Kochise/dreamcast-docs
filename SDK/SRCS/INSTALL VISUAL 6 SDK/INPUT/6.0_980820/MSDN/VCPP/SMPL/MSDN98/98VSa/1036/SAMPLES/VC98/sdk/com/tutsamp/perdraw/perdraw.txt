@@ -1,0 +1,196 @@
+
+PERDRAW - IPersistStorage Persistent Object Server
+
+
+SUMMARY
+=======
+
+PERDRAW is the third sample in a group of samples that illustrate various
+techniques for implementing COM object persistence. The first sample,
+PERSERVE, illustrates persistence by implementing the IPersistStream
+standard interface. The second sample, PERTEXT, illustrates persistence by
+implementing the IPersistStreamInit standard interface. This sample,
+PERDRAW, illustrates persistence by implementing the IPersistStorage
+standard interface. The fourth sample, PERCLIEN, shows how a client
+exploits the kinds of persistence provided by the PERSERVE, PERTEXT, and
+PERDRAW server components.
+
+The PERDRAW sample introduces the CODrawPage COM object, which models a
+sheet of white drawing paper. CODrawPage objects expose a set of features
+for free-form drawing on a virtual surface using "ink" of
+specified color and width. CODrawPage is based on the scribble-like
+functionality of the COPaper object from the STOSERVE sample.
+
+CODrawPage objects expose a set of interfaces whose methods make the
+objects connectable, persistent managers of the drawing data. Clients
+access this data through an IDrawPage custom interface exposed by
+CODrawPage.
+
+PERDRAW maintains a clear architectural distinction between client and
+server. Among other things, CODrawPage provides no graphical user
+interface (GUI); instead, the CODrawPage object relies on the client for
+all GUI behavior.
+
+The PERCLIEN client provides the GUI display and manages a list of pages,
+the contents of which are stored in a compound file that contains both the
+contents of the list and of each page in that list. The user of PERCLIEN
+can edit the content of two types of pages: text pages and drawing pages.
+Text pages have data that the user can edit using a simple windowed text
+editor. Drawing pages have drawing data that the user can edit using
+free-form, scribble-like functionality based on the earlier STOSERVE and
+STOCLIEN samples. Both kinds of editing are done in separate client
+windows. For more details see PERCLIEN.HTM.
+
+Storage in the compound file is achieved because the components provide
+persistent COM objects that encapsulate the page list and edited page
+data. PERSERVE houses a persistent object that encapsulates the single
+page list kept in each compound file containing such pages. PERTEXT houses
+a persistent object that encapsulates the edited text data for each text
+page. PERDRAW houses a persistent object that encapsulates the drawing
+data for each drawing page.
+
+The COPageList object in the PERSERVE sample encapsulates the persistent
+page list data. COPageList implements the IPersistStream standard
+interface to expose control of the page list storage located in the
+client-provided stream of a compound file. The COTextPage object in the
+previous PERTEXT sample encapsulates the data of an edited text page.
+COTextPage implements the IPersistStreamInit standard interface to expose
+control of the text data storage that is located in the client-provided
+stream of a compound file. In contrast to these stream-based persistent
+objects, the CODrawPage object in this PERDRAW sample encapsulates the
+persistent drawing-ink data that comprises a drawing. CODrawPage
+implements the IPersistStorage standard interface to expose control of the
+drawing-ink data storage located in the client-provided substorage of a
+compound file.
+
+This code sample focuses primarily on the CODrawPage implementation of the
+IPersistStorage interface to provide storage-based persistence for a COM
+object. PERDRAW works with the PERCLIEN sample to demonstrate the joint
+use by client and server of this IPersistStorage-based persistence.
+
+CODrawPage's support for object persistence is the primary means of
+storing the ink data of the drawing page. CODrawPage stores its ink data
+in client-provided substorages located in a structured storage compound
+file. The compound file has a unique format because of the various streams
+and storages used. The client identifies these compound files as page
+files with a .PAG file extension. The client controls the use of the
+containing compound file and provides CODrawPage with an IStorage pointer
+to load and save its drawing data in the compound file. The IStorage
+pointer is passed to CODrawPage in calls to the IPersistStorage interface
+methods.
+
+CODrawPage also exposes an IDrawPage custom interface to manipulate the
+drawing data that is encapsulated by the drawing page. IDrawPage exposes
+the InkStart, InkDraw, InkStop, Clear, Resize, and Redraw methods.
+
+CODrawPage also supports connectable object features. It exposes the
+IConnectionPointContainer interface, an appropriate connection point is
+implemented, and an outgoing custom IDrawPageSink interface is declared to
+send notifications to the client.
+
+The two IDrawPage and IDrawPageSink custom interfaces are declared in
+IPAGES.H, which is  located in the common INC directory. PAGEGUID.H, which
+contains the GUID definitions for the for the interfaces and objects, is
+in that same directory.
+
+The PERDRAW sample uses the CThreaded facility in APPUTIL to achieve thread
+safety in the server housing and the class factory. Because PERDRAW.DLL is
+generally accessed from a Single Threaded Apartment (STA) as an in-process
+server, CODrawPage instances are not coded as thread-safe using the
+CThreaded facility. The CLSID_DrawPage component is registered as
+supporting the apartment threading model.
+
+For functional descriptions and a tutorial code tour of the PERDRAW
+sample, see the Code Tour section in PERDRAW.HTM. For details on setting
+up the programmatic usage of PERDRAW.DLL, see the Usage section in
+PERDRAW.HTM. To read PERDRAW.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the PERDRAW lesson in the table of lessons. You can do
+the same thing by double-clicking the PERDRAW.HTM file after locating the
+main tutorial directory in Windows Explorer. For more details on the
+PERCLIEN client application and how it works with PERDRAW.DLL, see
+PERCLIEN.HTM in the main tutorial directory. You must build PERDRAW.DLL
+before running the PERCLIEN sample.
+
+The PERDRAW server provides a DrawPage component that can create instances
+of the CODrawPage COM object. CODrawPage is housed in the PERDRAW.DLL
+in-process server and is made publicly available as a custom COM
+component. Like all other servers in this tutorial series, PERDRAW.DLL is
+a self-registering COM server. It makes the CODrawPage object type
+available to clients as the DrawPage component in the PERDRAW server using
+a CLSID_DrawPage registration in the Registry.
+
+PERDRAW's makefile automatically registers its DrawPage COM component in
+the registry, which it must do before clients can use PERDRAW.DLL as a
+server for the DrawPage component. This self-registration is started in
+the makefile using the REGISTER.EXE utility built in the REGISTER sample.
+To build or run PERDRAW.DLL, you must build the REGISTER code sample
+first.
+
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+
+Usage
+-----
+
+To use PERDRAW.DLL, a client program does not need to include PERDRAW.H or
+link to PERDRAW.LIB. A COM client of PERDRAW.DLL obtains access solely
+through its object's CLSID and COM services. For PERDRAW, that CLSID is
+CLSID_DrawPage (defined in PAGEGUID.H in the common INC directory).
+The PERCLIEN code sample shows how the client obtains this access.
+
+PERDRAW.DLL is intended primarily as a COM server. Although it can be
+implicitly loaded by linking to its associated .LIB file, it is normally
+used after an explicit LoadLibrary call, usually from within COM's
+CoGetClassObject function. PERDRAW is a self-registering in-process
+server.
+
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the PERDRAW directory:
+
+  nmake register
+
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the PERDRAW directory.
+
+  ..\register\register.exe perdraw.dll
+
+These registration commands require a prior build of both the REGISTER
+sample and PERDRAW.DLL.
+
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Microsoft Platform SDK and
+Visual C++ include a utility, REGSVR32.EXE, which can be used in a
+similar fashion to register in-process servers and marshaling DLLs.
+
+
+FILES
+=====
+
+Files         Description
+
+PERDRAW.TXT   This file.
+MAKEFILE      The generic makefile for building the PERDRAW.DLL
+              code sample of this lesson.
+PERDRAW.H     The include file for declaring as imported or defining as
+              exported the service functions in PERDRAW.DLL.
+PERDRAW.CPP   The main implementation file for PERDRAW.DLL. Has DllMain
+              and the COM server functions (for example, DllGetClassObject).
+PERDRAW.DEF   The module definition file. Exports server housing functions.
+PERDRAW.RC    The DLL resource definition file for the executable.
+PERDRAW.ICO   The icon resource for the executable.
+SERVER.H      The include file for the server control C++ object.
+SERVER.CPP    The implementation file for the server control C++ object.
+FACTORY.H     The include file for the server's class factory COM objects.
+FACTORY.CPP   The implementation file for the server's class factories.
+CONNECT.H     The include file for the connection point enumerator,
+              connection point, and connection enumerator classes.
+CONNECT.CPP   The implementation file for the connection point enumerator,
+              connection point, and connection enumerators objects.
+DRAWPAGE.H    The include file for the CODrawPage COM object class.
+DRAWPAGE.CPP  The implementation file for the CODrawPage COM object class
+              and the connection points.

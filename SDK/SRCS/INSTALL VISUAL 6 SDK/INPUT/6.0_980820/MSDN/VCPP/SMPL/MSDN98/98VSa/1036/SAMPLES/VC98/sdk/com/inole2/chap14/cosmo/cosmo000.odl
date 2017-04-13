@@ -1,0 +1,345 @@
+/*
+ * COSMO000.ODL
+ * Neutral/English Language Cosmo Type Library Chapter 14
+ *
+ * "Neutral" language is considered to be English.  We register
+ * this under LCID of 0 so the lcid before "library" has to match.
+ *
+ * Copyright (c)1993-1995 Microsoft Corporation, All Rights Reserved
+ *
+ * Kraig Brockschmidt, Microsoft
+ * Internet  :  kraigb@microsoft.com
+ * Compuserve:  >INTERNET:kraigb@microsoft.com
+ */
+
+//LIBID_Cosmo2TypeLibrary
+[
+uuid(00021165-0000-0000-C000-000000000046)
+    , helpstring("Cosmo (Chapter 14) Type Library")
+    , lcid(0x0000)
+    , version(1.0)
+]
+library CosmoTypeLibrary
+    {
+   #ifdef WIN32
+    importlib("STDOLE32.TLB");
+   #else
+    importlib("STDOLE.TLB");
+   #endif
+
+    /*
+     * IID_ICosmoFigure, the interface of a Cosmo Figure.
+     * Since each Cosmo document has one figure, then this
+     * is also considered the 'document' interface.
+     */
+    [
+    uuid(00021161-0000-0000-C000-000000000046)
+        , helpstring("Definition of interface ICosmoFigure")
+        , odl
+    ]
+    interface ICosmoFigure : IUnknown
+        {
+        //Standard Document Properties
+        [propget, helpstring("Cosmo's application object")]
+            IDispatch *    Application(void);
+
+        [propget, helpstring("Cosmo's application object")]
+            IDispatch *    Parent(void);
+
+        [propget, helpstring("The full pathname of the figure")]
+            BSTR       FullName(void);
+
+        [id(0), propget, helpstring("The simple name of the figure")]
+            BSTR       Name(void);
+
+        [propget, helpstring("The path of the figure without the name")]
+            BSTR       Path(void);
+
+        [propget, helpstring("The saved state of the figure")]
+            boolean    Saved(void);
+
+
+        //Custom Properties
+        [propget, helpstring("The number of points in the figure")]
+            short NumberOfPoints(void);
+
+        [propget, helpstring("The background color of the figure")]
+            long  BackColor(void);
+
+        [propput]
+            void  BackColor([in] long BackColor);
+
+        [propget, helpstring("The line color of the figure")]
+            long  LineColor(void);
+
+        [propput]
+            void  LineColor([in] long LineColor);
+
+        [propget, helpstring("The line style of the figure")]
+            short LineStyle(void);
+
+        [propput]
+            void  LineStyle([in] short Style);
+
+        [propget, helpstring("The horizontal position (pixels) of the figure window relative to the frame")]
+            long  Left(void);
+
+        [propput]
+            void  Left([in] long Left);
+
+        [propget, helpstring("The vertical position (pixels) of the figure window relative to the frame")]
+            long  Top(void);
+
+        [propput]
+            void  Top([in] long Top);
+
+        [propget, helpstring("The horizontal dimension (pixels) of the figure window")]
+            long  Width(void);
+
+        [propput]
+            void  Width([in] long Width);
+
+        [propget, helpstring("The vertical dimension (pixels) of the figure window")]
+            long  Height(void);
+
+        [propput]
+            void  Height([in] long Height);
+
+        [propget, helpstring("Controls the visibility of the figure window")]
+            boolean Visible(void);
+
+        [propput]
+            void    Visible([in] boolean Visible);
+
+
+
+        //Standard Methods
+        [helpstring("Activate this figure window")]
+            void  Activate(void);
+
+        [helpstring("Close this figure window")]
+            void  Close([in, optional] VARIANT SaveChanges
+                , [in, optional] VARIANT Path);
+
+        [helpstring("Discard changes to this figure and reload it")]
+            void  RevertToSaved(void);
+
+        [helpstring("Save this figure to the pathname in the FullName property")]
+            void  Save(void);
+
+        /*
+         * The pathname could be optional for SaveAs, but I don't
+         * see how that would help.  So here it's required.
+         */
+        [helpstring("Save this figure to the specified pathname")]
+            void  SaveAs([in] BSTR Path);
+
+        //Custom Methods
+        [helpstring("Replace the figure with the figure in the given pathname")]
+            void  Import([in] BSTR ImportPath);
+
+        [helpstring("Copy the figure to the clipboard")]
+            void  Copy(void);
+
+        [helpstring("Move the figure to the clipboard")]
+            void  Cut(void);
+
+        [helpstring("Replace the figure with the one on the clipboard")]
+            void  Paste(void);
+
+        //Custom Methods
+        [helpstring("Add a point, on a 32767*32767 grid, to the figure")]
+            boolean AddPoint([in] short x, [in] short y);
+
+        [helpstring("Remove the last added point from the figure")]
+            void RemovePoint(void);
+        }
+
+
+
+    //IID_ICosmoFigures, the interface of the Cosmo Figures collection
+    [
+    uuid(00021160-0000-0000-C000-000000000046)
+        , helpstring("Definition of interface ICosmoFigures")
+        , odl
+    ]
+    interface ICosmoFigures : IUnknown
+        {
+        //Standard Properties
+        [propget, helpstring("Cosmo's application object")]
+            IDispatch *Application(void);
+
+        [propget, helpstring("Cosmo's application object")]
+            IDispatch *Parent(void);
+
+        [propget, helpstring("The number of figures currently open")]
+            long       Count(void);
+
+
+        //Standard Methods
+        [id(0), helpstring("Return the figure for the given index")]
+            IDispatch *Item([in,optional] VARIANT index);
+
+        [helpstring("Create a new figure")]
+            IDispatch *Add(void);
+
+        [helpstring("Opens an existing figure")]
+            IDispatch *Open([in] BSTR Path);
+
+        [helpstring("Close all figures")]
+            void       Close(void);
+
+        [id(-4), helpstring("Enumerates the figures")]
+            IUnknown *_NewEnum(void);
+        }
+
+
+
+    /*
+     * IID_ICosmoApplication, Cosmo's application interface
+     */
+    [
+    uuid(0002115F-0000-0000-C000-000000000046)
+        , helpstring("Definition of interface ICosmoApplication")
+        , odl
+    ]
+    interface ICosmoApplication : IUnknown
+        {
+        //Standard Properties
+        //DISPID_VALUE returns the same object as invoked
+        [id(0), propget, helpstring("The application object")]
+            IDispatch *Application(void);
+
+        [propget, helpstring("The active figure")]
+            IDispatch *ActiveFigure(void);
+
+        //You can make this read-write, but ours is read-only
+        [propget, helpstring("The application caption")]
+            BSTR       Caption(void);
+
+        [propget, helpstring("The collection of open figures")]
+            IDispatch *Figures(void);
+
+        [propget, helpstring("The full pathname of the application module")]
+            BSTR       FullName(void);
+
+        [propget, helpstring("The module name of the application")]
+            BSTR       Name(void);
+
+        [propget, helpstring("The application path without the module name")]
+            BSTR       Path(void);
+
+
+        [propget, helpstring("The horizontal position (pixels) of the frame window relative to the screen")]
+            long  Left(void);
+
+        [propput]
+            void  Left([in] long Left);
+
+        [propget, helpstring("The vertical position (pixels) of the frame window relative to the screen")]
+            long  Top(void);
+
+        [propput]
+            void  Top([in] long Top);
+
+        [propget, helpstring("The horizontal dimension (pixels) of the frame window")]
+            long  Width(void);
+
+        [propput]
+            void  Width([in] long Width);
+
+        [propget, helpstring("The vertical dimension (pixels) of the frame window")]
+            long  Height(void);
+
+        [propput]
+            void  Height([in] long Height);
+
+        [propget, helpstring("Controls the visibility of the application")]
+            boolean Visible(void);
+
+        [propput]
+            void    Visible([in] boolean Visible);
+
+        [propget, helpstring("The text in the status bar")]
+            BSTR    StatusBar(void);
+
+        [propput]
+            void    StatusBar([in] BSTR Text);
+
+        //Methods
+        [helpstring("Terminates the application")]
+            void Quit(void);
+        }
+
+
+    /*
+     * Now define dispinterfaces that have the same members
+     * as the interfaces we just defined.  Note that if we
+     * were using dual interfaces we'd add 'dual' to the
+     * interfaces above.
+     */
+
+    //DIID_DICosmoFigure
+    [
+    uuid(00021164-0000-0000-C000-000000000046)
+        , helpstring("Definition of dispinterface DICosmoFigure")
+    ]
+    dispinterface DICosmoFigure
+        {
+        interface   ICosmoFigure;
+        }
+
+
+    //DIID_DICosmoFigures
+    [
+    uuid(00021163-0000-0000-C000-000000000046)
+        , helpstring("Definition of dispinterface DICosmoFigures")
+    ]
+    dispinterface DICosmoFigures
+        {
+        interface   ICosmoFigures;
+        }
+
+
+    //DIID_DICosmoApplication
+    [
+    uuid(00021162-0000-0000-C000-000000000046)
+        , helpstring("Definition of dispinterface DICosmoApplications")
+    ]
+    dispinterface DICosmoApplication
+        {
+        interface   ICosmoApplication;
+        }
+
+
+    /*
+     * Now we finally define the component classes that are
+     * involved with this automated version of Cosmo.  We'll have
+     * two:  CLSID_Cosmo2Figure and CLSID_Cosmo2Application.
+     * CLSID_Cosmo2Figure is also the CLSID stored in our
+     * compound files.
+     */
+
+    //CLSID_Cosmo2Figure
+    [
+    uuid(00021107-0000-0000-C000-000000000046)
+        , helpstring("Cosmo Figure Object Type Information")
+    ]
+    coclass Cosmo2Figure
+        {
+        dispinterface   DICosmoFigure;
+        interface       ICosmoFigure;
+        }
+
+    //CLSID_Cosmo2Application
+    [
+    uuid(00021166-0000-0000-C000-000000000046)
+        , helpstring("Cosmo Application Type Information")
+    ]
+    coclass Cosmo2Application
+        {
+        dispinterface   DICosmoApplication;
+        interface       ICosmoApplication;
+        }
+
+    };

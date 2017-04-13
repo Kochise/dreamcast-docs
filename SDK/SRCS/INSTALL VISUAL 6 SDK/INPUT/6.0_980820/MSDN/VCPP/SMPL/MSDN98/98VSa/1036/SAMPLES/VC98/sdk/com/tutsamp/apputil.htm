@@ -1,0 +1,456 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>APPUTIL COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="readtut.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="APPUTIL">APPUTIL - Win32 Application Utility Library</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<p>
+The APPUTIL library provides utility classes and functions that are useful
+for making simple C++ Win32 Windows applications. This library is used
+extensively in all the COM Tutorial Samples and is provided as
+&quot;Lesson 0&quot; in the tutorial sequence. It is worth reviewing
+briefly before plunging into the other samples.
+
+<P>
+APPUTIL provides a minimal application framework for building Win32
+applications. For example, such convenient C++ abstract base classes as
+CVirWindow and CVirDialog are provided to ease the creation of application
+windows and dialogs. Much of APPUTIL is also concerned with utility
+functions that add support in sample applications for tutorial behavior.
+For example, one significant set of functionality is a trace logging
+facility (see the CMsgLog and CSendLog classes) that allows the samples
+under study to more clearly reveal their internal behavior.
+
+<p>
+For functional descriptions and a tutorial code tour of APPUTIL, see the
+Code Tour section in APPUTIL.HTM. For details on setting up the
+programmatic usage of APPUTIL, see the Usage section in APPUTIL.HTM. To
+read APPUTIL.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the APPUTIL lesson in the table of lessons. You can also achieve the
+same thing by clicking the APPUTIL.HTM file after locating the main
+tutorial directory in the Windows Explorer.
+
+<p>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE
+is Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<h4>Usage</h4>
+
+<P>
+APPUTIL.LIB is meant to be statically linked to modules (.EXEs or .DLLs)
+that use it. You include APPUTIL.H in the module that uses features of
+APPUTIL.LIB. You must also include APPUTIL.LIB in the LINK command of your
+application's makefile. For an example of the use of APPUTIL.LIB, see the
+READTUT code sample.
+
+<h4>Classes</h4>
+The classes provided are: CVirWindow, CVirDialog, CAboutBox, CDelayBox,
+CMsgBox, CMsgLog, CSendLog, and CThreaded.
+
+<h4>Functions</h4>
+
+<P>
+The functions provided are: WindowProc, DialogProc, AnsiToUc, UcToAnsi,
+DComOk, lRandom, CreateColorScalePalette, PaintWindow, SkipAnsi,
+FileExist, MakeFamilyPath, CmdExec, DelayBox, ErrorBox, GetErrorMsg,
+HrMsg, HrMsgId, ReadHelp, ReadTutorial, GoWeb, ReadSource, GetErrorMsg,
+and OutputDebugFmt.
+
+<P>
+There are also a series of A_ ANSII versions of COM/OLE service helper
+functions. The A_ functions are used in conjunction with a matching series
+of macros in APPUTIL.H to permit compilation of the code samples under
+both ANSII (default) and UNICODE. These macros and matching A_ functions
+are for service calls that only accept Unicode string parameters. For
+example, the standard StgIsStorageFile function only accepts a Unicode
+string. When compiling a sample for ANSII (ie, UNICODE is not defined), a
+macro replaces any StgIsStorageFile calls with A_StgIsStorageFile calls.
+A_StgIsStorageFile is implemented here in APPUTIL. A_StgIsStorageFile
+takes the input ANSII string that is passed and converts it into a Unicode
+string prior to making a call to the actual StgIsStorageFile system
+function.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>File          Description</u>
+APPUTIL.TXT   Short sample description.
+MAKEFILE      The generic Win32 makefile for this APPUTIL library.
+APPUTIL.H     The include file for the APPUTIL library. Contains the
+              class declarations and function prototypes.
+APPUTIL.CPP   The main implementation file for APPUTIL.
+ </FONT> </PRE>
+
+<P>
+An abstract base class, CVirWindow, is declared in APPUTIL.H as an aid in
+treating a window as a C++ object. Using the CVirWindow class, a window
+procedure can directly access class members by dereferencing a pointer to
+an object instance of this class. Through GWL_USERDATA in GetWindowLong
+and SetWindowLong, the WindowProc member function has access to the
+pointer. The global WindowProc function is still used, but this scheme
+allows the global function to forward most message handling to the
+&quot;this&quot; WindowProc member function of a specific object instance
+of CVirWindow. The global WindowProc receives the &quot;this&quot; pointer
+as the lpCreateParams member passed as part of the WM_NCCREATE message. It
+saves the &quot;this&quot; pointer in the GWL_USERDATA field of the window
+structure.
+
+<P>
+An abstract base class, CVirDialog, which is similar to CVirWindow, is
+also declared as an aid in treating a dialog box as a C++ object. Using
+the CVirDialog class, a dialog box procedure can directly access class
+members by dereferencing a pointer to an object instance of this class.
+Through GWL_USERDATA in GetWindowLong and SetWindowLong, the DialogProc
+member function has access to the &quot;this&quot; pointer. The global
+DialogProc function is still used, but this scheme allows the global
+function to defer most message handling to the DialogProc member function
+of a specific object instance of CVirDialog.  The functionality is very
+similar to CVirWindow described above.
+
+<P>
+The CAboutBox class is declared to allow creation of a common About dialog
+box in applications. The class is derived from the CVirDialog abstract
+class and illustrates its use.
+
+<P>
+The CDelayBox class is declared to allow creation of a common dialog box
+in applications that have no buttons and appear on screen for a delay
+period. The class is derived from the CVirDialog abstract class.
+
+<P>
+The CMsgBox class is declared to provide simple message boxes to display
+error and notice messages. The message strings in the message box can be
+specified as string literals, string variables, or resource string
+identifiers. The Error and Note methods take string literals or string
+variables. The ErrorID and NoteID methods take resource string
+identifiers. In addition, the Notice message box methods have variants
+that support message string formatting in the style of the C standard
+library function printf. These member functions support a variable
+argument list, NoteFmt, and NoteFmtID.
+
+<P>
+The CMsgLog class is declared to provide a facility for logging debug
+trace messages to a Listbox control. This class is for code samples that
+use debug messages to announce internal activity in the code being
+studied. This message log listbox can be directed to occupy the entire
+client area of the parent window. An argument to the Create method
+determines whether the log occupies a detached child window or the entire
+client area as an integral child window. Message output member functions
+can use either string resource identifier arguments to retrieve the
+message strings from the application's resources, or string variables to
+retrieve the message strings directly. The CMsgLog::MsgFmt method is
+provided to allow message formatting in the style of the C standard
+library function wsprintf. This member function supports a variable
+argument list. The CMsgLog::Copy method is provided to copy the entire
+contents of the message log to the Windows Clipboard.
+
+<P>
+The CMsgLog logging facility is for examining the tutorial code samples.
+It works in parallel with the standard OutputDebugString capability. If
+you are compiling with NODEBUG=1, the debug output is not compiled. In
+this case, logging support is still available, because it is an integral
+part of the code sample itself. When compiling for debugging, both outputs
+are provided for flexibility. Most C++ debuggers have an output window
+that will display the debug output strings, but the logging facility works
+whether or not you are running the application under a debugger.
+
+<P>
+The CSendLog trace logging facility is also provided. It operates much
+like the CMsgLog facility, except that it is intended for an application
+that logs its activity to an application running in another process. This
+facility is useful in an out-of-process local server that logs its
+internal behavior to a display in a client .EXE. CSendLog uses the Win32
+SendMessage function with the WM_COPYDATA message to send a block of text
+data from one process to another. CSendLog duplicates some of the
+capability of CMsgLog by allowing a local server to have its own log
+display. The destination of the logging can therefore be switched between
+the client's logging display and the local server's logging display by
+calling the LogToServer method.
+
+<P>
+The CThreaded class is provided as a utility base class for providing
+functionality in derived classes that offer mutually exclusive access
+among multiple threads to data in objects of the derived class. Derive
+your class from CThreaded to inherit these features. A typical example of
+a method in the derived class that exploits these features follows.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  void CServer::Unlock(void)
+  {
+    if (OwnThis())
+    {
+      m_cLocks -= 1;
+      if (m_cLocks &lt; 0)
+        m_cLocks = 0;
+      if (0L == m_cObjects &amp;&amp; 0L == m_cLocks &amp;&amp; IsWindow(m_hWndServer))
+        PostMessage(m_hWndServer, WM_CLOSE, 0, 0L);
+
+      UnOwnThis();
+    }
+    return;
+  }
+</FONT> </PRE>
+
+<P>
+This Unlock method implements numerous thread-safe accesses and changes to
+the guarded m_cLocks member variable. CServer was derived public from
+CThreaded. Two CThreaded methods are of value here: OwnThis and UnOwnThis
+are virtual functions in CThreaded that have default defintions that
+enforce mutually exclusive access to data in objects of the derived class
+(like CServer here). You use bracketed pairs of these OwnThis and
+UnOwnThis methods, as above, to code the protection. OwnThis blocks the
+currently executing thread until the currently owning thread executes the
+UnOwnThis method. OwnThis returns true if ownership is granted. See the
+CThreaded method definitions in APPUTIL.CPP for more details.
+
+<P>
+Some general utility functions and macros provided by APPUTIL are briefly
+described below.
+
+<P>
+COM often deals with parameters that are pointers to pointers (void**). To
+capture this as a type, a PPVOID typedef is provided.
+
+<P>
+The DELETE_POINTER macro deletes the object pointed to by a pointer and
+sets the pointer to NULL.
+
+<P>
+The RELEASE_INTERFACE macro releases a pointer to an interface and sets
+the pointer to NULL. Use this carefully. If you have to perform a sequence
+of releases on the same interface don't use this macro because it NULLs
+the interface pointer and thus prevents any subsequent releases. Use it
+to perform the last release on an interface to a COM object.
+
+<P>
+Two utility functions are provided for string conversion between ANSII and
+Unicode strings. AnsiToUc converts an ANSII 'multi-byte' string to a
+Unicode 'wide character' string. UcToAnsi converts a Unicode string to an
+ANSII string.
+
+<P>
+The DComOk function detects whether the DCOM (Distributed COM) capability
+is installed on the system. It checks to ensure that the CoInitializeEx
+function is exported from the OLE32.DLL system library. CoInitializeEx was
+initially supplied with the DCOM functionality in Windows NT 4.0 and its
+presence is thus a simple way to confirm that DCOM is present. Simularly,
+DComOk will return FALSE on Windows 95 if the DCOM95 add-on is not
+installed.
+
+<P>
+lRandom is a simple DWORD pseudo-random number generator.
+
+<P>
+Two utility functions are provided for creating color scale palettes and
+for painting windows with such colors: CreateColorScalePalette and
+PaintWindow. Lifted from the GDIDEMO sample in the Win32 samples of the
+Platform SDK. They are used in these tutorial samples to add color
+background to dialogs like the standard Aboutbox dialog.
+
+<P>
+The SkipAnsi function scans an input ANSI string and either skips white
+characters or non-white characters. The string pointer after the skip
+operation is returned.
+
+<P>
+The FileExist utility function indicates whether a specified file exists.
+
+<P>
+The MakeFamilyPath utility function uses GetModuleFileName to dynamically
+determine the path to the module currently executing and construct a
+family variant of that path with the proper file name extension for a
+particular purpose. Various such extensions (for example, .HLP, .HTM,
+.TXT, and .LIC) are defined in APPUTIL.H for use with this MakeFamilyPath
+function. If the EXE program executing MakeFamilyPath is
+D:\MYPATH\MYAPP.EXE then MakeFamilyPath can be used to construct such
+filenames as D:\MYPATH\MYAPP.HTM.
+
+<P>
+The GetExeName function gets the executable file name of the currently
+executing module. The caller must allocate a string big enough for
+long file names (typically MAX_PATH characters long). This function
+returns file names like: MyApp.EXE and MyDynamicLinkLibrary.DLL.
+
+<P>
+The DelayBox function uses a specified dialog template from the calling
+application's resources and shows a buttonless dialog message box that
+remains on screen for about 3 seconds. You can set the delay period at
+compile time using DELAYBOX_DURATION in APPUTIL.H.
+
+<P>
+The ErrorBox function displays an error message dialog box. It displays an
+error message string in the dialog that is specified in the call by a
+resource ID.
+
+<P>
+The HrMsg function is used to display an Error Message box. The function
+takes a standard HRESULT result code, looks it up in the system error
+string tables, and shows the hex error code with the retrieved system
+error message string. HrMsg accepts an additional user message string that
+is displayed in the Message Box. The HrMsgId function does the same as the
+HrMsg function except that the user message string is specified as a
+resource ID rather than a string pointer.
+
+<P>
+The ReadTutorial function is for use by tutorial code sample applications
+that study themselves. This function uses the shell to launch the Web
+browser to read an HTML Web page that contains a tutorial covering the
+sample. If no HTM file (in a sibling or parent directory) is specified,
+this function assumes a family-named &lt;sample&gt;.HTM tutorial HTML file
+that is located next to the main .EXE file of the code sample.
+Family-named means that if the EXE program calling this function is
+MYAPP.EXE then the associated family-named HTML file is constructed as
+MYAPP.HTM. The function accepts a pointer to an optional HTML FileName
+string. If this pointer is NULL, then the family-named file is used for
+the HTML file and is assumed to be located next to the main .EXE file of
+the program executing this function. Non-NULL values are of the form
+MySiblingDirectory\MyHTMLFile.HTM or of the form
+MyHTMLFileInTheParentDirectory.HTM. Special non-NULL values beginning with
+'.' (eg. .HTM or .ASP) specify that the family-named file is assumed to be
+located in the parent directory. In this case, the specified file
+extension is used.
+
+<P>
+The GoWeb function is used to launch the Web browser on a specified HTML
+file via either a URL or a full file path/name. It accepts a pointer to
+the target specification string that must be ANSI. If this pointer is NULL
+then GoWeb simply calls ReadTutorial function (above). If the target
+starts with '//' then the target is assumed to be a www URL trailer of the
+form: //www.microsoft.com. If the target is any other string, then it is
+assumed to be a full HTML path/file name.
+
+<P>
+The ReadSource utility function is provided to display the Open common
+dialog box so the user can select any of the source files for the current
+code sample and start a reader on that file. The Windows Notepad
+(NOTEPAD.EXE) is the default reader. You can specify a different reader by
+modifying EDITOR_FILE_STR in APPUTIL.H
+
+<P>
+The GetErrorMsg function accepts a standard Win32 error code (i.e., an
+HRESULT SCODE) and retrieves the human readable system error message
+string that corresponds to that error code.
+
+<P>
+The OutputDebugFmt utility function is provided to support formatted
+(printf-style) variable argument output to the debugger. This function
+wraps the standard OutputDebugString function.
+
+<P>
+A set of debug output macros is provided to obtain source file and line
+number information for the debug output. These macros use the function
+OutputDebugFmt to support variable argument lists in the format of the
+debug output display string. The debug output macros are:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  <u>Macro Description</u>
+  ODS   Output debug string literal.
+        Example:  ODS(&quot;String Literal&quot;).
+  ODFn  Output formatted debug string using printf-style format string
+        and a variable argument list to correspond to the format.
+        Examples: ODF1(&quot;Integer=%i&quot;, iInteger);
+                  ODF2(&quot;Integer=%i String=%s \r\n&quot;, iInteger, szString);
+ </FONT> </PRE>
+
+<P>
+A set of debug trace logging macros is provided to obtain source file and
+line number information for the debug output while also logging these
+messages to a built-in CMsgLog message logging facility in the
+application. These macros also output the same messages to the debugger
+using the standard OutputDebugString call. These are convenience macros to
+perform both the message logging that the application requires and to
+output the same messages to the debugger, if the application was compiled
+for debugging and you are running it under a debugger aware of such
+output. Like the ODFn macros, these macros form a series. For the string
+literal arguments, do not use the TEXT macro--it is provided inside the
+macro.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  <u>Macro     Description</u>
+  LOG       Log a string literal message.
+            Example: LOG(&quot;String Literal&quot;);
+  LOGFn     Log a formatted message using printf-style format string
+            and a variable argument list to correspond to the format.
+            Examples: LOGF1(&quot;Integer=%i&quot;, iInteger);
+                      LOGF2(&quot;Integer=%i String=%s \r\n&quot;, iInteger, szString);
+  LOGID     Log a message string retrieved from the module's resources.
+            Example:  LOGID(ID_OF_MY_STRING_IN_THE_RESOURCES);
+  LOGERROR  Check an error code and if it is an error then fetch the matching
+            error string message from the system tables and log the error.
+            Example: LOGERROR(&quot;SysApiThatWasCalled:&quot;, ErrorCodeReturned);
+</FONT> </PRE>
+
+<P>
+The CKHR macro is provided as a convenient way to check standard COM
+HRESULT return codes. If the return code is an error then this macro uses
+the HrMsg function to display a message box with the system error
+description associated with that error code.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+</FONT>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</body>
+
+</html>

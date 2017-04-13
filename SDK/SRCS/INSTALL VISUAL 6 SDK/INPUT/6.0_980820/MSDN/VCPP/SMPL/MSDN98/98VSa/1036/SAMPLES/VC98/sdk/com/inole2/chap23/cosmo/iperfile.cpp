@@ -1,0 +1,278 @@
+/*
+ * IPERFILE.CPP
+ * Cosmo Chapter 23
+ *
+ * Implementation of the IPersistFile interface for Cosmo
+ *
+ * Copyright (c)1993-1995 Microsoft Corporation, All Rights Reserved
+ *
+ * Kraig Brockschmidt, Microsoft
+ * Internet  :  kraigb@microsoft.com
+ * Compuserve:  >INTERNET:kraigb@microsoft.com
+ */
+
+
+#include "cosmo.h"
+
+
+/*
+ * CImpIPersistFile:CImpIPersistFile
+ * CImpIPersistFile::~CImpIPersistFile
+ *
+ * Constructor Parameters:
+ *  pObj            PCFigure associated with this object.
+ *  pUnkOuter       LPUNKNOWN of the controlling unknown.
+ */
+
+CImpIPersistFile::CImpIPersistFile(PCFigure pObj
+    , LPUNKNOWN pUnkOuter)
+    {
+    m_cRef=0;
+    m_pObj=pObj;
+    m_pUnkOuter=pUnkOuter;
+    return;
+    }
+
+
+CImpIPersistFile::~CImpIPersistFile(void)
+    {
+    return;
+    }
+
+
+
+
+/*
+ * CImpIPersistFile::QueryInterface
+ * CImpIPersistFile::AddRef
+ * CImpIPersistFile::Release
+ */
+
+STDMETHODIMP CImpIPersistFile::QueryInterface(REFIID riid
+    , PPVOID ppv)
+    {
+    return m_pUnkOuter->QueryInterface(riid, ppv);
+    }
+
+STDMETHODIMP_(ULONG) CImpIPersistFile::AddRef(void)
+    {
+    ++m_cRef;
+    return m_pUnkOuter->AddRef();
+    }
+
+STDMETHODIMP_(ULONG) CImpIPersistFile::Release(void)
+    {
+    --m_cRef;
+    return m_pUnkOuter->Release();
+    }
+
+
+
+
+/*
+ * CImpIPersistFile::GetClassID
+ *
+ * Purpose:
+ *  Returns the CLSID of the file represented by this interface.
+ *
+ * Parameters:
+ *  pClsID          LPCLSID in which to store our CLSID.
+ *
+ * Return Value:
+ *  HRESULT         NOERROR or a general error value.
+ */
+
+STDMETHODIMP CImpIPersistFile::GetClassID(LPCLSID pClsID)
+    {
+    *pClsID=CLSID_CosmoFigure;
+    return NOERROR;
+    }
+
+
+
+
+
+/*
+ * CImpIPersistFile::IsDirty
+ *
+ * Purpose:
+ *  Tells the caller if we have made changes to this file since
+ *  it was loaded or initialized new.
+ *
+ * Parameters:
+ *  None
+ *
+ * Return Value:
+ *  HRESULT         Contains S_OK if we ARE dirty, S_FALSE if
+ *                  NOT dirty.
+ */
+
+STDMETHODIMP CImpIPersistFile::IsDirty(void)
+    {
+    return ResultFromScode(m_pObj->FIsDirty() ? S_OK : S_FALSE);
+    }
+
+
+
+
+
+/*
+ * IPersistFile::Load
+ *
+ * Purpose:
+ *  Asks the server to load the document for the given filename.
+ *
+ * Parameters:
+ *  pszFile         LPCOLESTR to the filename to load.
+ *  grfMode         DWORD containing open flags requested from the
+ *                  caller.  Currently these are safely ignored.
+ *
+ * Return Value:
+ *  HRESULT         NOERROR or a general error value.
+ */
+
+STDMETHODIMP CImpIPersistFile::Load(LPCOLESTR pszFile, DWORD grfMode)
+    {
+    UINT        uRet;
+
+   #ifdef WIN32ANSI
+    TCHAR       szTemp[CCHPATHMAX];
+    WideCharToMultiByte(CP_ACP, 0, pszFile, -1, szTemp, CCHPATHMAX
+        , NULL, NULL);
+    uRet=m_pObj->m_pDoc->Load(TRUE, (LPTSTR)szTemp);
+   #else
+    uRet=m_pObj->m_pDoc->Load(TRUE, (LPTSTR)pszFile);
+   #endif
+    return (DOCERR_NONE==uRet) ? NOERROR
+        : ResultFromScode(STG_E_READFAULT);
+    }
+
+
+
+
+
+/*
+ * IPersistFile::Save
+ *
+ * Purpose:
+ * Purpose:
+ *  Instructs the server to write the current file into a new
+ *  filename, possibly then using that filename as the current one.
+ *
+ * Parameters:
+ *  pszFile         LPCOLESTR of the file into which we save.  If NULL,
+ *                  this means save the current file.
+ *  fRemember       BOOL indicating if we're to use this filename as
+ *                  the current file now (Save As instead of Save
+ *                  Copy As).
+ *
+ * Return Value:
+ *  HRESULT         NOERROR or a general error value.
+ */
+
+STDMETHODIMP CImpIPersistFile::Save(LPCOLESTR pszFile, BOOL fRemember)
+    {
+    UINT        uRet;
+    BOOL        fTemp;
+
+    /*
+     * We set CFigure::m_fEmbedding here to TRUE if we don't want to
+     * remember this file, as that cons Save into ignoring this
+     * filename.  This is not something you have to do in your own
+     * code the same way, but be sure to pay attention to fRemember.
+     */
+    fTemp=m_pObj->m_fEmbedded;
+    m_pObj->m_fEmbedded=!fRemember;
+   #ifdef WIN32ANSI
+    char        szTemp[CCHPATHMAX];
+
+    WideCharToMultiByte(CP_ACP, 0, pszFile, -1, szTemp, CCHPATHMAX
+       , NULL, NULL);
+    uRet=m_pObj->m_pDoc->Save(0, szTemp);
+   #else
+    uRet=m_pObj->m_pDoc->Save(0, (LPTSTR)pszFile);
+   #endif
+
+    m_pObj->m_fEmbedded=fTemp;
+
+    return (DOCERR_NONE==uRet) ? NOERROR
+        : ResultFromScode(STG_E_WRITEFAULT);
+    }
+
+
+
+
+
+/*
+ * IPersistFile::SaveCompleted
+ *
+ * Purpose:
+ *  Informs us that the operation that called Save is now finished
+ *  and we can access the file again.
+ *
+ * Parameters:
+ *  pszFile         LPCOLESTR of the file in which we can start
+ *                  writing again.
+ *
+ * Return Value:
+ *  HRESULT         NOERROR or a general error value.
+ */
+
+STDMETHODIMP CImpIPersistFile::SaveCompleted(LPCOLESTR pszFile)
+    {
+    return NOERROR;
+    }
+
+
+
+
+/*
+ * IPersistFile::GetCurFile
+ *
+ * Purpose:
+ *  Retrieves the name of the current file.
+ *
+ * Parameters:
+ *  ppszFile        LPOLESTR * into which we store a pointer to
+ *                  the filename that should be allocated with the
+ *                  shared IMalloc.
+ *
+ * Return Value:
+ *  HRESULT         NOERROR or a general error value.
+ */
+
+STDMETHODIMP CImpIPersistFile::GetCurFile(LPOLESTR *ppszFile)
+    {
+    LPMALLOC    pIMalloc;
+    LPOLESTR    psz;
+    UINT        uRet;
+
+    *ppszFile=NULL;
+
+    if (FAILED(CoGetMalloc(MEMCTX_TASK, &pIMalloc)))
+        return ResultFromScode(E_FAIL);
+
+    psz=(LPOLESTR)pIMalloc->Alloc(CCHPATHMAX*sizeof(OLECHAR));
+    pIMalloc->Release();
+
+   #ifdef WIN32ANSI
+    char    szTemp[CCHPATHMAX];
+
+    uRet=m_pObj->m_pDoc->FilenameGet(szTemp, CCHPATHMAX);
+    MultiByteToWideChar(CP_ACP, 0, szTemp, -1, psz, CCHPATHMAX);
+   #else
+    uRet=m_pObj->m_pDoc->FilenameGet(psz, CCHPATHMAX);
+   #endif
+
+    //If we have no filename, return the prompt for File Open/Save.
+    if (0==uRet)
+       #ifdef WIN32ANSI
+        MultiByteToWideChar(CP_ACP, 0
+            , (*m_pObj->m_pST)[IDS_EXTENSION], -1, psz, CCHPATHMAX);
+       #else
+        lstrcpy(psz, (*m_pObj->m_pST)[IDS_EXTENSION]);
+       #endif
+
+    *ppszFile=psz;
+    return (0==uRet) ? ResultFromScode(S_FALSE) : NOERROR;
+    }

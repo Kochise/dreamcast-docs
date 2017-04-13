@@ -1,0 +1,195 @@
+/*************************************************************************
+**
+**    Lines Object.
+**
+**    lines.odl
+**
+**    Object Description source file.
+**
+**     Written by Microsoft Product Support Services, Windows Developer Support
+**    (c) Copyright Microsoft Corp. 1994 All Rights Reserved
+**
+*************************************************************************/ 
+
+[
+  uuid(3C591B20-1F13-101B-B826-00DD01103DE1),              // LIBID_Lines
+  helpstring("Lines 1.0 Type Library"),
+  version(1.0)
+] 
+library Lines
+{
+#ifdef WIN32
+    importlib("stdole2.tlb");
+#else
+    importlib("stdole.tlb");
+#endif
+
+    #define DISPID_NEWENUM -4      
+    
+    [
+      uuid(3C591B25-1F13-101B-B826-00DD01103DE1),          // IID_IPoint                 
+      helpstring("Point object."),
+      oleautomation,
+      dual
+    ]
+    interface IPoint : IDispatch                         
+    {                
+      [propget, helpstring("Returns and sets x coordinate.")]
+      HRESULT x([out, retval] int* retval); 
+      [propput, helpstring("Returns and sets x coordinate.")]
+      HRESULT x([in] int Value);
+        
+      [propget, helpstring("Returns and sets y coordinate.")]
+      HRESULT y([out, retval] int* retval); 
+      [propput, helpstring("Returns and sets y coordinate.")]
+      HRESULT y([in] int Value);
+    }                  
+    
+    [
+      uuid(3C591B24-1F13-101B-B826-00DD01103DE1),          // IID_ILine                      
+      helpstring("Line object."),
+      oleautomation,
+      dual
+    ]
+    interface ILine : IDispatch                         
+    {
+      [propget, helpstring("Returns and sets RGB color.")]
+      HRESULT Color([out, retval] long* retval); 
+      [propput, helpstring("Returns and sets RGB color.")]
+      HRESULT Color([in] long rgb);
+        
+      [propget, helpstring("Returns and sets EndPoint."), id(1)]   
+      HRESULT EndPoint([out, retval] IPoint** retval); 
+      [propputref, helpstring("Returns and sets EndPoint."), id(1)]  
+      HRESULT EndPoint([in] IPoint* Point);
+        
+      [propget, helpstring("Returns and sets StartPoint."), id(2)]
+      HRESULT StartPoint([out, retval] IPoint** retval); 
+      [propputref, helpstring("Returns and sets StartPoint."), id(2)]
+      HRESULT StartPoint([in] IPoint* Point);
+        
+      [propget, helpstring("Returns and sets Thickness.")]  
+      HRESULT Thickness([out, retval] int* retval); 
+      [propput, helpstring("Returns and sets Thickness.")]  
+      HRESULT Thickness([in] int Value);
+    }
+    
+    [
+      uuid(3C591B26-1F13-101B-B826-00DD01103DE1),          // IID_ILines                
+      helpstring("Lines collection."),
+      oleautomation,
+      dual
+    ]
+    interface ILines : IDispatch                         
+    {                
+      [helpstring("Adds a new line to collection.")] 
+      HRESULT Add([in] ILine* NewLine);  
+
+      [propget, helpstring("Returns number of lines in collection.")]    
+      HRESULT Count([out, retval] long* retval); 
+
+      [propget, id(0), helpstring("Given an integer index, returns one of the lines in the collection")]
+      HRESULT Item([in] long Index, [out, retval] ILine** retval); 
+                        
+      [propget, restricted, id(DISPID_NEWENUM)]    // Must be propget.   
+      HRESULT _NewEnum([out, retval] IUnknown** retval);        
+      
+      [helpstring("Given an integer index, removes line from collection.")]
+      HRESULT Remove([in] long Index); 
+    }
+    
+    [
+      uuid(3C591B27-1F13-101B-B826-00DD01103DE1),          // IID_IPoints                
+      helpstring("Points collection."),
+      oleautomation,
+      dual
+    ]
+    interface IPoints : IDispatch                         
+    {                
+      [propget, helpstring("Returns number of points in collection.")]
+      HRESULT Count([out, retval] long* retval); 
+
+      [propget, id(0), helpstring("Given an integer index, returns one of the points in the collection")]
+      HRESULT Item([in] long Index, [out, retval] IPoint** retval);
+                        
+      [propget, restricted, id(DISPID_NEWENUM)]    // Must be propget.
+      HRESULT _NewEnum([out, retval] IUnknown** retval);     
+    } 
+    
+    [
+      uuid(3C591B23-1F13-101B-B826-00DD01103DE1),          // IID_IPane                      
+      helpstring("Pane object."),
+      oleautomation,
+      dual
+    ]
+    interface IPane : IDispatch                         
+    {
+      [propget, helpstring("Returns a collection of all the Line objects in the drawing.")]
+      HRESULT Lines([out, retval] ILines** retval);    
+        
+      [propget, helpstring("Returns a collection of all the Point objects in the drawing.")]
+      HRESULT Points([out, retval] IPoints** retval);    
+        
+      [propget, helpstring("Returns the maximum visible X coordinate value in twips.")]
+      HRESULT MaxX([out, retval] int* retval);    
+        
+      [propget, helpstring("Returns the maximum visible Y coordinate value in twips.")]
+      HRESULT MaxY([out, retval] int* retval);    
+        
+      [helpstring("Clears drawing in pane and removes all lines and points.")]
+      HRESULT Clear();          
+        
+      [helpstring("Clears drawing area and redraws lines.")]
+      HRESULT Refresh();          
+    }                 
+    
+    [
+      uuid(3C591B22-1F13-101B-B826-00DD01103DE1),          // IID_IApplication                      
+      helpstring("Application object."),
+      oleautomation,
+      dual
+    ]
+    interface IApplication : IDispatch                         
+    {
+      [propget, helpstring("Returns the application of the object.")]  
+      HRESULT Application([out, retval] IApplication** retval);
+        
+      [propget, helpstring("Returns the full name of the application.")]
+      HRESULT FullName([out, retval] BSTR* retval);
+        
+      [propget, id(0), helpstring("Returns the name of the application.")]
+      HRESULT Name([out, retval] BSTR* retval);
+        
+      [propget, helpstring("Returns the parent of the object.")]
+      HRESULT Parent([out, retval] IApplication** retval);
+        
+      [propput]
+      HRESULT Visible([in] VARIANT_BOOL VisibleFlag);
+
+      [propget, helpstring("Sets or returns whether the main window is visible.")]
+      HRESULT Visible([out, retval] VARIANT_BOOL* retval);
+        
+      [helpstring("Exits the application.")]
+      HRESULT Quit();
+        
+      [propget, helpstring("Returns the pane object.")]
+      HRESULT Pane([out, retval] IPane** retval); 
+      
+      [helpstring("Creates new Line object with no start or end point.")]
+      HRESULT CreateLine([out, retval] ILine** retval);     
+        
+      [helpstring("Creates new Point object initialized to (0,0).")]
+      HRESULT CreatePoint([out, retval] IPoint** retval);         
+    }
+    
+    [
+      uuid(3C591B21-1F13-101B-B826-00DD01103DE1),          // CLSID_Lines
+      helpstring("Lines Class"),
+      appobject
+    ]                                             
+    coclass Lines
+    {   
+      [default] interface IApplication;   
+                interface IDispatch;
+    }
+}

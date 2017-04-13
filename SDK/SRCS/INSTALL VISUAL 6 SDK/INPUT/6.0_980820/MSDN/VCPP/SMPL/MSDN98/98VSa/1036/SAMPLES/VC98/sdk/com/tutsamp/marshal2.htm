@@ -1,0 +1,476 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>MARSHAL2 COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="marshal.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="locserve.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="MARSHAL2">MARSHAL2 - Marshaling DLL Self-Registration</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The MARSHAL2 sample shows an alternate and more advanced technique for
+building a proxy/stub marshaling DLL for the ICar, IUtility, and ICruise
+custom interfaces. The previous MARSHAL sample illustrated the system
+default method of producing the marshaling DLL. That method controlled the
+conditional compilation of the DLLDATA.C file to generate default
+definitions for the DllMain, DllRegisterServer, and DllUnregisterServer
+functions in the DLL. WMARSHAL2 does not generate these default functions.
+Instead, they coded explicitly.  Thus, this lesson has more detail on the
+content of these functions.
+
+<P>
+Although the default definitions of these functions are adequate for most
+programming, there may be occasions when you want more control over the
+content of the marshaling DLL. For example, you might want to perform some
+action within DllMain during DLL_PROCESS_ATTACH, you might want to code
+explicit control over the registration and unregistration of the
+marshaling server, or you might want to add standard module version
+information to the DLL resources. This sample covers these areas.
+
+<P>
+As in the MARSHAL sample, the Microsoft&reg; Interface Definition Language
+compiler (MIDL.EXE) is used to compile the interface definitions
+(expressed using the MIDL language in the MICARS.IDL file). MIDL.EXE is a
+utility provided as part of the Microsoft Platform Software Development
+Kit (SDK). The MIDL compilation of MICARS.IDL generates additional source
+files: MICARS.H, MICARS_I.C, MICARS_P.C, and DLLDATA.C.
+
+<P>
+In the series of COM Tutorial code samples, MARSHAL2 is an alternate
+marshaling DLL that can replace MARSHAL.DLL produced in the MARSHAL sample
+and can work with later samples in the series to provide standard
+marshaling for the custom ICar, IUtility, and ICruise interfaces. To
+achieve this, just register MARSHAL2.DLL. This will override any previous
+registration of MARSHAL.DLL. Since both of these DLLs provide proxy/stub
+marshaling for the same interfaces, the one registered most recently will
+replace the other if it is registered.
+
+<P>
+For functional descriptions and a tutorial code tour of MARSHAL2, see the
+Code Tour section in MARSHAL2.HTM. For details on setting up the
+programmatic usage of MARSHAL2, see the Usage section in MARSHAL2.HTM. To
+read MARSHAL2.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the MARSHAL2 lesson in the table of lessons. You can also do the
+same thing by double-clicking the MARSHAL2.HTM file after locating the
+main tutorial directory in Windows Explorer. For a simpler way to provide
+the same standard marshaling functionality that MARHSAL2 provides, see
+MARSHAL.HTM.
+
+<P>
+The subsequent samples in the series that require marshaling of the ICar,
+IUtility, and ICruise interfaces normally rely on the registration of
+MARSHAL.DLL as the marshaling DLL. MARSHAL.DLL is produced in the previous
+MARSHAL sample. MARSHAL2's makefile does not automatically register
+MARSHAL2.DLL as the marshaling DLL for those car-related interfaces.
+However, this registration can be enabled in MARSHAL2's makefile by
+uncommenting the appropriate lines. Registering MARSHAL2 will replace any
+prior registration of MARSHAL.DLL. Although, these two marshaling DLLs are
+functionally equivalent, there are subtle differences in how they perform
+their self-registration. For more details on how MARSHAL2.DLL performs
+self-registration see below.
+
+<P>
+If enabled in the makefile, MARSHAL2's self-registration is done using the
+REGISTER.EXE utility built in the REGISTER sample. To build or run
+MARSHAL2, you should build the REGISTER code sample first.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<P>
+MARSHAL2 is a DLL that is built solely as a marshaling DLL for the
+specified interfaces. Although it can be implicitly loaded by linking to
+its associated .LIB file, it is normally used on behalf of a COM client
+that functions the server across apartment, process, or machine
+boundaries. COM loads this DLL automatically in these situations. Before
+COM can find and load MARSHAL2.DLL to support marshaling of its supported
+interfaces, the MARSHAL2 server must be registered in the registry as the
+marshaling server for those interfaces. MARSHAL2 is a self-registering
+in-process server. If enabled (see above), the makefile that builds this
+sample automatically registers the server in the registry. You can
+manually initiate its self-registration by issuing the following command
+at the command prompt in the MARSHAL2 directory:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  nmake register
+ </FONT> </PRE>
+
+<P>
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the MARSHAL2 directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ..\register\register.exe marshal2.dll
+ </FONT> </PRE>
+
+<P>
+These registration commands require a prior build of both the REGISTER
+sample and the MARSHAL2 sample.
+
+<P>
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Microsoft Platform SDK and Visual
+C++&reg; include a utility, REGSVR32.EXE, which can be used in a similar
+fashion to register in-process servers and marshaling DLLs.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files        Description</u>
+MARSHAL2.TXT Short description of the sample.
+MAKEFILE     The generic makefile for building the MARSHAL2.DLL
+             code sample.
+MARSHAL2.CPP The main implementation file for MARSHAL2.DLL. Has DllMain
+             and the self-registration functions.
+MARSHAL2.DEF The module definition file. Exports server housing functions.
+MARSHAL2.RC  The DLL resource definition file for the executable.
+MARSHAL2.ICO The icon resource for the executable.
+MICARS.IDL   The MIDL interface definitions for ICar, IUtility,
+             and ICruise.
+MICARS.H     Generated by compiling MICARS.IDL. The interface include
+             file for the defined interfaces.
+MICARS_I.C   Generated by compiling MICARS.IDL. The data definitions
+             of the GUIDs for the marshaled interfaces.
+MICARS_P.C   Generated by compiling MICARS.IDL. The actual proxy and
+             stub functions for the interface methods.
+DLLDATA.C    Generated by compiling MICARS.IDL. DLL data routines for
+             the proxies.
+ </FONT> </PRE>
+
+<P>
+This code sample covers explicit definitions of the DllMain,
+DllRegisterServer, and DllUnregisterServer functions in a standard
+marshaling server which duplicates the functionality of the MARSHAL sample
+by providing standard marshaling for the same ICar, IUtility, and ICruise
+custom interfaces. For more details on the general topic of standard
+marshaling, see the MARSHAL sample. This sample focuses primarily on
+coding an explicit DLL framework for the marshaling server.
+
+<P>
+MARSHAL2 uses many of the utility classes and services provided by APPUTIL.
+For more details on APPUTIL, study the APPUTIL library's source code in
+the sibling APPUTIL directory and APPUTIL.HTM in the main tutorial
+directory.
+
+<P>
+MARSHAL2.DLL is very similar to the in-process COM servers produced in
+earlier samples and is a COM server that offers standard marshaling
+services for the interfaces it is registered to handle. You create
+MARSHAL2 DLL by compiling some source files that are automatically
+generated by the MIDL compiler when it processes the primary source for
+this sample, MICARS.IDL. This file defines the custom interfaces.
+
+<P>
+The MARSHAL2 DLL is coded in much the same way as the DLLSERVE server from
+an earlier lesson. A good place to start looking at the code is the DLL
+framework code in MARSHAL2.CPP. The following files are included by
+MARSHAL2.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  #include &lt;windows.h&gt;
+  #include &lt;ole2.h&gt;
+  #include &lt;apputil.h&gt;
+  #include &quot;micars.h&quot;
+ </FONT> </PRE>
+
+<P>
+The MIDL compiler generates MICARS.H when it compiles MICARS.IDL. MICARS.H
+looks very similar to the ICARS.H interface declaration file from previous
+samples in this series. MICARS.H is used as an include file when compiling
+the clients and servers that require the interface marshaling it supports.
+It is included by MARSHAL2.CPP when MARSHAL2.DLL is compiled by the C++
+compiler. In the LOCCLIEN sample, LOCCLIEN.CPP also includes this file for
+its declarations of the ICar, IUtility, and ICruise interfaces. Because
+the later samples like LOCSERVE and LOCCLIEN rely on MARSHAL.DLL, the
+MARSHAL2 makefile copies the generated MICARS.H file to the common INC
+directory.
+
+<P>
+The rest of MARSHAL2.CPP should be familiar. The DllMain function and the
+self-registration functions DllRegisterServer and DllUnregisterServer were
+presented in earlier lessons. The DllMain coded explicitly in this sample
+allows you to honor DLL_PROCESS_ATTACH and DLL_PROCESS_DETACH.
+
+<P>
+Server registration and unregistration is different now, because
+interfaces, rather than components, are being registered and unregistered.
+The follow is the DllRegisterServer function from MARSHAL2.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDAPI DllRegisterServer(void)
+  {
+    HRESULT  hr = NOERROR;
+    TCHAR    szID[GUID_SIZE+1];
+    TCHAR    szIFace[GUID_SIZE+32];
+    TCHAR    szCLSID[GUID_SIZE+32];
+    TCHAR    szModulePath[MAX_PATH];
+
+    // Obtain the path to this module's executable file for later use.
+    GetModuleFileName(
+      g_hDllInst,
+      szModulePath,
+      sizeof(szModulePath)/sizeof(TCHAR));
+
+    /*---------------------------------------------------------------------
+      Create registry entries for the ICar Interface.
+    ---------------------------------------------------------------------*/
+    // Create some base key strings.
+    StringFromGUID2(IID_ICar, szID, GUID_SIZE);
+    lstrcpy(szIFace, TEXT(&quot;Interface\\&quot;));
+    lstrcat(szIFace, szID);
+    lstrcpy(szCLSID, TEXT(&quot;CLSID\\&quot;));
+    lstrcat(szCLSID, szID);
+
+    // Create the HKEY_CLASSES_ROOT\Interface entries.
+    SetRegKeyValue(
+      szIFace,
+      NULL,
+      TEXT(&quot;ICar&quot;));
+    SetRegKeyValue(
+      szIFace,
+      TEXT(&quot;ProxyStubClsid32&quot;),
+      szID);
+    SetRegKeyValue(
+      szIFace,
+      TEXT(&quot;NumMethods&quot;),
+      TEXT(&quot;7&quot;));
+
+    // Create the HKEY_CLASSES_ROOT\CLSID entries.
+    SetRegKeyValue(
+      szCLSID,
+      NULL,
+      TEXT(&quot;ICar Proxy/Stub Factory&quot;));
+    SetRegKeyValue(
+      szCLSID,
+      TEXT(&quot;InprocServer32&quot;),
+      szModulePath);
+
+    ...
+    ...
+      // Similar code for the IUtility and ICruise interfaces.
+    ...
+    ...
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+The ICar interface registration appears under two main registry keys:
+HKEY_CLASSES_ROOT\Interface\[guid] and HKEY_CLASSES_ROOT\CLSID\[guid].
+Note that this sample assumes that all registration is under the main
+registry key of HKEY_CLASSES_ROOT. The content of the HKEY_CLASSES_ROOT
+branch is replicated under HKEY_LOCAL_MACHINE\SOFTWARE\Classes. These two
+branches of the Registry can be used interchangeably.
+
+<P>
+The CLSIDs used above in DllRegisterServer are the same as the GUIDS
+defined for the interfaces. In this case, they are defined in MICARS.IDL,
+and the MIDL compiler places them in the generated MICARS.H file. The
+reference above to IID_ICar is thus given meaning by MICARS.H which is an
+include file at the beginning of MARSHAL2.CPP. The double use of the
+interface GUIDs as CLSIDs is permitted because the interface IID will not
+be confused with the server's CLSID--the same GUID can be safely used for
+completely different things.
+
+<P>
+The registration code above differs from the default registration code
+used in the previous MARSHAL sample, which used the first interface GUID
+(IID_ICar) as the CLSID. In that sample, the ICar, IUtility, and ICruise
+proxy/stub marshaling components were all registered under that single
+CLSID. However, in DllRegisterServer above, each interface marshaling
+component is registered with a different CLSID. These CLSIDs are IID_ICar,
+IID_IUtility, and IID_ICruise. Thus, in this sample there is a separate
+CLSID entry for each marshaled interface. This variation is possible here
+because of the explicit control over the coding of DllRegisterServer and
+DllUnregisterServer. Of course, your explicit coding of these functions
+could just as well mimic the single CLSID technique used in the default
+functions of the MARSHAL sample.
+
+<P>
+The value of the NumMethods entry is a count that includes both the
+IUnknown methods and the methods unique to the interface. For the ICar
+interface entry above, the count is 7, including three methods for
+IUnknown (QueryInterface, AddRef, Release) and four for ICar (Shift,
+Clutch, Speed, Steer).
+
+<P>
+After you enable registration in the makefile (see above) and build this
+code sample, you can view the registered entries using the Registry Editor
+(REGEDT32.EXE for Windows NT, REGEDIT.EXE for Windows 95). MARSHAL2's
+registry entries for the ICar interface look like the following:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HKEY_CLASSES_ROOT
+     \CLSID
+        \{0002DA00-0000-0000-C000-000000000046} = &quot;ICar Proxy/Stub Factory&quot;
+           \InprocServer32 = &quot;D:\TUTSAMP\MARSHAL2\MARSHAL2.DLL&quot;
+
+  HKEY_CLASSES_ROOT
+     \Interface
+         \{0002DA00-0000-0000-C000-000000000046} = &quot;ICar&quot;
+           \ProxyStubClsid32 = &quot;{0002DA00-0000-0000-C000-000000000046}&quot;
+           \NumMethods = &quot;7&quot;
+ </FONT> </PRE>
+
+<P>
+Under HKEY_CLASSES_ROOT\CLSID, this marshaling DLL appears with the
+in-process COM server entry, InprocServer32. COM treats this standard
+marshaling server as an in-process server.
+
+<P>
+As in earlier lessons, the DllUnregisterServer function in MARSHAL2.CPP
+simply removes the registry entries created by the DllRegisterServer
+function. For example, see DllUnregisterServer in MARSHAL2.CPP.
+
+<P>
+One final note about the self-registration of MARSHAL2.DLL. As in other
+self-registering COM servers in this tutorial series, for instructional
+purposes we have written our own support for registration and
+unregistration. You, however, can forgo writing a main module file like
+MARSHAL2.CPP and a main module resource file like MARSHAL2.RC, and instead
+easily obtain a default implementation for DllMain, DllRegisterServer, and
+DllUnregisterServer by conditionally compiling your code. You do this by
+setting a compilation switch, -DREGISTER_PROXY_DLL, when you compile
+DLLDATA.C. For more details see the MARSHAL sample.
+
+<P>
+You may have noticed that MARSHAL2.CPP lacks the familiar COM in-process
+server functions DllGetClassObject and DllCanUnloadNow. As in the MARSHAL
+standard marshaling sample, explicit definitions of these functions are
+not needed because compiling DLLDATA.C generates default implementations
+for you. Those implementations, however, must still be exported from this
+DLL. Standard marshaling DLLs require the DllGetClassObject,
+DllCanUnloadNow, and GetProxyDllInfo exports. You need only export these
+three functions; you don't need to implement them within this standard
+marshaling DLL. Of course, you must also export the DllRegisterServer and
+DllUnregisterServer functions if you have defined them in the DLL.
+
+<P>
+From the makefile, the following linker switches that direct the Link of
+MARSHAL2 DLL:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  # Link the object and resource binaries into the target DLL binary.
+  # Build the import LIB file so apps can link to and use this DLL.
+  $(DLL).dll: $(DLLOBJS) $(TDIR)\$(DLL).res
+      $(LINK)  @&lt;&lt;
+      $(LINKFLAGS) $(dlllflags)
+      -out:$@
+      -base:0x1C000000
+      -def:$*.def
+      -implib:$*.lib
+      -map:$(TDIR)\$*.map
+      $(DLLOBJS)
+      $(TDIR)\$*.res
+      $(olelibsdll) $(APPLIBS)
+  &lt;&lt;
+ </FONT> </PRE>
+
+<P>
+As used in the MARSHAL sample, the Link of MARSHAL2.DLL uses a -def
+command line switch to specify a MARSHAL2.DEF file to use for the export
+of the necessary marshaling server functions. The following is
+MARSHAL2.DEF:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  LIBRARY     MARSHAL2
+
+  DESCRIPTION 'MARSHAL2: COM Tutorial Sample. Copyright Microsoft Corp., 1997'
+
+  EXPORTS
+    DllGetClassObject PRIVATE
+    DllCanUnloadNow PRIVATE
+    DllRegisterServer PRIVATE
+    DllUnregisterServer PRIVATE
+    GetProxyDllInfo PRIVATE
+</FONT> </PRE>
+
+<P>
+The requied exports for the default functions in this server DLL are
+marked for internal, private use only by COM.
+
+<P>
+A .RES resource file is linked into the final exeutable. Unlike
+MARSHAL.DLL and like earlier in-process servers in this series, this
+marshaling server DLL contains such resources as standard version
+information. For more details, see MARSHAL2.RC.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

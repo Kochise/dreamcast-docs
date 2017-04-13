@@ -1,0 +1,133 @@
+
+DLLSERVE - COM Server in a DLL
+
+
+SUMMARY
+=======
+
+The COMOBJ sample introduced COM objects. This DLLSERVE sample introduces
+COM components (also called simply component objects). A component object
+is a reusable software unit that encapsulates or packages the
+manufacturing of a specific class of COM object. A COM object class
+specifies an open-ended set of behaviorally identical COM objects that is
+uniquely identified for all programs and all time (by a Class ID).
+
+Component objects are housed in a COM Server. The server executable is
+registered (or published) in a system registry to act as the creation
+agent for COM object instances of the COM Component. The server contains
+one or more Class Factories used for the creation of COM objects. Class
+factories are themselves COM objects that expose the IClassfactory[2]
+interface.  However, as an integral part of the server housing, class
+factories are typically not full-fledged component objects.
+
+Component objects are the building blocks in COM and ActiveX programming.
+Component objects are combined to make some portion of an application. The
+running behavior of the applicaion is often determined by, and evidenced
+in, the COM objects that were instantiated (i.e., that were manufactured
+in the class factories of the various component objects that were combined
+in the application).
+
+The DLLSERVE sample begins with the car-related COM Objects of the
+previous COMOBJ lesson and refashions them into components. To do so
+requires little change to the COM objects themselves (COCar, COUtilityCar,
+and COCruiseCar). But to envelop them as components, this lesson
+introduces new facilities to house them in an in-process DLL COM server.
+These facilities include class factories for each component and a
+CarSample utility component that allows clients to see logged behavior in
+the server itself.
+
+The DLL server provides the following components: Car, UtilityCar,
+CruiseCar, and CarSample.
+
+In the series of COM tutorial code samples, DLLSERVE works with the
+DLLCLIEN code sample to illustrate DLLSERVE's COM server facilities for
+creating components that can be used by an EXE client and the subsequent
+manipulation of those components by DLLCLIEN.EXE.
+
+For functional descriptions and a tutorial code tour of DLLSERVE, see the
+Code Tour section in DLLSERVE.HTM. For details on setting up the
+programmatic usage of DLLSERVE, see the Usage section in DLLSERVE.HTM. To
+read DLLSERVE.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the DLLSERVE lesson in the table of lessons. You can also achieve
+the same thing by clicking the DLLSERVE.HTM file after locating the main
+tutorial directory in the Windows Explorer. See also DLLCLIEN.HTM in the
+main tutorial directory for more details on the DLLCLIEN client
+application and how it works with DLLSERVE.DLL.
+
+You must build DLLSERVE.DLL before building or running DLLCLIEN.
+DLLSERVE's makefile automatically registers DLLSERVE's components in the
+registry. These components must be registered before DLLSERVE is available
+to outside COM clients as a server for those components. This registration
+is done using the REGISTER.EXE utility built in the previous REGISTER
+lesson. To build or run DLLSERVE, you should build the REGISTER code
+sample first.
+
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+Usage
+-----
+
+DLLSERVE is a DLL that is meant to be used primarily as a COM server.
+Though it can be implicitly loaded by linking to its associated .LIB file,
+it is normally used after an explicit LoadLibrary call (usually from COM's
+CoGetClassObject function). Servers like DLLSERVE are registered in the
+registry. To use DLLSERVE in a COM client program, a client does not need
+to include DLLSERVE.H or link to DLLSERVE.LIB. A COM client of DLLSERVE
+obtains access solely through its components' CLSIDs and COM services. For
+DLLSERVE, those CLSIDs are CLSID_DllCar, CLSID_DllUtilityCar,
+CLSID_DllCruiseCar, and CLSID_DllCarSample. The DLLCLIEN lesson shows how
+this is done.
+
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the DLLSERVE directory:
+
+  nmake register
+
+You can also directly invoke the REGISTER.EXE command at the command prompt
+while in the DLLSERVE directory.
+
+  ..\register\register.exe dllserve.dll
+
+These registration commands require a prior build of the REGISTER sample
+in this series, as well as a prior build of DLLSERVE.DLL.
+
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Win32 Platform SDK and Visual C++
+include a utility, REGSVR32.EXE, which can be used in a similar fashion to
+register in-process servers and marshaling DLLs.
+
+
+FILES
+=====
+
+Files         Description
+
+DLLSERVE.TXT  This file.
+MAKEFILE      The generic makefile for building the DLLSERVE.DLL
+              code sample of this tutorial lesson.
+DLLSERVE.H    The include file for declaring as imported or defining as
+              exported the service functions in DLLSERVE.DLL.
+DLLSERVE.CPP  The main implementation file for DLLSERVE.DLL. Has DllMain
+              and the COM server functions (for example, DllGetClassObject).
+DLLSERVE.DEF  The module definition file. Exports server housing functions.
+DLLSERVE.RC   The DLL resource definition file for the executable.
+DLLSERVE.ICO  The icon resource for the executable.
+SERVER.H      The include file for the server control C++ object. Also has
+              resource identifiers for resources stored inside DLLSERVE.DLL
+              and other external declarations that are used internally
+              within the modules of DLLSERVE.DLL.
+SERVER.CPP    The implementation file for the server control object.
+FACTORY.H     The include file for the server's class factory COM objects.
+FACTORY.CPP   The implementation file for the server's class factories.
+CAR.H         The include file for the COCar COM object class.
+CAR.CPP       The implementation file for the COCar COM object class.
+UTILCAR.H     The include file for the COUtililtyCar COM object class.
+UTILCAR.CPP   The implementation file for the COUtilityCar COM object class.
+CRUCAR.H      The include file for the COCruiseCar COM object class.
+CRUCAR.CPP    The implementation file for the COCruiseCar COM object class.
+SAMPLE.H      The include file for the COCarSample COM object class.
+SAMPLE.CPP    The implementation file for the COCarSample COM object class.

@@ -1,0 +1,1370 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>REMCLIEN COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="aptclien.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="freserve.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="REMCLIEN">REMCLIEN - Distributed COM (DCOM) Remote Client</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The REMCLIEN sample shows how a client can access and control components
+in an out-of-process remote server. In this lesson the previously studied
+out-of-process server APTSERVE is used, but now it is accessed across
+machine boundaries by REMCLIEN. In earlier lessons, APTCLIEN accessed
+APTSERVE's components on the same machine by crossing only process and
+thread boundaries.
+
+<P>
+No changes to APTSERVE are required for REMCLIEN to work. Distributed COM
+(DCOM) supports local/remote transparency between client and server.
+
+<P>
+The REMCLIEN sample presents the car-related components that were studied
+in previous lessons. These COM objects use the following interfaces: ICar,
+IUtility, and ICruise. REMCLIEN works in conjunction with the separate
+APTSERVE.EXE, which provides the COCar, COUtilityCar, and COCruiseCar
+COM objects.
+
+<P>
+REMCLIEN.EXE creates its own COUtilityCruiseCar COM object by reusing the
+COCruiseCar COM object by containment and augmenting it with a native
+implementation of the IUtility interface. Because the COCruiseCar COM
+object class is a composite--that is, it reuses an inner COCar object by
+containment--REMCLIEN illustrates nested reuse of COM objects. The
+composite COUtilityCruiseCar object reuses COCruiseCar, another composite
+COM object, by containment. COCruiseCar further reuses the COCar COM
+object by containment.
+
+<P>
+The composition of COUtilityCruiseCar is also interesting because of the
+COUtilityCruiseCar object's containment of reuse the COCruiseCar object
+crosses the machine boundary between REMCLIEN and the out-of-process
+remote server APTSERVE.EXE. REMCLIEN uses standard marshaling support for
+the custom interfaces it uses on the COCruiseCar object. This marshaling
+support was separately built as MARSHAL.DLL in the earlier MARSHAL code
+sample.
+
+<P>
+Because client and server reside in separate processes on different
+machines, both REMCLIEN and APTSERVE rely on marshaling for the ICar,
+IUtility, and ICruise interfaces. This support was provided by the
+previous MARSHAL code sample, so you must also build the MARSHAL code
+sample on both machines prior to building and running REMCLIEN with
+APTSERVE.
+
+<P>
+To set up for the proper operation of REMCLIEN on one machine to control
+APTSERVE on the other, both machines must have DCOM (Distributed COM)
+installed. This is the case in Windows NT 4.0 or above and in Windows 98.
+It is also the case in Windows 95 with DCOM95 installed. Earlier versions
+of these operating systems do not support Distributed COM. The two
+machines must be connected in a properly configured network. For details
+on setting up a network, see your Windows NT product documentation or the
+Windows NT Resource Kit. Also see the &quot;Network and Setup Issues&quot;
+section at the end of this tutorial text for more details on machine and
+network setup for running REMCLIEN.
+
+<P>
+For functional descriptions and a tutorial code tour of REMCLIEN, see the
+Code Tour section in REMCLIEN.HTM. For details on the external user
+operation of REMCLIEN, see both the Usage and Operation sections in
+REMCLIEN.HTM. To read REMCLIEN.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the REMCLIEN lesson in the table of lessons. You can
+also achieve the same thing by clicking the REMCLIEN.HTM file after
+locating the main tutorial directory in the Windows Explorer. See also
+APTSERVE.HTM in the main tutorial directory for more details on how
+APTSERVE works and exposes its services to REMCLIEN. The makefile for
+APTSERVE automatically registers that server in the registry of the host
+machine, so you must build APTSERVE on the remote machine before
+attempting to run REMCLIEN.
+
+<P>
+For general details on setting up your system to build and test Win32 code
+samples such as those in this COM Tutorial series, see TUTORIAL.HTM.
+The supplied MAKEFILE is Microsoft NMAKE-compatible. To create a debug
+build, issue the NMAKE command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<P>
+REMCLIEN is an application that you can execute directly from Windows in
+the normal manner or from the Command Prompt window. No command line
+parameters are recognized by REMCLIEN. REMCLIEN will currently run on the
+Windows 95 operating system with the DCOM95 update for Win95 installed. It
+will run on the Windows 98 operating system. It will also run under
+version 4 or higher of Windows NT Workstation or Windows NT Server.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">
+Building the Code Samples.</a>
+
+<P>
+To access and control the remote APTSERVE server, the REMCLIEN client
+additionally requires that you have your network and machines set up
+properly for DCOM operation. See the &quot;Network Setup and Issues&quot;
+section below for more details. If you have already built the appropriate
+samples and set up your machines for DCOM operation, REMCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="REMCLIEN\REMCLIEN.exe">
+Click here to run REMCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>OPERATION</h3>
+
+<P>
+The REMCLIEN.EXE application provides the user interface for this lesson.
+It exercises the associated, but independent, APTSERVE.EXE out-of-process
+remote server. Here is a summary of operation from the standpoint of
+REMCLIEN.EXE as a client of APTSERVE.EXE.
+
+<P>
+The REMCLIEN and APTSERVE samples are directly analogous to the APTCLIEN
+and APTSERVE samples presented in earlier lessons. The same components are
+used, and almost the same menu system exercises those objects. The main
+difference is that the client must use the standard marshaling support
+provided by the MARSHAL.DLL server for the interfaces that reside across
+machine boundaries rather than across process boundaries. This standard
+marshaling is largely transparent if you use the Microsoft Interface
+Definition Language (MIDL) compiler to build a standard marshaling DLL.
+
+<P>
+Since two machines are involved in this lesson, we will refer to the
+machine where APTSERVE runs as Machine-S (server) and to the machine where
+REMCLIEN runs as Machine-C (client).
+
+<P>
+To run REMCLIEN and obtain the log listings for this tutorial, Machine-C
+was set up to compile Win32 applications, and all of the COM tutorial
+code samples were compiled there under Windows NT 4.x. Among other things,
+this build process registered the necessary interfaces in the registry on
+Machine-C for standard marshaling using the MARSHAL marshaling server on
+that machine. Using the C$ drive share predefined on Machine-S, a complete
+copy of the built \MSSDK\SAMPLES\COM\TUTSAMP branch was copied across the
+network from Machine-C to Machine-S.
+
+<P>
+With all the sample executables on Machine-S, the REGALL batch file was
+run from the TUTSAMP directory there. This registered the APTSERVE server
+and its interfaces in the registry on Machine-S. The MARSHAL standard
+marshaling server located on that machine registers the interfaces there.
+
+<P>
+Alternately, you can copy the uncompiled source of the samples branch from
+Machine-C to Machine-S and run MAKEALL.BAT on Machine-S. This will perform
+a complete build of all the executables and automatically register the
+APTSERVE and MARSHAL servers on Machine-S. However, it is quicker to
+perform a complete build on one machine and copy the TUTSAMP branch (with
+built executables) to the other machine and run REGALL.BAT on the other
+machine.
+
+<P>
+With the executables present and the servers properly registered on both
+machines, the REMCLIEN application can be run on Machine-C. From REMCLIEN
+you specify the network name of Machine-S. Then when you create an object
+from REMCLIEN you rely on COM to automatically locate and load the remote
+APTSERVE server on Machine-S. You must be logged on under the same user
+name and password on both machines, and those accounts on both machines
+must have Administrator privileges. See the &quot;Network and Setup
+Issues&quot; section below for more details.
+
+<P>
+As in the APTCLIEN code sample, support is provided in REMCLIEN for a
+trace logging facility.  However, REMCLIEN displays only the trace log of
+its own internal client behavior. Because the APTSERVE server is running
+on a remote machine, APTSERVE's own trace logging facility is used to
+display its internal behavior on the remote Machine-S display.
+
+<P>
+To run client and server so that both trace logs are displayed on each
+machine, start APTCLIEN on Machine-S before running REMCLIEN on Machine-C.
+On Machine-S, from the APTCLIEN Car menu, choose Create. This command
+will load the APTSERVE out-of-process server on Machine-S. As in the
+APTCLIEN and LOCCLIEN lessons, loading APTSERVE will provide an integrated
+logging display of the internal behavior of both APTCLIEN and APTSERVE on
+Machine-S.
+
+<P>
+You can then start REMCLIEN on Machine-C, where its internal client
+behavior will be logged in its own separate trace log display on
+Machine-C. From the REMCLIEN File menu, choose Set Remote Machine to set
+the remote machine's name (for example, Machine-S) in the Remote Server
+Info dialog box. This name is the network machine name of the computer
+where the remote APTSERVE server is located and registered. You must
+specify this name before you can run REMCLIEN. DCOM permits the machine
+name to be specified in a valid UNC format (for example, Machine-S or
+\\Machine-S) or DNS format (for example, www.mynode.com or 135.5.33.19).
+
+<P>
+If you then use REMCLIEN's Car menu to create a car object (from
+Machine-C), COM will find APTSERVE already loaded on Machine-S and will
+access this loaded instance. You will then see the log (on Machine-S) of
+APTSERVE's internal server behavior as you control it from either APTCLIEN
+on Machine-S or from REMCLIEN on machine-C. This example illustrates how a
+single COM server can be controlled simultaneously from multiple clients,
+in this case one local and one remote. APTSERVE supports such multiple
+client access to it by partitioning the COM server into separate apartment
+model threads and ensuring mutually exclusive access to shared server and
+class factory data.
+
+<P>
+By configuring the server trace log in the manner used above, you can see
+the inner behavior of a multithreaded server with multiple clients. On
+Machine-S you can freely create and manipulate components in APTSERVE,
+treating it as an out-of-process local server from APTCLIEN (on the same
+machine). At the same time, on Machine-C you can freely create and
+manipulate other component instances in APTSERVE, treating it as an
+out-of-process remote server from REMCLIEN.  In both cases you can watch
+internal APTSERVE behavior in the APTCLIEN trace log display on Machine-S.
+
+<P>
+Although REMCLIEN functions much like APTCLIEN, LOCCLIEN, DLLCLIEN and
+COMUSER, we'll give a short review for those readers who are visiting this
+code sample out of sequence. The COM objects that are used in the REMCLIEN
+and APTSERVE code samples represent sport utility vehicles. We invent some
+basic feature sets for modeling such car objects. These feature sets are
+implemented as interfaces to COM objects. The ICar interface provides some
+basic car behavior: Shift, Clutch, Speed, and Steer. The IUtility
+interface provides off-road utility systems: Offroad and Winch. The
+ICruise interface provides automatic cruise control facilities: Engage and
+Adjust.
+
+<P>
+REMCLIEN.EXE provides menus for creating, releasing, and invoking methods
+for four COM objects: COCar, COUtilityCar, COCruiseCar, and
+COUtilityCruiseCar. These objects have combinations of the ICar, IUtility,
+and ICruise interfaces. COCar objects expose the ICar interface.
+COUtilityCar objects expose the ICar and IUtility interfaces. COCruiseCar
+objects expose the ICar and ICruise interfaces. COUtilityCruiseCar objects
+expose the ICar, ICruise, and IUtility interfaces. As a result, COCar
+objects have only the basic car behavior (ICar). COUtilityCar objects have
+basic car behavior (ICar) with sport utility systems (IUtility).
+COCruiseCar objects have basic car behavior (ICar) with an automatic
+cruise control system (ICruise). COUtilityCruiseCar objects have basic car
+behavior (ICar), a cruise control system (ICruise), and a sport utility
+system (IUtility).
+
+<P>
+COCar is constructed as an aggregatable COM object with a native
+implementation of the ICar interface. COUtilityCar is constructed using
+containment and is implemented in APTSERVE.EXE. For details, see the
+APTSERVE lesson. COCruiseCar is constructed using containment and is also
+implemented in APTSERVE.EXE. COUtilityCruiseCar is constructed using
+containment and is implemented in REMCLIEN.EXE. In this sample,
+COUtilityCruiseCar reuses COCruiseCar by containment to illustrate nested
+COM object reuse that spans thread and machine boundaries.
+
+<P>
+REMCLIEN.EXE presents a menu for each of these four main COM objects. Each
+menu has commands that call the methods of the various available
+interfaces. The code samples (both REMCLIEN and APTSERVE) have trace
+message log statements throughout. When you exercise the objects from
+REMCLIEN.EXE, the main REMCLIEN window will display a log of only the
+internal client activity on Machine-C.  As described above, the trace log
+of internal APTSERVE server activity will be displayed on Machine-S.
+
+<p>Menu Selection: File/Exit<br>
+Exits REMCLIEN.
+
+<p>Menu Selection: File/Set Remote Machine...<br>
+Displays the Remote Server Info dialog box, in which you specify the
+network machine name of the computer where the remote APTSERVE server is
+located. You must specify this name in a valid UNC or DNS format before
+you can create and operate any remote APTSERVE COM objects from REMCLIEN.
+Example machine name: \\MyRemoteMachine.
+
+<p>Menu Selection: Car/Create<br>
+Creates a COCar COM object. A checkmark beside the menu item indicates
+that there is already an instance of the object.
+
+<p>Menu Selection: Car/Release<br>
+Releases the COCar COM object.
+
+<p>Menu Selection: Car/ICar::Shift<br>
+Calls the ICar::Shift method on the COCar object.
+
+<p>Menu Selection: Car/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COCar object.
+
+<p>Menu Selection: Car/ICar::Speed<br>
+Calls the ICar::Speed method on the COCar object.
+
+<p>Menu Selection: Car/ICar::Steer<br>
+Calls the ICar::Steer method on the COCar object.
+
+<p>Menu Selection: UtilityCar/Create<br>
+Creates the COUtilityCar COM object. A checkmark beside the menu item
+indicates that there is already an instance of the object.
+
+<p>Menu Selection: UtilityCar/Release<br>
+Releases the COUtilityCar COM object.
+
+<p>Menu Selection: UtilityCar/ICar::Shift<br>
+Calls the ICar::Shift method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/ICar::Speed<br>
+Calls the ICar::Speed method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/ICar::Steer<br>
+Calls the ICar::Steer method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/IUtility::Offroad<br>
+Calls the IUtility::Offroad method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/IUtility::Winch<br>
+Calls the IUtility::Winch method on the COUtilityCar object.
+
+<p>Menu Selection: CruiseCar/Create<br>
+Creates the COCruiseCar COM object. A checkmark beside the menu item
+indicates that there is already an instance of the object.
+
+<p>Menu Selection: CruiseCar/Release<br>
+Releases the COCruiseCar COM object.
+
+<p>Menu Selection: CruiseCar/ICar::Shift<br>
+Calls the ICar::Shift method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICar::Speed<br>
+Calls the ICar::Speed method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICar::Steer<br>
+Calls the ICar::Steer method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICruise::Engage<br>
+Calls the ICruise::Engage method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICruise::Adjust<br>
+Calls the ICruise::Adjust method on the COCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/Create<br>
+Creates the COUtilityCruiseCar COM object. A checkmark beside the menu
+item indicates that there is already an instance of the object.
+
+<p>Menu Selection: UtilityCruiseCar/Release<br>
+Releases the COUtilityCruiseCar COM object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Shift<br>
+Calls the ICar::Shift method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Speed<br>
+Calls the ICar::Speed method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Steer<br>
+Calls the ICar::Steer method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICruise::Engage<br>
+Calls the ICruise::Engage method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICruise::Adjust<br>
+Calls the ICruise::Adjust method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/IUtility::Offroad<br>
+Calls the IUtility::Offroad method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/IUtility::Winch<br>
+Calls the IUtility::Winch method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: Log/Clear<br>
+Clears the trace message log display.
+
+<p>Menu Selection: Log/Logging<br>
+Toggles the trace message logging facility on or off. A checkmark beside
+the menu item indicates that logging is on. Logging can be engaged but
+simply turned on or off. Unchecking this command turns the trace message
+logging facility off but does not disengage the logging mechanisms.
+
+<p>Menu Selection: Log/Copy<br>
+Copies the current contents of the trace message log to the Windows
+Clipboard.
+
+<P>Menu Selection: Help/REMCLIEN Tutorial<br>
+Opens the REMCLIEN.HTM tutorial file in the Web browser.
+
+<P>Menu Selection: Help/APTSERVE Tutorial<br>
+Opens the APTSERVE.HTM tutorial file in the Web browser.
+
+<P>Menu Selection: Help/MARSHAL Tutorial<br>
+Opens the MARSHAL.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/Read Source File<br>
+Displays the Open common dialog box so you can open a source file from this
+lesson or another one in the Windows Notepad.
+
+<p>Menu Selection: Help/About REMCLIEN<br>
+Displays the About dialog box for this application, a standard part of
+this series of code samples. The code illustrates how to program the use
+of the CAboutBox class provided by APPUTIL.LIB.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files          Description</u>
+REMCLIEN.TXT   Short sample description.
+MAKEFILE       The generic makefile for building the code sample
+               application of this tutorial lesson.
+REMCLIEN.H     The include file for the REMCLIEN application. Contains
+               class declarations, function prototypes, and resource
+               identifiers.
+REMCLIEN.CPP   The main implementation file for REMCLIEN.EXE. Has WinMain
+               and CMainWindow implementation, as well as the main menu
+               dispatching.
+REMCLIEN.RC    The application resource definition file.
+REMCLIEN.ICO   The application icon resource.
+UTCRUCAR.H     The class declaration for the COUtilityCruiseCar COM object.
+UTCRUCAR.CPP   Implementation file for the COUtilityCruiseCar COM object.
+               Also has the definition of the CreateUtilityCruiseCar
+               function.
+ </FONT> </PRE>
+
+<P>
+Like all code samples in the series, REMCLIEN uses many of the utility
+classes and services provided by APPUTIL. For more details on APPUTIL,
+study the APPUTIL library source code in the sibling APPUTIL directory and
+APPUTIL.HTM in the main tutorial directory.
+
+<P>
+REMCLIEN is consistent with earlier lessons to highlight the comparison of
+out-of-process remote servers with out-of-process local servers. REMCLIEN
+retains the same set of COM objects as the previous LOCCLIEN lesson. A
+matching menu system to manipulate these objects is also retained. For
+details on the implementation and functionality of these COM objects, see
+the code tours for LOCCLIEN, LOCSERVE, APTCLIEN, and APTSERVE.
+
+<P>
+This lesson examines the client code needed to support cross-machine
+remote manipulation of the components in the multiple apartments of the
+APTSERVE server. We will tour the client source code and its internal
+behavior using representative trace logs.
+
+<P>
+REMCLIEN needs DCOM to run. Early in its WinMain function, REMCLIEN calls
+APPUTIL's DComOk function to confirm that DCOM is installed on the system.
+DComOk does this by ensuring that the CoInitializeEx function is exported
+from the OLE32.DLL system library. CoInitializeEx was initially supplied
+with the DCOM functionality in Windows NT 4.0 and its presence is thus a
+simple way to confirm that DCOM is present. Simularly, DComOk will return
+FALSE on Windows 95 if the DCOM95 add-on is not installed.
+
+<P>
+No changes to the APTSERVE server sample need to be made, and only minimal
+changes are needed to transform the APTCLIEN local client into the
+REMCLIEN remote client. This emphasizes COM's local/remote transparency.
+The following code tour will thus focus on evolving the APTCLIEN code into
+the REMCLIEN code.
+
+<P>
+The main changes center on a different way of using COM to create
+instances of the components housed in the remote server.  The
+CoGetClassObject call is made with appropriate parameters to direct COM to
+locate, load, and set up standard marshaling for components in the remote
+server.
+
+<P>
+The most important new information that CoGetClassObject needs is defined
+in a COSERVERINFO structure.  Here is the code for this in REMCLIEN.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // Here is a structure for storing the remote server info.
+  COSERVERINFO g_ServerInfo;
+  // Storage for the user entered remote machine name.
+  TCHAR g_szMachineName[MAX_PATH] = TEXT(&quot;&quot;);
+  OLECHAR g_wszMachineName[MAX_PATH];
+ </FONT> </PRE>
+
+<P>
+The important member of this structure is a pointer to string storage for
+the network name of the machine where the remote COM server resides. Above
+are two such string variables: g_szMachineName is used for normal user
+input string storage from a dialog box, and g_wszMachineName is the actual
+storage pointed to by the g_ServerInfo structure.  g_wszMachineName is
+used by COM and must be of Unicode type OLECHAR.  Depending on whether
+REMCLIEN is compiled for Unicode, a string conversion may be required to
+obtain the Unicode version of the string.  The g_ServerInfo structure must
+be initialized with the pointer to g_wszMachineName.  This is done in the
+application's InitApplication function in REMCLIEN.CPP as follows
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+    ...
+    // Zero the g_ServerInfo structure.
+    memset(&amp;g_ServerInfo, 0, sizeof(COSERVERINFO));
+
+    // Init the remote machine name.
+    g_wszMachineName[0] = 0;
+  #ifdef UNICODE
+    g_ServerInfo.pwszName = &amp;g_szMachineName[0];
+  #else
+    g_ServerInfo.pwszName = &amp;g_wszMachineName[0];
+  #endif
+    ...
+ </FONT> </PRE>
+
+<P>
+First, a memset call is used to zero the entire g_ServerInfo structure
+contents. If the code is compiled for Unicode, no conversions are needed,
+and the g_ServerInfo.pwszName pointer is initialized to the TCHAR string
+array, g_szMachineName. Otherwise, it is initialized to point to a string
+array that is explicitly defined as type OLECHAR, g_wszMachineName.
+
+<P>
+We will examine later how the string is assigned a value. For now, we
+assume this string has the correct machine name. The g_ServerInfo structure
+is used when component instances are created at the request of the
+REMCLIEN user: Car, UtilityCar, and CruiseCar in source file REMCLIEN.CPP;
+UtilityCruiseCar in source file UTCRUCAR.CPP. For example, when the user
+requests creation of a CruiseCar component, the following code in
+REMCLIEN'S DoMenu function creates the remote COCruiseCar COM object
+residing in the APTSERVE server. The following code is found in
+REMCLIEN.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+    ...
+    case IDM_CCAR_CREATE:
+      LOG(&quot;C: === CruiseCar Menu: Create.&quot;);
+      if (NULL == m_pCruiseCar)
+      {
+        // Call COM services to create a remote instance.
+        hr = CreateRemote(
+               &amp;g_ServerInfo,
+               CLSID_AptCruiseCar,
+               (PPVOID)&amp;m_pCruiseCar);
+        if (SUCCEEDED(hr))
+        {
+          ::CheckMenuItem(
+              hMenu,
+              IDM_CCAR_CREATE,
+              MF_BYCOMMAND | MF_CHECKED);
+          LOG(&quot;C: CruiseCar creation succeeded.&quot;);
+        }
+        else
+          LOG(&quot;C: ???? CruiseCar creation failed.&quot;);
+      }
+      else
+        LOG(&quot;C: ???? CruiseCar already exists.&quot;);
+      break;
+    ...
+ </FONT> </PRE>
+
+<p>A common CreateRemote function is used in several such creation calls
+in DoMenu. Here is its definition in REMCLIEN.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CreateRemote(
+            COSERVERINFO* pServerInfo,
+            REFCLSID rclsid,
+            PPVOID ppv)
+  {
+    HRESULT hr = E_FAIL;
+    IClassFactory* pICF = NULL;
+    HCURSOR hCurPrev;
+    HCURSOR hCurWait = LoadCursor(NULL, IDC_WAIT);
+
+    // Ensure a remote machine name was specified by user.
+    if (pServerInfo-&gt;pszName[0])
+    {
+      // Change cursor to the hour glass. Things could take awhile working
+      // across the network.
+      hCurPrev = SetCursor(hCurWait);
+
+      // Get the COM Object Class Factory.
+      hr = CoGetClassObject(
+             rclsid,
+             CLSCTX_REMOTE_SERVER,
+             pServerInfo,
+             IID_IClassFactory,
+             (PPVOID)&amp;pICF);
+      LOGERROR(&quot;C:CoGetClassObject.&quot;,hr);
+      if (SUCCEEDED(hr))
+      {
+        // Use Class Factory to create an instance of the COM object.
+        hr = pICF-&gt;CreateInstance(
+                     NULL,
+                     IID_IUnknown,
+                     ppv);
+        pICF-&gt;Release();
+        LOGERROR(&quot;C:CreateInstance.&quot;,hr);
+      }
+
+      // Set Cursor back to what it was.
+      SetCursor(hCurPrev);
+    }
+    else
+    {
+      LOG(&quot;C: ???? Specify remote machine name first.&quot;);
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+This is a familiar sequence. A call to CoGetClassObject is used to obtain
+a class factory interface for a component. The class factory is then
+called to create an instance of the COM object and to return an interface
+pointer for the new object.  The significant difference in REMCLIEN is how
+the CLSCTX_REMOTE_SERVER parameter is used to direct COM to find the
+server remotely.  A pointer to the g_ServerInfo structure is also passed to
+provide the necessary network machine name of the computer where the
+remote server resides.
+
+<P>
+The LOGERROR macro is used to check an HRESULT for error and if necessary,
+fetch the associated human-readable error message string from the system
+tables and log that message for display.  See APPUTIL.HTM for more details
+on the use of the LOGERROR macro.
+
+<P>
+In this code sample, a remote server is explicitly requested. Here are
+some of the important CLSCTX_* values that can be passed for the execution
+context. Others are also honored. See the Platform SDK documentation for
+more details.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  CLSCTX_INPROC_SERVER
+    Load the in-process server (DLL).
+  CLSCTX_LOCAL_SERVER
+    Load the out-of-process local server (EXE).
+  CLSCTX_REMOTE_SERVER
+    Load the out-of-process remote server (EXE).
+  CLSCTX_SERVER
+    Load in-process, out-of-process local, or out-of-process remote server
+    with COM making the attempt in that order.
+ </FONT> </PRE>
+
+<P>
+For example, if the code above had specified CLSCTX_SERVER, then COM would
+consult the Registry and find the requested CLSID_AptCruiseCar component
+in the APTSERVE server on the local machine first, rather than attempting
+to find the one on the remote machine.
+
+<P>
+DCOM supports other mechanisms not covered in this lesson for designating
+how and where a remote component is instantiated. There are facilities for
+launch security, access security, and call-level security.
+
+<P>
+The REMCLIEN client could be configured to run the server remotely at a
+particular machine whenever the CLSCTX_REMOTE_SERVER flag is passed to an
+activation function without a COSERVERINFO structure. This is done by
+adding an appropriate \HKEY_CLASSES_ROOT\CLSID\[clsid]\RemoteServerName
+key for the CLSID of the component in the registry of the client machine.
+However, if a subsequent activation function is called (for example,
+CoCreateInstance) that passes a COSERVERINFO structure, it will override
+the RemoteServerName setting of the component's CLSID in the registry.
+
+<P>
+Once the new COM object is created, REMCLIEN can use its interfaces, as in
+the previous APTCLIEN code sample.  For example, the ICar::Shift method on
+the remote COM object can be called across machine boundaries. The
+standard marshaling provided by the MARSHAL server takes care of
+marshaling the ICar, IUtility, and ICruise interfaces across process,
+thread, and machine boundaries.  But the MARSHAL server must be built and
+registered on both the client machine, where REMCLIEN runs, and on the
+server machine, where APTSERVE runs.
+
+<P>
+The following code from the DialogProc procedure of the Remote Server Info
+dialog box (in REMCLIEN.CPP) assigns the machine name supplied by the user
+through the Set Remote Machine command on the File menu.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+    ...
+    case WM_COMMAND:
+      {
+        WORD wCmd = LOWORD(wParam);
+
+        if (wCmd == IDOK)
+        {
+          // Obtain the machine name from the edit control.
+          GetDlgItemText(hWndDlg, IDC_EDIT_MACHINE, g_szMachineName, MAX_PATH);
+  #if !defined(UNICODE)
+          // Convert to WideChar Unicode if we are NOT compiled for Unicode.
+          AnsiToUc(g_szMachineName, g_wszMachineName, 0);
+  #endif
+          ::EndDialog(hWndDlg, TRUE);
+        }
+        else if (wCmd == IDCANCEL)
+          ::EndDialog(hWndDlg, TRUE);
+      }
+      break;
+    ...
+ </FONT> </PRE>
+
+<P>
+If REMCLIEN is not compiled for Unicode, the ANSI string obtained in the
+dialog box must be converted to a wide character array (WCHAR or OLECHAR)
+for later use by COM. This conversion is performed by calling the Win32
+function MultiByteToWideChar inside the APPUTIL function, AnsiToUc.
+
+<P>
+We will now tour internal behavior in both APTSERVE and REMCLIEN by
+looking at some representative trace logs. Trace lines that begin with
+'C:' mark behavior reported in the REMCLIEN.EXE client. Lines that begin
+with 'L:' mark behavior reported in the remote APTSERVE.EXE local server.
+The internal APTSERVE trace lines will also show the thread ID of the
+action after the 'L'. These trace logs were obtained from machines that
+were connected in a network as described in the Summary section above.
+APTCLIEN is used on the remote machine to display the APTSERVE internal
+behavior.
+
+<P>
+First run APTCLIEN on remote Machine-S. Choose the Car menu's Create choice.
+Here is the resulting trace log in APTCLIEN.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === Car Menu: Create.
+  L: APTSERVE now logging to client.
+  L&lt;3B&gt;: CmdLine Switches= -Embedding
+  L&lt;3B&gt;: CServer::OpenFactories. Begin.
+  L: CServer::OwnThis. Thread &lt;3B&gt; waiting to own CServer.
+  L: CServer::OwnThis. CServer now owned by Thread &lt;3B&gt;.
+  L&lt;3B&gt;: CFCar::CImpIClassFactory Constructor. Non-Aggregating.
+  L&lt;3B&gt;: CFCar Constructor. m_pUnkOuter=0x0.
+  L&lt;3B&gt;: CFUtilityCar::CImpIClassFactory Constructor. Non-Aggregating.
+  L&lt;3B&gt;: CFUtilityCar Constructor. m_pUnkOuter=0x0.
+  L&lt;3B&gt;: CFCruiseCar::CImpIClassFactory Constructor. Non-Aggregating.
+  L&lt;3B&gt;: CFCruiseCar Constructor. m_pUnkOuter=0x0.
+  L&lt;3B&gt;: CServer::OpenFactories. AptCar.
+  L&lt;3B&gt;: CFCar::AddRef. New cRefs=1.
+  L&lt;3B&gt;: CFCar::AddRef. New cRefs=2.
+  L&lt;3B&gt;: CServer::OpenFactories. AptUtilityCar.
+  L&lt;3B&gt;: CFUtilityCar::AddRef. New cRefs=1.
+  L&lt;3B&gt;: CFUtilityCar::AddRef. New cRefs=2.
+  L: AptThreadProc. Starting Apartment Thread &lt;65&gt;.
+  L&lt;65&gt;: CFCar::AddRef. New cRefs=3.
+  L&lt;3B&gt;: CServer::OpenFactories. AptCruiseCar.
+  L&lt;3B&gt;: CFCruiseCar::AddRef. New cRefs=1.
+  L&lt;65&gt;: CFCar::QueryInterface. pIClassFactory returned.
+  L: AptThreadProc. Starting Apartment Thread &lt;7D&gt;.
+  L&lt;3B&gt;: CFCruiseCar::AddRef. New cRefs=2.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  L&lt;7D&gt;: CFUtilityCar::AddRef. New cRefs=3.
+  L: CServer::UnOwnThis. Ownership relinquished by &lt;3B&gt;.
+  L&lt;65&gt;: CFCar::AddRef. New cRefs=4.
+  L: AptThreadProc. Starting Apartment Thread &lt;34&gt;.
+  L&lt;3B&gt;: CServer::OpenFactories. End.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::CreateInstance. pUnkOuter=0x0.
+  L&lt;34&gt;: CFCruiseCar::AddRef. New cRefs=3.
+  L&lt;65&gt;: COCar::CImpICar Constructor. Non-Aggregating.
+  L&lt;65&gt;: COCar Constructor. m_pUnkOuter=0x0.
+  L: CServer::OwnThis. Thread &lt;65&gt; waiting to own CServer.
+  L: CServer::OwnThis. CServer now owned by Thread &lt;65&gt;.
+  L&lt;65&gt;: CServer::ObjectsUp. New cObjects=1.
+  L: CServer::UnOwnThis. Ownership relinquished by &lt;65&gt;.
+  L&lt;65&gt;: COCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=1.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::CreateInstance Succeeded. *ppv=0x771680.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=2.
+  L&lt;65&gt;: COCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=3.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=4.
+  L&lt;65&gt;: COCar::Release. New cRefs=3.
+  L&lt;65&gt;: COCar::Release. New cRefs=2.
+  L&lt;65&gt;: COCar::Release. New cRefs=1.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  L&lt;65&gt;: CFCar::Release. New cRefs=3.
+ </FONT> </PRE>
+
+<P>
+Our main goal here is to establish the integrated logging in the client
+log display of both client and server behavior. We will not cover the rest
+of this APTCLIEN-driven log in detail because we did so in the APTCLIEN
+lesson. Our main focus here is the DCOM behavior driven by REMCLIEN.
+
+<P>
+As in the APTCLIEN lesson, when the following threads are started, each of
+the server's component class factories is registered with COM on
+Machine-S:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  &lt;3B&gt; - Main thread for the APTSERVE local server.
+  &lt;65&gt; - AptCar component apartment thread.
+  &lt;7D&gt; - AptUtilityCar component apartment thread.
+  &lt;34&gt; - AptCruiseCar component apartment thread.
+ </FONT> </PRE>
+
+<P>
+The main thread is also an apartment in the strict sense. It is not
+exploited as such in this code sample.
+
+<P>
+As in the APTSERVE lesson, starting of the apartment threads is reported
+in the same order that class factories are created, but the entries are
+scattered later in the log. This is because this trace log reflects
+asynchronous multi-tasking, in which internal operating system scheduling
+determines when the processor resource is given to the various threads.
+Though deterministic, this behavior can appear somewhat random at the
+application level.
+
+<P>
+To retain symmetry with the APTCLIEN sample we'll issue the Car menu
+ICar::Shift method.  Here is the APTCLIEN log.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === Car Menu: ICar::Shift
+  C: --Obtaining Interface Pointer.
+  L&lt;65&gt;: COCar::QueryInterface. pICar returned.
+  L&lt;65&gt;: COCar::CImpICar::Addref. Delegating. New cI=1.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=2.
+  L&lt;65&gt;: COCar::QueryInterface. pICar returned.
+  L&lt;65&gt;: COCar::CImpICar::Addref. Delegating. New cI=2.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=3.
+  L&lt;65&gt;: COCar::CImpICar::Release. Delegating. New cI=1.
+  L&lt;65&gt;: COCar::Release. New cRefs=2.
+  C: Interface obtained. *ppv=0x14C8DC
+  C: --Calling pICar-&gt;Shift
+  L&lt;65&gt;: COCar::CImpICar::Shift. Called. ICar calls=1.
+  C: --Releasing pICar
+ </FONT> </PRE>
+
+<P>
+We see that the ICar interface call counter registers 1 for this created
+instance of the COCar COM object.
+
+<P>
+We now start REMCLIEN on Machine-C. When it is running, click the Set
+Remote Machine command on the File menu and enter the remote machine name
+in the dialog box, and then click the Create command from the Car menu.
+
+<P>
+In the REMCLIEN log we see the following.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === Car Menu: Create.
+  C: Car creation succeeded.
+ </FONT> </PRE>
+
+<p>In the server log (actually the APTCLIEN log) we see the following.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  L&lt;65&gt;: CFCar::QueryInterface. pIClassFactory returned.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  L&lt;65&gt;: CFCar::AddRef. New cRefs=4.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;65&gt;: CFCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;65&gt;: CFCar::AddRef. New cRefs=5.
+  L&lt;65&gt;: CFCar::AddRef. New cRefs=6.
+  L&lt;65&gt;: CFCar::Release. New cRefs=5.
+  L&lt;65&gt;: CFCar::QueryInterface. pIClassFactory returned.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::Addref. Delegating. New cI=2.
+  L&lt;65&gt;: CFCar::AddRef. New cRefs=6.
+  L&lt;65&gt;: CFCar::QueryInterface. pIClassFactory returned.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::Addref. Delegating. New cI=3.
+  L&lt;65&gt;: CFCar::AddRef. New cRefs=7.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::Release. Delegating. New cI=2.
+  L&lt;65&gt;: CFCar::Release. New cRefs=6.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::Release. Delegating. New cI=1.
+  L&lt;65&gt;: CFCar::Release. New cRefs=5.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::CreateInstance. pUnkOuter=0x0.
+  L&lt;65&gt;: COCar::CImpICar Constructor. Non-Aggregating.
+  L&lt;65&gt;: COCar Constructor. m_pUnkOuter=0x0.
+  L: CServer::OwnThis. Thread &lt;65&gt; waiting to own CServer.
+  L: CServer::OwnThis. CServer now owned by Thread &lt;65&gt;.
+  L&lt;65&gt;: CServer::ObjectsUp. New cObjects=2.
+  L: CServer::UnOwnThis. Ownership relinquished by &lt;65&gt;.
+  L&lt;65&gt;: COCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=1.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::CreateInstance Succeeded. *ppv=0x7716B0.
+  L&lt;65&gt;: COCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=2.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=3.
+  L&lt;65&gt;: COCar::Release. New cRefs=2.
+  L&lt;65&gt;: COCar::Release. New cRefs=1.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  L&lt;65&gt;: CFCar::Release. New cRefs=4.
+  L&lt;65&gt;: CFCar::Release. New cRefs=3.
+ </FONT> </PRE>
+
+<P>
+These actions create a new instance of COCar as indicated by the server's
+cObjects count showing a value of 2.  The first object was the COCar
+created by APTCLIEN above. Here is a call to ICar::Shift (still in
+REMCLIEN).
+
+<P>
+In the REMCLIEN log:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === Car Menu: ICar::Shift
+  C: --Obtaining Interface Pointer.
+  C: Interface obtained. *ppv=0x14D81C
+  C: --Calling pICar-&gt;Shift
+  C: --Releasing pICar
+ </FONT> </PRE>
+
+<p>In the APTCLIEN log:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  L&lt;65&gt;: COCar::QueryInterface. pICar returned.
+  L&lt;65&gt;: COCar::CImpICar::Addref. Delegating. New cI=1.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=2.
+  L&lt;65&gt;: COCar::QueryInterface. pICar returned.
+  L&lt;65&gt;: COCar::CImpICar::Addref. Delegating. New cI=2.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=3.
+  L&lt;65&gt;: COCar::CImpICar::Release. Delegating. New cI=1.
+  L&lt;65&gt;: COCar::Release. New cRefs=2.
+  L&lt;65&gt;: COCar::CImpICar::Shift. Called. ICar calls=1.
+ </FONT> </PRE>
+
+<p>Now, from the REMCLIEN CruiseCar menu, click Create.
+
+<p>In the REMCLIEN log:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === CruiseCar Menu: Create.
+  C: CruiseCar creation succeeded.
+ </FONT> </PRE>
+
+<p>In the APTCLIEN log:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  L&lt;34&gt;: CFCruiseCar::QueryInterface. pIClassFactory returned.
+  L&lt;34&gt;: CFCruiseCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  L&lt;34&gt;: CFCruiseCar::AddRef. New cRefs=4.
+  L&lt;34&gt;: CFCruiseCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;34&gt;: CFCruiseCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;34&gt;: CFCruiseCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;34&gt;: CFCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;34&gt;: CFCruiseCar::AddRef. New cRefs=5.
+  L&lt;34&gt;: CFCruiseCar::AddRef. New cRefs=6.
+  L&lt;34&gt;: CFCruiseCar::Release. New cRefs=5.
+  L&lt;34&gt;: CFCruiseCar::QueryInterface. pIClassFactory returned.
+  L&lt;34&gt;: CFCruiseCar::CImpIClassFactory::Addref. Delegating. New cI=2.
+  L&lt;34&gt;: CFCruiseCar::AddRef. New cRefs=6.
+  L&lt;34&gt;: CFCruiseCar::QueryInterface. pIClassFactory returned.
+  L&lt;34&gt;: CFCruiseCar::CImpIClassFactory::Addref. Delegating. New cI=3.
+  L&lt;34&gt;: CFCruiseCar::AddRef. New cRefs=7.
+  L&lt;34&gt;: CFCruiseCar::CImpIClassFactory::Release. Delegating. New cI=2.
+  L&lt;34&gt;: CFCruiseCar::Release. New cRefs=6.
+  L&lt;34&gt;: CFCruiseCar::CImpIClassFactory::Release. Delegating. New cI=1.
+  L&lt;34&gt;: CFCruiseCar::Release. New cRefs=5.
+  L&lt;34&gt;: CFCruiseCar::CImpIClassFactory::CreateInstance. pUnkOuter=0x0.
+  L&lt;34&gt;: COCruiseCar::CImpICar Constructor. Non-Aggregating
+  L&lt;34&gt;: COCruiseCar::CImpICruise Constructor. Non-Aggregating.
+  L&lt;34&gt;: COCruiseCar Constructor. m_pUnkOuter=0x0.
+  L: CServer::OwnThis. Thread &lt;34&gt; waiting to own CServer.
+  L: CServer::OwnThis. CServer now owned by Thread &lt;34&gt;.
+  L&lt;34&gt;: CServer::ObjectsUp. New cObjects=3.
+  L: CServer::UnOwnThis. Ownership relinquished by &lt;34&gt;.
+  L&lt;34&gt;: COCruiseCar::Init.
+  L&lt;65&gt;: CFCar::QueryInterface. pIClassFactory returned.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  L&lt;65&gt;: CFCar::AddRef. New cRefs=4.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::CreateInstance. pUnkOuter=0x0.
+  L&lt;65&gt;: COCar::CImpICar Constructor. Non-Aggregating.
+  L&lt;65&gt;: COCar Constructor. m_pUnkOuter=0x0.
+  L: CServer::OwnThis. Thread &lt;65&gt; waiting to own CServer.
+  L: CServer::OwnThis. CServer now owned by Thread &lt;65&gt;.
+  L&lt;65&gt;: CServer::ObjectsUp. New cObjects=4.
+  L: CServer::UnOwnThis. Ownership relinquished by &lt;65&gt;.
+  L&lt;65&gt;: COCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=1.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::CreateInstance Succeeded. *ppv=0x771720.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=2.
+  L&lt;65&gt;: COCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=3.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=4.
+  L&lt;65&gt;: COCar::Release. New cRefs=3.
+  L&lt;65&gt;: COCar::QueryInterface. pICar returned.
+  L&lt;65&gt;: COCar::CImpICar::Addref. Delegating. New cI=1.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=4.
+  L&lt;65&gt;: COCar::QueryInterface. pICar returned.
+  L&lt;65&gt;: COCar::CImpICar::Addref. Delegating. New cI=2.
+  L&lt;65&gt;: COCar::AddRef. New cRefs=5.
+  L&lt;65&gt;: COCar::CImpICar::Release. Delegating. New cI=1.
+  L&lt;65&gt;: COCar::Release. New cRefs=4.
+  L&lt;65&gt;: COCar::Release. New cRefs=3.
+  L&lt;65&gt;: COCar::Release. New cRefs=2.
+  L&lt;65&gt;: CFCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  L&lt;65&gt;: CFCar::Release. New cRefs=3.
+  L&lt;34&gt;: COCruiseCar::Init (New Containment of COCar) Succeeded.
+  L&lt;34&gt;: COCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;34&gt;: COCruiseCar::AddRef. New cRefs=1.
+  L&lt;34&gt;: CFCruiseCar::CImpIClassFactory::CreateInstance Succeeded. *ppv=0x7716E0.
+  L&lt;34&gt;: COCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;34&gt;: COCruiseCar::AddRef. New cRefs=2.
+  L&lt;34&gt;: COCruiseCar::AddRef. New cRefs=3.
+  L&lt;34&gt;: COCruiseCar::Release. New cRefs=2.
+  L&lt;34&gt;: COCruiseCar::Release. New cRefs=1.
+  L&lt;34&gt;: CFCruiseCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  L&lt;34&gt;: CFCruiseCar::Release. New cRefs=4.
+  L&lt;34&gt;: CFCruiseCar::Release. New cRefs=3.
+ </FONT> </PRE>
+
+<P>
+The server has now created two new object instances, a COCruiseCar and
+COCar object, with the COCar object reused by containment to make the
+COCruiseCar.  The cObjects=4 thus indicates four outstanding object
+instances for the server. COCruiseCar is managed by a newly encountered
+apartment thread, &lt;34&gt;. The three COCar objects remain managed by a
+single apartment thread, &lt;65&gt;, even though one is held by APTCLIEN,
+one is held by REMCLIEN, and one is held by APTCLIEN as a contained part
+of a composite COCruiseCar.
+
+<P>
+Using the CruiseCar menu we can now call ICar::Shift.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === CruiseCar Menu: ICar::Shift
+  C: --Obtaining Interface Pointer.
+  C: Interface obtained. *ppv=0x14D284
+  C: --Calling pICar-&gt;Shift
+  C: --Releasing pICar
+ </FONT> </PRE>
+
+<p>In the APTCLIEN log:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  L&lt;34&gt;: COCruiseCar::QueryInterface. pICar returned
+  L&lt;34&gt;: COCruiseCar::CImpICar::Addref. Delegating. New cI=1.
+  L&lt;34&gt;: COCruiseCar::AddRef. New cRefs=2.
+  L&lt;34&gt;: COCruiseCar::QueryInterface. pICar returned
+  L&lt;34&gt;: COCruiseCar::CImpICar::Addref. Delegating. New cI=2.
+  L&lt;34&gt;: COCruiseCar::AddRef. New cRefs=3.
+  L&lt;34&gt;: COCruiseCar::CImpICar::Release. Delegating. New cI=1.
+  L&lt;34&gt;: COCruiseCar::Release. New cRefs=2.
+  L&lt;34&gt;: COCruiseCar::CImpICar::Shift. Delegating. nGear=4.
+  L&lt;65&gt;: COCar::CImpICar::Shift. Called. ICar calls=1.
+ </FONT> </PRE>
+
+<P>
+The ICar interface call counter indicates only one call, providing
+additional proof that this is a newly created instance of COCar managed by
+the apartment thread &lt;65&gt;. The call had to be delegated within the
+server from COCruiseCar object's apartment thread &lt;34&gt; to the
+contained COCar object's apartment thread &lt;65&gt;. This means that the
+interface call had to be marshaled at least twice: First, from the main
+thread of REMCLIEN through DCOM (and thus RPC) across the network to the
+remote server CruiseCar apartment thread &lt;34&gt;, then from the
+CruiseCar apartment thread &lt;34&gt; within the same APTSERVE server
+process to the Car apartment thread &lt;65&gt;.
+
+<P>
+This illustrates component composition within the same process but across
+thread boundaries, as well as the DCOM functioning of this composite
+object remotely across machine boundaries.
+
+<P>
+The release of the CruiseCar and Car objects is essentially the same as
+seen in the APTCLIEN lesson, even though these Release calls are marshaled
+across machine boundaries.
+
+<P>
+To shut down the samples on both machines, first click Release on the
+REMCLIEN CruiseCar menu. This shuts down the COCruiseCar (with its
+contained COCar instance) held by the REMCLIEN client. Then click Release
+on the APTCLIEN Car menu. This shuts down the original COCar held by the
+APTCLIEN client and leaves the server with an object count of 1. Finally,
+click Release on the REMCLIEN Car menu. As seen in the APTCLIEN lesson,
+this causes an orderly termination of the apartment threads during
+execution of the CloseFactories function in APTSERVE, after which the
+APTSERVE server application exits and unloads.
+
+<p>&#160;
+<h3>NETWORK AND SETUP ISSUES</h3>
+
+<P>
+The test setup used during development of REMCLIEN consisted of the
+following two machines: Machine-S (server) running Windows NT 4.0
+Workstation with an Ethernet network adapter installed, and Machine-C
+(client) running Windows NT 4.0 Workstation with an Ethernet network
+adapter installed.  The two machines were connected using shielded twisted
+pair cable and a IEEE 802.3 10Base-T multiport repeater.  This is called a
+peer-to-peer network, and Windows NT Workstation supports this out of the
+box. The same network workgroup was created for both machines.  The same
+user account was created on each machine for this workgroup.  Each of
+these accounts had Administrator privilege. After logging on to each
+machine with this account, the predefined C$ share name on Machine-S was
+used to copy files from Machine-C's drive C across the network to
+Machine-S. See your Windows NT product documentation or the Windows NT
+Resource Kit for details on using the predefined C$ and D$ shares or on
+creating shared access to a drive among networked machines.
+
+<P>
+Your network setup might vary. For example, you might have the two
+machines connected to a client-server network, and your machines might be
+configured in the same network domain rather than in the same workgroup on
+a peer-to-peer network. In this case, to capture the log displays in
+APTCLIEN as used above, each machine must have a domain user account with
+the same name and password. These domain accounts on each machine must
+be members of the Administrators group on each machine.
+
+<P>
+Don't forget that a MyUserName/MyPassword login account with administrator
+privileges on the local machine is not the same login account as a domain
+login account using the same MyUserName/MyPassword. If you are setting up
+Machine-S and Machine-C in an NT network domain so that you are logging on
+to both machines with your domain login, make sure you add the domain
+login account to the Administrators group on both machines. You do this in
+the Windows NT User Manager. You do not need to do this for Machine-C if
+it is running Windows 95 or Windows 98.
+
+<P>
+For DCOM operation, the Windows NT operating system version 4 or greater
+can be installed on each machine. A DCOM95 technology add-on for the
+Windows 95 operating system is also available. DCOM95 can currently be
+obtained by download from Microsoft's world wide Web site at:
+<a href="http://www.microsoft.com/com/" target="_blank">
+http://www.microsoft.com/com/</a>.
+If Win95 is involved, then the REMCLIEN.EXE client is typically run under
+DCOM95 on the Win95 machine while the APTSERVE.EXE server is run on the
+remote machine under version 4 or greater of Windows NT Workstation or
+Windows NT Server. DCOM is built into version 4 or greater of the Windows
+NT operating system. It is also built into Windows 98.
+
+<P>
+The TCP/IP network protocol, installed and configured with IP address,
+subnet mask, and default gateway IP address, is recommended but not
+required by DCOM. For example, if your network uses the NetBEUI protocol
+instead of TCP/IP, DCOM will still work. Currently, if the COM client is
+run under DCOM95 on a Win95 machine, then the TCP/IP protocol must be
+used. Also, if the APTSERVE.EXE server is run under DCOM95 on a Win95
+machine, then that server must be launched manually, as DCOM95 will not
+launch it automatically on behalf of a remote request from REMCLIEN.EXE.
+This lesson assumes that the TCP/IP protocol is used and that Machine-S
+is Windows NT Server or Workstation. Thus, this lesson assumes that if
+Windows 95 or Windows 98 is involved it is running on Machine-C.
+
+<P>
+If the computers you use for this lesson are part of a Windows NT Server
+domain, then it is likely that a DHCP server is available on that network
+which can be used to automatically assign an IP address for your TCP/IP
+protocol operation.
+
+<P>
+If the computers you use for this lesson are configured as an isolated
+peer-to-peer network, you may need to manually configure the TCP/IP
+protocol with an IP address if a DHCP server is not available. In this
+case, you can use the Network option of the Windows NT Control Panel to
+configure TCP/IP. In the Network dialog box, choose the Protocols tab and
+select the TCP/IP protocol in the list box. Click the Properties button.
+In the Microsoft TCP/IP Properties dialog box, click the Specify An IP
+Address radio button and enter values in the IP Address, Subnet Mask, and
+Default Gateway boxes. The values to specify depend on your network. Your
+network administrator may be responsible for dispensing static IP
+addresses for machines on the network. If you intend the two machines to
+remain in an isolated peer-to-peer network, you can assign your own IP
+address values.
+
+<P>
+For example you can use values similar to the following.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  <u>Machine-S                              Machine-C</u>
+  IP Address= 222.3.4.5                  IP Address= 222.3.4.6
+  Subnet Mask= 255.255.255.0             Subnet Mask= 255.255.255.0
+  Default Gateway= 222.3.4.5             Default Gateway= 222.3.4.6
+ </FONT> </PRE>
+
+<P>
+For these makeshift values, the IP address and default gateway are the
+same on each machine but must differ on different machines.  The subnet
+mask above will work for most situations.
+
+<P>
+<b>Note:</b> If you manually specify such values and later wish to connect
+either machine to an existing corporate client-server network, you should
+first delete this IP address information. In the Network option of the
+Windows NT Control Panel, choose the Protocols tab and select the TCP/IP
+protocol in the list box. In the Microsoft TCP/IP Properties dialog box,
+click the Obtain An IP Address From a DHCP Server button. Save this
+change, and then restart Windows NT.
+
+<P>
+DCOM will not work if TCP/IP is installed but the machine has no assigned
+IP address. This situation may show up as error 0x80070776 (The object
+exporter specified was not found) returned from a failed CoGetClassObject
+or CoCreateInstance call.
+
+<P>
+The operation of DCOM uses some entries in the registry to control DCOM.
+You can use the REGEDIT, DCOMCNFG, or OLEVIEWER tools to manually view and
+edit these entries. DCOM can be configured by default so that only machine
+accounts with Administrator privilege can remotely start and access
+objects of existing COM component classes. This restriction is set as a
+configurable machine-wide default registry entries on the remote machine.
+It is located in the registry as follows.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  \HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\OLE\DefaultLaunchPermission
+  \HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\OLE\DefaultAccessPermission
+ </FONT> </PRE>
+
+<P>
+You can view these values in the Machine-S registry using REGEDIT. These
+values are binary ACLs (Access Control Lists) and can be overridden for
+individual component classes by specifying a LaunchPermission or
+AccessPermission named value on the AppID entry for the APTSERVE server in
+the Machine-S registry. During self-registration, the APTSERVE server on
+Machine-S does not modify DefaultLaunchPermission or
+DefaultAccessPermission. It also does not override these defaults with its
+own values on its AppID entry.
+
+<P>
+Thus, the successful launching and accessing of the components in APTSERVE
+by REMCLIEN depends on a proper security configuraton for APTSERVE. You
+can manually set the LaunchPermission and AccessPermission values for the
+components in the APTSERVE server using a DCOM configuration utility. DCOM
+includes the DCOMCNFG utility for use in configuring 32-bit COM and DCOM
+applications. To run this tool, click Start, click Run, and then type
+DCOMCNFG. Before you use an application with DCOM, you can use DCOMCNFG to
+set application properties, such as security and location. On the computer
+running the client application you can specify the location of the server
+application that will be accessed or started. For the server application
+you can specify the user account that will have permission to access or
+start the application, and the user account that will be used to run the
+application.
+
+<P>
+Follow the these instructions to configure the security of the APTSERVE
+server so that REMCLIEN can access its components via DCOM.
+
+<ol>
+<li>Login on Machine-S (running Windows NT Server or Workstation).
+    This must be an account that has administrator privileges.</li>
+
+<li>Make sure APTSERVE is compiled and/or registered on Machine-S.</li>
+
+<li>Run the DCOMCNFG utility by choosing the &quot;Run&quot; choice on
+    the desktop &quot;Start&quot; menu--just enter DCOMCNFG. DCOMCNFG.EXE
+    is located in the \WINNT\SYSTEM32 directory.
+    <ol>
+    <li>Select the &quot;AptCar Component&quot; in the
+        &quot;Applications&quot; list.</li>
+    <li>Click the &quot;Properties&quot; button.</li>
+    <li>Click the &quot;Security&quot; tab.</li>
+    <li>Select the &quot;Use custom access permissions&quot; radio button
+        and click the &quot;Edit&quot; button for it.</li>
+    <li>In the &quot;Registry Value Permissions&quot; dialog click the
+        &quot;Add&quot; button.</li>
+    <li>In the &quot;Add Users and Group&quot; dialog select the
+        &quot;Everyone&quot; entry in the &quot;Names&quot; list and click
+        the &quot;Add&quot; button.</li>
+    <li>Click the &quot;OK&quot; button in the
+        &quot;Registry Value Permissions&quot; dialog.</li>
+    <li>Back in the &quot;Security&quot; tab, select the
+        &quot;Use custom launch permissions&quot; radio button and click
+        the &quot;Edit&quot; button for it.</li>
+    <li>In the &quot;Registry Value Permissions&quot; dialog click the
+        &quot;Add&quot; button.</li>
+    <li>In the &quot;Add Users and Groups&quot; dialog select the
+        &quot;Everone&quot; entry in the &quot;Names&quot; list and click
+        the &quot;Add&quot; button.</li>
+    <li>Click the &quot;OK&quot; button in the
+        &quot;Registry Value Permissions&quot; dialog.</li>
+    <li>Click the &quot;OK&quot; button to complete the properties for
+        the APTSERVE components.</li>
+    <li>Finally, click the &quot;OK&quot; button to close the
+        DCOMCNFG utility.</li>
+    </ol></li>
+</ol>
+
+<P>
+Because DCOM security is not significantly addressed within the coding of
+either REMCLIEN or APTSERVE, to launch and function the APTSERVE server on
+the remote Machine-S from the REMCLIEN client on the client Machine-C, you
+must be logged in--with administrator privilages--as the same user on both
+machines. Both machines must reside in the same workgroup or domain. See
+the later DCOMDRAW sample for more coverage of coding DCOM security within
+the client and server.
+
+<P>
+In this sample you run APTCLIEN on Machine-S to obtain a logging display
+of the APTSERVE server behavior in the APTCLIEN display. Of course you can
+also simply run REMCLIEN on Machine-C without explicitly running APTCLIEN
+on Machine-S. COM will simply locate and run APTSERVE on Machine-S. This
+is the preferred transparent behavior under normal application conditions.
+
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

@@ -1,0 +1,823 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>DCOMDRAW COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="dcdserve.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+</TABLE>
+
+<h2><a name="DCOMDRAW">DCOMDRAW - DCOM Client Using Security</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The DCOMDRAW, DCDSERVE, and DCDMARSH samples together form a distributed
+drawing application. Using Distributed COM (DCOM) technology, they allow
+users on different client machines in a network to interactively draw on a
+shared drawing. All DCOMDRAW clients see the same drawing and any client
+can take ownership of the pen to draw. The user of DCOMDRAW can use a
+mouse or tablet device to draw in the client window and can choose the
+color and width of the electronic ink. As clients draw, the application
+echoes the drawing activity from DCDSERVE to all connected clients using
+DCOM over the network. Although these samples do not build an optimized
+and complete application, the functionality is suggestive of the shared
+whiteboards offered by some workgroup applications.
+
+<P>
+Although DCOMDRAW, DCDSERVE, and DCDMARSH work on the same machine across
+process boundaries, the main goal is to provide a distributed application
+that enables multiple DCOMDRAW clients on different machines to access a
+single shared drawing object housed in a DCDSERVE server running on a
+common server machine. A typical scenario would have numerous client
+machines hooked to an intranet consisting of a Windows NT network domain
+or peer-to-peer workgroup. DCOMDRAW can run on any of these client
+machines. DCDSERVE is installed and runs on a common server machine in the
+domain. The user of the DCOMDRAW client can interactively choose the
+remote server machine to determine which DCDSERVE COM server to use for
+the shared drawing.
+
+<P>
+DCDSERVE manages a shared, single COPaper COM object that models a sheet
+of white drawing paper. Clients can use the methods of the COPaper object
+to draw on the paper surface using &quot;ink&quot; of specified color and
+width. This functionality is outwardly similar to the &quot;scribble&quot;
+tutorial samples in many versions of the Microsoft Visual C++&reg;
+product. The drawing paper features of COPaper objects are exposed to
+DCOMDRAW clients by a custom ISharePaper interface. COPaper implements the
+ISharePaper interface. A clear architectural distinction is kept between
+client and server. No graphical user interface (GUI) is provided by the
+COPaper object. It relies on the DCOMDRAW client for all GUI behavior.
+COPaper encapsulates only the server-based capture and storage of the
+drawn ink data.
+
+<p>
+The ink data that is drawn on the COPaper surface can be stored in and
+loaded from compound files. The ISharePaper::Save and ISharePaper::Load
+method implementations in COPaper use structured storage to store the
+current data of the shared drawing in a compound file kept with
+DCDSERVE.EXE on the machine acting as the common server.
+
+<P>
+The DCOMDRAW sample creates and uses the connectable COPaper COM object
+that is provided as the CLSID_SharePaper component in the DCDSERVE server.
+The DCOMDRAW client creates a COPaper object and controls it using the
+methods of the ISharePaper interface. DCOMDRAW obtains drawing data from
+the user and displays that data in a window that it manages. DCOMDRAW uses
+COPaper's ISharePaper interface to save the drawing data in COPaper and to
+direct file-storage operations on this data.
+
+<P>
+COPaper only manages the drawing data; it performs no GUI actions.
+DCOMDRAW provides the GUI for the drawing application by encapsulating
+this functionality in a central CGuiPaper C++ object.
+
+<P>
+DCOMDRAW also implements the custom IPaperSink interface on a COPaperSink
+COM object and connects this interface to an appropriate connection point
+on the COPaper object in DCDSERVE. COPaper uses the connected IPaperSink
+interface to send notifications back to the COPaperSink in DCOMDRAW. The
+normal GUI repainting of COPaper's drawing data is done in DCOMDRAW using
+COPaper's connectable object technology. Thus in this sample, COM's
+connectable-object technology uses DCOM to function transparently across
+the network. In earlier samples such as STOCLIEN and STOSERVE, COM's
+connectable-object technology was shown operating only in-process.
+
+<p>
+The two ISharePaper and IPaperSink custom interfaces are declared in
+PAPINT.H, which is located in the common INC directory. PAPINT.H is
+automatically generated in the DCDMARSH sample. The GUIDs for the
+interfaces and objects are defined in PAPGUIDS.H located in that same
+directory.
+
+<P>
+This lesson focuses primarily on how to take care of DCOM process security
+on the client side and how to load a remote object using DCOM. Using
+CoInitializeSecurity to set process security is covered.
+CoCreateInstanceEx using the MULTI_QI structure is covered.
+
+<P>
+Because client and server run in separate processes--usually on different
+computers--both DCDSERVE and DCOMDRAW rely on standard marshaling for the
+ISharePaper and IPaperSink custom interfaces. The DCDMARSH sample provides
+this support, so you must build (or otherwise register) DCDMARSH.DLL on
+both machines prior to building and running DCDSERVE and DCOMDRAW across
+machines.
+
+<P>
+To set a DCOMDRAW client on one machine to control the common DCDSERVE
+server on another, both machines must have DCOM (Distributed COM)
+installed. DCOM is included in Windows NT 4.0 or above and in Windows 98.
+If a computer is running Windows 95, you must install the DCOM95 add on.
+DCOM95 can currently be obtained by download from Microsoft's world wide
+Web site at:
+<a href="http://www.microsoft.com/com/" target="_blank">
+http://www.microsoft.com/com/</a>.
+
+<P>
+The multiple computers must be connected in a properly configured network.
+For details on setting up a network, see your Windows NT product
+documentation or the Windows NT Resource Kit. For more details on computer
+and network setup for running with DCOM, see the &quot;Network and Setup
+Issues&quot; section at the end of the REMCLIEN lesson. Note that the less
+restrictive security in Windows 95 and Windows 98 prevents the SCM under
+DCOM from automatically launching DCDSERVE on behalf of a remote DCOMDRAW
+client. You must manually pre-launch DCDSERVE on these operating systems
+if you attempt a remote load of DCDSERVE from a DCOMDRAW running on
+another machine. The DCDSERVE and DCOMDRAW lessons assume that you install
+DCDSERVE on a machine running Windows NT Server or Workstation.
+
+<P>
+For functional descriptions and a tutorial code tour of DCOMDRAW, see the
+Code Tour section in DCOMDRAW.HTM. For details on the external user
+operation of DCOMDRAW, see both the Usage and Operation sections in
+DCOMDRAW.HTM. To read DCOMDRAW.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the DCOMDRAW lesson in the table of lessons. You can
+do the same thing by locating the main tutorial directory in the Windows
+Explorer and double-clicking the DCOMDRAW.HTM file. For more details on
+how DCDSERVE works and exposes its services to DCOMDRAW, see DCDSERVE.HTM
+in the main tutorial directory. The makefile for DCDSERVE automatically
+registers that server in the registry of the host machine, so you must
+build DCDSERVE on the remote machine before attempting to run DCOMDRAW.
+
+<P>
+For general details on setting up your system to build and test Win32 code
+samples such as those in this COM Tutorial series, see TUTORIAL.HTM.
+The supplied MAKEFILE is Microsoft NMAKE-compatible. To create a debug
+build, issue the NMAKE command in the command-prompt window.
+
+<h4>Usage</h4>
+
+<P>
+DCOMDRAW is an application that you can execute directly from Windows or
+from the command-prompt window. No command-line parameters are recognized
+by DCOMDRAW. DCOMDRAW currently runs on the Windows 95 operating system
+with the DCOM95 update for Windows 95 installed. It will run on Windows 98
+which includes DCOM. It will also run under version 4 or later of Windows
+NT Workstation or Windows NT Server.
+
+<h4>Run the Sample</h4>
+
+<p>
+The DCDSERVE, DCDMARSH, and DCOMDRAW samples must be compiled before you
+can run the client. For more details on building the samples, see
+<a href="using.htm#building">Building the Code Samples.</a>
+
+<P>
+To access and control the remote DCDSERVE server, the DCOMDRAW client
+requires that you have your network and machines set up
+properly for DCOM operation. See the &quot;Network Setup and Issues&quot;
+section of the REMCLIEN lesson for more details. If you have already built
+the appropriate samples and set up your machines for DCOM operation,
+DCOMDRAW.EXE is the client executable to run for this sample.
+
+<a href="DCOMDRAW\DCOMDRAW.exe">Click here to run DCOMDRAW.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog box
+prompting you to either open the .EXE file or save it to disk. Select the
+"Open it" radio button and then click the OK button.
+
+<p>&#160;
+<h3>OPERATION</h3>
+
+<P>
+The DCOMDRAW.EXE application provides the user interface for this sample
+application. It uses the functionality of the associated, but independent,
+DCDSERVE.EXE out-of-process server. Here is a summary of operation from
+the standpoint of DCOMDRAW.EXE as a client of DCDSERVE.EXE.
+
+<P>
+Since two machines are involved in this lesson, this lesson refers to the
+machine where DCDSERVE runs as Machine-S (server) and to the machine where
+DCOMDRAW runs as Machine-C (client).
+
+<P>
+The are many ways to set up to build and run DCOMDRAW for this tutorial.
+Here are two alternate ways to get started:
+
+<ol>
+  <li>Set up Machine-S (running Windows NT 4.0) to compile Win32
+      applications. Run MAKEALL.BAT to compile all of the COM tutorial
+      code samples there. Among other things, this build process registers
+      the necessary interfaces in the registry on Machine-S for standard
+      marshaling using the DCDMARSH marshaling server on that machine.
+      Using the drive share predefined as C$ on Machine-S, copy a complete
+      copy of the compiled \MSSDK\SAMPLES\COM\TUTSAMP branch across the
+      network from Machine-S to Machine-C. With all the sample executables
+      on Machine-C (running Windows NT 4.0), run the REGALL batch file in
+      the TUTSAMP directory on Machine-C. This registers the DCDSERVE
+      server and its interfaces in the registry on Machine-C. The DCDMARSH
+      standard marshaling server located on that machine is used to
+      register the interfaces there.</li>
+
+  <li>Set up both Machine-S and Machine-C (perhaps with Machine-S running
+      Windows NT 5.0 and Machine-C running Windows 98). Copy the
+      uncompiled source of the samples branch from Machine-S to Machine-C.
+      Then run MAKEALL.BAT on both machines. This will perform a complete
+      build of all the executables and automatically register the DCDSERVE
+      and DCDMARSH servers on both machines.</li>
+</ol>
+
+<P>
+Once registered, DCDSERVE server requires manual security configuration
+using the DCOMCNFG utility. For more details, see
+<a href="dcdserve.htm#Installing">&quot;Installing DCDSERVE&quot;</a>
+in the DCDSERVE.HTM file.
+
+<P>
+With the executables present and the servers properly registered on both
+machines, you can run the DCOMDRAW application on Machine-C, relying on
+COM to locate and load the remote DCDSERVE server on Machine-S. DCOMDRAW
+provides a Load from Remote Server dialog box in which you can enter the
+name of the remote machine on which the DCDSERVE server runs.
+
+<P>
+DCOMDRAW.EXE provides menus for loading and saving the shared drawing and
+for controlling the drawing pen color and width. The following menus are
+provided:
+
+<p>Menu Selection: File/Load Remote...<br>
+Displays the Load from Remote Server dialog box, in which you specify the
+network machine name of the computer where the remote DCDSERVE server is
+located and registered. DCOM recognizes machine names that are in a valid
+UNC format (for example, Machine-S or \\Machine-S), a DNS format (for
+example, www.mymachine.com), or an IP address format (for example,
+123.45.6.7).
+
+<p>Menu Selection: File/Load Local<br>
+Loads (or reloads) the drawing from a DCDSERVE registered on the local
+machine (that is, the machine where this client is running).
+
+<p>Menu Selection: File/Save<br>
+Saves the current drawing. Beeps if this DCOMDRAW does not own the pen.
+
+<p>Menu Selection: File/Exit<br>
+Exits DCOMDRAW.
+
+<p>Menu Selection: Draw/Take Pen<br>
+Takes ownership of the pen to permit this DCOMDRAW to draw on the shared
+drawing. Beeps if another client already owns the pen.
+
+<p>Menu Selection: Draw/Give Pen<br>
+Relinquishes ownership of the pen to permit any other DCOMDRAW client to
+take the pen draw on the shared drawing.
+
+<p>Menu Selection: Draw/Redraw<br>
+Forces a redraw of the current DCOMDRAW client's display of the shared
+drawing.
+
+<p>Menu Selection: Draw/Erase<br>
+Erases all content of the currently shared drawing. Beeps if this DCOMDRAW
+client does not own the pen.
+
+<p>Menu Selection: Color<br>
+Shows the Pick Color dialog allowing you to choose the current color of
+the drawing pen. Beeps if this DCOMDRAW client does not own the pen.
+
+<p>Menu Selection: Thin<br>
+Sets current pen width to Thin. Beeps if this DCOMDRAW client does not own
+the pen.
+
+<p>Menu Selection: Medium<br>
+Sets current pen width to Medium. Beeps if this DCOMDRAW client does not own
+the pen.
+
+<p>Menu Selection: Fat<br>
+Sets current pen width to Fat. Beeps if this DCOMDRAW client does not own
+the pen.
+
+<P>Menu Selection: Help/DCOMDRAW Tutorial<br>
+Opens the DCOMDRAW.HTM tutorial file in the Web browser.
+
+<P>Menu Selection: Help/DCDSERVE Tutorial<br>
+Opens the DCDSERVE.HTM tutorial file in the Web browser.
+
+<P>Menu Selection: Help/DCDMARSH Tutorial<br>
+Opens the DCDMARSH.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/Read Source File<br>
+Displays the Open common dialog box so you can open a source file from this
+lesson or another one in the Windows Notepad.
+
+<p>Menu Selection: Help/About DCOMDRAW<br>
+Displays the About dialog box for this application, a standard part of
+this series of code samples. The code illustrates how to use the CAboutBox
+class provided by APPUTIL.LIB.
+
+<P>
+When first run on a machine, DCOMDRAW loads a shared drawing from the
+DCDSERVE registered on the local machine. That first instance of DCOMDRAW
+is given &quot;master&quot; ownership of the drawing pen. This means that
+it can immediately make drawing changes to the drawing. Any subsequent
+instances of DCOMDRAW on that same machine will access the same locally
+shared drawing, but will not own the pen. This means that they cannot draw
+and may merely see drawing activity as it is done in the DCOMDRAW client
+that owns the pen. The pen cursor changes to an 'X' indicating that the
+pen is not owned and that drawing is off. When drawing is on, the pen
+cursor size changes (that is, a thin, medium, or fat pen) to indicate the
+chosen pen width. The DCOMDRAW title bar also has an indicator of pen
+ownership. If DCOMDRAW owns the pen, &quot;***TALK***&quot; appears in the
+title bar. If the client does not own the pen, &quot;LISTEN&quot; appears
+in the title bar. The usage model here assumes that while users are
+sharing the drawing they are also talking over some audio channel
+(possibly telephone). Typically, when a client user is drawing they are
+talking to explain it; otherwise the client user con only watch another
+client's drawing activity.
+
+<P>
+When you own the pen in DCOMDRAW, you press and hold the left mouse button
+as you move the mouse to draw ink.
+
+<P>
+The File/Load Remote menu choice allows you to load or connect to a shared
+drawing maintained on a remote machine. If multiple clients on different
+client machines load from that same remote machine then they will all
+share the same drawing maintained by the DCDSERVE registered on that
+server machine.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files          Description</u>
+DCOMDRAW.TXT   Short description of the sample.
+MAKEFILE       The generic Win32 makefile for building the code sample
+               application of this tutorial lesson.
+DCOMDRAW.H     The include file for the DCOMDRAW application. Contains
+               class declarations, function prototypes, and resource
+               identifiers.
+DCOMDRAW.CPP   The main implementation file for DCOMDRAW.EXE. Has WinMain
+               and CMainWindow implementation, as well as the main menu
+               dispatching.
+DCOMDRAW.RC    The application resource definition file.
+DCOMDRAW.ICO   The application icon resource.
+PENCURT.CUR    Pen cursor for the Thin pen width.
+PENCURM.CUR    Pen cursor for the Medium pen width.
+PENCURF.CUR    Pen cursor for the Fat pen width.
+PENCURN.CUR    Pen cursor for when drawing is off (pen is not owned).
+GUIPAPER.H     The class declaration for the CGuiPaper C++ class.
+GUIPAPER.CPP   Implementation file for the CGuiPaper C++ class.
+SINK.H         The class declaration for the COPaperSink COM object class.
+SINK.CPP       Implementation file for the COPaperSink COM object class.
+</FONT> </PRE>
+
+<P>
+Like all code samples in the series, DCOMDRAW uses many of the utility
+classes and services provided by APPUTIL. For more details on APPUTIL,
+study the APPUTIL library source code in the APPUTIL directory and the
+lesson in the APPUTIL.HTM file in the main tutorial directory.
+
+<P>
+DCOMDRAW requires DCOM. Early in its WinMain function, DCOMDRAW calls
+APPUTIL's DComOk function to confirm that DCOM is installed on the system.
+DComOk does this by ensuring that the CoInitializeEx function is exported
+from the OLE32.DLL system library. CoInitializeEx was initially supplied
+with the DCOM functionality in Windows NT 4.0 and its presence is thus a
+simple way to confirm that DCOM is present. Similarly, DComOk will return
+FALSE on Windows 95 if the DCOM95 add-on is not installed.
+
+<P>
+DCOMDRAW and DCDSERVE borrow much from the STOCLIEN and STOSERVE samples.
+As a result, this lesson does not discuss in detail how CGuiPaper
+encapsulates the GUI behavior of drawing paper, how the interactive mouse
+activity is captured and displayed, how COPaper records the drawing data,
+how IPaperSink and the connectable-object technology works, and how the
+drawing data is actually stored in the structured storage of a compound
+file. For more details on these topics, see the STOCLIEN/STOSERVE lessons
+for more details on these topics.
+
+<P>
+The major topics covered in this code tour are:
+
+<ul>
+<li>How DCOMDRAW establishes its process security context to use
+    DCOM with a remote server.</li>
+
+<li>How DCOMDRAW loads the remote COPaper drawing.</li>
+
+<li>How DCOMDRAW paints the remote COPaper drawing.</li>
+</ul>
+
+<P>
+The DCOMDRAW sample relies heavily on COM's connectable-object technology
+for communication from COPaper back to the client. Interactive drawing as
+well as on-demand re-painting use this technology. In particular, COPaper
+calls the methods of an IPaperSink interface on a COPaperSink object in
+DCOMDRAW. For DCOM to carry these calls across the network you must take
+care of some security issues. We saw in the DCDSERVE lesson that its
+process is acting under the identity of a DCOMDraw user. We explicitly
+created that user account when installing DCDSERVE. Unless we create an
+account for this specific user on every client machine with the proper
+permissions, this DCOMDraw identity in the server will not have
+permissions to call back into (or otherwise access) DCOMDRAW on the client
+side. So a technique is needed to permit this access into the client from
+an outside identity.
+
+<P>
+A call to CoInitializeSecurity grants this access for the entire DCOMDRAW
+client process. The call establishes a security context in the client that
+permits COPaper on the server side to call back into DCOMDRAW on the
+client side. Here is such a CoInitializeSecurity call in a code fragment
+from the WinMain function in DCOMDRAW.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ...
+  ...
+  // If we were compiled for UNICODE and the platform seems OK with this
+  // then proceed.  Else we error and exit the app.
+  if (UnicodeOk())
+  {
+    // Call to initialize the COM Library.  Use the SUCCEEDED macro
+    // to detect success.  If fail then exit app with error message.
+    // Tell COM that this client process will use the Single Threaded
+    // Apartment model.
+    if (SUCCEEDED(CoInitialize(NULL)))
+    {
+      // Ensure that DCOM (Distributed COM) is installed.
+      if (DComOk())
+      {
+        // Initialize for Client process security. Allow COPaper to
+        // call back into the client (ie, the client can impersonate
+        // the server identity).
+        hr = CoInitializeSecurity(
+               NULL,                        //Points to security descriptor
+               -1,                          //Count of entries in asAuthSvc
+               NULL,                        //Array of names to register
+               NULL,                        //Reserved for future use
+               RPC_C_AUTHN_LEVEL_NONE,      //Default authentication level
+                                            // for proxies
+               RPC_C_IMP_LEVEL_IMPERSONATE, //Default impersonation level
+                                            // for proxies
+               NULL,                        //Reserved; must be set to NULL
+               EOAC_NONE,                   //Additional client or
+                                            // server-side capabilities
+               NULL);                       //Reserved for future use
+        if (SUCCEEDED(hr))
+        {
+          ...
+          ...
+          Initialize the client app and run the main message loop.
+          ...
+          ...
+        }
+        else
+          Error: Can't initialize security.
+      }
+      else
+        Error: DCOM is not installed.
+
+      // We're exiting this app (either normally or by init failure) so
+      // shut down the COM Library.
+      CoUninitialize();
+    }
+    else
+      Error: Can't initialize COM.
+  }
+  else
+    Error: Platform Can't handle UNICODE.
+  ...
+  ...
+</FONT> </PRE>
+
+<P>
+The above CoInitializeSecurity call should look familiar because it is
+identical to the one used in the DCDSERVE sample. See DCDSERVE.HTM where
+this call is covered in detail. In DCOMDRAW the call to
+CoInitializeSecurity shown above establishes a process security context in
+which call backs are not authenticated (that is, they are allowed to pass)
+and the calling identity (the DCOMDraw user) is impersonated in the
+client. This essentially opens the security door in this sample client.
+You can also use CoInitializeSecurity to create a more restrictive
+arrangement. For example, a non-NULL security descriptor could be passed
+as the first parameter. It could include a DACL (Discretionary Access
+Control List) that specifically grants permission to only the DCOMDraw
+user. Although this sample does not use them, there are also techniques
+whereby restricted security contexts can be established for the duration
+of individual interface method calls.
+
+<P>
+When you run DCOMDRAW it initially loads the drawing from a COPaper that is
+available from a DCDSERVE server that is registered on the local machine.
+At this point DCOMDRAW is a simple local drawing application. The drawing
+you make is stored in the DCDSERVE.PAP compound file located with the
+DCDSERVE on the local machine. If you run multiple instances of DCOMDRAW
+on this machine, they will all share that local drawing.
+
+<P>
+By choosing the File/Load Remote command you can enter the machine name
+for the remote drawing to be shared. The existing local drawing is then
+closed and a drawing is loaded into a COPaper running on the remote server
+machine. (Of course, this assumes that the remote machine is set up with
+DCDSERVE installed as described in the DCDSERVE lesson.) The REMCLIEN
+lesson also covered using CoCreateInstanceEx and a COSERVERINFO structure
+DCOMDRAW uses the same technique. Here is the CGuiPaper::LoadRemote method
+from GUIPAPER.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CGuiPaper::LoadRemote(void)
+  {
+    HRESULT hr = NOERROR;
+    BOOL bFirst;
+    COPaperSink* pCobSink = NULL;
+    HCURSOR hCurPrev;
+    HCURSOR hCurWait = LoadCursor(NULL, IDC_WAIT);
+    COSERVERINFO* pServerInfo = &amp;g_ServerInfo;
+    MULTI_QI qiRes;
+    int iAns;
+    CDlgLoadRemote dlgLoadRemote;
+
+    // Ask user for the remote machine name. Cancel this whole load if
+    // he cancels the dialog.
+    iAns = dlgLoadRemote.ShowDialog(
+             m_hInst,
+             MAKEINTRESOURCE(IDD_LOAD_REMOTE),
+             m_hWnd);
+    // Ensure a remote machine name was specified by user.
+    if (IDOK == iAns &amp;&amp; pServerInfo-&gt;pwszName[0])
+    {
+      hr = E_FAIL;
+      // Unload the existing COPaper object.
+      if (m_pISharePaper)
+      {
+        // Ask User if save of current drawing is desired.
+        AskSave();
+
+        // Change cursor to the hour glass.
+        hCurPrev = SetCursor(hCurWait);
+
+        // Clear the window of the previous drawing.
+        ClearWin();
+
+        // Make sure we unlock the paper object.
+        Lock(FALSE);
+
+        // Disconnect all Sinks--currently only one: PaperSink. This
+        // officially stops all PaperSink notifications.
+        hr = DisconnectPaperSink();
+
+        // Release the main interface pointer copy held in CGuiPaper.
+        // This causes destruction (in the server) of the current
+        // COPaper object.
+        RELEASE_INTERFACE(m_pISharePaper);
+      }
+
+      // Load a new COPaper from the server on a user-specifed remote machine.
+
+      // Call COM service to create an instance of the remote COPaper
+      // COM object. We are not aggregating this new object (viz, the
+      // NULL parameter), so we ask for its IShareDraw interface directly.
+      qiRes.pIID = &amp;IID_ISharePaper;
+      qiRes.pItf = NULL;
+      qiRes.hr = 0;
+      hr = CoCreateInstanceEx(
+             CLSID_SharePaper,
+             NULL,
+             CLSCTX_REMOTE_SERVER,
+             pServerInfo,
+             1,
+             &amp;qiRes);
+      if (SUCCEEDED(hr))
+      {
+        hr = qiRes.hr;
+        if (SUCCEEDED(hr))
+        {
+          // Grab our copy of the returned interface pointer. An AddRef was
+          // done by CoCreateInstanceEx on this interface pointer.
+          m_pISharePaper = (ISharePaper*)qiRes.pItf;
+
+          // Init the newly created COPaper object.
+          GetClientRect(m_hWnd, &amp;m_WinRect);
+          hr = m_pISharePaper-&gt;InitPaper(&amp;m_WinRect, &amp;bFirst);
+          if (SUCCEEDED(hr))
+          {
+            // Reconnect all Sinks--currently only one: PaperSink.
+            // This restores all PaperSink notifications.
+            hr = ConnectPaperSink();
+            if (SUCCEEDED(hr))
+            {
+              if (bFirst)
+              {
+                // Lock and load.
+                Lock(TRUE);
+                hr = Load();
+              }
+              else
+              {
+                Lock(FALSE);
+                // If this is not first init then resize this client's
+                // window to match what the remote COPaper object is
+                // using for its window size.
+                hr = ResizeWin(m_WinRect.right, m_WinRect.bottom);
+              }
+              PaintWin();
+            }
+          }
+        }
+      }
+
+      if (FAILED(hr))
+      {
+        HrMsg(m_hWnd, TEXT(REMOTE_CREATE_ERR_STR), hr);
+
+        // If error with remote load then restore local drawing.
+        hr = LoadLocal();
+      }
+
+      // Set Cursor back to what it was.
+      SetCursor(hCurPrev);
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+The CoCreateInstanceEx call uses the MULTI_QI structure even though only
+one interface is requested. This facility is especially useful in the
+context of DCOM where numerous interfaces on a remote object are needed by
+a client. Rather than suffer the overhead of separate QueryInterface
+round-trips across the network, this facility allows more than one
+interface to be obtained in one CoCreateInstanceEx call.
+
+<P>
+After obtaining the m_pISharePaper interface pointer, it is used to call
+the InitPaper method. This call returns the window rectangle of the remote
+drawing and also a flag that indicates whether this is the first client to
+gain access to the newly created COPaper.
+
+<P>
+If this is the first client then an initial lock on the shared COPaper
+drawing is requested. This lock means that this first client owns the pen.
+COPaper is then asked to load the drawing content from its associated
+compound file. This is the DCDSERVE.PAP file located on the remote machine
+with DCDSERVE.
+
+<P>
+If this client is not the first client, then it does not request a lock on
+COPaper because it is assumed that an earlier client owns the pen. Since a
+COPaper object already exists and is loaded, this client resizes its
+window to match the existing drawing used by the other clients. In
+addition to drawing something, one of these earlier clients may have
+resized the drawing window. Finally, the drawing is painted in the
+client's window whether this client is the first or not.
+
+<P>
+Since the drawing data for the shared drawing is managed by a single
+instance of COPaper on the server side, DCOMDRAW must obtain this data
+from COPaper to display the drawing. Here is the CGuiPaper::PaintWin
+method from GUIPAPER.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CGuiPaper::PaintWin(void)
+  {
+    HRESULT hr = E_FAIL;
+    COLORREF crInkColorTmp;
+    SHORT nInkWidthTmp;
+    BOOL bInkSavingTmp;
+    LONG i;
+    SHORT nInkType;
+    SHORT nX;
+    SHORT nY;
+    SHORT nInkWidth;
+    COLORREF crInkColor;
+
+    if (m_pISharePaper &amp;&amp; !m_bPainting &amp;&amp; !m_bInking)
+    {
+      hr = NOERROR;
+      m_bPainting = TRUE;
+      // Save and restore ink color and width since redraw otherwise
+      // ends up changing these values in CGuiPaper.
+      crInkColorTmp = m_crInkColor;
+      nInkWidthTmp = m_nInkWidth;
+      bInkSavingTmp = m_bInkSaving;
+      m_bInkSaving = FALSE;
+      for (i = 0; SUCCEEDED(hr); i++)
+      {
+        hr = m_pISharePaper-&gt;GetInk(
+               i,
+               &amp;nInkType,
+               &amp;nX,
+               &amp;nY,
+               &amp;nInkWidth,
+               &amp;crInkColor);
+        if (SUCCEEDED(hr))
+        {
+          switch (nInkType)
+          {
+            case INKTYPE_START:
+              m_nInkWidth = nInkWidth;
+              m_crInkColor = crInkColor;
+              InkStart(nX, nY);
+              break;
+            case INKTYPE_DRAW:
+              InkDraw(nX, nY);
+              break;
+            case INKTYPE_STOP:
+              InkStop(nX, nY);
+              break;
+            default:
+              break;
+          }
+        }
+      }
+      m_nInkWidth = nInkWidthTmp;
+      m_crInkColor = crInkColorTmp;
+      m_bInkSaving = bInkSavingTmp;
+      m_bPainting = FALSE;
+      hr = NOERROR;
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+The DCOMDRAW client plays an active role in getting the ink data for
+painting. Compare this to the repainting in the STOCLIEN sample. In that
+sample the client would request a redraw of the COPaper object. COPaper
+would then loop to send the data back to a sink in the client. But in this
+DCOMDRAW distributed drawing sample, the clients can all concurrently loop
+to obtain the data for their own separate repaints. Because both the
+DCDSERVE server and the DCOMDRAW client initialize COM in a Single
+Threaded Apartment (STA), COM ensures that multiple client calls to the
+shared COPaper are serialized on the same thread in DCDSERVE. This
+arrangement is convenient to program but can tax performance. For better
+performance, COPaper can be coded as a free-threaded object residing in
+the Multi-Threaded Apartment (MTA) of DCDSERVE.
+
+<P>
+Note that performance of the drawing and repainting in DCOMDRAW can vary
+depending on the complexity of your network. For example, during repaints
+COPaper in DCDSERVE may be calling COPaperSink in DCOMDRAW through
+intermediary servers or from trusted domains to trusting domains. DCOMDRAW
+and DCDSERVE are not optimized for maximum performance in these cases. One
+worthy optimization would cache individual ink points into collections
+called strokes. Each stroke would be a variant blob beginning with an
+InkStart and ending with an InkStop. Rather than each individual ink point
+being sent separately, strokes would be sent. This would replace the
+InkDraw calls that make up the bulk of the repaint traffic with a greatly
+reduced number of InkStroke calls. The drawing behavior would look less
+smooth but a repaint would be faster.
+
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

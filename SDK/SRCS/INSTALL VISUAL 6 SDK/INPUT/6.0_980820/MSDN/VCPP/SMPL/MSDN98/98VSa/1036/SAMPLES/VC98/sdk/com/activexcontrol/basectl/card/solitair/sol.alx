@@ -1,0 +1,2836 @@
+
+<SCRIPT LANGUAGE="VBScript">
+<!--
+
+'The naming conventions for each of the areas where
+' cards can play are:
+'	
+'	Shuffle Stack		Place where cards are ALL face down 
+'				 and the user can click to put cards into
+'				 play. Both 3 card and 1 card deal are supported.
+'				 (to change number of cards played
+'				  change the value of gCOUNTDEAL)
+'				 There is only 1 Shuffle Stack.
+'
+'	Discard Stack		Place where cards are face up
+'				 and can be dragged to an Ace Stack
+'				 or a Card Stack. There is only 1 Discard Stack.
+'
+'	Ace Stack		Place where cards of the same suit
+'				 are piled, starting with the Ace and Ending
+'				 with the King. When all kings are showing
+'				 the game is over and the animation begins.
+'				 There are 4 Ace Stacks.
+'
+'	Card Stack		Place where cards are piled, alternating the
+'				 the suit and in descending order.
+'				 There are 7 card stacks.
+
+'The following global variables are used for this application.
+'Before each variable is information explaining how to use it,
+'as well as explanatory text on the question that the variable 
+'answers (Boolean) or a statement describing the variable's use.
+'
+'The variable naming conventions used in this
+' application are represented by: [g][r]vartypeVarName
+' Where:
+'	 [g]		Denotes it as a global variable.
+'	 [r]		Denotes it as an array (region).
+'	 vartype	One of the values specified below.
+'	 VarName	Name of variable, starting each word 
+'			 with a capital letter.
+'			Using a VARNAME in ALL uppercase
+'			will denote it as a constant value.
+'
+' vartype can be:
+'	d	Decimal number, numeric and non-integer.
+'	b	Boolean.
+'	int	Integer.
+'	inc	Incrementer (Used when doing things, like animations
+'				 in steps or increments).
+'	str	String.
+'	obj	Object or Control.
+'	
+'	NOTE: Since all data types in VBScript are Variants,
+'	this variable convention is for documentation and
+'	to help you with debugging and programming.
+'
+
+'Are we in debug mode?
+dim gbDebug
+
+'Did the mouseup event happen so 
+' we can stop dragging a card?
+dim gbMouseUp
+
+'Number of MouseMove(s) to skip before actually
+' redrawing a card (makes the drag seem faster).
+dim gintDragSkip
+
+'Did the user want to End the game?
+dim gbEndGame
+
+'Done with bouncing all cards off screen.
+dim gbAnimationDone 
+
+'Was the background clicked during card animation?
+dim gbLeaveEarly
+
+'Number of moves the card will take to get to the ace
+' Stack during animation
+dim gincCardMoveSteps
+
+'Current card being moved.
+dim gobjCurMoveCard
+
+'Amount to move left of card on each step.
+dim gincEndLeft
+
+'Amount to move top of card on each step.
+dim gincEndTop
+
+'Order the suits appear on the Ace Stacks.
+dim gstrSuitOrder
+
+'Stack the cards are currently being moved to
+dim gintCurStackToMove
+
+'Done moving cards to Ace Stack.
+dim gbCardMoveDone 
+
+'Is the shuffling done yet?
+dim gbShuffleDone
+
+'The array to hold the randomly shuffled cards.
+dim grintShuffled(52)
+
+'Number of times to go into the random sequence.
+dim gRNDCOUNT
+
+'For the End game
+'Each card that is currently bouncing and the 
+' top and left value for each.
+dim grCardBouncing(4,3)
+
+'Which cards are done moving.
+dim gbDoneMoving(4)
+
+'Friction and gravity valued applied to each bounce.
+dim gdFriction
+dim gdGravity
+
+'Used for the count of cards to deal.
+dim gCOUNTDEAL
+
+'Number of cards moved to Discard Stack when a user clicks the
+' Shuffle Stack.  Needed to determine how many cards should
+' be showing on the Discard Stack.
+dim gintCountDiscarded
+
+'Stack the card is being moved from.
+dim gintSrcStack
+
+'Used during animation. These variables
+' store the starting position of each card and
+' the End points of where the card
+' should End up after being moved.
+dim gdStartTop, gdStartLeft
+dim gdCardTop, gdCardLeft
+dim gdOffsetTop
+
+'Card being moved.
+dim gintMoveCardInx
+
+'Number of total cards being moved during a mouse
+' drag, i.e., moving cards from one stack to another.
+dim gintCountMoving
+
+'Holds all the cards of the deck.
+dim grobjAllCards(52) 
+
+'Is the card face up?
+dim grbCardShowing(52)
+
+'Current deck being displayed.
+dim gintCurDeck
+
+'Current deck being displayed in the dialog.
+dim gintTempCurDeck
+
+'Holds all the card backs to be displayed later.
+dim grobjCardDeck(12)
+
+'Used when comparing with a King or Ace.
+dim gACE 
+dim gKING
+
+'Starting index into stack array of Shuffle Stack.
+dim gintShuffleStackInx
+
+'Starting index into stack array of Discard Stack.
+dim gintDiscardStackInx
+
+'Starting index into stack array of first Ace Stack
+dim gintAceStackStartInx 
+
+'This encompasses all 7 Card Stacks, 4 Ace Stacks,
+' Shuffle Stack and Discard Stack.
+'This array contains 30 items in each stack because 28 is 
+' the maximum number of cards that could be in one stack
+' plus two spaces for other info.
+' The first dimension of the array determines which
+' stack to use and the second dimension is what is on
+' the stack. The first element in each stack is the
+' stack object, the second element is the count of 
+' elements and the third element onward is where the cards are stored.
+dim grobjAllCardStacks(13,30) 
+
+'Value of the bottom of the stack, empty stack.
+dim gstrBOTTOMOFSTACK 
+
+'Count of the total number of stacks used.
+dim gintCountAllStacks
+
+'Total number of card stacks (7).
+dim gintCountCardStacks
+
+'Number of pixels used between each card when
+' being drawn.
+dim gintCardOffset
+
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+'**********************************************
+'* Name: DebugPrint
+'**********************************************
+'* Description:
+'*	Provides a utility Function that displays
+'*	 the string sent to it in a debug
+'*	 "window." Currently, a listbox control
+'*	 is used to display debug output.
+'*	 Feel free to call this Function during
+'*	 debugging. 
+'*	NOTE: Does depEnd on the existence of a 
+'*	 listbox with the ID of lstDebugPrint
+'**********************************************
+'* Parameters:
+'*	str		String displayed to debug window
+'**********************************************
+Sub DebugPrint(str)
+	If gbDebug then
+		lstDebugPrint.additem str
+	END IF
+End Sub 'DebugPrint
+
+'**********************************************
+'* Name: OnLoad event for ActiveX Layout
+'**********************************************
+'* Description:
+'*	Sets up the default values and
+'*	 calls startgame to get things going.
+'**********************************************
+'* Parameters:
+'*	None
+'**********************************************
+Sub Form_OnLoad()
+	'Turn debug mode off
+	gbDebug = false
+	'Allow the user a checkbox for changing debug mode
+	chkDebug.value = gbDebug
+	
+	Form.DrawBuffer = "256000"
+	gACE = 1
+	gKING = 13
+	gCOUNTDEAL = 3
+
+	gdFriction = 2
+	gdGravity = 9.8
+
+  	gstrBOTTOMOFSTACK = "BOS"
+
+	'Spacing when drawing a card
+	gintCardOffset = 11
+  
+	gintShuffleStackInx = 12
+	gintDiscardStackInx = 13
+  	gintCountCardStacks = 7
+	gintAceStackStartInx = gintCountCardStacks+1
+
+	gintCountAllStacks = 13
+
+	AceImage1.Picture = AceImage3.Picture
+	AceImage2.Picture = AceImage3.Picture
+	AceImage4.Picture = AceImage3.Picture
+	AceImage1.visible = true
+	AceImage2.visible = true
+	AceImage3.visible = true
+	AceImage4.visible = true
+
+	StartGame  
+End Sub 'Form_OnLoad
+
+'**********************************************
+'* Name: StartGame
+'**********************************************
+'* Description:
+'*	Gets the game going by setting up
+'*	 the card back and shuffling and dealing 
+'*	 the cards.
+'**********************************************
+'* Parameters:
+'*	None
+'**********************************************
+Sub StartGame
+	gbEndGame = False
+	'Values used during animation
+	gintDragSkip = 3
+	gbCardMoveDone = True
+	tmEndAnimation.enabled = false
+	tmEndCardMove.enabled = false
+	gincCardMoveSteps = 0
+	gincEndLeft = 0
+	gincEndTop = 0
+	gintCountMoving = 0
+
+	LoadCards
+
+ 	if gintCurDeck > -1 or gintCurDeck < -12 then
+		ChangeTheDeck -1
+	end if
+
+	gRNDCOUNT = 500
+
+	DealCards
+End Sub 'StartGame
+
+'**********************************************
+'* Name: LoadCard
+'**********************************************
+'* Description:
+'*	Loads all the arrays with the card objects.
+'*	Initializes grbCardShowing.
+'*	Applies default values to the stacks.
+'**********************************************
+'* Parameters:
+'*	None
+'**********************************************
+Sub LoadCards
+	'Could also use a control array here but this
+	' code loads the card objects into the array
+	set grobjAllCards(1) = Card1H
+	set grobjAllCards(2) = Card2H
+	set grobjAllCards(3) = Card3H
+	set grobjAllCards(4) = Card4H
+	set grobjAllCards(5) = Card5H
+	set grobjAllCards(6) = Card6H
+	set grobjAllCards(7) = Card7H
+	set grobjAllCards(8) = Card8H
+	set grobjAllCards(9) = Card9H
+	set grobjAllCards(10) = Card10H
+	set grobjAllCards(11) = Card11H
+	set grobjAllCards(12) = Card12H
+	set grobjAllCards(13) = Card13H
+	set grobjAllCards(14) = Card1D
+	set grobjAllCards(15) = Card2D
+	set grobjAllCards(16) = Card3D
+	set grobjAllCards(17) = Card4D
+	set grobjAllCards(18) = Card5D
+	set grobjAllCards(19) = Card6D
+	set grobjAllCards(20) = Card7D
+	set grobjAllCards(21) = Card8D
+	set grobjAllCards(22) = Card9D
+	set grobjAllCards(23) = Card10D
+	set grobjAllCards(24) = Card11D
+	set grobjAllCards(25) = Card12D
+	set grobjAllCards(26) = Card13D
+	set grobjAllCards(27) = Card1C
+	set grobjAllCards(28) = Card2C
+	set grobjAllCards(29) = Card3C
+	set grobjAllCards(30) = Card4C
+	set grobjAllCards(31) = Card5C
+	set grobjAllCards(32) = Card6C
+	set grobjAllCards(33) = Card7C
+	set grobjAllCards(34) = Card8C
+	set grobjAllCards(35) = Card9C
+	set grobjAllCards(36) = Card10C
+	set grobjAllCards(37) = Card11C
+	set grobjAllCards(38) = Card12C
+	set grobjAllCards(39) = Card13C
+	set grobjAllCards(40) = Card1S
+	set grobjAllCards(41) = Card2S
+	set grobjAllCards(42) = Card3S
+	set grobjAllCards(43) = Card4S
+	set grobjAllCards(44) = Card5S
+	set grobjAllCards(45) = Card6S
+	set grobjAllCards(46) = Card7S
+	set grobjAllCards(47) = Card8S
+	set grobjAllCards(48) = Card9S
+	set grobjAllCards(49) = Card10S
+	set grobjAllCards(50) = Card11S
+	set grobjAllCards(51) = Card12S
+	set grobjAllCards(52) = Card13S
+
+
+	'Make all cards transparent
+	ClearAllCards
+
+	'Load up the card stacks
+	set grobjAllCardStacks(gintShuffleStackInx,1)= Shuffle
+	set grobjAllCardStacks(gintDiscardStackInx,1)= Discard
+
+	set grobjAllCardStacks(1,1) = Stack1
+	set grobjAllCardStacks(2,1) = Stack2
+	set grobjAllCardStacks(3,1) = Stack3
+	set grobjAllCardStacks(4,1) = Stack4
+	set grobjAllCardStacks(5,1) = Stack5
+	set grobjAllCardStacks(6,1) = Stack6
+	set grobjAllCardStacks(7,1) = Stack7
+
+	for inx = 1 to gintCountAllStacks
+		grobjAllCardStacks(inx,2) = 0
+	next 
+
+	set grobjAllCardStacks(gintAceStackStartInx,1) = Ace1
+	set grobjAllCardStacks(gintAceStackStartInx+1,1) = Ace2
+	set grobjAllCardStacks(gintAceStackStartInx+2,1) = Ace3
+	set grobjAllCardStacks(gintAceStackStartInx+3,1) = Ace4
+
+
+	'Setup initial stack size by setting to the size of a card object.
+	' Don't use default Discard Stack because is hardcoded.
+	for inx = 1 to gintCountAllStacks - 1
+		grobjAllCardStacks(inx,1).height = grobjAllCards(1).height
+		grobjAllCardStacks(inx,1).width = grobjAllCards(1).width
+	next
+
+	set grobjCardDeck(1) = CardDeck1
+	set grobjCardDeck(2) = CardDeck2
+	set grobjCardDeck(3) = CardDeck3
+	set grobjCardDeck(4) = CardDeck4
+	set grobjCardDeck(5) = CardDeck5
+	set grobjCardDeck(6) = CardDeck6
+	set grobjCardDeck(7) = CardDeck7
+	set grobjCardDeck(8) = CardDeck8
+	set grobjCardDeck(9) = CardDeck9
+	set grobjCardDeck(10) = CardDeck10
+	set grobjCardDeck(11) = CardDeck11
+	set grobjCardDeck(12) = CardDeck12
+
+End Sub 'LoadCard
+
+'**********************************************
+'* Name: ChangeTheDeck
+'**********************************************
+'* Description:
+'*	Changes the current deck being used.
+'**********************************************
+'* Parameters:
+'*	DeckID	New card deck to be displayed.
+'*			Current value of deck is stored
+'*			in gintCurDeck.
+'**********************************************
+Sub ChangeTheDeck (DeckID)
+	'The deck back didn't change so don't redo it.
+	If gintCurDeck = DeckID then
+		exit Sub
+	End If
+	'Deck is new, let's change all the cards that need it.
+	gintCurDeck = DeckID
+
+	for StackInx = 1 to gintCountAllStacks
+		for inner = 1 to intCountOnStack(StackInx)
+			strCard = strGetStackElement(StackInx,inner)
+			intCardInx = intGetCardIndex(strCard)
+			If not grbCardShowing(intCardInx) then
+				'Redraw the cards that are not face up.
+				DrawCard intCardInx
+			End If
+		next
+	next 
+End Sub 'ChangeTheDeck
+
+'**********************************************
+'* Name: ClearAllCards
+'**********************************************
+'* Description:
+'*	Sets all card objects to their transparent
+'*	 value.
+'**********************************************
+'* Parameters:
+'*	None
+'**********************************************
+Sub ClearAllCards
+	for inx = 1 to 52
+		grobjAllCards(inx).Suite = 0
+		grobjAllCards(inx).Visible = True
+	next 
+End Sub 'ClearAllCards
+
+'**********************************************
+'* Name: Push
+'**********************************************
+'* Description:
+'*	Pushes (adds) a card object to a stack.
+'**********************************************
+'* Parameters:
+'*	intStack	Stack to add card to
+'*	strCard	Card to add
+'**********************************************
+Sub Push(intStack, strCard)
+	dim intNewSize
+
+	If gstrBOTTOMOFSTACK <> strTopOfStack(intStack) then
+		grobjAllCardStacks(intStack,1).height = grobjAllCardStacks(intStack,1).height + intGetVertOffset(intStack)
+'		grobjAllCardStacks(intStack,1).width = grobjAllCardStacks(intStack,1).width + intGetHorzOffset(intStack)
+	End If
+
+	intNewSize = grobjAllCardStacks(intStack,2)+1
+	grobjAllCardStacks(intStack,2) = intNewSize
+	grobjAllCardStacks(intStack,intNewSize+2) = strCard
+
+	'This makes all cards but the top two invisible so drawing of the stack
+	' is much faster
+	if intNewSize > 2 and _
+	   (intStack >= gintAceStackStartInx and intStack <= gintAceStackStartInx+3) then
+		CardIndex = intGetCardIndex(grobjAllCardStacks(intStack,intNewSize+2-2))
+		grobjAllCards(CardIndex).suite = 0
+	end if
+
+End Sub 'Push	
+
+
+'**********************************************
+'* Name: strPop
+'**********************************************
+'* Description:
+'*	Returns the string representation of
+'*	 the card at the top of the stack and
+'*	 removes it from the top.
+'**********************************************
+'* Parameters:
+'*	intStack	Stack to strPop card off of
+'**********************************************
+Function strPop(intStack)
+	strCard = strTopOfStack(intStack)
+
+	If gstrBOTTOMOFSTACK = strCard then
+		strPop = gstrBOTTOMOFSTACK
+		exit Function
+	End If
+
+	pos = grobjAllCardStacks(intStack,2)
+
+	'This unhides the cards that were hidden in Sub Push
+	if pos > 2 and _
+	   (intStack >= gintAceStackStartInx and intStack <= gintAceStackStartInx+3) then
+		CardIndex = intGetCardIndex(grobjAllCardStacks(intStack,pos+2-2))
+		grobjAllCards(CardIndex).suite = (CardIndex \ 13) + 1
+	end if
+
+	strPop = grobjAllCardStacks(intStack,pos+2)
+	grobjAllCardStacks(intStack,2) = pos-1
+
+	grobjAllCardStacks(intStack,1).height = grobjAllCardStacks(intStack,1).height - intGetVertOffset(intStack)
+'	grobjAllCardStacks(intStack,1).width = grobjAllCardStacks(intStack,1).width - intGetHorzOffset(intStack)
+
+End Function 'Pop
+
+'**********************************************
+'* Name: strGetStackElement
+'**********************************************
+'* Description:
+'*	Internal Stack function used to get
+'*	 elements that are not on the top or the
+'*	 bottom of the stack.
+'**********************************************
+'* Parameters:
+'*	intStack	Stack to get it from
+'*	intElement	Position of element
+'**********************************************
+Function strGetStackElement(intStack,intElement)
+	strGetStackElement = gstrBOTTOMOFSTACK
+	If Element <= intCountOnStack(intStack) then
+		strGetStackElement = grobjAllCardStacks(intStack,intElement+2)
+	End If
+End Function 'strGetStackElement
+
+'**********************************************
+'* Name: strTopOfStack
+'**********************************************
+'* Description:
+'*	Returns the string value of the card
+'*	on the top of the stack. Does NOT
+'*	remove the card from the stack.
+'**********************************************
+'* Parameters:
+'*	intStack	Stack to get card from
+'**********************************************
+Function strTopOfStack(intStack)
+	strTopOfStack = gstrBOTTOMOFSTACK
+	If 0 < intCountOnStack(intStack) then
+		Pos = intCountOnStack(intStack)
+		strTopOfStack = grobjAllCardStacks(intStack,Pos+2)
+	End If
+End Function 'strTopOfStack
+
+'**********************************************
+'* Name: strGenerateCard
+'**********************************************
+'* Description:
+'*	Generates a card randomly. If the deck has
+'*	 not been shuffled yet, they will be.
+'**********************************************
+'* Parameters:
+'*	intCardCount	Card to get
+'**********************************************
+Function strGenerateCard(intCardCount)
+	dim rSorted(52)
+	'Shuffle the stack if not already done.
+	If not gbShuffleDone then
+		Randomize 
+		'Go a random number of elements into the sequence.
+		for inx = 1 to (gRNDCOUNT * rnd())
+		next
+
+		'Load the unsorted array.
+		for inx = 1 to 52
+			rSorted(inx-1) = inx
+		next
+
+		'Load a shuffled card into the array.
+		for inx = 0 to 51
+			random = cint(rnd() * (51 - inx))
+			grintShuffled(inx+1) = rSorted(random)
+			rSorted(random) = rSorted(51 - inx)
+		next
+		gbShuffleDone = true
+	End If
+	intCardNum = grintShuffled(intCardCount)
+	strGenerateCard = strInxToCard(intCardNum)
+End Function 'strGenerateCard
+
+'**********************************************
+'* Name: strInxToCard
+'**********************************************
+'* Description:
+'*	Converts a card number (index) to its
+'*	 string representation.
+'**********************************************
+'* Parameters:
+'*	intCardNum	Value of card
+'**********************************************
+Function strInxToCard(intCardNum)
+	inxSuit = 0
+	
+	intCurCardNum = intCardNum
+	while 13 < intCurCardNum
+		intCurCardNum = intCurCardNum - 13
+		inxSuit = inxSuit + 1
+	wEnd
+	Select Case inxSuit
+'Clubs, Spades, Hearts and Diamonds is the current order
+' of Suits.
+'Order in Card.ocx is dependent on suit order.
+	case 0
+		strSuit = "C"
+	case 1
+		strSuit = "S"
+	case 2
+		strSuit = "H"
+	case 3
+		strSuit = "D"
+	case Else
+		debugPrint "Error (strInxToCard): attempting to increment suit past last one"
+	End select
+
+	strCurCard = intCurCardNum & strSuit
+	strInxToCard = strCurCard
+End Function 'strInxToCard
+
+'**********************************************
+'* Name: strGetCardSuit
+'**********************************************
+'* Description:
+'*	Returns the suit of a card.
+'**********************************************
+'* Parameters:
+'*	strCard	Card to get the suit of.
+'**********************************************
+Function strGetCardSuit(strCard)
+	strGetCardSuit = ""
+	If "" = strCard then
+		exit Function
+	End If
+
+	strGetCardSuit = right(strCard,1)
+End Function 'strGetCardSuit
+
+'**********************************************
+'* Name: intGetCardIndex
+'**********************************************
+'* Description:
+'*	Returns the position, (index) into the
+'* 	 AllCards array of where the card is.
+'**********************************************
+'* Parameters:
+'*	strCard	Card to find index of.
+'**********************************************
+Function intGetCardIndex(strCard)
+	If "" = strCard or gstrBOTTOMOFSTACK = strCard then
+		intGetCardIndex = -1
+		exit Function
+	End If
+	strSuit = right(strCard,1)
+'Order in Card.ocx is dependent on suit order.
+	Select case strSuit
+	case "H"
+		Offset = 26
+	case "D"
+		Offset = 39
+	case "S"
+		Offset = 13
+	case "C"
+		Offset = 0
+	End Select
+
+	intGetCardIndex = Offset + intCardVal(strCard)
+End Function 'intGetCardIndex
+
+'**********************************************
+'* Name: intCardVal
+'**********************************************
+'* Description:
+'*	Returns the numeric value of a given card,
+'*	 independent of suit.
+'*	 Ex: 10 of Hearts is "10H" and the value
+'*	 returned would be 10.
+'**********************************************
+'* Parameters:
+'*	strCard	Card to get value of.
+'**********************************************
+Function intCardVal(strCard)
+	dim tmpVal
+	If "" = strCard or gstrBOTTOMOFSTACK = strCard then
+		tmpVal = -1
+	Else
+		tmpVal = left(strCard,len(strCard) -1)
+	End If
+	intCardVal = cint(tmpVal)
+End Function 'intCardVal
+
+'**********************************************
+'* Name: bSameSuit
+'**********************************************
+'* Description:
+'*	Returns:
+'* 	  True	if cards are the same suit.
+'*	  False	if suits are different.
+'**********************************************
+'* Parameters:
+'*	strCard1	First card.
+'*	strCard2	Card to compare against first card.
+'**********************************************
+Function bSameSuit(strCard1,strCard2)
+	'Get the values of both cards.
+	strSuit1 = strGetCardSuit(strCard1)
+	strSuit2 = strGetCardSuit(strCard2)
+	
+	bSameSuit = (strSuit1 = strSuit2)
+End Function 'bSameSuit
+
+'**********************************************
+'* Name: bSameColor
+'**********************************************
+'* Description:
+'*	Returns:
+'*		True	if cards are the same color.
+'*		False	if cards are different color.
+'**********************************************
+'* Parameters:
+'*	strCard1	First card.
+'*	strCard2	Card to compare against first card.
+'**********************************************
+Function bSameColor(strCard1,strCard2)
+
+	strSuit1 = strGetCardSuit(strCard1)
+	strSuit2 = strGetCardSuit(strCard2)
+
+	'Are they the same suit?
+	If (strSuit1 = strSuit2) then
+		bSameColor = True
+		exit Function
+	End If
+	'Since both cards don't match suit
+	' check the other suit of that color.
+	Select Case strSuit1
+	case "H"
+		bSameColor = (strSuit2 = "D")
+	case "D"
+		bSameColor = (strSuit2 = "H")
+	case "S"
+		bSameColor = (strSuit2 = "C")
+	case "C"
+		bSameColor = (strSuit2 = "S")
+	End select
+
+End Function 'bSameColor
+
+'**********************************************
+'* Name: intGetHorzOffset
+'**********************************************
+'* Description:
+'*	Returns the current horizontal offset
+'*	in pixels when drawing the cards on a stack.
+'**********************************************
+'* Parameters:
+'*	intStack	Stack to draw.
+'**********************************************
+Function intGetHorzOffset(intStack)
+	intGetHorzOffset = 0
+	'Only the Discard Stack has a horizontal offset.
+	If (gintDiscardStackInx = intStack) then
+		intGetHorzOffset = gintCardOffset
+	End If
+End Function 'intGetHorzOffset
+
+'**********************************************
+'* Name: intGetVertOffset
+'**********************************************
+'* Description:
+'*	Returns the vertical offset, used during
+'*	drawing a stack, for a particular stack.
+'**********************************************
+'* Parameters:
+'*	intStack	Stack to return Vertical
+'*			 offset for.
+'**********************************************
+Function intGetVertOffset(intStack)
+	intGetVertOffset = gintCardOffset
+	'HARDCODE ASSUMPTION: ALL Stacks above gintAceStackStartInx WILL have a vert offset of 0
+	If (gintAceStackStartInx <= intStack) then
+		intGetVertOffset = 0
+	End If
+End Function 'intGetVertOffset
+
+'**********************************************
+'* Name: DrawDiscardStack
+'**********************************************
+'* Description:
+'*	The Discard Stack is drawn in this routine
+'*	because it is a special case of the draw
+'*	routine. The difference being that all 
+'*	other stacks draw ALL cards with an offset
+'*	and the discard ONLY draws the cards on
+'*	the top of its pile with an offset.
+'**********************************************
+'* Parameters:
+'*	None
+'**********************************************
+Sub DrawDiscardStack
+	dim intStartOffset
+	dim intStackSize
+	dim intCountPiles
+	dim intRemainder
+
+	'Default Offset Values
+	intHorzOffset = intGetHorzOffset(gintDiscardStackInx)
+	intVertOffset = intGetVertOffset(gintDiscardStackInx)
+
+	intStackSize = intCountOnStack(gintDiscardStackInx)
+
+	'See if less than three cards were transferred to Discard Stack.
+	intStartOffset = (intStackSize - gintCountDiscarded)
+
+	'Draw all underneath cards that won't have an offset.
+	for inx = 0 to intStartOffset - 1
+		strCard = grobjAllCardStacks(gintDiscardStackInx,inx + 3)
+		CardIndex = intGetCardIndex(strCard)
+		grobjAllCards(CardIndex).top = grobjAllCardStacks(gintDiscardStackInx,1).top 
+		grobjAllCards(CardIndex).left = grobjAllCardStacks(gintDiscardStackInx,1).left 
+		DrawCard CardIndex
+	next 
+	OffsetInx = 0
+	'Draw the cards at the top of the Discard Stack.
+	for inx = intStartOffset to intStackSize - 1
+		strCard = grobjAllCardStacks(gintDiscardStackInx,inx + 3)
+		CardIndex = intGetCardIndex(strCard)
+		grobjAllCards(CardIndex).top = grobjAllCardStacks(gintDiscardStackInx,1).top  + (OffsetInx * intVertOffset)
+		grobjAllCards(CardIndex).left = grobjAllCardStacks(gintDiscardStackInx,1).left + (OffsetInx * intHorzOffset)
+		DrawCard CardIndex
+		OffsetInx = OffsetInx + 1
+		'Bring that card to top of pile.
+		grobjAllCards(CardIndex).ZOrder(0)
+	next
+	'Make sure to bring hotspot stack to top of z order so it can get events.
+	grobjAllCardStacks(gintDiscardStackInx,1).ZOrder(0)
+
+End Sub 'DrawDiscardStack
+
+'**********************************************
+'* Name: DrawCard
+'**********************************************
+'* Description:
+'*	Here we draw a card based on the index
+'*	sent in.
+'*	NOTE: if Card.ocx changes it will most likely
+'*	effect code here.
+'**********************************************
+'* Parameters:
+'*	intCardIndex	Index into card array of
+'*				 card being drawn.
+'**********************************************
+Sub DrawCard (CardIndex)
+	If True = grbCardShowing(CardIndex) then
+
+		'Calculate which suit it was so we
+		' can change it back.
+		inxSuit = (CardIndex \ 13)
+		inxCard = CardIndex - (inxSuit*13)
+		If (0 <> inxCard) then
+			inxSuit = inxSuit + 1
+		Else
+			inxCard = 13
+		End If
+		grobjAllCards(CardIndex).Number= inxCard
+	Else
+		'Cards are face down, let's use the current deck.
+		inxSuit = gintCurDeck
+	End If
+	grobjAllCards(CardIndex).Suite= inxSuit
+End Sub 'DrawCard
+
+'**********************************************
+'* Name: DrawStack
+'**********************************************
+'* Description:
+'*	Draws a specific stack by getting the correct
+'*	 offset and then calling DrawCard.
+'**********************************************
+'* Parameters:
+'*	intStack	Stack to draw.
+'**********************************************
+Sub DrawStack (intStack)
+
+	'Default Offset Values
+	intHorzOffset = intGetHorzOffset(intStack)
+	intVertOffset = intGetVertOffset(intStack)
+	If 0 = intCountOnStack(intStack) then Exit Sub
+
+	If (gintDiscardStackInx = intStack) then
+		DrawDiscardStack
+		exit Sub
+	End If
+
+	for inx = 1 to intCountOnStack(intStack)
+	'This cycles through all the cards in the stack applying an offset.
+		strCard = grobjAllCardStacks(intStack,inx + 2)
+		intCardIndex = intGetCardIndex(strCard)
+		grobjAllCards(intCardIndex).top = grobjAllCardStacks(intStack,1).top + ((inx-1) * intVertOffset)
+		grobjAllCards(intCardIndex).left = grobjAllCardStacks(intStack,1).left + ((inx-1) * intHorzOffset)
+
+		DrawCard intCardIndex
+	next
+	If (0 < intCardIndex) then 
+		grobjAllCards(intCardIndex).ZOrder(0)
+		grobjAllCardStacks(intStack,1).ZOrder(0)
+	End If
+End Sub 'DrawStack
+
+'**********************************************
+'* Name: DealCards
+'**********************************************
+'* Description:
+'*	Here we deal the cards to each of the
+'*	7 card stacks and put the rest into
+'*	the Shuffle Stack.
+'**********************************************
+'* Parameters:
+'*	NONE
+'**********************************************
+Sub DealCards
+	'The first time calling GenerateCard we have
+	' to be sure it shuffles the deck.
+	gbShuffleDone = false
+	intCardCount = 1
+
+	'This set of loops will deal the cards
+	' needed to the 7 stacks.
+	for inxStack = 1 to gintCountCardStacks
+		For inx = 1 to inxStack
+			strCard = strGenerateCard(intCardCount)
+			'Push on the new card.
+			Push inxStack,strCard
+			intCardInx = intGetCardIndex(strCard)
+			grbCardShowing(intCardInx) = False
+			intCardCount = intCardCount +1
+			grobjAllCards(intCardInx).Zorder(0)
+		next 
+		'Only show the top card on the stack.
+		grbCardShowing(intCardInx) = True
+		DrawStack inxStack
+	next 
+
+	'Give the rest to the Shuffle Stack.
+	for Card = intCardCount to 52
+		strCard = strGenerateCard(Card)
+		push gintShuffleStackInx, strCard
+		intCardInx = intGetCardIndex(strCard)
+		grbCardShowing(intCardInx) = false
+		grobjAllCards(intCardInx).Zorder(0)
+	next
+	DrawStack gintShuffleStackInx
+End Sub 'DealCards
+
+'**********************************************
+'* Name: DoDblClick
+'**********************************************
+'* Description:
+'*	Here is where all double-clicking of
+'* 	 a card is processed. The double-click
+'*	 allows a card to be put on an Ace Stack,
+'*	 if the move is valid, with the 
+'*	 top card on the stack clicked.
+'**********************************************
+'* Parameters:
+'*	intStack	The stack that was double-clicked.
+'**********************************************
+Sub DoDblClick(intStack)
+	'If Valid Move then move it.
+	intAceInx = gintAceStackStartInx
+	bMoved = false
+
+	strCard = strTopOfStack(intStack)
+	If (gstrBOTTOMOFSTACK = strCard) then Exit Sub
+
+	'Until we find a valid move or run out of Ace Stacks to check.
+	While intAceInx < gintAceStackStartInx + 4 and not bMoved
+		bMoved = bIsLegalMove(intStack,intAceInx,strCard)
+		intAceInx = intAceInx + 1
+	wEnd
+
+	If bMoved then
+		gintSrcStack = intStack
+		MoveCard intAceInx -1
+	End If
+	'Turn off the moving of a card.
+	gintMoveCardInx = -1
+End Sub 'DoDblClick
+
+'**********************************************
+'* Name: ShuffleClicked
+'**********************************************
+'* Description:
+'*	When the Shuffle Stack is clicked we
+'*	must either put some cards on the
+'*	Discard Stack, or if the Shuffle Stack is empty
+'*	move all the cards from the Discard Stack.
+'**********************************************
+'* Parameters:
+'*	intStack	Should be the Shuffle Stack.
+'**********************************************
+Sub ShuffleClicked(intStack)
+	dim strCard
+	dim inx
+	'Do we actually have cards to move?
+	If gstrBOTTOMOFSTACK <> strTopOfStack(intStack) then
+		inx = 0
+		strCard = strPop(intStack)
+		'Move cards to Discard Stack until we are out of cards or
+		' hit the number we wanted to move.
+		while (gCOUNTDEAL > inx) and (gstrBOTTOMOFSTACK <> strCard)
+			Push gintDiscardStackInx, strCard
+			intCardInx = intGetCardIndex(strCard)
+			If -1 <> intCardInx then grbCardShowing(intCardInx) = True
+			inx = inx + 1
+			strCard = strPop(intStack)
+		Wend
+		If (gCOUNTDEAL = inx ) and (gstrBOTTOMOFSTACK <> strCard) then Push intStack,strCard
+		gintCountDiscarded = inx
+	Else
+		'No more to move so let's move discard back to shuffle.
+		for inx = 1 to intCountOnStack(gintDiscardStackInx)
+			strCard = strPop(gintDiscardStackInx)
+			Push intStack,strCard
+			intCardInx = intGetCardIndex(strCard)
+			grbCardShowing(intCardInx) = False
+		next 
+		DrawStack intStack
+		gintCountDiscarded = 0
+	End If
+	DrawStack gintDiscardStackInx
+End Sub 'ShuffleClicked
+
+'**********************************************
+'* Name: intCountOnStack
+'**********************************************
+'* Description:
+'*	Returns number of elements on stack given.
+'**********************************************
+'* Parameters:
+'*	intStack	Stack to get number from.
+'**********************************************
+Function intCountonStack(intStack)
+	intCountOnStack = grobjAllCardStacks(intStack,2)
+End Function
+
+'**********************************************
+'* Name: SetMoveStartValues
+'**********************************************
+'* Description:
+'*	This is the first function called in the 
+'*	 action of moving a card. This is where
+'*	 the MouseDown events call to so stated
+'*	 variables can be initialized.
+'*	 Also the top and left start positions
+'*	 are set up here for the card drag.
+'*	
+'**********************************************
+'* Parameters:
+'*	intStack	Stack moving from
+'*	x		Start left mouse position
+'*	y		Start top mouse position
+'**********************************************
+Sub SetMoveStartValues (intStack,x,y)
+
+	dim intCount
+
+	CardMoving = strTopOfStack(intStack)
+	If gstrBOTTOMOFSTACK <>  CardMoving then
+		intCardInx = intGetCardIndex(CardMoving)
+		If not grbCardShowing(intCardInx) then
+			'Card was on the stack but not visible, so
+			' make it visible and exit the move.
+			gintMoveCardInx = -1
+			grbCardShowing(intCardInx) = True
+			DrawCard intCardInx
+			exit Sub
+		End If
+	Else
+		gintMoveCardInx = -1
+		Exit Sub
+	End If
+
+	'If this isn't from an Ace Stack. then we must calculate
+	' which card it is on that stack,
+	If (gintAceStackStartInx > intStack) then
+		intCount = intCountOnStack(intStack)
+		'Calculate card position using default offset amount.
+		' No need to check horizontal offset because we wouldn't
+		' get this event unless we were already in the stack.
+		ClickedCard = (Y \ intGetVertOffset(intStack)) + 1
+		If ClickedCard > intCount then
+			ClickedCard = intCount
+		End If
+		'Number of cards we are moving.
+		gintCountMoving = (intCount - ClickedCard) + 1
+
+		CardMoving = strGetStackElement(intStack,ClickedCard)
+	Else
+		'Can only move the top element on an Ace Stack.
+		CardMoving = strTopOfStack(intStack)
+		If (gstrBOTTOMOFSTACK = CardMoving) then
+			gintMoveCardInx = -1
+			exit Sub
+		End If
+		gintCountMoving = 1
+	End If
+		
+	gintMoveCardInx = intGetCardIndex(CardMoving)
+
+	If not grbCardShowing(gintMoveCardInx) then
+		gintMoveCardInx = -1
+		exit Sub
+	End If
+		
+	'Save the stack it came from.
+	gintSrcStack = intStack
+
+	'Save starting values for the card to be used in
+	' DragCard.
+	gdCardTop = grobjAllCards(gintMoveCardInx).top 
+   	gdCardLeft = grobjAllCards(gintMoveCardInx).left 
+
+	intStackSize = intCountOnStack(intStack)
+	for inx =  (intStackSize - gintCountMoving)+ 1 to intStackSize
+		'Move the card to top of z order
+		intCardInx = intGetCardIndex(strGetStackElement(intStack,inx))
+		grobjAllCards(intCardInx).ZOrder(0)
+	next 
+
+	gdOffsetTop = intGetVertOffset(intStack) * intCountOnStack(intStack)
+	gdStartTop = y
+	gdStartLeft = x
+
+End Sub 'SetMoveStartValues
+
+'**********************************************
+'* Name: DragCard
+'**********************************************
+'* Description:
+'*	This is where a card is dragged.  Drag stops
+'*	when a MouseUp event is fired.
+'**********************************************
+'* Parameters:
+'*	intStack	Stack moving from
+'*	x		Start left mouse position.
+'*	y		Start top mouse position.
+'**********************************************
+Sub DragCard (intStack,x,y)
+	'Move Top of intStack
+	dim cntCard
+
+	If gintMoveCardInx = -1 then Exit Sub
+
+	'DragSkip is used to ignore a number of 
+	' MouseMove events. This is done so
+	' we won't be overdrawing the card
+	' when a draw really isn't necessary.
+	' It will also make the drag appear to be
+	' more responsive
+
+	gintDragSkip = gintDragSkip - 1
+	If gintDragSkip <> 0 then exit Sub
+	gintDragSkip = 3
+
+	intStackSize = intCountOnStack(intStack)
+	cntCard = 0
+	'Figure out new top and left.
+	MyTop = grobjAllCards(gintMoveCardInx).top
+	MyLeft = grobjAllCards(gintMoveCardInx).left
+	for inx =  (intStackSize - gintCountMoving) + 1 to intStackSize
+		intCardInx = intGetCardIndex(strGetStackElement(intStack,inx))
+		'Apply new values to cards below current one, being sure to maintain offset.
+		grobjAllCards(intCardInx).top =  MyTop + (y - gdStartTop) + (cntCard * intGetVertOffset(intStack))
+   		grobjAllCards(intCardInx).left = MyLeft +  (x - gdStartLeft)
+		cntCard = cntCard + 1
+	next 
+
+	gdStartTop = y
+	gdStartLeft = x
+End Sub 'DragCard
+
+'**********************************************
+'* Name: SetMouseUp
+'**********************************************
+'* Description:
+'*	Tells the move operation that MouseUp has
+'*	happened. Will take care of seeing if 
+'*	card was dropped in a movable place and
+'*	if so, moves the card. If not in a valid
+'*	place then the card is returned to the start
+'*	stack.
+'**********************************************
+'* Parameters:
+'*	intStack		Stack moving from.
+'*	x		Start left mouse position.
+'*	y		Start top mouse position.
+'**********************************************
+Sub SetMouseUp (intStack, x,y)
+	If gintMoveCardInx = -1 then exit Sub
+
+	'Calculate the screen coordinates based on the x and y.
+	ScrnX = X + grobjAllCardStacks(intStack,1).left
+	ScrnY = Y + grobjAllCardStacks(intStack,1).top
+	inxStack = 1
+	bHit = False
+	while (inxStack <= gintCountAllStacks) and Not bHit
+		set pCurStack = grobjAllCardStacks(inxStack,1)
+
+		'Hit testing to see if we dropped it on a stack.
+		If ScrnX >= pCurStack.left and ScrnX <= (pCurStack.Left + pCurStack.Width) then
+			If ScrnY >= pCurStack.Top and ScrnY <= (pCurStack.Top + pCurStack.Height) then
+				bHit = True
+			End If
+		End If
+		inxStack = inxStack + 1
+	wEnd
+	If inxStack > gintCountAllStacks then
+		'Move it Back.
+		MoveCard gintSrcStack
+	Else
+		'Move it for real.
+		MoveCard inxStack-1
+	End If
+End Sub 'SetMouseUp
+
+'**********************************************
+'* Name: bIsLegalMove
+'**********************************************
+'* Description:
+'*	Returns:
+'*	 True 	Move from Src to Dest is valid.
+'*	 False	Not valid to move from Src to Dest.
+'*
+'* 	Move is valid to a card stack when:
+'*	  Card moving is one less and different color.
+'*	Move is valid to an Ace Stack when:
+'*	  Card moving is one greater and same suit.
+'*	Moves are valid between card stacks and
+'*	from ace and Discard Stack to card stack.
+'*
+'* 	Not valid:
+'*	  Ace or Card stack to Discard Stack
+'*	  if card not face up.
+'**********************************************
+'* Parameters:
+'*	intSrcStack	Stack coming from.
+'*	intDestStack	Stack going to.
+'*	strCard		Card being moved.
+'**********************************************
+Function bIsLegalMove(intSrcStack,intDestStack, strCard)
+	dim intCard
+	dim intCardInx
+
+	bIsLegalMove = False
+	'Can put a card anywhere we want in debug mode.
+	If gbDebug then	
+		bIsLegalMove = gbDebug
+		exit Function
+	End If
+	if gintCountMoving > 1 and (intDestStack >= gintAceStackStartInx and intDestStack <= (gintAceStackStartInx + 3)) then
+		exit function
+	end if
+
+	intCardInx = intGetCardIndex(strCard)
+	If -1 = intCardInx then exit Function
+
+	'Not valid, not visible.
+	If not grbCardShowing(intCardInx) then Exit Function
+
+	'Nothing moves to the Discard Stack (Not Valid).
+	If gintDiscardStackInx = intDestStack then exit Function
+
+	'Get card on top of destination for testing.
+	DestCard = strTopOfStack(intDestStack)
+	intCard = intCardVal(strCard)
+	If gintAceStackStartInx <= intDestStack then
+		'Move to Ace intStack?
+		If (gstrBOTTOMOFSTACK = DestCard) then
+			'Can move to empty Ace Stack if card is an Ace.
+			bIsLegalMove = (gACE = intCard)
+		Else
+			bIsLegalMove = (bSameSuit (strCard,DestCard) and (intCard - 1 = intCardVal(DestCard)))
+		End If
+	Else 'Move to CardStack
+		If (gstrBOTTOMOFSTACK = DestCard) then
+			'Can move to empty card stack if card is a King.
+			bIsLegalMove = (gKING = intCard)
+		Else
+			bIsLegalMove = ((Not bSameColor(strCard,DestCard)) and (intCard + 1 = intCardVal(DestCard)))
+		End If
+	End If
+End Function
+
+'**********************************************
+'* Name: tmNewCard_Timer
+'**********************************************
+'* Description:
+'*	Here is where a new card is assigned to 
+'*	 the animation routine when the last one
+'*	 has finished moving to the Ace Stack.
+'**********************************************
+'* Parameters:
+'*	None
+'**********************************************
+Sub tmNewCard_Timer()
+	If gbCardMoveDone then
+		'Turn off all timers until we get a new card assigned.
+		tmNewCard.enabled = false
+		gbCardMoveDone = false
+		'Our Start Case.
+		If gintCurStackToMove = 0 then
+			gintCurStackToMove = gintAceStackStartInx
+		Else
+			gobjCurMoveCard.left = grobjAllCardStacks(gintCurStackToMove,1).left
+			gobjCurMoveCard.top = grobjAllCardStacks(gintCurStackToMove,1).top
+		End If
+
+		'See if cards are already on the Ace Stack.
+		strCard = strTopOfStack(gintCurStackToMove)
+		intCard = intCardVal(strCard)
+		If -1 = intCard then
+			intCard = gACE
+		Else
+			'Already have cards on the stack, let's pile the rest on.
+			If 13 = intCard then gintCurStackToMove = gintCurStackToMove + 1
+			intCard = intCard + 1
+			While (intCard = 14) and (gintCurStackToMove <> gintAceStackStartInx + 4)
+				strCard = strTopOfStack(gintCurStackToMove)
+				If gstrBOTTOMOFSTACK = strCard then
+					intCard = gACE
+				Else
+					intCard = intCardVal(strCard)
+				End If
+			Wend
+		End If
+		'We are done moving. Call end-game animation to bounce cards away
+		If (gintCurStackToMove =  gintAceStackStartInx + 4) then
+			SeeIfGameOver gintAceStackStartInx
+			exit Sub
+		End If
+
+		'Current suit that is moving.
+		CurMoveSuit = mid(gstrSuitOrder,((gintCurStackToMove - gintAceStackStartInx) + 1),1)
+
+		'Move the card to the destination.
+		strCard = intCard & CurMoveSuit
+		push gintCurStackToMove,strCard
+
+		'Get next card.
+		intCardInx = intGetCardIndex(strCard)
+		set gobjCurMoveCard = grobjAllCards(intCardInx)
+
+		grbCardShowing(intCardInx) = True
+		gobjCurMoveCard.ZOrder(0)
+		DrawCard intCardInx
+		
+
+		'Figure out increments for moving it.
+		gincCardMoveSteps = 5
+		gincEndLeft = ((gobjCurMoveCard.left - grobjAllCardStacks(gintCurStackToMove,1).Left) \ gincCardMoveSteps)
+		gincEndTop = ((gobjCurMoveCard.Top - grobjAllCardStacks(gintCurStackToMove,1).Top) \ gincCardMoveSteps)
+	
+		'Start the moving of the new card.
+		tmEndCardMove.enabled = true
+	End If
+End Sub 'tmNewCard_Timer
+
+'**********************************************
+'* Name: tmEndCardMove_Timer
+'**********************************************
+'* Description:
+'*	Here is where the actual moving of a 
+'*	card to its Ace Stack happens after the
+'*	user clicks End_The_Game.
+'**********************************************
+'* Parameters:
+'*	None
+'**********************************************
+Sub tmEndCardMove_Timer()
+	If (gincCardMoveSteps =  0) then
+		'If card has completed moving, get a new one.
+		gbCardMoveDone = true
+		tmEndCardMove.enabled = false
+		tmNewCard.enabled = true
+		exit Sub
+	End If
+
+	'Not done yet, move it another increment.
+	gincCardMoveSteps = gincCardMoveSteps - 1
+	gobjCurMoveCard.left = gobjCurMoveCard.left - gincEndLeft
+	gobjCurMoveCard.top = gobjCurMoveCard.top - gincEndTop
+End Sub 'tmEndCardMove_Timer
+
+'**********************************************
+'* Name: EndTheGame
+'**********************************************
+'* Description:
+'*	When a user clicks End the Game, this is where
+'*	the whole process of moving
+'*	those cards is started.
+'**********************************************
+'* Parameters:
+'*	None
+'**********************************************
+Sub EndTheGame()
+	'Remove ALL cards from the card stacks.
+	for inx = 1 to gintCountCardStacks
+		strCard = strPop(inx)
+		while (strCard <> gstrBOTTOMOFSTACK)
+			strCard = strPop(inx)
+		Wend
+	next
+
+	gstrSuitOrder = ""
+	'Figure out the order the suits are placed on the Ace Stack.
+	' gstrSuitOrder holds the order.
+	for inx = gintAceStackStartInx to gintAceStackStartInx + 3	
+		strCard = strTopOfStack(inx)
+		If strCard <> gstrBOTTOMOFSTACK then
+			gstrSuitOrder = gstrSuitOrder & strGetCardSuit(strCard)
+		Else
+			gstrSuitOrder = gstrSuitOrder & " "
+		End If
+	next 
+	curSuit = "C"
+	'Default order is CSHD if no cards are have been played on an Ace Stack.
+	' If cards are already displayed then figure out which ones we are missing
+	' and add them to the spaces in the string.
+	for inx = 1 to 4
+		If instr(gstrSuitOrder,curSuit) = 0 then
+			blank = instr(gstrSuitOrder," ")
+			gstrSuitOrder = left(gstrSuitOrder,blank - 1) & curSuit & mid(gstrSuitOrder,blank+1)
+		End If
+		Select Case curSuit
+		Case "C"
+			curSuit = "S"
+		Case "S"
+			curSuit = "H"
+		case "H"
+			curSuit = "D"
+		End select
+	next
+
+	gintCurStackToMove = 0
+	gbCardMoveDone = true
+
+	'Set up and start the timers to move the first
+	' card.
+	tmNewCard.Interval = 1
+	tmNewCard.Enabled = true
+
+	tmEndCardMove.interval = 1
+
+End Sub 'EndTheGame
+
+'**********************************************
+'* Name: SeeIfGameOver
+'**********************************************
+'* Description:
+'*	This is the place to see if all
+'*	 the Kings are placed on their proper
+'*	 Ace Stack and, if so, start the animation.
+'**********************************************
+'* Parameters:
+'*	intStack		Stack to test.
+'**********************************************
+Sub SeeIfGameOver(intStack)
+	If (gintAceStackStartInx > intStack) or (gintAceStackStartInx+4 < intStack) then
+		exit Sub
+	End If
+	bWon = true
+	inx = gintAceStackStartInx
+	'Go until we don't see a king or we tested the last
+	' Ace Stack.
+	while bWon and inx < gintAceStackStartInx + 4
+		strCard = strTopOfStack(inx)
+		If (gstrBOTTOMOFSTACK <> strCard) then
+			bWon = (gKING = intCardVal(strCard))
+		Else
+			bWon = False
+		End If
+		inx = inx + 1
+	wEnd 
+
+	If not bWon then exit Sub
+
+	'We WON!! Let's initialize for animation.
+	gCardCount = 52
+	tmEndAnimation.interval = 4
+	gbAnimationDone = false
+
+	'Moving all four cards.
+	for inx = 0 to 3
+		gbDoneMoving(inx) = true
+	next
+	Randomize
+	gbLeaveEarly = False
+
+	tmEndAnimation.enabled = true
+
+End Sub 'SeeIfGameOver
+
+'**********************************************
+'* Name: tmEndAnimation_Timer
+'**********************************************
+'* Description:
+'*	Here is where all of the work for the 
+'*	bouncing cards animation takes place.
+'**********************************************
+'* Parameters:
+'**********************************************
+Sub tmEndAnimation_Timer()
+	dim objCard
+' inc-/decrement position
+	If gbAnimationDone or gbLeaveEarly then
+		'User wanted to exit early or animation finished.
+		tmEndAnimation.enabled = false
+		gbAnimationDone = True
+		msgbox "You Won !!!",0,"ActiveX Solitaire"
+		ClearAllCards
+		exit Sub
+	End If
+	gbAnimationDone = true
+	for inx = 0 to 3
+		'See if one of the 4 cards is done so we can assign another one.
+		If gbDoneMoving(inx) then
+			'Get next card.
+			strCard = strPop(inx + gintAceStackStartInx)
+			If (gstrBOTTOMOFSTACK <> strCard) then
+				intCardInx = intGetCardIndex(strCard)
+				set grCardBouncing(inx,1) = grobjAllCards(intCardInx)
+					'The following random is subtracted by half the range so 
+					' both positive and negative directions can be generated.
+				grCardBouncing(inx,2) = (rnd() * 10) - 5	'Vertical
+				grCardBouncing(inx,3) = (rnd() * 30) - 15	'Horizontal
+				gbDoneMoving(inx) = false
+			Else
+			'Hit bottom of stack, no more bouncing.
+				grCardBouncing(inx,1) = 0
+			End If
+		End If
+
+		'Figure out effect of gravity.
+		grCardBouncing(inx,2) = grCardBouncing(inx,2) + (gdGravity * (tmEndAnimation.interval/100))
+		If not gbDoneMoving(inx) then
+			set objCard = grCardBouncing(inx,1)
+			'Get new position.
+			objCard.left = objCard.left + grCardBouncing(inx,3)
+			objCard.top = objCard.top +  grCardBouncing(inx,2)
+
+			'check for border bounce,
+			gbDoneMoving(inx) = (objCard.left >= Form.Width) or (objCard.left + objCard.Width <= 0)
+			gbDoneMoving(inx) = gbDoneMoving(inx) or (objCard.top > Form.height) or ((objCard.top + objCard.height) < 0)
+
+			'Here's the friction and direction change if necessary.
+			If (grCardBouncing(inx,1).top <= 0) then 
+				grCardBouncing(inx,2) = -1 * (grCardBouncing(inx,2) + gdFriction)
+			elseif (objCard.top + objCard.height) >= Form.Height then 
+				grCardBouncing(inx,2) = (gdFriction - (grCardBouncing(inx,2)))
+			End If
+		End If
+		gbAnimationDone = (gbAnimationDone and gbDoneMoving(inx) and (gstrBOTTOMOFSTACK = strTopOfStack(inx + gintAceStackStartInx)))
+	next 
+End Sub 'tmEndAnimation_timer
+
+'**********************************************
+'* Name: MoveCard
+'**********************************************
+'* Description:
+'*	This is where a card move actually is
+'* 	 done. For the source stack, it relies
+'*	 on gintSrcStack.
+'**********************************************
+'* Parameters:
+'*	intDestStack	Destination stack
+'**********************************************
+Sub MoveCard (intDestStack)
+	'See If Card hit a different intStack.
+	'If not, hit other intStack or legal drop, then move back to original intStack.
+	intStackSize = intCountOnStack(gintSrcStack)
+	intTopOfMove = (intStackSize - gintCountMoving)+ 1
+
+	'Move from Src to Dest.
+	If (gintSrcStack <> intDestStack) then 
+		strCard = strGetStackElement(gintSrcStack,intTopOfMove)
+
+		'See if it is legal to do this move.
+		If bIsLegalMove(gintSrcStack,intDestStack,strCard) then
+			for inx =  (intStackSize - gintCountMoving)+ 1 to intStackSize
+			'Yes, let's move all the cards to the new stack.
+				strCard = strGetStackElement(gintSrcStack,inx)
+				Push intDestStack,strCard
+			next 
+			'However many moved must be removed from the source.
+			for inx = 1 to gintCountMoving
+				strCard = strPop(gintSrcStack)
+			next
+			grobjAllCardStacks(intDestStack,1).Zorder(0)
+			DrawStack intDestStack
+
+			'After that move, let's see if it is the last.
+			SeeIfGameOver intDestStack
+			exit Sub
+		End If
+	End If
+	cntCard = 0
+	'Source and destination were the same, let's move cards back.
+	for inx =  intTopOfMove to intStackSize
+		intCardInx = intGetCardIndex(strGetStackElement(gintSrcStack,inx))
+		grobjAllCards(intCardInx).top = gdCardTop + (cntCard * intGetVertOffset(intStack))
+  			grobjAllCards(intCardInx).left = gdCardLeft
+		cntCard = cntCard + 1
+	next 
+	grobjAllCardStacks(gintSrcStack,1).Zorder(0)
+End Sub 'MoveCard
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+'**********************************************
+'* Name: Discard Stack Mouse events
+'**********************************************
+'* Description:
+'*	These events will handle the moving
+'*	of cards from the Discard Stack to either
+'*	the Ace Stack or a card stack.
+'**********************************************
+Sub Discard_DblClick(Cancel)
+   DoDblClick gintDiscardStackInx
+End Sub
+Sub Discard_MouseDown(ByVal Button, ByVal Shift, ByVal X, ByVal Y)
+	If 1 <> Button then exit Sub
+	gbMouseUp = false
+	SetMoveStartValues gintDiscardStackInx,x,y
+End Sub
+
+Sub Discard_MouseMove(Button, Shift, X, Y)
+	If (1 <> Button) or gbMouseUp then exit Sub
+
+	DragCard gintDiscardStackInx,x,y
+End Sub
+
+Sub Discard_MouseUp(Button, Shift, X, Y)
+	gbMouseUp = True
+	SetMouseUp gintDiscardStackInx,x,y
+End Sub
+
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+'**********************************************
+'* Name: Shuffle Stack Mouse events
+'**********************************************
+'* Description:
+'*	These events will handle the moving
+'*	of cards from the Shuffle Stack to the
+'*	Discard Stack..
+'**********************************************
+Sub Shuffle_MouseDown(ByVal Button, ByVal Shift, ByVal X, ByVal Y)
+	ShuffleClicked(gintShuffleStackInx)
+End Sub
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+'**********************************************
+'* Name: Ace Stack mouse events
+'**********************************************
+'* Description:
+'*	These mouse events for all the Ace Stacks
+'*	will handle moving cards from an ace
+'*	stack back to a card stack ONLY.
+'**********************************************
+Sub Ace1_MouseDown(ByVal Button, ByVal Shift, ByVal X, ByVal Y)
+	If 1 <> Button then exit Sub
+	gbMouseUp = false
+	SetMoveStartValues gintCountCardStacks + 1,x,y
+End Sub
+
+Sub Ace1_MouseMove(Button, Shift, X, Y)
+	If (1 <> Button) or gbMouseUp then exit Sub
+	DragCard gintCountCardStacks + 1,x,y
+End Sub
+
+Sub Ace1_MouseUp(Button, Shift, X, Y)
+	gbMouseUp = True
+	SetMouseUp gintCountCardStacks + 1,x,y
+End Sub
+
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+Sub Ace2_MouseDown(ByVal Button, ByVal Shift, ByVal X, ByVal Y)
+	If 1 <> Button then exit Sub
+	gbMouseUp = false
+	SetMoveStartValues gintCountCardStacks + 2,x,y
+End Sub
+
+Sub Ace2_MouseMove(Button, Shift, X, Y)
+	If (1 <> Button) or gbMouseUp then exit Sub
+	DragCard gintCountCardStacks + 2,x,y
+End Sub
+
+Sub Ace2_MouseUp(Button, Shift, X, Y)
+	gbMouseUp = True
+	SetMouseUp gintCountCardStacks + 2,x,y
+End Sub
+
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+Sub Ace3_MouseDown(ByVal Button, ByVal Shift, ByVal X, ByVal Y)
+	If 1 <> Button then exit Sub
+	gbMouseUp = false
+	SetMoveStartValues gintCountCardStacks + 3,x,y
+End Sub
+
+Sub Ace3_MouseMove(Button, Shift, X, Y)
+	If (1 <> Button) or gbMouseUp then exit Sub
+	DragCard gintCountCardStacks + 3,x,y
+End Sub
+
+Sub Ace3_MouseUp(Button, Shift, X, Y)
+	gbMouseUp = True
+	SetMouseUp gintCountCardStacks + 3,x,y
+End Sub
+
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+Sub Ace4_MouseDown(ByVal Button, ByVal Shift, ByVal X, ByVal Y)
+	If 1 <> Button then exit Sub
+	gbMouseUp = false
+	SetMoveStartValues gintCountCardStacks + 4,x,y
+End Sub
+
+Sub Ace4_MouseMove(Button, Shift, X, Y)
+	If (1 <> Button) or gbMouseUp then exit Sub
+	DragCard gintCountCardStacks + 4,x,y
+End Sub
+
+Sub Ace4_MouseUp(Button, Shift, X, Y)
+	gbMouseUp = True
+	SetMouseUp gintCountCardStacks + 4,x,y
+End Sub
+
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+'**********************************************
+'* Name: Card stack mouse events
+'**********************************************
+'* Description:
+'*	These events will handle the moving
+'*	of cards from one stack to another, from
+'*	the Discard Stack to the card stacks or from
+'*	an Ace Stack to a card stack.
+'**********************************************
+
+Sub Stack7_DblClick(Cancel)
+   DoDblClick 7
+End Sub
+Sub Stack7_MouseDown(ByVal Button, ByVal Shift, ByVal X, ByVal Y)
+	If 1 <> Button then exit Sub
+	gbMouseUp = false
+	SetMoveStartValues 7,x,y
+End Sub
+
+Sub Stack7_MouseMove(Button, Shift, X, Y)
+	If (1 <> Button) or gbMouseUp then exit Sub
+	DragCard 7,x,y
+End Sub
+
+Sub Stack7_MouseUp(Button, Shift, X, Y)
+	gbMouseUp = True
+	SetMouseUp 7,x,y
+End Sub
+
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+Sub Stack6_DblClick(Cancel)
+   DoDblClick 6
+End Sub
+Sub Stack6_MouseDown(ByVal Button, ByVal Shift, ByVal X, ByVal Y)
+	If 1 <> Button then exit Sub
+	gbMouseUp = false
+	SetMoveStartValues 6,x,y
+End Sub
+
+Sub Stack6_MouseMove(Button, Shift, X, Y)
+	If (1 <> Button) or gbMouseUp then exit Sub
+	DragCard 6,x,y
+End Sub
+
+Sub Stack6_MouseUp(Button, Shift, X, Y)
+	gbMouseUp = True
+	SetMouseUp 6,x,y
+End Sub
+
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+Sub Stack5_DblClick(Cancel)
+   DoDblClick 5
+End Sub
+Sub Stack5_MouseUp(Button, Shift, X, Y)
+	gbMouseUp = True
+	SetMouseUp 5,x,y
+End Sub
+Sub Stack5_MouseDown(ByVal Button, ByVal Shift, ByVal X, ByVal Y)
+	If 1 <> Button then exit Sub
+	gbMouseUp = false
+	SetMoveStartValues 5,x,y
+End Sub
+Sub Stack5_MouseMove(Button, Shift, X, Y)
+	If (1 <> Button) or gbMouseUp then exit Sub
+	DragCard 5,x,y
+End Sub
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+Sub Stack4_DblClick(Cancel)
+   DoDblClick 4
+End Sub
+Sub Stack4_MouseDown(ByVal Button, ByVal Shift, ByVal X, ByVal Y)
+	If 1 <> Button then exit Sub
+	gbMouseUp = false
+	SetMoveStartValues 4,x,y
+End Sub
+Sub Stack4_MouseMove(Button, Shift, X, Y)
+	If (1 <> Button) or gbMouseUp then exit Sub
+	DragCard 4,x,y
+End Sub
+Sub Stack4_MouseUp(Button, Shift, X, Y)
+	gbMouseUp = True
+	SetMouseUp 4,x,y
+End Sub
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+Sub Stack3_DblClick(Cancel)
+   DoDblClick 3
+End Sub
+Sub Stack3_MouseDown(ByVal Button, ByVal Shift, ByVal X, ByVal Y)
+	If 1 <> Button then exit Sub
+	gbMouseUp = false
+	SetMoveStartValues 3,x,y
+End Sub
+Sub Stack3_MouseMove(Button, Shift, X, Y)
+	If (1 <> Button) or gbMouseUp then exit Sub
+	DragCard 3,x,y
+End Sub
+Sub Stack3_MouseUp(Button, Shift, X, Y)
+	gbMouseUp = True
+	SetMouseUp 3,x,y
+End Sub
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+Sub Stack2_DblClick(Cancel)
+   DoDblClick 2
+End Sub
+Sub Stack2_MouseDown(ByVal Button, ByVal Shift, ByVal X, ByVal Y)
+	If 1 <> Button then exit Sub
+	gbMouseUp = false
+	SetMoveStartValues 2,x,y
+End Sub
+Sub Stack2_MouseMove(Button, Shift, X, Y)
+	If (1 <> Button) or gbMouseUp then exit Sub
+	DragCard 2,x,y
+End Sub
+Sub Stack2_MouseUp(Button, Shift, X, Y)
+	gbMouseUp = True
+	SetMouseUp 2,x,y
+End Sub
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+Sub Stack1_DblClick(Cancel)
+   DoDblClick 1
+End Sub
+Sub Stack1_MouseUp(Button, Shift, X, Y)
+	gbMouseUp = True
+	SetMouseUp 1,x,y
+End Sub
+Sub Stack1_MouseDown(ByVal Button, ByVal Shift, ByVal X, ByVal Y)
+	If 1 <> Button then exit Sub
+	gbMouseUp = false
+	SetMoveStartValues 1,x,y
+End Sub
+Sub Stack1_MouseMove(Button, Shift, X, Y)
+	If (1 <> Button) or gbMouseUp then exit Sub
+	DragCard 1,x,y
+End Sub
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+Sub chkDebug_Click()
+	lstDebugPrint.Visible = chkDebug.Value
+	gbDebug = chkDebug.value
+End Sub
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+'**********************************************
+'* Name: cmdHelp_Click
+'**********************************************
+'* Description:
+'*	User clicks this button to display instructions
+'*	on how to play the game.
+'**********************************************
+sub cmdHelp_Click()
+	dim n
+	n = chr(13)&chr(10)
+MsgBox _
+"Begin play by double-clicking any aces on top of the seven row stacks to move " & _
+"them to the spaces at the top right of the screen and then making any other " & _
+"plays available on the board." &n&n& _
+"You will be building two kinds of stacks: row stacks (7 vertical stacks in the middle) and suit stacks (4 stacks at upper right). " & _
+"To free up cards that you need to build the suit stacks, you build row stacks.  " & _
+"To move a card or a stack of cards from one row stack to another, drag it. " & _
+"To move a card to a suit stack, double-click it. " & _
+"When you have made all the available plays on the board, click the deck (upper left) to begin turning over cards. The card that is face up on top of the deck is always available for play." &n&n& _
+"The object of the game is to use all the cards in the deck to build up the four suit stacks from ace to king.", 0, "ActiveX Solitaire Help"
+end sub
+'**********************************************
+'* Name: cmdEndGame_Click
+'**********************************************
+'* Description:
+'*	User clicks this button to end the game
+'**********************************************
+Sub cmdEndGame_Click()
+	If not gbEndGame then
+		EndTheGame
+		gbEndGame = True
+	End If
+End Sub
+'Check box for debug mode
+Sub UpDebug_Click()
+	If not gbEndGame then
+		chkDebug.visible = not chkdebug.visible
+	End If
+End Sub
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+'**********************************************
+'* Name: cmdNewDeck_Click
+'**********************************************
+'* Description:
+'*	User clicks this button to pop up the
+'*	dialog that allows the user to
+'*	choose a different deck.
+'**********************************************
+sub cmdNewDeck_Click()
+	CardDeckClick(-gintCurDeck)
+	CardDeckOnOff(true)
+end sub 'cmdNewDeck_Click
+'**********************************************
+'* Name: CardDeckOk_Click
+'**********************************************
+'* Description:
+'*	Routine called when user clicks the ok
+'*	button in the CardDeck dialog. The routine
+'*	will store the new deck choice and close
+'*	the dialog.
+'**********************************************
+sub CardDeckOk_Click()
+	ChangeTheDeck gintTempCurDeck
+	CardDeckOnOff(false)
+end sub 
+'**********************************************
+'* Name: CardDeckCancel_Click 
+'**********************************************
+'* Description:
+'*	Called to close the card back dialog
+'*	and the NOT change the value of the 
+'*	current deck
+'**********************************************
+sub CardDeckCancel_Click()
+	CardDeckOnOff(false)
+end sub
+'**********************************************
+'* Name: CardDeckClick
+'**********************************************
+'* Description:
+'*	Moves the "selection" square in the Deck
+'*	back dialog to visually show the user
+'*	which card back is choosen
+'**********************************************
+'*	Parameters:
+'*	intCardNum	Deck that is choosen by the user
+'**********************************************
+sub CardDeckClick(intCardnum)
+	gintTempCurDeck = -intCardnum
+	CardDeckSelector.Left = grobjCardDeck(intCardnum).Left - 4
+	CardDeckSelector.Top = grobjCardDeck(intCardnum).Top - 4
+end sub
+
+sub CardDeck1_Click:	CardDeckClick 1:	end sub
+sub CardDeck2_Click:	CardDeckClick 2:	end sub
+sub CardDeck3_Click:	CardDeckClick 3:	end sub
+sub CardDeck4_Click:	CardDeckClick 4:	end sub
+sub CardDeck5_Click:	CardDeckClick 5:	end sub
+sub CardDeck6_Click:	CardDeckClick 6:	end sub
+sub CardDeck7_Click:	CardDeckClick 7:	end sub
+sub CardDeck8_Click:	CardDeckClick 8:	end sub
+sub CardDeck9_Click:	CardDeckClick 9:	end sub
+sub CardDeck10_Click:	CardDeckClick 10:	end sub
+sub CardDeck11_Click:	CardDeckClick 11:	end sub
+sub CardDeck12_Click:	CardDeckClick 12:	end sub
+
+'**********************************************
+'* Name: CardDeckOnOff
+'**********************************************
+'* Description:
+'*	Displays or hides the dialog with the
+'*	card backs depending on the parameter.
+'**********************************************
+'*	Parameters:
+'*	bSwitch	True = Show dialog
+'*			False = Hide dialog
+'**********************************************
+sub CardDeckOnOff(bSwitch)
+	if( bSwitch = true ) then
+		bSwitchz = 0
+	else
+		bSwitchz = 1
+	end if
+	CardDeckMouseBlock.Zorder(bSwitchz):	CardDeckMouseBlock.Visible = bSwitch
+	CardDeckBack.Zorder(bSwitchz):		CardDeckBack.Visible = bSwitch
+	CardDeckSelector.Zorder(bSwitchz):	CardDeckSelector.Visible = bSwitch
+	for t = 1 to 12
+		grobjCardDeck(t).Zorder(bSwitchz): 	grobjCardDeck(t).Visible = bSwitch
+	next
+	CardDeckOk.Zorder(bSwitchz):		CardDeckOk.Visible = bSwitch
+	CardDeckCancel.Zorder(bSwitchz):		CardDeckCancel.Visible = bSwitch	
+end sub
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+'New deal.
+Sub cmdNewDeal_Click()
+	StartGame
+End Sub
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+'Click on the background when the end animation is running
+' to stop the animation and bring up the You Won dialog.
+Sub EndGameClick_MouseDown(Button, Shift, X, Y)
+	If gbEndGame then
+		gbLeaveEarly = true
+	End If
+End Sub
+-->
+</SCRIPT>
+<SCRIPT LANGUAGE="VBScript">
+<!--
+'Changes the number of cards that are dealt from
+' the Shuffle Stack to the Discard Stack
+Sub cmdChangeDeal_Click()
+	if( gCOUNTDEAL = 1 ) then
+		gCOUNTDEAL = 3
+		cmdChangeDeal.Caption = "Change to Draw 1"
+	else
+		gCOUNTDEAL = 1 
+		cmdChangeDeal.Caption = "Change to Draw 3"
+	end if
+end sub
+-->
+</SCRIPT>
+<DIV BACKGROUND="#8000" ID="Form" STYLE="LAYOUT:FIXED;WIDTH:450pt;HEIGHT:444pt;">
+    <OBJECT ID="CardDeckMouseBlock"
+     CLASSID="CLSID:978C9E23-D4B0-11CE-BF2D-00AA003F40D0" STYLE="TOP:-1pt;LEFT:-2pt;WIDTH:590pt;HEIGHT:362pt;DISPLAY:NONE;ZINDEX:0;">
+        <PARAM NAME="BackColor" VALUE="32768">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="20814;12771">
+        <PARAM NAME="FontCharSet" VALUE="0">
+        <PARAM NAME="FontPitchAndFamily" VALUE="2">
+        <PARAM NAME="FontWeight" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="CardDeckBack"
+     CLASSID="CLSID:D7053240-CE69-11CD-A777-00DD01143C57" STYLE="TOP:68pt;LEFT:13pt;WIDTH:420pt;HEIGHT:223pt;TABINDEX:2;DISPLAY:NONE;ZINDEX:1;">
+        <PARAM NAME="VariousPropertyBits" VALUE="25">
+        <PARAM NAME="Size" VALUE="14817;7867">
+        <PARAM NAME="FontEffects" VALUE="1073750016">
+        <PARAM NAME="FontCharSet" VALUE="0">
+        <PARAM NAME="FontPitchAndFamily" VALUE="2">
+        <PARAM NAME="ParagraphAlign" VALUE="3">
+        <PARAM NAME="FontWeight" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="EndGameClick"
+     CLASSID="CLSID:978C9E23-D4B0-11CE-BF2D-00AA003F40D0" STYLE="TOP:0pt;LEFT:0pt;WIDTH:644pt;HEIGHT:440pt;ZINDEX:2;">
+        <PARAM NAME="BackColor" VALUE="32768">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="22719;15522">
+        <PARAM NAME="FontCharSet" VALUE="0">
+        <PARAM NAME="FontPitchAndFamily" VALUE="2">
+    </OBJECT>
+    <OBJECT ID="CardDeckSelector"
+     CLASSID="CLSID:978C9E23-D4B0-11CE-BF2D-00AA003F40D0" STYLE="TOP:57pt;LEFT:91pt;WIDTH:65pt;HEIGHT:82pt;DISPLAY:NONE;ZINDEX:4;">
+        <PARAM NAME="ForeColor" VALUE="0">
+        <PARAM NAME="BackColor" VALUE="0">
+        <PARAM NAME="Size" VALUE="2328;2928">
+        <PARAM NAME="FontCharSet" VALUE="0">
+        <PARAM NAME="FontPitchAndFamily" VALUE="2">
+        <PARAM NAME="FontWeight" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="tmEndAnimation"
+     CLASSID="CLSID:59CCB4A0-727D-11CF-AC36-00AA00A47DD2"
+     CODEBASE="ietimer.ocx"
+     STYLE="TOP:469pt;LEFT:-17pt;WIDTH:25pt;HEIGHT:17pt;TABINDEX:0;ZINDEX:4;">
+        <PARAM NAME="_ExtentX" VALUE="873">
+        <PARAM NAME="_ExtentY" VALUE="609">
+    </OBJECT>
+
+    <OBJECT ID="Card1H"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:15pt;LEFT:124pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:1;ZINDEX:5;"
+	CODEBASE="card.ocx#version=1,0,0,5">   
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Ace3"
+     CLASSID="CLSID:2B32FBC2-A8F1-11CF-93EE-00AA00C08FDF" STYLE="TOP:32pt;LEFT:396pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:6;">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="1905;2540">
+    </OBJECT>
+    <OBJECT ID="AceImage3"
+     CLASSID="CLSID:4C599241-6926-101B-9992-00000B65C6F9"
+     DATA="DATA:application/x-oleobject;BASE64,QZJZTCZpGxCZkgAAC2XG+QACGAA0DgAAAIAAAAAA//8AAAAAVwcAAOwJAACw
+gWfaSsLPEbWEAKoApx0abHQAAOcBAABHSUY4OWFHAGAAkf8A////AIAAAAAA
+AAAALAAAAABHAGAAAAL/TISpy+0PozCH2ouz3rzbOVVGKJbkSaFjyq6u2SLe
+TNe13F7kl+05j/G9Pjib8WjDqWCvpTP3bMaEyKo1VQTqetxgd+vFXsdkJfQs
+TTPXUVGWDE/uqPSv9v7Lj97xfses1iaIxobG54cYdFgXBuaIN/RzmEh5EDIY
+SIhZ6DJZiZjF+KhXAllKmvCpupfZyvm6eUm12pfaaCqKayc5SwsHCKsp7Brl
+6TsWuhu5fMqci9V7fAUcOxxMzCoNuqjc7P3sTKS9jV1+fS477pd8i9oN/m2s
+bkRtXW1eHD0vB9///i9mX5lL9griGyZP4Ax2o8K1c9jQkj6FHuodvIguG8Uq
+wLYi+nv4zU7CjRssZsR4byTJHnMAenSJS+VKHQRRGjzpZuJMRR9fguxpaSe9
+mjjvFdUodGHLnzDd/ZSZ1KTRqQahCu2oi6lWn0iT/iFK1WY5qzsZZuV6NqZO
+r0GPij1JdiZWp2jppo27UurNsNfwkjRrNzBEtWyVvuWbcq3XuYMFh9zatjAH
+vYf3GlIcdWndxpzjYb4K1nLlVn43Mn68GfXdz2VDj3bLpDRFwJ2BOj4tmQcI
+0bCrnZAAPLhwCQYKAAA7AA==
+"
+     STYLE="TOP:32pt;LEFT:396pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:99;DISPLAY:NONE">
+    </OBJECT>
+    <OBJECT ID="Ace1"
+     CLASSID="CLSID:2B32FBC2-A8F1-11CF-93EE-00AA00C08FDF" STYLE="TOP:32pt;LEFT:264pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:8;">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="1905;2540">
+    </OBJECT>
+    <OBJECT ID="AceImage1"
+     CLASSID="CLSID:4C599241-6926-101B-9992-00000B65C6F9" 
+	STYLE="TOP:32pt;LEFT:264pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:100;DISPLAY:NONE">
+        <PARAM NAME="AutoSize" VALUE="-1">
+        <PARAM NAME="BackColor" VALUE="32768">
+        <PARAM NAME="BorderStyle" VALUE="0">
+        <PARAM NAME="Size" VALUE="2328;2910">
+        <PARAM NAME="PictureAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Ace2"
+     CLASSID="CLSID:2B32FBC2-A8F1-11CF-93EE-00AA00C08FDF" STYLE="TOP:32pt;LEFT:330pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:10;">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="1905;2540">
+    </OBJECT>
+    <OBJECT ID="AceImage2"
+     CLASSID="CLSID:4C599241-6926-101B-9992-00000B65C6F9" 
+	STYLE="TOP:32pt;LEFT:330pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:100;DISPLAY:NONE">
+        <PARAM NAME="AutoSize" VALUE="-1">
+        <PARAM NAME="BackColor" VALUE="32768">
+        <PARAM NAME="BorderStyle" VALUE="0">
+        <PARAM NAME="Size" VALUE="2328;2910">
+        <PARAM NAME="PictureAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Ace4"
+     CLASSID="CLSID:2B32FBC2-A8F1-11CF-93EE-00AA00C08FDF" STYLE="TOP:32pt;LEFT:198pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:12;">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="1905;2540">
+    </OBJECT>
+    <OBJECT ID="AceImage4"
+     CLASSID="CLSID:4C599241-6926-101B-9992-00000B65C6F9" 
+	STYLE="TOP:32pt;LEFT:198pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:100;DISPLAY:NONE">
+        <PARAM NAME="AutoSize" VALUE="-1">
+        <PARAM NAME="BackColor" VALUE="32768">
+        <PARAM NAME="BorderStyle" VALUE="0">
+        <PARAM NAME="Size" VALUE="2328;2910">
+        <PARAM NAME="PictureAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="ShuffleImage"
+     CLASSID="CLSID:4C599241-6926-101B-9992-00000B65C6F9"
+     DATA="DATA:application/x-oleobject;BASE64,QZJZTCZpGxCZkgAAC2XG+QACGAA0DgAAAIAAAAAA//8AAAAAVwcAAOwJAACw
+gWfaSsLPEbWEAKoApx0abHQAAMsBAABHSUY4OWFHAGAAkf8A////AP8AAIAA
+AAAALAAAAABHAGAAAAL/lIapy+0P4zCH2ouz3rzbOXniSI5Iiabpqbauxr7y
+G882Wt+6l+9+1vsJDcHhr2jcIZO3JXPmfNJC0iO1qrxim1pb4AsGW2/hsvnL
+nZ3XZmi3xI63XVGN/D5fvT34flhVd+E3iIazZ9eX4VcSKIAn8mhyKBinIic5
+UtmiyTNJwbnJJhIlSrbW2VGqowrjefrzurEUC3vGgcTqk/txSCvky7th+zQM
+tAf8W3xRpMzUTBGEPIQcnVf1fPCGnYRdXbblaA3dJW0E3LPtLJ6Nkc69jr4u
+9Rz/DR5uH0yZv0VPLk8M3j9+WPy1A6iOILt9f+4ZZCjGocCDCKc9hFiooDxv
+pA01KlyIMQC4btrc6SKJ6KNFlcxMmgKIq+IqhDFlqklX06aLXeM4lLtZ0cnP
+nSaFDk3BU5/PpChAtYLENFPUnlCPCptKlc8dEpFQSe1KcSsmOIQIGUJaNtFZ
+tGmdjrXUVufTF3Eztmi01Kybk1jX3rOB9+8tT4LfFqZD+HCHwIqXJW48F7Ie
+yYAeU1Z62XBmr5tHWd7MmDKIzjzGSTiNOnUEAwUAADsA
+"
+     STYLE="TOP:32pt;LEFT:0pt;WIDTH:53pt;HEIGHT:72pt;ZINDEX:97;">
+    </OBJECT>
+    <OBJECT ID="Stack1"
+     CLASSID="CLSID:2B32FBC2-A8F1-11CF-93EE-00AA00C08FDF" STYLE="TOP:131pt;LEFT:0pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:15;">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="1905;2540">
+    </OBJECT>
+    <OBJECT ID="Stack2"
+     CLASSID="CLSID:2B32FBC2-A8F1-11CF-93EE-00AA00C08FDF" STYLE="TOP:131pt;LEFT:66pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:15;">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="1905;2540">
+    </OBJECT>
+    <OBJECT ID="Stack3"
+     CLASSID="CLSID:2B32FBC2-A8F1-11CF-93EE-00AA00C08FDF" STYLE="TOP:131pt;LEFT:132pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:16;">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="1905;2540">
+    </OBJECT>
+    <OBJECT ID="Stack4"
+     CLASSID="CLSID:2B32FBC2-A8F1-11CF-93EE-00AA00C08FDF" STYLE="TOP:131pt;LEFT:198pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:17;">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="1905;2540">
+    </OBJECT>
+    <OBJECT ID="Stack5"
+     CLASSID="CLSID:2B32FBC2-A8F1-11CF-93EE-00AA00C08FDF" STYLE="TOP:131pt;LEFT:264pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:18;">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="1905;2540">
+    </OBJECT>
+    <OBJECT ID="Stack6"
+     CLASSID="CLSID:2B32FBC2-A8F1-11CF-93EE-00AA00C08FDF" STYLE="TOP:131pt;LEFT:330pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:19;">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="1905;2540">
+    </OBJECT>
+    <OBJECT ID="Stack7"
+     CLASSID="CLSID:2B32FBC2-A8F1-11CF-93EE-00AA00C08FDF" STYLE="TOP:131pt;LEFT:396pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:20;">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="1905;2540">
+    </OBJECT>
+    <OBJECT ID="Discard"
+     CLASSID="CLSID:2B32FBC2-A8F1-11CF-93EE-00AA00C08FDF" STYLE="TOP:32pt;LEFT:74pt;WIDTH:74pt;HEIGHT:72pt;ZINDEX:22;">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="2611;2540">
+    </OBJECT>
+    <OBJECT ID="Shuffle"
+     CLASSID="CLSID:2B32FBC2-A8F1-11CF-93EE-00AA00C08FDF" STYLE="TOP:32pt;LEFT:0pt;WIDTH:54pt;HEIGHT:72pt;ZINDEX:23;">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Size" VALUE="1905;2540">
+    </OBJECT>
+    <OBJECT ID="tmEndCardMove"
+     CLASSID="CLSID:59CCB4A0-727D-11CF-AC36-00AA00A47DD2" STYLE="TOP:469pt;LEFT:16pt;WIDTH:25pt;HEIGHT:17pt;TABINDEX:4;ZINDEX:24;">
+        <PARAM NAME="_ExtentX" VALUE="873">
+        <PARAM NAME="_ExtentY" VALUE="609">
+    </OBJECT>
+    <OBJECT ID="tmNewCard"
+     CLASSID="CLSID:59CCB4A0-727D-11CF-AC36-00AA00A47DD2" STYLE="TOP:469pt;LEFT:49pt;WIDTH:25pt;HEIGHT:17pt;TABINDEX:44;ZINDEX:25;">
+        <PARAM NAME="_ExtentX" VALUE="873">
+        <PARAM NAME="_ExtentY" VALUE="609">
+    </OBJECT>
+    <OBJECT ID="HiddenCardLabel"
+     CLASSID="CLSID:978C9E23-D4B0-11CE-BF2D-00AA003F40D0" STYLE="TOP:15pt;LEFT:487pt;WIDTH:107pt;HEIGHT:8pt;DISPLAY:NONE;ZINDEX:26;">
+        <PARAM NAME="BackColor" VALUE="32768">
+        <PARAM NAME="Caption" VALUE="All the cards are betwen this lable and the check box">
+        <PARAM NAME="Size" VALUE="3775;282">
+        <PARAM NAME="FontCharSet" VALUE="0">
+        <PARAM NAME="FontPitchAndFamily" VALUE="2">
+        <PARAM NAME="FontWeight" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="chkDebug"
+     CLASSID="CLSID:8BD21D40-EC42-11CE-9E0D-00AA006002F3" STYLE="TOP:15pt;LEFT:8pt;WIDTH:57pt;HEIGHT:12pt;TABINDEX:5;DISPLAY:NONE;ZINDEX:27;">
+        <PARAM NAME="BackColor" VALUE="2000000000">
+        <PARAM NAME="ForeColor" VALUE="100">
+        <PARAM NAME="DisplayStyle" VALUE="4">
+        <PARAM NAME="Size" VALUE="2011;423">
+        <PARAM NAME="Caption" VALUE="Debug">
+        <PARAM NAME="Accelerator" VALUE="68">
+        <PARAM NAME="FontCharSet" VALUE="0">
+        <PARAM NAME="FontPitchAndFamily" VALUE="2">
+        <PARAM NAME="FontWeight" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="cmdNewDeal"
+     CLASSID="CLSID:978C9E23-D4B0-11CE-BF2D-00AA003F40D0" STYLE="TOP:1pt;LEFT:120pt;WIDTH:50pt;HEIGHT:17pt;ZINDEX:78;">
+        <PARAM NAME="ForeColor" VALUE="65280">
+        <PARAM NAME="BackColor" VALUE="32768">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Caption" VALUE="New Game">
+        <PARAM NAME="Size" VALUE="1746;600">
+        <PARAM NAME="FontName" VALUE="Arial">
+        <PARAM NAME="FontEffects" VALUE="1073741828">
+        <PARAM NAME="FontHeight" VALUE="180">
+        <PARAM NAME="FontCharSet" VALUE="0">
+        <PARAM NAME="FontPitchAndFamily" VALUE="2">
+        <PARAM NAME="ParagraphAlign" VALUE="3">
+        <PARAM NAME="FontWeight" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="cmdNewDeck"
+     CLASSID="CLSID:978C9E23-D4B0-11CE-BF2D-00AA003F40D0" STYLE="TOP:1pt;LEFT:173pt;WIDTH:83pt;HEIGHT:17pt;ZINDEX:79;">
+        <PARAM NAME="ForeColor" VALUE="65280">
+        <PARAM NAME="BackColor" VALUE="32768">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Caption" VALUE="Select New Deck">
+        <PARAM NAME="Size" VALUE="2910;600">
+        <PARAM NAME="FontName" VALUE="Arial">
+        <PARAM NAME="FontEffects" VALUE="1073741828">
+        <PARAM NAME="FontHeight" VALUE="180">
+        <PARAM NAME="FontCharSet" VALUE="0">
+        <PARAM NAME="FontPitchAndFamily" VALUE="2">
+        <PARAM NAME="ParagraphAlign" VALUE="3">
+        <PARAM NAME="FontWeight" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="cmdChangeDeal"
+     CLASSID="CLSID:978C9E23-D4B0-11CE-BF2D-00AA003F40D0" STYLE="TOP:1pt;LEFT:256pt;WIDTH:83pt;HEIGHT:17pt;ZINDEX:80;">
+        <PARAM NAME="ForeColor" VALUE="65280">
+        <PARAM NAME="BackColor" VALUE="32768">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Caption" VALUE="Change to Draw 1">
+        <PARAM NAME="Size" VALUE="2911;600">
+        <PARAM NAME="FontName" VALUE="Arial">
+        <PARAM NAME="FontEffects" VALUE="1073741828">
+        <PARAM NAME="FontHeight" VALUE="180">
+        <PARAM NAME="FontCharSet" VALUE="0">
+        <PARAM NAME="FontPitchAndFamily" VALUE="2">
+        <PARAM NAME="ParagraphAlign" VALUE="3">
+        <PARAM NAME="FontWeight" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="cmdEndGame"
+     CLASSID="CLSID:978C9E23-D4B0-11CE-BF2D-00AA003F40D0" STYLE="TOP:1pt;LEFT:346pt;WIDTH:66pt;HEIGHT:17pt;ZINDEX:81;">
+        <PARAM NAME="ForeColor" VALUE="65280">
+        <PARAM NAME="BackColor" VALUE="32768">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Caption" VALUE="End the Game">
+        <PARAM NAME="Size" VALUE="2328;600">
+        <PARAM NAME="FontName" VALUE="Arial">
+        <PARAM NAME="FontEffects" VALUE="1073741828">
+        <PARAM NAME="FontHeight" VALUE="180">
+        <PARAM NAME="FontCharSet" VALUE="0">
+        <PARAM NAME="FontPitchAndFamily" VALUE="2">
+        <PARAM NAME="ParagraphAlign" VALUE="3">
+        <PARAM NAME="FontWeight" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="cmdHelp"
+     CLASSID="CLSID:978C9E23-D4B0-11CE-BF2D-00AA003F40D0" STYLE="TOP:1pt;LEFT:414pt;WIDTH:33pt;HEIGHT:17pt;ZINDEX:81;">
+        <PARAM NAME="ForeColor" VALUE="65280">
+        <PARAM NAME="BackColor" VALUE="32768">
+        <PARAM NAME="VariousPropertyBits" VALUE="8388627">
+        <PARAM NAME="Caption" VALUE="Help">
+        <PARAM NAME="Size" VALUE="2328;600">
+        <PARAM NAME="FontName" VALUE="Arial">
+        <PARAM NAME="FontEffects" VALUE="1073741828">
+        <PARAM NAME="FontHeight" VALUE="180">
+        <PARAM NAME="FontCharSet" VALUE="0">
+        <PARAM NAME="FontPitchAndFamily" VALUE="2">
+        <PARAM NAME="ParagraphAlign" VALUE="3">
+        <PARAM NAME="FontWeight" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card2H"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:190pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:11;ZINDEX:32;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card3H"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:247pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:12;ZINDEX:33;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card4H"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:132pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:13;ZINDEX:34;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card5H"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:198pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:14;ZINDEX:35;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card6H"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:256pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:15;ZINDEX:36;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card7H"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:140pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:16;ZINDEX:37;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card8H"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:206pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:17;ZINDEX:38;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card9H"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:264pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:18;ZINDEX:39;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card10H"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:148pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:19;ZINDEX:40;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card11H"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:214pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:20;ZINDEX:41;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card12H"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:272pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:21;ZINDEX:42;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card13H"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:140pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:22;ZINDEX:43;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card1D"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:206pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:23;ZINDEX:44;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card2D"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:264pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:24;ZINDEX:45;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card3D"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:148pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:25;ZINDEX:46;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card4D"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:214pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:26;ZINDEX:47;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card5D"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:272pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:27;ZINDEX:48;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card6D"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:157pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:28;ZINDEX:49;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card7D"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:223pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:29;ZINDEX:50;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card8D"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:280pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:30;ZINDEX:51;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card9D"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:165pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:31;ZINDEX:52;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card10D"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:231pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:32;ZINDEX:53;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card11D"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:33;ZINDEX:54;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card12D"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:37;ZINDEX:55;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card13D"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:42;ZINDEX:56;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card1C"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:46;ZINDEX:57;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card2C"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:47;ZINDEX:58;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card3C"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:50;ZINDEX:59;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card4C"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:51;ZINDEX:60;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card5C"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:55;ZINDEX:61;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card6C"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:56;ZINDEX:62;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card7C"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:59;ZINDEX:63;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card8C"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:60;ZINDEX:64;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card9C"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:66;ZINDEX:65;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card10C"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:68;ZINDEX:66;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card11C"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:76;ZINDEX:67;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card12C"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:80;ZINDEX:68;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card13C"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:86;ZINDEX:69;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card1S"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:88;ZINDEX:70;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card2S"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:91;ZINDEX:71;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card3S"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:92;ZINDEX:72;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card4S"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:90;ZINDEX:73;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card5S"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:82;ZINDEX:74;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card6S"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:70;ZINDEX:75;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card7S"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:61;ZINDEX:76;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card8S"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:57;ZINDEX:77;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card9S"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:52;ZINDEX:78;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card10S"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:48;ZINDEX:79;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card11S"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:43;ZINDEX:80;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card12S"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:38;ZINDEX:81;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="Card13S"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:-41pt;LEFT:289pt;WIDTH:54pt;HEIGHT:72pt;TABINDEX:34;ZINDEX:82;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+	<PARAM NAME="CardAlignment" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="CardDeck1"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:76pt;LEFT:30pt;WIDTH:58pt;HEIGHT:74pt;TABINDEX:63;DISPLAY:NONE;ZINDEX:83;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+        <PARAM NAME="Suite" VALUE="-1">
+    </OBJECT>
+    <OBJECT ID="CardDeck2"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:76pt;LEFT:96pt;WIDTH:58pt;HEIGHT:74pt;TABINDEX:65;DISPLAY:NONE;ZINDEX:84;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+        <PARAM NAME="Suite" VALUE="-2">
+    </OBJECT>
+    <OBJECT ID="CardDeck3"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:76pt;LEFT:162pt;WIDTH:58pt;HEIGHT:74pt;TABINDEX:67;DISPLAY:NONE;ZINDEX:85;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+        <PARAM NAME="Suite" VALUE="-3">
+    </OBJECT>
+    <OBJECT ID="CardDeck4"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:76pt;LEFT:228pt;WIDTH:58pt;HEIGHT:74pt;TABINDEX:69;DISPLAY:NONE;ZINDEX:86;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+        <PARAM NAME="Suite" VALUE="-4">
+    </OBJECT>
+    <OBJECT ID="CardDeck5"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:76pt;LEFT:294pt;WIDTH:58pt;HEIGHT:74pt;TABINDEX:71;DISPLAY:NONE;ZINDEX:87;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+        <PARAM NAME="Suite" VALUE="-5">
+    </OBJECT>
+    <OBJECT ID="CardDeck6"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:76pt;LEFT:360pt;WIDTH:58pt;HEIGHT:74pt;TABINDEX:73;DISPLAY:NONE;ZINDEX:88;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+        <PARAM NAME="Suite" VALUE="-6">
+    </OBJECT>
+    <OBJECT ID="CardDeck7"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:158pt;LEFT:30pt;WIDTH:58pt;HEIGHT:74pt;TABINDEX:75;DISPLAY:NONE;ZINDEX:89;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+        <PARAM NAME="Suite" VALUE="-7">
+    </OBJECT>
+    <OBJECT ID="CardDeck8"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:158pt;LEFT:96pt;WIDTH:58pt;HEIGHT:74pt;TABINDEX:77;DISPLAY:NONE;ZINDEX:90;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+        <PARAM NAME="Suite" VALUE="-8">
+    </OBJECT>
+    <OBJECT ID="CardDeck9"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:158pt;LEFT:162pt;WIDTH:58pt;HEIGHT:74pt;TABINDEX:79;DISPLAY:NONE;ZINDEX:91;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+        <PARAM NAME="Suite" VALUE="-9">
+    </OBJECT>
+    <OBJECT ID="CardDeck10"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:158pt;LEFT:228pt;WIDTH:58pt;HEIGHT:74pt;TABINDEX:81;DISPLAY:NONE;ZINDEX:92;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+        <PARAM NAME="Suite" VALUE="-10">
+    </OBJECT>
+    <OBJECT ID="CardDeck11"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:158pt;LEFT:294pt;WIDTH:58pt;HEIGHT:74pt;TABINDEX:83;DISPLAY:NONE;ZINDEX:93;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+        <PARAM NAME="Suite" VALUE="-11">
+    </OBJECT>
+    <OBJECT ID="CardDeck12"
+     CLASSID="CLSID:55707B23-FF82-11CF-BB32-142A04C10000" STYLE="TOP:158pt;LEFT:360pt;WIDTH:58pt;HEIGHT:74pt;TABINDEX:85;DISPLAY:NONE;ZINDEX:94;">
+        <PARAM NAME="_ExtentX" VALUE="2037">
+        <PARAM NAME="_ExtentY" VALUE="2619">
+        <PARAM NAME="Suite" VALUE="-12">
+    </OBJECT>
+    <OBJECT ID="CardDeckOk"
+     CLASSID="CLSID:D7053240-CE69-11CD-A777-00DD01143C57" STYLE="TOP:249pt;LEFT:121pt;WIDTH:91pt;HEIGHT:25pt;TABINDEX:87;DISPLAY:NONE;ZINDEX:95;">
+        <PARAM NAME="Caption" VALUE="OK">
+        <PARAM NAME="Size" VALUE="3210;882">
+        <PARAM NAME="Accelerator" VALUE="79">
+        <PARAM NAME="FontCharSet" VALUE="0">
+        <PARAM NAME="FontPitchAndFamily" VALUE="2">
+        <PARAM NAME="ParagraphAlign" VALUE="3">
+        <PARAM NAME="FontWeight" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="CardDeckCancel"
+     CLASSID="CLSID:D7053240-CE69-11CD-A777-00DD01143C57" STYLE="TOP:249pt;LEFT:236pt;WIDTH:91pt;HEIGHT:25pt;TABINDEX:89;DISPLAY:NONE;ZINDEX:96;">
+        <PARAM NAME="Caption" VALUE="Cancel">
+        <PARAM NAME="Size" VALUE="3210;882">
+        <PARAM NAME="Accelerator" VALUE="67">
+        <PARAM NAME="FontCharSet" VALUE="0">
+        <PARAM NAME="FontPitchAndFamily" VALUE="2">
+        <PARAM NAME="ParagraphAlign" VALUE="3">
+        <PARAM NAME="FontWeight" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="lstDebugPrint"
+     CLASSID="CLSID:8BD21D20-EC42-11CE-9E0D-00AA006002F3" STYLE="TOP:23pt;LEFT:132pt;WIDTH:122pt;HEIGHT:66pt;TABINDEX:9;DISPLAY:NONE;ZINDEX:97;">
+        <PARAM NAME="BackColor" VALUE="16777215">
+        <PARAM NAME="ScrollBars" VALUE="3">
+        <PARAM NAME="DisplayStyle" VALUE="2">
+        <PARAM NAME="Size" VALUE="4304;2328">
+        <PARAM NAME="MatchEntry" VALUE="0">
+        <PARAM NAME="FontCharSet" VALUE="0">
+        <PARAM NAME="FontPitchAndFamily" VALUE="2">
+        <PARAM NAME="FontWeight" VALUE="0">
+    </OBJECT>
+    <OBJECT ID="TitleBanner"
+     CLASSID="CLSID:4C599241-6926-101B-9992-00000B65C6F9"
+     DATA="DATA:application/x-oleobject;BASE64,QZJZTCZpGxCZkgAAC2XG+QACGAC4BgAAAIAAAACAAAAAA///nAwAANwBAACw
+gWfaSsLPEbWEAKoApx0abHQAAFUCAABHSUY4OWF6ABIAov8A////AIAAAGsA
+AEoAADEAABgAABAAAAAALAAAAAB6ABIAAAP/GLrc/jDKSau9VQgc9OZa4z3C
+YH5TGFoj1xTHkBHKcbiCzeTFM9hAmeS3ORgUAppE52L8YpQcLankwD68B+FA
+0PyOkm2HIJNKqE0Gl0shphc/4aHnyAlrt2VV4X5XCgVxIgRkfAZsJgGJcFiE
+AyiKbIAQYgyBC1R3bokDh1UDBYV8Qo+EH4RdEXF2DFswknNkbGx8Bxuuh2AL
+NjARVyQwr0oER3Y5sZGANmVQTzpfMLoObKwKW8w9m7YBc7s0xEKHkK+QDVtz
+dwqH4XlsW7fbgpEy7wEwjyVQAfUOlWYd+vbJmBTAAJ1u9o7I2xfQXkMtQPTx
+YxhpA0GEiwBa7JEF/+CnhwBJ6WPSAEo1alCuePllzcYeCEkObaOloJcYVguR
+COiFU98qDRMXvIooI2etDX2gGAQYkRecNXSiiOtTgwaibfxARaThhtiupgid
+cBlA5hrDcvvAFNAV40etE/g+/KAhro6oBe/WijWxTW9BOnMfudH7T0qJw+X+
+IVGap0OBIlMCzpHYWJFcWmZF0KzZY/OkmyZDVwFNb1tFTOlqVg7JzXQvbVic
+qj7VjObcOmEdFola7yq8lk+5bjOgS97tvQ0EBQNlAN5jgpFMMwxktuPiqJhk
+ErLxwZPWosMPztk59pyMpQu/kN1s7aWiS0lcyjVI9k6S1Ocet++HHdPQVCJI
+CCMXHaJ08hh5BpiQSiGgQPLEJX5EKOGEFFZo4YUYWpAAADsAAAA=
+"
+     STYLE="TOP:0pt;LEFT:0pt;WIDTH:92pt;HEIGHT:14pt;ZINDEX:98;">
+    </OBJECT>
+</DIV>

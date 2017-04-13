@@ -1,0 +1,162 @@
+
+PERCLIEN - Client of Persistent Components
+
+
+SUMMARY
+=======
+
+The PERCLIEN sample completes a sequence of four samples that cover
+persistent COM objects. The first three samples discuss three COM servers
+that each house COM objects having a different kind of object persistence.
+The first sample, PERSERVE, shows how to use the IPersistStream interface
+to give COPageList COM objects their persistence in a stream of a
+structured storage compound file.  The second sample, PERTEXT, shows how
+to use the IPersistStreamInit interface is used to give COTextPage COM
+object their persistence in streams. The IPersistStreamInit::InitNew
+method is covered in detail. The third sample, PERDRAW, shows how to use
+the IPersistStorage interface to give CODrawPage COM objects their
+persistence in substorages of a compound file. The
+IPersistStorage::HandsOffStorage and IPersistStorage::SaveCompleted
+methods are covered in detail. This sample, PERCLIEN, integrates the use
+of the three previous servers into a single COM client application.
+
+The PERCLIEN client uses the components in the PERSERVE, PERTEXT, and
+PERDRAW to build a document editing application that presents a list of
+pages to users. The user can add, delete, open, and name the page items in
+the list. When an item is opened, the content appears in a separate window
+for editing. The separate edit windows are child windows of PERCLIEN's
+main window. Two types of pages are supported: text pages and drawing
+pages.
+
+PERCLIEN provides the graphical user interface for editing the page list
+as well as for editing the content of the two page types. PERCLIEN's
+CGuiList C++ object encapsulates the editing of the page list in
+PERCLIEN's main window. CGuiList controls the server-side COPageList
+object in PERSERVE. PERCLIEN's CGuiText C++ object encapsulates the
+editing of text pages in separate child windows. CGuiText controls the
+server-side COTextPage object in PERTEXT. PERCLIEN's CGuiDraw C++ object
+encapsulates the editing of drawing pages in separate child windows.
+CGuiDraw controls the server-side CODrawPage object in PERDRAW.
+
+The separate text page windows of CGuiText provide for the editing of text
+using the standard Win32 multi-line edit control. The separate drawing
+page windows of CGuiDraw provide the free-form line drawing functionality
+that appeared in the STOSERVE and STOCLIEN samples.
+
+The PERCLIEN sample relies on each page's persistent COM object to load
+and store the page's content. PERCLIEN acquires a pointer to the
+IPersistStream interface on COPageList to control persistent stream
+storage of the page list. It acquires a pointer to the IPersistStreamInit
+interface on COTextPage to control persistent stream storage (with InitNew
+capability) of a text page. It acquires a pointer to the IPersistStorage
+interface on CODrawPage to control persistent storage in a substorage
+(with the HandsOffStorage protocol) of a drawing page.
+
+PERCLIEN controls the use of the compound file and provides the COM
+objects on the server side with appropriate interface pointers for the
+storages or streams used to store the data. PERSERVE's COPageList COM
+object exposes the IPersistStream interface and receives an IStream
+pointer from PERCLIEN. PERTEXT's COTextPage COM object exposes the
+IPersistStreamInit interface and receives an IStream pointer by PERCLIEN.
+PERDRAW's CODrawPage COM object exposes the IPersistStorage interface and
+receives an IStorage pointer by PERCLIEN. These IStorage and IStream
+interfaces are not implemented inside PERCLIEN or PERSERVE: They are
+implemented by the COM libraries. When a pointer to one of these
+interfaces is obtained, their methods are essentially used as a set of
+services to operate on areas in a compound file. If you have not used
+streams (IStream) or storages (IStorage) in structured storage compound
+files, see the STOSERVE and STOCLIEN samples for coverage of this topic.
+
+PERCLIEN manages its structured storage compound file as a kind of
+document file where the page list and the pages themselves are stored.
+PERCLIEN loads and saves its page list, text pages, and drawing pages in
+the structured storage of this compound file. The compound file has a
+unique format because of the various streams and storages used. PERCLIEN
+identifies these compound files as page files with a .PAG file extension.
+
+The connectable-object technology that was shown in the CONSERVE and
+CONCLIEN samples is used between PERCLIEN and the COM objects in its
+servers. Thus, PERCLIEN implements custom event sink interfaces for the
+connectable objects in the servers: IPageListSink, ITextPageSink, and
+IDrawPageSink.
+
+For functional descriptions and a tutorial code tour of PERCLIEN, see the
+Code Tour section in PERCLIEN.HTM. For details on the external user
+operation of PERCLIEN, see both the Usage and Operation sections in
+PERCLIEN.HTM. To read PERCLIEN.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the PERCLIEN lesson in the table of lessons. You can
+also do same thing by double-clicking the PERCLIEN.HTM file after locating
+it in the main tutorial directory in Windows Explorer. See also
+PERSERVE.HTM, PERTEXT.HTM, and PERDRAW.HTM in the main tutorial directory
+for more details on how these servers work and expose their services to
+PERCLIEN. The makefile for each of the servers automatically registers
+that server in the system registry, so you must build the PERSERVE,
+PERTEXT, and PERDRAW servers before you can run PERCLIEN.
+
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command at the Command Prompt.
+
+Usage
+-----
+
+PERCLIEN is an application that you can execute directly from Windows in
+the normal manner or from the Command Prompt window. PERCLIEN accepts an
+optional file name parameter on the command line. For example:
+
+  PERCLIEN c:\pages\mynotes.pag
+
+Where mynotes.pag is a compound file containing pages of text and drawings
+previously made by PERCLIEN. If no file name argument is specified,
+PERCLIEN uses the default file name PERCLIEN.PAG and attempts to open it
+in the same directory as the executing PERCLIEN.EXE.
+
+
+FILES
+=====
+
+Files          Description
+
+PERCLIEN.TXT   This file.
+MAKEFILE       The generic makefile for building the code sample
+               application of this tutorial lesson.
+PERCLIEN.H     The include file for the PERCLIEN application. Contains
+               class declarations for main window and dialogs.
+PERCLIEN.CPP   The main implementation file for PERCLIEN.EXE. Has WinMain
+               and CMainWindow implementation and the main menu dispatching.
+PERCLIEN.RC    The application's resource definition file.
+PERCLIEN.ICO   The application's main icon resource.
+PERCLIEN.PAG   A default page file for the application (with two pages).
+RESDEF.H       Resource ID definitions for application menu, strings, etc.
+PENCIL.CUR     A pencil image for the drawing page window cursor.
+GUILIST.H      The class declaration for the CGuiList C++ class.
+GUILIST.CPP    Implementation file for the CGuiList C++ class. Has user
+               interface to handle the main page list display window.
+LISTWIN.H      The class declaration for the CListWin C++ class.
+LISTWIN.CPP    Implementation file for the CListWin C++ class.
+               Encapsulates the list box control used to show the page list.
+LISTSINK.H     The class declaration for the COPageListSink COM object class.
+LISTSINK.CPP   Implementation file for the COPageListSink COM object class.
+               Connectable object notifications of page list events are
+               handled by COPageListSink.
+PAGEFILE.H     The class declaration for the CPageFile C++ class.
+PAGEFILE.CPP   Implementation file for the CPageFile C++ class.
+               Encapsulates operations on the .PAG page list compound file.
+GUITEXT.H      The class declaration for the CGuiText C++ class.
+GUITEXT.CPP    Implementaton file for the CGuiText C++ class. Has the
+               user interface for the separate editing of text pages.
+TEXTWIN.H      The class declaration for the CTextWin C++ class.
+TEXTWIN.CPP    Implementation file for the CTextWin C++ class. Encapsulates
+               the text edit control used to edit text page.s
+TEXTSINK.H     The class declaration for the COTextPageSink COM object class.
+TEXTSINK.CPP   Implementation file for the COTextPageSink COM object class.
+               Connectable object notifications of text edit events are
+               handled by COTextPageSink.
+GUIDRAW.H      The class declaration for the CGuiDraw C++ class.
+GUIDRAW.CPP    Implementation file for the CGuiDraw C++ class. Has the
+               user interface for the separate drawing in draw pages.
+DRAWSINK.H     The class declaration for the CODrawPageSink COM object class.
+DRAWSINK.CPP   Implementation file for the CODrawPageSink COM object class.
+               Connectable object notifications of drawing-related events
+               are handled by COTextPageSink.

@@ -1,0 +1,40 @@
+#
+# MAKEFILE
+# Links Assistant Chapter 20
+#
+# Copyright (c)1993-1995 Microsoft Corporation, All Rights Reserved
+#
+# Kraig Brockschmidt, Microsoft
+# Internet  :  kraigb@microsoft.com
+# Compuserve:  >INTERNET:kraigb@microsoft.com
+#
+
+#Add '#' to the next line for 'noisy' operation
+!CMDSWITCHES +s
+
+TARGET  = lnkassis
+OUTFILE = lnkassis.dll
+DLL     = 1
+NODOC   = 1
+NOPRECOMP = 1
+
+INCLS   = $(TARGET).h dllassis.h
+
+OBJS1   = $(TARGET).obj dllassis.obj
+OBJS2   = ""
+OBJS3   = ""
+OBJS4   = ""
+OBJS5   = ""
+OBJS6   = ""
+OBJS    = $(OBJS1)
+
+RCFILES =
+
+!include "..\\..\\inole-a.mak"
+!include "..\\..\\inole-b.mak"
+
+##### Dependencies #####
+
+$(TARGET).obj : $(TARGET).cpp $(INCLS)
+dllassis.obj  : dllassis.cpp  $(INCLS)
+$(TARGET).res : $(TARGET).rc  $(INCLS) $(RCFILES)

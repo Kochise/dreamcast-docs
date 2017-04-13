@@ -1,0 +1,123 @@
+
+CONSERVE - Connectable COM objects in an in-process server
+
+
+SUMMARY
+=======
+
+The CONSERVE sample shows how to construct a connectable COM object,
+COBall, in a thread-safe in-process server. To expose connectable object
+features, COBall implements the standard COM interface,
+IConnectionPointContainer. COBall also implements the custom interface,
+IBall, that was introduced in the FRESERVE sample.
+
+The principal focus of CONSERVE is the connectable object support in
+COBall and how connected clients are notified of ball events. CONSERVE
+works with the CONCLIEN client code sample.
+
+CONSERVE's COBall implements a virtual moving ball similar to the one
+coded in the FRESERVE sample. However, rather than FRESERVE's
+free-threaded COM object, CONSERVE houses COBall in an apartment model
+server. COBall defines the internal logic of a moving ball that exists
+within a specified two-dimensional bounding rectangle. COBall provides
+only a description of a ball. It is up to the client to create a graphical
+representation based on the data managed in COBall.
+
+Clients move the virtual ball using its IBall interface. COBall's internal
+logic will bounce the ball when it collides with a boundary. The client
+can obtain the ball's current position, size, and color to permit display
+of the ball's moving image. The client can also use the connection
+facilities of COBall to receive notifications of ball bounce events. The
+CONCLIEN sample will use these connection facilities to produce various
+sounds when the ball bounces.
+
+CONSERVE uses the CThreaded facility in APPUTIL for thread safety, as in
+the FRESERVE sample. COBall objects are derived from the CThreaded class
+and inherit its OwnThis and UnOwnThis methods. These methods allow only
+one thread at a time to have access to the CONSERVE server and to COBall
+objects managed by the server.
+
+For functional descriptions and a tutorial code tour of CONSERVE, see the
+Code Tour section in CONSERVE.HTM. For details on setting up the
+programmatic usage of CONSERVE, see the Usage section in CONSERVE.HTM. To
+read CONSERVE.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the CONSERVE lesson in the table of lessons. You can also achieve
+the same thing by clicking the CONSERVE.HTM file after locating the main
+tutorial directory in the Windows Explorer. See also CONCLIEN.HTM in the
+main tutorial directory for more details on the CONCLIEN client
+application and how it works with CONSERVE.DLL. You must build
+CONSERVE.DLL before building or running CONCLIEN.
+
+CONSERVE's makefile automatically registers the DllSndBall component in
+the registry. This component must be registered before CONSERVE is
+available to outside clients as a server for that component. This
+self-registration is done using the REGISTER.EXE utility built in the
+REGISTER lesson. To build or run CONSERVE, you should build the REGISTER
+code sample first.
+
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+Usage
+-----
+
+To use CONSERVE, a client program does not need to include CONSERVE.H or
+link to CONSERVE.LIB. A client of CONSERVE obtains access solely through
+its object's CLSID and COM services. For CONSERVE, that CLSID is
+CLSID_DllSndBall (defined in BALLGUID.H in the \INC sibling directory).
+The CONCLIEN code sample shows how the client obtains this access.
+
+CONSERVE is a DLL that is intended primarily as an in-process server.
+Although it can be implicitly loaded by linking to its associated .LIB
+file, it is normally used after an explicit LoadLibrary call, usually from
+within COM's CoGetClassObject function. CONSERVE is a self-registering
+in-process server.
+
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the CONSERVE directory:
+
+  nmake register
+
+You can also directly invoke the REGISTER.EXE command at the command prompt
+while in the CONSERVE directory.
+
+  ..\register\register.exe conserve.dll
+
+These registration commands require a prior build of the REGISTER sample
+in this series, as well as a prior build of CONSERVE.DLL.
+
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Win32 Platform SDK and Visual C++
+include a utility, REGSVR32.EXE, which can be used in a similar fashion to
+register in-process servers and marshaling DLLs.
+
+
+FILES
+=====
+
+Files         Description
+
+CONSERVE.TXT  This file.
+MAKEFILE      The generic makefile for building the CONSERVE.DLL
+              code sample of this lesson.
+CONSERVE.H    The include file for declaring as imported or defining as
+              exported the service functions in CONSERVE.DLL.
+CONSERVE.CPP  The main implementation file for CONSERVE.DLL. Has DllMain
+              and the COM server functions (for example, DllGetClassObject).
+CONSERVE.DEF  The module definition file. Exports server housing functions.
+CONSERVE.RC   The DLL resource definition file for the executable.
+CONSERVE.ICO  The icon resource for the executable.
+SERVER.H      The include file for the server control C++ object.
+SERVER.CPP    The implementation file for the server control object.
+FACTORY.H     The include file for the server's class factory COM objects.
+FACTORY.CPP   The implementation file for the server's class factories.
+CONNECT.H     The include file for the connection point enumerator,
+              connection point, and connection enumerator classes.
+CONNECT.CPP   The implementation file for the connection point enumerator,
+              connection point, and connection enumerators objects.
+BALL.H        The include file for the COBall object class.
+BALL.CPP      The implementation file for the COBall object class
+              and the connection points.

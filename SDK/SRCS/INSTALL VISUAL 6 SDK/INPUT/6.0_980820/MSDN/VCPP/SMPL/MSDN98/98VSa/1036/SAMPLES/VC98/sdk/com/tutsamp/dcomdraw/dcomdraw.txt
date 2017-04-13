@@ -1,0 +1,162 @@
+
+DCOMDRAW - Client of structured storage server
+
+
+SUMMARY
+=======
+
+The DCOMDRAW, DCDSERVE, and DCDMARSH samples together form a distributed
+drawing application. Using Distributed COM (DCOM) technology, they allow
+users on different client machines in a network to interactively draw on a
+shared drawing. All DCOMDRAW clients see the same drawing and any client
+can take ownership of the pen to draw. The user of DCOMDRAW can use a
+mouse or tablet device to draw in the client window and can choose the
+color and width of the electronic ink. As clients draw, the application
+echoes the drawing activity from DCDSERVE to all connected clients using
+DCOM over the network. Although these samples do not build an optimized
+and complete application, the functionality is suggestive of the shared
+whiteboards offered by some workgroup applications.
+
+Although DCOMDRAW, DCDSERVE, and DCDMARSH work on the same machine across
+process boundaries, the main goal is to provide a distributed application
+that enables multiple DCOMDRAW clients on different machines to access a
+single shared drawing object housed in a DCDSERVE server running on a
+common server machine. A typical scenario would have numerous client
+machines hooked to an intranet consisting of a Windows NT network domain
+or peer-to-peer workgroup. DCOMDRAW can run on any of these client
+machines. DCDSERVE is installed and runs on a common server machine in the
+domain. The user of the DCOMDRAW client can interactively choose the
+remote server machine to determine which DCDSERVE COM server to use for
+the shared drawing.
+
+DCDSERVE manages a shared, single COPaper COM object that models a sheet
+of white drawing paper. Clients can use the methods of the COPaper object
+to draw on the paper surface using "ink" of specified color and
+width. This functionality is outwardly similar to the "scribble"
+tutorial samples in many versions of the Microsoft Visual C++&reg;
+product. The drawing paper features of COPaper objects are exposed to
+DCOMDRAW clients by a custom ISharePaper interface. COPaper implements the
+ISharePaper interface. A clear architectural distinction is kept between
+client and server. No graphical user interface (GUI) is provided by the
+COPaper object. It relies on the DCOMDRAW client for all GUI behavior.
+COPaper encapsulates only the server-based capture and storage of the
+drawn ink data.
+
+The ink data that is drawn on the COPaper surface can be stored in and
+loaded from compound files. The ISharePaper::Save and ISharePaper::Load
+method implementations in COPaper use structured storage to store the
+current data of the shared drawing in a compound file kept with
+DCDSERVE.EXE on the machine acting as the common server.
+
+The DCOMDRAW sample creates and uses the connectable COPaper COM object
+that is provided as the CLSID_SharePaper component in the DCDSERVE server.
+The DCOMDRAW client creates a COPaper object and controls it using the
+methods of the ISharePaper interface. DCOMDRAW obtains drawing data from
+the user and displays that data in a window that it manages. DCOMDRAW uses
+COPaper's ISharePaper interface to save the drawing data in COPaper and to
+direct file-storage operations on this data.
+
+COPaper only manages the drawing data; it performs no GUI actions.
+DCOMDRAW provides the GUI for the drawing application by encapsulating
+this functionality in a central CGuiPaper C++ object.
+
+DCOMDRAW also implements the custom IPaperSink interface on a COPaperSink
+COM object and connects this interface to an appropriate connection point
+on the COPaper object in DCDSERVE. COPaper uses the connected IPaperSink
+interface to send notifications back to the COPaperSink in DCOMDRAW. The
+normal GUI repainting of COPaper's drawing data is done in DCOMDRAW using
+COPaper's connectable object technology. Thus in this sample, COM's
+connectable-object technology uses DCOM to function transparently across
+the network. In earlier samples such as STOCLIEN and STOSERVE, COM's
+connectable-object technology was shown operating only in-process.
+
+The two ISharePaper and IPaperSink custom interfaces are declared in
+PAPINT.H, which is located in the common INC directory. PAPINT.H is
+automatically generated in the DCDMARSH sample. The GUIDs for the
+interfaces and objects are defined in PAPGUIDS.H located in that same
+directory.
+
+This lesson focuses primarily on how to take care of DCOM process security
+on the client side and how to load a remote object using DCOM. Using
+CoInitializeSecurity to set process security is covered.
+CoCreateInstanceEx using the MULTI_QI structure is covered.
+
+Because client and server run in separate processes--usually on different
+computers--both DCDSERVE and DCOMDRAW rely on standard marshaling for the
+ISharePaper and IPaperSink custom interfaces. The DCDMARSH sample provides
+this support, so you must build (or otherwise register) DCDMARSH.DLL on
+both machines prior to building and running DCDSERVE and DCOMDRAW across
+machines.
+
+To set a DCOMDRAW client on one machine to control the common DCDSERVE
+server on another, both machines must have DCOM (Distributed COM)
+installed. DCOM is included in Windows NT 4.0 or above and in Windows 98.
+If a computer is running Windows 95, you must install the DCOM95 add on.
+DCOM95 can currently be obtained by download from Microsoft's world wide
+Web site at: http://www.microsoft.com/com/.
+
+The multiple computers must be connected in a properly configured network.
+For details on setting up a network, see your Windows NT product
+documentation or the Windows NT Resource Kit. For more details on computer
+and network setup for running with DCOM, see the "Network and Setup
+Issues" section at the end of the REMCLIEN lesson. Note that the less
+restrictive security in Windows 95 and Windows 98 prevents the SCM under
+DCOM from automatically launching DCDSERVE on behalf of a remote DCOMDRAW
+client. You must manually pre-launch DCDSERVE on these operating systems
+if you attempt a remote load of DCDSERVE from a DCOMDRAW running on
+another machine. The DCDSERVE and DCOMDRAW lessons assume that you install
+DCDSERVE on a machine running Windows NT Server or Workstation.
+
+For functional descriptions and a tutorial code tour of DCOMDRAW, see the
+Code Tour section in DCOMDRAW.HTM. For details on the external user
+operation of DCOMDRAW, see both the Usage and Operation sections in
+DCOMDRAW.HTM. To read DCOMDRAW.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the DCOMDRAW lesson in the table of lessons. You can
+do the same thing by locating the main tutorial directory in the Windows
+Explorer and double-clicking the DCOMDRAW.HTM file. For more details on
+how DCDSERVE works and exposes its services to DCOMDRAW, see DCDSERVE.HTM
+in the main tutorial directory. The makefile for DCDSERVE automatically
+registers that server in the registry of the host machine, so you must
+build DCDSERVE on the remote machine before attempting to run DCOMDRAW.
+
+For general details on setting up your system to build and test Win32 code
+samples such as those in this COM Tutorial series, see TUTORIAL.HTM.
+The supplied MAKEFILE is Microsoft NMAKE-compatible. To create a debug
+build, issue the NMAKE command in the command-prompt window.
+
+
+Usage
+-----
+
+DCOMDRAW is an application that you can execute directly from Windows or
+from the command-prompt window. No command-line parameters are recognized
+by DCOMDRAW. DCOMDRAW currently runs on the Windows 95 operating system
+with the DCOM95 update for Windows 95 installed. It will run on Windows 98
+which includes DCOM. It will also run under version 4 or later of Windows
+NT Workstation or Windows NT Server.
+
+
+FILES
+=====
+
+Files          Description
+
+DCOMDRAW.TXT   Short description of the sample.
+MAKEFILE       The generic Win32 makefile for building the code sample
+               application of this tutorial lesson.
+DCOMDRAW.H     The include file for the DCOMDRAW application. Contains
+               class declarations, function prototypes, and resource
+               identifiers.
+DCOMDRAW.CPP   The main implementation file for DCOMDRAW.EXE. Has WinMain
+               and CMainWindow implementation, as well as the main menu
+               dispatching.
+DCOMDRAW.RC    The application resource definition file.
+DCOMDRAW.ICO   The application icon resource.
+PENCURT.CUR    Pen cursor for the Thin pen width.
+PENCURM.CUR    Pen cursor for the Medium pen width.
+PENCURF.CUR    Pen cursor for the Fat pen width.
+PENCURN.CUR    Pen cursor for when drawing is off (pen is not owned).
+GUIPAPER.H     The class declaration for the CGuiPaper C++ class.
+GUIPAPER.CPP   Implementation file for the CGuiPaper C++ class.
+SINK.H         The class declaration for the COPaperSink COM object class.
+SINK.CPP       Implementation file for the COPaperSink COM object class.

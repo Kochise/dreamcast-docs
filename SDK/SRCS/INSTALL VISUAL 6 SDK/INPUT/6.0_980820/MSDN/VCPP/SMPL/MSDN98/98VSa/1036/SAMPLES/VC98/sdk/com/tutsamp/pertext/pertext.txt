@@ -1,0 +1,193 @@
+
+PERTEXT - IPersistStreamInit Persistent Object Server
+
+
+SUMMARY
+=======
+
+PERTEXT is the second sample in a group of samples that covers various
+techniques for implementing COM object persistence. The first sample,
+PERSERVE, covers persistence by implementing the IPersistStream standard
+interface. This sample, PERTEXT, covers persistence by implementing the
+IPersistStreamInit standard interface. The third sample, PERDRAW, covers
+persistence by implementing the IPersistStorage standard interface. The
+fourth sample, PERCLIEN, covers how a client exploits the kinds of
+persistence provided the PERSERVE, PERTEXT, and PERDRAW server components.
+
+The PERTEXT sample introduces the COTextPage COM object, which
+encapsulates the data of an editable page of text. COTextPage objects
+expose a set of interfaces whose methods make the objects connectable,
+persistent managers of text data. Client access to this data is available
+through an ITextPage custom interface. COTextPage implements the ITextPage
+interface.
+
+The PERTEXT sample keeps a clear architectural distinction between client
+and server. Among other things, COTextPage provides no graphical user
+interface (GUI), relying instead upon the client for all GUI behavior.
+
+The PERCLIEN client provides the GUI display and manages the list of
+pages, the contents of which are stored in a compound file that contains
+both the contents of the list and of each page in that list. The user of
+PERCLIEN can edit the content of two types of pages: text pages and
+drawing pages. Text pages have data that the user can edit using a simple
+windowed text editor. Drawing pages have drawing data that the user can
+edit using free-form, scribble-like functionality based on the earlier
+STOSERVE and STOCLIEN samples. Both types of editing are done in separate
+client windows. For more information, see PERCLIEN.HTM.
+
+Storage in the compound file is achieved because the components provide
+persistent COM objects that encapsulate the page list and edited page
+data. PERSERVE houses a persistent object that encapsulates the single
+page list kept in each compound file containing such pages. PERTEXT houses
+a persistent object that encapsulates the edited text data for each text
+page. PERDRAW houses a persistent object that encapsulates the drawing
+data for each drawing page.
+
+The COPageList object in the PERSERVE sample encapsulates the persistent
+page list data. COPageList implements the IPersistStream standard
+interface to expose control of the page list storage located in the
+client-provided stream of a compound file. The COTextPage object in this
+PERTEXT sample encapsulates the data of an edited text page. COTextPage
+implements the IPersistStreamInit standard interface to expose control of
+the text data storage that is located in the client-provided stream of a
+compound file. In contrast to these stream-based persistent objects, the
+CODrawPage object in the PERDRAW sample encapsulates the persistent
+drawing-ink data. CODrawPage implements the IPersistStorage standard
+interface to expose control of the drawing-ink data storage located in the
+client-provided substorage of a compound file.
+
+This code sample focuses primarily on COTextPage's implementation of the
+IPersistStreamInit interface to provide stream-based persistence for a COM
+object. IPersistStreamInit's InitNew method is the main difference between
+the IPersistStream interface used in the PERSERVE sample and the
+IPersistStreamInit interface used in the PERTEXT sample. This sample
+covers the InitNew method in detail. PERTEXT works with the PERCLIEN code
+sample to illustrate the joint use by client and server of
+IPersistStreamInit-based persistence.
+
+COTextPage's support for object persistence is the primary means of
+storing the text page data. COTextPage stores its text data in a
+client-provided stream located in a structured storage compound file. The
+compound file has a unique format because of the various streams and
+storages used. The client identifies these compound files as page files
+with a .PAG extension. The client controls the use of the containing
+compound file and provides COTextPage with a pointer to the IStream
+interface to load and save its text data in the compound file. The IStream
+pointer is passed to COTextPage in calls to the IPersistStreamInit
+interface methods.
+
+COTextPage also exposes an ITextPage custom interface to manipulate the
+text that is encapsulated in the text page. ITextPage exposes the
+GetLength, GetText, PutText, and Clear methods.
+
+COTextPage also supports connectable object features. The
+IConnectionPointContainer interface is exposed, an appropriate connection
+point is implemented, and an outgoing custom ITextPageSink interface is
+declared to send notifications to the client.
+
+The two ITextPage and ITextPageSink custom interfaces are declared in
+IPAGES.H located in the common INC directory. PAGEGUID.H, which contains
+the GUIDs for the interfaces and objects, is also located in that same
+directory.
+
+The PERTEXT sample uses the CThreaded facility in APPUTIL to achieve
+thread safety in the server housing and the class factory. Because the
+PERTEXT.DLL is generally accessed from a Single Threaded Apartment (STA)
+as an in-process server, COTextPage instances are not coded as thread-safe
+using the CThreaded facility. The CLSID_TextPage component is registered
+as supporting the apartment threading model.
+
+For functional descriptions and a tutorial code tour of the PERTEXT
+sample, see the Code Tour section in PERTEXT.HTM. For details on setting
+up the programmatic usage of PERTEXT.DLL, see the Usage section in
+PERTEXT.HTM. To read PERTEXT.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the PERTEXT lesson in the table of lessons. You can
+also do the same thing by double-clicking the PERTEXT.HTM file after
+locating the main tutorial directory in Windows Explorer. For more details
+on the PERCLIEN client application and how it works with PERTEXT.DLL, see
+also PERCLIEN.HTM in the main tutorial directory. You must build
+PERTEXT.DLL before running the PERCLIEN sample.
+
+The PERTEXT server provides a TextPage component that can create instances
+of the COTextPage COM object. COTextPage is housed in the PERTEXT.DLL
+in-process server and is made publicly available as a custom COM
+component. Like all other servers in this tutorial series, PERTEXT.DLL is
+a self-registering COM server. It makes the COTextPage object type
+available to clients as the TextPage component in the PERTEXT server using
+a CLSID_TextPage registration in the Registry.
+
+PERTEXT's makefile automatically registers its TextPage COM component in
+the registry, which it must do before clients can use PERTEXT.DLL as a
+server for the TextPage component. This self-registration is started in
+the makefile using the REGISTER.EXE utility built in the REGISTER sample.
+To build or run PERTEXT.DLL, you must build the REGISTER code sample
+first.
+
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+
+Usage
+-----
+
+To use PERTEXT.DLL, a client program does not need to include PERTEXT.H or
+link to PERTEXT.LIB. A COM client of PERTEXT.DLL obtains access solely
+through its object's CLSID and COM services. For PERTEXT.DLL, that CLSID
+is CLSID_TextPage (defined in PAGEGUID.H in the INC sibling directory).
+The PERCLIEN code sample shows how the client obtains this access.
+
+PERTEXT.DLL is intended primarily as a COM server. Although it can be
+implicitly loaded by linking to its associated .LIB file, it is normally
+used after an explicit LoadLibrary call, usually from within COM's
+CoGetClassObject function. PERTEXT.DLL is a self-registering in-process
+server.
+
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the PERTEXT directory:
+
+  nmake register
+
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the PERTEXT directory.
+
+  ..\register\register.exe pertext.dll
+
+These registration commands require a prior build of both the REGISTER
+sample and PERTEXT.DLL.
+
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Microsoft Platform SDK and Visual
+C++ include a utility, REGSVR32.EXE, which can be used in a similar
+fashion to register in-process servers and marshaling DLLs.
+
+
+FILES
+=====
+
+Files         Description
+
+PERTEXT.TXT   This file.
+MAKEFILE      The generic makefile for building the PERTEXT.DLL
+              code sample of this lesson.
+PERTEXT.H     The include file for declaring as imported or defining as
+              exported the service functions in PERTEXT.DLL.
+PERTEXT.CPP   The main implementation file for PERTEXT.DLL. Has DllMain
+              and the COM server functions (for example, DllGetClassObject).
+PERTEXT.DEF   The module definition file. Exports server housing functions.
+PERTEXT.RC    The DLL resource definition file for the executable.
+PERTEXT.ICO   The icon resource for the executable.
+SERVER.H      The include file for the server control C++ object.
+SERVER.CPP    The implementation file for the server control C++ object.
+FACTORY.H     The include file for the server's class factory COM objects.
+FACTORY.CPP   The implementation file for the server's class factories.
+CONNECT.H     The include file for the connection point enumerator,
+              connection point, and connection enumerator classes.
+CONNECT.CPP   The implementation file for the connection point enumerator,
+              connection point, and connection enumerators objects.
+TEXTPAGE.H    The include file for the COTextPage COM object class.
+TEXTPAGE.CPP  The implementation file for the COTextPage COM object class
+              and the connection points.

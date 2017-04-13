@@ -1,0 +1,1054 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>PERTEXT COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="perserve.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="perdraw.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="PERTEXT">
+PERTEXT - IPersistStreamInit Persistent Object Server</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+PERTEXT is the second sample in a group of samples that covers various
+techniques for implementing COM object persistence. The first sample,
+PERSERVE, covers persistence by implementing the IPersistStream standard
+interface. This sample, PERTEXT, covers persistence by implementing the
+IPersistStreamInit standard interface. The third sample, PERDRAW, covers
+persistence by implementing the IPersistStorage standard interface. The
+fourth sample, PERCLIEN, covers how a client exploits the kinds of
+persistence provided the PERSERVE, PERTEXT, and PERDRAW server components.
+
+<P>
+The PERTEXT sample introduces the COTextPage COM object, which
+encapsulates the data of an editable page of text. COTextPage objects
+expose a set of interfaces whose methods make the objects connectable,
+persistent managers of text data. Client access to this data is available
+through an ITextPage custom interface. COTextPage implements the ITextPage
+interface.
+
+<P>
+The PERTEXT sample keeps a clear architectural distinction between client
+and server. Among other things, COTextPage provides no graphical user
+interface (GUI), relying instead upon the client for all GUI behavior.
+
+<P>
+The PERCLIEN client provides the GUI display and manages the list of
+pages, the contents of which are stored in a compound file that contains
+both the contents of the list and of each page in that list. The user of
+PERCLIEN can edit the content of two types of pages: text pages and
+drawing pages. Text pages have data that the user can edit using a simple
+windowed text editor. Drawing pages have drawing data that the user can
+edit using free-form, scribble-like functionality based on the earlier
+STOSERVE and STOCLIEN samples. Both types of editing are done in separate
+client windows. For more information, see PERCLIEN.HTM.
+
+<P>
+Storage in the compound file is achieved because the components provide
+persistent COM objects that encapsulate the page list and edited page
+data. PERSERVE houses a persistent object that encapsulates the single
+page list kept in each compound file containing such pages. PERTEXT houses
+a persistent object that encapsulates the edited text data for each text
+page. PERDRAW houses a persistent object that encapsulates the drawing
+data for each drawing page.
+
+<P>
+The COPageList object in the PERSERVE sample encapsulates the persistent
+page list data. COPageList implements the IPersistStream standard
+interface to expose control of the page list storage located in the
+client-provided stream of a compound file. The COTextPage object in this
+PERTEXT sample encapsulates the data of an edited text page. COTextPage
+implements the IPersistStreamInit standard interface to expose control of
+the text data storage that is located in the client-provided stream of a
+compound file. In contrast to these stream-based persistent objects, the
+CODrawPage object in the PERDRAW sample encapsulates the persistent
+drawing-ink data. CODrawPage implements the IPersistStorage standard
+interface to expose control of the drawing-ink data storage located in the
+client-provided substorage of a compound file.
+
+<P>
+This code sample focuses primarily on COTextPage's implementation of the
+IPersistStreamInit interface to provide stream-based persistence for a COM
+object. IPersistStreamInit's InitNew method is the main difference between
+the IPersistStream interface used in the PERSERVE sample and the
+IPersistStreamInit interface used in the PERTEXT sample. This sample
+covers the InitNew method in detail. PERTEXT works with the PERCLIEN code
+sample to illustrate the joint use by client and server of
+IPersistStreamInit-based persistence.
+
+<P>
+COTextPage's support for object persistence is the primary means of
+storing the text page data. COTextPage stores its text data in a
+client-provided stream located in a structured storage compound file. The
+compound file has a unique format because of the various streams and
+storages used. The client identifies these compound files as page files
+with a .PAG extension. The client controls the use of the containing
+compound file and provides COTextPage with a pointer to the IStream
+interface to load and save its text data in the compound file. The IStream
+pointer is passed to COTextPage in calls to the IPersistStreamInit
+interface methods.
+
+<P>
+COTextPage also exposes an ITextPage custom interface to manipulate the
+text that is encapsulated in the text page. ITextPage exposes the
+GetLength, GetText, PutText, and Clear methods.
+
+<P>
+COTextPage also supports connectable object features. The
+IConnectionPointContainer interface is exposed, an appropriate connection
+point is implemented, and an outgoing custom ITextPageSink interface is
+declared to send notifications to the client.
+
+<P>
+The two ITextPage and ITextPageSink custom interfaces are declared in
+IPAGES.H located in the common INC directory. PAGEGUID.H, which contains
+the GUIDs for the interfaces and objects, is also located in that same
+directory.
+
+<P>
+The PERTEXT sample uses the CThreaded facility in APPUTIL to achieve
+thread safety in the server housing and the class factory. Because the
+PERTEXT.DLL is generally accessed from a Single Threaded Apartment (STA)
+as an in-process server, COTextPage instances are not coded as thread-safe
+using the CThreaded facility. The CLSID_TextPage component is registered
+as supporting the apartment threading model.
+
+<P>
+For functional descriptions and a tutorial code tour of the PERTEXT
+sample, see the Code Tour section in PERTEXT.HTM. For details on setting
+up the programmatic usage of PERTEXT.DLL, see the Usage section in
+PERTEXT.HTM. To read PERTEXT.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the PERTEXT lesson in the table of lessons. You can
+also do the same thing by double-clicking the PERTEXT.HTM file after
+locating the main tutorial directory in Windows Explorer. For more details
+on the PERCLIEN client application and how it works with PERTEXT.DLL, see
+also PERCLIEN.HTM in the main tutorial directory. You must build
+PERTEXT.DLL before running the PERCLIEN sample.
+
+<P>
+The PERTEXT server provides a TextPage component that can create instances
+of the COTextPage COM object. COTextPage is housed in the PERTEXT.DLL
+in-process server and is made publicly available as a custom COM
+component. Like all other servers in this tutorial series, PERTEXT.DLL is
+a self-registering COM server. It makes the COTextPage object type
+available to clients as the TextPage component in the PERTEXT server using
+a CLSID_TextPage registration in the Registry.
+
+<P>
+PERTEXT's makefile automatically registers its TextPage COM component in
+the registry, which it must do before clients can use PERTEXT.DLL as a
+server for the TextPage component. This self-registration is started in
+the makefile using the REGISTER.EXE utility built in the REGISTER sample.
+To build or run PERTEXT.DLL, you must build the REGISTER code sample
+first.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<p>
+To use PERTEXT.DLL, a client program does not need to include PERTEXT.H or
+link to PERTEXT.LIB. A COM client of PERTEXT.DLL obtains access solely
+through its object's CLSID and COM services. For PERTEXT.DLL, that CLSID
+is CLSID_TextPage (defined in PAGEGUID.H in the INC sibling directory).
+The PERCLIEN code sample shows how the client obtains this access.
+
+<p>
+PERTEXT.DLL is intended primarily as a COM server. Although it can be
+implicitly loaded by linking to its associated .LIB file, it is normally
+used after an explicit LoadLibrary call, usually from within COM's
+CoGetClassObject function. PERTEXT.DLL is a self-registering in-process
+server.
+
+<P>
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the PERTEXT directory:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  nmake register
+ </FONT> </PRE>
+
+<P>
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the PERTEXT directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ..\register\register.exe pertext.dll
+ </FONT> </PRE>
+
+<P>
+These registration commands require a prior build of both the REGISTER
+sample and PERTEXT.DLL.
+
+<P>
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Microsoft Platform SDK and Visual
+C++&reg; include a utility, REGSVR32.EXE, which can be used in a similar
+fashion to register in-process servers and marshaling DLLs.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, PERCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="perclien\perclien.exe">Click here to run PERCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files         Description</u>
+PERTEXT.TXT   Short description of sample.
+MAKEFILE      The generic makefile for building the PERTEXT.DLL
+              code sample of this lesson.
+PERTEXT.H     The include file for declaring as imported or defining as
+              exported the service functions in PERTEXT.DLL.
+PERTEXT.CPP   The main implementation file for PERTEXT.DLL. Has DllMain
+              and the COM server functions (for example, DllGetClassObject).
+PERTEXT.DEF   The module definition file. Exports server housing functions.
+PERTEXT.RC    The DLL resource definition file for the executable.
+PERTEXT.ICO   The icon resource for the executable.
+SERVER.H      The include file for the server control C++ object.
+SERVER.CPP    The implementation file for the server control C++ object.
+FACTORY.H     The include file for the server's class factory COM objects.
+FACTORY.CPP   The implementation file for the server's class factories.
+CONNECT.H     The include file for the connection point enumerator,
+              connection point, and connection enumerator classes.
+CONNECT.CPP   The implementation file for the connection point enumerator,
+              connection point, and connection enumerators objects.
+TEXTPAGE.H    The include file for the COTextPage COM object class.
+TEXTPAGE.CPP  The implementation file for the COTextPage COM object class
+              and the connection points.
+</FONT> </PRE>
+
+<p>
+PERTEXT.DLL uses many of the utility classes and services provided by
+APPUTIL. For more details on APPUTIL, study the APPUTIL library's source
+code in the sibling APPUTIL directory and APPUTIL.HTM in the main tutorial
+directory.
+
+<p>
+This sample is part of a graduated series of tutorial code samples and
+assumes that you have had some exposure to those samples. It does not
+revisit basic interface implementation techniques, COM object
+construction, in-process server construction, class factory construction,
+connectable object construction, or use of structured storage in compound
+files. For information on these topics, study the earlier tutorial
+samples.
+
+<p>The major topics covered in this code tour are:
+
+<ul>
+<li>How PERTEXT works with connected clients
+
+<li>COTextPage's use of the ITextPage interface for managing text pages.
+
+<li>The data constructs that make up COTextPage's persistent data.
+
+<li>COTextPage's implementation of the IPersistStreamInit interface to
+    provide persistence.
+
+<li>COTextPage's use of the ITextPageSink interface for client notifications.
+
+</ul>
+
+<p>
+The COTextPage COM object is the single object type managed by this
+PERTEXT in-process server. COTextPage is a connectable COM object that
+implements the IConnectionPointContainer standard interface, the
+IPersistStreamInit standard interface, and the ITextPage custom interface.
+
+<P>
+COTextPage exposes the ITextPage custom interface so clients can perform a
+small set of operations on the text data that is encapsulated by
+COTextPage. Here is a summary of the ITextPage methods from IPAGES.H
+located in the common INC directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  GetLength
+    Get the current length (in WCHARs) of the text page.
+
+  GetText
+    Get the current page text held in this object.
+
+  PutText
+    Put specified wide character text of specified length
+    into this text page object. Does not save persistently.
+
+  Clear
+    Clears all text from the entire text page.
+</FONT> </PRE>
+
+<P>
+The implementation of ITextPage is straightforward: a set of properties
+for the text page is maintained and the text data itself is maintained.
+For more details, see TEXTPAGE.H and TEXTPAGE.CPP.
+
+<p>
+COTextPage manages its text data in RAM. However, since COTextPage is also
+a persistent object, it also manages the persistent image of this text
+data in a stream of a structured storage compound file. COTextPage exposes
+the IPersistStreamInit interface so that clients can control the
+perisitence features of COTextPage. The implementation of
+IPersistStreamInit in COTextPage is the principal focus of this sample.
+
+<p>
+The client is responsible for a presentation of the text to the user. In
+PERCLIEN a standard multiline edit control in a separate window is used.
+The client uses the ITextPage interface on COTextPage to obtain the data
+for display in this edit control and to update COTextPage with any
+user-requested changes to the text data. The client cooperates with
+COTextPage to manage the text data. The client manages creation or opening
+of a stream in the compound file containing the data. When the client
+needs to control the persistence of COTextPage it passes an IStream
+interface to COTextPage, usually during calls to the IPersistStreamInit
+Load and Save methods. COTextPage then uses that stream for all its
+persistent storage of its object state data.
+
+<P>
+Two major data constructs are stored for COTextPage's state data: the page
+text and the page text properties. The text data is stored in the page's
+data stream as a wide character string. The persistent properties are
+stored in the same stream. Here is the TEXTPROPS structure from
+TEXTPAGE.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // Properties of the TextPage.
+  typedef struct _TEXTPROPS
+  {
+    ULONG ulVersion;
+    ULONG ulMaxLength;
+    ULONG ulLength;
+    WCHAR wszTitle[PAGE_TITLE_SIZE];
+  } TEXTPROPS;
+</FONT> </PRE>
+
+<P>
+The ulVersion member holds a version number for the text page. This allows
+the first member to be checked to determine possible variations in
+treatment based on the text page version.
+
+<P>
+The ulMaxLength member holds the maximum length that the text page can
+grow.
+
+<P>
+The ulLength member holds the current length of the page text.
+
+<P>
+The wszTitle member is for future evolution of the application and are
+not used by PERTEXT or PERCLIEN.
+
+<p>
+In the division of labor between client and server, COTextPage does not
+create the compound file that is used to store text page data. To both
+Save and Load the persistent data the client uses the Save and Load
+methods of the IPersistStreamInit interface, passing an IStream interface
+pointer for a stream located in an existing compound file. COTextPage then
+uses the IStream interface to read and write data in the compound file.
+
+<P>
+The following code is the declaration of the COTextPage COM object from
+TEXTPAGE.H:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class COTextPage : public IUnknown
+  {
+    public:
+      // Main COM Object Constructor & Destructor.
+      COTextPage(IUnknown* pUnkOuter, CServer* pServer);
+      ~COTextPage(void);
+
+      // A general public method for initializing this newly created
+      // object. Creates any subordinate arrays, structures, or objects.
+      // Not exposed as part of an interface. Used by Class Factory.
+      HRESULT Init(void);
+
+      // Main COM Object IUnknown interface. Non-delegating.
+      STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+      STDMETHODIMP_(ULONG) AddRef(void);
+      STDMETHODIMP_(ULONG) Release(void);
+
+    private:
+      // We declare nested class interface implementations here.
+
+      // Standard Connectable Object features.
+      class CImpIConnectionPointContainer : public IConnectionPointContainer
+      {
+        public:
+          // Interface Implementation Constructor & Destructor.
+          CImpIConnectionPointContainer(COTextPage* pCO, IUnknown* pUnkOuter);
+          ~CImpIConnectionPointContainer(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // IConnectionPointContainer methods.
+          STDMETHODIMP         FindConnectionPoint(REFIID, IConnectionPoint**);
+          STDMETHODIMP         EnumConnectionPoints(IEnumConnectionPoints**);
+
+        private:
+          // Data private to this interface implementation.
+          COTextPage*   m_pCO;          // Parent Object back pointer.
+          IUnknown*     m_pUnkOuter;    // Outer unknown for Delegation.
+      };
+
+      // Standard Object Persistence (in Streams) features.
+      class CImpIPersistStreamInit : public IPersistStreamInit
+      {
+        public:
+          // Interface Implementation Constructor & Destructor.
+          CImpIPersistStreamInit(COTextPage* pCO, IUnknown* pUnkOuter);
+          ~CImpIPersistStreamInit(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // IPersistStreamInit methods.
+          STDMETHODIMP         GetClassID(CLSID* pClassID);
+          STDMETHODIMP         IsDirty(void);
+          STDMETHODIMP         Load(IStream* pIStream);
+          STDMETHODIMP         Save(IStream* pIStream, BOOL bClearDirty);
+          STDMETHODIMP         GetSizeMax(ULARGE_INTEGER* pcbSize);
+          STDMETHODIMP         InitNew(void);
+
+        private:
+          // Data private to this interface implementation.
+          COTextPage*   m_pCO;          // Parent Object back pointer.
+          IUnknown*     m_pUnkOuter;    // Outer unknown for Delegation.
+      };
+
+      // Custom Text Entry/Edit page features.
+      class CImpITextPage : public ITextPage
+      {
+        public:
+          // Interface Implementation Constructor & Destructor.
+          CImpITextPage(COTextPage* pCO, IUnknown* pUnkOuter);
+          ~CImpITextPage(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // ITextPage methods.
+          STDMETHODIMP         GetLength(INT* piLength);
+          STDMETHODIMP         GetText(WCHAR* pwszText);
+          STDMETHODIMP         PutText(WCHAR* pwszText, INT iLength);
+          STDMETHODIMP         Clear(BOOL bSaveNeeded);
+
+        private:
+          // Data private to this interface implementation of ITextPage.
+          COTextPage*   m_pCO;          // Parent Object back pointer.
+          IUnknown*     m_pUnkOuter;    // Outer unknown for Delegation.
+      };
+
+      // Make the otherwise private and nested interface implementations
+      // friends to instantiations of this COTextPage COM object class.
+      friend CImpIConnectionPointContainer;
+      friend CImpIPersistStreamInit;
+      friend CImpITextPage;
+
+      // Private Methods of COTextPage COM objects.
+
+      // Method to clear the COTextPage's current page text and reset
+      // the page properties appropriately.
+      HRESULT Clear(BOOL bSaveNeeded);
+
+      // Method of main connectable COTextPage COM object to broadcast
+      // event notifications to all connected listening sinks.
+      HRESULT NotifySinks(TEXTPAGE_EVENT TextPageEvent);
+
+      // Private Data of COTextPage COM objects.
+
+      // Nested IConnectionPointContainer implementation instantiation.
+      CImpIConnectionPointContainer m_ImpIConnectionPointContainer;
+
+      // Nested IPersistStreamInit implementation instantiation.
+      CImpIPersistStreamInit m_ImpIPersistStreamInit;
+
+      // Nested ITextPage implementation instantiation. This ITextPage
+      // interface is instantiated as a native interface of COTextPage.
+      CImpITextPage     m_ImpITextPage;
+
+      // Main Object reference count.
+      ULONG             m_cRefs;
+
+      // Outer unknown (aggregation & delegation).
+      IUnknown*         m_pUnkOuter;
+
+      // Pointer to this component server's control object.
+      CServer*          m_pServer;
+
+      // The array of connection points for this connectable COM object.
+      IConnectionPoint* m_aConnectionPoints[MAX_CONNECTION_POINTS];
+
+      // The following private data and methods constitute the working
+      // heart of COTextPage as an actual application object.
+      TEXTPROPS         m_TextProps;    // For saving properties in stream.
+      CLSID             m_ClassID;      // CLSID of this COM Object.
+      WCHAR*            m_pwszPageText; // The text to edit.
+      BOOL              m_bInitNew;     // TRUE=>obj newly initialized in RAM.
+      BOOL              m_bDirty;       // RAM no match file--save needed.
+  };
+</FONT> </PRE>
+
+<P>
+COTextPage has nested implementations of the IUnknown,
+IConnectionPointContainer, IPersistStreamInit, and ITextPage interfaces.
+The techniques of these interface implementations follow the pattern used
+in earlier samples. The COMOBJ sample, for example, implemented IUnknown
+and the CONSERVE sample implemented IConnectionPointContainer. This
+samples introduces the ITextPage custom interface, but its implementation
+is very similar to the custom interface implementations in many previous
+samples.
+
+<P>
+The m_TextProps member is a TEXTPROPS structure that holds properties of
+the text page. See above for a summary of the TEXTPROPS structure. The
+m_ClassID stores the CLSID of the COTextPage component for later use
+within the method implementations of COTextPage. The m_bInitNew member is
+indicates whether the object was newly initialized by the
+IPersistStreamInit::InitNew method. The m_bDirty member is used internally
+to determine when the RAM-resident text data has changed relative to the
+last time it was loaded from or saved to persistent storage.
+
+<P>
+COTextPage keeps the text data in a RAM-resident string the pointer to
+which is kept in the m_pwszPageText variable. The string is initially
+allocated during either IPersistStreamInit::Load or
+IPersistStreamInit::InitNew after COTextPage is created. The following
+paragraphs discuss IPersistStreamInit methods in more detail.
+
+<P>
+The following IPersistStreamInit methods are declared:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+    STDMETHODIMP         GetClassID(CLSID* pClassID);
+    STDMETHODIMP         IsDirty(void);
+    STDMETHODIMP         Load(IStream* pIStream);
+    STDMETHODIMP         Save(IStream* pIStream, BOOL bClearDirty);
+    STDMETHODIMP         GetSizeMax(ULARGE_INTEGER* pcbSize);
+    STDMETHODIMP         InitNew(void);
+</FONT> </PRE>
+
+<P>
+Examining these methods in detail shows how the implementation of the
+standard IPersistStreamInit interface provides persistence for the text
+and property data in COTextPage. If you have not used streams (IStream) or
+storages (IStorage) in structured storage compound files, see the STOSERVE
+and STOCLIEN samples for coverage of this topic.
+
+<P>
+Clients call the GetClassID method to obtain the component CLSID of
+COTextPage. This method is actually inherited from the IPersist interface
+from which IPersistStreamInit is derived. The following code is the
+implementation of GetClassID from TEXTPAGE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COTextPage::CImpIPersistStreamInit::GetClassID(
+                 CLSID* pClassID)
+  {
+    HRESULT hr = E_POINTER;
+
+    if (NULL != pClassID)
+    {
+      // Use overloaded '=' operator to copy the Class ID to caller.
+      *pClassID = m_pCO-&gt;m_ClassID;
+      hr = NOERROR;
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+This simple method uses the overloaded '=' operator to copy COTextPage's
+main copy of the CLSID to the client's address space using the specified
+pClassID pointer. The convenient overloading of the '=' operator is
+provided in the COM and OLE header files that are included at the front of
+TEXTPAGE.CPP. The COTextPage constructor initially assigned the m_ClassID
+value to the value CLSID_TextPage, which is defined in the PAGEGUID.H file
+located in the common INC directory. PAGEGUID.H contains other GUIDs--such
+as interface IIDs--that are used in the PERTEXT, PERTEXT, PERDRAW, and
+PERCLIEN samples.
+
+<P>
+Clients call the IsDirty method to determine if changes have been made to
+this COTextPage's persistent data since it was last loaded, initialized,
+or saved. The following code is the implementation of IsDirty from
+TEXTPAGE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COTextPage::CImpIPersistStreamInit::IsDirty(
+                 void)
+  {
+    HRESULT hr;
+
+    hr = m_pCO-&gt;m_bDirty ? S_OK : S_FALSE;
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+This method simply returns the current &quot;dirty&quot; status of the
+RAM-resident data in terms of the standard HRESULT return codes of S_OK or
+S_FALSE. S_OK means the data needs saving; S_FALSE means the data matches
+its counterpart in persistent storage.
+
+<P>
+The Load method implementation should not store a copy of the passed
+pIStream pointer within COTextPage. The stack copy of the passed stream
+interface pointer should be used only within this method call. The
+following code is the implementation of Load from TEXTPAGE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COTextPage::CImpIPersistStreamInit::Load(
+                 IStream* pIStream)
+  {
+    HRESULT hr = E_POINTER;
+    ULONG ulToRead, ulReadIn;
+    TEXTPROPS NewProps;
+    WCHAR* pwszPageText;
+
+    if (NULL != pIStream)
+    {
+      if (!m_pCO-&gt;m_bInitNew)
+      {
+        // We have the TextPage data stream. First read the TextPage
+        // Properties.
+        ulToRead = sizeof(TEXTPROPS);
+        hr = pIStream-&gt;Read(
+                         &amp;NewProps,
+                         ulToRead,
+                         &amp;ulReadIn);
+        if (SUCCEEDED(hr) &amp;&amp; ulToRead != ulReadIn)
+          hr = E_FAIL;
+        if (SUCCEEDED(hr))
+        {
+          // Deal with the different versions.
+          switch (NewProps.ulVersion)
+          {
+            case TEXTPAGE_VERSION10:
+              if (NewProps.ulMaxLength &lt;= TEXTPAGE_V10_MAX)
+              {
+                // Allocate an page text array big enough for the largest
+                // text page.
+                pwszPageText = new WCHAR[(ULONG) NewProps.ulMaxLength];
+                if (NULL != pwszPageText)
+                {
+                  m_pCO-&gt;m_pwszPageText = pwszPageText;
+                  // First zero the page text area.
+                  memset(
+                    pwszPageText,
+                    0,
+                    NewProps.ulMaxLength * sizeof(WCHAR));
+                  ulToRead = NewProps.ulLength * sizeof(WCHAR);
+                  if (ulToRead &gt;= 0 &amp;&amp; ulToRead &lt; (ULONG)NewProps.ulMaxLength)
+                  {
+                    // Now read in the complete text page.
+                    hr = pIStream-&gt;Read(
+                           pwszPageText,
+                           ulToRead,
+                           &amp;ulReadIn);
+                    if (SUCCEEDED(hr) &amp;&amp; ulToRead != ulReadIn)
+                      hr = E_FAIL;
+                    if (SUCCEEDED(hr))
+                    {
+                      // Copy the new properties into current properties.
+                      memcpy(
+                        &amp;m_pCO-&gt;m_TextProps,
+                        &amp;NewProps,
+                        sizeof(TEXTPROPS));
+
+                      // We are loaded and clean (ie, COTextPage data
+                      // matches file data). Clear dirty flag.
+                      m_pCO-&gt;m_bDirty = FALSE;
+                    }
+                  }
+                  else
+                    hr = E_FAIL;
+                }
+                else
+                  hr = E_OUTOFMEMORY;
+              }
+              break;
+            default:
+              hr = E_FAIL;  // Bad version.
+              break;
+          }
+        }
+      }
+      else
+        hr = E_UNEXPECTED;
+    }
+
+    // Notify all other connected clients that TextPage is now loaded.
+    // If we didn't load then clear to a safe, empty text page.
+    if (SUCCEEDED(hr))
+      m_pCO-&gt;NotifySinks(TEXTPAGE_EVENT_LOADED);
+    else
+      m_pCO-&gt;Clear(TRUE);
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+The Load method is called instead of the InitNew method when the
+COTextPage COM object already has a persistent state stored in a stream. A
+complete copy of that state data (a group of object properties followed by
+the text data) is read from the stream into newly allocated, RAM-resident
+space for the data. Load first reads a copy of the TEXTPROPS properties
+structure into a temporary NewProps structure. If Load returns
+successfully, these properties are copied to COTextPage::m_TextProps. This
+is done to allow reverting to the current COTextPage data if Load fails.
+
+<P>
+After the m_TextProps are read, the ulVersion property is used in a switch
+statement which allows for different load behavior or data formats based
+on the version of the data that was stored. Because the version number is
+the first thing in stream's data for the object, it can be separately read
+to determine how to subsequently read and deal with the data that follows.
+The ulMaxLength property is used to allocate a new string character array
+in RAM that is big enough for the largest text page permitted. The string
+is allocated as an array of wide characters (WCHAR) to accomodate Unicode
+strings. After the string is allocated, the text data is read into that
+string from the stream. At this point COTextPage has been loaded from
+persistent storage, and because this has caused the in-RAM data to match
+the file data, the m_bDirty flag is set to FALSE. This means that a save
+is currently not needed to achieve such a match.
+
+<P>
+If the load is successful, a call to the internal NotifySinks method
+notifies all connected clients that the load was completed. This
+notification makes use of COTextPage's connectable object features, and
+usually triggers an appropriate display of the newly loaded data. If the
+load was unsuccessful, a call to the internal Clear method clears the text
+page to a safe, empty page.
+
+<P>
+Clients call the Save method to command COTextPage to save its persistent
+data from RAM to a specified stream in a compound file starting at the
+current seek-pointer offset. As with the Load method, the client passes an
+IStream pointer Save. On exit from this method the seek pointer is assumed
+to be at the end of the data saved. As was discussed above for the Load
+method, the rules governing the seek pointer in the Load and Save methods
+allow a series of contiguous persistent objects to be saved into the same
+stream.
+
+<P>
+The Save method, like Load, should not store a copy of the passed pIStream
+pointer within COTextPage. The stack copy of the passed stream interface
+pointer should be used only within this method call. The following code is
+the implementation of Save from TEXTPAGE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COTextPage::CImpIPersistStreamInit::Save(
+                 IStream* pIStream,
+                 BOOL bClearDirty)
+  {
+    HRESULT hr = E_POINTER;
+    ULONG ulToWrite, ulWritten;
+
+    if (NULL != pIStream)
+    {
+      // Got a stream. Now write data into it.
+
+      // First write TEXTPROPS structure.
+      ulToWrite = sizeof(TEXTPROPS);
+      hr = pIStream-&gt;Write(&amp;m_pCO-&gt;m_TextProps, ulToWrite, &amp;ulWritten);
+      if (SUCCEEDED(hr) &amp;&amp; ulToWrite != ulWritten)
+        hr = STG_E_CANTSAVE;
+      if (SUCCEEDED(hr))
+      {
+        // Now write the complete page text data.
+        ulToWrite = m_pCO-&gt;m_TextProps.ulLength * sizeof(WCHAR);
+        hr = pIStream-&gt;Write(m_pCO-&gt;m_pwszPageText, ulToWrite, &amp;ulWritten);
+        if (SUCCEEDED(hr) &amp;&amp; ulToWrite != ulWritten)
+          hr = STG_E_CANTSAVE;
+        if (SUCCEEDED(hr))
+        {
+          // Clear this COM object's dirty flag if instructed.
+          if (bClearDirty)
+            m_pCO-&gt;m_bDirty = FALSE;
+        }
+      }
+    }
+
+    // Notify all other connected clients that TextPage is now saved.
+    if (SUCCEEDED(hr))
+      m_pCO-&gt;NotifySinks(TEXTPAGE_EVENT_SAVED);
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+The Save method is essentially the reverse of the Load method. The content
+of COTextPage's m_TextProps structure is written into the specified stream
+at the stream's current seek offset. This structure is essentially a
+properties header at the front of the state data. If the TEXTPROPS data is
+saved successfully, the current text string data (located in RAM at
+m_pwszPageText) is written to the stream. The seek pointer is left
+pointing just past the end of the saved text. In either of these data
+writes to the stream, if the amount of data actually written does not
+equal the amount attempted, the Save method fails and returns
+STG_E_CANTSAVE.
+
+<P>
+A bClearDirty parameter determines if this method should clear
+COTextPage's m_bDirty flag. If bClearDirty is TRUE then
+COTextPage::m_bDirty is set to FALSE (that is, cleared). Usually, with a
+Save call the RAM-resident data and its corresponding image stored in the
+stream will match. However, there may be cases when you want to save to a
+stream without clearing COTextPage's dirty flag. This might occur if the
+client is saving a copy of the data state to a stream that is different
+than the current unsaved stream. If COTextPage is not saved to the
+original unsaved stream, the state of m_bDirty will need to be preserved
+across the operation. A value of FALSE for the bClearDirty parameter
+accomplishes this preservation.
+
+<P>
+If the save is successful, a call to the internal NotifySinks method
+notifies all connected clients that the save was completed.
+
+<P>
+Clients call the GetSizeMax method to obtain the maximum size of the
+object state data that can be saved when the Save method is next called.
+The following code is the implementation of GetSizeMax from TEXTPAGE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COTextPage::CImpIPersistStreamInit::GetSizeMax(
+                 ULARGE_INTEGER* pcbSize)
+  {
+    HRESULT hr = E_POINTER;
+    ULONG ulMax = m_pCO-&gt;m_TextProps.ulMaxLength;
+
+    if (NULL != pcbSize)
+    {
+      ULISet32(*pcbSize, sizeof(TEXTPROPS) + (ulMax * sizeof(WCHAR)));
+      hr = NOERROR;
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+The caller passes the address of a ULARGE_INTEGER variable that the
+GetSizeMax method assigns. The ULISet32 macro (defined in OBJBASE.H)
+performs the assignment of the caller's ULARGE_INTEGER variable. Clients
+can use this assigned variable to set the size of a stream using
+IStream::SetSize. This may be necessary if the client is saving multiple
+objects in the same stream. If it is known in advance within COTextPage,
+GetSizeMax should return the maximum potential size that a future Save
+would consume in the stream.
+
+<P>
+Clients call the InitNew method to instruct COTextPage to initialize its
+object state data in RAM for the first time. InitNew is called instead of
+Load when the newly created object instance must be initialized with new
+data rather than with persistent data previously saved in a stream. The
+following is the implementation of InitNew from TEXTPAGE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COTextPage::CImpIPersistStreamInit::InitNew(
+                 void)
+  {
+    HRESULT hr = E_FAIL;
+    WCHAR* pwszPageText;
+
+    if (!m_pCO-&gt;m_bInitNew)
+    {
+      // There is no previous persistent data for this COTextPage object.
+      // Create and init a new persistence data for an empty text page.
+
+      // Allocate an page text array big enough for the largest text page.
+      // This maximum is hard-coded here for this Version 1.0 of Text Pages.
+      pwszPageText = new WCHAR[(LONG) TEXTPAGE_V10_MAX];
+      if (NULL != pwszPageText)
+      {
+        m_pCO-&gt;m_pwszPageText = pwszPageText;
+        // Use the private Clear method to clear the new text array and to
+        // set the Page Properties structure appropriately. Also sets dirty.
+        hr = m_pCO-&gt;Clear(TRUE);
+        m_pCO-&gt;m_bInitNew = TRUE;
+      }
+      else
+        hr = E_OUTOFMEMORY;
+    }
+    else
+      hr = E_UNEXPECTED;
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+You must call either InitNew or Load (but not both) to command COTextPage
+to assign its state data. COTextPage's m_bInitNew flag is used to enforce
+this rule. If you call InitNew when m_bInitNew is TRUE then the method
+will fail and return the E_UNEXPECTED error. The Load method uses the same
+logic to return the E_UNEXPECTED error if m_bInitNew is TRUE. When
+COTextPage is created it assigns m_bInitNew to FALSE in the constructor.
+During InitNew, if initialization is successful, it sets m_bInitNew to
+TRUE. By doing this, any subsequent calls to Load (or to InitNew again)
+fail by returning E_UNEXPECTED.
+
+<P>
+If InitNew successfully creates a new text string array for COTextPage,
+COTextPage's internal Clear method is used to fill the string array with
+zeroes, initialize appropriate constants to the members of m_TextProps,
+and initialize the m_bDirty flag. The dirty flag is assigned to TRUE
+because a later save to file is needed for this persistent COTextPage
+object.
+
+<p>
+COTextPage exposes the IConnectionPointContainer interface so clients can
+connect to COTextPage and receive notifications of certain events that
+occur in COTextPage. By exposing this interface, COTextPage is seen by
+clients as a connectable object. A client can call QueryInterface for this
+interface and use it to obtain the object's connection points.
+
+<p>
+The client implements what is called a <i>sink</i> in the form of a sink
+object with a sink interface. The sink interface receives outgoing event
+notification calls from COTextPage after the sink is properly connected by
+the client to a COTextPage instance. The client makes the connection by
+using a connection point object that is managed by COTextPage. (For more
+detailed information on the client participation in this scheme, see the
+PERCLIEN sample.)  There can be numerous connection points on a single
+connectable COM object, but in the PERTEXT sample, COTextPage has only one
+connection point to handle text page events.
+
+<p>
+Any number of clients can connect to a single connection point. The
+CONNPOINT_TEXTPAGESINK connection point in COTextPage maintains a group of
+connections that can grow dynamically at run time. The full implementation
+of COTextPage's connectable object support is coded in files CONNECT.H and
+CONNECT.CPP and will not be covered here. The construction is very similar
+to that in the CONSERVE code sample.
+
+<p>
+The PERCLIEN client implements appropriate sink objects for the connection
+points it expects to find in COTextPage. From the context of COTextPage,
+the sink object that PERCLIEN implements exposes the ITextPageSink
+interface. This is the outgoing interface used by COTextPage to notify
+PERCLIEN of various events in COTextPage. Here is a summary of the methods
+in ITextPageSink from IPAGES.H in the common INC directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  Loaded
+    The TextPage was loaded from a persistent stream.
+
+  Saved
+    The TextPage was saved to a persistent stream.
+
+  Put
+    New text content was put into the TextPage object.
+
+  Cleared
+    The entire TextPage was cleared.
+</FONT> </PRE>
+
+<p>
+These methods are largely self-explanatory. The Loaded, Put, and Cleared
+methods implemented in the client sink will typically trigger a redisplay
+of the text page. Although the sink must implement all these methods in
+some fashion, many are implemented as stubs and are not used in the
+PERTEXT and PERCLIEN samples.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

@@ -1,0 +1,156 @@
+//=--------------------------------------------------------------------------=
+// Card.ODL
+//=--------------------------------------------------------------------------=
+// Copyright 1995 - 1997 Microsoft Corporation.  All Rights Reserved.
+//
+// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF 
+// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO 
+// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A 
+// PARTICULAR PURPOSE.
+//=--------------------------------------------------------------------------=
+//
+// ODL file for the control(s) and automation object(s) in this inproc server
+//
+#include <olectl.h>
+#include "dispids.h"
+
+// can't include oaidl.h, so this will have to do
+//
+#define DISPID_NEWENUM -4
+//#define VARIANT_BOOL short
+
+//=--------------------------------------------------------------------------=
+// the libid for this type libray
+//
+[
+    uuid(55707B20-FF82-11cf-BB32-142A04C10000),
+    helpstring("ActiveX SDK Card Control Library"),
+    lcid(0x0000),
+    version(1.0)
+]
+library CardObjects {
+
+    // standard imports
+    //
+    importlib("STDOLE2.TLB");
+    importlib(STDTYPE_TLB);
+
+    typedef enum {
+	[helpstring("TopLeft")]   	CardTopLeft = 0,
+	[helpstring("TopCenter")]   	CardTopCenter = 1,
+	[helpstring("TopRight")]  	CardTopRight = 2,
+	[helpstring("CenterLeft")]   	CardCenterLeft = 3,
+	[helpstring("Center")]   	CardCenter = 4,
+	[helpstring("CenterRight")]  	CardCenterRight = 5,
+	[helpstring("BottomLeft")]  	CardBottomLeft = 6,
+	[helpstring("BottomCenter")]   	CardBottomCenter = 7,
+	[helpstring("BottomRight")]  	CardBottomRight = 8,
+	[helpstring("Stretch")]  	CardStretch = 9	
+    } enumCardAlignment;
+
+    typedef enum {
+	[helpstring("Ace")]   	CardAce = 1,
+	[helpstring("Two")]  	Card2 = 2,
+	[helpstring("Three")]  	Card3 = 3,
+	[helpstring("Four")]  	Card4 = 4,	
+	[helpstring("Five")]  	Card5 = 5,
+	[helpstring("Six")]  	Card6 = 6,
+	[helpstring("Seven")]  	Card7 = 7,
+	[helpstring("Eight")]  	Card8 = 8,
+	[helpstring("Nine")]  	Card9 = 9,
+	[helpstring("Ten")]  	Card10 = 10,
+	[helpstring("Jack")]  	CardJack = 11,
+	[helpstring("Queen")]  	CardQueen = 12,
+	[helpstring("King")]  	CardKing = 13,
+	[helpstring("Joker")]  	CardJoker = 14
+    } enumCardNumber;
+
+    typedef enum {
+	[helpstring("Invisible")]		CardBlank = 0,
+	[helpstring("Clubs")]			CardClub = 1,
+	[helpstring("Spades")]			CardSpade = 2,
+	[helpstring("Hearts")]			CardHeart = 3,
+	[helpstring("Diamonds")]		CardDiamond = 4,
+	[helpstring("CardBack Weave1")]		CardBack1 = -1,
+	[helpstring("CardBack Weave2")]		CardBack2 = -2,
+	[helpstring("CardBack Robot")]		CardBack3 = -3,
+	[helpstring("CardBack Roses")]		CardBack4 = -4,
+	[helpstring("CardBack BlackVine")]	CardBack5 = -5,
+	[helpstring("CardBack BlueVine")]	CardBack6 = -6,
+	[helpstring("CardBack Fish1")]		CardBack7 = -7,
+	[helpstring("CardBack Fish2")]		CardBack8 = -8,
+	[helpstring("CardBack Seashell")]	CardBack9 = -9,
+	[helpstring("CardBack Castle")]		CardBack10 = -10,
+	[helpstring("CardBack Beach")]		CardBack11 = -11,
+	[helpstring("CardBack Hand")]		CardBack12 = -12,
+	[helpstring("CardBack Casino")]		CardBack13 = -13
+    } enumCardSuite;
+	
+    // primary dispatch interface for CCard control
+    //
+    [
+	uuid(55707B21-FF82-11cf-BB32-142A04C10000),
+                helpstring("ActiveX SDK Card Control"),
+        hidden,
+		dual,
+		odl
+    ]
+    interface ICard : IDispatch {
+
+		// properties
+		//
+	[id(DISPID_NUMBER), propget]
+            HRESULT Number([out, retval] enumCardNumber *number);
+        [id(DISPID_NUMBER), propput]
+            HRESULT Number([in] enumCardNumber number);
+
+	[id(DISPID_SUITE), propget]
+            HRESULT Suite([out, retval] enumCardSuite *suite);
+        [id(DISPID_SUITE), propput]
+            HRESULT Suite([in] enumCardSuite suite);
+
+	[id(DISPID_INVERT), propget]
+            HRESULT Invert([out, retval] Boolean *invert);
+        [id(DISPID_INVERT), propput]
+            HRESULT Invert([in] Boolean invert);
+
+	[id(DISPID_CARDALIGNMENT), propget]
+            HRESULT CardAlignment([out, retval] enumCardAlignment *cardalignment);
+        [id(DISPID_CARDALIGNMENT), propput]
+            HRESULT CardAlignment([in] enumCardAlignment cardalignment);
+
+        // methods
+		//
+        [id(DISPID_ABOUTBOX)]
+            void AboutBox(void);
+    };
+
+    // event interface for CCard controls ...
+    //
+    [
+	uuid(55707B22-FF82-11cf-BB32-142A04C10000),
+               helpstring("Event interface for ActiveX SDK Card control"),
+		hidden
+    ]
+    dispinterface DCardEvents {
+        
+	properties:
+	methods:
+		[id(DISPID_MOUSEMOVE)] void MouseMove(short Button, short Shift, OLE_XPOS_PIXELS x, OLE_YPOS_PIXELS y);
+		[id(DISPID_CLICK)] void Click();
+		[id(DISPID_DBLCLICK)] void DblClick();
+		[id(DISPID_MOUSEDOWN)] void MouseDown(short Button, short Shift, OLE_XPOS_PIXELS x, OLE_YPOS_PIXELS y);
+		[id(DISPID_MOUSEUP)] void MouseUp(short Button, short Shift, OLE_XPOS_PIXELS x, OLE_YPOS_PIXELS y);
+    };
+
+    // coclass for Card controls
+    //
+    [
+	uuid(55707B23-FF82-11cf-BB32-142A04C10000),
+                helpstring("ActiveX SDK Card control")
+    ]
+    coclass Card {
+        [default]         interface ICard;
+                [default, source] dispinterface DCardEvents;
+    };
+};

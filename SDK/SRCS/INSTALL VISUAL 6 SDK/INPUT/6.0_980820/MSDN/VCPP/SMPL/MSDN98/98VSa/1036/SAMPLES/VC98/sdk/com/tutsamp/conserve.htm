@@ -1,0 +1,1362 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>CONSERVE COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="freclien.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="conclien.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="CONSERVE">CONSERVE - Connectable Object Server</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The CONSERVE sample shows how to construct a connectable COM object,
+COBall, in a thread-safe in-process server. To expose connectable object
+features, COBall implements the standard COM interface,
+IConnectionPointContainer. COBall also implements the custom interface,
+IBall, that was introduced in the FRESERVE sample.
+
+<P>
+The principal focus of CONSERVE is the connectable object support in
+COBall and how connected clients are notified of ball events. CONSERVE
+works with the CONCLIEN client code sample.
+
+<P>
+CONSERVE's COBall implements a virtual moving ball similar to the one
+coded in the FRESERVE sample. However, rather than FRESERVE's
+free-threaded COM object, CONSERVE houses COBall in an apartment model
+server. COBall defines the internal logic of a moving ball that exists
+within a specified two-dimensional bounding rectangle. COBall provides
+only a description of a ball. It is up to the client to create a graphical
+representation based on the data managed in COBall.
+
+<P>
+Clients move the virtual ball using its IBall interface. COBall's internal
+logic will bounce the ball when it collides with a boundary. The client
+can obtain the ball's current position, size, and color to permit display
+of the ball's moving image. The client can also use the connection
+facilities of COBall to receive notifications of ball bounce events. The
+CONCLIEN sample will use these connection facilities to produce various
+sounds when the ball bounces.
+
+<P>
+CONSERVE uses the CThreaded facility in APPUTIL for thread safety, as in
+the FRESERVE sample. COBall objects are derived from the CThreaded class
+and inherit its OwnThis and UnOwnThis methods. These methods allow only
+one thread at a time to have access to the CONSERVE server and to COBall
+objects managed by the server.
+
+<P>
+For functional descriptions and a tutorial code tour of CONSERVE, see the
+Code Tour section in CONSERVE.HTM. For details on setting up the
+programmatic usage of CONSERVE, see the Usage section in CONSERVE.HTM. To
+read CONSERVE.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the CONSERVE lesson in the table of lessons. You can also achieve
+the same thing by clicking the CONSERVE.HTM file after locating the main
+tutorial directory in the Windows Explorer. See also CONCLIEN.HTM in the
+main tutorial directory for more details on the CONCLIEN client
+application and how it works with CONSERVE.DLL. You must build
+CONSERVE.DLL before building or running CONCLIEN.
+
+<P>
+CONSERVE's makefile automatically registers the DllSndBall component in
+the registry. This component must be registered before CONSERVE is
+available to outside clients as a server for that component. This
+self-registration is done using the REGISTER.EXE utility built in the
+REGISTER lesson. To build or run CONSERVE, you should build the REGISTER
+code sample first.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<P>
+To use CONSERVE, a client program does not need to include CONSERVE.H or
+link to CONSERVE.LIB. A client of CONSERVE obtains access solely through
+its object's CLSID and COM services. For CONSERVE, that CLSID is
+CLSID_DllSndBall (defined in BALLGUID.H in the \INC sibling directory).
+The CONCLIEN code sample shows how the client obtains this access.
+
+<P>
+CONSERVE is a DLL that is intended primarily as an in-process server.
+Although it can be implicitly loaded by linking to its associated .LIB
+file, it is normally used after an explicit LoadLibrary call, usually from
+within COM's CoGetClassObject function. CONSERVE is a self-registering
+in-process server.
+
+<P>
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the CONSERVE directory:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  nmake register
+ </FONT> </PRE>
+
+<P>
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the CONSERVE directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ..\register\register.exe conserve.dll
+ </FONT> </PRE>
+
+<P>
+These registration commands require a prior build of the REGISTER sample
+in this series, as well as a prior build of CONSERVE.DLL.
+
+<P>
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Platform SDK and Visual C++&reg;
+include a utility, REGSVR32.EXE, which can be used in a similar fashion to
+register in-process servers and marshaling DLLs.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">
+Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, CONCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="CONCLIEN\CONCLIEN.exe">
+Click here to run CONCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files         Description</u>
+CONSERVE.TXT  Short sample description.
+MAKEFILE      The generic makefile for building the CONSERVE.DLL
+              code sample of this lesson.
+CONSERVE.H    The include file for declaring as imported or defining as
+              exported the service functions in CONSERVE.DLL.
+CONSERVE.CPP  The main implementation file for CONSERVE.DLL. Has DllMain
+              and the COM server functions (for example, DllGetClassObject).
+CONSERVE.DEF  The module definition file. Exports server housing functions.
+CONSERVE.RC   The DLL resource definition file for the executable.
+CONSERVE.ICO  The icon resource for the executable.
+SERVER.H      The include file for the server control C++ object.
+SERVER.CPP    The implementation file for the server control object.
+FACTORY.H     The include file for the server's class factory COM objects.
+FACTORY.CPP   The implementation file for the server's class factories.
+CONNECT.H     The include file for the connection point enumerator,
+              connection point, and connection enumerator classes.
+CONNECT.CPP   The implementation file for the connection point enumerator,
+              connection point, and connection enumerators objects.
+BALL.H        The include file for the COBall object class.
+BALL.CPP      The implementation file for the COBall object class
+              and the connection points.
+ </FONT> </PRE>
+
+<P>
+CONSERVE uses many of the utility classes and services provided by
+APPUTIL. For more details on APPUTIL, study the APPUTIL library's source
+code in the sibling \APPUTIL directory and APPUTIL.HTM in the main
+tutorial directory.
+
+<P>
+This sample is part of a graduated series of tutorial samples. This tour
+assumes that you have some exposure to those previous samples. It does not
+revisit earlier topics of basic interface implementation techniques, COM
+object construction, in-process server construction, and class factory
+construction. For information on these topics, study the earlier tutorial
+samples.
+
+<P>
+The major topics covered in this code tour are:
+
+<ul>
+<li>An overview of how CONSERVE connectability works
+<li>Connectable object mechanisms in COBall
+<li>The connection point container in COBall
+<li>The connection point object
+<li>Event notification
+<li>The connection enumerator object
+<li>The connection point enumerator object
+</ul>
+
+<P>
+The COBall object is the single object type managed by this CONSERVE
+in-process server. COBall is constructed as a connectable COM object with
+an implementation of the standard IConnectionPointContainer interface and
+an implementation of the custom IBall interface.
+
+<P>
+COBall exposes the IBall interface so clients can perform a small set of
+ball-related operations on an instance of COBall. Methods are exposed to
+reset, move, and obtain current ball position, size, and color. This IBall
+interface is the same interface used in the FRESERVE sample. See
+FRESERVE.HTM for more details on the IBall interface.
+
+<P>
+The COBall object encapsulates data, such as position, size, and color,
+that defines a moving ball. No graphical images are managed in COBall.
+When a COBall object is initialized with a call to its Reset method, it is
+given a rectangle (a Win32 RECT structure) that defines the boundaries
+within which the ball may move. The COBall object contains coded logic to
+move the ball within those boundaries, to bounce the ball off any boundary
+when appropriate, and to provide clients with current data on the ball's
+location, size, and color. A client can use the IBall interface to move
+the ball and to obtain the data necessary to paint an image of the moving
+ball.
+
+<P>
+COBall exposes the IConnectionPointContainer interface so clients can
+connect to COBall to receive notifications of specified events that occur
+in COBall. By exposing this interface, COBall becomes a connectable
+object. A client can request this interface with a call to QueryInterface
+and use it to obtain the object's connection points. The client
+participation in this scheme is covered in the associated CONCLIEN sample.
+
+<P>
+Basically, the client implements what is called a sink object with a sink
+interface. The sink interface receives event notifications from COBall
+after the sink is properly connected to a COBall instance. The client
+makes the connection by using a connection point object that is managed by
+COBall. There can be numerous connection points on a connectable object.
+In the CONSERVE sample, COBall has only one connection point, which
+reports ball bounce events.
+
+<P>
+A connection point can support numerous client connections. The connection
+point in COBall maintains an array of connections that can grow
+dynamically at run time. We will see later in this tour how COBall
+maintains and uses this array to broadcast event notifications.
+
+<P>
+To make COBall fully connectable, several COM object classes must be
+implemented: COEnumConnectionPoints, COConnectionPoint, and
+COEnumConnections. The implementation of the standard
+IConnectionPointContainer interface within COBall is also necessary. The
+COEnumConnectionPoints object exposes the standard IEnumConnectionPoints
+interface so clients can enumerate or sequence through the connection
+points of the connectable COM object. The COConnectionPoint object exposes
+the standard IConnectionPoint interface so that clients can connect to the
+connectable COM object using the connection point. The COEnumConnections
+object exposes the standard IEnumConnections interface so clients can
+enumerate through the current connections managed by a connection point.
+In this CONSERVE sample, the bulk of the code for these implementations is
+in files CONNECT.H and CONNECT.CPP. The rest of this tour will focus on
+these implementations.
+
+<P>
+Enumeration objects are common in COM programming. The basic scheme relies
+on a dynamically created enumeration object that exposes an interface used
+for subsequent access to an enumerated sequence of other objects that are
+managed by the object being enumerated. For example, the COBall
+implementation of the IConnectionPointContainer interface has an
+EnumConnectionPoints method. This method allows clients to enumerate the
+connection points of the COBall object. It dynamically creates a special
+object, COEnumConnectionPoints, whose sole purpose is to enable access by
+the client through a standard IEnumConnectionPoint interface to an
+enumerated sequence of the connection points. This interface is
+implemented by the programmer in a COEnumConnectionPoints object. It has
+Next, Skip, Reset, and Clone methods which clients can use to sequence
+through the enumerated connection points. In this sample, connection
+points themselves support enumeration of the connections they manage. A
+COEnumConnections object can be dynamically created. On the same
+programming model as IEnumConnectionPoints, COEnumConnections exposes an
+IEnumConnections interface with Next, Skip, Reset, and Clone methods.
+
+<P>
+The COBall implementation of IConnectionPointContainer must provide the
+FindConnectionPoint and EnumConnectionPoints methods. Once a client
+obtains an IConnectionPointContainer interface on COBall, it can call
+FindConnectionPoint to obtain a specific connection point, or it can call
+EnumConnectionPoints to enumerate all connection points. Once the client
+obtains a connection point, it can connect to it (Advise method),
+disconnect from it (Unadvise method), enumerate all current connections to
+that connection point (EnumConnections method), obtain the container of
+the connection point (GetConnectionPointContainer method), and obtain the
+outgoing interface of the client notification sink (GetConnectionInterface
+method). When the client connects to a COBall connection point, it passes
+a pointer to the sink interface on its sink object. The connection point
+object maintains a dynamic list of such sink interfaces. When events occur
+within COBall that require sending a notification to the sink in the
+client, logic in COBall can use each connection point's sink interface
+list to broadcast appropriate notifications.
+
+<P>
+In this connection scheme, the client implements sink objects for the
+connection points it expects to find in COBall. On the server side, COBall
+must implement the IConnectionPointContainer interface. This interface
+implementation, in turn, requires certain other COM objects. Each
+connection point requires a COConnectionPoint object. To enumerate
+connection points in COBall requires a COEnumConnectionPoints object, and
+to enumerate the connections of a connection point requires a
+COEnumConnections object. We will cover enumerator objects later in this
+code tour.
+
+<P>
+COBall's implementation of the IConnectionPointContainer interface is
+coded in BALL.H and BALL.CPP. The construction of the COBall object is
+based on techniques presented in earlier samples of this series. Nested
+class declarations are used for the multiple interface implementations.
+Here is the COBall class declaration in BALL.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class COBall : public IUnknown, public CThreaded
+  {
+    public:
+      // Main Object Constructor &amp; Destructor.
+      COBall(IUnknown* pUnkOuter, CServer* pServer);
+      ~COBall(void);
+
+      // A general method for initializing this newly created object.
+      // Creates any subordinate arrays, structures, or objects.
+      HRESULT Init(void);
+
+      // IUnknown methods. Main object, non-delegating.
+      STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+      STDMETHODIMP_(ULONG) AddRef(void);
+      STDMETHODIMP_(ULONG) Release(void);
+
+    private:
+      // We declare nested class interface implementations here.
+
+      class CImpIConnectionPointContainer : public IConnectionPointContainer,
+                                            public CThreaded
+      {
+        public:
+          // Interface Implementation Constructor &amp; Destructor.
+          CImpIConnectionPointContainer(
+            COBall* pBackObj,
+            IUnknown* pUnkOuter);
+          ~CImpIConnectionPointContainer(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // IConnectionPointContainer methods.
+          STDMETHODIMP         FindConnectionPoint(
+                                 REFIID,
+                                 IConnectionPoint**);
+          STDMETHODIMP         EnumConnectionPoints(IEnumConnectionPoints**);
+
+        private:
+          // Data private to this interface implementation.
+          COBall*       m_pBackObj;     // Parent Object back pointer.
+          IUnknown*     m_pUnkOuter;    // Outer unknown for Delegation.
+      };
+
+      class CImpIBall : public IBall, public CThreaded
+      {
+        public:
+          // Interface Implementation Constructor &amp; Destructor.
+          CImpIBall(COBall* pBackObj, IUnknown* pUnkOuter);
+          ~CImpIBall(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // IBall methods.
+          STDMETHODIMP         Reset(RECT* pNewRect, short nBallSize);
+          STDMETHODIMP         GetBall(
+                                 POINT* pNewOrg,
+                                 POINT* pNewExt,
+                                 COLORREF* pcrColor);
+          STDMETHODIMP         Move(BOOL bAlive);
+
+        private:
+          // Data private to this interface implementation of IBall.
+          COBall*       m_pBackObj;     // Parent Object back pointer.
+          IUnknown*     m_pUnkOuter;    // Outer unknown for Delegation.
+
+          // The following private data and methods constitute the working
+          // heart of COBall as an actual application object.
+          BOOL          m_bAlive;
+          RECT          m_WinRect;
+          int           m_nWidth;
+          int           m_nHeight;
+          int           m_xDirection;
+          int           m_yDirection;
+          BOOL          m_bNewPosition;
+          int           m_xPosition;
+          int           m_yPosition;
+          short         m_xSkew;
+          short         m_ySkew;
+          COLORREF      m_crColor;
+          CXForm        m_XForm;
+          CBallThread   m_aBallThreads[MAX_BALLTHREADS];
+
+          // Private utility methods for internal support of the custom
+          // IBall semantics.
+          void GetDimensions(POINT*);
+          void SetDimensions(int,int);
+          void GetDirection(POINT*);
+          void SetDirection(int,int);
+          void GetPosition(POINT*);
+          void SetPosition(int,int);
+          void FindThread(void);
+          DWORD CheckBounce(void);
+      };
+
+      // Make the otherwise private and nested IBall and
+      // IConnectionPointContainer interface implementations a friend to
+      // COM object instantiations of this COBall COM object class.
+      friend CImpIConnectionPointContainer;
+      friend CImpIBall;
+
+      // Private method of main connectable COBall COM object to broadcast
+      // event notifications to all connected listening sinks.
+      HRESULT NotifySinks(DWORD dwEvent);
+
+      // Private data of COBall COM objects.
+
+      // Nested IBall implementation instantiation.  This IBall interface
+      // is instantiated inside this COBall object as a native interface.
+      CImpIBall         m_ImpIBall;
+
+      // Nested IConnectionPointContainer implementation instantiation.
+      CImpIConnectionPointContainer m_ImpIConnectionPointContainer;
+
+      // Main Object reference count.
+      ULONG             m_cRefs;
+
+      // Outer unknown (aggregation &amp; delegation).
+      IUnknown*         m_pUnkOuter;
+
+      // Pointer to this component server's control object.
+      CServer*          m_pServer;
+
+      // The array of connection points for this connectable COM object.
+      IConnectionPoint* m_aConnectionPoints[MAX_CONNECTION_POINTS];
+  };
+ </FONT> </PRE>
+
+<P>
+The outer COBall class and the nested CImpIBall and
+CImpIConnectionPointContainer classes are derived from CThreaded to
+inherit the OwnThis thread safety mechanism. The methods of these classes
+use this mechanism to ensure mutually exclusive access to their objects by
+multiple threads. Though COBall is not registered as a free-threaded
+component in this sample, it is coded for thread-safety and could
+therefore easily be used in a free-threaded program.
+
+<P>
+Much of this COBall class declaration was presented in the FRESERVE
+sample. The items related to connectable object support are the
+CImpIConnectionPointContainer implementation, the COBall::NotifySinks
+private method, and the COBall::m_aConnectionPoints array.
+
+<P>
+NotifySinks is an internal convenience method that consolidates the
+broadcast to client sinks of all appropriate events occurring in COBall.
+We will look at NotifySinks in detail later.
+
+<P>
+The m_aConnectionPoints array is COBall's main array of connection points.
+In this sample it is declared with a compile-time constant,
+MAX_CONNECTION_POINTS. This means that the connection points supported by
+COBall are determined at compile time. The m_aConnectionPoints array is
+initially assigned during COBall::Init in file BALL.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT COBall::Init(void)
+  {
+    HRESULT hr = NOERROR;
+    COConnectionPoint* pCOConnPt;
+
+    // Rig this COBall COM object to be connectable. Assign the connection
+    // point array. This object's connection points are determined at
+    // compile time--it currently has only one connection point:
+    // the CONNPOINT_BALLSINK connection point. Create a connection
+    // point object for this and assign it into the array. This array could
+    // easily grow to support additional connection points in the future.
+
+    // First try creating a new connection point object. Pass 'this' as the
+    // pHostObj pointer used by the connection point to pass its AddRef and
+    // Release calls back to the host connectable object.
+    pCOConnPt = new COConnectionPoint(this);
+    if (NULL != pCOConnPt)
+    {
+      // If creation succeeded then initialize it (including creating
+      // its initial dynamic connection array).
+      hr = pCOConnPt-&gt;Init(IID_IBallSink);
+
+      // If the init succeeded then use QueryInterface to obtain the
+      // IConnectionPoint interface on the new connection point object.
+      // The interface pointer is assigned directly into the
+      // connection point array. The QI also does the needed AddRef.
+      if (SUCCEEDED(hr))
+        hr = pCOConnPt-&gt;QueryInterface(
+                          IID_IConnectionPoint,
+                          (PPVOID)&amp;m_aConnectionPoints[CONNPOINT_BALLSINK]);
+    }
+    else
+      hr = E_OUTOFMEMORY;
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+The call to COBall::Init is done in COBall's class factory in the
+CreateInstance method, which is called when a client asks COM to create an
+instance of a DllSndBall object. The class factory for CONSERVE's
+DllSndBall object, CFBall, is declared in FACTORY.H and implemented in
+FACTORY.CPP. This factory code is adapted from many previous samples in
+this series. Like COBall, CFBall is derived from IUnknown and CThreaded
+using multiple inheritance. CThreaded gives the class factory its thread
+safety using the OwnThis mechanism seen earlier.
+
+<P>
+This COBall::Init method creates the connection point object, initializes
+it, and uses a QueryInterface call on the connection point to assign the
+new connection point to COBall's connection point array. The
+CONNPOINT_BALLSINK connection point is the only connection point currently
+supported by COBall objects. To add other connection points would require
+additional code in Init for each one. CONNPOINT_BALLSINK is a constant
+defined in CONNECT.H. Similar constants would be needed for additional
+connection points.
+
+<P>
+The COConnectionPoint object class is declared in CONNECT.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class COConnectionPoint : public IConnectionPoint, public CThreaded
+  {
+    public:
+      // Main Object Constructor &amp; Destructor.
+      COConnectionPoint(IUnknown* pHostObj);
+      ~COConnectionPoint(void);
+
+      // A general method for initializing this newly created object.
+      // Creates any subordinate arrays, structures, or objects.
+      HRESULT Init(REFIID riid);
+
+      // IUnknown methods. Main object, non-delegating.
+      STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+      STDMETHODIMP_(ULONG) AddRef(void);
+      STDMETHODIMP_(ULONG) Release(void);
+
+      // IConnectionPoint methods.
+      STDMETHODIMP GetConnectionInterface(IID*);
+      STDMETHODIMP GetConnectionPointContainer(IConnectionPointContainer**);
+      STDMETHODIMP Advise(IUnknown*, DWORD*);
+      STDMETHODIMP Unadvise(DWORD);
+      STDMETHODIMP EnumConnections(IEnumConnections**);
+
+    private:
+      // Private utility methods of COConnectionPoint.
+      HRESULT GetSlot(UINT* puiFreeSlot);
+      HRESULT FindSlot(DWORD dwCookie, UINT* puiSlot);
+
+      // Private data of COConnectionPoint COM objects.
+
+      // Main Object reference count.
+      ULONG          m_cRefs;
+
+      // IUnknown pointer to host COM object offering this connection point.
+      IUnknown*      m_pHostObj;
+
+      // The IID of the sink interface associated with this connection point.
+      IID            m_iidSink;
+
+      // The current connection cookie (key) counter.
+      DWORD          m_dwNextCookie;
+
+      // The current number of live sink connections to this connection point.
+      UINT           m_cConnections;
+
+      // The current maximum index into the dynamic connection array.
+      UINT           m_uiMaxIndex;
+
+      // The dynamic array of sink connections to this connection point.
+      CONNECTDATA*   m_paConnections;
+  };
+ </FONT> </PRE>
+
+<P>
+This code includes many of the fixtures that are common to COM objects
+housed in an in-process server. For example, the member m_cRefs is the
+object reference counter. IConnectionPoint is not implemented in
+COConnectionPoint in the familiar pattern of nested class implementation.
+Instead, COConnectionPoint is derived directly from IConnectionPoint. This
+direct derivation can be done as a convenience because COConnectionPoint
+objects are not aggregatable and are not exposed as public components
+housed in this server. COConnectionPoint objects are managed as internal
+objects within the server.
+
+<P>
+The m_pHostObj pointer is passed into the constructor for use later in the
+connection point's GetConnectionPointContainer method.
+
+<P>
+The m_iidSink member variable stores a reference to the IID of the sink
+interface in the client. This member is solely for the use of the
+GetConnectionInterface method.
+
+<P>
+COConnectionPoint objects manage a dynamic list of current connections to
+the connection point using the m_dwNextCookie, m_cConnections,
+m_uiMaxIndex, and m_paConnections member variables. The m_paConnections
+member points to the current dynamic array of connections. Each connection
+in the array is represented by a COM-declared CONNECTDATA structure. The
+structure contains the following.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  typedef struct tagCONNECTDATA
+  {
+    IUnknown* pUnk;
+    DWORD     dwCookie;
+  } CONNECTDATA;
+ </FONT> </PRE>
+
+<p>
+The pUnk member contains the interface pointer for the sink in the client.
+The dwCookie member contains a unique key used to designate the
+connection.
+
+<p>
+The initial dynamic array of these elements is created by
+COConnectionPoint::Init. Here is Init from CONNECT.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT COConnectionPoint::Init(
+            REFIID riid)
+  {
+    HRESULT hr = NOERROR;
+    CONNECTDATA* paConns;
+
+    // Keep a copy of the reference to the IID of the sink interface
+    // associated with this connection point. Needed for potential
+    // use by the GetConnectionInterface method.
+    m_iidSink = riid;
+
+    // Build the initial dynamic array for connections.
+    paConns = new CONNECTDATA[ALLOC_CONNECTIONS];
+    if (NULL != paConns)
+    {
+      // Zero the array.
+      memset(paConns, 0, ALLOC_CONNECTIONS * sizeof(CONNECTDATA));
+
+      // Rig this connection point object so that it will use the
+      // new internal array of connections.
+      m_uiMaxIndex = ALLOC_CONNECTIONS;
+      m_paConnections = paConns;
+    }
+    else
+      hr = E_OUTOFMEMORY;
+
+    return (hr);
+  }
+ </FONT> </PRE>
+
+<p>
+This implementation of Init creates an initial allocated array of empty
+connection elements and assigns member m_paConnections as a pointer to
+that array. The content of these array elements is assigned when
+COConnectionPoint::Advise is called, and the content is cleared by
+COConnectionPoint::Unadvise. Here is Advise from CONNECT.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COConnectionPoint::Advise(
+                 IUnknown* pUnkSink,
+                 DWORD* pdwCookie)
+  {
+    HRESULT hr = NOERROR;
+    UINT uiFreeSlot = 0;
+    IUnknown* pISink = NULL;
+
+    if (OwnThis())
+    {
+      // Zero the output connection key.
+      *pdwCookie = 0;
+
+      // Get the specific associated client Sink interface that this
+      // connection point expects to use for notifications.
+      hr = pUnkSink-&gt;QueryInterface(m_iidSink, (PPVOID)&amp;pISink);
+      if (SUCCEEDED(hr))
+      {
+        // Store the specific sink interface in this connection point's
+        // array of live connections. First find a free slot (expand the
+        // array if needed).
+        hr = GetSlot(&amp;uiFreeSlot);
+        if (SUCCEEDED(hr))
+        {
+          // Assign the new slot with the connection entry.
+          m_paConnections[uiFreeSlot].pUnk = pISink;
+          m_paConnections[uiFreeSlot].dwCookie = m_dwNextCookie;
+
+          // Assign the output Cookie value.
+          *pdwCookie = m_dwNextCookie;
+
+          // Increment the Cookie counter.
+          m_dwNextCookie++;
+
+          // Increment the number of live connections.
+          m_cConnections++;
+        }
+      }
+      else if (hr == E_NOINTERFACE)
+      {
+         // The sink does not support m_iidSink.
+         hr = CONNECT_E_CANNOTCONNECT;
+      }
+
+      UnOwnThis();
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+Advise is called by a client to establish a connection of its sink
+interface to the connection point of a connectable object. The client
+passes a pointer to the IUnknown of its sink object and a pointer to a
+&quot;cookie&quot; variable. Advise assigns a unique key value to this
+client cookie variable and adds the new connection to the connection array
+created by Init. The connection point maintains m_dwNextCookie as a
+counter to provide such cookies. When a connection is properly assigned,
+Advise also increments a counter of current live connections,
+m_cConnections. Because these counters might be accessed by multiple
+client threads, the entire COConnectionPoint class is derived from
+CThreaded to permit the Advise and Unadvise methods to use the OwnThis
+mechanism to ensure thread-safety. For details on the CThreaded class, see
+APTSERVE.HTM and the APTSERVE code sample of this series.
+
+<P>
+Advise calls the GetSlot private method to obtain an index into the
+connection array of an open slot. Here is GetSlot from CONNECT.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT COConnectionPoint::GetSlot(
+            UINT* puiFreeSlot)
+  {
+    HRESULT hr = NOERROR;
+    BOOL bOpen = FALSE;
+    UINT i;
+    CONNECTDATA* paConns;
+
+    // Zero the output variable.
+    *puiFreeSlot = 0;
+
+    // Loop to find an empty slot.
+    for (i=0; i&lt;m_uiMaxIndex; i++)
+    {
+      if (m_paConnections[i].dwCookie == 0)
+      {
+        // We found an open empty slot.
+        *puiFreeSlot = i;
+        bOpen = TRUE;
+        break;
+      }
+    }
+
+    if (!bOpen)
+    {
+      // We didn't find an existing open slot in the array--it's full.
+      // Expand the array by ALLOC_CONNECTIONS entries and assign the
+      // appropriate output index.
+      paConns = new CONNECTDATA[m_uiMaxIndex + ALLOC_CONNECTIONS];
+      if (NULL != paConns)
+      {
+        // Copy the content of the old full array to the new larger array.
+        for (i=0; i&lt;m_uiMaxIndex; i++)
+        {
+          paConns[i].pUnk = m_paConnections[i].pUnk;
+          paConns[i].dwCookie = m_paConnections[i].dwCookie;
+        }
+
+        // Zero (ie mark as empty) the expanded portion of the new array.
+        for (i=m_uiMaxIndex; i&lt;m_uiMaxIndex+ALLOC_CONNECTIONS; i++)
+        {
+          paConns[i].pUnk = NULL;
+          paConns[i].dwCookie = 0;
+        }
+
+        // New larger array is ready--delete the old array.
+        delete [] m_paConnections;
+
+        // Rig the connection point to use the new larger array.
+        m_paConnections = paConns;
+
+        // Assign the output free slot as first entry in new expanded area.
+        *puiFreeSlot = m_uiMaxIndex;
+
+        // Calculate the new max index.
+        m_uiMaxIndex += ALLOC_CONNECTIONS;
+      }
+      else
+        hr = E_OUTOFMEMORY;
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+GetSlot first attempts to find an open slot in the existing array and will
+return it if one is found. Such an open slot exists because a previous
+client call to Unadvise cleared the entry. However, if the current array
+is full and GetSlot can find no existing open slot, GetSlot will allocate
+an entirely new larger array with room for ALLOC_CONNECTIONS more entries.
+ALLOC_CONNECTIONS is a constant declared in CONNECT.H. The m_uiMaxIndex
+member is used to maintain the current maximum index of the array. The
+m_uiMaxIndex member stores the size of the array so any for loops that
+iterate through the array always work, no matter how the size of the array
+has changed in dynamic reallocations of the array.
+
+<P>
+The client calls Unadvise to disconnect its sink interface from the
+connection point. Here is Unadvise from CONNECT.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COConnectionPoint::Unadvise(
+                 DWORD dwCookie)
+  {
+    HRESULT hr = NOERROR;
+    UINT uiSlot;
+
+    if (0 != dwCookie)
+    {
+      if (OwnThis())
+      {
+        hr = FindSlot(dwCookie, &amp;uiSlot);
+        if (SUCCEEDED(hr))
+        {
+          // Release the sink interface.
+          RELEASE_INTERFACE(m_paConnections[uiSlot].pUnk);
+
+          // Mark the array entry as empty.
+          m_paConnections[uiSlot].dwCookie = 0;
+
+          // Decrement the number of live connections.
+          m_cConnections--;
+        }
+
+        UnOwnThis();
+      }
+    }
+    else
+      hr = E_INVALIDARG;
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<p>
+Unadvise releases the sink interface of the specified connection and
+sets the associated pointer to NULL, zeroes the associated cookie value,
+and decrements the number of live connections. Unadvise is passed a cookie
+value that was obtained by a previous call to Advise. This cookie value is
+used to locate the connection in the connection array. The FindSlot
+private method is called to find the array index to the connection entry
+corresponding to the specified cookie value. Here is FindSlot from
+CONNECT.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT COConnectionPoint::FindSlot(
+            DWORD dwCookie,
+            UINT* puiSlot)
+  {
+    HRESULT hr = CONNECT_E_NOCONNECTION;
+    UINT i;
+
+    // Loop to find the Cookie.
+    for (i=0; i&lt;m_uiMaxIndex; i++)
+    {
+      if (dwCookie == m_paConnections[i].dwCookie)
+      {
+        // If a cookie match is found, assign the output slot index.
+        *puiSlot = i;
+        hr = NOERROR;
+        break;
+      }
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<p>
+When a match of the specified cookie is found, the *puiSlot index is
+assigned.
+
+<p>
+With an array of client sink connections established by client calls to
+Advise, COBall can use the array to broadcast notifications to the client
+sinks. We return to BALL.CPP to study notifications. Here is COBall::Move.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COBall::CImpIBall::Move(
+                 BOOL bAlive)
+  {
+    HRESULT hr = E_FAIL;
+    DWORD dwEvent;
+
+    if (OwnThis())
+    {
+      if (bAlive && m_bAlive)
+      {
+        // Find thread that is now executing this code. Remember its Id and
+        // assign it a color. If this thread previously visited here then
+        // use its remembered values. In any case, set a color value in
+        // m_crColor of its existing or newly assigned color.
+        FindThread();
+
+        // Ask the Ball if it has hit any of the edges of the current window
+        // rectangle. If so, it will recalculate its position and direction
+        // to achieve a &quot;bounce&quot; effect in its motion the next time it is
+        // painted. CheckBounce also determines and returns any notification
+        // events.
+        dwEvent = CheckBounce();
+
+        // Send notification of each bounce event to any listening sinks.
+        m_pBackObj-&gt;NotifySinks(dwEvent);
+
+        // Calculate and set new Ball position.
+        if(m_bNewPosition)
+        {
+          m_bNewPosition = FALSE;
+          m_XForm.Clear();
+          m_XForm.Trans(m_xPosition, m_yPosition);
+        }
+        else
+          m_XForm.Trans(m_xDirection, m_yDirection);
+      }
+      else
+        m_bAlive = FALSE;
+
+      hr = m_bAlive ? NOERROR : E_FAIL;
+
+      UnOwnThis();
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+This implementation is very similar to that of the Move method presented
+in the COBall object of the FRESERVE code sample. In the CONSERVE sample,
+when the CONCLIEN client calls IBall::Move on this COBall object, COBall
+has internal logic in the CheckBounce private method to determine if
+certain events have occurred. CheckBounce returns a constant indicating
+the event. Move uses this event constant to call the NotifySinks private
+method. Here is NotifySinks from BALL.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT COBall::NotifySinks(
+         DWORD dwEvent)
+  {
+    HRESULT hr = NOERROR;
+    IConnectionPoint* pIConnectionPoint;
+    IEnumConnections* pIEnum;
+    CONNECTDATA ConnData;
+
+    // If there was a bounce event, broadcast appropriate notifications to
+    // all Sinks connected to each connection point.
+    if (BOUNCE_NONE != dwEvent)
+    {
+      // Here is the section for the BallSink connection point--currently
+      // this is the only connection point offered by COBall objects.
+      pIConnectionPoint = m_aConnectionPoints[CONNPOINT_BALLSINK];
+      if (NULL != pIConnectionPoint)
+      {
+        pIConnectionPoint-&gt;AddRef();
+        hr = pIConnectionPoint-&gt;EnumConnections(&amp;pIEnum);
+        if (SUCCEEDED(hr))
+        {
+          // Loop thru the connection point's connections and if the
+          // listening connection supports IBallSink (ie, BallSink events)
+          // then dispatch the dwEvent event notification to that sink.
+          while (NOERROR == pIEnum-&gt;Next(1, &amp;ConnData, NULL))
+          {
+            IBallSink* pIBallSink;
+
+            hr = ConnData.pUnk-&gt;QueryInterface(
+                                  IID_IBallSink,
+                                  (PPVOID)&amp;pIBallSink);
+            if (SUCCEEDED(hr))
+            {
+              switch (dwEvent)
+              {
+                case BOUNCE_BOTTOM:
+                  pIBallSink-&gt;BounceBottom();
+                  break;
+                case BOUNCE_LEFT:
+                  pIBallSink-&gt;BounceLeft();
+                  break;
+                case BOUNCE_RIGHT:
+                  pIBallSink-&gt;BounceRight();
+                  break;
+                case BOUNCE_TOP:
+                  pIBallSink-&gt;BounceTop();
+                  break;
+                default:
+                  break;
+              }
+              pIBallSink-&gt;Release();
+            }
+            ConnData.pUnk-&gt;Release();
+          }
+          pIEnum-&gt;Release();
+        }
+        pIConnectionPoint-&gt;Release();
+      }
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+Since this COBall object has one connection point determined at compile
+time, NotifySinks can index into the connection point array for specific
+connection points. In this case, only one connection point is known, and
+its index is CONNPOINT_BALLSINK.
+
+<P>
+Once the connection point is obtained, a connection enumerator is used.
+The connection point's EnumConnections method is called to obtain an
+IEnumConnections interface pointer on a COEnumConnections object. A while
+loop iterates through the connections with calls to pIEnum->Next. Once the
+data for each connection is obtained, the client's sink interface is used
+to make specific notification calls. In this case, the IBallSink interface
+has methods to handle the BOUNCE_BOTTOM, BOUNCE_LEFT, BOUNCE_RIGHT, and
+BOUNCE_BOTTOM events. The custom client sink interface was designed to
+match the expected connection points in the connectable objects.
+
+<P>
+This enumeration scheme is a common pattern in COM programming. Here is
+the COConnectionPoint::EnumConnections method from CONNECT.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COConnectionPoint::EnumConnections(
+                 IEnumConnections** ppIEnum)
+  {
+    HRESULT hr = OLE_E_NOCONNECTION;
+    CONNECTDATA* paConns;
+    COEnumConnections* pCOEnum;
+    UINT i,j;
+
+    if (OwnThis())
+    {
+      // Zero the output enumerator interface pointer.
+      *ppIEnum = NULL;
+
+      if (0 != m_cConnections)
+      {
+        // Create an array of CONNECTDATA structures.
+        paConns = new CONNECTDATA[(UINT)m_cConnections];
+        if (NULL != paConns)
+        {
+          for (i=0, j=0; i&lt;m_uiMaxIndex &amp;&amp; j&lt;m_cConnections; i++)
+          {
+            // Copy non-empty entries only.
+            if (0 != m_paConnections[i].dwCookie)
+            {
+              // Assign the occupied entry.
+              paConns[j].pUnk = (IUnknown*)m_paConnections[i].pUnk;
+              paConns[j].dwCookie = m_paConnections[i].dwCookie;
+              j++;
+            }
+          }
+
+          // Create a new COM object for enumerating connections. Pass
+          // 'this' as a pHostObj pointer used later to ensure the host
+          // connection point object stays alive as long as the enumerator
+          // that enumerates connections to that connection point.
+          pCOEnum = new COEnumConnections(this);
+          if (NULL != pCOEnum)
+          {
+            // Use the previously constructed (paConns) array of connections
+            // to init the new COEnumConnections COM object. The Init will
+            // build yet another internal copy of this array. Set the
+            // initial enumerator index to 0.
+            hr = pCOEnum-&gt;Init(m_cConnections, paConns, 0);
+
+            // QueryInterface to return the requested interface pointer.
+            // An AddRef will be conveniently done by the QI.
+            if (SUCCEEDED(hr))
+              hr = pCOEnum-&gt;QueryInterface(
+                              IID_IEnumConnections,
+                              (PPVOID)ppIEnum);
+          }
+          else
+            hr = E_OUTOFMEMORY;
+
+          // We're done with the locally constructed array copy--delete it.
+          delete [] paConns;
+        }
+        else
+          hr = E_OUTOFMEMORY;
+      }
+
+      UnOwnThis();
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+A special copy of the connection array is constructed containing only the
+active connections. Other empty entries are ignored. This array copy is
+used in the initialization of a COEnumConnections COM object. Once created
+and initialized, this object is queried for its IEnumConnections
+interface. A pointer to this interface is passed to the caller of
+COConnectionPoint::EnumConnections.
+
+<P>
+To enumerate the connections of a connection point, a COEnumConnections
+object must be created. Here is the declaration of COEnumConnections from
+CONNECT.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class COEnumConnections : public IEnumConnections
+  {
+    public:
+      // Main Object Constructor &amp; Destructor.
+      COEnumConnections(IUnknown* pHostObj);
+      ~COEnumConnections(void);
+
+      // A general method for initializing this newly created object.
+      // Creates any subordinate arrays, structures, or objects.
+      HRESULT Init(
+                ULONG cConnections,
+                CONNECTDATA* paConnections,
+                ULONG iEnumIndex);
+
+      // IUnknown methods. Main object, non-delegating.
+      STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+      STDMETHODIMP_(ULONG) AddRef(void);
+      STDMETHODIMP_(ULONG) Release(void);
+
+      // IEnumConnections methods.
+      STDMETHODIMP         Next(ULONG, CONNECTDATA*, ULONG*);
+      STDMETHODIMP         Skip(ULONG);
+      STDMETHODIMP         Reset(void);
+      STDMETHODIMP         Clone(IEnumConnections**);
+
+    private:
+      // Private data of COEnumConnections COM objects.
+
+      // Main Object reference count.
+      ULONG            m_cRefs;
+
+      // IUnknown pointer to host connection point COM object being
+      // enumerated.
+      IUnknown*        m_pHostObj;
+
+      // Connection index variable.
+      ULONG            m_iEnumIndex;
+
+      // Number of Connections being enumerated.
+      ULONG            m_cConnections;
+
+      // Allocated array of live Connections only.
+      CONNECTDATA*     m_paConnections;
+  };
+ </FONT> </PRE>
+
+<P>
+To ensure that the host connection point object remains in existence as
+long as the COEnumConnections enumerator object, the m_pHostObj member is
+used to delegate AddRef and Release calls. The value for m_pHostObj is
+initially passed into COEnumConnections in its constructor. To support the
+IEnumConnections interface, a current connection array index is maintained
+in member m_iEnumIndex. The total number of connections in the array is
+also retained in member m_cConnections. An internal copy of the connection
+array is also kept by COEnumConnections. The m_paConnections member points
+to this array.
+
+<P>
+The COEnumConnections::Init method assigns m_pHostObj, m_cConnections, and
+m_iEnumIndex. The Init method also allocates and assigns an internal copy
+of the connection array and assigns m_paConnections to point to it.
+
+<P>
+Enumerator objects offer the Next, Skip, Reset, and Clone methods of the
+standard IEnumConnections interface. The IEnumConnections interface is
+implemented directly by COEnumConnections rather than being coded as a
+nested interface implementation. This is convenient for such ad hoc COM
+objects as COEnumConnections, which are subordinate to the other objects
+housed in the server and which are not components in their own right.
+
+<P>
+The COEnumConnections::Next method is called to return a specified number
+of next connections from the connection array. Here is Next from
+CONNECT.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COEnumConnections::Next(
+                 ULONG cReq,
+                 CONNECTDATA* paConnections,
+                 ULONG* pcEnumerated)
+  {
+    HRESULT hr = NOERROR;
+    ULONG cRet = 0;
+
+    // Make sure the argument values passed are valid.
+    if (NULL != m_paConnections)
+    {
+      if (NULL != paConnections)
+      {
+        if (m_iEnumIndex &lt; m_cConnections)
+        {
+          if (NULL != pcEnumerated)
+            *pcEnumerated = 0L;
+          else
+            if (1L != cReq)
+              hr = E_POINTER;
+        }
+        else
+          hr = S_FALSE;
+      }
+      else
+        hr = E_POINTER;
+    }
+    else
+      hr = S_FALSE;
+
+    if (SUCCEEDED(hr))
+    {
+      // Starting at the current Enumerator index, loop to assign the
+      // requested number of output connection data structures.
+      for (; m_iEnumIndex &lt; m_cConnections &amp;&amp; cReq &gt; 0;
+             paConnections++, m_iEnumIndex++, cRet++, cReq--)
+      {
+        // Because we are assigning a copy of a connection's data, AddRef
+        // its sink interface pointer.
+        if (NULL != m_paConnections[m_iEnumIndex].pUnk)
+          m_paConnections[m_iEnumIndex].pUnk-&gt;AddRef();
+
+        // Assign a connection's data from the inside Enumerator array to
+        // the specified output receiving array.
+        *paConnections = m_paConnections[m_iEnumIndex];
+      }
+
+      // Assign the output number of connections enumerated.
+      if (NULL != pcEnumerated)
+        *pcEnumerated = cRet;
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+Argument cReq is the number of connection items requested. Argument
+paConnections is a pointer to a caller-allocated array of the CONNECTDATA
+items requested. The caller must ensure that the array size is large
+enough to accept the number of requested items. Argument pcEnumerated is a
+pointer to a variable that will contain, upon return, the number of items
+actually returned. Because copies of the connection data are being passed
+back to the caller, AddRef must be called on the sink interface pointer in
+each CONNECTDATA element.
+
+<P>
+The Skip method is called to start at the current enumeration index and
+skip a specified number of connection entries. The Reset method is called
+to reset the current enumeration index to 0. The Clone method is called to
+create a new copy of the entire COEnumConnections object, with internal
+connection array and index the same as the original.
+
+<P>
+Earlier in this tour we saw that COBall's connection points could also be
+enumerated by a call to COBall's implementation of the
+IConnectionPointContainer interface. IConnectionPointContainer has an
+EnumConnectionPoints method that can be called by clients that want to
+enumerate all the connection points of the connectable object. Unlike the
+EnumConnections presented earlier, EnumConnectionPoints is not called by
+any object within the CONSERVE server. The
+IConnectionPointContainer::EnumConnectionPoints method relies on the
+creation of a COEnumConnectionPoints COM object and works very similar to
+the COEnumConnections just presented. It implements the
+IEnumConnectionPoints interface with methods Next, Skip, Reset, and Clone.
+You can study the source for COEnumConnectionPoints in files CONNECT.H and
+CONNECT.CPP.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

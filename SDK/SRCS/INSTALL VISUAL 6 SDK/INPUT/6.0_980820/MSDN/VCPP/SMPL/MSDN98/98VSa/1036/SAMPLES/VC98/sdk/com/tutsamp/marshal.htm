@@ -1,0 +1,642 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>MARSHAL COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="licclien.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="marshal2.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="MARSHAL">MARSHAL - Custom Interface Standard Marshaling</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The MARSHAL sample anticipates the interaction of a client and
+out-of-process server in the LOCCLIEN and LOCSERVE samples. For a client
+like LOCCLIEN to use the COM objects in an out-of-process server like
+LOCSERVE requires marshaling the car-related interfaces used in the
+previous COM samples of this series. The MARSHAL sample creates a
+proxy/stub DLL that provides standard marshaling for the ICar, IUtility,
+and ICruise custom interfaces.
+
+<P>
+The Microsoft&reg; Interface Definition Language (MIDL) compiler is used
+to compile the interface specifications (expressed using the MIDL language
+in the MICARS.IDL file). MIDL.EXE is a utility provided as part of the
+Microsoft Platform SDK. The MIDL compilation of MICARS.IDL generates
+additional source files: MICARS.H, MICARS_I.C, MICARS_P.C, and DLLDATA.C.
+
+<P>
+In the series of COM Tutorial code samples, MARSHAL works with the
+LOCSERVE and LOCCLIEN samples to illustrate a COM client using the
+interfaces on COM objects in an out-of-process local server. In this
+sample series, only standard marshaling is used for the custom ICar,
+IUtility, and ICruise interfaces. Later samples in the series which use
+these interfaces across apartment, process, or machine boundaries (for
+example, APTSERVE, APTCLIEN, and REMCLIEN) also rely on MARSHAL.DLL for
+standard marshaling of these interfaces.
+
+<P>
+The MARSHAL sample demonstrates a simple and efficient way to create a
+marshaling DLL for custom interfaces. Default definitions are generated
+for the DllMain, DllGetClassObject, DllCanUnloadNow, GetProxyDllInfo,
+DllRegisterServer, and DllUnregisterServer functions. With this technique,
+all that is needed is a makefile, a .DEF file, and an input .IDL file
+specifying the interfaces. However, there may be occasions when you want
+more control over the content of the marshaling DLL. For example, you may
+want to perform some action within DllMain during DLL_PROCESS_ATTACH, you
+may want to code explicit control over the registration and unregistration
+of the marshaling server, or you may want to add standard module version
+information to the DLL resources. For coverage of these areas, see the
+subsequent MARSHAL2 sample. MARSHAL2 produces a marshaling DLL that
+marshals the same custom interfaces as MARSHAL. When registered,
+MARSHAL2.DLL is functionally equivalent to MARSHAL.DLL and replaces it.
+The makefile for the MARSHAL2.DLL does not automatically register the
+server to achieve this replacement. You must enable this in MARSHAL2's
+makefile. For the MARSHAL2 lesson, see MARSHAL2.HTM.
+
+<P>
+For functional descriptions and a tutorial code tour of MARSHAL, see the
+Code Tour section in MARSHAL.HTM. For details on setting up the
+programmatic usage of MARSHAL.DLL, see the Usage section in MARSHAL.HTM.
+To read MARSHAL.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the MARSHAL lesson in the table of lessons. You can also do the same
+thing by double-clicking the MARSHAL.HTM file after locating the main
+tutorial directory in Windows Explorer. For more details on the LOCCLIEN
+client and the LOCSERVE server and how MARSHAL.DLL supports their
+operation, see LOCSERVE.HTM and LOCCLIEN.HTM in the main tutorial
+directory. Because those code samples rely on MARSHAL.DLL, you must build
+MARSHAL DLL before building or running LOCCLIEN and LOCSERVE. MARSHAL's
+makefile automatically registers MARSHAL's proxy and stub interface
+marshalers in the system registry. This registration must be done before
+these interfaces can be used by COM clients or servers in LOCSERVE,
+LOCCLIEN, and later samples of the series.
+
+<P>
+MARSHAL's self-registration is done using the REGISTER.EXE utility built
+in the REGISTER sample. To build or run MARSHAL, you must build the
+REGISTER code sample first.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE
+is Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<P>
+MARSHAL.DLL is built solely as a marshaling DLL for the specified
+interfaces. Although it can be implicitly loaded by linking to its
+associated .LIB file, it is normally used on behalf of a COM client that
+is using the interfaces across apartment, process, or machine boundaries.
+In these cases COM automatically loads this DLL as needed. Before COM can
+find and load the MARSHAL DLL to support marshaling of its supported
+interfaces, the MARSHAL server must be registered in the registry as the
+marshaling server for those interfaces. MARSHAL is a self-registering
+in-process server.
+
+<P>
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the MARSHAL directory:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  nmake register
+ </FONT> </PRE>
+
+<P>
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the MARSHAL directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ..\register\register.exe marshal.dll
+ </FONT> </PRE>
+
+<P>
+These registration commands require a prior build of the REGISTER sample
+in this series, as well as a prior build of MARSHAL.DLL.
+
+<P>
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Microsoft&reg; Platform SDK and
+Visual C++&reg; include a utility, REGSVR32.EXE, which can be used in a
+similar fashion to register in-process servers and marshaling DLLs.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files        Description</u>
+MARSHAL.TXT  Short description of the sample.
+MAKEFILE     The generic makefile for building the MARSHAL.DLL
+             code sample.
+MARSHAL.DEF  The module definition file. Exports server housing functions.
+MICARS.IDL   The MIDL interface specifications for ICar, IUtility,
+             and ICruise.
+MICARS.H     Generated by compiling MICARS.IDL. The interface include
+             file for the specified interfaces.
+MICARS_I.C   Generated by compiling MICARS.IDL. The data definitions
+             of the GUIDs for the marshaled interfaces.
+MICARS_P.C   Generated by compiling MICARS.IDL. The actual proxy and
+             stub functions for the interface methods.
+DLLDATA.C    Generated by compiling MICARS.IDL. DLL data routines for
+             the proxies and default definitions for the DllMain,
+             DllRegisterServer, and DllUnregisterServer functions.
+ </FONT> </PRE>
+
+<P>
+This code sample introduces standard marshaling of custom COM interfaces.
+Before custom interfaces in a COM server can be used at run-time by a
+client across apartment, process, or machine boundaries, they must be
+<i>marshaled</i>.  Method calls must be translated from the client's
+address space to that of the server, and arguments must be packaged in the
+client and converted in the server's environment. The return value from
+the method call must also be packaged in the server and converted in the
+client for use in the client's environment. A proxy on the client side
+works with a stub on the server side to achieve this packaging and
+unpackaging.
+
+<P>
+This sample builds a proxy/stub marshaling DLL to serve three interfaces
+that will be used in subsequent samples in this series. The LOCCLIEN and
+LOCSERVE samples will be the first that require this marshaling. The two
+EXE applications built in those samples, LOCSERVE.EXE and LOCCLIEN.EXE,
+are a client and out-of-process local server that manipulate the
+car-related components introduced in earlier lessons. The MARSHAL.DLL
+server built in this sample provies standard marshaling support for the
+ICar, IUtility, and ICruise custom interfaces.
+
+<P>
+MARSHAL.DLL provides this support by implementing interface proxy and stub
+functions for each method of each interface. The internal details of these
+proxy/stub pairs, while worthy of study, are beyond the scope of this
+lesson. Standard marshaling largely hides the details, so you can take a
+black-box approach. For more information, see the COM documentation in the
+Platform SDK.
+
+<P>
+MARSHAL.DLL registers itself as the provider of standard marshaling for
+the interfaces specified in MICARS.IDL. Each interface is registered using
+to the GUID specified for it (for example, IID_ICar for the ICar
+interface). The makefile for MARSHAL invokes the REGISTER.EXE utility to
+register the interfaces. Later, when a client calls COM to create an
+instance of a component, the call specifies an execution context (for
+example, CLSCTX_LOCAL_SERVER). This context indicates whether marshaling
+is required for the interfaces on the created component, and if so,
+whether the out-of-process server is on the local machine. COM thus loads
+MARSHAL.DLL as needed, locating it by consulting the registry entries for
+the marshaled interfaces.
+
+<P>
+The MARSHAL.DLL developed in this sample is very similar to the in-process
+COM servers produced in previous samples. It is a COM server that offers
+standard marshaling services for the interfaces it is registered to
+handle. MARSHAL.DLL is produced by compiling some source files that are
+automatically generated by the MIDL compiler when it compiles MICARS.IDL,
+which specifies the custom interfaces.
+
+<P>
+The sequence of build operations in the makefile is different from that
+seen in such previous COM server code samples, such as the DLLSERVE
+in-process server. This is because most of the source code for MARSHAL.DLL
+is automatically generated by the MIDL compiler. The dependencies in the
+makefile guarantee that these generated source files (in this case,
+MICARS.H, MICARS_I.C, MICARS_P.C, and DLLDATA.C) are created before any
+attempt is made to compile and link them. Here is the MIDL compilation
+from the makefile:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  # Generate the proxy/stub source from the .IDL file.
+  micars.h micars_p.c micars_i.c dlldata.c: micars.idl
+    midl /ms_ext /app_config /c_ext micars.idl
+ </FONT> </PRE>
+
+<P>
+The generated source files all depend on MICARS.IDL. If any of them are
+absent, all will be regenerated by MIDL. If MICARS.IDL has a more recent
+time stamp than the C files, all the files will be regenerated.
+
+<P>
+MICARS.IDL is thus the principal source for this entire executable. The
+following are the interface definitions from MICARS.IDL:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  [uuid(0002da00-0000-0000-c000-000000000046),
+      object
+  ]
+  interface ICar : IUnknown
+  {
+    import &quot;unknwn.idl&quot;;
+
+    HRESULT Shift([in] short nGear);
+    HRESULT Clutch([in] short nEngaged);
+    HRESULT Speed([in] short nMph);
+    HRESULT Steer([in] short nAngle);
+  }
+
+  [uuid(0002da01-0000-0000-c000-000000000046),
+      object
+  ]
+  interface IUtility : IUnknown
+  {
+    import &quot;unknwn.idl&quot;;
+
+    HRESULT Offroad([in] short nGear);
+    HRESULT Winch([in] short nRpm);
+  }
+
+  [uuid(0002da02-0000-0000-c000-000000000046),
+      object
+  ]
+  interface ICruise : IUnknown
+  {
+    import &quot;unknwn.idl&quot;;
+
+    HRESULT Engage([in] BOOL bOnOff);
+    HRESULT Adjust([in] BOOL bUpDown);
+  }
+ </FONT> </PRE>
+
+<P>
+MIDL's specialized interface syntax is similar to that of C++. Because
+each interface is derived from IUnknown, a common .IDL file specifying it
+(UNKNWN.IDL, provided as part of the Platform SDK) is imported. The [in]
+directional attributes direct how the method arguments are marshaled.
+Other directional attributes in MIDL are [out] and [in,out]. Complete
+details on MIDL are beyond the scope of this lesson's introduction to
+standard marshaling. For more information on MIDL, see the Platform SDK.
+
+<P>
+Note that in previous code samples in this series, where marshaling was
+not involved, car-related interfaces like ICar could have used the int
+parameter type without problems. In this and the following lessons that
+involve marshaling, these parameter types are short (as in the ICar Shift
+method above). In the past this use of short paramters in marshaled
+interfaces was necessary when compiling 16-bit applications. Consistent
+with this, earlier versions of MIDL would generate compiler errors and not
+produce marshaling support for parameter types such as int whose final
+machine representation may be hardware-dependent. However, for Win32
+applications, this restriction is no longer enforced by MIDL and the int
+parameter type can be used in interfaces that require marshaling.
+
+<P>
+MICARS.H is generated by the MIDL compiler when it compiles MICARS.IDL.
+(MICARS.H looks very similar to the ICARS.H interface declaration file
+from previous samples in this series.) MICARS.H is used as an include file
+when compiling the clients and servers that require the interface
+marshaling it supports. For example, LOCCLIEN.CPP includes this file for
+its declarations of the ICar, IUtility, and ICruise interfaces. Because
+the later samples like LOCSERVE and LOCCLIEN rely on MARSHAL.DLL, the
+MARSHAL makefile copies the generated MICARS.H file to the sibling \INC
+directory.
+
+<P>
+The C files (MICARS_I.C, MICARS_P.C, and DLLDATA.C) created by the MIDL
+compiler are later compiled and linked to produce MARSHAL.DLL. Here are
+the rules for these compilations from the makefile.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  # Compilation/Dependency rules for the .DLL source files.
+  #
+  $(TDIR)\micars_i.obj: micars.h
+    $(cc) $(cvarsdll) $(cflags) $(CDBG) -Fo$@ micars_i.c
+
+  $(TDIR)\micars_p.obj: micars.h
+    $(cc) $(cvarsdll) $(cflags) $(CDBG) -Fo$@ micars_p.c
+
+  # Note the compiler switch that defines REGISTER_PROXY_DLL.
+  # This turns on conditional compilaiton of default definitions for the
+  # DllMain, DllRegisterServer, and DllUnregisterServer functions. This
+  # means that these functions do not need to be explicitly defined
+  # in a separate source module.
+  $(TDIR)\dlldata.obj: micars.h
+    $(cc) $(cvarsdll) $(cflags) $(CDBG) -DREGISTER_PROXY_DLL -Fo$@ dlldata.c
+</FONT> </PRE>
+
+<P>
+The automatically generated C files are the only files that need be
+compiled. DLLDATA.C has some special features that greatly ease the task
+of producing the DLL. These special features are controlled in the
+rpcproxy.h file that is included by DLLDATA.C in the the following
+line:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  #include &lt;rpcproxy.h&gt;
+</FONT> </PRE>
+
+<P>
+RPCPROXY.H supports some important conditional compilation that is
+controlled by defining the appropriate macros prior to compilation. The
+most important of these is the REGISTER_PROXY_DLL macro. By defining this,
+you can enable default definitions for the DllMain, DllRegisterServer, and
+DllUnregisterServer functions. By relying on these default function
+definitions you don't need to explicitly define them as you normally would
+for an in-process COM server.
+
+<P>
+Since MICARS.IDL specified the interfaces completely, enough information
+is available when DLLDATA.C is compiled to automatically generate the code
+within DllRegisterServer and DllUnregisterServer to register and
+unregister the interfaces. In contrast to the registration process in
+previous server samples, it is interfaces, rather than components, that
+are now being registered and unregistered. From the standpoint of this
+sample, you can regard this process as a black box. By enabling the
+default functions, MARSHAL.DLL will contain appropriate code to fully
+register and unregister the interfaces. MARSHAL.DLL will also have a
+default DllMain definition. For more details on writing explicit functions
+for DllMain, DllRegisterServer, and DllUnregisterServer, see the MARSHAL2
+sample.
+
+<P>
+Whether or not you define the REGISTER_PROXY_DLL macro, the MIDL-generated
+C files will have default definitions for the other required functions:
+DllGetClassObject, DllCanUnloadNow, and GetProxyDllInfo. The
+GetProxyDllInfo function is used internally by COM. The DllGetClassObject
+and DllCanUnloadNow functions should be familiar as standard fixtures for
+COM in-process servers. Thus, MARSHAL.DLL is actually an in-process server
+with a class factory as well as special COM components that support the
+operation of standard marshaling for those interfaces originally specified
+in MICARS.IDL. These default functions are defined for you but you must
+still export them from the DLL during the final link of the object
+modules. The following is the final link of MARSHAL.DLL from the makefile:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  # Link the object and resource binaries into the target DLL binary.
+  # Build the import LIB file so apps can link to and use this DLL.
+  $(DLL).dll: $(DLLOBJS)
+      $(LINK)  @&lt;&lt;
+      $(LINKFLAGS) $(dlllflags)
+      -out:$@
+      -base:0x1C000000
+      -def:$*.def
+      -implib:$*.lib
+      -map:$(TDIR)\$*.map
+      $(DLLOBJS)
+      $(olelibsdll) $(APPLIBS)
+  &lt;&lt;
+</FONT> </PRE>
+
+<P>
+The Linker's -def:$*.def command line switch is used above. This reduces
+to -def:MARSHAL.DEF when the makefile is processed. Thus, the link relies
+on MARSHAL.DEF for the necessary export specifications. Here is
+MARSHAL.DEF:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  LIBRARY     MARSHAL
+
+  DESCRIPTION 'MARSHAL: COM Tutorial Sample. Copyright Microsoft Corp., 1997'
+
+  EXPORTS
+    DllGetClassObject PRIVATE
+    DllCanUnloadNow PRIVATE
+    DllRegisterServer PRIVATE
+    DllUnregisterServer PRIVATE
+    GetProxyDllInfo PRIVATE
+</FONT> </PRE>
+
+<P>
+The requied exports for the default functions in this server DLL are
+marked for internal, private use only by COM.
+
+<P>
+After you build (and thus register) this code sample, you can view the
+registered entries in the Registry Editor (REGEDT32.EXE for Windows
+NT&reg;, REGEDIT.EXE for Windows&reg; 95). Its entries for the ICar
+interface look like this.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HKEY_CLASSES_ROOT
+     \CLSID
+        \{0002DA00-0000-0000-C000-000000000046} = &quot;PSFactoryBuffer&quot;
+           \InprocServer32 = &quot;D:\TUTSAMP\MARSHAL\MARSHAL.DLL&quot;
+            ThreadingModel = &quot;Both&quot;
+
+  HKEY_CLASSES_ROOT
+     \Interface
+         \{0002DA00-0000-0000-C000-000000000046} = &quot;ICar&quot;
+           \NumMethods = &quot;7&quot;
+           \ProxyStubClsid32 = &quot;{0002DA00-0000-0000-C000-000000000046}&quot;
+ </FONT> </PRE>
+
+<P>
+Under HKEY_CLASSES_ROOT\CLSID, this marshaling DLL appears with the
+in-process COM server entry, InprocServer32. COM treats this standard
+marshaling server as an in-process server. Note that this server is
+registered to support both the Apartment and Free threading models. For
+more information on the significance of this designation see the FRESERVE
+sample.
+
+<P>
+The default registration code uses the GUID of the first interface
+encountered (for example, IID_ICar) as the CLSID for registering the
+entire proxy/stub server. COM later uses this CLSID to locate and load
+MARSHAL.DLL for the marshaling of any of the interfaces it is registered
+to handle (that is, ICar, IUtility, ICruise). When an application makes an
+interface method call that crosses apartment, process, or machine
+boundaries, COM uses the interface's IID (that is, a GUID) registry entry
+to locate the CLSID registry entry for the MARSHAL.DLL server. It then
+uses this CLSID to load the server (if it isn't already loaded) so the
+interface call can then be marshaled using the appropriate proxy/stub pair
+in the server.
+
+<P>
+In the preceding registry entries the CLSID used for the server is the
+GUID of the first interface encountered (in this case, IID_ICar). This
+double use of the GUID is permitted because the interface IID will not be
+confused with the server's CLSID--the same GUID can be safely used for
+completely different things. The default behavior of using the IID of the
+first interface encountered as the CLSID of the proxy/stub server is
+adequate for most programming.
+
+<P>
+However, there are situations that may warrant explicit control over the
+default DLLDATA.C code that is generated. For example, instead of relying
+on the default use of the first interface IID as the marshaling server's
+CLSID, you can explicitly specify a CLSID. When REGISTER_PROXY_DLL is
+defined, RPCPROXY.H provides for additional conditional compilation
+control with the following macros: PROXY_CLSID=&lt;clsid symbol&gt;,
+PROXY_CLSID_IS=&lt;explicit value of guid&gt;, and
+ENTRY_PREFIX=&lt;function name prefix&gt;.
+
+<P>
+The PROXY_CLSID= macro explicitly specifies a CLSID for the marshaling
+server. The following is an example of how this macro is defined in a
+linker command-line switch:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  -DREGISTER_PROXY_DLL -DPROXY_CLSID=CLSID_CarMarshal
+ </FONT> </PRE>
+
+<P>
+This macro directly uses the CLSID definition symbol that you may have
+already defined elsewhere in an include file using the DEFINE_GUID macro.
+It assumes that you have declared and instantiated CLSID_CarMarshal
+elsewhere in this DLL. For more information, see the discussion of
+INITGUID.H in DLLSERVE.HTM.
+
+<P>
+The PROXY_CLSID_IS macro can be used instead of PROXY_CLSID to define
+the explicit value of the CLSID in the standard binary HEX form of a GUID.
+The following example illustrates this:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  -DPROXY_CLSID_IS={0x0002da03,0x0000,0x0000,{0xc0,0x00,0x00,0x00,0x00,0x00,0x00,0x46}}
+</FONT> </PRE>
+
+<P>
+The ENTRY_PREFIX macro is used to generate the marshaling server code in a
+way that combines the proxies with other COM objects in the same
+in-process server. In many cases the interfaces that are marshaled in the
+marshaling server are implemented in COM objects that are housed in
+different servers. A separate marshaling server is appropriate for these
+situations. However, there are cases when the interfaces exposed by the
+COM objects are uniquely associated with those objects. In these
+situations it can be efficient to combine the marshaling server with the
+in-process server that houses the application COM objects. Thus, a COM
+server--such as the previous DLLSERVE sample server--that would normally
+house application COM objects can also be used as the server housing for
+the marshaling proxy. The ENTRY_PREFIX provides a convenient way to create
+this combined server.
+
+<P>
+By specifying the ENTRY_PREFIX macro, each of the normal DLL entry points
+supplied in DLLDATA.C (via RPCPROXY.H) is renamed by adding the specified
+entry prefix. Thus, the DllGetClassObject generated for the proxy becomes
+&lt;prefix&gt;DllGetClassObject, and so on. The enveloping COM server would
+implement and expose the normal DllGetClassObject function. The main
+functions should call their renamed counterpart functions (that is,
+&lt;prefix&gt;DllMain, &lt;prefix&gt;DllGetClassObject,
+&lt;prefix&gt;DllCanUnloadNow, &lt;prefix&gt;DllRegisterServer, and
+&lt;prefix&gt;DllUnregisterServer) at the end of the server's main
+implementation of these functions.
+
+<P>
+For example, if ENTRY_PREFIX=Prxy during the compile of DLLDATA.C, then
+the server's main implementation of DllGetClassObject would look like
+the following (based on code in DLLSERVE.CPP):
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDAPI DllGetClassObject(
+           REFCLSID rclsid,
+           REFIID riid,
+           PPVOID ppv)
+  {
+    HRESULT hr = CLASS_E_CLASSNOTAVAILABLE;
+    IUnknown* pCob = NULL;
+    BOOL bProxyObject = TRUE;
+
+    if (CLSID_DllCar == rclsid)
+    {
+      hr = E_OUTOFMEMORY;
+      pCob = new CFCar(NULL, g_pServer);
+      bProxyObject = FALSE;
+    }
+    else if (CLSID_DllUtilityCar == rclsid)
+    {
+      hr = E_OUTOFMEMORY;
+      pCob = new CFUtilityCar(NULL, g_pServer);
+      bProxyObject = FALSE;
+    }
+
+    if (NULL != pCob)
+    {
+      g_pServer-&gt;ObjectsUp();
+      hr = pCob-&gt;QueryInterface(riid, ppv);
+      if (FAILED(hr))
+      {
+        g_pServer-&gt;ObjectsDown();
+        DELETE_POINTER(pCob);
+      }
+    }
+
+    if (bProxyObject)
+      hr = PrxyDllGetClassObject(rclsid, riid, ppv);
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+You do not need to code any explicit linkage of the proxy object lifetimes
+to the combined server lifetime. The proxy objects will maintain an
+independent object count. Either object count will cause the DLL to stay
+loaded. When the server's object count reaches zero, DllCanUnloadNow
+should chain to PrxyDllCanUnloadNow in a manner similar to that shown
+above for DllGetClassObject.
+
+<P>
+There are other special macros supported in RPCPROXY.H. See the comments
+at the front of that file for more details. RPCPROXY.H is located in the
+\MSSDK\INCLUDE directory of the installed Microsoft Platform SDK.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

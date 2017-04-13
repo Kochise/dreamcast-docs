@@ -1,0 +1,1319 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>DLLSERVE COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="register.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="dllclien.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="DLLSERVE">DLLSERVE - Component Object DLL Server</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The COMOBJ sample introduced COM objects. This DLLSERVE sample introduces
+COM components (also called simply component objects). A component object
+is a reusable software unit that encapsulates or packages the
+manufacturing of a specific class of COM object. A COM object class
+specifies an open-ended set of behaviorally identical COM objects that is
+uniquely identified for all programs and all time (by a Class ID).
+
+<P>
+Component objects are housed in a COM Server. The server executable is
+registered (or published) in a system registry to act as the creation
+agent for COM object instances of the COM Component. The server contains
+one or more Class Factories used for the creation of COM objects. Class
+factories are themselves COM objects that expose the IClassfactory[2]
+interface.  However, as an integral part of the server housing, class
+factories are typically not full-fledged component objects.
+
+<P>
+Component objects are the building blocks in COM and ActiveX programming.
+Component objects are combined to make some portion of an application. The
+running behavior of the applicaion is often determined by, and evidenced
+in, the COM objects that were instantiated (i.e., that were manufactured
+in the class factories of the various component objects that were combined
+in the application).
+
+<P>
+The DLLSERVE sample begins with the car-related COM Objects of the
+previous COMOBJ lesson and refashions them into component objects. To do
+so requires little change to the COM objects themselves (COCar,
+COUtilityCar, and COCruiseCar). But to envelop them as components, this
+lesson introduces new facilities to house them in an in-process DLL COM
+server. These facilities include class factories for each component and a
+CarSample utility component that allows clients to see logged behavior in
+the server itself.
+
+<P>
+The DLL server provides the following components: Car, UtilityCar, CruiseCar,
+and CarSample.
+
+<P>
+In the series of COM tutorial code samples, DLLSERVE works with the
+DLLCLIEN code sample to illustrate DLLSERVE's COM server facilities for
+creating components that can be used by an EXE client and the subsequent
+manipulation of those components by DLLCLIEN.EXE.
+
+<P>
+For functional descriptions and a tutorial code tour of DLLSERVE, see the
+Code Tour section in DLLSERVE.HTM. For details on setting up the
+programmatic usage of DLLSERVE, see the Usage section in DLLSERVE.HTM. To
+read DLLSERVE.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the DLLSERVE lesson in the table of lessons. You can also achieve
+the same thing by clicking the DLLSERVE.HTM file after locating the main
+tutorial directory in the Windows Explorer. See also DLLCLIEN.HTM in the
+main tutorial directory for more details on the DLLCLIEN client
+application and how it works with DLLSERVE.DLL.
+
+<P>
+You must build DLLSERVE.DLL before building or running DLLCLIEN.
+DLLSERVE's makefile automatically registers DLLSERVE's components in the
+registry. These components must be registered before DLLSERVE is available
+to outside COM clients as a server for those components. This registration
+is done using the REGISTER.EXE utility built in the previous REGISTER
+lesson. To build or run DLLSERVE, you should build the REGISTER code
+sample first.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<P>
+DLLSERVE is a DLL that is meant to be used primarily as a COM server.
+Though it can be implicitly loaded by linking to its associated .LIB file,
+it is normally used after an explicit LoadLibrary call (usually from COM's
+CoGetClassObject function). Servers like DLLSERVE are registered in the
+registry. To use DLLSERVE in a COM client program, a client does not need
+to include DLLSERVE.H or link to DLLSERVE.LIB. A COM client of DLLSERVE
+obtains access solely through its components' CLSIDs and COM services. For
+DLLSERVE, those CLSIDs are CLSID_DllCar, CLSID_DllUtilityCar,
+CLSID_DllCruiseCar, and CLSID_DllCarSample. The DLLCLIEN lesson shows how
+this is done.
+
+<P>
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the DLLSERVE directory:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  nmake register
+ </FONT> </PRE>
+
+<P>
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the DLLSERVE directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ..\register\register.exe dllserve.dll
+ </FONT> </PRE>
+
+<P>
+These registration commands require a prior build of the REGISTER sample
+in this series, as well as a prior build of DLLSERVE.DLL.
+
+<P>
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Platform SDK and Visual C++&reg;
+include a utility, REGSVR32.EXE, which can be used in a similar fashion to
+register in-process servers and marshaling DLLs.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">
+Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, DLLCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="DLLCLIEN\DLLCLIEN.exe">
+Click here to run DLLCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files         Description</u>
+DLLSERVE.TXT  Short sample description.
+MAKEFILE      The generic makefile for building the DLLSERVE.DLL
+              code sample of this tutorial lesson.
+DLLSERVE.H    The include file for declaring as imported or defining as
+              exported the service functions in DLLSERVE.DLL.
+DLLSERVE.CPP  The main implementation file for DLLSERVE.DLL. Has DllMain
+              and the COM server functions (for example, DllGetClassObject).
+DLLSERVE.DEF  The module definition file. Exports server housing functions.
+DLLSERVE.RC   The DLL resource definition file for the executable.
+DLLSERVE.ICO  The icon resource for the executable.
+SERVER.H      The include file for the server control C++ object. Also has
+              resource identifiers for resources stored inside DLLSERVE.DLL
+              and other external declarations that are used internally
+              within the modules of DLLSERVE.DLL.
+SERVER.CPP    The implementation file for the server control object.
+FACTORY.H     The include file for the server's class factory COM objects.
+FACTORY.CPP   The implementation file for the server's class factories.
+CAR.H         The include file for the COCar COM object class.
+CAR.CPP       The implementation file for the COCar COM object class.
+UTILCAR.H     The include file for the COUtililtyCar COM object class.
+UTILCAR.CPP   The implementation file for the COUtilityCar COM object class.
+CRUCAR.H      The include file for the COCruiseCar COM object class.
+CRUCAR.CPP    The implementation file for the COCruiseCar COM object class.
+SAMPLE.H      The include file for the COCarSample COM object class.
+SAMPLE.CPP    The implementation file for the COCarSample COM object class.
+ </FONT> </PRE>
+
+<P>
+This code sample is based on the code in the COMOBJ lesson. The same COM
+objects studied in COMOBJ and COMUSER are encountered here again in
+DLLSERVE: COCar, COUtilityCar, and COCruiseCar. Some minor changes have
+been made to house these objects in a COM server. More on this below.
+
+<P>
+DLLSERVE is a server that manages several component types. This need not
+be the case. A COM server might need to manage only one component type.
+If you're modeling such a single component server on DLLSERVE, it is easy
+to remove the code for the other components.
+
+<P>
+DLLSERVE uses many of the utility classes and services provided by
+APPUTIL. For more details on APPUTIL, study the APPUTIL library's source
+code in the sibling \APPUTIL directory and APPUTIL.HTM in the main
+tutorial directory.
+
+<P>
+The main elements of the DLLSERVE and DLLCLIEN code samples are the
+mechanisms required to render COM objects into components by housing them
+in a DLL (in-process) server. Subsequent lessons will perform this same
+kind of evolution of COM objects by housing them as licensed in-process
+components (LICSERVE and LICCLIEN) and by housing them as components in an
+EXE (out-of-process) server (LOCSERVE and LOCCLIEN).
+
+<P>
+All of these COM servers are self-registering. The previous lesson in
+this series presented a small REGISTER.EXE utility that DLLSERVE will use
+for self-registration. We'll look first at the support for this facility
+that is provided in DLLSERVE. We will then see how the class factories
+are built. We'll tour the mechanism for control of the server as objects
+are created and deleted. We'll look at a new component (CarSample) that
+integrates the logging faciities of the server and the client to provide
+more instructive code samples. Finally, we'll look at the changes made to
+the COM object classes of the components themselves. This last section
+won't be long, because these COM object classes are almost the same as
+those presented in COMOBJ and COMUSER.
+
+<P>
+We start in DLLSERVE.H. Two exported functions, DllRegisterServer and
+DllUnregisterServer, are implemented to manage registration of the
+components. Both functions are declared for import in the manner seen in
+the DLLSKEL and COMOBJ lessons. The STDENTRY macro from DLLSERVE.H is used
+when applications want to build a .LIB file from DLLSERVE.DLL and then
+link to DLLSERVE.LIB in order to import these two functions. However, the
+macro is not used to define them as exports, as was done in earlier code
+samples. In this code sample, the desired functions are specified as
+exported in the a DLLSERVE.DEF module definition file. This .DEF file is
+submitted to the Linker in the makefile's Link command line as follows.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  $(DLL).dll: $(DLLOBJS) $(TDIR)\$(DLL).res
+      $(LINK)  @&lt;&lt;
+      $(LINKFLAGS) $(dlllflags)
+      -out:$@
+      -base:0x1C000000
+      -def:$*.def
+      -implib:$*.lib
+      -map:$(TDIR)\$*.map
+      $(DLLOBJS)
+      $(TDIR)\$*.res
+      $(olelibsdll) $(APPLIBS)
+  &lt;&lt;
+ </FONT> </PRE>
+
+<P>
+The Linker's -def:$*.def command line switch is used above. This reduces
+to -def:DLLSERVE.DEF when the makefile is processed. Here is the content
+of DLLSERVE.DEF.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  LIBRARY     DLLSERVE
+
+  DESCRIPTION 'DLLSERVE: COM Tutorial Sample. Copyright Microsoft Corp., 1997'
+
+  EXPORTS
+    DllGetClassObject PRIVATE
+    DllCanUnloadNow PRIVATE
+    DllRegisterServer PRIVATE
+    DllUnregisterServer PRIVATE
+</FONT> </PRE>
+
+Export definition is done differently in this code sample because using
+the STDENTRY macro for the export definitions (as was done in the COMOBJ
+sample) may yield compile-time errors (linkage conflict). These errors
+happen because functions like DllGetClassObject are already declared in
+the COM/OLE header files, and these prototypes do not currently include
+linkage instructions in their signature. Thus, for COM servers, the
+DllClassObject, DllCanUnloadNow, DllRegisterServer, and
+DllUnregisterServer functions are considered exports that are intended for
+internal, private use only by COM. The linker is told explicitly--in the
+export statements of the DLLSERVE.DEF file--to mark those functions as
+PRIVATE exports. This also excludes those functions from any import
+libraries that may be produced during Linking.
+
+<P>
+The above export approach applies especially to the DllGetClassObject and
+DllCanUnloadNow functions, which all COM component servers must implement.
+More on them later.
+
+<P>
+First, look at DllRegisterServer (in DLLSERVE.CPP). The following fragment
+shows what it does.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDAPI DllRegisterServer(void)
+  {
+    HRESULT  hr = NOERROR;
+    TCHAR    szID[GUID_SIZE+1];
+    TCHAR    szCLSID[GUID_SIZE+32];
+    TCHAR    szModulePath[MAX_PATH];
+
+    // Obtain the path to this module's executable file for later use.
+    GetModuleFileName(
+      g_pServer-&gt;m_hDllInst,
+      szModulePath,
+      sizeof(szModulePath)/sizeof(TCHAR));
+
+    /*-------------------------------------------------------------------
+      Create registry entries for the DllCar Component.
+    -------------------------------------------------------------------*/
+    // Create some base key strings.
+    StringFromGUID2(CLSID_DllCar, szID, GUID_SIZE);
+    lstrcpy(szCLSID, TEXT(&quot;CLSID\\&quot;));
+    lstrcat(szCLSID, szID);
+
+    // Create ProgID keys.
+    SetRegKeyValue(
+      TEXT(&quot;DllCar1.0&quot;),
+      NULL,
+      TEXT(&quot;DllCar Component - DLLSERVE Code Sample&quot;));
+    SetRegKeyValue(
+      TEXT(&quot;DllCar1.0&quot;),
+      TEXT(&quot;CLSID&quot;),
+      szID);
+
+    // Create VersionIndependentProgID keys.
+    SetRegKeyValue(
+      TEXT(&quot;DllCar&quot;),
+      NULL,
+      TEXT(&quot;DllCar Component - DLLSERVE Code Sample&quot;));
+    SetRegKeyValue(
+      TEXT(&quot;DllCar&quot;),
+      TEXT(&quot;CurVer&quot;),
+      TEXT(&quot;DllCar1.0&quot;));
+    SetRegKeyValue(
+      TEXT(&quot;DllCar&quot;),
+      TEXT(&quot;CLSID&quot;),
+      szID);
+
+    // Create entries under CLSID.
+    SetRegKeyValue(
+      szCLSID,
+      NULL,
+      TEXT(&quot;DllCar Component - DLLSERVE Code Sample&quot;));
+    SetRegKeyValue(
+      szCLSID,
+      TEXT(&quot;ProgID&quot;),
+      TEXT(&quot;DllCar1.0&quot;));
+    SetRegKeyValue(
+      szCLSID,
+      TEXT(&quot;VersionIndependentProgID&quot;),
+      TEXT(&quot;DllCar&quot;));
+    SetRegKeyValue(
+      szCLSID,
+      TEXT(&quot;NotInsertable&quot;),
+      NULL);
+    SetRegKeyValue(
+      szCLSID,
+      TEXT(&quot;InprocServer32&quot;),
+      szModulePath);
+
+    ...
+    ...
+    [Similar for UtilityCar, CruiseCar, and CarSample.]
+    ...
+    ...
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+Notice the specific CLSIDs, such as CLSID_DllCar, used for these component
+types. A CLSID is important in distinguishing a component from the
+in-process COM objects that were introduced in the previous code samples.
+As we shall see, other work must be done to fully flesh them out as
+components.
+
+<P>
+These CLSIDs must be unique, hence the DllCar, DllUtilityCar, and
+DllCruiseCar in their names. Even though these components are similar to
+the COCar, COUtilityCar, and COCruiseCar COM objects, different CLSIDs
+must be created for them when they reside in other servers. All the
+car-related CLSIDs, GUIDs, and interfaces are declared in CARGUIDS.H and
+ICARS.H, in sibling directory \INC. These include files are common to all
+the code samples in this tutorial series.
+
+<P>
+The CLSIDs are like tickets to the servers. You present a CLSID to COM to
+get components from the servers that house them. Though different servers
+may create COCar COM objects, the client's access to these objects is
+first through their component type CLSID, which gets to their server,
+which in turn can create them. Subsequent use of the COM objects by the
+client is solely through COM interfaces on the objects themselves.
+
+<P>
+The internal avenue from the CLSID of a component type to its server is
+provided by appropriate entries in the system registry. One way to get
+those entries into the registry is to have the server that manages a
+component type put them there. That is what the DllRegisterServer
+function does for each component type.
+
+<P>
+The StringFromGUID2 service is called to convert the GUID corresponding to
+CLSID_DllCar into a string that can be stored in the registry. Most of the
+work is in constructing the proper strings to write into the registry. The
+CLSIDs themselves are stored as registry keys under the CLSID subkey,
+which is in turn under HKEY_CLASSES_ROOT. All of these entries are stored
+in the registry under the HKEY_CLASSES_ROOT key. You can look at these
+entries by running the Registry Editor utility that is provided as part of
+the operating system (REGEDIT.EXE under Windows 95, and REGEDT32.EXE under
+Windows NT).
+
+<P>
+Note that this sample assumes that all registration is under the main
+registry key of HKEY_CLASSES_ROOT. The same content that is in the
+HKEY_CLASSES_ROOT branch can also be accessed in the
+HKEY_LOCAL_MACHINE\SOFTWARE\Classes branch. These two branches of the
+Registry can be used interchangeably.
+
+<P>
+Aside from the CLSID itself (which ties a component type's CLSID to its
+COM server), other registry entries are written for
+VersionIndependentProgID and ProgID. For the HKEY_CLASSES_ROOT\CLSID
+entry, because this server is in a DLL, the path to the server is the
+value of an 'InprocServer32' subkey. This value will probably be
+different on each system, so the function GetModuleFileName is
+called to dynamically determine where the executing server is located.
+This approach is more convenient than using .REG files, but it does
+require running a small utility such as REGISTER.EXE or SELFREG.EXE. It
+also requires that a runnable copy of the server be present, which may not
+always be the case.
+
+<P>
+To make the code example easier to read and maintain, these keys, subkeys,
+and values are written to the registry within DllRegisterServer using
+calls to the SetRegKeyValue local function.
+
+<P>
+The entries for each server's component types are removed from the
+registry within DllUnregisterServer using calls to the RegDeleteKey COM
+function. These are the same entries that DllRegisterServer had previously
+written to the registry. Here is DllUnregisterServer (in DLLSERVE.CPP).
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDAPI DllUnregisterServer(void)
+  {
+    HRESULT  hr = NOERROR;
+    TCHAR    szID[GUID_SIZE+1];
+    TCHAR    szCLSID[GUID_SIZE+32];
+    TCHAR    szTemp[MAX_PATH+GUID_SIZE];
+
+    /*-----------------------------------------------------------------------
+    Delete registry entries for the DllCar Component.
+    -----------------------------------------------------------------------*/
+    //Create some base key strings.
+    StringFromGUID2(CLSID_DllCar, szID, GUID_SIZE);
+    lstrcpy(szCLSID, TEXT(&quot;CLSID\\&quot;));
+    lstrcat(szCLSID, szID);
+
+    RegDeleteKey(HKEY_CLASSES_ROOT, TEXT(&quot;CTS.DllCar\\CurVer&quot;));
+    RegDeleteKey(HKEY_CLASSES_ROOT, TEXT(&quot;CTS.DllCar\\CLSID&quot;));
+    RegDeleteKey(HKEY_CLASSES_ROOT, TEXT(&quot;CTS.DllCar&quot;));
+
+    RegDeleteKey(HKEY_CLASSES_ROOT, TEXT(&quot;CTS.DllCar.1\\CLSID&quot;));
+    RegDeleteKey(HKEY_CLASSES_ROOT, TEXT(&quot;CTS.DllCar.1&quot;));
+
+    wsprintf(szTemp, TEXT(&quot;%s\\%s&quot;), szCLSID, TEXT(&quot;ProgID&quot;));
+    RegDeleteKey(HKEY_CLASSES_ROOT, szTemp);
+
+    wsprintf(szTemp, TEXT(&quot;%s\\%s&quot;), szCLSID, TEXT(&quot;VersionIndependentProgID&quot;));
+    RegDeleteKey(HKEY_CLASSES_ROOT, szTemp);
+
+    wsprintf(szTemp, TEXT(&quot;%s\\%s&quot;), szCLSID, TEXT(&quot;NotInsertable&quot;));
+    RegDeleteKey(HKEY_CLASSES_ROOT, szTemp);
+
+    wsprintf(szTemp, TEXT(&quot;%s\\%s&quot;), szCLSID, TEXT(&quot;InprocServer32&quot;));
+    RegDeleteKey(HKEY_CLASSES_ROOT, szTemp);
+
+    RegDeleteKey(HKEY_CLASSES_ROOT, szCLSID);
+
+    ...
+    ...
+    [Similar for DllUtilityCar, DllCruiseCar, and DllCarSample.]
+    ...
+    ...
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+We turn next to class factories. To be a COM server is to expose the class
+factories for the component types the server supports. These class
+factories create instances of the component types supported. In the
+process, much like the CreatexxxCar functions of the COMOBJ sample, they
+pass the client a requested interface pointer to the new COM object. Part
+of the elegance of COM is in how it is built using itself. Class factories
+can illustrate this point. The class factories in this code sample are
+themselves COM objects that implement the standard COM IClassFactory
+interface. IClassFactory is called a standard interface because it is
+provided by COM and is pre-declared in the system header files.
+
+<P>
+Outside the COM server, COM is made aware of the class factories through a
+DllGetClassObject function that the server must implement and export.
+We'll see in the DLLCLIEN lesson how the client presents a CLSID to COM to
+get a class factory, then uses it to create the object, and then uses the
+object through its interfaces.
+
+<P>
+Here's the whole of DllGetClassObject (again from DLLSERVE.CPP).
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDAPI DllGetClassObject(
+           REFCLSID rclsid,
+           REFIID riid,
+           PPVOID ppv)
+  {
+    HRESULT hr = CLASS_E_CLASSNOTAVAILABLE;
+    IUnknown* pCob = NULL;
+
+    if (CLSID_DllCar == rclsid)
+    {
+      LOG(&quot;S: DllGetClassObject: Requesting CFCar.&quot;);
+      hr = E_OUTOFMEMORY;
+      pCob = new CFCar(NULL, g_pServer);
+    }
+    else if (CLSID_DllUtilityCar == rclsid)
+    {
+      LOG(&quot;S: DllGetClassObject: Requesting CFUtilityCar.&quot;);
+      hr = E_OUTOFMEMORY;
+      pCob = new CFUtilityCar(NULL, g_pServer);
+    }
+    else if (CLSID_DllCruiseCar == rclsid)
+    {
+      LOG(&quot;S: DllGetClassObject: Requesting CFCruiseCar.&quot;);
+      hr = E_OUTOFMEMORY;
+      pCob = new CFCruiseCar(NULL, g_pServer);
+    }
+    else if (CLSID_DllCarSample == rclsid)
+    {
+      LOG(&quot;S: DllGetClassObject: Requesting CFCarSample.&quot;);
+      hr = E_OUTOFMEMORY;
+      pCob = new CFCarSample(NULL, g_pServer);
+    }
+
+    if (NULL != pCob)
+    {
+      g_pServer-&gt;ObjectsUp();
+      hr = pCob-&gt;QueryInterface(riid, ppv);
+      if (FAILED(hr))
+      {
+        g_pServer-&gt;ObjectsDown();
+        DELETE_POINTER(pCob);
+      }
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+For a given CLSID, the function creates the appropriate new CFCarXXX class
+factory COM object. A pointer to the requested interface on the new class
+factory COM object (usually IClassFactory) is then obtained by a call to
+QueryInterface. To create an object, the CreateInstance method of the
+obtained IClassFactory interface is then called by the client. This
+DllGetClassObject is not called directly by the client, but by COM on
+behalf of clients, usually through such COM services as CoGetClassObject
+or CoCreateInstance. More on this in the DLLCLIEN lesson.
+
+<P>
+The CFCarXXX class factory object obtained is also a component in its own
+right. When a class factory object is created or destroyed, it maintains
+its server's object count by calling the ObjectsUp and ObjectsDown
+functions of the appropriate server control object. There will be more on
+these calls later when we look at the server control object itself and at
+the actual car-related application components to see how they are related
+to the server as components.
+
+<P>
+All the CFxxx class factories are declared in FACTORY.H and implemented in
+FACTORY.CPP. Throughout most of the rest of this tour of the class
+factories, we'll use the Car component's server code as a representative
+example. Unless stated otherwise, this server code applies by direct
+analogy to the other class factories. From FACTORY.H, here is the
+declaration for CFCar.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class CFCar : public IUnknown
+  {
+    public:
+      // Main Object Constructor &amp; Destructor.
+      CFCar(IUnknown* pUnkOuter, CServer* pServer);
+      ~CFCar(void);
+
+      // IUnknown methods. Main object, non-delegating.
+      STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+      STDMETHODIMP_(ULONG) AddRef(void);
+      STDMETHODIMP_(ULONG) Release(void);
+
+    private:
+      // We declare nested class interface implementations here.
+
+      // We implement the IClassFactory interface (ofcourse) in this class
+      // factory COM object class.
+      class CImpIClassFactory : public IClassFactory
+      {
+        public:
+          // Interface Implementation Constructor &amp; Destructor.
+          CImpIClassFactory(
+            CFCar* pBackObj,
+            IUnknown* pUnkOuter,
+            CServer* pServer);
+          ~CImpIClassFactory(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // IClassFactory methods.
+          STDMETHODIMP         CreateInstance(IUnknown*, REFIID, PPVOID);
+          STDMETHODIMP         LockServer(BOOL);
+
+        private:
+          // Data private to this interface implementation of IClassFactory.
+          ULONG         m_cRefI;       // Interface Ref Count (debugging).
+          CFCar*        m_pBackObj;    // Parent Object back pointer.
+          IUnknown*     m_pUnkOuter;   // Outer unknown for Delegation.
+          CServer*      m_pServer;     // Server's control object.
+      };
+
+      // Make the otherwise private and nested IClassFactory interface
+      // implementation a friend to COM object instantiations of this
+      // selfsame CFCar COM object class.
+      friend CImpIClassFactory;
+
+      // Private data of CFCar COM objects.
+
+      // Nested IClassFactory implementation instantiation.
+      CImpIClassFactory m_ImpIClassFactory;
+
+      // Main Object reference count.
+      ULONG             m_cRefs;
+
+      // Outer unknown (aggregation &amp; delegation). Used when this
+      // CFCar object is being aggregated. Otherwise it is used
+      // for delegation if this object is reused via containment.
+      IUnknown*         m_pUnkOuter;
+
+      // Pointer to this component server's control object.
+      CServer*          m_pServer;
+  };
+ </FONT> </PRE>
+
+<P>
+This code should look familiar, since there were a lot of COM objects very
+much like this in the COMOBJ and COMUSER code samples. Here again we see
+the pattern of nested classes used to implement the multiple interfaces on
+this COM object, in this case IUnknown and IClassFactory. We see
+prototypes for the two IClassFactory methods, CreateInstance and
+LockServer. We won't repeat the discussion of COM object construction that
+was covered in COMOBJ. Return to that lesson if you don't recognize the
+COM object pattern of this code.
+
+<P>
+We will focus here on the code that constructs this class factory so that,
+when CreateInstance is called, the class factory creates its COM objects
+and gives those objects access to their server. To consolidate and
+encapsulate this internal access to the server housing, a CServer server
+control object is used. The server control object is a C++ object, not a
+COM object. In this scheme, only one server control object is implemented
+for the entire server, regardless of how many component types the server
+manages.
+
+<P>
+For now we'll examine how a pointer to the server control object is passed
+into the labyrinth of COM objects, their interface implementations, and
+the components that are actually manufactured. First notice the CFCar
+constructor.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  CFCar(IUnknown* pUnkOuter, CServer* pServer);
+ </FONT> </PRE>
+
+<p>
+Here a pointer to the server control object is passed to the class
+factory. Think about where this pointer came from in the first place. One
+clue is in the call to the class factory constructor (see above in
+function DllGetClassObject). Here's the line for CFCar:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  pCob = new CFCar(NULL, g_pServer);
+ </FONT> </PRE>
+
+<p>
+The value is passed as global variable g_pServer. This value in turn is
+assigned during execution of the DLL_PROCESS_ATTACH case in DllMain, where
+the server control object is created. (DllMain is in DLLSERVE.CPP.)
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  g_pServer = new CServer;
+ </FONT> </PRE>
+
+<p>
+This pointer value to the server control object must also be passed to
+the CFCar's IClassFactory implementation through its constructor.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  CImpIClassFactory(
+    CFCar* pBackObj,
+    IUnknown* pUnkOuter,
+    CServer* pServer);
+ </FONT> </PRE>
+
+<p>
+As with the pBackObj and pUnkOuter pointers, the pServer pointer is
+passed so the methods inside the protected scope of the interface
+implementation can access the outside server control object. Both the
+CFCar COM object and its implementation of IClassFactory have m_pServer
+pointer members to store this value when it is passed by the constructors.
+The constructor method implementations have appropriate assignments, such
+as the following from the CFCar constructor (in FACTORY.CPP).
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // Init the pointer to the server control object.
+  m_pServer = pServer;
+ </FONT> </PRE>
+
+<p>
+The class factory, in turn, passes the pointer to any new COM objects
+that it creates. To see this, you have to switch over to the IClassFactory
+interface implementation in FACTORY.CPP. For example, from the CFCar
+implementation of IClassFactory, here is method
+CFCar::CImpIClassFactory::CreatInstance:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP CFCar::CImpIClassFactory::CreateInstance(
+                 IUnknown* pUnkOuter,
+                 REFIID riid,
+                 PPVOID ppv)
+  {
+    HRESULT hr = E_FAIL;
+    COCar* pCob = NULL;
+
+    // NULL the output pointer.
+    *ppv = NULL;
+
+    // If the creation call is requesting aggregation (pUnkOuter != NULL),
+    // the COM rules state that the IUnknown interface MUST also be
+    // requested concomitantly. If it is not so requested
+    // (riid != IID_IUnknown), then an error must be returned indicating
+    // that no aggregate creation of the CFCar COM Object can be
+    // performed.
+    if (NULL != pUnkOuter &amp;&amp; riid != IID_IUnknown)
+      hr = CLASS_E_NOAGGREGATION;
+    else
+    {
+      // Instantiate a COCar COM Object.
+      pCob = new COCar(pUnkOuter, m_pServer);
+      if (NULL != pCob)
+      {
+        // We initially created the new COM object so tell the server
+        // to increment its global server object count to help ensure
+        // that the server remains loaded until this partial creation
+        // of a component is completed.
+        m_pServer-&gt;ObjectsUp();
+
+        // We QueryInterface this new COM Object not only to deposit the
+        // main interface pointer to the caller's pointer variable, but to
+        // also automatically bump the Reference Count on the new COM
+        // Object after handing out this reference to it.
+        hr = pCob-&gt;QueryInterface(riid, (PPVOID)ppv);
+        if (FAILED(hr))
+        {
+          m_pServer-&gt;ObjectsDown();
+          delete pCob;
+        }
+      }
+      else
+        hr = E_OUTOFMEMORY;
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<p>
+The CreateInstance code above should remind you of the CreateCar function
+in COMOBJ. For example, like CreateCar, the CreateInstance function calls
+QueryInterface to provide the caller with the requested interface output
+pointer (value *ppv) after successfully creating its COM object.
+
+<p>
+In terms of m_pServer, the important line is:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // Instantiate a COCar COM Object.
+  pCob = new COCar(pUnkOuter, m_pServer);
+ </FONT> </PRE>
+
+<P>
+The interface implementation's m_pServer data member is passed to the new
+COCar COM object. What will the new COCar COM object do with it? The
+primary thing that the newly manufactured COCar object needs to
+communicate to the server is when the COCar COM object has been deleted.
+This happens when a client of the object releases the last interface
+pointer held on the object. The server needs to be informed when one of
+its objects is deleted so that the server can unload itself when it is no
+longer needed by any clients. This is part of the control responsibility
+encapsulated in the CServer server control object. The new COCar object
+will use m_pServer to notify the server control object when the COCar
+object is being deleted. More on this below.
+
+<P>
+CreateInstance (above) uses m_pServer in other ways, as well, such as the
+following.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // We initially created the new COM object so tell the server
+  // to increment its global server object count to help ensure
+  // that the server remains loaded until this partial creation
+  // of a component is completed.
+  m_pServer-&gt;ObjectsUp();
+ </FONT> </PRE>
+
+<P>
+The server control object is responsible for maintaining the server's
+object count, among other things. In a way, the server control object
+governs the lifetime of the server as a whole. The ObjectsUp method
+increments the server's object count, and the ObjectsDown method
+decrements the count. After the class factory successfully manufactures a
+new COM object of the requested component type, it calls ObjectsUp in the
+server control object to increment the server's object count.
+
+<P>
+The server control object is an outgrowth of the CDllData object that was
+used to encapsulate DLL data in the DLLSKEL and COMOBJ code samples. Now
+it takes on greater importance. CServer is declared in SERVER.H and
+implemented in SERVER.CPP. Here is the CServer declaration from SERVER.H:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class CServer
+  {
+    public:
+      CServer(void);
+      ~CServer(void);
+
+      void Lock(void);
+      void Unlock(void);
+      void ObjectsUp(void);
+      void ObjectsDown(void);
+
+      // A place to store the handle to loaded instance of this DLL module.
+      HINSTANCE m_hDllInst;
+
+      // A place to store a client's parent window.
+      HINSTANCE m_hWndParent;
+
+      // A Pointer to a Message Box object.
+      CMsgBox* m_pMsgBox;
+
+      // Global DLL Server living Object count.
+      LONG m_cObjects;
+
+      // Global DLL Server Client Lock count.
+      LONG m_cLocks;
+  };
+ </FONT> </PRE>
+
+<p>The ObjectsUp and ObjectsDown methods take care of incrementing and
+decrementing the server's object count. For example, here is the ObjectsDown
+method implementation.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  void CServer::ObjectsDown(void)
+  {
+    InterlockedDecrement((PLONG) &amp;g_pServer-&gt;m_cObjects);
+
+    LOGF1(&quot;S: CServer::ObjectsDown, new cObjects=%i.&quot;, g_pServer-&gt;m_cObjects);
+
+    return;
+  }
+ </FONT> </PRE>
+
+<P>
+ObjectsUp and ObjectsDown call the Win32 functions InterlockedIncrement
+and InterlockedDecrement, respectively. Because the server exists and has
+clients in a multitasking environment, the server's object count must be
+accessed in ways that guarantee mutual exclusion among contending tasks
+(or threads within the same client process). These Win32 functions
+guarantee this mutual exclusion for the increment and decrement
+operations. The Lock and Unlock methods use the same functions to perform
+increment and decrement operations on a global server lock count. These
+lock methods are called by the IClassFactory::LockServer method
+implementation when a client needs to lock the server in a loaded state,
+regardless of whether the server has a zero object count.
+
+<P>
+This server is unloaded through the DllCanUnloadNow function that all COM
+servers must implement and export. Returning to file DLLSERVE.CPP, here is
+DllCanUnloadNow.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDAPI DllCanUnloadNow(void)
+  {
+    HRESULT hr;
+
+    LOGF1(&quot;S: DllCanUnloadNow. cObjects=%i.&quot;, g_pServer-&gt;m_cObjects);
+
+    // We return S_OK if there are no longer any living objects AND
+    // there are no outstanding client locks on this server.
+    hr = (0L==g_pServer-&gt;m_cObjects &amp;&amp; 0L==g_pServer-&gt;m_cLocks) ? S_OK : S_FALSE;
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+This function is occasionally called by COM, usually when the client calls
+CoFreeUnusedLibraries, to ask the server if COM can unload it. The server
+gives the OK on return from this function if both the lock count and the
+object count are zero. Though encapsulated in the CServer object, these
+counts are global to the attached process associated with a client
+instance and its use of the server. It is not necessary to place these
+count variables in a shared section to make them global to all client
+processes, because DllCanUnloadNow can be called only in the context of
+the CoInitialize/CoUninitialize matching pair of a given client process.
+The system maintains process-global usage counts for DLLs, and there is no
+need for COM servers to manage this.
+
+<P>
+As was pointed out earlier, CFCar is a component in its own right. But
+unlike the other applications components managed by the server, it is also
+part of what makes the server a server. In the CFCar::Release method
+implementation, notice that m_pServer->ObjectsDown is called when the
+client releases its pointer to the class factory.
+
+<P>
+In the COMOBJ and COMUSER samples, we used a direct DLL call to connect
+the DLL to the EXE user of the DLL so that the sample's trace logging
+could be integrated in one display. But with DLLSERVE, the client
+accesses services in the DLL server solely through interfaces. To provide
+a clean model of client/server separation, we have no direct
+(DLL-exported) call that the client can make to pass a pointer to its
+logging facility into the server.
+
+<P>
+There is always power in such indirection. By isolating the client from
+direct linkage to the server, the way is open for the servers to reside on
+other machines. By making a component, we use an abstraction agency
+between the client and the component in the server. This agency is a
+cooperative effort between COM and the server.
+
+<P>
+Now consider another component that is also part of the infastructure of
+this server. In this server code sample, we use a new custom interface
+(ISample) and implement it in a CarSample component. Though its purpose
+is administratively mundane, it is representative of situations we all
+face in developing real applications.
+
+<P>
+ISample is declared in ICARS.H, in the sibling \INC directory, and has two
+methods: Init and AboutBox. Init is the significant one for associating
+the client's logging display with the logging being done in the server.
+This method yields an integrated display in the client that shows the
+internal sequential behavior in both server and client. This logging
+scheme was used to good effect in the prior lessons. Those lessons also
+had separate About dialog boxes in the resources of each DLL. This may
+seem odd in one sense, but the dialog box doesn't have to be an AboutBox
+as such: DLLs might often need to supply dialog boxes to an application. A
+banking application, for example, might call on a component in a DLL to
+display a dialog box containing a loan application form. The AboutBox is
+just an excuse to put a dialog box in the DLL. The ISample implementation
+in the CarSample component provides an interface method through which the
+client can invoke the dialog box in the server.
+
+<P>
+The COCarSample COM object is declared in SAMPLE.H and implemented in the
+SAMPLE.CPP file. Once again, the object's multiple interfaces, IUnknown
+and a native implementation of ISample, are nested classes.
+
+<P>
+The other COM objects provided by DLLSERVE are COCar, COUtilityCar, and
+COCruiseCar. They retain their COM object construction characteristics.
+COCar (in CAR.H and CAR.CPP) has nested implementations of IUnknown with a
+native ICar interface. COUtilityCar (in UTILCAR.H and UTILCAR.CPP) has
+nested implementations of IUnknown with two other interfaces, ICar and
+IUtility, which are reused by containment. COCruiseCar (in CRUCAR.H and
+CRUCAR.CPP) has nested implementations of IUnknown with two other
+interfaces, ICar and ICruise, which are reused by aggregation. We'll tour
+COCruiseCar as a representative example.
+
+<P>
+The COCruiseCar COM object class declaration in CRUCAR.H is a little
+different from the declaration in the COMOBJ code sample. These
+differences associate the COM object with the server housing and help make
+the COM object a properly constructed instance of the CLSID_DllCruiseCar
+class of components. Here is the COCruiseCar COM object class declaration:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class COCruiseCar : public IUnknown
+  {
+    public:
+      // Main Object Constructor &amp; Destructor.
+      COCruiseCar(IUnknown* pUnkOuter, CServer* pServer);
+      ~COCruiseCar(void);
+
+      // A general method for initializing a newly created COCruiseCar.
+      HRESULT Init(void);
+
+      // IUnknown methods. Main object, non-delegating.
+      STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+      STDMETHODIMP_(ULONG) AddRef(void);
+      STDMETHODIMP_(ULONG) Release(void);
+
+    private:
+      // We declare nested class interface implementations here.
+
+      // We implement the ICruise interface (ofcourse) in this COCruiseCar
+      // COM object class. This is the interface that we are using as an
+      // augmentation to the existing COCar COM object class.
+      class CImpICruise : public ICruise
+      {
+        public:
+          // Interface Implementation Constructor &amp; Destructor.
+          CImpICruise(COCruiseCar* pBackObj, IUnknown* pUnkOuter);
+          ~CImpICruise(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // ICruise methods.
+          STDMETHODIMP Engage(BOOL bOnOff);
+          STDMETHODIMP Adjust(BOOL bUpDown);
+
+        private:
+          // Data private to this interface implementation of ICruise.
+          ULONG         m_cRefI;       // Interface Ref Count (debugging).
+          COCruiseCar*  m_pBackObj;    // Parent Object back pointer.
+          IUnknown*     m_pUnkOuter;   // Outer unknown for Delegation.
+      };
+
+      // Make the otherwise private and nested ICar interface implementation
+      // a friend to COM object instantiations of this selfsame COCruiseCar
+      // COM object class.
+      friend CImpICruise;
+
+      // Private data of COCruiseCar COM objects.
+
+      // Nested ICruise implementation instantiation.  This ICruise
+      // interface is implemented inside this COCruiseCar object as a native
+      // interface.
+      CImpICruise     m_ImpICruise;
+
+      // Main Object reference count.
+      ULONG           m_cRefs;
+
+      // Outer unknown (aggregation &amp; delegation). Used when this
+      // COCruiseCar object is being aggregated. Otherwise it is used for
+      // delegation if this object is reused via containment.
+      IUnknown*       m_pUnkOuter;
+
+      // We need to save the IUnknown interface pointer on the COCar
+      // object that we aggregate. We use this when we need to delegate
+      // IUnknown calls to this aggregated inner object.
+      IUnknown*       m_pUnkCar;
+
+      // Pointer to this component server's control object.
+      CServer*        m_pServer;
+  };
+ </FONT> </PRE>
+
+<P>
+The COM object has to be able to inform the server when the object is
+being deleted. It does so by storing a pointer to the server's control
+object, declared as CServer* m_pServer above. This value is passed to the
+constructor and assigned in the constructor implementation. Earlier in
+this tour, we saw how this value was passed to the class factory. When
+the class factory for COCruiseCar creates a new COCruiseCar COM object, it
+passes a copy of this m_pServer pointer to the constructor of the new
+COCruiseCar object.
+
+<P>
+There is no need, as there was in the interface implementations of the
+class factory COM objects, to pass this m_pServer value to COCruiseCar's
+other interface implementations (ImpICar and ImpICruise). They simply
+don't need it. The pointer is needed only in the COCruiseCar object's
+IUnknown, where the object's lifetime is managed. The Release method of
+the COCruiseCar object's IUnknown uses m_pServer as follows:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP_(ULONG) COCruiseCar::Release(void)
+  {
+    ULONG ulCount = --m_cRefs;
+
+    LOGF1(&quot;S: COCruiseCar::Release. New Count=%i.&quot;, m_cRefs);
+
+    if (0 == m_cRefs)
+    {
+      // We've reached a zero reference count for this COM object.
+      // So we tell the server housing to decrement its global object
+      // count so that the server will be unloaded if appropriate.
+      if (NULL != m_pServer)
+        m_pServer-&gt;ObjectsDown();
+
+      // We artificially bump the main ref count. This fulfills one of
+      // the rules of aggregated objects and ensures that an indirect
+      // recursive call to this release won't occur because of other
+      // delegating releases that might happen in our own destructor.
+      m_cRefs++;
+      delete this;
+    }
+
+    return ulCount;
+  }
+ </FONT> </PRE>
+
+<P>
+When the reference count of this COM object goes to zero,
+m_pServer->ObjectsDown is called to inform the server. If there are no
+more objects for the server (m_cObjects == 0) and no clients have
+outstanding locks on the server as a result of calls to
+IClassFactory::LockServer, the next call to DllCanUnloadNow will cause COM
+to unload the server.
+
+<P>
+Another thing to notice in this lesson is the COCruiseCar::Init method.
+In COMOBJ we saw that there was an Init method to create any subordinate
+COM objects. In the class factory for COCruiseCar components
+(CFCruiseCar's CreateInstance method implementation in FACTORY.CPP), this
+Init method is called just after a new COCruiseCar object is created.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+    ...
+    ...
+    // Instantiate a COCruiseCar COM Object.
+    pCob = new COCruiseCar(pUnkOuter, m_pServer);
+    if (NULL != pCob)
+    {
+      // We initially created the new COM object so tell the server
+      // to increment its global server object count to help ensure
+      // that the server remains loaded until this partial creation
+      // of a component is completed.
+      m_pServer-&gt;ObjectsUp();
+
+      // If we have succeeded in instantiating the COM object we
+      // initialize it to set up any subordinate objects.
+      hr = pCob-&gt;Init();
+      if (SUCCEEDED(hr))
+      {
+        // We QueryInterface this new COM Object not only to deposit the
+        // main interface pointer to the caller's pointer variable, but to
+        // also automatically bump the Reference Count on the new COM
+        // Object after handing out this reference to it.
+        hr = pCob-&gt;QueryInterface(riid, (PPVOID)ppv);
+      }
+
+      if (FAILED(hr))
+      {
+        m_pServer-&gt;ObjectsDown();
+        delete pCob;
+      }
+    }
+    else
+      hr = E_OUTOFMEMORY;
+    ...
+    ...
+ </FONT> </PRE>
+
+<P>
+The ObjectsUp call is made before the call to Init. This is to keep the
+server loaded (by incrementing its object count) while the composite
+object creation is completed. Init could take some time, and we wouldn't
+want another client releasing the last interface on a server-managed
+object, causing COM to prematurely unload the server.
+
+<P>
+This code guards against something that is extremely unlikely in this code
+sample because the class factory component itself resides in the same
+server. In order to call CreateInstance, the client must be holding an
+interface pointer to the class factory. Since the class factory is
+itself a component, the server's object count will be nonzero, at least
+until the client releases this pointer to the class factory. There is
+nothing wrong, however, with writing foolproof code, and in other
+application coding contexts it is at least conceivable that a class
+factory component might reside in a different server from the components
+it creates.
+
+<P>
+Back in CRUCAR.CPP, here is the COCruiseCar::Init method:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT COCruiseCar::Init(void)
+  {
+    HRESULT hr;
+
+    LOG(&quot;S: COCruiseCar::Init.&quot;);
+
+    // Set up the right pIUnknown for delegation. If we are being
+    // aggregated, then we pass the pUnkOuter in turn to any COM objects
+    // that we are aggregating. m_pUnkOuter was set in the Constructor.
+    IUnknown* pUnkOuter = (NULL == m_pUnkOuter) ? this : m_pUnkOuter;
+
+    // We create an instance of the COCar object and do this via the
+    // Aggregation reuse technique. Note we pass pUnkOuter as the
+    // Aggregation pointer. It is the 'this' pointer to this present
+    // CruiseCar object if we are not being aggregated; otherwise it is the
+    // pointer to the outermost object's controlling IUnknown. Following
+    // the rules of Aggregation, we must ask for an IID_IUnknown interface.
+    // We cache the requested pointer to the IUnknown of the new COCar COM
+    // object for later use in delegating IUnknown calls.
+    hr = CoCreateInstance(
+           CLSID_DllCar,
+           pUnkOuter,
+           CLSCTX_INPROC_SERVER,
+           IID_IUnknown,
+           (PPVOID)&amp;m_pUnkCar);
+
+    return (hr);
+  }
+ </FONT> </PRE>
+
+<P>
+We don't just use a &quot;new COCar&quot; statement to create the
+subordinate COCar COM object. COCar is a component in its own right, and
+rather than assuming any special knowledge about its availability inside
+this server, we use the general power of COM to find the right server and
+create the object. Our code is not hard-wired to require that all
+CLSID_DllCar components be managed by the same server. We are going to
+make a new COCruiseCar COM Object and aggregate a new COCar object to do
+it. We don't care where the new COCar is or where it comes from; it might
+even be on another machine. We only want COM to give back a pointer to the
+object's IUnknown.
+
+<P>
+CoCreateInstance is a COM service that accepts a CLSID for a component
+type and creates a single instance of it. CoCreateInstance encapsulates
+the following behavior:
+
+<ol>
+<li>Locates and loads the appropriate server.
+
+<li>Obtains a pointer to the appropriate class factory.
+
+<li>Requests that the class factory create an instance of the component.
+
+<li>Releases the class factory interface pointer.
+
+<li>Returns a pointer to the requested interface in the location specified
+(in the sample code above, by the &amp;m_pUnkCar parameter).
+
+</ol>
+
+<P>
+This COM API &quot;helper&quot; function is useful when you need a single
+instance of a given component type.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

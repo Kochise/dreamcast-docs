@@ -1,0 +1,161 @@
+/*
+ * POLYLINE.ODL
+ * Neutral Language Polyline Type Library Chapter 24
+ *
+ * "Neutral" language is considered to be English.  We register
+ * this under LCID of 0 so the lcid before "library" has to match.
+ *
+ * Copyright (c)1993-1995 Microsoft Corporation, All Rights Reserved
+ *
+ * Kraig Brockschmidt, Microsoft
+ * Internet  :  kraigb@microsoft.com
+ * Compuserve:  >INTERNET:kraigb@microsoft.com
+ */
+
+//LIBID_Polyline
+[
+uuid(00021173-0000-0000-C000-000000000046)
+    , helpstring("Polyline Type Library")
+    , lcid(0x0000)
+    , version(1.0)
+]
+library PolylineTypeLibrary
+    {
+   #ifdef WIN32
+    importlib("stdole32.tlb");
+    #ifdef UNICODE
+     importlib("oc30u.dll");
+    #else
+     importlib("oc30.dll");
+    #endif
+   #else
+    importlib("stdole.tlb");
+    importlib("oc25.dll");
+   #endif
+
+    /*
+     * IID_IPolylineControl
+     * This is an interface like IPolyline10 but attuned to
+     * the needs of Automation and oriented directly towards
+     * properties and methods that come up in being an OLE Control.
+     * The only relevant properties are line style and color;
+     * the only relevant methods being Clear and RemoveLastPoint.
+     */
+    [
+    uuid(00021171-0000-0000-C000-000000000046)
+        , helpstring("Definition of interface IPolyline10")
+        , odl
+    ]
+    interface IPolylineControl : IUnknown
+        {
+        //Properties
+        [propput, id(-501), helpstring("Background Color")]
+            void BackColor([in] OLE_COLOR cr);
+
+        [propget, id(-501)]
+            OLE_COLOR BackColor(void);
+
+        [propput, id(-513), helpstring("Line Color")]
+            void LineColor([in] OLE_COLOR cr);
+
+        [propget, id(-513)]
+            OLE_COLOR LineColor(void);
+
+        [propput, helpstring("Line style")]
+            void LineStyle([in] short iStyle);
+
+        [propget]
+            short LineStyle(void);
+
+        //Methods
+        [helpstring("Clear the entire figure")]
+            HRESULT Clear(void);
+
+        [helpstring("Remove the last added point")]
+            HRESULT RemoveLastPoint(void);
+
+        }
+
+    //DIID_DIPolylineControl
+    [
+    uuid(00021172-0000-0000-C000-000000000046)
+        , helpstring("Definition of dispinterface DIPolylineControl")
+    ]
+    dispinterface DIPolylineControl
+        {
+        interface IPolylineControl;
+        }
+
+    //IID_IPolylineAdviseSink10
+    [
+    uuid(00021159-0000-0000-C000-000000000046)
+        , helpstring("Definition of interface IPolylineAdviseSink10")
+        , odl
+    ]
+    interface IPolylineAdviseSink10 : IUnknown
+        {
+        [id(0), helpstring("A point was added or removed")]
+            void OnPointChange(void);
+
+        [id(1), helpstring("The size of the figure changed")]
+            void OnSizeChange(void);
+
+        [id(2), helpstring("A color in the figure changed")]
+            void OnColorChange(void);
+
+        [id(3), helpstring("The line style of the figure changed")]
+            void OnLineStyleChange(void);
+        }
+
+    /*
+     * DIID_DIPolylineAdviseSink10
+     * We declared these separate from IPolylineAdviseSink10
+     * so the IUnknown members don't show up in a
+     * container's events list.
+     */
+
+    [
+    uuid(00021170-0000-0000-C000-000000000046)
+        , helpstring("Definition of dispinterface DIPolylineAdviseSink10")
+    ]
+    dispinterface DIPolylineAdviseSink10
+        {
+        properties:
+            //None
+
+        methods:
+
+        [id(0), helpstring("A point was added or removed")]
+            void OnPointChange(void);
+
+        [id(1), helpstring("The size of the figure changed")]
+            void OnSizeChange(void);
+
+        [id(2), helpstring("A color in the figure changed")]
+            void OnColorChange(void);
+
+        [id(3), helpstring("The line style of the figure changed")]
+            void OnLineStyleChange(void);
+        }
+
+
+
+    /*
+     * CLSID_Polyline19--sure we're in Chapter 24, but we want to
+     * use this same CLSID to be compatible with other OLE
+     * Document versions.
+     */
+    [
+    uuid(0002116D-0000-0000-C000-000000000046)
+        , helpstring("Polyline Component Type Information")
+        , control
+    ]
+    coclass Polyline19
+        {
+        dispinterface DIPolylineControl;
+        interface     IPolylineControl;
+
+        [default, source] dispinterface DIPolylineAdviseSink10;
+        [source]          interface     IPolylineAdviseSink10;
+        }
+    };

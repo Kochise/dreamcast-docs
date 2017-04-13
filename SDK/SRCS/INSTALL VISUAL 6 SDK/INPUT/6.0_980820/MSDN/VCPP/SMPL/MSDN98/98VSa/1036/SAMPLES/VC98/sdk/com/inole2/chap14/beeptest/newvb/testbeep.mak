@@ -1,0 +1,16 @@
+TESTBEEP.FRM
+c:\c\BIN\MSOLE2.BAS
+ProjWinSize=96,706,194,128
+ProjWinShow=2
+IconForm="Form1"
+ExeName="TESTBEEP.exe"
+Command=""
+Name="TESTBEEP"
+HelpContextID="0"
+StartMode=0
+VersionCompatible="0"
+MajorVer=1
+MinorVer=0
+RevisionVer=0
+AutoIncrementVer=0
+VersionCompanyName="Microsoft"

@@ -1,0 +1,961 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>APTCLIEN COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="aptserve.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="remclien.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="APTCLIEN">APTCLIEN - Client of Multiple Apartment Server</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The APTCLIEN sample shows a client of several single-threaded apartments
+in the APTSERVE server. APTCLIEN's main purpose is to exercise and reveal
+for study the multiple apartments in the APTSERVE local out-of-process
+server. The following REMCLIEN sample, run in conjunction with APTCLIEN,
+shows the effects of multiple clients on the APTSERVE multithreaded
+server, with one client controlling from a remote machine.
+
+<P>
+The COM objects that APTCLIEN manipulates are the car-related ones from
+previous samples in this tutorial series, with the following interfaces:
+ICar, IUtility, and ICruise. APTCLIEN works in conjunction with the
+separate APTSERVE.EXE, which provides the COCar, COUtilityCar, and
+COCruiseCar COM objects.
+
+<P>
+APTCLIEN.EXE creates its own COUtilityCruiseCar COM object by reusing the
+COCruiseCar COM object by containment and augmenting it with a native
+implementation of the IUtility interface. Like LOCCLIEN, APTCLIEN's
+COUtilityCruiseCar composite object reuses COCruiseCar by containment.
+However, because COCruiseCar and COCar are in different apartments,
+COCruiseCar reuses COCar by containment rather than the aggregation shown
+in previous lessons.
+
+<P>
+The composition of COUtilityCruiseCar is also interesting because the
+COUtilityCruiseCar object's containment of the COCruiseCar object crosses
+the process boundary between APTCLIEN and the out-of-process local server
+APTSERVE.EXE. In addition, COCruiseCar's containment of COCar crosses
+thread boundaries within APTSERVE. APTCLIEN uses standard marshaling
+support for the custom interfaces it uses on the COCruiseCar and COCar
+objects. This marshaling support is provided by the previous MARSHAL code
+sample, so you must build the MARSHAL code sample prior to building and
+running APTCLIEN and APTSERVE.
+
+<P>
+For functional descriptions and a tutorial code tour of APTCLIEN, see the
+Code Tour section in APTCLIEN.HTM. For details on the external user
+operation of APTCLIEN, see both the Usage and Operation sections in
+APTCLIEN.HTM. To read APTCLIEN.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the APTCLIEN lesson in the table of lessons. You can
+also achieve the same thing by clicking the APTCLIEN.HTM file after
+locating the main tutorial directory in the Windows Explorer. See also
+APTSERVE.HTM in the main directory for more details on how APTSERVE works
+and exposes its services to APTCLIEN. You must build APTSERVE.EXE before
+building APTCLIEN. The makefile for APTSERVE automatically registers that
+server in the registry, so you must build APTSERVE before attempting to
+run APTCLIEN.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<h4>Usage</h4>
+
+<P>
+APTCLIEN is an application that you can execute directly from Windows in
+the normal manner or from the Command Prompt window. No command line
+parameters are recognized by APTCLIEN.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">
+Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, APTCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="APTCLIEN\APTCLIEN.exe">
+Click here to run APTCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>OPERATION</h3>
+
+<P>
+The APTCLIEN.EXE application provides the user interface for this lesson.
+It exercises the associated, but independent, APTSERVE.EXE out-of-process
+local server. Here is a summary of operation from the standpoint of
+APTCLIEN.EXE as a COM client of the APTSERVE.EXE COM server.
+
+<P>
+The APTCLIEN and APTSERVE samples are directly analogous to the LOCCLIEN
+and LOCSERVE samples. The same components are used, and the same menu
+system exercises those objects.
+
+<P>
+As in the LOCCLIEN code sample, support is provided for a trace logging
+facility that will display in the APTCLIEN client application an
+integrated trace log of activity in both client and server.
+
+<P>
+Although APTCLIEN functions much like the prior LOCCLIEN sample, here is a
+short review for those readers who are visiting this code sample out of
+sequence. The COM objects that are used in the APTCLIEN and APTSERVE code
+samples represent sport utility vehicles. We invent some basic feature
+sets for modeling such car objects. These feature sets are implemented as
+interfaces to COM objects. The ICar interface provides some basic car
+behavior: Shift, Clutch, Speed, and Steer. The IUtility interface provides
+off-road utility systems: Offroad and Winch. The ICruise interface
+provides automatic cruise control facilities: Engage and Adjust.
+
+<P>
+APTCLIEN.EXE provides menus for creating, releasing, and invoking methods
+for four COM objects: COCar, COUtilityCar, COCruiseCar, and
+COUtilityCruiseCar. These objects have combinations of the ICar, IUtility,
+and ICruise interfaces. COCar objects expose the ICar interface.
+COUtilityCar objects expose the ICar and IUtility interfaces. COCruiseCar
+objects expose the ICar and ICruise interfaces. COUtilityCruiseCar objects
+expose the ICar, ICruise, and IUtility interfaces. As a result, COCar
+objects have only the basic car behavior (ICar). COUtilityCar objects have
+basic car behavior (ICar) with sport utility systems (IUtility).
+COCruiseCar objects have basic car behavior (ICar) with an automatic
+cruise control system (ICruise). COUtilityCruiseCar objects have basic car
+behavior (ICar), a cruise control system (ICruise), and a sport utility
+system (IUtility).
+
+<P>
+COCar is constructed as an aggregatable COM object with a native
+implementation of the ICar interface. COUtilityCar is constructed using
+containment and is implemented in APTSERVE.EXE. For details, see the
+APTSERVE lesson. COCruiseCar is also constructed using containment and is
+also implemented in APTSERVE.EXE. COUtilityCruiseCar is constructed using
+containment and is implemented in APTCLIEN.EXE. In this sample,
+COUtilityCruiseCar reuses COCruiseCar by containment, which in turn reuses
+COCar by containment to illustrate three levels of nested object reuse by
+containment.
+
+<P>
+APTCLIEN.EXE presents a menu for each of these four main COM objects. Each
+menu has commands that call the methods of the various available
+interfaces. The code samples (both APTCLIEN and APTSERVE) issue trace
+message log statements throughout. When you exercise the objects from
+APTCLIEN.EXE, the main APTCLIEN window will display a log of internal
+activity in these COM objects.
+
+<P>
+Here is a description of the menu operation of APTCLIEN.
+
+<p>Menu Selection: File/Exit<br>
+Exits APTCLIEN.
+
+<p>Menu Selection: Car/Create<br>
+Creates a COCar COM object. A checkmark beside the menu item indicates
+that there is already an instance of the object.
+
+<p>Menu Selection: Car/Release<br>
+Releases the COCar COM object.
+
+<p>Menu Selection: Car/ICar::Shift<br>
+Calls the ICar::Shift method on the COCar object.
+
+<p>Menu Selection: Car/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COCar object.
+
+<p>Menu Selection: Car/ICar::Speed<br>
+Calls the ICar::Speed method on the COCar object.
+
+<p>Menu Selection: Car/ICar::Steer<br>
+Calls the ICar::Steer method on the COCar object.
+
+<p>Menu Selection: UtilityCar/Create<br>
+Creates the COUtilityCar COM object. A checkmark beside the menu item
+indicates that there is already an instance of the object.
+
+<p>Menu Selection: UtilityCar/Release<br>
+Releases the COUtilityCar COM object.
+
+<p>Menu Selection: UtilityCar/ICar::Shift<br>
+Calls the ICar::Shift method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/ICar::Speed<br>
+Calls the ICar::Speed method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/ICar::Steer<br>
+Calls the ICar::Steer method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/IUtility::Offroad<br>
+Calls the IUtility::Offroad method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/IUtility::Winch<br>
+Calls the IUtility::Winch method on the COUtilityCar object.
+
+<p>Menu Selection: CruiseCar/Create<br>
+Creates the COCruiseCar COM object. A checkmark beside the menu item
+indicates that there is already an instance of the object.
+
+<p>Menu Selection: CruiseCar/Release<br>
+Releases the COCruiseCar COM object.
+
+<p>Menu Selection: CruiseCar/ICar::Shift<br>
+Calls the ICar::Shift method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICar::Speed<br>
+Calls the ICar::Speed method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICar::Steer<br>
+Calls the ICar::Steer method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICruise::Engage<br>
+Calls the ICruise::Engage method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICruise::Adjust<br>
+Calls the ICruise::Adjust method on the COCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/Create<br>
+Creates the COUtilityCruiseCar COM object. A checkmark beside the menu
+item indicates that there is already an instance of the object.
+
+<p>Menu Selection: UtilityCruiseCar/Release<br>
+Releases the COUtilityCruiseCar COM object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Shift<br>
+Calls the ICar::Shift method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Speed<br>
+Calls the ICar::Speed method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Steer<br>
+Calls the ICar::Steer method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICruise::Engage<br>
+Calls the ICruise::Engage method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICruise::Adjust<br>
+Calls the ICruise::Adjust method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/IUtility::Offroad<br>
+Calls the IUtility::Offroad method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/IUtility::Winch<br>
+Calls the IUtility::Winch method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: Log/Clear<br>
+Clears the trace message log display.
+
+<p>Menu Selection: Log/Logging<br>
+Toggles the trace message logging facility on or off. A checkmark beside
+the menu item indicates that logging is on. Logging can be engaged but
+simply turned on or off. Unchecking this command turns the trace message
+logging facility off but does not disengage the logging mechanisms.
+
+<p>Menu Selection: Log/Copy<br>
+Copies the current contents of the trace message log to the Windows
+Clipboard.
+
+<P>Menu Selection: Help/APTCLIEN Tutorial<br>
+Opens the APTCLIEN.HTM tutorial file in the Web browser.
+
+<P>Menu Selection: Help/APTSERVE Tutorial<br>
+Opens the APTSERVE.HTM tutorial file in the Web browser.
+
+<P>Menu Selection: Help/MARSHAL Tutorial<br>
+Opens the MARSHAL.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/Read Source File<br>
+Displays the Open common dialog box so you can open a source file from
+this lesson or another one in the Windows Notepad.
+
+<p>Menu Selection: Help/About APTCLIEN<br>
+Displays the About dialog box for this application.
+
+<p>Menu Selection: Help/About APTSERVE<br>
+Displays the About dialog box for APTSERVE.EXE, which is used by this
+application.<br>
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files          Description</u>
+APTCLIEN.TXT   Short sample description.
+MAKEFILE       The generic makefile for building the code sample
+               application of this tutorial lesson.
+APTCLIEN.H     The include file for the APTCLIEN application. Contains
+               class declarations, function prototypes, and resource
+               identifiers.
+APTCLIEN.CPP   The main implementation file for APTCLIEN.EXE. Has WinMain
+               and CMainWindow implementation, as well as the main menu
+               dispatching.
+APTCLIEN.RC    The application resource definition file.
+APTCLIEN.ICO   The application icon resource.
+UTCRUCAR.H     The class declaration for the COUtilityCruiseCar COM object.
+UTCRUCAR.CPP   Implementation file for the COUtilityCruiseCar COM object.
+               Also has the definition of the CreateUtilityCruiseCar
+               function.
+ </FONT> </PRE>
+
+<P>
+Like all code samples in the series, APTCLIEN uses many of the utility
+classes and services provided by APPUTIL. For more details on APPUTIL,
+study the APPUTIL library source code in the sibling APPUTIL directory and
+APPUTIL.HTM in the main tutorial directory.
+
+<P>
+In addition to covering the coding techniques used, this lesson examines
+the internal behavior of the APTCLIEN and APTSERVE client/server pair. As
+a client, APTCLIEN offers nothing beyond what was shown in LOCCLIEN. The
+significant difference is simply the use of different CLSIDs
+(CLSID_AptCar, CLSID_AptUtilityCar, and CLSID_AptCruiseCar) for the
+creation of the APTSERVE objects to be controlled.
+
+<P>
+We will tour internal behavior in both APTCLIEN and APTSERVE by looking at
+some representative trace logs. Trace lines that begin with &quot;C:&quot;
+mark behavior reported in the APTCLIEN.EXE client. Lines that begin with
+&quot;L:&quot; mark behavior reported in the APTSERVE.EXE local
+out-of-process server. The internal APTSERVE trace lines will also show
+the thread ID of the executing thread in angle brackets after the
+&quot;L&quot;. Since the client is single-threaded, its thread ID is not
+shown. These trace logs were obtained under the Windows 95 operating
+system. Because a multithreaded program is being traced, your results may
+be slightly different if you replicate this logged behavior on you own
+machine. For example, the server's AptThreadProc function will execute at
+different times depending on the operating system's task load and
+scheduling priorities.
+
+<P>
+After running APTCLIEN, choose the Create command from the Car menu. Here
+is the resulting trace log.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === Car Menu: Create.
+  L: APTSERVE now logging to client.
+  L&lt;FFFE7005&gt;: CmdLine Switches= -Embedding
+  L&lt;FFFE7005&gt;: CServer::OpenFactories. Begin.
+  L: CServer::OwnThis. Thread &lt;FFFE7005&gt; waiting to own CServer.
+  L: CServer::OwnThis. CServer now owned by Thread &lt;FFFE7005&gt;.
+  L&lt;FFFE7005&gt;: CFCar::CImpIClassFactory Constructor. Non-Aggregating.
+  L&lt;FFFE7005&gt;: CFCar Constructor. m_pUnkOuter=0x0.
+  L&lt;FFFE7005&gt;: CFUtilityCar::CImpIClassFactory Constructor. Non-Aggregating.
+  L&lt;FFFE7005&gt;: CFUtilityCar Constructor. m_pUnkOuter=0x0.
+  L&lt;FFFE7005&gt;: CFCruiseCar::CImpIClassFactory Constructor. Non-Aggregating.
+  L&lt;FFFE7005&gt;: CFCruiseCar Constructor. m_pUnkOuter=0x0.
+  L&lt;FFFE7005&gt;: CServer::OpenFactories. AptCar.
+  L&lt;FFFE7005&gt;: CFCar::AddRef. New cRefs=1.
+  L&lt;FFFE7005&gt;: CFCar::AddRef. New cRefs=2.
+  L&lt;FFFE7005&gt;: CServer::OpenFactories. AptUtilityCar.
+  L&lt;FFFE7005&gt;: CFUtilityCar::AddRef. New cRefs=1.
+  L&lt;FFFE7005&gt;: CFUtilityCar::AddRef. New cRefs=2.
+  L&lt;FFFE7005&gt;: CServer::OpenFactories. AptCruiseCar.
+  L&lt;FFFE7005&gt;: CFCruiseCar::AddRef. New cRefs=1.
+  L: AptThreadProc. Starting Apartment Thread &lt;FFFEE289&gt;.
+  L: AptThreadProc. Starting Apartment Thread &lt;FFFEE4B1&gt;.
+  L&lt;FFFE7005&gt;: CFCruiseCar::AddRef. New cRefs=2.
+  L: AptThreadProc. Registering class factory of apartment &lt;FFFEE289&gt;.
+  L: AptThreadProc. Registering class factory of apartment &lt;FFFEE4B1&gt;.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=3.
+  L&lt;FFFEE4B1&gt;: CFUtilityCar::AddRef. New cRefs=3.
+  L: CServer::UnOwnThis. Ownership relinquished by &lt;FFFE7005&gt;.
+  L&lt;FFFE7005&gt;: CServer::OpenFactories. End.
+  L: AptThreadProc. Starting Apartment Thread &lt;FFFEE811&gt;.
+  L: AptThreadProc. Registering class factory of apartment &lt;FFFEE811&gt;.
+  L&lt;FFFEE811&gt;: CFCruiseCar::AddRef. New cRefs=3.
+  L&lt;FFFEE289&gt;: CFCar::QueryInterface. pIClassFactory returned.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=4.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;FFFEE289&gt;: CFCar::QueryInterface. pIClassFactory returned.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Addref. Delegating. New cI=2.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=5.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;FFFEE289&gt;: CFCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=6.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=7.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=6.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=7.
+  L&lt;FFFEE289&gt;: CFCar::QueryInterface. pIClassFactory returned.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Addref. Delegating. New cI=3.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=8.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Release. Delegating. New cI=2.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=7.
+  L&lt;FFFEE289&gt;: CFCar::QueryInterface. pIClassFactory returned.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Addref. Delegating. New cI=3.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=8.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Release. Delegating. New cI=2.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=7.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Release. Delegating. New cI=1.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=6.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::CreateInstance. pUnkOuter=0x0.
+  L&lt;FFFEE289&gt;: COCar::CImpICar Constructor. Non-Aggregating.
+  L&lt;FFFEE289&gt;: COCar Constructor. m_pUnkOuter=0x0.
+  L: CServer::OwnThis. Thread &lt;FFFEE289&gt; waiting to own CServer.
+  L: CServer::OwnThis. CServer now owned by Thread &lt;FFFEE289&gt;.
+  L&lt;FFFEE289&gt;: CServer::ObjectsUp. New cObjects=1.
+  L: CServer::UnOwnThis. Ownership relinquished by &lt;FFFEE289&gt;.
+  L&lt;FFFEE289&gt;: COCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;FFFEE289&gt;: COCar::AddRef. New cRefs=1.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::CreateInstance Succeeded. *ppv=0x870658.
+  L&lt;FFFEE289&gt;: COCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;FFFEE289&gt;: COCar::AddRef. New cRefs=2.
+  L&lt;FFFEE289&gt;: COCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;FFFEE289&gt;: COCar::AddRef. New cRefs=3.
+  L&lt;FFFEE289&gt;: COCar::AddRef. New cRefs=4.
+  L&lt;FFFEE289&gt;: COCar::Release. New cRefs=3.
+  L&lt;FFFEE289&gt;: COCar::AddRef. New cRefs=4.
+  L&lt;FFFEE289&gt;: COCar::Release. New cRefs=3.
+  L&lt;FFFEE289&gt;: COCar::Release. New cRefs=2.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=5.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=4.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=3.
+ </FONT> </PRE>
+
+<p>
+This log shows that the following threads are started.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  &lt;FFFE7005&gt; - Main thread for the APTSERVE local server application.
+  &lt;FFFEE289&gt; - AptCar component apartment thread.
+  &lt;FFFEE4B1&gt; - AptUtilityCar component apartment thread.
+  &lt;FFFEE811&gt; - AptCruiseCar component apartment thread.
+ </FONT> </PRE>
+
+<p>
+We will abbreviate these to &lt;05&gt;, &lt;89&gt;, &lt;B1&gt;, and
+&lt;11&gt;. The main thread, &lt;05&gt;, is also called the main apartment
+thread and could be exploited more fully as an apartment in the strict
+sense. But it is not exploited as such in this code sample. All four of
+these threads are separate single-threaded apartments.
+
+<p>
+The main thread, &lt;05&gt;, executes the OpenFactories method. We see the
+use of the CThreaded ownership mechanism, with the main thread requesting
+and getting ownership of CServer. On this main thread we see the
+constructors for each class factory. The class factories create the
+threads for the AptCar, AptUtilityCar, and AptCruiseCar objects. At some
+variable length of time after the thread creation calls, the operating
+system calls each thread's AptThreadProc function to start the thread. We
+see these calls reported as the threads for AptCar (&lt;89&gt;),
+AptUtilityCar (&lt;B1&gt;), and AptCruiseCar (&lt;11&gt;) are started.
+Within AptThreadProc, each thread also registers the apartment's new class
+factory with COM. The main thread, &lt;05&gt;, relinquishes ownership of
+CServer, and the log then reports that OpenFactories has ended.
+
+<p>
+We then see the CFCar class factory used to create the requested new COCar
+object. CFCar and the constructor of the new COCar object both execute on
+the AptCar thread, &lt;89&gt;. When the class factory is successful in
+creating the COCar object, we see the server's object count incremented to
+1 inside the protection of the OwnThis ownership by thread &lt;89&gt;. We
+then see the delegated release of the IClassFactory held by the client.
+COM still holds three outstanding references to the registered CFCar class
+factory and two outstanding references to the COCar object.
+
+<p>
+Next choose the ICar::Shift command from the Car menu to see the client
+call the interface methods of the new COCar object.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === Car Menu: ICar::Shift
+  C: --Obtaining Interface Pointer.
+  L&lt;FFFEE289&gt;: COCar::QueryInterface. pICar returned.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::Addref. Delegating. New cI=1.
+  L&lt;FFFEE289&gt;: COCar::AddRef. New cRefs=3.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::Release. Delegating. New cI=0.
+  L&lt;FFFEE289&gt;: COCar::Release. New cRefs=2.
+  L&lt;FFFEE289&gt;: COCar::QueryInterface. pICar returned.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::Addref. Delegating. New cI=1.
+  L&lt;FFFEE289&gt;: COCar::AddRef. New cRefs=3.
+  C: Interface obtained. *ppv=0x520BC4
+  C: --Calling pICar-&gt;Shift
+  L&lt;FFFEE289&gt;: COCar::CImpICar::Shift. Called. ICar calls=1.
+  C: --Releasing pICar
+ </FONT> </PRE>
+
+<p>
+In the process of obtaining the interface pointer, ICar's own AddRef and
+Release functions are called. Before this Shift call, COCar had two
+outstanding references. Afterwards, it ended with three references prior
+to the actual call to pICar-&gt;Shift. The Shift method call indicates
+this is the first call to this object instance's ICar interface.
+
+<p>
+We see COM efficiency at work if we choose the ICar::Shift command from
+the Car menu again.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === Car Menu: ICar::Shift
+  C: --Obtaining Interface Pointer.
+  C: Interface obtained. *ppv=0x520BC4
+  C: --Calling pICar-&gt;Shift
+  L&lt;FFFEE289&gt;: COCar::CImpICar::Shift. Called. ICar calls=2.
+  C: --Releasing pICar
+</FONT> </PRE>
+
+<p>
+COM had cached the interface information during the previous ICar::Shift
+call, so that on this second call the interface pointer was returned
+directly without QueryInterface calls to the COCar object. The actual
+Shift call is executed on thread &lt;89&gt;. This call was marshaled from
+the client process to this server's AptCar thread, &lt;89&gt;. The ICar
+interface call counter indicates 2 for this second call to ICar::Shift.
+
+<p>
+To show the functioning of a composite multithreaded object in the server,
+choose the Create command from the UtilityCruiseCar menu.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === UtilityCruiseCar Menu: Create.
+  C: CreateUtilityCruiseCar. pUnkOuter=0x0.
+  C: COUtilityCruiseCar::CImpICar Constructor. Non-Aggregating
+  C: COUtilityCruiseCar::CImpICruise Constructor. Non-Aggregating
+  C: COUtilityCruiseCar::CImpIUtility Constructor. Non-Aggregating.
+  C: COUtilityCruiseCar Constructor. m_pUnkOuter=0x0.
+  C: COUtilityCruiseCar::Init. pUnkOuter=0x870138
+  C: COUtilityCruiseCar::Init. Obtain CruiseCar Class Factory.
+  L&lt;FFFEE811&gt;: CFCruiseCar::QueryInterface. pIClassFactory returned.
+  L&lt;FFFEE811&gt;: CFCruiseCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  L&lt;FFFEE811&gt;: CFCruiseCar::AddRef. New cRefs=4.
+  L&lt;FFFEE811&gt;: CFCruiseCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;FFFEE811&gt;: CFCruiseCar::QueryInterface. pIClassFactory returned.
+  L&lt;FFFEE811&gt;: CFCruiseCar::CImpIClassFactory::Addref. Delegating. New cI=2.
+  L&lt;FFFEE811&gt;: CFCruiseCar::AddRef. New cRefs=5.
+  L&lt;FFFEE811&gt;: CFCruiseCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;FFFEE811&gt;: CFCruiseCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;FFFEE811&gt;: CFCruiseCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;FFFEE811&gt;: CFCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;FFFEE811&gt;: CFCruiseCar::AddRef. New cRefs=6.
+  L&lt;FFFEE811&gt;: CFCruiseCar::AddRef. New cRefs=7.
+  L&lt;FFFEE811&gt;: CFCruiseCar::Release. New cRefs=6.
+  L&lt;FFFEE811&gt;: CFCruiseCar::AddRef. New cRefs=7.
+  L&lt;FFFEE811&gt;: CFCruiseCar::QueryInterface. pIClassFactory returned.
+  L&lt;FFFEE811&gt;: CFCruiseCar::CImpIClassFactory::Addref. Delegating. New cI=3.
+  L&lt;FFFEE811&gt;: CFCruiseCar::AddRef. New cRefs=8.
+  L&lt;FFFEE811&gt;: CFCruiseCar::CImpIClassFactory::Release. Delegating. New cI=2.
+  L&lt;FFFEE811&gt;: CFCruiseCar::Release. New cRefs=7.
+  L&lt;FFFEE811&gt;: CFCruiseCar::QueryInterface. pIClassFactory returned.
+  L&lt;FFFEE811&gt;: CFCruiseCar::CImpIClassFactory::Addref. Delegating. New cI=3.
+  L&lt;FFFEE811&gt;: CFCruiseCar::AddRef. New cRefs=8.
+  L&lt;FFFEE811&gt;: CFCruiseCar::CImpIClassFactory::Release. Delegating. New cI=2.
+  L&lt;FFFEE811&gt;: CFCruiseCar::Release. New cRefs=7.
+  L&lt;FFFEE811&gt;: CFCruiseCar::CImpIClassFactory::Release. Delegating. New cI=1.
+  L&lt;FFFEE811&gt;: CFCruiseCar::Release. New cRefs=6.
+  C: COUtilityCruiseCar::Init. CruiseCar Class Factory obtained.
+  C: COUtilityCruiseCar::Init. Calling CFCruiseCar::CreateInstance.
+  L&lt;FFFEE811&gt;: CFCruiseCar::CImpIClassFactory::CreateInstance. pUnkOuter=0x0.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICar Constructor. Non-Aggregating
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise Constructor. Non-Aggregating.
+  L&lt;FFFEE811&gt;: COCruiseCar Constructor. m_pUnkOuter=0x0.
+  L: CServer::OwnThis. Thread &lt;FFFEE811&gt; waiting to own CServer.
+  L: CServer::OwnThis. CServer now owned by Thread &lt;FFFEE811&gt;.
+  L&lt;FFFEE811&gt;: CServer::ObjectsUp. New cObjects=2.
+  L: CServer::UnOwnThis. Ownership relinquished by &lt;FFFEE811&gt;.
+  L&lt;FFFEE811&gt;: COCruiseCar::Init.
+  L&lt;FFFEE289&gt;: CFCar::QueryInterface. pIClassFactory returned.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=4.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;FFFEE289&gt;: CFCar::QueryInterface. pIClassFactory returned.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Addref. Delegating. New cI=2.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=5.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::QueryInterface. Delegating.
+  L&lt;FFFEE289&gt;: CFCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=6.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=7.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=6.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=7.
+  L&lt;FFFEE289&gt;: CFCar::QueryInterface. pIClassFactory returned.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Addref. Delegating. New cI=3.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=8.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Release. Delegating. New cI=2.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=7.
+  L&lt;FFFEE289&gt;: CFCar::QueryInterface. pIClassFactory returned.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Addref. Delegating. New cI=3.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=8.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Release. Delegating. New cI=2.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=7.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Release. Delegating. New cI=1.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=6.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::CreateInstance. pUnkOuter=0x0.
+  L&lt;FFFEE289&gt;: COCar::CImpICar Constructor. Non-Aggregating.
+  L&lt;FFFEE289&gt;: COCar Constructor. m_pUnkOuter=0x0.
+  L: CServer::OwnThis. Thread &lt;FFFEE289&gt; waiting to own CServer.
+  L: CServer::OwnThis. CServer now owned by Thread &lt;FFFEE289&gt;.
+  L&lt;FFFEE289&gt;: CServer::ObjectsUp. New cObjects=3.
+  L: CServer::UnOwnThis. Ownership relinquished by &lt;FFFEE289&gt;.
+  L&lt;FFFEE289&gt;: COCar::QueryInterface. pICar returned.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::Addref. Delegating. New cI=1.
+  L&lt;FFFEE289&gt;: COCar::AddRef. New cRefs=1.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::CreateInstance Succeeded. *ppv=0x8706BC.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::QueryInterface. Delegating.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::QueryInterface. Delegating.
+  L&lt;FFFEE289&gt;: COCar::QueryInterface. pICar returned.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::Addref. Delegating. New cI=2.
+  L&lt;FFFEE289&gt;: COCar::AddRef. New cRefs=2.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::QueryInterface. Delegating.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::QueryInterface. Delegating.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::QueryInterface. Delegating.
+  L&lt;FFFEE289&gt;: COCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;FFFEE289&gt;: COCar::AddRef. New cRefs=3.
+  L&lt;FFFEE289&gt;: COCar::AddRef. New cRefs=4.
+  L&lt;FFFEE289&gt;: COCar::Release. New cRefs=3.
+  L&lt;FFFEE289&gt;: COCar::AddRef. New cRefs=4.
+  L&lt;FFFEE289&gt;: COCar::QueryInterface. pICar returned.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::Addref. Delegating. New cI=3.
+  L&lt;FFFEE289&gt;: COCar::AddRef. New cRefs=5.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::Release. Delegating. New cI=2.
+  L&lt;FFFEE289&gt;: COCar::Release. New cRefs=4.
+  L&lt;FFFEE289&gt;: COCar::QueryInterface. pICar returned.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::Addref. Delegating. New cI=3.
+  L&lt;FFFEE289&gt;: COCar::AddRef. New cRefs=5.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::Release. Delegating. New cI=2.
+  L&lt;FFFEE289&gt;: COCar::Release. New cRefs=4.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::Release. Delegating. New cI=1.
+  L&lt;FFFEE289&gt;: COCar::Release. New cRefs=3.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=5.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=4.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=3.
+  L&lt;FFFEE811&gt;: COCruiseCar::Init (New Containment of COCar) Succeeded.
+  L&lt;FFFEE811&gt;: COCruiseCar::QueryInterface. pICruise returned.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise::Addref. Delegating. New cI=1.
+  L&lt;FFFEE811&gt;: COCruiseCar::AddRef. New cRefs=1.
+  L&lt;FFFEE811&gt;: CFCruiseCar::CImpIClassFactory::CreateInstance Succeeded. *ppv=0x870698.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise::QueryInterface. Delegating.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise::QueryInterface. Delegating.
+  L&lt;FFFEE811&gt;: COCruiseCar::QueryInterface. pICruise returned.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise::Addref. Delegating. New cI=2.
+  L&lt;FFFEE811&gt;: COCruiseCar::AddRef. New cRefs=2.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise::QueryInterface. Delegating.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise::QueryInterface. Delegating.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise::QueryInterface. Delegating.
+  L&lt;FFFEE811&gt;: COCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;FFFEE811&gt;: COCruiseCar::AddRef. New cRefs=3.
+  L&lt;FFFEE811&gt;: COCruiseCar::AddRef. New cRefs=4.
+  L&lt;FFFEE811&gt;: COCruiseCar::Release. New cRefs=3.
+  L&lt;FFFEE811&gt;: COCruiseCar::AddRef. New cRefs=4.
+  L&lt;FFFEE811&gt;: COCruiseCar::QueryInterface. pICruise returned.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise::Addref. Delegating. New cI=3.
+  L&lt;FFFEE811&gt;: COCruiseCar::AddRef. New cRefs=5.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise::Release. Delegating. New cI=2.
+  L&lt;FFFEE811&gt;: COCruiseCar::Release. New cRefs=4.
+  L&lt;FFFEE811&gt;: COCruiseCar::QueryInterface. pICruise returned.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise::Addref. Delegating. New cI=3.
+  L&lt;FFFEE811&gt;: COCruiseCar::AddRef. New cRefs=5.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise::Release. Delegating. New cI=2.
+  L&lt;FFFEE811&gt;: COCruiseCar::Release. New cRefs=4.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise::Release. Delegating. New cI=1.
+  L&lt;FFFEE811&gt;: COCruiseCar::Release. New cRefs=3.
+  C: COUtilityCruiseCar::Init. Releasing CruiseCar Class Factory.
+  L&lt;FFFEE811&gt;: CFCruiseCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  L&lt;FFFEE811&gt;: CFCruiseCar::Release. New cRefs=5.
+  L&lt;FFFEE811&gt;: CFCruiseCar::Release. New cRefs=4.
+  L&lt;FFFEE811&gt;: CFCruiseCar::Release. New cRefs=3.
+  L&lt;FFFEE811&gt;: COCruiseCar::QueryInterface. pICar returned
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICar::Addref. Delegating. New cI=1.
+  L&lt;FFFEE811&gt;: COCruiseCar::AddRef. New cRefs=4.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICar::Release. Delegating. New cI=0.
+  L&lt;FFFEE811&gt;: COCruiseCar::Release. New cRefs=3.
+  L&lt;FFFEE811&gt;: COCruiseCar::QueryInterface. pICar returned
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICar::Addref. Delegating. New cI=1.
+  L&lt;FFFEE811&gt;: COCruiseCar::AddRef. New cRefs=4.
+  C: COUtilityCruiseCar::Init (CruiseCar Containment) Succeeded.
+  C: COUtilityCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  C: COUtilityCruiseCar::AddRef. New cRefs=1.
+  C: CreateUtilityCruiseCar Succeeded. *ppv=0x870138.
+</FONT> </PRE>
+
+<p>
+COUtilityCruiseCar is a composite COM object created in the client. It
+reuses the COCruiseCar COM object provided by the server. COCruiseCar in
+turn reuses the COCar COM object provided by the server. In the server, we
+see the CruiseCar class factory executing on the AptCruiseCar thread,
+&lt;11&gt;, to create a new COCruiseCar whose constructor also runs on
+this thread. The server object count is incremented to 2 by this thread
+when it obtains ownership of CServer. The object count is now 2, one for
+the original COCar created at the start of this lesson and one for the new
+COCruiseCar.
+
+<p>
+To complete the creation of COCruiseCar its Init method is called on the
+AptCruiseCar thread, &lt;11&gt;. We see the resulting CFCar class factory
+executed on the AptCar thread, &lt;89&gt;. The creation of this new COCar
+object is completed on this thread, and it increments the server's object
+count to 3. Through the remainder of the log, the behavior winds back out
+of the object creations with COM, causing various QueryInterface, AddRef,
+and Release calls. Upon completion, there are three outstanding references
+on CFCar, three on the new COCar object, three on CFCruiseCar, and four on
+the new COCruiseCar object. Most of these outstanding references to our
+custom interfaces are held within COM.
+
+<p>
+Now choose the ICar::Shift command from the UtilityCruiseCar menu.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === UtilityCruiseCar Menu: ICar::Shift
+  C: --Obtaining Interface Pointer.
+  C: COUtilityCruiseCar::QueryInterface. pICar returned
+  C: COUtilityCruiseCar::CImpICar::Addref. Delegating. New cI=1.
+  C: COUtilityCruiseCar::AddRef. New cRefs=2.
+  C: Interface obtained. *ppv=0x870144
+  C: --Calling pICar-&gt;Shift
+  C: COUtilityCruiseCar::CImpICar::Shift. Delegating. nGear=1.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICar::Shift. Delegating. nGear=1.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::Shift. Called. ICar calls=1.
+  C: --Releasing pICar
+  C: COUtilityCruiseCar::CImpICar::Release. Delegating. New cI=0.
+  C: COUtilityCruiseCar::Release. New cRefs=1.
+</FONT> </PRE>
+
+<p>
+The interface obtained is on the composite COUtilityCruiseCar object that
+is created within the client. Using this interface, the Shift call is
+delegated to the contained COCruiseCar object. At this point COM has to
+marshal the call from the APTCLIEN client process to thread &lt;11&gt;,
+where the COCruiseCar object resides. COCruiseCar is a composite object
+and delegates the ICar::Shift call to its contained COCar object. COM now
+has to marshal the call again within the server from the COCruiseCar
+apartment thread, &lt;11&gt;, to the COCar thread, &lt;89&gt;. On this
+AptCar thread, &lt;89&gt;, we see the Shift action finally performed.
+
+<p>
+For this call to ICar::Shift on the COUtilityCruiseCar object, COM
+enforces the apartment model and ensures that, regardless of the calling
+thread, the call performed in the particular object is executed on the
+thread of that object. The ICar interface call counter shows 1, indicating
+a first call to this interface on the new contained COCar object. This
+count confirms that this is a new instance of COCar. If the COCar
+originally created at the start of this lesson had been somehow mistakenly
+used, we would see an interface call count of 3 because of the two Shift
+calls to that COCar object earlier in this lesson.
+
+<p>
+To watch the shutdown of the COUtilityCruiseCar object, choose the Release
+command from the UtilityCruiseCar menu.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === UtilityCruiseCar Menu: Release.
+  C: COUtilityCruiseCar::Release. New cRefs=0.
+  C: COUtilityCruiseCar::Destructor.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise::Release. Delegating. New cI=0.
+  L&lt;FFFEE811&gt;: COCruiseCar::Release. New cRefs=3.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICar::Release. Delegating. New cI=0.
+  L&lt;FFFEE811&gt;: COCruiseCar::Release. New cRefs=2.
+  L&lt;FFFEE811&gt;: COCruiseCar::Release. New cRefs=1.
+  L&lt;FFFEE811&gt;: COCruiseCar::Release. New cRefs=0.
+  L: CServer::OwnThis. Thread &lt;FFFEE811&gt; waiting to own CServer.
+  L: CServer::OwnThis. CServer now owned by Thread &lt;FFFEE811&gt;.
+  L&lt;FFFEE811&gt;: CServer::ObjectsDown. New cObjects=2.
+  L: CServer::UnOwnThis. Ownership relinquished by &lt;FFFEE811&gt;.
+  L&lt;FFFEE811&gt;: COCruiseCar::Destructor.
+  L&lt;FFFEE289&gt;: COCar::CImpICar::Release. Delegating. New cI=0.
+  L&lt;FFFEE289&gt;: COCar::Release. New cRefs=2.
+  L&lt;FFFEE289&gt;: COCar::Release. New cRefs=1.
+  L&lt;FFFEE289&gt;: COCar::Release. New cRefs=0.
+  L: CServer::OwnThis. Thread &lt;FFFEE289&gt; waiting to own CServer.
+  L: CServer::OwnThis. CServer now owned by Thread &lt;FFFEE289&gt;.
+  L&lt;FFFEE289&gt;: CServer::ObjectsDown. New cObjects=1.
+  L: CServer::UnOwnThis. Ownership relinquished by &lt;FFFEE289&gt;.
+  L&lt;FFFEE289&gt;: COCar::Destructor.
+  L&lt;FFFEE289&gt;: COCar::CImpICar Destructor.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICruise Destructor.
+  L&lt;FFFEE811&gt;: COCruiseCar::CImpICar Destructor.
+  C: COUtilityCruiseCar::CImpIUtility Destructor.
+  C: COUtilityCruiseCar::CImpICruise Destructor.
+  C: COUtilityCruiseCar::CImpICar Destructor.
+ </FONT> </PRE>
+
+<p>
+This event causes the COUtilityCruiseCar destructor to run. It releases
+the IUnknown of the contained COCruiseCar object. In the server, we see
+the resulting releases of interfaces on COCruiseCar held by the client and
+by COM. These releases run on the AptCruiseCar thread, &lt;11&gt;, and
+decrement the COCruiseCar reference count to 0, forcing the destruction of
+the COCruiseCar object. Thread &lt;11&gt; gains ownership of CServer and
+decrements the server's object count to 2. The COCruiseCar destruction
+causes this object to release its hold on its contained COCar. We see the
+resulting releases of the interfaces on COCar held by COCruiseCar and by
+COM. These run on the AptCar thread, &lt;89&gt;, and decrement of the
+COCar reference count to 0, which forces the destruction of the COCar
+object. The AptCar thread, &lt;89&gt;, gains ownership of CServer and
+decrements the server's object count to 1. Finally, we see the destructors
+for all the various interface implementation C++ objects.
+
+<p>
+The resulting object count of 1 reflects the remaining existence of the
+original COCar object created at the start of this lesson. We will now
+release this only remaining object supplied by APTSERVE and watch the
+server shutdown. From the Car menu, choose Release.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === Car Menu: Release.
+  L&lt;FFFEE289&gt;: COCar::Release. New cRefs=2.
+  L&lt;FFFEE289&gt;: COCar::Release. New cRefs=1.
+  L&lt;FFFEE289&gt;: COCar::Release. New cRefs=0.
+  L: CServer::OwnThis. Thread &lt;FFFEE289&gt; waiting to own CServer.
+  L: CServer::OwnThis. CServer now owned by Thread &lt;FFFEE289&gt;.
+  L&lt;FFFEE289&gt;: CServer::ObjectsDown. New cObjects=0.
+  L&lt;FFFEE289&gt;: CServer::ObjectsDown. Closing down APTSERVE server.
+  L: CServer::UnOwnThis. Ownership relinquished by &lt;FFFEE289&gt;.
+  L&lt;FFFE7005&gt;: CServer::CloseFactories. Begin.
+  L&lt;FFFEE289&gt;: COCar::Destructor.
+  L: CServer::OwnThis. Thread &lt;FFFE7005&gt; waiting to own CServer.
+  L&lt;FFFEE289&gt;: COCar::CImpICar Destructor.
+  L: CServer::OwnThis. CServer now owned by Thread &lt;FFFE7005&gt;.
+  L&lt;FFFE7005&gt;: CServer::CloseFactories. Terminate AptCar Apartment.
+  L&lt;FFFE7005&gt;: CServer::CloseFactories. Terminate AptUtilityCar Apartment.
+  L: AptThreadProc. Revoking class factory of apartment &lt;FFFEE289&gt;.
+  L&lt;FFFE7005&gt;: CServer::CloseFactories. Terminate AptCruiseCar Apartment.
+  L: AptThreadProc. Revoking class factory of apartment &lt;FFFEE4B1&gt;.
+  L&lt;FFFEE289&gt;: CFCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;FFFE7005&gt;: CServer::CloseFactories. Releasing all Classfactory interfaces.
+  L&lt;FFFEE289&gt;: CFCar::AddRef. New cRefs=4.
+  L&lt;FFFE7005&gt;: CFCar::Release. New cRefs=3.
+  L&lt;FFFE7005&gt;: CFCar::Release. New cRefs=2.
+  L: AptThreadProc. Revoking class factory of apartment &lt;FFFEE811&gt;.
+  L&lt;FFFEE4B1&gt;: CFUtilityCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=1.
+  L&lt;FFFE7005&gt;: CFUtilityCar::Release. New cRefs=2.
+  L&lt;FFFEE811&gt;: CFCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  L&lt;FFFEE4B1&gt;: CFUtilityCar::AddRef. New cRefs=3.
+  L&lt;FFFEE289&gt;: CFCar::Release. New cRefs=0.
+  L&lt;FFFE7005&gt;: CFUtilityCar::Release. New cRefs=2.
+  L&lt;FFFEE811&gt;: CFCruiseCar::AddRef. New cRefs=4.
+  L&lt;FFFEE4B1&gt;: CFUtilityCar::Release. New cRefs=1.
+  L&lt;FFFEE289&gt;: CFCar::Destructor.
+  L&lt;FFFEE811&gt;: CFCruiseCar::Release. New cRefs=3.
+  L&lt;FFFEE4B1&gt;: CFUtilityCar::Release. New cRefs=0.
+  L&lt;FFFEE289&gt;: CFCar::CImpIClassFactory Destructor.
+  L&lt;FFFE7005&gt;: CFUtilityCar::Destructor.
+  L&lt;FFFEE811&gt;: CFCruiseCar::Release. New cRefs=2.
+  L: AptThreadProc. Apartment Thread &lt;FFFEE4B1&gt; Terminated.
+  L&lt;FFFE7005&gt;: CFUtilityCar::CImpIClassFactory Destructor.
+  L: AptThreadProc. Apartment Thread &lt;FFFEE811&gt; Terminated.
+  L: AptThreadProc. Apartment Thread &lt;FFFEE289&gt; Terminated.
+  L&lt;FFFE7005&gt;: CFCruiseCar::Release. New cRefs=1.
+  L&lt;FFFE7005&gt;: CFCruiseCar::Release. New cRefs=0.
+  L&lt;FFFE7005&gt;: CFCruiseCar::Destructor.
+  L&lt;FFFE7005&gt;: CFCruiseCar::CImpIClassFactory Destructor.
+  L: CServer::UnOwnThis. Ownership relinquished by &lt;FFFE7005&gt;.
+  L&lt;FFFE7005&gt;: CServer::CloseFactories. End.
+  L&lt;FFFE7005&gt;: Exiting APTSERVE local server application.
+</FONT> </PRE>
+
+<p>
+The client releases the IUnknown of the COCar object. In the server, we
+see a resulting cascade of releases of COCar interfaces held by the client
+and by COM. These are executed on the AptCar thread, &lt;89&gt;, and
+decrement the COCar reference count to 0, which forces the destruction of
+the COCar object. Thread &lt;89&gt; gains ownership of CServer and
+decrements the server's object count to 0, triggering a shutdown of the
+entire server. This happens in the ObjectsDown method, where a WM_CLOSE
+message is sent to the main thread, &lt;05&gt;, of the server process.
+This message causes an exit of the server application's message loop. The
+server's CServer::CloseFactories method is then called.
+
+<p>
+Within CloseFactories, we see the unregistering of the class factories
+with COM and the termination of the AptCar, AptUtilityCar, and
+AptCruiseCar threads. The apartment thread message loops are exited after
+WM_QUIT messages are sent to each apartment thread from CloseFactories,
+which is running on the main thread, &lt;05&gt;. Before CloseFactories
+returns, we see the releases of the interfaces held on the class
+factories. These releases decrement each factory's reference count to 0
+and cause the destructors to run for the CFCar, CFUtilityCar, and
+CFCruiseCar objects. After CloseFactories, execution exits the main
+application, and the operating system unloads APTSERVE.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

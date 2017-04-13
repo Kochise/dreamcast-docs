@@ -1,0 +1,450 @@
+===========================================================
+           INSIDE OLE BY KRAIG BROCKSCHMIDT
+                    COMPANION DISC
+       COPYRIGHT (C) 1995 BY KRAIG BROCKSCHMIDT
+===========================================================
+
+
+Corrections to Printed Text of Inside OLE
+
+
+Acknowledgements:
+    My thanks also to Paul Gunn for reviewing some of the text.
+
+
+Addendum:  OLE And Unicode
+
+    It may not be clear from the book text itself that the OLE
+    API functions and interfaces defined for Win32 operating
+    systems are 100% Unicode, even on an ANSI platform such as
+    Windows 95.  For this reason, ANSI applications have to
+    convert strings between the two character sets when working
+    with certain OLE APIs and interfaces.  You'll see such places
+    in the sample code, conditionally compiled using the
+    WIN32ANSI symbol. (If the symbol is not set, the compilation
+    is 100% Unicode.)
+
+    In short, any string that comes back from OLE contains Unicode
+    characters, and any string you send to OLE has to contain the
+    same.  The samples convert strings on a case-by-case basis, as
+    needed.  There are, however, some cases where you will not
+    see an explicit conversion in the code, specifically where
+    an OLE API function is concerned.  The master header file
+    INC\INOLE.H, which is included with all the samples, will redefine
+    specific OLE API functions to redirect them to ANSI versions
+    implemented in the helper library found in the INOLE directory.
+    Functions found there inside ANSI.CPP will call the Unicode
+    OLE function converting input and output strings as necessary.
+
+
+Addendum:  A global comment about the printed code:
+    All the code as it appears in the printed text is oriented
+    around a native Unicode application for the sake of brevity.
+    The actual sample code compiles to ANSI as well as 16-bits,
+    so there will be a few minor differences where strings
+    and string manipulation functions are concerned.
+
+    In addition, you'll see char, TCHAR, and OLECHAR used for
+    various character types.  char will force ANSI characters
+    regardless of all other conditions; TCHAR will conditionally
+    compile to ANSI or Unicode depending on the UNICODE symbol
+    (see BUILD.TXT); OLECHAR is always Unicode (equivalent to WCHAR)
+    even on ANSI-only platforms such as Windows 95.
+
+    You'll see string literals wrapped in either the TEXT or
+    OLETEXT macro.  The TEXT macros conditionally create an
+    ANSI or Unicode string depending again on the compiler flags.
+    The OLETEXT macro, defined in INC\BOOK1632.H, always creates
+    a Unicode macro.  Both macros are defined as no-ops for
+    16-bit compilations.
+
+    Finally, the INC\BOOK1632.H file contains macros to hide
+    the differences between Win16 and Win32 code.  This results
+    in cleaner samples.  So if you see a function call in the
+    code that you know is not available or part of the API for
+    the system you're working in, it's probably defined in this file.
+
+
+
+Page xxiv:  A clarification
+
+    The "Windows Software Development Kit (SDK)" included with
+    Visual C++ isn't the complete Win32 SDK that Microsoft
+    provides separately for Windows 95 and Windows NT (3.5 and
+    3.51).  A few of the book's samples require pieces of the
+    Win32 SDK, specifically the MIDL compiler used to compile
+    custom interfaces in Chapters 6 and 9.  You will need
+    the full Win32 SDK to compile CHAP06\IANIMAL, CHAP06\IKOALA,
+    and CHAP09\IDESCRIP.
+
+    It is also important to note again that Visual C++ 2.0
+    and 2.1 do not include the header and import library for
+    the standard Windows 95 and Windows NT 3.51 OLE UI Library,
+    OLEDLG.DLL.  The files OLEDLG.H and OLEDLG.LIB, which are
+    used in the samples by default, are found in the Win32 SDK
+    products for either platform as well as later versions of
+    Visual C++ 32-bit.
+
+
+
+Page 55:  Table 1-1 BUILD directory
+    The binaries included on the companion disc were compiled
+    and tested on Windows NT 3.51.  Perfect operation on Windows 95
+    is not guaranteed as Windows 95 was not yet released when
+    this book was published.
+
+
+
+Page 137:  Second paragraph, end of second line in that paragraph
+    "RELEASEINTERFACE" should be "ReleaseInterface"
+
+
+
+Page 145:  First paragraph
+    Lo and behold my wife and I bought another car after I wrote
+    this chapter, and I gave away the Datsun 610 as a trade in.
+    So I now drive an 82 Honda Accord.
+
+
+
+Page 168:  Legend on Figure 3-2
+    The label for "*" should read "only available under 16-bits
+    with OLE 2.02 and later."
+
+
+
+Page 199:  Note near top of page
+    In the future Microsoft will include these files as part of
+    the Win32 SDK outside of the CDK.  At the time of writing,
+    however, the CDK was the only source for these files.
+
+
+
+Page 247:  Footnote 6
+    Windows NT 3.5 actually does allow a client to ask for any
+    class factory interface on a local server.  Windows NT 3.51
+    is no different.  However, an interface like IClassFactory2
+    does not have marshaling support at the time of writing.
+
+
+
+Page 273:  CKoalaClassFactory::CreateInstanceLic
+
+    This function should not call the classes' own RequestLicKey
+    because the latter will fail when the machine is not globally
+    licensed.  For this reason, replace this code:
+
+
+        hr=RequestLickey(&bstrTemp);
+
+        if (FAILED(hr))
+            return hr;
+
+    with this code:
+
+
+        OLECHAR     szLic[256];
+
+        mbstowcs(szLic, g_szLic, sizeof(g_szLic));
+        bstrTemp=SysAllocString(szLic);
+
+        if (NULL==bstrTemp)
+            return ResultFromScode(E_OUTOFMEMORY);
+
+
+
+Page 316:  Reference to OLEDLG.DLL at end of second paragraph
+    The text says that the samples "attempt" to use OLEDLG.DLL.
+    If you do not have the necessary header files for this library,
+    see BUILD.TXT for information on using the version of the library
+    included with Visual C++ (which would apply to another compiler
+    for the most part as well).
+
+
+
+Page 325:  Reference to [async] in the second paragraph after the code.
+    [async] actually doesn't do anything at the time of writing.
+    The marshaling code generated by MIDL will still generate
+    synchronous calls.
+
+
+
+Page 380:  A clarification to association by bit pattern
+    GetClassFile processes all the FileType entries for a CLSID
+    separately such that any single match for any individual
+    pattern entry will associate the file with the CLSID.  This
+    is obviously what should happen, as it allows multiple file
+    formats to map to the same CLSID.  The pattern matching
+    process can easily be confused to mean that all patterns
+    must match instead of only one, which is incorrect.
+
+
+
+
+Pages 405-406:  Clarification to footnote and discussion in general
+    The reason that IPersistStreamInit is not derived from
+    IPersistStream (although it is still polymorphic) is that
+    some objects may need to treat the two interfaces exclusively.
+    That is, an object may very much require the
+    IPersistStreamInit::InitNew semantics such that it does not
+    want to give clients the impression that IPersistStream is
+    suitable.  In other words, an object that immplements
+    IPersistStreamInit may not support IPersistStream through
+    its QueryInterface.  Those objects that can handle the
+    lack of InitNew, using it only for optimization purposes,
+    can implement both interfaces and provide them both through
+    its QueryInterface.  The Polyline sample is such an object.
+
+
+
+Page 471:  Concerning the samples and Windows 95
+    At the time of writing, these samples suffered from
+    "Invalid Page Fault" crashes on Windows 95 Build 460.
+    They do, however, work fine on Windows NT.  You may encounter
+    similar problems with beta versions of Windows 95
+    yourself, and if you find the problem to actually be in
+    the samples, please let the author know.
+
+
+
+
+Page 502:  Behavior of ReleaseStgMedium
+    When the STGMEDIUM structure contains an IStorage or
+    IStream, ReleaseStgMedium will call BOTH pUnkForRelease->Release()
+    if non-NULL as well as IStorage::Release or IStream::Release.
+    That means that a data source providing IStorage or IStream
+    types will need to call IStorage::AddRef or IStream::AddRef
+    in addition to supplying a pUnkForRelease if that source wants
+    to maintain ownership of the medium.
+
+
+
+Page 507:  A note about STATDATA
+    The client that enumerates advise connections must be sure
+    to free any non-NULL DVTARGETDEVICE structure inside the
+    FORMATETC of STATDATA with CoTaskMemFree and must also call
+    IAdviseSink::Release.  The enumerator object that creates these
+    structures must allocate the DVTARGETDEVICE with CoTaskMemAlloc
+    and must create or AddRef the IAdviseSink pointer.
+
+
+
+Page 562:  Code for Freeloader's CFreeloadDoc::Paste
+    The code, as printed, uses the data obtained from the clipboard
+    after CloseClipboard is called, which is incorrect.  The
+    code should appear as follows:
+
+
+    HGLOBAL             hMem;
+
+    if (!OpenClipboard(hWndFrame))
+        return FALSE;
+
+    /*
+     * Try to get data in order of metafile, dib, bitmap.  We set
+     * stm.tymed up front so if we actually get something a call
+     * to ReleaseStgMedium will clean it up for us.
+     */
+
+    stm.pUnkForRelease=NULL;
+    stm.tymed=TYMED_MFPICT;
+    hMem=GetClipboardData(CF_METAFILEPICT);
+
+    if (NULL!=hMem)
+        cf=CF_METAFILEPICT;
+
+    if (0==cf)
+        {
+        stm.tymed=TYMED_HGLOBAL;
+        hMem=GetClipboardData(CF_DIB);
+
+        if (NULL!=hMem)
+            cf=CF_DIB;
+        }
+
+    if (0==cf)
+        {
+        stm.tymed=TYMED_GDI;
+        hMem=GetClipboardData(CF_BITMAP);
+
+        if (NULL!=hMem)
+            cf=CF_BITMAP;
+        }
+
+    stm.hGlobal=OleDuplicateData(hMem, cf, NULL);
+    CloseClipboard();
+
+
+
+
+Page 573:  Correction to IDataObject::GetData code
+    Because DATATRAN is using pUnkForRelease to maintain
+    ownership of its data, it has to call AddRef through
+    any IStorage or IStream pointer returned from GetData.
+    Accordingly, the code shown at the top of this page is
+    insufficient and should appear as follow:
+
+
+    for (i=0; i < cItems; i++)
+        {
+        cb=SendMessage(hList, LB_GETTEXT, i, (LPARAM)&pRen);
+
+        if (LB_ERR!=cb)
+            {
+            /*
+             * Check if the requested FORMATETC is the same as one
+             * that we already have. If so, then copy that STGMEDIUM
+             * to pSTM and AddRef ourselves for pUnkForRelease.
+             */
+            if (pFE->cfFormat==pRen->fe.cfFormat
+                && (pFE->tymed & pRen->fe.tymed)
+                && pFE->dwAspect==pRen->fe.dwAspect)
+                {
+                /*
+                 * ReleaseStgMedium will Release both storage
+                 * and stream elements regardless of the value
+                 * of pUnkForRelease, so we have to AddRef the
+                 * element and bump our own ref count here.
+                 */
+                if (TYMED_ISTORAGE==pRen->fe.tymed)
+                      pRen->stm.pstg->AddRef();
+
+                if (TYMED_ISTREAM==pRen->fe.tymed)
+                      pRen->stm.pstm->AddRef();
+
+                *pSTM=pRen->stm;
+                AddRef();
+                return NOERROR;
+                }
+            }
+        }
+
+
+
+Page 670:  Additional comments about dual and custom interfaces
+    Versions of Visual Basic later than 3.0 and many versions of
+    Visual Basic for Application support direct calling
+    of dual and vtable custom interfaces.  This eliminates most
+    of the advantages that dispinterfaces once enjoyed, that is,
+    the exclusive ability for VB to call that interface.  Now that
+    VB can call any interface, using dual interfaces and custom
+    vtable interfaces should be the typical mode of operation,
+    since much greater performance can be achieved with vtable
+    binding.  If you want to have dispID binding still, then
+    a dual interface is encouraged.
+
+
+
+Page 677:  Concerning Beeper3.
+    Error objects (as described more below) also solve the problem
+    of returning exceptions from dual interfaces.  Beeper3 as it
+    exists does not return exceptions, so an additional sample,
+    Beeper3a, is provided to demonstrate the right way to use
+    error objects from vtable interfaces (including the vtable
+    portion of a dual interface)
+
+
+
+Pages 701-706:  About error objects
+    Besides the multi-threaded issue, error objects were invented
+    to allow vtable interfaces, dual interfaces, and those implemented
+    using the standard dispatch object (demonstrated in Beeper 5) to
+    return exception information.
+
+    As stated in the text, ITypeInfo::Invoke will call GetErrorInfo
+    to retrieve an exception, but it will do this only for vtable
+    functions that return an HRESULT and return DISP_E_EXCEPTION.
+    Beeper3, however, doesn't do this, as its vtable functions do
+    not return HRESULTs.  Therefore you will not see exceptions from
+    Beeper3.
+
+    A modification of Beeper3 that does this correctly is the
+    sample CHAP14\BEEPER3A, whose custom interface does return
+    HRESULTs and will return DISP_E_EXCEPTION when it has filled
+    an error object.  Please refer to that example in preferance
+    to Beeper 3.
+
+
+
+
+Page 708:  Third paragraph, reason why HRESULT is returned.
+    HRESULT is needed as a return value from dual interface
+    members not only for marshaling but also for support of
+    error objects, as described above.
+
+
+
+Page 710:  Concerning Beeper5
+    This sample could return exceptions through error objects if it
+    was modified to return HRESULTs from its vtable members instead
+    of other types.  In short, the same changes that took Beeper3 to
+    Beeper3a apply to Beeper5.  A code example for this is not,
+    however, provided, and is left as an exercise to the reader.
+    As it stands, Beeper5 doesn't return exception information.
+
+
+
+Page 736:  Concerning the test program CHAP15\VBSQUARE
+    This test script works only with versions of Visual Basic
+    after 3.0.
+
+
+
+Page 808:  Cosmo and the registry
+    If you encounter any registry trouble with Cosmo18 after
+    running Cosmo14, go to the registry and delete all entries
+    for Cosmo, then reregister Cosmo18.
+
+
+
+Page 881:  CHAP18\COSMO1.0
+    This sample has not been thoroughly tested, as OLE 1 on 32-bit
+    platforms is officially not supported by Microsoft.  If this
+    sample fails to work under 32-bits, try a 16-bit compilation,
+    which will still interoperate with the 32-bit Cosmo18.
+
+
+
+Page 997:  Code listing for CPatronDoc::Rename
+    The line at the top of the page should read:
+
+         INOLE_RegisterAsRunning(this, pmk
+             , ROTFLAGS_REGISTRATIONKEEPSALIVE, &m_dwRegROT);
+
+
+Page 999:  Code listing for CPage::NotifyTenantsOfRename
+    The second conditional statement at the top of the
+    page should appear as follows:
+
+
+        if (NULL!=pmkWild)
+            {
+            INOLE_RegisterAsRunning(this, pmkWild
+                , ROTFLAGS_REGISTRATIONKEEPSALIVE, &m_dwRegROTWild);
+            pmkWild->Release();
+            }
+
+
+
+Page 1114:  IOleControlSite::FreezeEvents
+    When a container freezes events, it really tells the control
+    that the container will not process those events, but the
+    control is still allowed to fire them.  In other words,
+    this function tells a control to not expect any behavior
+    from the container when events are fired until FreezeEvents(FALSE)
+    is called.  A container has to robustly handle events that
+    it receives when events have been frozen
+
+
+
+Page 1139:  Second paragraph under "Notes on Polyline..."
+    Polyline on 32 bits does not supply a ToolboxBitmap32,
+    nor does the 16-bit version supply a ToolboxBitmap.
+
+
+
+Page 1164:
+    Make yourself a big "Yippee! You Made It!" note
+    on this page.  Give yourself a reward when you finish
+    reading this mighty tome.  You deserve it!  And thank
+    you for reading it as well!

@@ -1,0 +1,17 @@
+Form=ROTATE.FRM
+Object={B16553C3-06DB-101B-85B2-0000C009BE81}#1.0#0; SPIN32.OCX
+Module=GLOBAL; GLOBAL.BAS
+Form=ANIMATE.FRM
+ProjWinSize=79,807,194,156
+ProjWinShow=0
+IconForm="RotateControl"
+Name="rotate"
+HelpContextID="0"
+StartMode=0
+VersionCompatible32="0"
+MajorVer=1
+MinorVer=0
+RevisionVer=0
+AutoIncrementVer=0
+ServerSupportFiles=0
+VersionCompanyName="OLE"

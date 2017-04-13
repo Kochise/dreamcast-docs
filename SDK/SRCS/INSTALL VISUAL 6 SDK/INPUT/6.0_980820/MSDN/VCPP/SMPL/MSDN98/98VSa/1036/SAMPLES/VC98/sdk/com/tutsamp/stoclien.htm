@@ -1,0 +1,1190 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>STOCLIEN COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="stoserve.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="perserve.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="STOCLIEN">STOCLIEN - Client of Structured Storage Server</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The STOCLIEN sample introduces a simple drawing application. The user can
+use a mouse or tablet device to do free-form drawing in the client window.
+The color and width of the electronic ink can be chosen, and the drawings
+can be saved in files.
+
+<P>
+This functionality is outwardly similar to the &quot;scribble&quot;
+tutorial samples in many versions of the Microsoft Visual C++&reg;
+product. The difference in the STOCLIEN/STOSERVE samples is an internal
+architecture based on COM technology. A clear architectural distinction is
+kept between COM client and COM server. A COPaper COM object encapsulates
+only the server-based storage of the drawing paper data: No graphical user
+interface (GUI) behavior is provided on the server side. All GUI behavior
+is isolated in the client. The data managment and storage features of
+COPaper objects are available only through an COM custom interface,
+IPaper.
+
+<P>
+STOCLIEN can load and save its drawings in the structured storage of COM
+compound files. The principal focus of the STOCLIEN sample is how the
+client uses this structured storage and how it directs a server component
+to use this storage. The programming of structured storage services is
+shown in the sample.
+
+<P>
+The STOCLIEN sample creates and uses the connectable COPaper COM object
+that is provided as the CLSID_DllPaper component in the STOSERVE server.
+The STOCLIEN client creates a COPaper object and controls it through the
+IPaper interface that the object exposes. STOCLIEN obtains drawing data
+from the user and graphically represents it in a window that it manages.
+STOCLIEN uses COPaper's IPaper interface to save the drawing data in
+COPaper and to direct file storage operations on this data.
+
+<P>
+STOCLIEN cooperates with the COPaper to load and save COPaper's drawing
+data. STOCLIEN obtains an IStorage interface for the storage object in a
+compound file. In its load and save operations, STOCLIEN passes a pointer
+to this IStorage interface to COPaper in the server. COPaper uses the
+provided IStorage to create streams in the storage. COPaper can then use
+the standard IStream interface for reading and writing the drawing data it
+manages.
+
+<P>
+COPaper only manages the drawing data; it performs no GUI actions.
+STOCLIEN provides the GUI for the drawing application. It encapsulates
+this in a central CGuiPaper C++ object.
+
+<P>
+STOCLIEN also implements the custom IPaperSink interface in a COPaperSink
+COM object and connects this interface to an appropriate connection point
+in the server's COPaper object. COPaper uses the connected IPaperSink
+interface to send notifications back to STOCLIEN. The normal GUI
+repainting of COPaper's drawing data is done in STOCLIEN using COPaper's
+connectable object technology.
+
+<P>
+For functional descriptions and a tutorial code tour of STOCLIEN, see the
+Code Tour section in STOCLIEN.HTM. For details on the external user
+operation of STOCLIEN, see both the Usage and Operation sections in
+STOCLIEN.HTM. To read STOCLIEN.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the STOCLIEN lesson in the table of lessons. You can
+also achieve the same thing by clicking the STOCLIEN.HTM file after
+locating the main tutorial directory in the Windows Explorer. See also
+STOSERVE.HTM in the main tutorial directory for more details on how
+STOSERVE works and exposes its services to STOCLIEN. You must build the
+STOSERVE DLL before building STOCLIEN. The makefile for STOSERVE
+automatically registers that server in the system registry, so you must
+build STOSERVE before attempting to run STOCLIEN.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<P>
+STOCLIEN is an application that you can execute directly from Windows in
+the normal manner or from the Command Prompt window. STOCLIEN accepts an
+optional file name parameter on the command line. For example:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STOCLIEN c:\drawings\drawing.pap
+ </FONT> </PRE>
+
+<P>
+Where drawing.pap is a compound file containing DllPaper-compatible
+structured storage of drawing data. If no command line file name parameter
+is specified, STOCLIEN uses the default file name STOCLIEN.PAP and
+attempts to open it in the same directory as the executing STOCLIEN.EXE.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">
+Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, STOCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="STOCLIEN\STOCLIEN.exe">
+Click here to run STOCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>OPERATION</h3>
+
+<P>
+The STOCLIEN.EXE application provides the user interface for this lesson.
+It exercises the associated, but independent, STOSERVE.DLL to demonstrate
+both client and server use of COM structured storage in compound files.
+
+<P>
+Here is a summary of operation from the standpoint of STOCLIEN.EXE as a
+COM client of the STOSERVE.DLL COM server.
+
+<P>
+The STOCLIEN application window's client area is used for visual display
+of freeform drawing created with a mouse or tablet device. To draw with
+the mouse, press and hold the left mouse button while moving the mouse.
+Releasing the left mouse button ends the drawing of a line.
+
+<P>
+The following menu is provided.
+
+<p>Menu Selection: File/Open<br>
+Shows the Open dialog box to obtain a name and path for an existing paper
+drawing file to open. A default .PAP file extension for these files is
+assumed. If changes were made to the existing drawing when this menu item
+is chosen, a separate dialog will first be shown asking the user if the
+current drawing should be saved into its associated compound file.
+
+<p>Menu Selection: File/Save<br>
+Saves the current drawing into its associated compound file.
+
+<p>Menu Selection: File/Save As<br>
+Shows the Save As dialog box to obtain a name and path for a new paper
+drawing file to create. The current drawing becomes the saved content of
+the new file, and the new file becomes the new associated compound file
+for the drawing.
+
+<p>Menu Selection: File/Exit<br>
+Exits STOCLIEN.
+
+<p>Menu Selection: Draw/Drawing On<br>
+Turns on drawing between the STOCLIEN client and the COPaper object in
+the server. This command locks the COPaper object for exclusive use by
+this client and prevents other clients from accessing the same COPaper
+instance in the server.
+
+<p>Menu Selection: Draw/Drawing Off<br>
+Turns off drawing between the STOCLIEN client and the COPaper object in
+the server. This command unlocks the COPaper for exclusive use by this
+client and allows other clients to access the same COPaper instance in the
+server.
+
+<p>Menu Selection: Draw/Redraw<br>
+Redraws in the client the current drawing data held in the COPaper object
+in the server.
+
+<p>Menu Selection: Draw/Erase<br>
+Erases the current drawing content and clears the window image.
+
+<p>Menu Selection: Pen/Color<br>
+Shows the Choose Color dialog box to obtain a new pen color for drawing.
+
+<p>Menu Selection: Pen/Thin<br>
+Chooses the thin width for drawing. A check mark on this menu choice
+indicates that thin is the current pen width.
+
+<p>Menu Selection: Pen/Medium<br>
+Chooses the medium width for drawing. A check mark on this menu choice
+indicates that medium is the current pen width.
+
+<p>Menu Selection: Pen/Thick<br>
+Chooses the thick width for drawing. A check mark on this menu choice
+indicates that thick is the current pen width.
+
+<p>Menu Selection: Sink/Connect<br>
+Connects the COPaperSink's IPaperSink interface to the COPaper object's
+PaperSink connection point. Repainting of the current drawing image in
+STOCLIEN relies on the sink connection. A check mark on this menu choice
+indicates that repainting is connected.
+
+<p>Menu Selection: Sink/Disconnect<br>
+Disconnects the COPaperSink's IPaperSink interface from the COPaper
+object's PaperSink connection point. Repainting of the current drawing
+image in STOCLIEN relies on the sink connection. A check mark on this menu
+choice indicates that repainting is disconnected.
+
+<P>Menu Selection: Help/STOCLIEN Tutorial<br>
+Opens the STOCLIEN.HTM tutorial file in the Web browser.
+
+<P>Menu Selection: Help/STOSERVE Tutorial<br>
+Opens the STOSERVE.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/Read Source File<br>
+Displays the Open dialog box so you can open a source file from this
+lesson or another one in the Windows Notepad.
+
+<p>Menu Selection: Help/About STOCLIEN<br>
+Displays the About dialog box for this application.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files          Description</u>
+STOCLIEN.TXT   Short sample description.
+MAKEFILE       The generic makefile for building the code sample
+               application of this tutorial lesson.
+STOCLIEN.H     The include file for the STOCLIEN application. Contains
+               class declarations, function prototypes, and resource
+               identifiers.
+STOCLIEN.CPP   The main implementation file for STOCLIEN.EXE. Has WinMain
+               and CMainWindow implementation, as well as the main menu
+               dispatching.
+STOCLIEN.RC    The application resource definition file.
+STOCLIEN.ICO   The application icon resource.
+STOCLIEN.PAP   A default paper drawing file for the application.
+PENCIL.CUR     A pencil image for the client window cursor.
+SINK.H         The class declaration for the COPaperSink COM object class.
+SINK.CPP       Implementation file for the COPaperSink COM object class.
+PAPFILE.H      The class declaration for the CPapFile C++ class.
+PAPFILE.CPP    Implementation file for the CPapFile C++ class.
+GUIPAPER.H     The class declaration for the CGuiPaper C++ class.
+GUIPAPER.CPP   Implementation file for the CGuiPaper C++ class.
+</FONT> </PRE>
+
+<P>
+STOCLIEN uses many of the utility classes and services provided by
+APPUTIL. For more details on APPUTIL, study the APPUTIL library source
+code in the sibling APPUTIL directory and APPUTIL.HTM in the main tutorial
+directory.
+
+<P>
+STOCLIEN works in a cooperative fashion with a COPaper object in a COM
+server to achieve persistent storage of drawings in COM compound files.
+See the STOSERVE sample and STOSERVE.HTM for details on COPaper's use of
+streams in the compound file that is provided to COPaper by STOCLIEN.
+COPaper's construction and its IPaper interface are also covered in the
+STOSERVE sample.
+
+<P>
+The major topics covered in this code tour are:
+
+<ul>
+<li>How CGuiPaper encapsulates the GUI behavior of STOCLIEN's electronic
+    drawing paper
+
+<li>How STOCLIEN captures and displays interactive drawing activity
+
+<li>How the CGuiPaper object uses COPaper to record drawing data
+
+<li>How an IPaperSink connection is used in repainting
+
+<li>How the CPapFile Load and Save methods use the structured storage in
+    compound files
+
+</ul>
+
+<p>As the CGuiBall class used in the FRECLIEN and CONCLIEN samples
+encapsulated the behavior of a bouncing ball, STOCLIEN uses a CGuiPaper
+C++ class to encapsulate the data and GUI behavior of electronic drawing
+paper.
+
+<p>Here is the CGuiPaper class declaration from GUIPAPER.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class CGuiPaper
+  {
+    public:
+      CGuiPaper(void);
+      ~CGuiPaper(void);
+      BOOL Init(HINSTANCE hInst, HWND hWnd, TCHAR* pszCmdLineFile);
+      HRESULT DrawOn(void);
+      HRESULT DrawOff(void);
+      HRESULT ClearWin(void);
+      HRESULT PaintWin(void);
+      HRESULT Erase(void);
+      HRESULT Resize(WORD wWidth, WORD wHeight);
+      HRESULT InkWidth(SHORT nInkWidth);
+      HRESULT InkColor(COLORREF crInkColor);
+      HRESULT InkSaving(BOOL bInkSaving);
+      HRESULT InkStart(SHORT nX, SHORT nY);
+      HRESULT InkDraw(SHORT nX, SHORT nY);
+      HRESULT InkStop(SHORT nX, SHORT nY);
+      HRESULT ConnectPaperSink(void);
+      HRESULT DisconnectPaperSink(void);
+      HRESULT Load(void);
+      HRESULT Save(void);
+      int     AskSave(void);
+      HRESULT Open(void);
+      HRESULT SaveAs(void);
+      COLORREF PickColor(void);
+
+    private:
+      HINSTANCE  m_hInst;
+      HWND       m_hWnd;
+      HDC        m_hDC;
+      RECT       m_WinRect;
+      IPaper*    m_pIPaper;
+      SHORT      m_nLockKey;
+      HPEN       m_hPen;
+      SHORT      m_nInkWidth;
+      COLORREF   m_crInkColor;
+      BOOL       m_bInkSaving;
+      BOOL       m_bInking;
+      BOOL       m_bPainting;
+      POINT      m_OldPos;
+      IUnknown*  m_pCOPaperSink;
+      DWORD      m_dwPaperSink;
+      BOOL       m_bDirty;
+      CPapFile*    m_pPapFile;
+      OPENFILENAME m_ofnFile;
+      TCHAR        m_szFileFilter[MAX_PATH];
+      TCHAR        m_szFileName[MAX_PATH];
+      TCHAR        m_szFileTitle[MAX_PATH];
+      CHOOSECOLOR  m_ChooseColor;
+      COLORREF     m_acrCustColors[16];
+
+      IConnectionPoint* GetConnectionPoint(REFIID riid);
+  };
+ </FONT> </PRE>
+
+<p>There is much here that is not relevant to the main focus of this
+sample and will not be covered in detail. COM connection technology is
+used significantly in the STOCLIEN/STOSERVE samples but is not covered
+here in detail. See the CONCLIEN/CONSERVE samples for more on this
+technology.
+
+<p>
+CGuiPaper maintains the current GUI properties of the drawing paper.
+Members m_crInkColor, m_crInkWidth, m_WinRect contain values for the
+current ink color, ink width, and drawing rectangle. Of course, a handle
+is needed for the window where painting is done. It is stored in member
+m_hWnd. The actual painting of images is done using a handle to a device
+context held in member m_hDC. A handle to the current drawing pen is kept
+in member m_hPen. The pen is destroyed and recreated when its color or
+width is changed by the user. Members m_pCOPaperSink and m_dwPaperSink
+hold values necessary for connecting with COPaper to receive incoming
+notifications through the IPaperSink interface. Member m_bDirty holds a
+flag indicating that the user has changed the drawing and that it no
+longer reflects the data stored in its file.
+
+<p>
+Member m_pIPaper holds the main interface pointer to the COPaper object
+instantiated in the server. It is through this pointer that all of the
+COPaper functionality is accessed.
+
+<p>
+The m_nLockKey member is used to support a client locking scheme that is
+used with multiple clients to allow a client exclusive access to a shared
+COPaper object. The m_nLockKey is assigned by COPaper during a IPaper Lock
+call and is passed as a parameter by the client in subsequent calls to
+COPaper. COPaper will perform the work in those calls only if the lock key
+that is passed matches the key last handed out to a client by COPaper.
+This locking scheme and the multiclient scenarios it supports are not
+covered in this tour.
+
+<p>
+Member m_pPapFile holds a pointer to a CPapFile object. This object will
+be examined in detail below. It is a C++ object that encapsulates load and
+save operations on a structured storage compound file. CPapFile works with
+the underlying server-based COPaper object to load and save COPaper's
+drawing data.
+
+<p>
+CGuiPaper's methods are summarized as follows.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  BOOL Init(HINSTANCE hInst, HWND hWnd, TCHAR* pszCmdLineFile);
+    Initializes the GuiPaper. Asks server to create a COPaper object.
+
+  HRESULT DrawOn(void);
+    Locks paper for drawing exclusively by this client.
+
+  HRESULT DrawOff(void);
+    Unlocks paper to allow other clients to draw.
+
+  HRESULT ClearWin(void);
+    Clears display window but retains ink data.
+
+  HRESULT PaintWin(void);
+    Clears window and repaints with current ink data.
+
+  HRESULT Erase(void);
+    Erases current drawing content and clears display window.
+
+  HRESULT Resize(WORD wWidth, WORD wHeight);
+    Resizes the display window.
+
+  HRESULT InkWidth(SHORT nInkWidth);
+    Sets current ink width for drawing.
+
+  HRESULT InkColor(COLORREF crInkColor);
+    Sets current ink color for drawing.
+
+  HRESULT InkSaving(BOOL bInkSaving);
+    Turns ink data saving in COPaper on and off.
+
+  HRESULT InkStart(SHORT nX, SHORT nY);
+    Starts ink drawing sequence.
+
+  HRESULT InkDraw(SHORT nX, SHORT nY);
+    Draws ink sequence data.
+
+  HRESULT InkStop(SHORT nX, SHORT nY);
+    Stops ink drawing sequence.
+
+  HRESULT ConnectPaperSink(void);
+    Connects the client PaperSink object to the server COPaper source.
+
+  HRESULT DisconnectPaperSink(void);
+    Disconnect the client PaperSink object from the server COPaper source.
+
+  HRESULT Load(void);
+    Loads ink data from current compound file.
+
+  HRESULT Save(void);
+    Saves existing ink data to current compound file.
+
+  HRESULT AskSave(void);
+    Checks if drawing changed. If so, displays dialog box asking
+    user whether to save changes and responds appropriately.
+
+  HRESULT Open(void);
+    Shows Win32 common dialog box. Opens existing paper data compound file.
+
+  HRESULT SaveAs(void);
+    Shows Win32 common dialog box. Saves current paper data in renamed file.
+
+  COLORREF PickColor(void);
+    Shows Win32 ommon dialog box. Asks user to choose new pen color.
+ </FONT> </PRE>
+
+<p>These methods are all implemented in GUIPAPER.CPP.
+
+<p>
+The Init method creates the server-based COPaper object and assigns
+CGuiPaper's m_pIPaper member.
+
+<p>
+The AskSave, Open, SaveAs, and PickColor methods provide familiar GUI
+behavior using Win32 common dialogs. For example, the Open method uses the
+Win32 Open File Name dialog box to ask the user to specify a file name for
+opening.
+
+<p>
+The Load and Save methods will be covered in detail later in this tour.
+
+<p>
+InkSaving, InkStart, InkDraw, and InkStop are the central methods for the
+drawing functionality of the STOCLIEN application. STOCLIEN uses these
+CGuiPaper methods to capture, display, and store the interactive drawing
+data as it occurs under user control. They perform a dual role of painting
+the drawn image to the client window as well as passing the drawing data
+to COPaper in the server. COPaper translates the drawing data into ink
+data packets for storage.
+
+<p>
+The user presses the left mouse button (or the pen tip switch in tablet
+devices) to initiate a line drawing sequence. The user holds down the
+button and moves the mouse to draw a line. The sequence is ended when the
+left mouse button is released. The Windows operating system translates
+these actions into standard window messages and sends them to STOCLIEN's
+main window procedure. Here is CMainWindow::WindowProc from STOCLIEN.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  LRESULT CMainWindow::WindowProc(
+            UINT uMsg,
+            WPARAM wParam,
+            LPARAM lParam)
+  {
+    LRESULT lResult = FALSE;
+
+    switch (uMsg)
+    {
+      case WM_CREATE:
+        break;
+
+      case WM_ACTIVATE:
+        // If we were newly activated by a mouse click then don't just sit
+        // there--re-paint. This is needed when another window was topped
+        // over part of STOCLIEN and the user then topped STOCLIEN using
+        // a mouse click on the visible part of STOCLIEN. In any case let
+        // the windows default WindowProc handle this message as well.
+        if (WA_CLICKACTIVE == LOWORD(wParam))
+          m_pGuiPaper-&gt;PaintWin();
+        lResult = ::DefWindowProc(m_hWnd, uMsg, wParam, lParam);
+        break;
+
+      case WM_SIZE:
+        // Handle a resize of this window.
+        m_wWidth = LOWORD(lParam);
+        m_wHeight = HIWORD(lParam);
+        // Inform CGuiPaper of the change.
+        m_pGuiPaper-&gt;Resize(m_wWidth, m_wHeight);
+        break;
+
+      case WM_PAINT:
+        // If something major happened repaint the whole window.
+        {
+          PAINTSTRUCT ps;
+
+          if(BeginPaint(m_hWnd, &amp;ps))
+            EndPaint(m_hWnd, &amp;ps);
+
+          m_pGuiPaper-&gt;PaintWin();
+        }
+        break;
+
+      case WM_LBUTTONDOWN:
+        // Start sequence of ink drawing to the paper.
+        m_pGuiPaper-&gt;InkStart(LOWORD(lParam), HIWORD(lParam));
+        break;
+
+      case WM_MOUSEMOVE:
+        // Draw inking sequence data.
+        m_pGuiPaper-&gt;InkDraw(LOWORD(lParam), HIWORD(lParam));
+        break;
+
+      case WM_LBUTTONUP:
+        // Stop an ink drawing sequence.
+        m_pGuiPaper-&gt;InkStop(LOWORD(lParam), HIWORD(lParam));
+        break;
+
+      case WM_COMMAND:
+        // Dispatch and handle any Menu command messages received.
+        lResult = DoMenu(wParam, lParam);
+        break;
+
+      case WM_CHAR:
+        if (wParam == 0x1b)
+        {
+          // Exit this app if user hits ESC key.
+          ::PostMessage(m_hWnd, WM_CLOSE, 0, 0);
+        }
+        break;
+
+      case WM_CLOSE:
+        // The user selected Close on the main window's System menu
+        // or Exit on the File menu.
+        // If there is ink data that has not been saved then ask user
+        // if it should be saved. If user cancels then cancel the exit.
+        if (IDCANCEL == m_pGuiPaper-&gt;AskSave())
+          break;
+      case WM_QUIT:
+        // If the app is being quit then close any associated help windows.
+        // ::WinHelp(m_hWnd, m_szHelpFile, HELP_QUIT, 0);
+      default:
+        // Defer all messages NOT handled above to the Default Window Proc.
+        lResult = ::DefWindowProc(m_hWnd, uMsg, wParam, lParam);
+        break;
+    }
+
+    return(lResult);
+  }
+ </FONT> </PRE>
+
+<p>
+A line drawing sequence is started when the WM_LBUTTONDOWN message is
+received with mouse position data. CMainWindow has a pointer to the
+CGuiPaper object and calls the CGuiPaper::InkStart method to start the
+line drawing sequence. As the mouse is moved to draw, a sequence of
+separate WM_MOUSEMOVE messages is received with mouse position data.
+CGuiPaper's InkDraw method is called with this data. When the left mouse
+button is released, the WM_LBUTTONUP message is received. CGuiPaper's
+InkStop method is then called to stop the line drawing sequence.
+
+<p>Here is the InkStart method from GUIPAPER.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CGuiPaper::InkStart(
+                       SHORT nX,
+                       SHORT nY)
+  {
+    HRESULT hr = E_FAIL;
+
+    if (m_nLockKey || (!m_nLockKey &amp;&amp; !m_bInkSaving))
+    {
+      // Start an ink drawing sequence only if one is not in progress.
+      if (!m_bInking)
+      {
+        // Remember start position.
+        m_OldPos.x = nX;
+        m_OldPos.y = nY;
+
+        // Delete old pen.
+        if (m_hPen)
+          DeleteObject(m_hPen);
+
+        // Create and select the new drawing pen.
+        m_hPen = CreatePen(PS_SOLID, m_nInkWidth, m_crInkColor);
+        SelectObject(m_hDC, m_hPen);
+
+        hr = NOERROR;
+
+        // Ask the Paper object to mark the start of the ink drawing
+        // sequence in the current ink color.
+        if (m_pIPaper &amp;&amp; m_bInkSaving)
+        {
+          hr = m_pIPaper-&gt;InkStart(
+                            m_nLockKey,
+                            nX,
+                            nY,
+                            m_nInkWidth,
+                            m_crInkColor);
+          // Capture the Mouse.
+          SetCapture(m_hWnd);
+
+          // We've modified the ink data--it is now &quot;dirty&quot; with
+          // respect to the compound file image. Set dirty flag.
+          m_bDirty = TRUE;
+        }
+
+        // Set inking flag to TRUE.
+        m_bInking = TRUE;
+      }
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<p>
+InkStart, InkDraw, and InkStop all use Win32 GUI constructs such as device
+contexts and pen objects. This illustrates why CGuiPaper is needed as a
+separate level of encapsulation. The GUI aspects of the drawing paper are
+handled in CGuiPaper. The COPaper object is sent only ink data.
+
+<p>
+Another design reason for the CGuiPaper level of encapsulation is the dual
+nature of its InkStart, InkDraw, and InkStop methods. They not only call
+on COPaper to record the ink data as it occurs, they also paint a visual
+image of the drawing as it occurs. CGuiPaper keeps an m_bInkSaving flag to
+manage this dual nature. When m_bInkSaving is FALSE, the image is drawn on
+screen but the data is not sent to COPaper for recording. This scheme is
+used in repainting when the user is not moving the mouse but COPaper's ink
+data is being resent to CGuiPaper for automatic repainting. CGuiPaper can
+be told to set the m_bInkSaving flag by calling its InkSaving method.
+
+<p>
+CGuiPaper also keeps an m_bInking flag. InkStart sets it to TRUE to signal
+that a drawing sequence is in process. For example, the InkDraw method
+uses this flag to determine whether it should paint and save ink data.
+Here is the InkDraw method from GUIPAPER.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CGuiPaper::InkDraw(
+                       SHORT nX,
+                       SHORT nY)
+  {
+    if (m_bInking)
+    {
+      // Start this ink line at previous old position.
+      MoveToEx(m_hDC, m_OldPos.x, m_OldPos.y, NULL);
+
+      // Assign new old position and draw the new line.
+      LineTo(m_hDC, m_OldPos.x = nX, m_OldPos.y = nY);
+
+      // Ask the Paper object to save this data.
+      if (m_bInkSaving)
+        m_pIPaper-&gt;InkDraw(m_nLockKey, nX, nY);
+    }
+
+    return NOERROR;
+  }
+ </FONT> </PRE>
+
+<p>
+This method does nothing if m_bInking is FALSE. This is the condition when
+the user is simply moving the mouse over the client window without
+pressing the left mouse button.
+
+<p>
+InkDraw clearly has a dual responsibility. The Win32 MoveToEx and LineTo
+calls are made to draw line images on the GUI screen (using the device
+context handle kept in m_hDC). The ink data is also passed to the COPaper
+object for recording using the IPaper interface's InkDraw method. When
+m_bInkSaving is FALSE, InkDraw paints the line image but does not store
+the data in COPaper. This condition is used during repainting.
+
+<p>Here is CGuiPaper's PaintWin method from GUIPAPER.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CGuiPaper::PaintWin(void)
+  {
+    HRESULT hr = E_FAIL;
+    COLORREF crInkColor;
+    SHORT nInkWidth;
+
+    if (m_pIPaper &amp;&amp; !m_bPainting &amp;&amp; !m_bInking)
+    {
+      m_bPainting = TRUE;
+      // Save and restore ink color and width since redraw otherwise
+      // ends up changing these values in CGuiPaper.
+      crInkColor = m_crInkColor;
+      nInkWidth = m_nInkWidth;
+      hr = m_pIPaper-&gt;Redraw(m_nLockKey);
+      m_nInkWidth = nInkWidth;
+      m_crInkColor = crInkColor;
+      m_bPainting = FALSE;
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<p>
+PaintWin essentially calls COPaper's Redraw method. In the STOSERVE
+sample, the Redraw method was shown to broadcast COPaper's entire ink data
+array to all connected sinks. PaintWin calls an object on the server side
+to send back the drawing data to the client. STOCLIEN receives this data
+in the form of calls to the connected IPaperSink interface in its
+COPaperSink object. These methods correspond to the similar InkStart,
+InkDraw, and InkStop methods in CGuiPaper. For example, here is
+IPaperSink's InkStart method from SINK.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COPaperSink::CImpIPaperSink::InkStart(
+                                              SHORT nX,
+                                              SHORT nY,
+                                              SHORT nWidth,
+                                              COLORREF crInkColor)
+  {
+    // Turn off ink saving to the COPaper object.
+    m_pBackObj-&gt;m_pGuiPaper-&gt;InkSaving(FALSE);
+
+    // Play the data back to the CGuiPaper for display only.
+    m_pBackObj-&gt;m_pGuiPaper-&gt;InkWidth(nWidth);
+    m_pBackObj-&gt;m_pGuiPaper-&gt;InkColor(crInkColor);
+    m_pBackObj-&gt;m_pGuiPaper-&gt;InkStart(nX, nY);
+
+    return NOERROR;
+  }
+ </FONT> </PRE>
+
+<p>
+When InkStart is called in the sink, it calls CGuiPaper to turn off ink
+saving to COPaper. COPaper does not need to receive an echoed copy of the
+data it is sending. When InkDraw is called in the sink, it simply passes
+the call on to CGuiPaper::InkDraw. When InkStop is called in the sink,
+CGuiPaper is called to turn ink saving back on. The result is a playback
+of COPaper's ink data to CGuiPaper for display only.
+
+<p>
+You can test the behavior of STOCLIEN when its IPaperSink is disconnected
+by choosing the Disconnect choice on the Sink menu. As an experiment,
+after disconnecting the sink, choose About from the Help menu. This will
+show the About dialog box, which will cover part of the STOCLIEN's
+drawing. Click OK in the About dialog box. Notice that the portion of the
+drawing that was covered is now gone. The drawing data is not lost, but
+part of the image is. The client received the WM_PAINT message and issued
+the IPaper Redraw method. But because the sink was not connected, it did
+not receive the IPaperSink calls to repaint the drawing.
+
+<p>
+You can also test this behavior by minimizing STOCLIEN and then restoring
+it. In this case, the entire drawing image is lost and needs repainting.
+To repaint the drawing image after either of these tests, use the Sink
+menu to reconnect, and then choose Redraw from the Draw menu.
+
+<p>
+STOCLIEN relies on COPaper to record drawing data. It also relies on
+COPaper to store the data in a compound file. However, in a typical
+division of labor between COM client and server, STOCLIEN shares part of
+the responsibility for file storage. This division of labor is important
+in COM applications where the client is a container and the server is an
+embedded object. In this arrangement, the client is responsible for
+creating or opening a structured storage file, while the server object is
+responsible for using that storage for its own data storage purposes. This
+may involve the server object creating substorages in the storage that is
+given to it. It usually involves the server object creating stream objects
+in the storage. COPaper's use of storage streams is detailed in the
+STOSERVE sample.
+
+<p>
+The IStorage interface is used by both client and server object to perform
+file operations. The compound files implementation of the Structured
+Storage architecture is used. Standard service functions are used for
+operations on compound files. For example, the StgCreateDocFile function
+initially creates a compound file and passes back an IStorage pointer that
+can be used to manipulate the file. This particular function is called in
+STOCLIEN. The IStorage interface it obtains is passed as a parameter to
+COPaper for its use. The COPaper object does not create or open compound
+files on its own: It uses the IStorage and IStream interfaces to work in
+compound files that are given to it.
+
+<p>
+These IStorage and IStream interfaces are not implemented within STOCLIEN
+or STOSERVE: They are implemented within the COM libraries. When a pointer
+to one of these interfaces is obtained, their methods are essentially used
+as a set of services to operate on a compound file.
+
+<p>
+STOCLIEN encapsulates its compound file operations in a CPapFile C++
+object. Here is the CPapFile class declaration from PAPFILE.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class CPapFile
+  {
+    public:
+      CPapFile(void);
+      ~CPapFile(void);
+      HRESULT Init(TCHAR* pszFileName, IPaper* pIPaper);
+      HRESULT Load(SHORT nLockKey, TCHAR* pszFileName);
+      HRESULT Save(SHORT nLockKey, TCHAR* pszFileName);
+
+    private:
+      TCHAR          m_szCurFileName[MAX_PATH];
+      IPaper*        m_pIPaper;
+      IStorage*      m_pIStorage;
+  };
+ </FONT> </PRE>
+
+<p>
+The CPapFile object keeps a current file name in member m_szCurFileName.
+This file name is used as a default in the Load and Save methods when they
+do not explicitly receive a file name.
+
+<p>
+Member m_pIPaper keeps an interface pointer to the COPaper's IPaper
+interface.
+
+<p>
+Member m_pIStorage keeps a pointer to the IStorage interface for the
+current compound file that STOCLIEN is using for structured storage.
+
+<p>Here is a summary of CPapFile's methods.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT Init(TCHAR* pszFileName, IPaper* pIPaper);
+    Initializes CPapFile.
+
+  HRESULT Load(SHORT nLockKey, TCHAR* pszFileName);
+    Loads default paper data file or a specified paper data file.
+
+  HRESULT Save(SHORT nLockKey, TCHAR* pszFileName);
+    Saves drawing data to the current paper data file or to a specified
+    paper data file.
+ </FONT> </PRE>
+
+<p>Here is CPapFile's Init method from PAPFILE.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CPapFile::Init(
+                      TCHAR* pszAppFileName,
+                      IPaper* pIPaper)
+  {
+    HRESULT hr = E_FAIL;
+
+    if (NULL != pIPaper)
+    {
+      // Keep CPapFile copy of pIPaper. Thus AddRef it.
+      // Released in Destructor.
+      m_pIPaper = pIPaper;
+      m_pIPaper-&gt;AddRef();
+
+      if (NULL != pszAppFileName)
+      {
+        // Set the default current file name.
+        lstrcpy(m_szCurFileName, pszAppFileName);
+
+        hr = NOERROR;
+      }
+    }
+
+    return (hr);
+  }
+ </FONT> </PRE>
+
+<p>
+The pszAppFileName parameter is used to initialize CPapFile with a default
+file name for any subsequent load or save operations. A copy is kept in
+member m_szCurFileName for the first load. In STOCLIEN, such a load is
+attempted when the application first starts after CPapFile has been
+initialized with pszAppFileName assigned &quot;STOCLIEN.PAP&quot;. This
+file name was constructed in CGuiPaper's constructor by obtaining the
+current executing module's name. (The Win32 GetModuleFileName function is
+called).
+
+<p>
+The pIPaper parameter is needed by CPapFile because it uses this interface
+on the COPaper object to perform its load and save operations. AddRef is
+called on this stored copy of pIPaper, according to COM rules. The
+matching Release is called in the CPapFile destructor.
+
+<p>
+Once CPapFile is initialized, it can be used to save the current drawing
+data that is held in the COPaper object. Here is CPapFile's Save method
+from PAPFILE.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CPapFile::Save(
+                      SHORT nLockKey,
+                      TCHAR* pszFileName)
+  {
+    HRESULT hr = E_FAIL;
+    BOOL bNewFile = (NULL != pszFileName);
+    TCHAR* pszFile;
+
+    // If NULL file name passed then use current file name.
+    pszFile = bNewFile ? pszFileName : m_szCurFileName;
+
+    // Use COM service to re-open (or newly create) the compound file.
+    hr = StgCreateDocfile(
+           pszFile,
+           STGM_CREATE | STGM_DIRECT | STGM_READWRITE | STGM_SHARE_EXCLUSIVE,
+           0,
+           &amp;m_pIStorage);
+    if (SUCCEEDED(hr))
+    {
+      // We've got the IStorage and the compound file is open.
+      // Now tell the COPaper object on the server side to save its
+      // paper data into the compound file using the IStorage of our
+      // client-provided compound file.
+      hr = m_pIPaper-&gt;Save(nLockKey, m_pIStorage);
+      if (SUCCEEDED(hr))
+      {
+        // The paper data was saved and we have a new current compound
+        // file name. Copy it for later use in a saves and loads.
+        if (bNewFile)
+          lstrcpy(m_szCurFileName, pszFileName);
+      }
+
+      // We are done with the Storage for now. We don't hold the file
+      // open. We re-obtain the IStorage again later (and thus re-open
+      // the compound file) when we need it for another save or load.
+      RELEASE_INTERFACE(m_pIStorage);
+    }
+
+    return (hr);
+  }
+ </FONT> </PRE>
+
+<p>
+If NULL is passed for the pszFileName parameter, the stored content of
+member m_szCurFileName is used for the file name. The nLockKey is the
+client's lock key, which was obtained in a previous call to COPaper's Lock
+method in the IPaper interface.
+
+<p>
+The COM standard StgCreateDocFile service function is called to create the
+compound file in which the drawing data will be saved.
+
+<p>
+The name of the compound file to create is passed as the first parameter.
+This is expected by StgCreateDocFile as a Unicode string. When STOCLIEN is
+compiled for ANSI strings (UNICODE is not defined, which is the default in
+the makefile), this call actually reduces to a call to an internal APPUTIL
+function, A_StgCreateDocFile. This function performs the proper conversion
+of the ANSI pszFile parameter to a Unicode version before calling
+StgCreateDocFile. See APPUTIL.H and STOSERVE.HTM for more details on how
+this works.
+
+<p>
+The access mode flags are passed as the second parameter and determine
+what access modes are permitted on the new file. The STGM_CREATE access
+mode flag creates a new compound file or overwrites an existing one of the
+same name. STGM_READWRITE opens the file with read-write permission.
+STGM_DIRECT opens the file for direct access, as opposed to transacted
+access. STGM_SHARE_EXCLUSIVE opens the file for exclusive, non-shared use
+by the caller.
+
+<p>
+The third parameter is reserved and must be 0.
+
+<p>
+The address of pointer variable m_pIStorage is passed to StgCreateDocFile
+as the fourth parameter. When the call successfully returns, m_pIStorage
+contains an interface pointer to an IStorage interface. This is the
+interface that is used for any subsequent operations on the file.
+
+<p>
+The important operation in this case is to have the COPaper object store
+its drawing data in the file. This is done above using the Save method of
+COPaper's IPaper interface. If COPaper succeeds in saving its data in the
+storage object provided, the name of the compound file is copied into
+m_szCurFileName as the new current file name.
+
+<p>
+When these operations are successfully completed, the IStorage interface
+that was obtained is released. This closes the file and means that the
+file is not held open during other client operations. It will be reopened
+when needed.
+
+<p>
+One such case is CPapFile's Load method. Here it is from PAPFILE.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CPapFile::Load(
+                      SHORT nLockKey,
+                      TCHAR* pszFileName)
+  {
+    HRESULT hr = E_FAIL;
+    BOOL bNewFile = (NULL != pszFileName);
+    TCHAR* pszFile;
+
+    // If NULL file name passed then use current file name.
+    pszFile = bNewFile ? pszFileName : m_szCurFileName;
+
+    // First check if the file is out there using APPUTIL function.
+    if (FileExist(pszFile))
+    {
+      // Use COM service to next check if the file is actually a valid
+      // compound file.
+      hr = StgIsStorageFile(pszFile);
+      if (SUCCEEDED(hr))
+      {
+        // We're go. Use COM service to open the compound file and
+        // obtain a IStorage interface.
+        hr = StgOpenStorage(
+               pszFile,
+               NULL,
+               STGM_DIRECT | STGM_READ | STGM_SHARE_EXCLUSIVE,
+               NULL,
+               0,
+               &amp;m_pIStorage);
+        if (SUCCEEDED(hr))
+        {
+          // We have an IStorage. Now ask the COPaper object on the server
+          // side to load into itself the file's paper data using the
+          // IStorage for our client-provided compound file.
+          hr = m_pIPaper-&gt;Load(nLockKey, m_pIStorage);
+          if (SUCCEEDED(hr))
+          {
+            // The paper data was loaded and we have a current compound
+            // file name. Copy it for later use in a saves and loads.
+            if (bNewFile)
+              lstrcpy(m_szCurFileName, pszFileName);
+          }
+
+          // We are done with the Storage for now. We don't hold the file
+          // open. We re-obtain the IStorage again later (and thus re-open
+          // the compound file) when we need it for another save or load.
+          RELEASE_INTERFACE(m_pIStorage);
+        }
+      }
+    }
+
+    return (hr);
+  }
+ </FONT> </PRE>
+
+<p>
+As with the Save method, if NULL is passed for the pszFileName parameter,
+the stored content of member m_szCurFileName is used for the file name.
+Since an existing file may be opened, APPUTIL's FileExist function is
+first used to check if the file exists. If it exists, the standard
+StgIsStorageFile service function is called to check the format of the
+file to determine if it is a valid compound file.
+
+<p>
+If the file is valid, the standard StgOpenStorage service function is
+called to open the file and return a pointer to an IStorage interface for
+it.
+
+<p>
+The first parameter is the name of the compound file to open. As with the
+StgCreateDocFile call, this string is expected in the Unicode form, and
+during ANSI compilation an APPUTIL macro is used to ensure the ANSI
+parameter is converted to the expected Unicode.
+
+<p>
+The second priority storage parameter is NULL, indicating it is not used
+in this sample.
+
+<p>
+The access mode flags are passed as the third parameter to specify what
+access modes are permitted on the opened file. STGM_READ opens the file
+with read-only permission. STGM_DIRECT opens the file for direct access,
+as opposed to transacted access. STGM_SHARE_EXCLUSIVE opens the file for
+exclusive, non-shared use by the caller.
+
+<p>
+The fourth element exclusion parameter in NULL, indicating it is not used
+in this sample.
+
+<p>
+The fifth parameter is reserved for future use and must be 0.
+
+<p>
+The address of pointer variable m_pIStorage is passed as the sixth
+parameter. When the call successfully returns, m_pIStorage contains a
+pointer to an IStorage interface. This is the interface that is used for
+any subsequent operations on the opened file.
+
+<p>
+The important operation in this case is to have the COPaper object load
+its drawing data from the file. This is done above using the Load method
+of COPaper's IPaper interface. If COPaper succeeds in loading its data
+using the IStorage provided, the name of the compound file is copied into
+m_szCurFileName as the new current file name.
+
+<p>
+When these operations are successfully completed, the IStorage interface
+that was obtained is released. This closes the file and means that the
+file is not held open during other client operations. It will be reopened
+when needed.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

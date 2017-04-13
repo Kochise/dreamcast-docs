@@ -1,0 +1,1067 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>STOSERVE COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="conclien.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="stoclien.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="STOSERVE">STOSERVE - Structured Storage Server</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<p>
+The STOSERVE sample introduces the COPaper COM object, which models a
+sheet of white drawing paper. COPaper objects expose a set of features for
+free-form drawing on the paper surface using &quot;ink&quot; of specified
+color and width. The functionality is outwardly similar to the
+&quot;scribble&quot; tutorial samples in many versions of the Microsoft
+Visual C++ product. The difference in the STOSERVE/STOCLIEN samples is an
+architecture based primarily on COM technology. The electronic drawing
+paper features of COPaper objects are available to clients through a
+custom IPaper interface. COPaper implements the IPaper interface. A clear
+architectural distinction is kept between client and server. No graphical
+user interface (GUI) is provided by COPaper. The design of the COPaper
+object relies on the client for all GUI behavior. COPaper encapsulates
+only the server-based capture and storage of the drawn ink data.
+
+<p>
+The ink data that is drawn on the COPaper surface can be stored in and
+loaded from compound files. The IPaper Save and Load methods accept an
+IStorage interface pointer. COPaper uses this client-provided IStorage
+interface to store the drawing data.
+
+<p>
+The primary focus of this code sample is on the use of structured storage
+services as provided in the compound files implementation. The use of the
+standard IStorage and IStream interfaces is covered. STOSERVE works with
+the STOCLIEN code sample to illustrate the joint use of compound file
+storage by client and server.
+
+<p>
+COPaper is housed in an in-process server and is made publicly available
+as a custom COM component. Like all other servers in this tutorial series,
+STOSERVE is a self-registering COM server. It makes the COPaper object
+type available to clients as the DllPaper component using a CLSID_DllPaper
+registration in the Registry.
+
+<p>
+As was the case in the previous CONSERVE server, connectable object
+features are supported in COPaper. The IConnectionPointContainer interface
+is exposed, and an appropriate connection point is implemented. In this
+context, an outgoing custom IPaperSink interface is declared for use in
+sending notifications to the client.
+
+<p>
+The two IPaper and IPaperSink custom interfaces are declared in IPAPER.H
+located in the common sibling \INC directory. The GUIDs for the interfaces
+and objects are defined in PAPGUIDS.H located in that same common include
+directory.
+
+<p>
+The CThreaded facility in APPUTIL is used by STOSERVE to achieve thread
+safety, as it was in the FRESERVE sample. COPaper objects are derived from
+the CThreaded class and inherit its OwnThis and UnOwnThis methods. These
+methods allow only one thread at a time to have access to the STOSERVE
+server and to COPaper objects managed by the server.
+
+<p>
+For functional descriptions and a tutorial code tour of STOSERVE, see the
+Code Tour section in STOSERVE.HTM. For details on setting up the
+programmatic usage of STOSERVE, see the Usage section in STOSERVE.HTM. To
+read STOSERVE.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the STOSERVE lesson in the table of lessons. You can also achieve
+the same thing by clicking the STOSERVE.HTM file after locating the main
+tutorial directory in the Windows Explorer. See also STOCLIEN.HTM in the
+main tutorial directory for more details on the STOCLIEN client
+application and how it works with STOSERVE.DLL. You must build
+STOSERVE.DLL before building or running STOCLIEN.
+
+<p>
+STOSERVE's makefile automatically registers STOSERVE's DllPaper COM
+component in the registry. This component must be registered before
+STOSERVE is available to outside COM clients as a server for that
+component. This self-registration is done using the REGISTER.EXE utility
+built in the REGISTER sample. To build or run STOSERVE, you should build
+the REGISTER code sample first.
+
+<p>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<p>
+To use STOSERVE, a client program does not need to include STOSERVE.H or
+link to STOSERVE.LIB. A COM client of STOSERVE obtains access solely
+through its object's CLSID and COM services. For STOSERVE, that CLSID is
+CLSID_DllPaper (defined in file PAPGUIDS.H in the \INC sibling directory).
+The STOCLIEN code sample shows how the client obtains this access.
+
+<p>
+STOSERVE is a DLL that is intended primarily as a COM server. Although it
+can be implicitly loaded by linking to its associated .LIB file, it is
+normally used after an explicit LoadLibrary call, usually from within the
+COM function CoGetClassObject. STOSERVE is a self-registering in-process
+server.
+
+<P>
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the STOSERVE directory:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  nmake register
+ </FONT> </PRE>
+
+<P>
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the STOSERVE directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ..\register\register.exe stoserve.dll
+ </FONT> </PRE>
+
+<P>
+These registration commands require a prior build of the REGISTER sample
+in this series, as well as a prior build of STOSERVE.DLL.
+
+<P>
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Platform SDK and Visual C++&reg;
+include a utility, REGSVR32.EXE, which can be used in a similar fashion to
+register in-process servers and marshaling DLLs.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">
+Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, STOCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="STOCLIEN\STOCLIEN.exe">
+Click here to run STOCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files         Description</u>
+STOSERVE.TXT  Short sample description.
+MAKEFILE      The generic makefile for building the STOSERVE.DLL
+              code sample of this lesson.
+STOSERVE.H    The include file for declaring as imported or defining as
+              exported the service functions in STOSERVE.DLL.
+STOSERVE.CPP  The main implementation file for STOSERVE.DLL. Has DllMain
+              and the COM server functions (for example, DllGetClassObject).
+STOSERVE.DEF  The module definition file. Exports server housing functions.
+STOSERVE.RC   The DLL resource definition file for the executable.
+STOSERVE.ICO  The icon resource for the executable.
+SERVER.H      The include file for the server control C++ object.
+SERVER.CPP    The implementation file for the server control C++ object.
+FACTORY.H     The include file for the server's class factory COM objects.
+FACTORY.CPP   The implementation file for the server's class factories.
+CONNECT.H     The include file for the connection point enumerator,
+              connection point, and connection enumerator classes.
+CONNECT.CPP   The implementation file for the connection point enumerator,
+              connection point, and connection enumerator objects.
+PAPER.H       The include file for the COPaper COM object class.
+PAPER.CPP     The implementation file for the COPaper COM object class
+              and the connection points.
+ </FONT> </PRE>
+
+<p>
+STOSERVE uses many of the utility classes and services provided by
+APPUTIL. For more details on APPUTIL, study the APPUTIL library's source
+code in the sibling APPUTIL directory and APPUTIL.HTM in the main tutorial
+directory.
+
+<p>
+This sample is part of a graduated series of tutorial code samples. This
+tour assumes that you have some exposure to those previous samples. It
+does not revisit earlier topics of basic interface implementation
+techniques, COM object construction, in-process server construction, class
+factory construction, and connectable object construction. For information
+on these topics, study the earlier tutorial samples.
+
+<p>The major topics covered in this code tour are:
+
+<ul>
+<li>An overview of how STOSERVE is designed to work with connected clients
+
+<li>The IPaper interface
+
+<li>COPaper's management of paper drawing data
+
+<li>COPaper's use of structured storage in compound files to save and load
+    paper data
+
+<li>COPaper's use of the IPaperSink interface for client notifications
+
+<li>Unicode considerations
+
+</ul>
+
+<p>
+The COPaper COM object is the single object type managed by this STOSERVE
+in-process server. COPaper is constructed as a connectable COM object with
+an implementation of the standard IConnectionPointContainer interface and
+an implementation of the custom IPaper interface. COPaper exposes the
+IPaper interface so clients can perform a small set of electronic paper
+operations on an instance of COPaper. The essential operations are
+starting an ink drawing sequence, drawing the ink data on COPaper's
+virtual paper surface, and ending the ink drawing sequence. In this
+scheme, the client is assumed to be a GUI application driven by a mouse or
+tablet device. The client is responsible for translating the mouse
+movements into requests to COPaper, which saves these requests as ink
+data.
+
+<p>
+There are two levels of ink data saving in COPaper. COPaper saves the ink
+data in a RAM-based array that represents the current drawing, and COPaper
+persistently saves an entire drawing into a compound file. Methods in the
+IPaper interface perform both.
+
+<p>
+Since the client does not manage the drawn paper data but is responsible
+for rendering it as an image on the screen, the IPaper implementation in
+COPaper must expose a method that allows the client to obtain the drawing
+data. The connectable object technology in COPaper is used for this
+purpose. A CONNPOINT_PAPERSINK connection point is implemented by COPaper
+so clients can connect to COPaper to recieve the ink data for drawing. The
+client first calls the IPaper::Redraw method on the COPaper object to
+request all the ink data of the current drawing. COPaper's implementation
+of Redraw then uses the client's implementation of IPaperSink to pass the
+data to the client.
+
+<p>
+As the user interactively draws in the client, it paints the data
+immediately to the screen while also sending it to COPaper for saving.
+When the client needs the screen to be repainted, it calls COPaper's
+Redraw method. Such repainting is common in applications. For example,
+repainting occurs when the client's window is overlaid by another
+application's window. The client has a bitmap rendering of the drawn
+image, but the bitmap is easily lost and must often be repainted. The
+client relies on COPaper in the server for the ink data needed for
+repainting.
+
+<p>
+This is a common client/server division of labor. It is especially
+appropriate when there is a need for multiple clients to share the data.
+COPaper is coded to allow for this eventuality. It uses APPUTIL's
+CThreaded facility to achieve thread safety. An application that might
+exploit this design is a shared whiteboard application, where multiple
+clients can contribute to a commonly viewed drawing. COM's support for
+Distributed COM (DCOM) supports this kind of workgroup application usage
+across the network. See the earlier REMCLIEN sample for more details on
+DCOM.
+
+<p>
+A more modest use of COPaper's client/server scheme is to integrate
+behavior for objects implemented in different applications on the same
+machine. In this case, the clients might be ActiveX containers in separate
+applications that share data managed by the same object. This data may not
+be the ink drawing data that the DllPaper component supports. STOSERVE can
+be used as a starting framework for programming components that manage
+other kinds of shared data.
+
+<p>
+STOSERVE provides COPaper objects, which are controlled primarily by their
+native IPaper interface. Here is a summary of IPaper's methods from
+IPAPER.H in the sibling \INC directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  InitPaper
+    Initializes paper object and create ink data array.
+
+  Lock
+    Gives client control of the paper and locks out other clients.
+
+  Unlock
+    Relinquishes client control of the paper.
+
+  Load
+    Loads paper content from client's compound file and notifies sinks.
+
+  Save
+    Saves paper content to client's compound file.
+
+  InkStart
+    Starts color ink drawing to the paper surface.
+
+  InkDraw
+    Puts ink data points on the electronic paper surface.
+
+  InkStop
+    Stops ink drawing to the paper surface.
+
+  Erase
+    Erase the current paper content and notifies sinks.
+
+  Resize
+    Resizes the drawing paper rectangle size and notifies sinks.
+
+  Redraw
+    Redraws contents of paper object and notifies sinks.
+ </FONT> </PRE>
+
+<p>
+Of interest for this code sample on compound files are the Load and Save
+methods. We will cover these in detail below, but first we will look at
+the ink data that will be loaded from and saved to compound files.
+
+<p>
+InkStart, InkDraw, and InkStop are the methods used by clients to command
+COPaper to record ink drawing sequences. The client will typically respond
+to a WM_LBUTTONDOWN message as the start of an ink drawing sequence by
+calling InkStart on COPaper. As the user moves the mouse or pen to draw
+while holding down the left button, the client will respond to repeated
+WM_MOUSEMOVE messages with corresponding calls to InkDraw. When the user
+releases the left mouse button, the client will respond to a WM_LBUTTONUP
+message with a call to InkStop, which marks the end of the ink drawing
+sequence.
+
+<p>
+InkStart tells COPaper the start position for the drawing sequence in
+client window coordinates. It also passes the currently selected ink color
+and width. The client maintains these selections; COPaper merely records
+them when the InkStart call is made. InkDraw is called repeatedly to tell
+COPaper the succession of window coordinates that represent the drawing
+motion of the mouse or pen. InkStop tells COPaper to mark the end of a
+drawing sequence.
+
+<p>
+COPaper packages the pen color, width, and coordinates into INKDATA
+structures and stores them in a dynamically allocated array that it
+manages in memory. Here are the declarations for the INKDATA structure
+from PAPER.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // The types of Ink Data.
+  #define INKTYPE_NONE  0
+  #define INKTYPE_START 1
+  #define INKTYPE_DRAW  2
+  #define INKTYPE_STOP  3
+
+  // The Ink Data structure.
+  typedef struct _INKDATA
+  {
+    SHORT nType;            // Ink Type.
+    SHORT nX;               // X-coordinate of ink point.
+    SHORT nY;               // Y-coordinate of ink point.
+    SHORT nWidth;           // Ink line width in pixels.
+    COLORREF crColor;       // Ink color.
+  } INKDATA;
+ </FONT> </PRE>
+
+<p>
+The dynamic array of these INKDATA packets is pointed to by m_paInkData, a
+member of the IPaper implementation class. The array is created within the
+IPaper::InitPaper method with an initial allocation. For details, see the
+InitPaper method and the private NextSlot utility method of the CImpIPaper
+implementation in PAPER.H. The InkStart, InkDraw, and InkStop methods use
+NextSlot to obtain new slots in the array. The array is expanded
+dynamically by NextSlot as the need arises.
+
+<p>
+The client calls the IPaper::Erase method to erase the current drawing.
+This method does not reallocate the array; it simply marks all current ink
+data as INKTYPE_NONE and resets the array's end-of-data index to zero.
+
+<p>
+The client calls the IPaper::Lock and Unlock methods to manage ownership
+of COPaper for drawing. These methods are provided to organize access
+among multiple clients to the drawing held in a shared COPaper.
+
+<p>
+The client calls the IPaper::Resize method to tell COPaper that the user
+resized the current drawing paper rectangle. This coordinate data is kept
+in a PAPER_PROPERTIES structure, which is stored with the ink data when
+all the paper data is stored in a compound file. Here is the
+PAPER_PROPERTIES declaration from PAPER.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  #define PAPER_TITLE_SIZE 64
+  typedef struct _PAPER_PROPERTIES
+  {
+    LONG lInkDataVersion;
+    LONG lInkArraySize;
+    COLORREF crWinColor;
+    RECT WinRect;
+    WCHAR wszTitle[PAPER_TITLE_SIZE];
+    WCHAR wszAuthor[PAPER_TITLE_SIZE];
+    WCHAR wszReserved1[PAPER_TITLE_SIZE];
+    WCHAR wszReserved2[PAPER_TITLE_SIZE];
+  } PAPER_PROPERTIES;
+ </FONT> </PRE>
+
+<p>
+The PAPER_PROPERTIES structure is designed so that new ink data formats
+can be added at any time as the DllPaper component evolves. The IPaper
+interface is general enough that a subsequent version of the DllPaper
+component may store a different ink data format while implementing the
+same IPaper interface. Because the methods of IPaper do not depend on a
+specific ink data format, a new version of the DllPaper component that
+does support a different ink data format can use this same interface.
+
+<p>
+The paper properties stored in a compound file record the current size of
+the ink data array. The proper array size can then be allocated to
+accommodate the ink data read from the file.
+
+<p>
+The PAPER_PROPERTIES structure also stores the paper surface's drawing
+rectangle size and background window color.
+
+<p>
+Though not used in the STOSERVE/STOCLIEN samples, a drawing title and an
+author name can also be stored.
+
+<p>
+Creation date and last modified dates are not included in these paper
+properties, because the IStorage interface used to access compound files
+manages this information.
+
+<p>
+The principal focus in this code sample is how COPaper can load and save
+its paper data in compound files. We now look at the IPaper Load and Save
+method implementations in detail.
+
+<p>Here is IPaper::Save from PAPER.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COPaper::CImpIPaper::Save(
+                 SHORT nLockKey,
+                 IStorage* pIStorage)
+  {
+    HRESULT hr = E_FAIL;
+    IStream* pIStream;
+    ULONG ulToWrite, ulWritten;
+
+    if (OwnThis())
+    {
+      if (m_bLocked &amp;&amp; m_cLockKey == nLockKey &amp;&amp; NULL != pIStorage)
+      {
+        // First use COM service to mark this compound file as one that is
+        // handled by our server component, DllPaper.
+        WriteClassStg(pIStorage, CLSID_DllPaper);
+
+        // Use COM Service to write user-readable clipboard format into
+        // the compound file.
+        WriteFmtUserTypeStg(pIStorage, m_ClipBdFmt, TEXT(CLIPBDFMT_STR));
+
+        // Create the stream to be used for the actual paper data.
+        // Call it &quot;PAPERDATA&quot;.
+        hr = pIStorage-&gt;CreateStream(
+               STREAM_PAPERDATA_USTR,
+               STGM_CREATE | STGM_WRITE | STGM_DIRECT | STGM_SHARE_EXCLUSIVE,
+               0,
+               0,
+               &amp;pIStream);
+        if (SUCCEEDED(hr))
+        {
+          // Got a stream. Now write data into it.
+          // First write PAPER_PROPERTIES structure.
+          m_PaperProperties.lInkArraySize = m_lInkDataEnd+1;
+          m_PaperProperties.crWinColor = m_crWinColor;
+          m_PaperProperties.WinRect.right = m_WinRect.right;
+          m_PaperProperties.WinRect.bottom = m_WinRect.bottom;
+          ulToWrite = sizeof(PAPER_PROPERTIES);
+          hr = pIStream-&gt;Write(&amp;m_PaperProperties, ulToWrite, &amp;ulWritten);
+          if (SUCCEEDED(hr) &amp;&amp; ulToWrite != ulWritten)
+            hr = STG_E_CANTSAVE;
+          if (SUCCEEDED(hr))
+          {
+            // Now write the complete array of Ink Data.
+            ulToWrite = m_PaperProperties.lInkArraySize * sizeof(INKDATA);
+            hr = pIStream-&gt;Write(m_paInkData, ulToWrite, &amp;ulWritten);
+            if (SUCCEEDED(hr) &amp;&amp; ulToWrite != ulWritten)
+              hr = STG_E_CANTSAVE;
+          }
+
+          // We are done with the stream so release it.
+          pIStream-&gt;Release();
+        }
+      }
+
+      UnOwnThis();
+    }
+
+    // Notify all other connected clients that Paper is now saved.
+    if (SUCCEEDED(hr))
+      m_pBackObj-&gt;NotifySinks(PAPER_EVENT_SAVED, 0, 0, 0, 0);
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<p>
+In the division of labor between client and server, COPaper does not
+create the compound file that is used to store paper data. For both the
+Save and Load methods, the client passes an IStorage interface pointer for
+an existing compound file. It then uses the IStorage to write and read
+data in that compound file. In IPaper::Save above, several types of data
+are stored.
+
+<p>
+The CLSID for DllPaper, CLSID_DllPaper, is serialized and stored in a
+special COM-controlled stream within the storage object called
+&quot;\001CompObj&quot;. The WriteClassStg service function performs this
+storage. This stored CLSID data can be used to associate the storage's
+content with the DllPaper component that created and can interpret it. In
+this sample, the root storage is passed by STOCLIEN, and thus the entire
+compound file is associated with the DllPaper component. This CLSID data
+can be retrieved later with a call to the ReadClassStg service function.
+
+<p>
+Since DllPaper deals with editable data, it is also appropriate to record
+a clipboard format in the storage. The WriteFmtUserTypeString service
+function is called to store both a clipboard format designation and a
+user-readable name for the format. The user-readable name is meant for GUI
+display in selection lists. The name passed above uses a macro,
+CLIPBDFMT_STR, which is defined as &quot;DllPaper 1.0&quot; in PAPER.H.
+This stored clipboard data can be retrieved later with a call to the
+service function ReadFmtUserTypeStg. This function returns a string value
+that is allocated using the task memory allocator. The caller is
+responsible for freeing the string.
+
+<p>
+Save next creates a stream in the storage for the COPaper paper data. The
+stream is called &quot;PAPERDATA&quot; and is passed using the
+STREAM_PAPERDATA_USTR macro. The IStorage::CreateStream method requires
+that this string be in Unicode. Since the string is fixed at compile time,
+the macro is defined as Unicode in PAPER.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  #define STREAM_PAPERDATA_USTR L&quot;PAPERDATA&quot;
+ </FONT> </PRE>
+
+<p>The 'L' before the string, indicating LONG, achieves this.
+
+<p>
+The CreateStream method creates and opens a stream within the specified
+storage. An IStream interface pointer for the new stream is passed in a
+caller's interface pointer variable. AddRef is called on this interface
+pointer within CreateStream, and the caller must release this pointer
+after using it. The CreateStream function is passed numerous access mode
+flags, as follows.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STGM_CREATE | STGM_WRITE | STGM_DIRECT | STGM_SHARE_EXCLUSIVE
+ </FONT> </PRE>
+
+<p>
+STGM_CREATE creates a new stream or overwrites an existing one of the same
+name. STGM_WRITE opens the stream with write permission. STGM_DIRECT opens
+the stream for direct access, as opposed to transacted access.
+STGM_SHARE_EXCLUSIVE opens the file for exclusive, non-shared use by the
+caller.
+
+<p>
+After the PAPERDATA stream is successfully created, the IStream interface
+is used to write into the stream. The IStream::Write method is used to
+first store the content of the PAPER_PROPERTIES structure. This is
+essentially a properties header at the front of the stream. Because the
+version number is the first thing in the file, it can be read
+independently to determine how to deal with the data that follows. If the
+amount of data actually written does not equal the amount requested, the
+Save method is aborted, and it returns STG_E_CANTSAVE.
+
+<p>Saving the entire array of ink data into the stream is simple.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // Now write the complete array of Ink Data.
+  ulToWrite = m_PaperProperties.lInkArraySize * sizeof(INKDATA);
+  hr = pIStream-&gt;Write(m_paInkData, ulToWrite, &amp;ulWritten);
+  if (SUCCEEDED(hr) &amp;&amp; ulToWrite != ulWritten)
+    hr = STG_E_CANTSAVE;
+ </FONT> </PRE>
+
+<p>
+Since the IStream::Write method operates on a byte array, the number of
+bytes of stored ink data in the array is calculated and the write
+operation begins at the start of the array. If the amount of data actually
+written does not equal the amount requested, the Save method returns
+STG_E_CANTSAVE.
+
+<p>
+After the stream is written, the IPaper::Save method releases the IStream
+pointer it was using.
+
+<p>
+The Save method also calls the client's IPaperSink (in COPaper's internal
+NotifySinks method) to notify the client that the save operation is
+complete. At this point the Save method returns to the calling client,
+which will typically release the IStorage pointer.
+
+<p>Here is the Save method's opposite, IPaper::Load from PAPER.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COPaper::CImpIPaper::Load(
+                 SHORT nLockKey,
+                 IStorage* pIStorage)
+  {
+    HRESULT hr = E_FAIL;
+    IStream* pIStream;
+    INKDATA* paInkData;
+    ULONG ulToRead, ulReadIn;
+    LONG lNewArraySize;
+    PAPER_PROPERTIES NewProps;
+
+    if (OwnThis())
+    {
+      if (m_bLocked &amp;&amp; m_cLockKey == nLockKey &amp;&amp; NULL != pIStorage)
+      {
+        // Open the &quot;PAPERDATA&quot; stream where the paper data is stored.
+        hr = pIStorage-&gt;OpenStream(
+               STREAM_PAPERDATA_USTR,
+               0,
+               STGM_READ | STGM_DIRECT | STGM_SHARE_EXCLUSIVE,
+               0,
+               &amp;pIStream);
+        if (SUCCEEDED(hr))
+        {
+          // We have the paper data stream. First read the Paper Properties.
+          ulToRead = sizeof(PAPER_PROPERTIES);
+          hr = pIStream-&gt;Read(
+                           &amp;NewProps,
+                           ulToRead,
+                           &amp;ulReadIn);
+          if (SUCCEEDED(hr) &amp;&amp; ulToRead != ulReadIn)
+            hr = E_FAIL;
+          if (SUCCEEDED(hr))
+          {
+            // Deal with the different versions of ink data format.
+            switch (NewProps.lInkDataVersion)
+            {
+              case INKDATA_VERSION10:
+                // Allocate an ink data array big enough--add some
+                // extra too.
+                lNewArraySize = NewProps.lInkArraySize + INKDATA_ALLOC;
+                paInkData = new INKDATA[(LONG) lNewArraySize];
+                if (NULL != paInkData)
+                {
+                  // Delete the entire old ink data array.
+                  delete [] m_paInkData;
+
+                  // Assign the new array.
+                  m_paInkData = paInkData;
+                  m_lInkDataMax = lNewArraySize;
+
+                  // Now read the complete array of Ink Data.
+                  ulToRead = NewProps.lInkArraySize * sizeof(INKDATA);
+                  hr = pIStream-&gt;Read(m_paInkData, ulToRead, &amp;ulReadIn);
+                  if (SUCCEEDED(hr) &amp;&amp; ulToRead != ulReadIn)
+                    hr = E_FAIL;
+                  if (SUCCEEDED(hr))
+                  {
+                    // Rig COPaper to use the new PAPER_PROPERTIES info.
+                    m_lInkDataEnd = NewProps.lInkArraySize-1;
+                    m_crWinColor = NewProps.crWinColor;
+                    m_WinRect.right = NewProps.WinRect.right;
+                    m_WinRect.bottom = NewProps.WinRect.bottom;
+
+                    // Copy the new properties into current properties.
+                    memcpy(
+                      &amp;m_PaperProperties,
+                      &amp;NewProps,
+                      sizeof(PAPER_PROPERTIES));
+                  }
+                }
+                else
+                  hr = E_OUTOFMEMORY;
+                break;
+              default:
+                hr = E_FAIL;  // Bad version.
+                break;
+            }
+          }
+
+          // We are done with the stream so release it.
+          pIStream-&gt;Release();
+        }
+      }
+
+      UnOwnThis();
+    }
+
+    // Notify all other connected clients that Paper is now loaded.
+    // If we didn't load then erase to a safe, empty ink data array.
+    if (SUCCEEDED(hr))
+      m_pBackObj-&gt;NotifySinks(PAPER_EVENT_LOADED, 0, 0, 0, 0);
+    else
+      Erase(nLockKey);
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<p>
+This time the IStorage::OpenStream method is called to open the existing
+stream in the storage called &quot;PAPERDATA&quot;. Access mode flags are
+for read only, direct, and non-shared exclusive access. Once the stream is
+open, the IStream::Read method is called to read the PAPER_PROPERTIES
+structure. If the amount actually read does not equal the amount
+requested, the load operation is aborted, and E_FAIL is returned. If the
+format version in the newly read PAPER_PROPERTIES is not recognized, then
+the load operation is aborted and Load returns E_FAIL.
+
+<p>
+With a valid ink data format version, the size of the new ink data array
+from the PAPER_PROPERTIES that was read in is used to allocate a new ink
+data array of the required size. The existing ink data is deleted, and its
+data is lost. If this data was valuable, it should have been saved before
+Load was called. After the new array is allocated, IStream::Read is called
+again to read the data into the array from the stream. If this call
+succeeds, the values in the newly read paper properties are adopted as the
+current values for COPaper.
+
+<p>
+During this load operation, a temporary PAPER_PROPERTIES structure,
+NewProps, was used to hold the new properties read in. If all succeeds
+with the load, NewProps is copied into the PAPER_PROPERTIES structure,
+m_PaperProperties. As before, after Load is done and the IStream is no
+longer needed, the IStream pointer is released.
+
+<p>
+If there is an error at the end of Load, the ink data array is erased,
+because it may contain damaged data.
+
+<p>
+If there is no error at the end of Load, the client's IPaperSink::Loaded
+method is called (in COPaper's internal NotifySinks method) to notify the
+client that the load operation is comleted. This is an important
+notification for the client, because it needs to display this newly loaded
+ink data. This notification makes significant use of COPaper's connectable
+object features.
+
+<p>
+COPaper exposes the IConnectionPointContainer interface so clients can
+connect to COPaper in order to receive notifications of specified events
+that occur in COPaper. By exposing this interface, COPaper becomes a
+connectable object. A client can call QueryInterface for this interface
+and use it to obtain the object's connection points. The client
+participation in this scheme is covered in the associated STOCLIEN sample.
+
+<p>
+Basically, the client implements what is called a sink in the form of a
+sink object with a sink interface. The sink interface receives outgoing
+event notification calls from COPaper after the sink is properly connected
+by the client to a COPaper instance. The client makes the connection by
+using a connection point object that is managed by COPaper. There can be
+numerous connection points on a single connectable COM object. In the
+STOSERVE sample, COPaper has only one connection point, which handles
+drawing paper events.
+
+<p>
+Any number of clients can connect to a single connection point. The
+CONNPOINT_PAPERSINK connection point in COPaper maintains a group of
+connections that can grow dynamically at run time. The full details on
+COPaper's connectable object support is coded in files CONNECT.H and
+CONNECT.CPP and will not be covered here. The construction is very similar
+to what was studied in the CONSERVE code sample.
+
+<p>
+The STOCLIEN client implements appropriate sink objects for the connection
+points it expects to find in COPaper. From the context of COPaper, the
+important sink object that STOCLIEN implements exposes the IPaperSink
+interface. This is the outgoing interface used by COPaper to notify
+STOCLIEN of various events in COPaper. Here is a summary of the methods in
+IPaperSink from IPAPER.H in the \INC sibling directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  Locked
+    A client has taken control of and locked the paper.
+
+  Unlocked
+    A client has relinquished control of the paper.
+
+  Loaded
+    A client has loaded paper content from its own compound file.
+
+  Saved
+    A client has saved paper content to its own compound file.
+
+  InkStart
+    A client started a color ink drawing sequence to the paper.
+
+  InkDraw
+    A client is putting ink data points on the paper surface.
+
+  InkStop
+    A client has stopped its ink drawing sequence to the paper.
+
+  Erased
+    A client has erased all ink data from the paper.
+
+  Resized
+    A client has resized the paper.
+ </FONT> </PRE>
+
+<p>
+These methods are largely self-explanatory. Although the sink must
+implement all these methods in some fashion, many are implemented as stubs
+and are not used in the STOSERVE/STOCLIEN samples.
+
+<p>
+An important method used in these samples is the Loaded method. When
+COPaper is told by the client to load a new drawing from file, it needs a
+way to notify the client when the new data is loaded. To do this, COPaper
+Calls IPaperSink::Loaded on the client sink. The client can then call
+IPaper::Redraw to request that COPaper play back the new data to the
+client. Redraw causes the loaded drawing in the client's display to be
+repainted. When the load is completed, the newly loaded drawing is
+displayed automatically in the window provided by the client.
+
+<p>The IPaper::Redraw method relies on the connection point technology.
+Here is Redraw from PAPER.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COPaper::CImpIPaper::Redraw(
+                 SHORT nLockKey)
+  {
+    HRESULT hr = E_FAIL;
+    IConnectionPoint* pIConnectionPoint;
+    IEnumConnections* pIEnum;
+    CONNECTDATA ConnData;
+    IPaperSink* pIPaperSink;
+    SHORT nInkType;
+    LONG i;
+
+    if (OwnThis())
+    {
+      if (m_bLocked &amp;&amp; m_cLockKey == nLockKey)
+      {
+        // Broadcast InkData notifications to all Sinks connected to
+        // each connection point.
+
+        // Here is the section for the PaperSink connection point--this is
+        // currently the only connection point offered by COPaper objects.
+        pIConnectionPoint =
+          m_pBackObj-&gt;m_aConnectionPoints[CONNPOINT_PAPERSINK];
+        if (NULL != pIConnectionPoint)
+        {
+          pIConnectionPoint-&gt;AddRef();
+          hr = pIConnectionPoint-&gt;EnumConnections(&amp;pIEnum);
+          if (SUCCEEDED(hr))
+          {
+            // Loop thru the connection point's connections and if the
+            // listening connection supports IPaperSink (ie, PaperSink
+            // events) then send all the current Paper's Ink Data to it.
+            while (NOERROR == pIEnum-&gt;Next(1, &amp;ConnData, NULL))
+            {
+              hr = ConnData.pUnk-&gt;QueryInterface(
+                                    IID_IPaperSink,
+                                    (PPVOID)&amp;pIPaperSink);
+              if (SUCCEEDED(hr))
+              {
+                // Loop thru all the Ink Data and send it to this connected
+                // client sink.
+                for (i=0; i&lt;m_lInkDataEnd+1; i++)
+                {
+                  nInkType = m_paInkData[i].nType;
+                  switch (nInkType)
+                  {
+                    case INKTYPE_START:
+                      pIPaperSink-&gt;InkStart(
+                                     m_paInkData[i].nX,
+                                     m_paInkData[i].nY,
+                                     m_paInkData[i].nWidth,
+                                     m_paInkData[i].crColor);
+                      break;
+                    case INKTYPE_DRAW:
+                      pIPaperSink-&gt;InkDraw(
+                                     m_paInkData[i].nX,
+                                     m_paInkData[i].nY);
+                      break;
+                    case INKTYPE_STOP:
+                      pIPaperSink-&gt;InkStop(
+                                     m_paInkData[i].nX,
+                                     m_paInkData[i].nY);
+                      break;
+                    default:
+                      break;
+                  }
+                }
+                pIPaperSink-&gt;Release();
+              }
+              ConnData.pUnk-&gt;Release();
+            }
+            pIEnum-&gt;Release();
+          }
+          pIConnectionPoint-&gt;Release();
+        }
+      }
+
+      UnOwnThis();
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<p>
+The IPaperSink methods InkStart, InkDraw, and InkStop are used to send
+individual ink data packets back to the client. On reception, the client
+paints them in its display in the same manner as when it originally sent
+them to COPaper. The above logic is general enough to allow for multiple
+clients that are all listening on the same CONNPOINT_PAPERSINK connection
+point. If a common COPaper instance was shared by these clients, they
+could all display the same drawing by connecting to this connection point.
+
+<p>
+The WriteFmtUserTypeStg service function used in the Save method shown
+above requires Unicode string parameters. This is the case with COM/OLE
+service calls that take string parameters. When compiling for ANSI
+strings, the expected Unicode parameters need conversion from ANSI to
+Unicode. This process is achieved using some macros in APPUTIL.H that may
+obscure the conversions that are performed. Take WriteFmtUserTypeStg as an
+example. The following call appears in the Save method.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  WriteFmtUserTypeStg(pIStorage, m_ClipBdFmt, TEXT(CLIPBDFMT_STR));
+ </FONT> </PRE>
+
+<p>
+When STOSERVE is compiled for ANSI (not for Unicode), this call actually
+reduces to a call to an internal APPUTIL surrogate function. To support
+this, the following macro scheme is used in APPUTIL.H, which is an
+included file in all code sample .CPP files.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  #if !defined(UNICODE)
+
+  STDAPI A_WriteFmtUserTypeStg(IStorage*, CLIPFORMAT, LPSTR);
+
+  #if !defined(_NOANSIMACROS_)
+
+  #undef WriteFmtUserTypeStg
+  #define WriteFmtUserTypeStg(a, b, c) A_WriteFmtUserTypeStg(a, b, c)
+
+  #endif
+
+  #endif
+ </FONT> </PRE>
+
+<p>
+The scheme uses surrogate service call functions. The ANSI versions of the
+calls begin with A_. These surrogate ANSI functions are implemented in
+APPUTIL.CPP. They are used when the code sample is being compiled for ANSI
+strings (the default in the makefiles). The service functions that the
+surrogates stand in place of support only Unicode string parameters. This
+forces some string conversions from ANSI to Unicode before the real
+COM/OLE service call is made inside the surrogate.
+
+<p>
+For example, if UNICODE is not defined during compiling, any calls in the
+samples to the WriteFmtUserTypeStg COM service function are actually
+changed by the macros into calls to an A_WriteFmtUserTypeStg function that
+is implemented in APPUTIL.CPP. This function accepts the input ANSI string
+pointer, converts it to a Unicode copy, and passes that Unicode copy as
+the string parameter in a call to the actual WriteFmtUserTypeStg function.
+
+<p>Here is A_WriteFmtUserTypeStg from APPUTIL.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDAPI A_WriteFmtUserTypeStg(
+           IStorage* pIStorage,
+           CLIPFORMAT ClipFmt,
+           LPSTR pszUserType)
+  {
+    HRESULT hr = E_INVALIDARG;
+    WCHAR wszUc[MAX_PATH];
+
+    if (NULL != pszUserType)
+    {
+      // Convert from Ansi in pszUserType to Unicode in wszUc.
+      AnsiToUc(pszUserType, wszUc, MAX_PATH);
+
+      // Use the Unicode string in the actual service call.
+      hr = WriteFmtUserTypeStg(pIStorage, ClipFmt, wszUc);
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P ALIGN=CENTER> <A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

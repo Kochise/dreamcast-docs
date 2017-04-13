@@ -1,0 +1,998 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>DLLCLIEN COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="dllserve.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="licserve.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="DLLCLIEN">DLLCLIEN - Client Application of DLL Server</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The DLLCLIEN sample presents a series of COM objects, several of which were
+introduced in the DLLSERVE code sample. These objects represent various
+types of cars, and they expose the following interfaces: ICar, IUtility,
+and ICruise. DLLCLIEN works in conjunction with the separate DLLSERVE.DLL,
+which creates COCar, COUtilityCar, and COCruiseCar COM objects.
+
+<P>
+DLLCLIEN.EXE creates its own COUtilityCruiseCar COM object, which is
+constructed by reusing the COCruiseCar COM object by aggregation and
+augmenting it with the IUtility interface. Because the COCruiseCar COM
+object class is also an aggregate--that is, it reuses an inner COCar
+object by aggregation--DLLCLIEN illustrates nested aggregation of COM
+objects.
+
+<P>
+For functional descriptions and a tutorial code tour of DLLCLIEN, see the
+Code Tour section in DLLCLIEN.HTM. For details on the external user
+operation of DLLCLIEN, see both the Usage and Operation sections in
+DLLCLIEN.HTM. To read DLLCLIEN.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the DLLCLIEN lesson in the table of lessons. You can
+also achieve the same thing by clicking the DLLCLIEN.HTM file after
+locating the main tutorial directory in the Windows Explorer. See also
+DLLSERVE.HTM in the main tutorial directory for more details on how
+DLLSERVE works and exposes its services to DLLCLIEN. You must build the
+DLLSERVE DLL before building DLLCLIEN. The makefile for DLLSERVE
+automatically registers that server in the system registry, so you must
+build DLLSERVE before attempting to run DLLCLIEN.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<p>
+DLLCLIEN is an application that you can execute directly from Windows
+in the normal manner or from the Command Prompt window. No command line
+parameters are recognized by DLLCLIEN.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">
+Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, DLLCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="DLLCLIEN\DLLCLIEN.exe">
+Click here to run DLLCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>OPERATION</h3>
+
+<P>
+The DLLCLIEN.EXE application provides the user interface for this lesson.
+It exercises the associated, but independent, DLLSERVE.DLL. Here is a
+summary of operation from the standpoint of DLLCLIEN.EXE as a COM client
+of the DLLSERVE.DLL COM server.
+
+<P>
+The DLLCLIEN and DLLSERVE samples are directly analogous to the COMUSER
+and COMOBJ samples. The same COM objects are used and the same menu system
+exercises those objects. The main difference, as was discussed in the
+DLLSERVE lesson, is that these COM objects are now components that are
+housed in a COM server and accessed by a COM client. The DLLCLIEN.EXE
+application is the client.
+
+<P>
+The COM objects that are used in the DLLCLIEN and DLLSERVE code samples
+represent sport utility vehicles. We invent some basic feature sets for
+modeling such car objects. These feature sets are implemented as
+interfaces to COM objects. The ICar interface provides some basic car
+behavior: Shift, Clutch, Speed, and Steer. The IUtility interface provides
+off-road utility systems: Offroad and Winch. The ICruise interface
+provides automatic cruise control facilities: Engage and Adjust.
+
+<P>
+DLLCLIEN.EXE provides menus for creating, releasing, and invoking methods
+for four COM objects: COCar, COUtilityCar, COCruiseCar, and
+COUtilityCruiseCar. These objects have combinations of the ICar, IUtility,
+and ICruise interfaces. COCar objects expose the ICar interface.
+COUtilityCar objects expose the ICar and IUtility interfaces. COCruiseCar
+objects expose the ICar and ICruise interfaces. COUtilityCruiseCar objects
+expose the ICar, ICruise, and IUtility interfaces. As a result, COCar
+objects have only the basic car behavior (ICar). COUtilityCar objects have
+basic car behavior (ICar) with sport utility systems (IUtility).
+COCruiseCar objects have basic car behavior (ICar) with an automatic
+cruise control system (ICruise). COUtilityCruiseCar objects have basic car
+behavior (ICar), a cruise control system (ICruise), and a sport utility
+system (IUtility).
+
+<P>
+COCar is constructed as an aggregatable COM object with a native
+implementation of the ICar interface. COUtilityCar is constructed using
+containment and is implemented in DLLSERVE.DLL. For details, see the
+DLLSERVE lesson. COCruiseCar is constructed using aggregation and is
+also implemented in DLLSERVE.DLL. COUtilityCruiseCar is constructed using
+aggregation and is implemented in DLLCLIEN.EXE. COUtilityCruiseCar
+aggregates COCruiseCar, to illustrate nested aggregation in this lesson.
+
+<P>
+DLLCLIEN.EXE presents a menu for each of these four main COM objects. Each
+menu has commands that call the methods of the various available
+interfaces. The code samples (both DLLCLIEN and DLLSERVE) have trace
+message log statements throughout. When you exercise the objects from
+DLLCLIEN.EXE, the main DLLCLIEN window will display a log of internal
+activity in these COM objects.
+
+<p>Menu Selection: File/Exit<br>
+Exits DLLCLIEN.
+
+<p>Menu Selection: Car/Create<br>
+Creates a COCar COM object. A checkmark beside the menu item indicates
+that there is already an instance of the object.
+
+<p>Menu Selection: Car/Release<br>
+Releases the COCar COM object.
+
+<p>Menu Selection: Car/ICar::Shift<br>
+Calls the ICar::Shift method on the COCar object.
+
+<p>Menu Selection: Car/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COCar object.
+
+<p>Menu Selection: Car/ICar::Speed<br>
+Calls the ICar::Speed method on the COCar object.
+
+<p>Menu Selection: Car/ICar::Steer<br>
+Calls the ICar::Steer method on the COCar object.
+
+<p>Menu Selection: UtilityCar/Create<br>
+Creates the COUtilityCar COM object. A checkmark beside the menu item
+indicates that there is already an instance of the object.
+
+<p>Menu Selection: UtilityCar/Release<br>
+Releases the COUtilityCar COM object.
+
+<p>Menu Selection: UtilityCar/ICar::Shift<br>
+Calls the ICar::Shift method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/ICar::Speed<br>
+Calls the ICar::Speed method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/ICar::Steer<br>
+Calls the ICar::Steer method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/IUtility::Offroad<br>
+Calls the IUtility::Offroad method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/IUtility::Winch<br>
+Calls the IUtility::Winch method on the COUtilityCar object.
+
+<p>Menu Selection: CruiseCar/Create<br>
+Creates the COCruiseCar COM object. A checkmark beside the menu item
+indicates that there is already an instance of the object.
+
+<p>Menu Selection: CruiseCar/Release<br>
+Releases the COCruiseCar COM object.
+
+<p>Menu Selection: CruiseCar/ICar::Shift<br>
+Calls the ICar::Shift method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICar::Speed<br>
+Calls the ICar::Speed method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICar::Steer<br>
+Calls the ICar::Steer method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICruise::Engage<br>
+Calls the ICruise::Engage method on the COCruiseCar object.
+
+<p>Menu Selection: CruiseCar/ICruise::Adjust<br>
+Calls the ICruise::Adjust method on the COCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/Create<br>
+Creates the COUtilityCruiseCar COM object. A checkmark beside the menu
+item indicates that there is already an instance of the object.
+
+<p>Menu Selection: UtilityCruiseCar/Release<br>
+Releases the COUtilityCruiseCar COM object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Shift<br>
+Calls the ICar::Shift method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Speed<br>
+Calls the ICar::Speed method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Steer<br>
+Calls the ICar::Steer method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICruise::Engage<br>
+Calls the ICruise::Engage method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICruise::Adjust<br>
+Calls the ICruise::Adjust method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/IUtility::Offroad<br>
+Calls the IUtility::Offroad method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/IUtility::Winch<br>
+Calls the IUtility::Winch method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: Log/Clear<br>
+Clears the trace message log display.
+
+<p>Menu Selection: Log/Logging<br>
+Toggles the trace message logging facility on or off. A checkmark beside
+the menu item indicates that logging is on. Logging can be engaged but
+simply turned on or off. Unchecking this command turns the trace message
+logging facility off but does not disengage the logging mechanisms.
+
+<p>Menu Selection: Log/Copy<br>
+Copies the current contents of the trace message log to the Windows Clipboard.
+
+<P>
+Menu Selection: Help/DLLCLIEN Tutorial<br>
+Opens the DLLCLIEN.HTM tutorial file in the Web browser.
+
+<P>
+Menu Selection: Help/DLLSERVE Tutorial<br>
+Opens the DLLSERVE.HTM tutorial file in the Web browser.
+
+<P>
+Menu Selection: Help/REGISTER Tutorial<br>
+Opens the REGISTER.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/Read Source File<br>
+Displays the Open common dialog box so you can open a source file from
+this sample or another one in the Windows Notepad.
+
+<p>Menu Selection: Help/About DLLCLIEN<br>
+Displays the About dialog box for this application, a standard part of
+this series of code samples. The code illustrates how to program the use
+of the CAboutBox class provided by APPUTIL.LIB.
+
+<p>Menu Selection: Help/About DLLSERVE<br>
+Displays the About dialog box for DLLSERVE.DLL, which is used by this
+application. In this series of code samples, partner DLLs like DLLSERVE
+are given their own About dialog box in the native resources of the DLL.
+This menu item calls the DLL function that displays this dialog box.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files          Description</u>
+DLLCLIEN.TXT   Short sample description.
+MAKEFILE       The generic makefile for building the code sample
+               application of this tutorial lesson.
+DLLCLIEN.H     The include file for the DLLCLIEN application. Contains
+               class declarations, function prototypes, and resource
+               identifiers.
+DLLCLIEN.CPP   The main implementation file for DLLCLIEN.EXE. Has WinMain
+               and CMainWindow implementation, as well as the main menu
+               dispatching.
+DLLCLIEN.RC    The application resource definition file.
+DLLCLIEN.ICO   The application icon resource.
+UTCRUCAR.H     The class declaration for the COUtilityCruiseCar COM object.
+UTCRUCAR.CPP   Implementation file for the COUtilityCruiseCar COM object.
+               Also has the definition of the CreateUtilityCruiseCar
+               function.
+ </FONT> </PRE>
+
+<P>
+This code sample is based on the code in COMUSER, which is based on the
+code in DLLUSER, which in turn is based on the code in EXESKEL. See the
+code tours in those samples for more details on using the application
+skeleton and the DLL.
+
+<P>
+DLLCLIEN uses many of the utility classes and services provided by
+APPUTIL. For more details on APPUTIL, study the APPUTIL library source
+code in the sibling \APPUTIL directory and APPUTIL.HTM in the main
+tutorial directory.
+
+<P>
+DLLCLIEN illustrates various kinds of COM objects in various settings. The
+object created and used in COMUSER is of class COUtilityCruiseCar. It is
+constructed by aggregation of the COCruiseCar COM object, which is
+implemented in DLLSERVE.DLL. See the DLLSERVE code tour for more
+information about the COCar, COUtilityCar, and COCruiseCar objects.
+
+<P>
+In addition to showing how COUtilityCruiseCar is constructed, this lesson
+demonstrates how DLLCLIEN.EXE, as a client of the COM objects implemented
+in both DLLCLIEN and DLLSERVE.DLL, creates, exercises, and releases those
+objects.
+
+<P>
+We start in DLLCLIEN.CPP. The following include statements are used to bring
+in the include files:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+     #include &lt;windows.h&gt;
+     #include &lt;ole2.h&gt;
+     #include &lt;initguid.h&gt;
+     #include &lt;commdlg.h&gt;
+     #include &lt;apputil.h&gt;
+     #include &lt;icars.h&gt;
+     #include &lt;carguids.h&gt;
+     #include &quot;dllclien.h&quot;
+     #include &quot;utcrucar.h&quot;
+ </FONT> </PRE>
+
+<P>
+Here, as in COMUSER, INITGUID.H is included. This file must be included
+only once in each executable. It ensures that any GUIDs defined in this
+application will be instantiated as named data in the data segment of the
+EXE.
+
+<P>
+We include ICARS.H, located in the sibling \INC directory, to get the
+car-related interface abstract base class declarations. We include
+CARGUIDS.H, also located in the sibling \INC directory, for the associated
+GUID definitions and the CLSIDs for the car-related component types
+(CLSID_DllCar, CLSID_DllUtilityCar, CLSID_DllCruiseCar,
+CLSID_DllUtilityCruiseCar, and CLSID_DllCarSample).
+
+<P>
+Earlier lessons introduced the MsgBox and MsgLog facilities, and their use
+is continued here. The LOG* macro calls in the source code are trace
+statements that log and display appropriate conditions at run time.
+
+<P>
+The following fragment from CMainWindow::InitInstance in file DLLCLIEN.CPP
+shows something different from what was done before.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ...
+  ...
+  // Now ask COM for the ISample interface to the server's
+  // CarSample component. This effectively loads the Server DLL.
+  LOG(&quot;C: Start DLLSERVE Server Trace Logging.&quot;);
+  hr = CoCreateInstance(
+         CLSID_DllCarSample,
+         NULL,
+         CLSCTX_INPROC_SERVER,
+         IID_ISample,
+         (PPVOID)&amp;m_pCarSample);
+  if (SUCCEEDED(hr))
+  {
+    hr = m_pCarSample-&gt;Init(m_hWnd, (PVOID)g_pMsgLog);
+    // Signal if we succeeded in initializing the app.
+    bOk = SUCCEEDED(hr);
+    if (!bOk)
+    {
+      RELEASE_INTERFACE(m_pCarSample);
+      // We ask COM to unload any unused COM Servers.
+      CoFreeUnusedLibraries();
+    }
+  }
+  else
+    m_pMsgBox-&gt;ErrorID(IDS_NOSERVER);
+  ...
+  ...
+ </FONT> </PRE>
+
+<P>
+After the message log is created, we build a bridge to the server so that
+the server's trace logging macros will be displayed in the client's log
+display. In COMUSER, we simply called COMOBJ.DLL's exported function
+(ComObjInitMsgLog) to pass a pointer to the client's message log facility.
+Things are different now that we have a stronger separation between client
+and server. DLLCLIEN is not implicitly linked to the DLLSERVE.DLL server.
+Instead, our only access to components in the server is through CLSIDs and
+interface GUIDs. Using COM's CoCreateInstance API function, we ask for an
+ISample interface pointer to a new COCarSample component.
+
+<P>
+This component was introduced in the DLLSERVE lesson. After COM creates
+one of these utility components, we call the component's ISample::Init
+method to pass a handle to the DLLCLIEN main window and a pointer to the
+DLLCLIEN logging facility. That's how we connect the server's logging
+facility with that of the client. One side effect of this strategy is that
+the entire server is loaded early during execution of this application's
+CMainWindow::InitInstance method. The server's object count will thus be
+set to 1 to account for the COCarSample component that is created.
+
+<P>
+As a result, one of last tasks upon exiting this client is to release
+the COCarSample component. Because this is the last component controlled
+by the server, releasing it decrements the server's object count to 0,
+which causes COM to unload the entire server when CoFreeUnusedLibraries is
+called. However, a 0 object count and resulting unload of the server may not
+occur because other client processes may be using objects managed by the
+server.
+
+<P>
+In the CMainWindow::DoMenu method, we see how the menu choices are
+dispatched. We'll take a typical example from the COM object implemented
+in this application. The following fragment shows the Create command from
+the UtilityCruiseCar menu.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+    case IDM_UCRU_CREATE:
+      LOG(&quot;C: === UtilityCruiseCar Menu: Create.&quot;);
+      if (NULL == m_pUtilityCruiseCar)
+      {
+        // Call a create function to create an instance.
+        hr = CreateUtilityCruiseCar(
+               NULL,
+               IID_IUnknown,
+               (PPVOID)&amp;m_pUtilityCruiseCar);
+        if (SUCCEEDED(hr))
+        {
+          ::CheckMenuItem(
+              hMenu,
+              IDM_UCRU_CREATE,
+              MF_BYCOMMAND | MF_CHECKED);
+        }
+        else
+        {
+          LOGERROR(&quot;C: ???? UtilityCruiseCar creation&quot;,hr);
+        }
+      }
+      else
+        LOG(&quot;C: ???? UtilityCruiseCar already exists.&quot;);
+      break;
+ </FONT> </PRE>
+
+<P>
+The CreateUtilityCruiseCar function is called. This function is defined in
+UTCRUCAR.CPP, part of this application. NULL is passed for the first
+parameter because at this top level of usage we are not aggregating the
+new COUtilityCruiseCar object as part of some outer object. Once the
+object is created, the output parameter, m_pUtilityCruiseCar, will contain
+a pointer to the IUnknown of the new object. We cache this object pointer
+for subsequent use of the COM object.
+
+<P>
+The following fragment handles the matching release of the
+COUtilityCruiseCar COM object.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+    case IDM_UCRU_RELEASE:
+      LOG(&quot;C: === UtilityCruiseCar Menu: Release.&quot;);
+      if (NULL != m_pUtilityCruiseCar)
+      {
+        RELEASE_INTERFACE(m_pUtilityCruiseCar);
+        // We ask COM to unload any unused COM Servers.
+        CoFreeUnusedLibraries();
+        ::CheckMenuItem(
+            hMenu,
+            IDM_UCRU_CREATE,
+            MF_BYCOMMAND | MF_UNCHECKED);
+      }
+      else
+        LOG(&quot;C: ???? No UtilityCruiseCar to Release.&quot;);
+      break;
+ </FONT> </PRE>
+
+<P>
+The CoFreeUnusedLibraries API function is called to unload the server, if
+appropriate. This function usually causes COM to call the in-process
+server's DllCanUnloadNow function. If the release caused the server's
+object count to reach 0, COM will unload the server DLL. As mentioned
+above, that won't happen in this code sample because of our use of the
+CarSample component. The server's object count will usually revert to 1
+after the release of the COUtilityCruiseCar object.
+
+<P>
+In DLLSERVE, CoCreateInstance was used to create single instances of the
+server's component types. Sometimes it is necessary to create multiple
+instances of the same component in quick succession (for example, when
+creating an array of such components). This is done more efficiently by
+directly using the component's class factory. Here's the
+CreateUtilityCruiseCar function from UTCRUCAR.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CreateUtilityCruiseCar(
+            IUnknown* pUnkOuter,
+            REFIID riid,
+            PPVOID ppv)
+  {
+    HRESULT hr;
+    COUtilityCruiseCar* pCob;
+
+    LOGF1(&quot;C: CreateUtilityCruiseCar. pUnkOuter=0x%X.&quot;,pUnkOuter);
+
+    // If the creation call is requesting aggregation (pUnkOuter != NULL),
+    // the COM rules state the IUnknown interface MUST also be concomitantly
+    // requested. If it is not so requested ( riid != IID_IUnknown) then
+    // an error must be returned, indicating that no aggregate creation of
+    // the COUtilityCruiseCar COM Object can be performed using anything
+    // other than a controlling IUnknown interface.
+    if (NULL != pUnkOuter &amp;&amp; riid != IID_IUnknown)
+      hr = CLASS_E_NOAGGREGATION;
+    else
+    {
+      // Instantiate a COUtilityCruiseCar COM Object.
+      pCob = new COUtilityCruiseCar(pUnkOuter);
+      if (NULL != pCob)
+      {
+        // If we have succeeded in instantiating the COUtilityCruiseCar
+        // object we initialize it to offer its interfaces.
+        hr = pCob-&gt;Init();
+        if (SUCCEEDED(hr))
+        {
+          // We QueryInterface this new COM Object not only to deposit the
+          // main interface pointer to the caller's pointer variable, but to
+          // also automatically bump the Reference Count on the new COM
+          // Object after handing out this *ppv reference to it.
+          hr = pCob-&gt;QueryInterface(riid, (PPVOID)ppv);
+        }
+      }
+      else
+        hr = E_OUTOFMEMORY;
+    }
+
+    if (SUCCEEDED(hr))
+      LOGF1(&quot;C: CreateUtilityCruiseCar Succeeded. *ppv=0x%X.&quot;,*ppv);
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<p>Here is the Init method, also from UTCRUCAR.CPP, that is executed when
+a new COUtilityCruiseCar object is created.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT COUtilityCruiseCar::Init(void)
+  {
+    HRESULT hr;
+    IClassFactory* pICFCruiseCar;
+
+    // Set up the right pIUnknown for delegation. If we are being
+    // aggregated, then we pass the pUnkOuter in turn to any COM objects
+    // that we are aggregating. m_pUnkOuter was set in the Constructor.
+    IUnknown* pUnkOuter = (NULL == m_pUnkOuter) ? this : m_pUnkOuter;
+
+    LOG(&quot;C: COUtilityCruiseCar::Init.&quot;);
+
+    // Get a class factory for DllCruiseCar and issue IClassFactory's
+    // CreateInstance method to manufacture a COCruiseCar COM object.
+    hr = CoGetClassObject(
+           CLSID_DllCruiseCar,
+           CLSCTX_INPROC_SERVER,
+           NULL,
+           IID_IClassFactory,
+           (PPVOID)&amp;pICFCruiseCar);
+    if (SUCCEEDED(hr))
+    {
+      hr = pICFCruiseCar-&gt;CreateInstance(
+                            pUnkOuter,
+                            IID_IUnknown,
+                            (PPVOID)&amp;m_pUnkCruiseCar);
+      pICFCruiseCar-&gt;Release();
+    }
+
+    return (hr);
+  }
+ </FONT> </PRE>
+
+<P>
+After we obtain a class factory for the COCruiseCar component type, we
+call the CreateInstance method to create an instance of the COCruiseCar
+object, which we reuse by aggregation. We pass pUnkOuter as the
+aggregation pointer. It is the 'this' pointer to the present
+COUtilityCruiseCar object if the object is not aggregated; otherwise, it
+is the pointer to the controlling IUnknown. Following the rules of
+aggregation, we ask for an IID_IUnknown interface. We cache this pointer
+to the IUnknown of the new COCruiseCar COM object for later use in
+delegating IUnknown calls. We then release the class factory after we are
+done with it.
+
+<P>
+The COM CoCreateInstance helper function encapsulates this use of the
+class factory. When creating only one instance, CoCreateInstance is
+adequate. We show direct use of the class factory here for purposes of
+illustration. If we need to create many COCruiseCar COM objects at the
+same time, we would use the class factory, which is much more efficient
+than a series of CoCreateInstance calls that must obtain and release the
+class factory to create each object.
+
+<P>
+These are the only significant differences between the COUtilityCruiseCar
+COM object in this lesson and the one in the previous COMUSER lesson. The
+object class defined in UTCRUCAR.H implements the native IUtility
+interface as a nested class. As before, the object is constructed by
+aggregating the native IUtility interface with an existing COCruiseCar COM
+object.
+
+<P>
+For symmetry, we'll list and tour a trace log of the same sequence of menu
+actions that we studied in the COMUSER lesson. Here is the trace log for
+the Create command from the UtilityCruiseCar menu. Trace lines preceded
+with 'C:' are from the DLLCLIEN.EXE client. Lines preceeded with 'S:' are
+from the DLLSERVE.DLL server.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === UtilityCruiseCar Menu: Create.
+  C: CreateUtilityCruiseCar. pUnkOuter=0x0.
+  C: COUtilityCruiseCar::CImpIUtility Constructor. Non-Aggregating.
+  C: COUtilityCruiseCar Constructor. m_pUnkOuter=0x0.
+  C: COUtilityCruiseCar::Init.
+  S: DllGetClassObject: Requesting CFCruiseCar.
+  S: CFCruiseCar::CImpIClassFactory Constructor. Non-Aggregating.
+  S: CFCruiseCar Constructor. m_pUnkOuter=0x0.
+  S: CServer::ObjectsUp. New cObjects=2.
+  S: CFCruiseCar::QueryInterface. pIClassFactory returned.
+  S: CFCruiseCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  S: CFCruiseCar::AddRef. New cRefs=1.
+  S: CFCruiseCar::CImpIClassFactory::CreatInstance. pUnkOuter=0x77069C.
+  S: COCruiseCar::CImpICruise Constructor. Aggregating.
+  S: COCruiseCar Constructor. m_pUnkOuter=0x77069C.
+  S: CServer::ObjectsUp. New cObjects=3.
+  S: COCruiseCar::Init.
+  S: DllGetClassObject: Requesting CFCar.
+  S: CFCar::CImpIClassFactory Constructor. Non-Aggregating.
+  S: CFCar Constructor. m_pUnkOuter=0x0.
+  S: CServer::ObjectsUp. New cObjects=4.
+  S: CFCar::QueryInterface. pIClassFactory returned.
+  S: CFCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  S: CFCar::AddRef. New cRefs=1.
+  S: CFCar::CImpIClassFactory::CreatInstance. pUnkOuter=0x77069C.
+  S: COCar::CImpICar Constructor. Aggregating.
+  S: COCar Constructor. m_pUnkOuter=0x77069C.
+  S: CServer::ObjectsUp. New cObjects=5.
+  S: COCar::QueryInterface. 'this' pIUnknown returned.
+  S: COCar::AddRef. New cRefs=1.
+  S: CFCar::CImpIClassFactory::CreatInstance Succeeded. *ppv=0x660760.
+  S: CFCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  S: CFCar::Release. New cRefs=0.
+  S: CServer::ObjectsDown. New cObjects=4.
+  S: CFCar::Destructor.
+  S: CFCar::CImpIClassFactory Destructor.
+  S: COCruiseCar::Init (New Aggregation of COCar) Succeeded.
+  S: COCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  S: COCruiseCar::AddRef. New cRefs=1.
+  S: CFCruiseCar::CImpIClassFactory::CreatInstance Succeeded. *ppv=0x660710.
+  S: CFCruiseCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  S: CFCruiseCar::Release. New cRefs=0.
+  S: CServer::ObjectsDown. New cObjects=3.
+  S: CFCruiseCar::Destructor.
+  S: CFCruiseCar::CImpIClassFactory Destructor.
+  C: COUtilityCruiseCar::Init Succeeded.
+  C: COUtilityCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  C: COUtilityCruiseCar::AddRef. New cRefs=1.
+  C: CreateUtilityCruiseCar Succeeded. *ppv=0x77069C.
+ </FONT> </PRE>
+
+<p>There's quite a lot going on here, so let's break this log down into
+more manageable chunks. First, choose the menu item in the client.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === UtilityCruiseCar Menu: Create.
+  C: CreateUtilityCruiseCar. pUnkOuter=0x0.
+  C: COUtilityCruiseCar::CImpIUtility Constructor. Non-Aggregating.
+  C: COUtilityCruiseCar Constructor. m_pUnkOuter=0x0.
+  C: COUtilityCruiseCar::Init.
+ </FONT> </PRE>
+
+<P>
+The CreateUtilityCruiseCar function is called with pUnkOuter passed as
+NULL, because we are not creating the COUtilityCruiseCar object for
+aggregation in another COM object. The IUnknown of the new
+COUtilityCruiseCar COM object will be the controlling IUnknown for the
+inner COCruiseCar object. Within CreateUtilityCruiseCar, a new
+COUtilityCruiseCar object is created, and the constructors are called for
+both the nested native implementation of the IUtility interface and the
+COUtilityCruiseCar object itself. Again, within the create function, the
+Init method of the new object is called.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  S: DllGetClassObject: Requesting CFCruiseCar.
+  S: CFCruiseCar::CImpIClassFactory Constructor. Non-Aggregating.
+  S: CFCruiseCar Constructor. m_pUnkOuter=0x0.
+  S: CServer::ObjectsUp. New cObjects=2.
+  S: CFCruiseCar::QueryInterface. pIClassFactory returned.
+  S: CFCruiseCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  S: CFCruiseCar::AddRef. New cRefs=1.
+  S: CFCruiseCar::CImpIClassFactory::CreatInstance. pUnkOuter=0x77069C.
+  S: COCruiseCar::CImpICruise Constructor. Aggregating.
+  S: COCruiseCar Constructor. m_pUnkOuter=0x77069C.
+  S: CServer::ObjectsUp. New cObjects=3.
+  S: COCruiseCar::Init.
+ </FONT> </PRE>
+
+<P>
+The COUtilityCruiseCar::Init method calls CoGetClassObject to request the
+class factory (CFCruiseCar) for COCruiseCar components. COM in turn calls
+the server's DllGetClassObject function, which is executed by the server
+(hence the 'S:' in the trace). DllGetClassObject provides the appropriate
+class factory and creates a new CFCruiseCar COM object. The constructors
+for the CFCruiseCar object and for the IClassFactory interface are called.
+Since this CFCruiseCar object is a server-housed component, the server
+control object (CServer) increments the global server object count to
+2--one for the pre-existing CarSample utility component and one for the
+new class factory object.
+
+<P>
+Still in DllGetClassObject, the server calls the appropriate
+QueryInterface to obtain the requested IClassFactory interface.
+QueryInterface makes the mandatory call to AddRef on this pointer, and
+this call is delegated to the AddRef in the CFCruiseCar object's IUnknown.
+Using the pointer to IClassFactory (still inside
+COUtilityCruiseCar::Init), CreateInstance is called to request a new
+COCruiseCar COM component. The value of pUnkOuter is non-NULL, signifying
+that the new object will be aggregated. This pUnkOuter points to the
+controlling IUnknown, which is that of the existing COUtilityCruiseCar COM
+object.
+
+<P>
+CreateInstance (in the server) creates the new COCruiseCar object, so the
+constructors for both the nested ICruise interface implementation and the
+object itself are executed. The constructors indicate that the object is
+being created for aggregation. Since COCruiseCar is a component, the
+server's object count is incremented to 3. The CreateInstance method then
+calls the COCruiseCar::Init method on the new object to create any inner
+COM objects.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  S: DllGetClassObject: Requesting CFCar.
+  S: CFCar::CImpIClassFactory Constructor. Non-Aggregating.
+  S: CFCar Constructor. m_pUnkOuter=0x0.
+  S: CServer::ObjectsUp. New cObjects=4.
+  S: CFCar::QueryInterface. pIClassFactory returned.
+  S: CFCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  S: CFCar::AddRef. New cRefs=1.
+  S: CFCar::CImpIClassFactory::CreatInstance. pUnkOuter=0x77069C.
+  S: COCar::CImpICar Constructor. Aggregating.
+  S: COCar Constructor. m_pUnkOuter=0x77069C.
+  S: CServer::ObjectsUp. New cObjects=5.
+  S: COCar::QueryInterface. 'this' pIUnknown returned.
+  S: COCar::AddRef. New cRefs=1.
+  S: CFCar::CImpIClassFactory::CreatInstance Succeeded. *ppv=0x660760.
+  S: CFCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  S: CFCar::Release. New cRefs=0.
+  S: CServer::ObjectsDown. New cObjects=4.
+  S: CFCar::Destructor.
+  S: CFCar::CImpIClassFactory Destructor.
+  S: COCruiseCar::Init (New Aggregation of COCar) Succeeded.
+ </FONT> </PRE>
+
+<P>
+There is indeed an inner COCar object to be aggregated as part of the
+COCruiseCar COM object. The COCruiseCar::Init method calls
+CoCreateInstance to create an instance of the COCar component. COM issues
+the request for the class factory, and as before, the server's
+DllGetClassObject function is called. The CFCar class factory is created,
+and its constructors are executed. The server is notified about this new
+CFCar object, and server's object count is incremented to 4.
+QueryInterface and AddRef are called on the returned IClassFactory
+interface pointer. COM calls CreateInstance and passes the pUnkOuter that
+COCruiseCar::Init passed to CoCreateInstance. Because this pointer is not
+NULL, the new COCar COM object is being created for aggregation. The
+pUnkOuter value is the same one that was passed in the
+CFCruiseCar::CreateInstance call above (0x77069C). It's the controlling
+IUnknown, the IUnknown of the COUtilityCruiseCar object that was created
+in the beginning.
+
+<P>
+The CFCar class factory's CreateInstance method creates a new COCar COM
+object. The constructors for the object and its interface implementation
+are executed. The COCar object is created for aggregation. The server's
+object count is incremented to 5. QueryInterface and AddRef are called on
+the returned IUnknown interface.
+
+<P>
+We now have objects nested at two levels of aggregation. CFCar's
+CreateInstance method returns success. COM's CoCreateInstance then
+releases the IClassFactory pointer. This release is delegated to the
+Release method of the CFCar object's IUnknown, which decrements its
+reference count to 0. The CFCar object is deleted, and the server's object
+count is decremented to 4. The destructors of the CFCar object and its
+nested IClassFactory interface implementation are executed. We continue to
+wind back up the call stack. The COCruiseCar::Init method returns success
+in creating an aggregated COCar object as part of the COCruiseCar object.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  S: COCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  S: COCruiseCar::AddRef. New cRefs=1.
+  S: CFCruiseCar::CImpIClassFactory::CreatInstance Succeeded. *ppv=0x660710.
+  S: CFCruiseCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  S: CFCruiseCar::Release. New cRefs=0.
+  S: CServer::ObjectsDown. New cObjects=3.
+  S: CFCruiseCar::Destructor.
+  S: CFCruiseCar::CImpIClassFactory Destructor.
+  C: COUtilityCruiseCar::Init Succeeded.
+  C: COUtilityCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  C: COUtilityCruiseCar::AddRef. New cRefs=1.
+  C: CreateUtilityCruiseCar Succeeded. *ppv=0x77069C.
+ </FONT> </PRE>
+
+<P>
+Because COCruiseCar::Init succeeded, CFCruiseCar's CreateInstance (which
+we have now returned to) calls QueryInterface on the new COCruiseCar
+object to pass the caller the requested IUnknown interface. As a result,
+AddRef is called. CFCruiseCar's CreateInstance then returns, indicating
+success to the caller (COUtilityCruiseCar::Init), which then explicitly
+releases the pointer to CFCruiseCar's IClassFactory interface. The release
+causes the CFCruiseCar object to be deleted. A call to the server control
+object's ObjectsDown method decrements the server's object count to 3. The
+destructors of the CFCruiseCar object and its IClassFactory interface
+implementation are executed.
+
+<P>
+Control now returns to the client CreateUtilityCruiseCar function, where
+all this started, and COUtilityCruiseCar::Init has returned successfully.
+Since a new COUtilityCruiseCar object has been created, QueryInterface is
+called to obtain its IUnknown in order to return to the caller of
+CreateUtilityCruiseCar the pointer to the controlling IUnknown of this
+three-level nested aggregate. CreateUtilityCruiseCar finally returns with
+success.
+
+<P>
+Now that we have created a COUtilityCruiseCar object, here's the trace log
+for the ICar::Shift command on the UtilityCruiseCar menu.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === UtilityCruiseCar Menu: ICar::Shift
+  C: --Obtaining Interface Pointer.
+  C: COUtilityCruiseCar::QueryInterface. ICar delegating.
+  S: COCruiseCar::QueryInterface. ICar delegating.
+  S: COCar::QueryInterface. pICar returned.
+  S: COCar::CImpICar::Addref. Delegating. New cI=1.
+  C: COUtilityCruiseCar::AddRef. New cRefs=2.
+  C: Interface obtained. *ppv=0x66076C
+  C: --Calling pICar-&gt;Shift
+  S: COCar::CImpICar::Shift. nGear=1.
+  C: --Releasing pICar
+  S: COCar::CImpICar::Release. Delegating. New cI=0.
+  C: COUtilityCruiseCar::Release. New cRefs=1.
+ </FONT> </PRE>
+
+<P>
+First, an ICar interface pointer on the UtilityCruiseCar object must be
+obtained using QueryInterface. This call is delegated to the next inner
+object that has the interface being asked for--in this case, the
+COUtilityCruiseCar::QueryInterface. This COM object's QueryInterface in
+turn does the same thing. Its ICar interface is provided by the COCar COM
+object. The interface pointer pICar is finally returned by the COCar
+object's QueryInterface. The AddRef call made by this QueryInterface is
+delegated directly to the controlling IUnknown (in this case,
+COUtilityCruiseCar::AddRef), and the COUtilityCruiseCar object's reference
+count is incremented to 2.
+
+<P>
+An outside agent now holds a reference to the ICar interface on this
+aggregate object. That same outside agent (DLLCLIEN.EXE) has also been
+holding a reference to the object's IUnknown, which explains the reference
+count of 2. The ICar interface pointer is used to directly call the
+implementation of the Shift method in the COCar object. The pointer to
+this ICar is then released, which causes a delegation to the Release
+method of the controlling IUnknown, where the outermost object's reference
+count is decremented to 1.
+
+<P>
+Here's the trace log for the Release command on the UtilityCruiseCar
+menu.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === UtilityCruiseCar Menu: Release.
+  C: COUtilityCruiseCar::Release. New cRefs=0.
+  C: COUtilityCruiseCar::Destructor.
+  S: COCruiseCar::Release. New cRefs=0.
+  S: CServer::ObjectsDown. New cObjects=2.
+  S: COCruiseCar::Destructor.
+  S: COCar::Release. New cRefs=0.
+  S: CServer::ObjectsDown. New cObjects=1.
+  S: COCar::Destructor.
+  S: COCar::CImpICar Destructor.
+  S: COCruiseCar::CImpICruise Destructor.
+  C: COUtilityCruiseCar::CImpIUtility Destructor.
+  S: DllCanUnloadNow. cObjects=1, cLocks=0.
+ </FONT> </PRE>
+
+<P>
+This command causes a cascade of releases and object destruction. The
+initial call to Release decrements the reference count of 1 to 0, causing
+the entire COUtilityCruiseCar COM object to be deleted. The object's
+destructor is called, which calls the Release method of the aggregated
+COCruiseCar COM object, in DLLSERVE.DLL. The COCruiseCar::Release method
+calls the server control object's ObjectsDown method to decrement the
+server's object count to 2. The COCruiseCar object's reference count is
+also decremented from 1 to 0, causing the object to be deleted. As above,
+its destructor releases the aggregated COCar object, decrementing its
+reference count to 0 and causing its destructor to run. Again, the
+server's object count is decremented, this time to 1. As we wind back out
+of all these destructors, the destructors of the ICar, ICruise, and
+IUtility ImpI interface implementations are executed. These require no
+explicit deletions, because the interfaces are implemented as nested
+classes. This is one of the benefits of this technique.
+
+<P>
+Finally, the client calls the COM CoFreeUnusedLibraries function, causing
+COM in turn to ask the server (via the DllCanUnloadNow call) if it can
+unload the server. It can't in this case (cObjects != 0), because the
+CarSample component is still in use. It's logging the internal trace
+announcements and won't be released until the client application is
+exited.
+
+<P>
+As a final experiment, you may want to try running several instances of
+DLLCLIEN and watching the server's object counts as you create server
+components from each client instance.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

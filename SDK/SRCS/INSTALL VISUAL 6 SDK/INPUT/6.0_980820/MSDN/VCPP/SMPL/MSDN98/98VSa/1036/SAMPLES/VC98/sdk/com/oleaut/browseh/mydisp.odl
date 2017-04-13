@@ -1,0 +1,72 @@
+[
+  uuid(8C0D9B00-4669-101B-B826-00DD01103DE1),
+  version(1.0)
+] 
+library MyDispatchLibrary
+{
+#ifdef WIN32
+    importlib("stdole2.tlb");
+#else
+    importlib("stdole.tlb");
+    typedef [public] void *LPTYPEINFO;  
+    typedef [public] long MEMBERID;   
+    
+    typedef  enum {
+      TKIND_ENUM = 0
+    , TKIND_RECORD
+    , TKIND_MODULE
+    , TKIND_INTERFACE
+    , TKIND_DISPATCH
+    , TKIND_COCLASS
+    , TKIND_ALIAS
+    , TKIND_UNION
+    , TKIND_MAX         /* end of enum marker */
+    } TYPEKIND;    
+    
+    typedef enum tagCALLCONV {
+      CC_CDECL = 1
+    , CC_MSCPASCAL
+    , CC_PASCAL = 2
+    , CC_MACPASCAL
+    , CC_STDCALL
+    , CC_RESERVED
+    , CC_SYSCALL
+    , CC_MPWCDECL
+    , CC_MPWPASCAL
+    , CC_MAX            /* end of enum marker */
+    } CALLCONV;
+    
+    typedef enum tagFUNCKIND {
+      FUNC_VIRTUAL
+    , FUNC_PUREVIRTUAL
+    , FUNC_NONVIRTUAL
+    , FUNC_STATIC
+    , FUNC_DISPATCH
+    } FUNCKIND;  
+    
+    typedef enum tagINVOKEKIND {
+      INVOKE_FUNC = 0x01
+    , INVOKE_PROPERTYGET = 0x02
+    , INVOKE_PROPERTYPUT = 0x04
+    , INVOKE_PROPERTYPUTREF =0x08
+    } INVOKEKIND;
+#endif
+    
+    [
+      uuid(8C0D9B01-4669-101B-B826-00DD01103DE1), 
+      helpstring("Common Dispatch Interface"),
+      dual
+    ]
+    interface CMyDispatch : IDispatch
+    {
+        void _CMyDispatchDestructor();   // Dummy place holder for the virtual destructor of CMyDispatch
+       // The function signatures below are different from the
+       // the actual function signatures used in mydisp.h. This does'nt
+       // matter because these are merely place holders so that that vtable 
+       // offsets of the member functions of classes that derive from CMyDispatch  
+       // are correct.
+        void _LoadTypeInfo();         
+        void _RaiseException();
+        void _GetInterfaceID();           
+    } 
+}  

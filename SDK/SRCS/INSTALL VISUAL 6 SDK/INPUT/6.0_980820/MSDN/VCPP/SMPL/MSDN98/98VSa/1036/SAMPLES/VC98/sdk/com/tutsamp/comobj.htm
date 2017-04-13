@@ -1,0 +1,1412 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>COMOBJ COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="dlluser.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="comuser.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="COMOBJ">COMOBJ - Containment and Aggregation in a DLL</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+This sample introduces COM objects.
+
+<P>
+An object is a software construct that encapsulates or packages some
+data and some public methods that operate on that data.  The data is often
+said to be "hidden" while the methods are exposed as the chief means to
+access the data.  At compile time, programming languages provide varying
+degrees of syntactic support to express objects. For example, the C++
+language offers a Class syntactic construct to express an abstract type
+(or class) of object. However, this C++ Class construct does allow for
+public access to an object's data. An object class is an abstraction that
+refers to an open-ended set of potential objects of the same specific
+kind. Objects are real things that occupy memory with their data and code
+instantiated in live binary form. The 'object' term typically refers to
+the runtime behavior of the this real software thing.
+
+<P>
+A COM object is a kind of object that originated with Microsoft's
+Component Object Model (COM). COM objects completely hide their data and
+expose their methods through a construct called an interface.  A COM
+interface is a grouping of related methods that is uniquely identified for
+all programs and all time (by an Interface ID).  Interfaces are used to
+encapsulate COM object feature sets.  The most fundamental feature set in
+COM gives COM objects their nature as COM objects. The IUnknown interface
+exposes this feature set in several methods (AddRef, Release, and
+QueryInterface) that determine the common behavior governing all COM
+object lifetimes and how interfaces on COM objects are properly acquired.
+
+<P>
+Outside users of a COM object can only use the object by acquiring one of
+its interfaces.  This acquisition of an interface is achieved by obtaining
+a pointer to the COM object's implementation of the interface.  COM
+objects &quot;know&quot; about the interfaces they expose to clients and
+can provide pointer references to the interface implementations. Likewise,
+COM objects know about how many interface references they have handed out
+to clients and can thus control their own lifetime. When no references
+remain, the object normally removes itself from memory and ceases to
+exist.
+
+<P>
+The COMOBJ DLL offers several car-related COM object classes. Because
+COMOBJ.DLL supports no object handlers, class factories, full in-process
+servers, or marshaling, it is not a full-blown COM Server. Rather, it is
+a primitive precursor to a COM in-process server.
+
+<P>
+This DLL exposes the following COM objects: COCar, COUtilityCar, and
+COCruiseCar. Appropriate create functions are exported from this DLL:
+CreateCar, CreateUtilityCar, and CreateCruiseCar.
+
+<P>
+In this tutorial, COMOBJ works with the COMUSER code sample to show how an
+EXE client (COMUSER.EXE) calls COM object creation services and
+manipulates the COM objects that are created.
+
+<P>
+For functional descriptions and a tutorial code tour of COMOBJ, see the
+Code Tour section in COMOBJ.HTM. For details on setting up the
+programmatic usage of COMOBJ, see the Usage section in COMOBJ.HTM. To read
+COMOBJ.HTM, run TUTORIAL.EXE in the main tutorial directory and click the
+COMOBJ lesson in the table of lessons. You can also achieve the same thing
+by clicking the COMOBJ.HTM file after locating the main tutorial directory
+in the Windows Explorer. See also COMUSER.HTM in the main tutorial
+directory for more details on the COMUSER client application and how it
+works with COMOBJ.DLL itself. You must build COMOBJ.DLL before building
+COMUSER. The makefile for COMOBJ copies the necessary COMOBJ.H,
+COMOBJ.LIB, and COMOBJ.DLL files to the appropriate sibling directories
+once the files are built. The .H goes to \INC, the .LIB goes to \LIB, and
+the .DLL goes to \COMUSER.
+
+<P>
+In general, to set up your system to build and test the code samples in
+this COM Tutorial series, see TUTORIAL.HTM for details. The supplied
+makefile is Microsoft NMAKE-compatible. To create a debug build, issue the
+NMAKE command at the command prompt.
+
+<h4>Usage</h4>
+
+<P>
+COMOBJ is a DLL that you can access from .EXE modules either by performing
+an explicit LoadLibrary call or implicitly loading the DLL by linking to
+its associated import library (.LIB) file. In either case, you need to
+include COMOBJ.H to declare the functions that are defined as exported in
+the COMOBJ DLL. In this lesson, a representative COMUSER.EXE application
+is provided to illustrate the programmatic use of COMOBJ.DLL. COMUSER is
+built in the COMUSER lesson (in sibling directory COMUSER). See below for
+more details.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">
+Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, COMUSER.EXE is the
+client executable to run for this sample.
+
+<a href="COMUSER\COMUSER.exe">
+Click here to run COMUSER.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files       Description</u>
+COMOBJ.TXT  Short sample description.
+MAKEFILE    The generic makefile for building the COMOBJ.DLL code sample.
+COMOBJ.H    The include file for declaring as imported or defining as
+            exported the service functions in COMOBJ.DLL.
+COMOBJ.CPP  The main implementation file for COMOBJ.DLL. Has DllMain
+            and the COM Object creation functions.
+CAR.H       The include file for the COCar COM object class.
+CAR.CPP     The implementation file for the COCar COM object class.
+UTILCAR.H   The include file for the COUtilityCar COM object class.
+UTILCAR.CPP The implementation file for the COUtilityCar COM object class.
+CRUCAR.H    The include file for the COCruiseCar COM object class.
+CRUCAR.CPP  The implementation file for the COCruiseCar COM object class.
+COMOBJI.H   The include file for the internal class declarations and
+            resource identifier definitions for resources stored inside
+            the COMOBJ.DLL.
+COMOBJ.RC   The DLL resource definition file.
+COMOBJ.ICO  The icon resource.
+ </FONT> </PRE>
+
+<P>
+This code sample is based on the code in DLLSKEL. See the DLLSKEL code
+tour in the sibling DLLSKEL directory for more detail on the DLL skeleton.
+
+<P>
+COMOBJ makes use of many of the utility classes and services provided by
+APPUTIL. For more details on APPUTIL, study the source code in the sibling
+APPUTIL directory and tutorial file APPUTIL.HTM in the main tutorial
+directory.
+
+<P>
+In the context of this tutorial, the goal of COMOBJ is to use a C++ DLL
+framework to illustrate various techniques for constructing COM objects.
+The DLL acts as a primitive server for several simple COM objects. Later
+in this series, COM objects are shown housed as COM component objects in
+COM servers. COM components are COM object types that have associated
+class factories, are housed in COM servers, and are registered in the
+registry.
+
+<P>
+The COM objects that are used in both the COMUSER and COMOBJ code samples
+represent sport utility vehicles. We invent some basic feature sets that
+are available for modeling such car objects. These feature sets are
+implemented as custom interfaces in COM objects. Custom interfaces are
+created by application programmers and are declared in the application's
+header files. In contrast to custom interfaces, standard interfaces (e.g.,
+IUnknown) are provided by COM and are pre-declared in COM's system header
+files. In this sample, three custom COM interfaces are created to roughly
+model some feature sets on real cars: ICar, IUtility, and ICruise.
+
+<P>
+The most basic interface, ICar, has the following methods: Shift, Clutch,
+Speed, and Steer. Through this interface, car objects can be commanded to:
+
+<ol>
+<li>
+Shift. Shift the 5-speed manual transmission (1 - 5 forward; 6 reverse).
+
+<li>
+Clutch. Engage the engine to, or disengage it from, the transmission.
+
+<li>
+Speed. Accelerate or decelerate the car to a specified speed in miles per
+hour.
+
+<li>
+Steer. Steer the car by turning the steering wheel to point the car at a
+specified angle.
+
+</ol>
+
+<p>
+The IUtility Interface can add off-road and 4-wheel drive utility systems
+to our car objects: Offroad and Winch. Through this interface, these car
+objects can:
+
+<ol>
+<li>
+Offroad. Set the transfer case gear to the specified gear (0 = 2H or
+regular 2-wheel drive; 1 = 4H or 4-wheel drive high speed; 2 = neutral;
+and 3 = 4L or 4-wheel drive low speed).
+
+<li>
+Winch. Turn on/off the front-mounted winch.
+
+</ol>
+
+<p>
+The ICruise interface can add automatic cruise control methods to our car
+objects: Engage, Adjust. Through this interface these car objects can:
+
+<ol>
+<li>
+Engage. Turn the cruise control system on or off.
+
+<li>
+Adjust. Adjust the cruising speed up or down by 3 mph.
+
+</ol>
+
+<P>
+Using these interfaces, COMOBJ exposes three COM object classes: COCar,
+COUtilityCar, and COCruiseCar. COCar exposes the basic ICar interface.
+COUtilityCar exposes the ICar and IUtility interfaces. COCruiseCar exposes
+the ICar and ICruise interfaces. So COCars have basic Car behavior (ICar).
+UtilityCars have basic Car behavior (ICar) with offroad utility systems
+(IUtility). COCruiseCars have basic Car behavior (ICar) with a cruise
+control system (ICruise).
+
+<P>
+COCar is a COM object class that exposes a native implementation of the
+ICar interface. The multiple interfaces of COCar are implemented using the
+nested class technique.
+
+<P>
+COUtilityCar is a COM object class that exposes a native implementation of
+the IUtility interface and reuses the COCar class and its ICar interface
+by containment. The multiple interfaces of COUtilityCar are implemented
+using the nested class technique.
+
+<P>
+COCruiseCar is a COM object class that exposes a native implementation of
+the ICruise interface and reuses the COCar class and its ICar interface by
+aggregation. The multiple interfaces of COCruiseCar are implemented using
+the nested class technique.
+
+<P>
+COM objects created from these three classes can be used by client
+software only as in-process COM objects. No object handler or marshaling
+is provided, and simple creation functions are supplied instead of fully
+functioning class factories. The idea here is to keep it simple to
+illustrate COM object interface augmentation and the COM object reuse
+techniques of containment and aggregation.
+
+<P>
+COMOBJ.H is an important file not only for compiling COMOBJ.DLL, but also
+for outside users of the DLL. As with DLLSKEL.H in the DLLSKEL code
+sample, this include file serves double duty by defining certain functions
+as exported and also declaring those functions as imported, depending on
+how COMOBJ.H is included.
+
+<P>
+COMOBJ.H uses the #if !defined(RC_INCLUDE) block to exclude the contents
+of this file if someone includes it in an .RC file. RC_INCLUDE is defined
+on the RC compiler invocation command lines. See RCFLAGS in the makefiles.
+In general, COMOBJ.H is written to support either C or C++ programs.
+
+<P>
+In ICARS.H in the sibling \INC directory, the car-related interfaces are
+declared. CARGUIDS.H is in the same common directory and defines the GUIDs
+for the interfaces. CARGUIDS.H also contains the CLSIDs for the class
+factories of the main COM object classes. Class Factories are not used in
+this code sample but will be studied in future lessons. So these two files
+are common include files used by the current code sample as well as future
+ones.
+
+<P>
+If your project consists of a suite of executables that all manage a
+common set of COM objects and interfaces (as this code sample series
+does), it is a good practice to factor out those common interface and GUID
+definitions into a common include directory. Such factoring can help you
+ensure that there are no conflicts in the interface or GUID definitions
+between executables in the application suite.
+
+<P>
+First the interfaces. From ICARS.H, here is a representative declaration
+for ICar.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  DECLARE_INTERFACE_(ICar, IUnknown)
+  {
+    // IUnknown methods.
+    STDMETHOD(QueryInterface) (THIS_ REFIID, PPVOID) PURE;
+    STDMETHOD_(ULONG,AddRef)  (THIS) PURE;
+    STDMETHOD_(ULONG,Release) (THIS) PURE;
+
+    // ICar methods.
+    STDMETHOD(Shift)   (THIS_ short) PURE;
+    STDMETHOD(Clutch)  (THIS_ short) PURE;
+    STDMETHOD(Speed)   (THIS_ short) PURE;
+    STDMETHOD(Steer)   (THIS_ short) PURE;
+  };
+ </FONT> </PRE>
+
+<P>
+The DECLAREINTERFACE_ macro is used to publicly derive the ICar interface
+class from the existing COM IUnknown interface abstract base class. The
+STDMETHOD macro declares the method with the standard HRESULT error return
+code. The parameter is the method name. The STDMETHOD_ macro is used when
+the method returns something other than HRESULT. For example, in AddRef
+above, a ULONG return type is specified. THIS is used when the method
+accepts the void parameter. THIS_ is used when parameter types are
+accepted and those types are specified in parameter order. The PURE macro
+(in C++ it reduces to '=0') designates these methods as pure virtual
+functions, as all methods in C++ interface declarations must be. In C,
+this macro reduces to nothing.  With these macros, you should be able to
+use the services of COMOBJ.DLL from either C or C++ programs.
+
+<P>
+A standard part of every interface is an IUnknown implementation, which
+includes the three methods QueryInterface, AddRef, and Release. All COM
+interfaces are derived from IUnknown. Additional declarations are
+necessary for the methods that are unique to each interface (for example,
+the Shift, Clutch, Speed, and Steer methods of ICar).
+
+<P>
+For this interface to be used in a way fully consistent with COM
+interfaces, it needs a globally unique identifier, or GUID, as in
+CARGUIDS.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  DEFINE_GUID(IID_ICar,
+    0x0002da00, 0x0000, 0x0000, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46);
+ </FONT> </PRE>
+<P>With this definition, the GUID of the interface can be referred to by the
+name IID_ICar.
+
+<P>
+This GUID is part of a Microsoft pre-allocated sequence in which the first
+value 0x0002DAxx has values of xx in the range 00 to FF. Do not use the
+GUIDs in this sequence or any GUIDs in this code sample series elsewhere
+in other applications. You can obtain your own unique GUIDs by running the
+UUIDGEN utility supplied with the Platform SDK. The following command in
+the command prompt window will produce 10 such GUIDs in file GUIDS.C.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  UUIDGEN -s -n10 -oGUIDS.C
+ </FONT> </PRE>
+<p>This utility uses random number generation techniques to ensure
+absolute GUID uniqueness. It produces the GUIDs as a C structure:
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  INTERFACENAME = { /* b124eec0-e7a9-11ce-9a5f-444553540000 */
+      0x3c0869c0,
+      0xd721,
+      0x11ce,
+      {0x9a, 0x5f, 0x44, 0x45, 0x53, 0x54, 0x00, 0x00}
+    };
+ </FONT> </PRE>
+
+<p>
+This structure is easy to edit into the format required by the DEFINE_GUID
+macro as shown above.
+
+<p>
+COMOBJ.CPP provides the main exported creation functions for the DLL. It
+also has the DllMain function that you saw in DLLSKEL. Because COMOBJ.CPP
+brings together the functionality of the DLL, it includes the following
+#include statements:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  #include &lt;windows.h&gt;
+  #include &lt;ole2.h&gt;
+  #include &lt;initguid.h&gt;
+  #include &lt;apputil.h&gt;
+  #include &lt;icars.h&gt;
+  #include &lt;carguids.h&gt;
+  #include &quot;comobji.h&quot;
+  #define _DLLEXPORT_
+  #include &quot;comobj.h&quot;
+  #include &quot;car.h&quot;
+  #include &quot;utilcar.h&quot;
+  #include &quot;crucar.h&quot;
+ </FONT> </PRE>
+
+<P>
+We include OLE2.H because we will need to call the COM/OLE library
+functions. Of special note is INITGUID.H. This file must be included only
+once in each executable, just after the other COM/OLE header files are
+included. What this ensures is that any GUIDs defined in this application
+will be instantiated as named data in the data segment of this executable
+DLL. If you do not include this file, you will get unresolved external
+references to the IID_IMyInterface GUIDs during linking. We include
+ICARS.H for the common car-related interface specifications. We include
+CARGUIDS.H for the interface GUID definitions.
+
+<P>
+As with DLLSKEL, we confine internal resource identifier macros and
+utility classes to a separate file, COMOBJI.H. We define the _DLLEXPORT_
+macro to force export definition of the creation functions in this file.
+We next include COMOBJ.H for the STDENTRY macro definitions, as well as
+the main interfaces already discussed. We include CAR.H, UTILCAR.H, and
+CRUCAR.H for the COM object class declarations of the three main objects
+exposed by this DLL: COCar, COUtilityCar, and COCruiseCar.
+
+<P>There is a global variable worthy of note:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // Here is a pointer for use by the global Debug Message logging macros.
+  // Set by the ComObjInitMsgLog function call from an outside EXE user.
+  CMsgLog* g_pMsgLog = NULL;
+ </FONT> </PRE>
+
+<P>
+The trace message log facility is a simple one that is meant to be global
+and nonintrusive. One central set of LOGxx macros all assume the
+same-named global variable (ie, g_pMsgLog) regardless of the executable
+module. Because the MsgLog window lives in a host EXE which has a message
+loop, we define this global variable in the DLL. It is later assigned by a
+call from the EXE to the ComObjInitMsgLog function which is also defined
+in COMOBJ.
+
+<P>
+As a primitive server providing the three COM objects, this DLL exports
+three creation functions: CreateCar, CreateUtilityCar, and
+CreateCruiseCar. Explicit calls to delete the objects are not needed,
+because COM object lifetimes are controlled by their own internal
+reference counts. The creation functions provide a requested interface
+pointer on the new object. After creation, it is only through interfaces
+that the objects are accessible. The Car, UtilityCar, and CruiseCar
+objects are all exposed as COM objects that are aggregatable outside this
+DLL via the pUnkOuter parameter to their creation functions. Here is a
+representative CreateCruiseCar function:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDENTRY CreateCruiseCar(
+             IUnknown* pUnkOuter,
+             REFIID riid,
+             PPVOID ppv)
+  {
+    HRESULT hr;
+    COCruiseCar* pCob;
+
+    LOGF1(&quot;D: CreateCruiseCar. pUnkOuter=0x%X.&quot;,pUnkOuter);
+
+    // If the creation call is requesting aggregation (pUnkOuter != NULL),
+    // the COM rules state the IUnknown interface MUST also concomitantly
+    // be requested. If it is not so requested (riid != IID_IUnknown), then
+    // an error must be returned indicating that no aggregate creation of
+    // the COCruiseCar COM Object can be performed.
+    if (NULL != pUnkOuter &amp;&amp; riid != IID_IUnknown)
+      hr = CLASS_E_NOAGGREGATION;
+    else
+    {
+      // Instantiate a COCruiseCar COM Object.
+      pCob = new COCruiseCar(pUnkOuter);
+      if (NULL != pCob)
+      {
+        // If we have succeeded in instantiating the COCruiseCar object,
+        // we initialize it to set up any subordinate objects (ie, via
+        // containment or aggregation).
+        hr = pCob-&gt;Init();
+        if (SUCCEEDED(hr))
+        {
+          // We QueryInterface this new COM Object not only to deposit the
+          // requested interface pointer into the caller's pointer variable,
+          // but to also automatically bump the Reference Count on the new
+          // COM Object after handing out this reference to it.
+          hr = pCob-&gt;QueryInterface(riid, (PPVOID)ppv);
+        }
+      }
+      else
+        hr = E_OUTOFMEMORY;
+    }
+
+    if (SUCCEEDED(hr))
+      LOGF1(&quot;D: CreateCruiseCar Succeeded. *ppv=0x%X.&quot;,*ppv);
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+Using the REFIID parameter, this function attempts to return the requested
+interface pointer after the COCruiseCar COM object is created. The
+QueryInterface method of the new object's IUnknown interface is used to
+get the interface pointer. The pUnkOuter parameter determines whether the
+object is being aggregated into another object. The CoCruiseCar's Init
+method is called to compartmentalize any creation of subordinate objects,
+which applies here because a subordinate COCar object is created using
+aggregation in this Init method.
+
+<h4>COCar COM Object</h4>
+
+<p>
+The COCar COM object class is declared in CAR.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class COCar : public IUnknown
+  {
+    public:
+      // Main Object Constructor &amp; Destructor.
+      COCar(IUnknown* pUnkOuter);
+      ~COCar(void);
+
+      // IUnknown members. Main object, non-delegating.
+      STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+      STDMETHODIMP_(ULONG) AddRef(void);
+      STDMETHODIMP_(ULONG) Release(void);
+
+    private:
+      // We declare nested class interface implementations here.
+
+      class CImpICar : public ICar
+      {
+        public:
+          // Interface Implementation Constructor &amp; Destructor.
+          CImpICar(COCar* pBackObj, IUnknown* pUnkOuter);
+          ~CImpICar(void);
+
+          // IUnknown members.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // ICar members.
+          STDMETHODIMP Shift(short nGear);
+          STDMETHODIMP Clutch(short nEngaged);
+          STDMETHODIMP Speed(short nMph);
+          STDMETHODIMP Steer(short nAngle);
+
+        private:
+          // Data private to this interface implementation of ICar.
+          ULONG        m_cRefI;       // Interface Ref Count (for debugging)
+          COCar*       m_pBackObj;    // Parent Object back pointer
+          IUnknown*    m_pUnkOuter;   // Outer unknown for Delegation
+      };
+
+      // Make the otherwise private and nested ICar interface implementation
+      // a friend to COM object instantiations of this selfsame COCar
+      // COM object class.
+      friend CImpICar;
+
+      // Private data of COCar COM objects.
+
+      // Nested ICar implementation instantiation.  This ICar interface is
+      // instantiated inside this COCar object as a native interface.
+      CImpICar         m_ImpICar;
+
+      // Main Object reference count.
+      ULONG            m_cRefs;
+
+      // Outer unknown (aggregation &amp; delegation).
+      IUnknown*        m_pUnkOuter;
+  };
+ </FONT> </PRE>
+
+<p>
+The ICar interface is implemented as a nested class. The nested CImpICar
+is declared in the private section of the main COCar object class. An
+instance of the ICar interface is created in the private section with this
+code.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // Nested ICar implementation instantiation. This ICar interface is
+  // instantiated inside this COCar object as a native interface.
+  CImpICar        m_ImpICar;
+ </FONT> </PRE>
+
+<P>
+Because the ICar interface implementation is nested in the COCar object
+class, no explicit creation and deletion operations are needed. Its
+lifetime is tied to the lifetime of the parent COCar object, so it is
+automatically constructed and destroyed as the parent object is. To ensure
+the CImpICar methods can access the private data of the COCar class,
+CImpICar is made a friend ot COCar.
+
+<P>
+The constructor function of CImpICar contains two important parameters.
+The pBackObj pointer is used by CImpICar methods to access private data in
+COCar. The pUnkOuter parameter signals aggregation if it is non-NULL, in
+which case it is stored within the CImpICar object and used for later
+delegation of calls to its own interfaces' IUnknown methods. More on this
+later, when we tour CAR.CPP.
+
+<P>
+The m_pUnkOuter variable is used when this object is aggregated inside
+another COM object. The value then is a pointer to the outermost
+controlling IUnknown, which is passed to the COCar constructor. COCar
+supports both containment and aggregation.
+
+<P>
+CAR.CPP defines the methods of COCar. The constructor uses an interesting
+member initializer to pass the pBackObj and pUnkOuter parameters mentioned
+above to the CImpICar constructor. This inner class's constructor is
+thereby executed prior to the main COCar constructor.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  COCar::COCar(IUnknown* pUnkOuter) : m_ImpICar(this, pUnkOuter)
+  {
+    // Zero the COM object's reference count.
+    m_cRefs = 0;
+
+    // No AddRef necessary if non-NULL, as we're nested.
+    m_pUnkOuter = pUnkOuter;
+
+    LOGF1(&quot;D: COCar Constructor. m_pUnkOuter=0x%X.&quot;, m_pUnkOuter);
+
+    return;
+  }
+ </FONT> </PRE>
+
+<p>
+Here is that inner CImpICar::CImpICar constructor.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  COCar::CImpICar::CImpICar(
+    COCar* pBackObj,
+    IUnknown* pUnkOuter)
+  {
+    // Init the Interface Ref Count (used for debugging only).
+    m_cRefI = 0;
+
+    // Init the Back Object Pointer to point to the parent object.
+    m_pBackObj = pBackObj;
+
+    // Init the CImpICar interface's delegating Unknown pointer. We use
+    // the Back Object pointer for IUnknown delegation here if we are not
+    // being aggregated. If we are being aggregated, we use the supplied
+    // pUnkOuter for IUnknown delegation. In either case, the pointer
+    // assignment requires no AddRef because the CImpICar lifetime is
+    // quaranteed by the lifetime of the parent object in which
+    // CImpICar is nested.
+    if (NULL == pUnkOuter)
+    {
+      m_pUnkOuter = pBackObj;
+      LOG(&quot;D: COCar::CImpICar Constructor. Non-Aggregating.&quot;);
+    }
+    else
+    {
+      m_pUnkOuter = pUnkOuter;
+      LOG(&quot;D: COCar::CImpICar Constructor. Aggregating.&quot;);
+    }
+
+    return;
+  }
+ </FONT> </PRE>
+
+<P>
+Note the logic used to assign the delegating m_pUnkOuter pointer. If the
+COCar object is not being aggregated (parameter pUnkOUter == NULL),
+m_pUnkOuter is assigned the COCar object's 'this' pointer (passed in the
+pBackObj parameter of the member initializer pointed out above). In this
+case, the ICar interface's IUnknown methods will all be delegated to the
+COCar object. If COCar is being aggregated (pUnkOuter != NULL),
+m_pUnkOuter is assigned a pointer to the outermost controlling IUnknown
+(passed in the pUnkOuter parameter of the member initializer pointed out
+above). The pUnkOuter parameter is then passed to the constructor of
+COCar. If pUnkOuter is non-NULL, it is passed to any subordinate objects
+that are created. It makes the code for the CImpICar IUnknown methods
+simple as well--they all blindly delegate through the interface's assigned
+m_pUnkOuter pointer. Here, for example, is CImpICar::QueryInterface.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COCar::CImpICar::QueryInterface(
+                 REFIID riid,
+                 PPVOID ppv)
+  {
+    LOG(&quot;D: COCar::CImpICar::QueryInterface. Delegating.&quot;);
+
+    // Delegate this call to the outer object's QueryInterface.
+    return m_pUnkOuter-&gt;QueryInterface(riid, ppv);
+  }
+ </FONT> </PRE>
+
+<p>
+When the COCar object is aggregated, calls to this method are delegated to
+the outermost controlling IUnknown. At the outermost aggregating object,
+it appears that this ICar interface is on the outer object rather than on
+the inner COCar object.
+
+<p>
+Since this COCar COM object does not reuse any COM objects, its IUnknown
+methods are easy. Here's QueryInterface:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COCar::QueryInterface(
+                 REFIID riid,
+                 PPVOID ppv)
+  {
+    HRESULT hr = E_NOINTERFACE;
+    *ppv = NULL;
+
+    if (IID_IUnknown == riid)
+    {
+      *ppv = this;
+      LOG(&quot;D: COCar::QueryInterface. 'this' pIUnknown returned.&quot;);
+    }
+    else if (IID_ICar == riid)
+    {
+      *ppv = &amp;m_ImpICar;
+      LOG(&quot;D: COCar::QueryInterface. pICar returned.&quot;);
+    }
+
+    if (NULL != *ppv)
+    {
+      // We've handed out a pointer to the interface so obey the COM rules
+      // and AddRef the reference count.
+      ((LPUNKNOWN)*ppv)-&gt;AddRef();
+      hr = NOERROR;
+    }
+
+    return (hr);
+  }
+ </FONT> </PRE>
+
+<P>
+For IID_IUnknown, the 'this' pointer is used, because a pointer to the
+object itself is a pointer to the object's IUnknown. For IID_ICar,
+QueryInterface passes the address of the nested instance of CImpICar (*ppv
+= &amp;m_ImpICar). After passing an interface pointer, QueryInterface
+calls AddRef to maintain the object's reference count.
+
+<P>
+The &quot;if (IID_Unknown == riid)&quot; comparisons take advantage of an
+overloaded C++ == operator. Such overloaded operators are provided in the
+COM/OLE headers for types GUID, CLSID, and IID. IIDs are actually the
+128-bit (16 byte) integer entities that you saw above.  In C++, these
+entities can simply be referred to using references (as with IID_Unknown
+above).
+
+<P>
+The actual ICar methods (like CImpICar::Shift) in this code sample are
+empty LOG announcements that the methods have been called. This is where
+the skeleton ends and real application code would be added.
+
+<h4>COUtilityCar COM Object</h4>
+
+<p>UTILCAR.H declares the COUtilityCar COM object class.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class COUtilityCar : public IUnknown
+  {
+    public:
+      // Main Object Constructor &amp; Destructor.
+      COUtilityCar(IUnknown* pUnkOuter);
+      ~COUtilityCar(void);
+
+      // A general public method for initializing this newly created
+      // COUtilityCar object. Creates any subordinate arrays, structures,
+      // or objects. Not exposed as a method in an interface.
+      HRESULT Init(void);
+
+      // IUnknown members. Main object, non-delegating.
+      STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+      STDMETHODIMP_(ULONG) AddRef(void);
+      STDMETHODIMP_(ULONG) Release(void);
+
+      // We get this ICar interface pointer via containment reuse of the
+      // ICar interface in an instantiated COCar.
+      ICar*           m_pICar;
+
+    private:
+      // We show nested interface class implementations here.
+
+      // We implement the basic ICar interface in this COUtilityCar
+      // COM object class.
+      class CImpICar : public ICar
+      {
+        public:
+          // Interface Implementation Constructor &amp; Destructor.
+          CImpICar(COUtilityCar* pBackObj, IUnknown* pUnkOuter);
+          ~CImpICar(void);
+
+          // IUnknown members.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // ICar members.
+          STDMETHODIMP Shift(short nGear);
+          STDMETHODIMP Clutch(short nEngaged);
+          STDMETHODIMP Speed(short nMph);
+          STDMETHODIMP Steer(short nAngle);
+
+        private:
+          // Data private to this interface implementation of ICar
+          ULONG         m_cRefI;      // Interface Ref Count (for debugging)
+          COUtilityCar* m_pBackObj;   // Parent Object back pointer
+          IUnknown*     m_pUnkOuter;  // Outer unknown for Delegation
+      };
+
+      // We implement the IUtility interface (ofcourse) in this COUtilityCar
+      // COM object class. This is the interface that we are using as an
+      // augmentation to the existing COCar COM object class.
+      class CImpIUtility : public IUtility
+      {
+        public:
+          // Interface Implementation Constructor &amp; Destructor.
+          CImpIUtility(COUtilityCar* pBackObj, IUnknown* pUnkOuter);
+          ~CImpIUtility(void);
+
+          // IUnknown members.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // IUtility members.
+          STDMETHODIMP Offroad(short nGear);
+          STDMETHODIMP Winch(short nRpm);
+
+        private:
+          // Data private to this interface implementation of IUtility
+          ULONG         m_cRefI;      // Interface Ref Count (for debugging)
+          COUtilityCar* m_pBackObj;   // Parent Object back pointer
+          IUnknown*     m_pUnkOuter;  // Outer unknown for Delegation
+      };
+
+      // Make the otherwise private and nested ICar interface implementation
+      // a friend to COM object instantiations of this selfsame COUtilityCar
+      // COM object class.
+      friend CImpICar;
+      friend CImpIUtility;
+
+      // Private data of COUtilityCar COM objects.
+
+      // Nested ICar implementation instantiation.
+      CImpICar        m_ImpICar;
+
+      // Nested IUtility implementation instantiation.
+      CImpIUtility    m_ImpIUtility;
+
+      // Main Object reference count.
+      ULONG           m_cRefs;
+
+      // Outer unknown (aggregation &amp; delegation).
+      IUnknown       *m_pUnkOuter;
+  };
+ </FONT> </PRE>
+
+<P>
+COM objects of the COUtilityCar class augment COCar COM objects (which
+expose ICar interface features) with a native implementation of IUtility
+interface features (Offroad and Winch). A COUtilityCar COM object class
+reuses the COCar COM object class by containment. The multiple interfaces
+on this COM object class are implemented as nested classes.
+
+<P>
+To supply both the ICar and IUtility interfaces, we implement them in this
+COM object. The IUtility interface is a native implementation in the
+COUtilityCar COM object. The COUtilityCar object contains a delegating
+implementation of the ICar interface, called CImpICar in the sample code.
+The whole purpose of CImpICar is to delegate ICar calls to the real ICar
+implementation, which is located in a contained COCar object.
+
+<P>
+For this implementation, the COUtilityCar object's constructor creates a
+COCar object and holds a pointer to the ICar interface of the COCar
+object. This pointer is used to delegate calls to ICar methods
+(implemented in the COUtilityCar object) to the corresponding method
+implemented in the contained object's ICar interface. We declare the
+delegation pointer like this:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // We get this ICar interface pointer via containment reuse of the
+  // ICar interface in an instantiated COCar.
+  ICar*           m_pICar;
+ </FONT> </PRE>
+
+<p>
+This delegating pointer is assigned when the COUtilityCar is initialized
+by the Init call in the CreateUtilityCar function in COMOBJ.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // Instantiate a COUtilityCar COM Object.
+  pCob = new COUtilityCar(pUnkOuter);
+  if (NULL != pCob)
+  {
+    // If we have succeeded in instantiating the COUtilityCar object
+    // we initialize it to set up any subordinate objects (ie, via
+    // containment or aggregation).
+    hr = pCob-&gt;Init();
+    if (SUCCEEDED(hr))
+    {
+      // We QueryInterface this new COM Object not only to deposit the
+      // requested interface pointer into the caller's pointer variable,
+      // but to also automatically bump the Reference Count on the new
+      // COM Object after handing out this reference to it.
+      hr = pCob-&gt;QueryInterface(riid, (PPVOID)ppv);
+    }
+  }
+  else
+    hr = E_OUTOFMEMORY;
+ </FONT> </PRE>
+
+<p>
+After creating a COUtilityCar COM object, the object's Init method is
+called to create and initialize any inner objects. In this case, an inner
+COCar COM object must be created. Here is the Init method (from
+UTILCAR.CPP):
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT COUtilityCar::Init(void)
+  {
+    HRESULT hr;
+
+    LOG(&quot;D: COUtilityCar::Init.&quot;);
+
+    // Create an instance of the COCar object and ask for its ICar
+    // interface directly. We pass NULL for the pUnkOuter because we
+    // are not aggregating. It is here that we are reusing the COCar
+    // COM Object through the Containment technique. We cache the
+    // pointer to the ICar interface for later delegation use. We
+    // don't need to AddRef it here because CreateCar does that for us.
+    hr = CreateCar(NULL, IID_ICar, (PPVOID) &amp;m_pICar);
+
+    return (hr);
+  }
+ </FONT> </PRE>
+
+<p>
+The call to the CreateCar function creates a COCar COM object.
+COUtilityCar objects reuse COCar objects by containment, not aggregation,
+so the pUnkOuter parameter is NULL. Since the COCar COM object is not
+aggregated, CreateCar can explicitly ask it for its IID_ICar interface.
+The output parameter passes the address of the m_pICar delegation pointer
+(&amp;m_pICar).
+
+<p>
+In UTILCAR.CPP, the IUnknown methods of CImpIUtility all delegate as was
+done for the ICar implementation in COCar (through the interface's
+m_pUnkOuter). But the COUtilityCar object contains a COCar object, so the
+delegating ICar implementation delegates calls (through m_pICar) to
+COCar's ICar implementation. Here is an example, ICar::Speed.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COUtilityCar::CImpICar::Speed(
+                 short nMph)
+  {
+    LOGF1(&quot;D: COUtilityCar::CImpICar::Speed. Delegating. nMph=%i.&quot;,nMph);
+
+    m_pBackObj-&gt;m_pICar-&gt;Speed(nMph);
+
+    return NOERROR;
+  }
+ </FONT> </PRE>
+
+<P>
+We need the m_pBackObj pointer to access the COUtilityCar object's m_pICar
+pointer because this method is inside the delegating CImpICar class. Even
+though this CImpICar class is a delegating interface implementation for
+the one in the COCar object, we must still delegate calls to the IUnknown
+of CImpICar using the interface's m_pUnkOuter. Doing so helps make the
+COUtilityCar object itself an aggregatable COM object; just because it
+contains a COCar object (to expose the ICar interface) doesn't mean it
+cannot in turn be either contained or aggregated by some other COM object.
+As we did for COCar, we code COUtilityCar to support either containment or
+aggregation--a good general practice for all COM objects since it's easy
+once you understand what's going on.
+
+<P>
+Now we can look at the COUtilityCar controlling IUnknown's QueryInterface
+method:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COUtilityCar::QueryInterface(
+                 REFIID riid,
+                 PPVOID ppv)
+  {
+    HRESULT hr = E_NOINTERFACE;
+    *ppv = NULL;
+
+    if (IID_IUnknown == riid)
+    {
+      *ppv = this;
+      LOG(&quot;D: COUtilityCar::QueryInterface. 'this' pIUnknown returned&quot;);
+    }
+    else if (IID_ICar == riid)
+    {
+      *ppv = &amp;m_ImpICar;
+      LOG(&quot;D: COUtilityCar::QueryInterface. pICar returned&quot;);
+    }
+    else if (IID_IUtility == riid)
+    {
+      *ppv = &amp;m_ImpIUtility;
+      LOG(&quot;D: COUtilityCar::QueryInterface. pIUtility returned&quot;);
+    }
+
+    if (NULL != *ppv)
+    {
+      // We've handed out a pointer to the interface so obey the COM rules
+      // and AddRef the reference count.
+      ((LPUNKNOWN)*ppv)-&gt;AddRef();
+      hr = NOERROR;
+    }
+
+    return (hr);
+  }
+ </FONT> </PRE>
+
+<p>
+The IID_ICar case looks deceptively simple. QueryInterface just gives back
+the address of the delegating ICar interface implementation
+(&amp;m_ImpICar). The IID_IUtility case is indeed simple, since we have
+implemented IUtility as a native interface on this COUtilityCar object.
+QueryInterface gives back the address of that IUtility interface
+(&amp;m_ImpIUtility).
+
+<p>
+The last point to make about COUtilityCar concerns its constructor. As
+before, we use member initializers for the constructors of the nested
+interface implementation classes. These are required because we are using
+nested interface classes.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  COUtilityCar::COUtilityCar(IUnknown* pUnkOuter) :
+    m_ImpICar(this, pUnkOuter),
+    m_ImpIUtility(this, pUnkOuter)
+  {
+    ...
+  }
+ </FONT> </PRE>
+
+<h4>COCruiseCar COM Object</h4>
+
+<p>
+CRUCAR.H declares the COCruiseCar COM object class.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class COCruiseCar : public IUnknown
+  {
+    public:
+      // Main Object Constructor &amp; Destructor.
+      COCruiseCar(IUnknown* pUnkOuter);
+      ~COCruiseCar(void);
+
+      // A general public method for initializing this newly created
+      // COCruiseCar object. Creates any subordinate arrays, structures,
+      // or objects. Not exposed as a method in an interface.
+      HRESULT Init(void);
+
+      // IUnknown members. Main object, non-delegating.
+      STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+      STDMETHODIMP_(ULONG) AddRef(void);
+      STDMETHODIMP_(ULONG) Release(void);
+
+    private:
+      // We declare nested class interface implementations here.
+
+      // We implement the ICruise interface (ofcourse) in this COCruiseCar
+      // COM object class.  This is the interface that we are using as an
+      // augmentation to the existing COCar COM object class.
+      class CImpICruise : public ICruise
+      {
+        public:
+          // Interface Implementation Constructor &amp; Destructor.
+          CImpICruise(COCruiseCar* pBackObj, IUnknown* pUnkOuter);
+          ~CImpICruise(void);
+
+          // IUnknown members.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // ICruise members.
+          STDMETHODIMP Engage(BOOL bOnOff);
+          STDMETHODIMP Adjust(BOOL bUpDown);
+
+        private:
+          // Data private to this interface implementation of ICruise
+          ULONG         m_cRefI;      // Interface Ref Count (for debugging)
+          COCruiseCar*  m_pBackObj;   // Parent Object back pointer
+          IUnknown*     m_pUnkOuter;  // Outer unknown for Delegation
+      };
+
+      // Make the otherwise private and nested ICar interface implementation
+      // a friend to COM object instantiations of this selfsame COCruiseCar
+      // COM object class.
+      friend CImpICruise;
+
+      // Private data of COCruiseCar COM objects.
+
+      // Nested ICruise implementation instantiation. This ICruise interface
+      // is implemented inside this COCruiseCar object as a native interface.
+      CImpICruise     m_ImpICruise;
+
+      // Main Object reference count.
+      ULONG           m_cRefs;
+
+      // Outer unknown (aggregation &amp; delegation). Used when this COCruiseCar
+      // object is being aggregated. Otherwise, it is used for delegation
+      // if this object is reused via containment.
+      IUnknown*       m_pUnkOuter;
+
+      // We need to save the IUnknown interface pointer on the COCar
+      // object that we aggregate. We use this when we need to delegate
+      // IUnknown calls to this aggregated inner object.
+      IUnknown*       m_pUnkCar;
+  };
+ </FONT> </PRE>
+
+<P>
+With the COCruiseCar COM object class, once more the native interface,
+ICruise, is implemented as a nested interface class. COCruiseCar exposes
+the ICar interface through an aggregated COCar object. This is similar to
+the way COUtilityCar exposes its own native IUtility interface and also
+exposes the ICar interface, but COUtilityCar objects reuse the ICar
+interface through containment, not aggregation, of a COCar object. In the
+COMUSER code sample, we will build a COUtilityCruiseCar COM object that
+aggregates this COCruiseCar object. We'll then have a COM object that
+aggregates a COM object that aggregates a COM object.
+
+<P>
+CImpICruise itself has a private data member, m_pUnkOuter, for supporting
+aggregation and delegation. This pointer is used to delegate calls to
+IUnknown methods of the ICruise interface. If the COCruiseCar object is
+not aggregated, calls are delegated to its IUnknown. If the COCruiseCar
+object is aggregated, calls are delegated to the outermost controlling
+IUnknown. The m_pBackObj is for use in any of the ICruise methods to
+reference members of the COCruiseCar object.
+
+<P>
+As in previous interface implementations, the CImpICruise embedded class
+needs to be made a friend class to COCruiseCar so that CImpICruise's
+methods can access the private data in COCruiseCar.
+
+<P>
+COCruiseCar is itself constructed by aggregating the COCar COM object with
+this object's native ICruise interface implementation. That is what the
+m_pUnkCar pointer in the COCruiseCar object's private data is for. It
+caches a pointer to the aggregated inner COCar object. This pointer is
+used to delegate certain IUnknown calls to the inner object's IUnknown
+interface. More on this later.
+
+<P>
+When COCruiseCar is aggregated in an outer composite COM object, it has an
+m_pUnkOuter delegation pointer in its private data area. If it is not
+aggregated, this pointer merely serves as a record of the NULL pUnkOuter
+when a COCruiseCar object is created.
+
+<P>
+We will skip the COCruiseCar constructor function, because it is similar
+to that of other COM functions we have already studied.
+
+<P>
+The CreateCruiseCar function discussed earlier in this tour calls the
+COCruiseCar::Init method. Here is COCruiseCar::Init as it is implemented
+in CRUCAR.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT COCruiseCar::Init(void)
+  {
+    HRESULT hr;
+    // Set up the right pIUnknown for delegation. If we are being
+    // aggregated, then we pass the pUnkOuter in turn to any COM objects
+    // that we are aggregating. m_pUnkOuter was set in the Constructor.
+    IUnknown* pUnkOuter = (NULL == m_pUnkOuter) ? this : m_pUnkOuter;
+
+    LOG(&quot;D: COCruiseCar::Init.&quot;);
+
+    // We create an instance of the COCar object and do this via the
+    // Aggregation reuse technique. Note we pass pUnkOuter as the
+    // Aggregation pointer. It is the 'this' pointer to this present
+    // COCruiseCar object if we are not being aggregated; otherwise it is
+    // the pointer to the outermost object's controlling IUnknown.
+    // Following the rules of Aggregation we ask CreateCar to give us an
+    // IID_IUnknown interface. We cache this pointer to the IUnknown of
+    // the new COCar COM object for later use in delegating IUnknown calls.
+    hr = CreateCar(pUnkOuter, IID_IUnknown, (PPVOID)&amp;m_pUnkCar);
+
+    return (hr);
+  }
+ </FONT> </PRE>
+
+<P>
+The CreateCar function creates and aggregates a COCar object and asks that
+the controlling IUnknown of the new COCar object be placed in the
+m_pUnkCar pointer discussed above.
+
+<P>
+This Init functionality could be attempted in the constructor function,
+but aggregation requests in the constructor can cause problems that are
+difficult to debug. Depending on the order of events, such creation calls
+often cause QueryInterface calls that are delegated to the outermost
+aggregating object. At that point, the source of any errors encountered
+can be difficult to detect. Placing aggregation requests in a separate
+Init method can make it easier to avoid problems, or to detect them if
+they arise. It is also convenient to make the Init method a member of the
+COCruiseCar class (rather than putting it in the CreateCruiseCar function)
+because the method has access to the object's private data and to the
+'this' pointer. For example, in Init's conditional assignment of pUnkOuter
+above, we use both m_pUnkOuter and the 'this' pointer.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  IUnknown* pUnkOuter = (NULL == m_pUnkOuter) ? this : m_pUnkOuter;
+ </FONT> </PRE>
+
+<P>
+This conditional assignment gives pUnkOuter the right value for the
+CreateCar aggregation creation call. It's part of what is needed to make
+the COCruiseCar COM object an aggregating object that is at the same time
+aggregatable itself.
+
+<P>
+If m_pUnkOuter is NULL, this COCruiseCar object itself is not being
+aggregated. If it is not being aggregated, the inner COCar object still
+needs to be created as an aggregated object. In this case, COCruiseCar's
+'this' controlling IUnknown pointer is passed in as the outermost
+controlling IUnknown. By doing so, any aggregated inner objects are
+informed that this COCruiseCar object is the outermost controlling
+IUnknown.
+
+<P>
+If m_pUnkOuter is not NULL, the COCruiseCar object is itself being
+aggregated, and it passes to any aggregated inner objects the pointer it
+receives in m_pUnkOuter as the outermost controlling IUnknown.
+
+<P>
+We mentioned earlier that m_pUnkCar was used to delegate certain IUnknown
+calls to the aggregated inner object. One place to see this delegation in
+action is in COCruiseCar::QueryInterface.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COCruiseCar::QueryInterface(
+                 REFIID riid,
+                 PPVOID ppv)
+  {
+    HRESULT hr = E_NOINTERFACE;
+    *ppv = NULL;
+
+    if (IID_IUnknown == riid)
+    {
+      *ppv = this;
+      LOG(&quot;D: COCruiseCar::QueryInterface. 'this' pIUnknown returned.&quot;);
+    }
+    else if (IID_ICruise == riid)
+    {
+      // This ICruise interface is implemented in this COCruiseCar object
+      // and might be called a native interface of COCruiseCar.
+      *ppv = &amp;m_ImpICruise;
+      LOG(&quot;D: COCruiseCar::QueryInterface. pICruise returned.&quot;);
+    }
+
+    if (NULL != *ppv)
+    {
+      // We've handed out a pointer to an interface, so obey the COM rules
+      // and AddRef its reference count.
+      ((LPUNKNOWN)*ppv)-&gt;AddRef();
+      hr = NOERROR;
+    }
+    else if (IID_ICar == riid)
+    {
+      LOG(&quot;D: COCruiseCar::QueryInterface. ICar delegating.&quot;);
+      // We didn't implement the ICar interface in this COCruiseCar object.
+      // The aggregated inner object (COCar) is contributing the ICar
+      // interface to this present composite or aggregating COCruiseCar
+      // object. So, to satisfy a QI request for the ICar interface,
+      // we delegate the QueryInterface to the inner object's controlling
+      // IUnknown.
+      hr = m_pUnkCar-&gt;QueryInterface(riid, ppv);
+    }
+
+    return (hr);
+  }
+ </FONT> </PRE>
+
+<P>
+The IID_IUnknown and IID_ICruise cases are familiar. If QueryInterface
+passes those pointers by request, it must call AddRef on their interface.
+The IID_ICruise interface is exposed as a native interface and is
+implemented in the COCruiseCar class, so it is easy to pass a pointer to
+it. For the IID_ICar interface, however, the request must be passed to the
+aggregated object that owns it. The cached object pointer m_pUnkCar is
+used to delegate the QueryInterface call to the inner COCar object, which
+will delegate the call to its outermost controlling IUnknown, the present
+COCruiseCar object.
+
+<P>
+For information on the COCruiseCar::Release method, see the code comments
+below.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP_(ULONG) COCruiseCar::Release(void)
+  {
+    ULONG ulCount = --m_cRefs;
+
+    LOGF1(&quot;D: COCruiseCar::Release. New cRefs=%i.&quot;, m_cRefs);
+
+    if (0 == m_cRefs)
+    {
+      // We artificially bump the main ref count. This fulfills one of
+      // the rules of aggregated objects and ensures that an indirect
+      // recursive call to this release won't occur because of other
+      // delegating releases that might happen in our own destructor.
+      m_cRefs++;
+      delete this;
+    }
+
+    return ulCount;
+  }
+ </FONT> </PRE>
+
+<p>
+The COCruiseCar::CImpICruise::CImpICruise constructor uses the following
+logic to assign its own IUnknown delegation pointer.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  if (NULL == pUnkOuter)
+  {
+    m_pUnkOuter = pBackObj;
+    LOG(&quot;D: COCruiseCar::CImpICruise Constructor. Non-Aggregating.&quot;);
+  }
+  else
+  {
+    m_pUnkOuter = pUnkOuter;
+    LOG(&quot;D: COCruiseCar::CImpICruise Constructor. Aggregating.&quot;);
+  }
+ </FONT> </PRE>
+
+<P>
+If the COCruiseCar object is aggregated, the ICruise interface's
+m_pUnkOuter delegation pointer is assigned the pointer to the outermost
+controlling IUnknown (constructor parameter pUnkOuter). If the COCruiseCar
+object is not aggregated, any IUnknown calls received by the ICruise
+interface are delegated to the IUnknown of the COCruiseCar object using
+the value of pBackObj. The pBackObj pointer is passed to the CImpICruise
+constructor as the COCruiseCar object's 'this' pointer. This parameter to
+the interface implementation constructor was achieved through the use of
+member initializers in COCruiseCar's constructor. For more details on this
+special use of member initializers, see the discussion of the
+COCruiseCar::Init method earlier in this text file.
+
+<P>
+The CImpICruise interface's IUnknown methods are simple outward
+delegations using the value of m_pUnkOuter assigned. This assignment of
+the m_pUnkOuter IUnknown pointer in the CImpICruise constructor requires
+no call to AddRef, because the CImpICruise lifetime is guaranteed by the
+lifetime of the parent object in which CImpICruise is nested. This
+convenience is one of the benefits of nested interface class
+implementations.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

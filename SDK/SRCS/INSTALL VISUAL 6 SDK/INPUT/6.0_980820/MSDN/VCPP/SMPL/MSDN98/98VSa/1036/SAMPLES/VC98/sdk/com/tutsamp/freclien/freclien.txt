@@ -1,0 +1,97 @@
+
+FRECLIEN - Free-threaded client of a free-threaded server
+
+
+NOTE: FRECLIEN uses CoInitializeEx. CoInitializeEx is implemented only on
+Windows NT 4.0 and later versions. It is also implemented in the DCOM95
+addition to Win95. This sample will not run on earlier versions of Windows
+NT or on Win95 without DCOM95.
+
+
+SUMMARY
+=======
+
+The FRECLIEN sample spawns multiple threads to create and use the COBall
+COM object provided by the FRESERVE free-threaded server. COBall object
+itself spawns no threads; it passively responds to IBall interface
+requests from multiple client threads. The FRECLIEN client creates and
+controls one COBall object through the IBall interface that the object
+exposes. As three of FRECLIEN's threads move the ball through calls to
+IBall::Move, the remaining main thread uses a system timer to obtain timed
+updates of the COBall object's position, size, and color. This main thread
+uses that data, obtained by calling the IBall::GetBall method, to display
+graphical snapshot images of the ball in the client's main window.
+
+As explained in the FRESERVE sample, the COBall object internally updates
+its color property to reflect the last thread that called the object's
+Move method. The display thread uses this data for each ball image it
+displays. As the ball moves, it changes color to reflect the changing
+threads that move the ball. As the ball moves, it also leaves a trail that
+provides a striking visual history of these passing threads. This trail
+demonstrates that, with COM's free threading model, all threads that make
+interface requests to the same object access the object on the different
+calling threads. Each different color of the single ball object represents
+a different calling thread. Since the display thread is asynchronous with
+respect to the ball-moving threads, there is no guarantee that the display
+trail will include a record of every thread that moved the ball. Based on
+thread scheduling and on the load of other applications running, not all
+threads that move the ball are "caught in the act" by the display thread.
+
+This free threading model is in contrast to the apartment model presented
+in the APTSERVE and APTCLIEN samples. In apartment model threading, each
+COM object is associated with an single-threaded apartment. Calls from
+multiple client threads are switched by COM to the thread of the apartment
+that owns the object. Only one thread, the object's apartment thread, is
+permitted to execute the methods of the object. This provides a
+serialization of access to the object's data.
+
+For functional descriptions and a tutorial code tour of FRECLIEN, see the
+Code Tour section in FRECLIEN.HTM. For details on the external user
+operation of FRECLIEN, see both the Usage and Operation sections in
+FRECLIEN.HTM. To read FRECLIEN.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the FRECLIEN lesson in the table of lessons. You can
+also achieve the same thing by clicking the FRECLIEN.HTM file after
+locating the main tutorial directory in the Windows Explorer. See also
+FRESERVE.HTM in the main tutorial directory for more details on how
+FRESERVE works and exposes its services to FRECLIEN. You must build the
+FRESERVE DLL before building FRECLIEN. The makefile for FRESERVE
+automatically registers that server in the system registry, so you must
+build FRESERVE before attempting to run FRECLIEN.
+
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+Usage
+-----
+
+FRECLIEN is an application that you can execute directly from Windows in
+the normal manner or from the Command Prompt window. No command line
+parameters are recognized by FRECLIEN. FRECLIEN currently requires the
+free-threading facilities provided in more recent releases of COM such as
+found in version 4.0 and later releases of the Windows NT operating
+system. The Windows 95 operating system does not currently support free
+threading, so FRECLIEN will not run on it. However, a DCOM95 add-on to
+Win95 will permit the FRECLIEN/FRESERVE samples to run on Win95. DCOM95 is
+currently nearing release.
+
+
+FILES
+=====
+
+Files          Description
+
+FRECLIEN.TXT   This file.
+MAKEFILE       The generic makefile for building the code sample
+               application of this tutorial lesson.
+FRECLIEN.H     The include file for the FRECLIEN application. Contains
+               class declarations, function prototypes, and resource
+               identifiers.
+FRECLIEN.CPP   The main implementation file for FRECLIEN.EXE. Has WinMain
+               and CMainWindow implementation, as well as the main menu
+               dispatching.
+FRECLIEN.RC    The application resource definition file.
+FRECLIEN.ICO   The application icon resource.
+GUIBALL.H      The class declaration for the CGuiBall C++ class.
+GUIBALL.CPP    Implementation file for the CGuiBall C++ class.

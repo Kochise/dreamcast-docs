@@ -1,0 +1,698 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>FRECLIEN COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="freserve.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="conserve.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="FRECLIEN">FRECLIEN - Client of Free-threaded Server</a></h2>
+
+<P>
+NOTE: FRECLIEN uses CoInitializeEx. CoInitializeEx is implemented only on
+Windows NT 4.0 and later versions. It is also implemented in the DCOM95
+addition to Win95. This sample will not run on earlier versions of Windows
+NT or on Win95 without DCOM95.
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The FRECLIEN sample spawns multiple threads to create and use the COBall
+COM object provided by the FRESERVE free-threaded server. COBall object
+itself spawns no threads; it passively responds to IBall interface
+requests from multiple client threads. The FRECLIEN client creates and
+controls one COBall object through the IBall interface that the object
+exposes. As three of FRECLIEN's threads move the ball through calls to
+IBall::Move, the remaining main thread uses a system timer to obtain timed
+updates of the COBall object's position, size, and color. This main thread
+uses that data, obtained by calling the IBall::GetBall method, to display
+graphical snapshot images of the ball in the client's main window.
+
+<P>
+As explained in the FRESERVE sample, the COBall object internally updates
+its color property to reflect the last thread that called the object's
+Move method. The display thread uses this data for each ball image it
+displays. As the ball moves, it changes color to reflect the changing
+threads that move the ball. As the ball moves, it also leaves a trail that
+provides a striking visual history of these passing threads. This trail
+demonstrates that, with COM's free threading model, all threads that make
+interface requests to the same object access the object on the different
+calling threads. Each different color of the single ball object represents
+a different calling thread. Since the display thread is asynchronous with
+respect to the ball-moving threads, there is no guarantee that the display
+trail will include a record of every thread that moved the ball. Based on
+thread scheduling and on the load of other applications running, not all
+threads that move the ball are caught in the act by the display thread.
+
+<P>
+This free threading model is in contrast to the apartment model presented
+in the APTSERVE and APTCLIEN samples. In apartment model threading, each
+COM object is associated with an single-threaded apartment. Calls from
+multiple client threads are switched by COM to the thread of the apartment
+that owns the object. Only one thread, the object's apartment thread, is
+permitted to execute the methods of the object. This provides a
+serialization of access to the object's data.
+
+<P>
+For functional descriptions and a tutorial code tour of FRECLIEN, see the
+Code Tour section in FRECLIEN.HTM. For details on the external user
+operation of FRECLIEN, see both the Usage and Operation sections in
+FRECLIEN.HTM. To read FRECLIEN.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the FRECLIEN lesson in the table of lessons. You can
+also achieve the same thing by clicking the FRECLIEN.HTM file after
+locating the main tutorial directory in the Windows Explorer. See also
+FRESERVE.HTM in the main tutorial directory for more details on how
+FRESERVE works and exposes its services to FRECLIEN. You must build the
+FRESERVE DLL before building FRECLIEN. The makefile for FRESERVE
+automatically registers that server in the system registry, so you must
+build FRESERVE before attempting to run FRECLIEN.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE
+is Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<P>
+FRECLIEN is an application that you can execute directly from Windows in
+the normal manner or from the Command Prompt window. No command line
+parameters are recognized by FRECLIEN. FRECLIEN currently requires the
+free-threading facilities provided in more recent releases of COM such as
+found in version 4.0 and later releases of the Windows NT operating
+system. The Windows 95 operating system does not currently support free
+threading, so FRECLIEN will not run on it. However, a DCOM95 add-on to
+Win95 will permit the FRECLIEN/FRESERVE samples to run on Win95. DCOM95 is
+currently nearing release.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">
+Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, FRECLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="FRECLIEN\FRECLIEN.exe">
+Click here to run FRECLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>OPERATION</h3>
+
+<P>
+The FRECLIEN.EXE application provides the user interface for this lesson.
+It exercises the associated, but independent, FRESERVE.DLL to graphically
+illustrate the free threading model. As the ball image created by FRECLIEN
+moves, it leaves a trail. This trail shows a history of the various
+threads that have executed the COBall object's Move method.
+
+<P>
+Here is a summary of operation from the standpoint of FRECLIEN.EXE as a
+COM client of the FRESERVE.DLL COM server.
+
+<P>
+There is a minimal menu in FRECLIEN. All the operation is automatic. The
+main application window's client area is used for visual display of the
+moving ball.
+
+<p>Menu Selection: File/Exit<br>
+Exits FRECLIEN.
+
+<P>Menu Selection: Help/FRECLIEN Tutorial<br>
+Opens the FRECLIEN.HTM tutorial file in the Web browser.
+
+<P>Menu Selection: Help/FRESERVE Tutorial<br>
+Opens the FRESERVE.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/Read Source File<br>
+Displays the Open common dialog box so you can open a source file from
+this lesson or another one in the Windows Notepad.
+
+<p>Menu Selection: Help/About FRECLIEN<br>
+Displays the About dialog box for this application, a standard part of
+this series of code samples. The code illustrates how to program the use
+of the CAboutBox class provided by APPUTIL.LIB.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files          Description</u>
+FRECLIEN.TXT   Short sample description.
+MAKEFILE       The generic makefile for building the code sample
+               application of this tutorial lesson.
+FRECLIEN.H     The include file for the FRECLIEN application. Contains
+               class declarations, function prototypes, and resource
+               identifiers.
+FRECLIEN.CPP   The main implementation file for FRECLIEN.EXE. Has WinMain
+               and CMainWindow implementation, as well as the main menu
+               dispatching.
+FRECLIEN.RC    The application resource definition file.
+FRECLIEN.ICO   The application icon resource.
+GUIBALL.H      The class declaration for the CGuiBall C++ class.
+GUIBALL.CPP    Implementation file for the CGuiBall C++ class.
+ </FONT> </PRE>
+
+<P>
+FRECLIEN uses many of the utility classes and services provided by
+APPUTIL. For more details on APPUTIL, study the APPUTIL library source
+code in the sibling APPUTIL directory and APPUTIL.HTM in the main tutorial
+directory.
+
+<P>
+The program logic governing the ball's motion is encapsulated in the
+COBall object. See the FRESERVE sample and FRESERVE.HTM for details.
+
+<P>
+The major topics covered in this code tour are:
+
+<ul>
+<li>initializing COM for free-threaded access to the FRESERVE server and
+its components
+
+<li>the construction of the CGuiBall C++ object
+
+<li>multithreading in FRECLIEN
+
+<li>the use of the system timer; and shutdown of the client
+
+</ul>
+
+<p>The main FRECLIEN process initializes COM for free-threaded operation.
+It does this in the WinMain function. Here is the code from FRECLIEN.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ...
+  // Call to initialize the COM Library.  Use the SUCCEEDED macro
+  // to detect success.  If fail, then exit app with error message.
+  // Initialize COM here in the main process thread to establish this
+  // main thread as the founding member of the multi-threaded apartment
+  // of this process. Other worker free-threads will also live in this
+  // multi-threaded apartment. The app can have only one such multi-
+  // threaded apartment but could have a mixed model with other
+  // single-threaded apartments running. This sample has no other
+  // single-threaded apartments.
+  if (SUCCEEDED(CoInitializeEx(NULL, COINIT_MULTITHREADED)))
+  {
+    ...
+    ... Init application and enter main message loop, etc
+    ...
+  }
+    ...
+ </FONT> </PRE>
+
+<P>
+The CoInitializeEx function is called with the COINIT_MULTITHREADED flag.
+This means that COM is initialized to use the free-threading model in
+FRECLIEN's main message loop thread. Other worker threads will be created
+and initialized as COINIT_MULTITHREADED. These worker threads will also
+operate in the free-threaded model on a single instance of FRESERVE's
+COBall COM object.
+
+<P>
+FRECLIEN uses a CGuiBall C++ class to encapsulate the data and behavior
+of the client's graphical user interface (GUI) moving ball.
+
+<P>
+Here is the declaration of the CGuiBall class from file GUIBALL.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class CGuiBall
+  {
+    private:
+      HWND     m_hWnd;
+      IBall*   m_pIBall;
+      COLORREF m_crColor;
+
+      // Pointers to thread init data structures.
+      CThreadInitData m_BallThreadData1;
+      CThreadInitData m_BallThreadData2;
+      CThreadInitData m_BallThreadData3;
+
+    public:
+      // Some member variables to store thread ids.
+      DWORD m_dwBallThread1;
+      DWORD m_dwBallThread2;
+      DWORD m_dwBallThread3;
+
+      // An array of handles to the ball threads.
+      HANDLE m_hBallThreads[3];
+
+      CGuiBall(void);
+      ~CGuiBall(void);
+      BOOL Init(HWND hWnd);
+      void PaintBall(void);
+      void Restart(void);
+      void PaintWin(void);
+  };
+ </FONT> </PRE>
+
+<P>
+The main process thread uses CGuiBall by calling its main public methods:
+Init, Restart, PaintBall, and PaintWin. Calls through the IBall interface
+on FRESERVE's COBall object are encapsulated within the methods of
+CGuiBall. The COBall object is accessed through an IBall interface
+pointer, m_pIBall, privately held in CGuiBall.
+
+<P>
+CGuiBall has an Init method in which an instance of FRESERVE's COBall
+object is created. This Init method also spawns three threads whose sole
+job is to continuously call COBall::Move to move the ball entity defined
+in COBall. These three calling threads keep the ball moving while the main
+display thread continuously paints snapshot images of the moving ball.
+CGuiBall keeps the identifiers of these three threads. Several
+CThreadInitData structures are used to create the threads.
+
+<P>
+Here is the CGuiBall::Init method definition from GUIBALL.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  BOOL CGuiBall::Init(
+         HWND hWnd)
+  {
+    BOOL bOk = FALSE;
+    HRESULT hr;
+
+    if (hWnd)
+    {
+      m_hWnd = hWnd;
+
+      // Call COM service to create the single COBall instance.
+      // We are not aggregating it so we ask for its IBall interface
+      // directly.
+      hr = CoCreateInstance(
+             CLSID_DllBall,
+             NULL,
+             CLSCTX_INPROC_SERVER,
+             IID_IBall,
+             (PPVOID)&amp;m_pIBall);
+      if (SUCCEEDED(hr))
+      {
+        // Now start up 3 client BallThreads that will all try to move the
+        // Ball concurrently. They will bring independent asynchronous life
+        // to the ball. The separate main process thread displays the ball.
+        // These threads (including the main display thread) will all
+        // comprise the multi-threaded apartment of the main process.
+
+        // Create Structures for thread initialization.
+        m_BallThreadData1.m_hWnd = hWnd;
+        m_BallThreadData1.m_nDelay = BALL_MOVE_DELAY;
+        m_BallThreadData1.m_pIBall = m_pIBall;
+        m_BallThreadData2.m_hWnd = hWnd;
+        m_BallThreadData2.m_nDelay = BALL_MOVE_DELAY;
+        m_BallThreadData2.m_pIBall = m_pIBall;
+        m_BallThreadData3.m_hWnd = hWnd;
+        m_BallThreadData3.m_nDelay = BALL_MOVE_DELAY;
+        m_BallThreadData3.m_pIBall = m_pIBall;
+
+        // Create the ball-moving thread #1.
+        m_hBallThreads[0] = CreateThread(
+                              0,
+                              0,
+                              (LPTHREAD_START_ROUTINE) BallThreadProc,
+                              (LPVOID) &amp;m_BallThreadData1,
+                              0,
+                              &amp;m_dwBallThread1);
+
+        bOk = (NULL != m_hBallThreads[0]);
+        if (bOk)
+        {
+          // AddRef for the copy handed out to free-thread1.
+          m_pIBall-&gt;AddRef();
+
+          // Create the Ball Moving Thread #2.
+          m_hBallThreads[1] = CreateThread(
+                                0,
+                                0,
+                                (LPTHREAD_START_ROUTINE) BallThreadProc,
+                                (LPVOID) &amp;m_BallThreadData2,
+                                0,
+                                &amp;m_dwBallThread2);
+
+          bOk = (NULL != m_hBallThreads[1]);
+          if (bOk)
+          {
+            // AddRef for the copy handed out to free-thread2.
+            m_pIBall-&gt;AddRef();
+
+            // Create the Ball Moving Thread #3.
+            m_hBallThreads[2] = CreateThread(
+                                  0,
+                                  0,
+                                  (LPTHREAD_START_ROUTINE) BallThreadProc,
+                                  (LPVOID) &amp;m_BallThreadData3,
+                                  0,
+                                  &amp;m_dwBallThread3);
+
+            bOk = (NULL != m_hBallThreads[2]);
+            if (bOk)
+            {
+              // AddRef for the copy handed out to free-thread3.
+              m_pIBall-&gt;AddRef();
+            }
+          }
+        }
+      }
+      else
+        HrMsg(hWnd, TEXT(NOCOMOBJ_ERROR_STR), hr);
+
+      if (!bOk)
+      {
+        hr = GetLastError();
+        if (FAILED(hr))
+          HrMsg(hWnd, TEXT(NOTHREAD_ERROR_STR), hr);
+      }
+    }
+
+    if (bOk)
+    {
+      // Set up the client process to periodically paint the ball
+      // thru WM_TIMER messages to the main Window proc.
+      SetTimer(hWnd, 1, BALL_PAINT_DELAY, NULL);
+    }
+
+    return (bOk);
+  }
+ </FONT> </PRE>
+
+<P>
+CoCreateInstance is called to create an instance of the FRESERVE server's
+COBall object specified by its CLSID, CLSID_DllBall. This CLSID is defined
+in BALLGUID.H, located in the sibling INC directory. Because aggregation
+is not required, CoCreateInstance directly requests the IBall interface,
+which on return is stored in m_pIBall. The Init method then launches the
+three moving threads after setting appropriate CThreadInitData structures.
+This is the CThreadInitData as declared in GUIBALL.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // A small utility struct providing an encapsulation of data needed when
+  // worker threads are initialized.
+  struct CThreadInitData
+  {
+    HWND   m_hWnd;
+    IBall* m_pIBall;
+    DWORD  m_nDelay;
+  };
+ </FONT> </PRE>
+
+<P>
+As presented in the previous APTSERVE sample, a pointer to a
+CThreadInitData structure is passed as an LPARAM to the thread procedure
+of the newly launched thread. Using this structure, the client's main
+window handle, an interface pointer to the IBall interface on the COBall
+object, and a value for the time delay between ball movements are all
+passed to the new threads. Following the COM contract, the Init method
+calls m_pIBall-&gt;AddRef for each copy of the interface pointer returned to
+the newly created thread. These AddRef calls are later matched by Release
+calls in the CGuiBall destructor.
+
+<P>
+Note that the interface pointer in member m_pIBall is passed from one
+thread, the main thread, to the newly created thread. This requires no
+marshaling because both threads are in the same multi-threaded apartment
+of the process. If the creating thread was in a single-threaded apartment
+that was creating a new thread in the multi-threaded apartment then
+explicit marshaling of the passed m_pIBall interface would be required.
+The CoMarshalInterThreadInterfaceInStream and
+CoGetInterfaceAndReleaseStream functions are convenient for such explicit
+runtime marshaling of interfaces between threads within a process.
+
+<P>
+The m_hBallThreads array holds handles to the created threads. It is used
+for later calls to WaitForMultipleObjects to ensure an orderly shutdown of
+the threads before the client program exits. This occurs in the CGuiBall
+destructor.  Here is the destructor from GUIBALL.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  CGuiBall::~CGuiBall(void)
+  {
+    BOOL bOk = TRUE;
+
+    if (m_pIBall)
+    {
+      // Kill the client's app timer for its repaints.
+      KillTimer(m_hWnd, 1);
+
+      // Call down to the server's COBall and tell it to shutdown.
+      m_pIBall-&gt;Move(FALSE);
+
+      // Wait for the threads to terminate before closing their
+      // thread handles.
+      WaitForMultipleObjects(3, m_hBallThreads, TRUE, INFINITE);
+      for (size_t i = 0; i&lt;3; i++)
+        CloseHandle(m_hBallThreads[i]);
+
+      // Release for each of the thread copies handed out.
+      m_pIBall->Release();
+      m_pIBall->Release();
+      m_pIBall->Release();
+      // Do final Release for the main copy held in CGuiBall.
+      RELEASE_INTERFACE(m_pIBall);
+    }
+  }
+ </FONT> </PRE>
+
+<P>
+The main process thread relies on a recurrent system timer's WM_TIMER
+message. This was set up within the Init method of CGuiBall shown above.
+These periodic timer messages drive the client's independent asynchronous
+display process. The timer is killed in the destructor (see above) with
+the KillTimer call. Each WM_TIMER message sent to the main window
+procedure is honored by a call to the COBall::GetBall method to obtain the
+ball's display data. Here is the main window procedure from FRECLIEN.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  LRESULT CMainWindow::WindowProc(
+            UINT uMsg,
+            WPARAM wParam,
+            LPARAM lParam)
+  {
+    LRESULT lResult = FALSE;
+
+    switch (uMsg)
+    {
+      case WM_CREATE:
+        break;
+
+      case WM_MEASUREITEM:
+        // Get setup for painting text in this window.
+        {
+          LPMEASUREITEMSTRUCT lpmis = (LPMEASUREITEMSTRUCT) lParam;
+          lpmis-&gt;itemHeight = m_tm.tmHeight + m_tm.tmExternalLeading;
+          lpmis-&gt;itemWidth = m_wWidth;
+          lResult = TRUE;
+        }
+
+      case WM_SIZE:
+        // Handle a resize of this window.
+        m_wWidth = LOWORD(lParam);
+        m_wHeight = HIWORD(lParam);
+        // Handle a resize of this window.
+        // Restart the ball from upper left, clear window.
+        m_pGuiBall-&gt;Restart();
+        break;
+
+      case WM_TIMER:
+        // This is our timed attempt to continuously paint the moving ball.
+        // It doesn't move it. Other non-GUI threads move the virtual ball.
+        m_pGuiBall-&gt;PaintBall();
+        break;
+
+      case WM_COMMAND:
+        // Dispatch and handle any Menu command messages received.
+        lResult = DoMenu(wParam, lParam);
+        break;
+
+      case WM_CHAR:
+        if (wParam == 0x1b)
+        {
+          // Exit this app if user hits ESC key.
+          PostMessage(m_hWnd,WM_CLOSE,0,0);
+          break;
+        }
+      case WM_LBUTTONUP:
+      case WM_PAINT:
+        // If something major happened or user clicks or hits key then
+        // repaint the whole window.
+        m_pGuiBall-&gt;PaintWin();
+        break;
+
+      case WM_CLOSE:
+        // The user selected Close on the main window's System menu.
+      case WM_QUIT:
+        // If the app is quit by the File/Exit main menu then close
+        //   any associated help windows too.
+        ::WinHelp(m_hWnd, m_szHelpFile, HELP_QUIT, 0);
+      default:
+        // Defer all messages NOT handled here to the Default Window Proc.
+        lResult = ::DefWindowProc(m_hWnd, uMsg, wParam, lParam);
+        break;
+    }
+
+    return(lResult);
+  }
+ </FONT> </PRE>
+
+<P>
+The CGuiBall::PaintBall method is called to paint the ball when the
+WM_TIMER messages arrive. Other main client application messages of
+interest are WM_SIZE, WM_PAINT, and WM_LBUTTONUP. For WM_SIZE, if the user
+resizes the client application's main window, CGuiBall::Restart is called.
+The WM_SIZE message handler calls COBall::Reset, which relocates the ball
+to the upper left corner of the window and also resets the ball size. If
+the user clicks the left mouse button (causing WM_LBUTTONUP) or a general
+WM_PAINT condition occurs, the window is repainted, but the ball is not
+reset.
+
+<P>
+The threads each run the following common thread procedure, BallThreadProc
+in GUIBALL.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  DWORD WINAPI BallThreadProc(
+                 LPARAM lparam)
+  {
+    CThreadInitData* pInitData = (CThreadInitData*) lparam;
+    DWORD nEndCount = 0;
+    HRESULT hr;
+    BOOL bAlive;
+
+    // Initialize COM for use by this thread. Tell COM this new thread
+    // is another free-threaded thread in the multi-threaded apartment.
+    hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    bAlive = SUCCEEDED(hr);
+
+    if (bAlive)
+    {
+      // Continuously move the ball while it is still alive.
+      while (bAlive)
+      {
+        // Use system timer to slow down the ball motion to the range
+        // of the humanly perceptible.
+        if (GetTickCount() &gt; nEndCount)
+        {
+          // After the delay, call from this thread thru IBall interface
+          // to move the ball that lives in the single COBall COM object.
+          // Set bAlive flag FALSE if the COBall can no longer move.
+          hr = pInitData-&gt;m_pIBall-&gt;Move(TRUE);
+          bAlive = (NOERROR == hr);
+
+          // Set new timer end count.
+          nEndCount = GetTickCount() + pInitData-&gt;m_nDelay;
+        }
+      }
+
+      // UnInitialize COM for use by this thread.
+      CoUninitialize();
+    }
+
+    return 0;
+  }
+ </FONT> </PRE>
+
+<P>
+Within each launched worker thread, COM is initialized specifying
+COINIT_MULTITHREADED to indicate the new thread will execute as part of
+the process's multi-threaded apartment. Each of the three threads executes
+this same re-entrant thread procedure. Within the procedure, each thread
+executes an indefinite while loop containing a call to the IBall::Move
+method on the COBall object. Because these move calls would be far too
+fast for human perception, each thread is kept busy in a delay countdown
+using the system timer tick count. This sample uses delays in the
+neighborhood of 100 milliseconds. When the delay is over, the Move method
+is called on the COBall object. The three threads are running concurrently
+and could make the Move calls at conflicting times. As explained in the
+FRESERVE sample, the Move method on COBall is guarded by the CThreaded
+OwnThis mechanism. If one of the threads currently owns the COBall object,
+a Move call by another thread will block the calling thread until it can
+obtain ownership.
+
+<P>
+Each thread's while loop terminates in BallThreadProc when the Move call
+that is made there returns E_FAIL. This return signals that some other
+thread had killed the ball by calling the Move method with the bAlive
+parameter set to FALSE. This terminating call is actually made by the main
+application thread and not by any of the ball-moving threads. The call is
+made in the CGuiBall destructor shown above. The destructor is run when
+the main CGuiBall object is deleted because the user has closed or exited
+the main application, causing an exit of the main process thread's message
+loop in WinMain.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

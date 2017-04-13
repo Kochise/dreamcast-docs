@@ -1,0 +1,1520 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>PERCLIEN COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="perdraw.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="dcdmarsh.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="PERCLIEN">PERCLIEN - Client of Persistent Object Servers</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The PERCLIEN sample completes a sequence of four samples that cover
+persistent COM objects. The first three samples discuss three COM servers
+that each house COM objects having a different kind of object persistence.
+The first sample, PERSERVE, shows how to use the IPersistStream interface
+to give COPageList COM objects their persistence in a stream of a
+structured storage compound file.  The second sample, PERTEXT, shows how
+to use the IPersistStreamInit interface is used to give COTextPage COM
+object their persistence in streams. The IPersistStreamInit::InitNew
+method is covered in detail. The third sample, PERDRAW, shows how to use
+the IPersistStorage interface to give CODrawPage COM objects their
+persistence in substorages of a compound file. The
+IPersistStorage::HandsOffStorage and IPersistStorage::SaveCompleted
+methods are covered in detail. This sample, PERCLIEN, integrates the use
+of the three previous servers into a single COM client application.
+
+<P>
+The PERCLIEN client uses the components in the PERSERVE, PERTEXT, and
+PERDRAW to build a document editing application that presents a list of
+pages to users. The user can add, delete, open, and name the page items in
+the list. When an item is opened, the content appears in a separate window
+for editing. The separate edit windows are child windows of PERCLIEN's
+main window. Two types of pages are supported: text pages and drawing
+pages.
+
+<P>
+PERCLIEN provides the graphical user interface for editing the page list
+as well as for editing the content of the two page types. PERCLIEN's
+CGuiList C++ object encapsulates the editing of the page list in
+PERCLIEN's main window. CGuiList controls the server-side COPageList
+object in PERSERVE. PERCLIEN's CGuiText C++ object encapsulates the
+editing of text pages in separate child windows. CGuiText controls the
+server-side COTextPage object in PERTEXT. PERCLIEN's CGuiDraw C++ object
+encapsulates the editing of drawing pages in separate child windows.
+CGuiDraw controls the server-side CODrawPage object in PERDRAW.
+
+<P>
+The separate text page windows of CGuiText provide for the editing of text
+using the standard Win32 multi-line edit control. The separate drawing
+page windows of CGuiDraw provide the free-form line drawing functionality
+that appeared in the STOSERVE and STOCLIEN samples.
+
+<P>
+The PERCLIEN sample relies on each page's persistent COM object to load
+and store the page's content. PERCLIEN acquires a pointer to the
+IPersistStream interface on COPageList to control persistent stream
+storage of the page list. It acquires a pointer to the IPersistStreamInit
+interface on COTextPage to control persistent stream storage (with InitNew
+capability) of a text page. It acquires a pointer to the IPersistStorage
+interface on CODrawPage to control persistent storage in a substorage
+(with the HandsOffStorage protocol) of a drawing page.
+
+<P>
+PERCLIEN controls the use of the compound file and provides the COM
+objects on the server side with appropriate interface pointers for the
+storages or streams used to store the data. PERSERVE's COPageList COM
+object exposes the IPersistStream interface and receives an IStream
+pointer from PERCLIEN. PERTEXT's COTextPage COM object exposes the
+IPersistStreamInit interface and receives an IStream pointer by PERCLIEN.
+PERDRAW's CODrawPage COM object exposes the IPersistStorage interface and
+receives an IStorage pointer by PERCLIEN. These IStorage and IStream
+interfaces are not implemented inside PERCLIEN or PERSERVE: They are
+implemented by the COM libraries. When a pointer to one of these
+interfaces is obtained, their methods are essentially used as a set of
+services to operate on areas in a compound file. If you have not used
+streams (IStream) or storages (IStorage) in structured storage compound
+files, see the STOSERVE and STOCLIEN samples for coverage of this topic.
+
+<P>
+PERCLIEN manages its structured storage compound file as a kind of
+document file where the page list and the pages themselves are stored.
+PERCLIEN loads and saves its page list, text pages, and drawing pages in
+the structured storage of this compound file. The compound file has a
+unique format because of the various streams and storages used. PERCLIEN
+identifies these compound files as page files with a .PAG file extension.
+
+<P>
+The connectable-object technology that was shown in the CONSERVE and
+CONCLIEN samples is used between PERCLIEN and the COM objects in its
+servers. Thus, PERCLIEN implements custom event sink interfaces for the
+connectable objects in the servers: IPageListSink, ITextPageSink, and
+IDrawPageSink.
+
+<P>
+For functional descriptions and a tutorial code tour of PERCLIEN, see the
+Code Tour section in PERCLIEN.HTM. For details on the external user
+operation of PERCLIEN, see both the Usage and Operation sections in
+PERCLIEN.HTM. To read PERCLIEN.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the PERCLIEN lesson in the table of lessons. You can
+also do same thing by double-clicking the PERCLIEN.HTM file after locating
+it in the main tutorial directory in Windows Explorer. See also
+PERSERVE.HTM, PERTEXT.HTM, and PERDRAW.HTM in the main tutorial directory
+for more details on how these servers work and expose their services to
+PERCLIEN. The makefile for each of the servers automatically registers
+that server in the system registry, so you must build the PERSERVE,
+PERTEXT, and PERDRAW servers before you can run PERCLIEN.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command at the Command Prompt.
+
+<P>
+<h4>Usage</h4>
+
+<P>
+PERCLIEN is an application that you can execute directly from Windows in
+the normal manner or from the Command Prompt window. PERCLIEN accepts an
+optional file name parameter on the command line. For example:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  PERCLIEN c:\pages\mynotes.pag
+ </FONT> </PRE>
+
+<P>
+Where mynotes.pag is a compound file containing pages of text and drawings
+previously made by PERCLIEN. If no file name argument is specified,
+PERCLIEN uses the default file name PERCLIEN.PAG and attempts to open it
+in the same directory as the executing PERCLIEN.EXE.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, PERCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="perclien\perclien.exe">Click here to run PERCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>OPERATION</h3>
+
+<P>
+The PERCLIEN.EXE application provides the user interface for this sample.
+It uses the associated but independent PERSERVE.DLL, PERTEXT.DLL, and
+PERDRAW.DLL in-process servers to demonstrate both client and server use
+of the persistent objects in these servers. The following summarizes the
+operation from the standpoint of PERCLIEN.EXE as a COM client of those
+servers.
+
+<h4>Main Menu (Page List)</h4>
+
+<P>
+The PERCLIEN application's main window client area displays the page list
+for the currently opened page file. PERCLIEN has a main menu helps the
+user control the page file and items in the page list. The following menu
+commands are provided.
+
+<p>Menu Selection: File/New<br>
+Displays the Save As dialog box to obtain a name and path for a new page
+file to create. A default .PAG file extension for these files is assumed.
+The newly created page file becomes the currently open page file. If
+changes were made to the existing page file before this menu item was
+chosen, a separate dialog box asks the user if the current page list (and
+any other open pages) should be saved into its associated compound file.
+
+<p>Menu Selection: File/Open<br>
+Displays the Open dialog box to obtain a name and path for an existing
+page file to open. A default .PAG file extension for these files is
+assumed. The newly opened page file becomes the currently open page file.
+If changes were made to the existing page file before this menu item was
+chosen, a separate dialog box asks the user if the current page list (and
+any other open pages) should be saved into its associated compound file.
+
+<p>Menu Selection: File/Save<br>
+Saves the current drawing into its associated compound file.
+
+<p>Menu Selection: File/Save As<br>
+Displays the Save As dialog box to obtain a name and path for a new page
+file to create. The currently open page list and pages become the saved
+content of the new file, and the new file becomes the new associated
+compound file.
+
+<p>Menu Selection: File/Exit<br>
+Exits PERCLIEN. If the current page file was changed then a dialog box
+will ask the user whether a save should be done.
+
+<p>Menu Selection: Page/Open<br>
+Opens the page edit window for the page currently selected in the page
+list.
+
+<p>Menu Selection: Page/Title<br>
+Displays a dialog box so the user can edit the list title for the page
+currently selected in the page list.
+
+<p>Menu Selection: Page/Delete<br>
+Deletes the page currently selected in the page list.
+
+<p>Menu Selection: Page/New Text<br>
+Creates an empty text page and opens an edit window for it.
+
+<p>Menu Selection: Page/New Drawing<br>
+Creates an empty drawing page and opens an edit window for it.
+
+<P>Menu Selection: Help/PERCLIEN Tutorial<br>
+Opens the PERCLIEN.HTM tutorial file in the Web browser.
+
+<P>Menu Selection: Help/PERSERVE Tutorial<br>
+Opens the PERSERVE.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/PERTEXT Tutorial<br>
+Opens the PERTEXT.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/PERDRAW Tutorial<br>
+Opens the PERDRAW.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/Read Source File<br>
+Displays the Open dialog box so you can open a source file from this
+lesson or another one in the Windows Notepad.
+
+<p>Menu Selection: Help/About PERCLIEN<br>
+Displays the About dialog box for this application.
+
+<h4>Text Page Menu</h4>
+
+<P>
+The PERCLIEN application's text-page window client area displays the
+currently opened text page. Users edit a the page in a separate window
+with its own menu that provides for user control of the text page. The
+following menu commands are available:
+
+<p>Menu Selection: Text/Save<br>
+Saves the current text page to the currently open page file.
+
+<p>Menu Selection: Text/Clear<br>
+Clears the current text page to a blank text page.
+
+<p>Menu Selection: Text/Exit<br>
+Exits the text page. If the text page was changed, a dialog box prompts
+the user to save the changes.
+
+<p>Menu Selection: Edit/Undo<br>
+Undoes the previous editing action.
+
+<p>Menu Selection: Edit/Select All<br>
+Selects all text in the text page.
+
+<p>Menu Selection: Edit/Cut<br>
+Cuts the currently selected text from the current text page and stores it
+on the clipboard for later paste.
+
+<p>Menu Selection: Edit/Copy<br>
+Copies the currently selected text from the currrent text page and stores
+it on the clipboard for later paste.
+
+<p>Menu Selection: Edit/Paste<br>
+Pastes the text content on the clipboard into the text page at the current
+cursor.
+
+<p>Menu Selection: Edit/Delete<br>
+Deletes the currently selected text from the current text page. This text
+is not placed on the clipboard.
+
+<p>Menu Selection: Help/PERCLIEN Tutorial<br>
+Opens the PERCLIEN.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/PERTEXT Tutorial<br>
+Opens the PERTEXT.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/Read Source &File<br>
+Displays the Open dialog box so you can use Windows Notepad to open a
+source file from this or another sample.
+
+<p>Menu Selection: Help/About PERCLIEN<br>
+Displays the About dialog box for this application.
+
+<h4>Drawing Page Menu</h4>
+
+<P>
+The PERCLIEN application's drawing page window client area displays a
+currently opened drawing page. Users edit this page is provided in a
+separate window with its own menu that helps the user control the drawing
+page. The following menu commands are provided:
+
+<p>Menu Selection: Drawing/Save<br>
+Saves the current drawing into the currently open page file.
+
+<p>Menu Selection: Drawing/Clear<br>
+Clears the current drawing to a blank drawing page.
+
+<p>Menu Selection: Drawing/Exit<br>
+Exits the drawing page. If the drawing page was changed, a dialog box
+prompts the user to save the file.
+
+<p>Menu Selection: Pen/Color<br>
+Displays the Choose Color dialog box to obtain a new pen color for
+drawing.
+
+<p>Menu Selection: Pen/Thin<br>
+Chooses the thin width for drawing. A check mark on this menu choice
+indicates that thin is the current pen width.
+
+<p>Menu Selection: Pen/Medium<br>
+Chooses the medium width for drawing. A check mark on this menu choice
+indicates that medium is the current pen width.
+
+<p>Menu Selection: Pen/Thick<br>
+Chooses the thick width for drawing. A check mark on this menu choice
+indicates that thick is the current pen width.
+
+<p>Menu Selection: Help/PERCLIEN Tutorial<br>
+Opens the PERCLIEN.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/PERDRAW Tutorial<br>
+Opens the PERDRAW.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/Read Source &File<br>
+Displays the Open dialog box so a user can use Windows Notepad to open a
+source file from this or another lesson.
+
+<p>Menu Selection: Help/About PERCLIEN<br>
+Displays the About dialog box for this application.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files          Description</u>
+PERCLIEN.TXT   Short description of the sample.
+MAKEFILE       The generic makefile for building the code sample
+               application of this tutorial lesson.
+PERCLIEN.H     The include file for the PERCLIEN application. Contains
+               class declarations for main window and dialogs.
+PERCLIEN.CPP   The main implementation file for PERCLIEN.EXE. Has WinMain
+               and CMainWindow implementation and the main menu dispatching.
+PERCLIEN.RC    The application's resource definition file.
+PERCLIEN.ICO   The application's main icon resource.
+PERCLIEN.PAG   A default page file for the application (with two pages).
+RESDEF.H       Resource ID definitions for application menu, strings, etc.
+PENCIL.CUR     A pencil image for the drawing page window cursor.
+GUILIST.H      The class declaration for the CGuiList C++ class.
+GUILIST.CPP    Implementation file for the CGuiList C++ class. Has user
+               interface to handle the main page list display window.
+LISTWIN.H      The class declaration for the CListWin C++ class.
+LISTWIN.CPP    Implementation file for the CListWin C++ class.
+               Encapsulates the list box control used to show the page list.
+LISTSINK.H     The class declaration for the COPageListSink COM object class.
+LISTSINK.CPP   Implementation file for the COPageListSink COM object class.
+               Connectable object notifications of page list events are
+               handled by COPageListSink.
+PAGEFILE.H     The class declaration for the CPageFile C++ class.
+PAGEFILE.CPP   Implementation file for the CPageFile C++ class.
+               Encapsulates operations on the .PAG page list compound file.
+GUITEXT.H      The class declaration for the CGuiText C++ class.
+GUITEXT.CPP    Implementaton file for the CGuiText C++ class. Has the
+               user interface for the separate editing of text pages.
+TEXTWIN.H      The class declaration for the CTextWin C++ class.
+TEXTWIN.CPP    Implementation file for the CTextWin C++ class. Encapsulates
+               the text edit control used to edit text page.s
+TEXTSINK.H     The class declaration for the COTextPageSink COM object class.
+TEXTSINK.CPP   Implementation file for the COTextPageSink COM object class.
+               Connectable object notifications of text edit events are
+               handled by COTextPageSink.
+GUIDRAW.H      The class declaration for the CGuiDraw C++ class.
+GUIDRAW.CPP    Implementation file for the CGuiDraw C++ class. Has the
+               user interface for the separate drawing in draw pages.
+DRAWSINK.H     The class declaration for the CODrawPageSink COM object class.
+DRAWSINK.CPP   Implementation file for the CODrawPageSink COM object class.
+               Connectable object notifications of drawing-related events
+               are handled by COTextPageSink.
+</FONT> </PRE>
+
+<P>
+PERCLIEN uses many of the utility classes and services provided by
+APPUTIL. For more details on APPUTIL, study the APPUTIL library source
+code in the common APPUTIL directory and APPUTIL.HTM in the main tutorial
+directory.
+
+<P>
+This sample focuses mainly on the client's use of the persistence features
+that are exposed by the persistent objects in the servers. Most of the
+infrastructure that makes PERCLIEN an application is a straightforward
+reuse of technology studied in previous samples and is not covered in this
+lesson. For example, the drawing functionality provided in CGuiDraw
+windows is very similar to the &quot;scribble&quot; functionality used in
+the STOCLIEN sample. Other COM-based infastructure is present in PERCLIEN
+but is not covered. For example, the connectable object sinks in PERCLIEN
+are very similar to the sink mechanisms studied in several previous
+samples.
+
+<P>The major topics covered in this code tour are:
+
+<ul>
+<li>How CGuiList, CGuiText, and CGuiDraw together form the heart of
+    PERCLIEN.
+
+<li>How CGuiList and CPageFile use the IPersistStream exposed by
+    COPageList in the PERSERVE server.
+
+<li>How CGuiText uses the IPersistStreamInit exposed by COTextPage in the
+    PERTEXT server.
+
+<li>How CGuiDraw uses the IPersistStorage exposed by CODrawPage in the
+    PERDRAW server.
+</ul>
+
+<h4>Client Overview</h4>
+
+<P>
+The CGuiList, CGuiText, and CGuiDraw C++ classes all encapsulate the GUI
+behavior of PERCLIEN. As in previous client samples, PERCLIEN uses a
+CMainWindow that derives from APPUTIL's CVirWindow abstract class.
+PERCLIEN's CMainWindow::InitInstance method creates the CGuiList object.
+This object in turn creates the main application window and attempts to
+load a default page file. Such a load process will be covered in detail
+below. With a page file loaded, a page list is displayed to the user as
+the content of a standard Win32 listbox control. This control is
+encapsulated in the CListWin C++ object (coded in LISTWIN.H and
+LISTWIN.CPP). The displayed list shows the page number, page type, and
+title of all the pages in the page file.
+
+<P>
+With a page list entry selected, the user can open the corresponding page,
+which calls CGuiList::PageOpen (in GUILIST.CPP). Using the page number of
+the page to be opened, PageOpen calls IPageList::Get (implemented by the
+COPageList object in the PERSERVE server) to obtain the page type, title,
+and data name of the page. The obtained title is used in the page list
+display. The page type determines whether CGuiText or CGuiDraw is used to
+create the window for the new page. Both CGuiText and CGuiDraw are C++
+classes derived from APPUTIL's CVirWindow abstract class to facilitate
+greatly their treatment as separate child windows of PERCLIEN's main
+window.
+
+<P>
+Both text page and drawing page windows have their own menus. See
+PERCLIEN.RC for the resource definitions of the menus for the list, text,
+and drawing windows. The menu commands are handled by respective DoCommand
+methods: for the main list window see CMainWindow::DoCommand in
+PERCLIEN.CPP; for the text window see CGuiText::DoCommand in GUITEXT.CPP;
+and for the drawing window see CGuiDraw::DoCommand in GUIDRAW.CPP.
+
+<P>
+Every page has a unique internal data name (for example, Text0001 or
+Drawing0002) and a counter ensures this uniqueness of data names within
+the page file. The data name is assigned when the page is first created.
+It is stored persistently in the page list entry for each page. The data
+name is also used as the name for the stream or storage located elsewhere
+in the same compound file in which the page's object data is stored. The
+page type determines whether a stream or storage branch is used to contain
+the object's data. For the page list itself, an IStream interface is used
+by COPageList's implementation of IPersistStream. For a text page, an
+IStream interface is used by COTextPage's implementation of
+IPersistStreamInit. For a drawing page, an IStorage interface is used by
+CODrawPage's implementation of IPersistStorage.
+
+<P>
+If the page being opened is a text page, then CGuiList::PageOpen creates a
+new CGuiText C++ object and calls CGuiText::OpenWin (in GUITEXT.CPP) to
+create a separate text page window that has its own menu. After
+the window is successfully created as a child window of PERCLIEN's main
+window, OpenWin calls CGuiText::Load to restore the object's data from its
+persistent storage. We will cover this load of a text page in more detail
+below.
+
+<P>
+If the page being opened is a drawing page, then CGuiList::PageOpen
+creates a new CGuiDraw C++ object and calls CGuiDraw::OpenWin (in
+GUIDRAW.CPP) to create a separate drawing page window. This window has its
+own menu. After the window is successfully created as a child window of
+PERCLIEN's main window, OpenWin calls CGuiDraw::Load to restore the
+object's data from its persistent storage. This load of a drawing page is
+covered in more detail below.
+
+<h4>Page List Persistence (IPersistStream)</h4>
+
+<P>
+CGuiList uses the persistence features of the COPageList object in the
+PERSERVE.DLL server. It does this in CGuiList::New, CGuiList::Load,
+CGuiList::Save, and CGuiList::SaveAs. These methods rely on an additional
+level of encapsulation in the CPageFile C++ object. For example,
+CGuiList::Load calls CPageFile::Load to load the page list. CPageFile is
+the heart of PERCLIEN's management of the persistence of the page list.
+The CPageFile object is first created in CGuiList::Init just after
+CGuiList is created. We will tour CPageFile and see how it uses
+COPageList's implementation of IPersistStream. The following is
+CPageFile::New from PAGEFILE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CPageFile::New(
+            TCHAR* pszFileName,
+            IStorage** ppIStorage,
+            IPageList** ppIPageList)
+  {
+    HRESULT hr = E_POINTER;
+    BOOL bNewFile = (NULL != pszFileName);
+    TCHAR* pszFile;
+    IStorage* pIStorage;
+    IStream* pIStream;
+    IPersistStream* pIPersistStream;
+    IPageList* pIPageList;
+    ULARGE_INTEGER uliMaxSize;
+
+    if (NULL != ppIStorage &amp;&amp; NULL != ppIPageList)
+    {
+      // Zero the output pointers in case of errror.
+      *ppIStorage = NULL;
+      *ppIPageList = NULL;
+
+      // If NULL file name passed then use current file name.
+      pszFile = bNewFile ? pszFileName : m_szCurFileName;
+
+      // Use COM service to create a new compound file.
+      hr = StgCreateDocfile(
+             pszFile,
+             STGM_CREATE | STGM_DIRECT | STGM_READWRITE
+               | STGM_SHARE_EXCLUSIVE,
+             0,
+             &amp;pIStorage);
+      if (SUCCEEDED(hr))
+      {
+        // We have created a new compound file. Now store the CLSID of
+        // COPageList.
+        hr = WriteClassStg(pIStorage, m_CidPageList);
+        if (SUCCEEDED(hr))
+        {
+          // Now Create the single 'PageList' stream under the root storage.
+          hr = pIStorage-&gt;CreateStream(
+                 PAGELIST_USTR,
+                 STGM_CREATE | STGM_WRITE | STGM_DIRECT | STGM_SHARE_EXCLUSIVE,
+                 0,
+                 0,
+                 &amp;pIStream);
+          if (SUCCEEDED(hr))
+          {
+            // Now use the Class ID to create a COPageList object. Initially
+            // ask for the IPageList interface.
+            hr = CoCreateInstance(
+                   m_CidPageList,
+                   NULL,
+                   CLSCTX_INPROC_SERVER,
+                   IID_IPageList  ,
+                   (PPVOID)&amp;pIPageList);
+            if (SUCCEEDED(hr))
+            {
+              // Clear the content of the Page List.
+              pIPageList-&gt;Clear();
+
+              // Now obtain the IPersistStream interface on the new
+              // COPageList object. At this point the client assumes that
+              // PageList COM objects support the IPersistStream interface.
+              hr = pIPageList-&gt;QueryInterface(
+                     IID_IPersistStream,
+                     (PPVOID)&pIPersistStream);
+              if (SUCCEEDED(hr))
+              {
+                // And as expected by this client, COPageList supports
+                // the IPersistStream interface. Now use this interface
+                // to ask the COPageList object to save an empty Page List.
+
+                // First ask the COPageList object how much space the
+                // maximum save would consume and then pre-allocate that
+                // space in the stream.
+                hr = pIPersistStream-&gt;GetSizeMax(&amp;uliMaxSize);
+                if (SUCCEEDED(hr))
+                {
+                  hr = pIStream-&gt;SetSize(uliMaxSize);
+                  if (SUCCEEDED(hr))
+                  {
+                    // Now save the new Page List into the
+                    // pre-allocated space.
+                    hr = pIPersistStream-&gt;Save(pIStream, TRUE);
+                  }
+                }
+
+                // Done with IPersistStream for now so release it.
+                pIPersistStream-&gt;Release();
+              }
+
+              // Done with the stream for now so release it.
+              pIStream-&gt;Release();
+            }
+          }
+        }
+      }
+
+      if (SUCCEEDED(hr))
+      {
+        // COPageList is fully created and the page list is
+        // loaded. Assign a copy of COPageList's IPageList
+        // interface for use by the caller.
+        *ppIPageList = pIPageList;
+
+        // For performance, keep the Page List 'Document' file
+        // open (ie, don't release IStorage here) and give the
+        // caller a copy of the IStorage Pointer.
+        *ppIStorage = pIStorage;
+
+        // The page list was loaded and we have a current compound
+        // file name. Copy it for later use in saves and loads.
+        if (bNewFile)
+          lstrcpy(m_szCurFileName, pszFileName);
+      }
+    }
+
+    return (hr);
+  }
+</FONT> </PRE>
+
+<p>
+The name of the compound file to create is passed to New as the first
+parameter. StgCreateDocFile expects a Unicode string. When PERCLIEN is
+compiled for ANSI strings (the UNICODE macro is not defined--which is the
+default in the makefile), this call actually reduces to a call to an
+internal APPUTIL function, A_StgCreateDocFile. This function performs the
+proper conversion of the ANSI pszFile parameter to a Unicode version
+before calling StgCreateDocFile. For more details, see APPUTIL.H and
+STOSERVE.HTM.
+
+<P>
+The New method also receives the addresses of two output pointer
+variables. When New is done, it assigns an IStorage interface pointer for
+the root storage of the newly created compound file. New also assigns a
+pointer to an IPageList interface on the persistent COPageList object that
+is created to manage the page list data.
+
+<P>
+The COM standard StgCreateDocFile service function is called to create the
+compound file in which the page list data will be saved. WriteClassStg
+stores the CLSID under the root storage for the page list component,
+making the page list component the main handler of data in .PAG compound
+files. With a successfully created root storage, a PageList stream is
+created to hold the persistent object data for COPageList objects. With
+this stream created, an instance of COPageList is created on the server
+side by calling CoCreateInstance. The initial interface requested is the
+native IPageList interface. The COPageList object obtained from the
+PERSERVE server now saves an empty copy of its persistent object data into
+the newly created compound file. QueryInterface is called to obtain the
+IPersistStream interface on COPageList. IPersistStream::GetSize is called
+to obtain the largest size that the maximum save would consume.
+IPersistStream::SetSize is then used to reserve that space in the stream.
+To complete the new persistent COPageList, IPersistStream::Save is called
+to save an initial copy of the object's persistent data. Since there is no
+page list yet, no list array is saved, but this does save an initial set
+of page list properties. Some data must be saved to blank file space even
+for an &quot;empty&quot; page list. When all this is done successfully,
+the caller is given a copy of the pointer to the file's root storage and a
+copy of the pointer to the IPageList interface on the new COPageList
+object.
+
+<P>
+If a page list compound file already exists then CPageFile::Load is called
+to open the root storage of the file, create the COPageList COM object,
+and load COPageList's persistent data from the storage. The following is
+CPageFile::Load from PAGEFILE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CPageFile::Load(
+            TCHAR* pszFileName,
+            IStorage** ppIStorage,
+            IPageList** ppIPageList)
+  {
+    HRESULT hr = E_POINTER;
+    BOOL bNewFile = (NULL != pszFileName);
+    TCHAR* pszFile;
+    IStorage* pIStorage;
+    IStream* pIStream;
+    IPersistStream* pIPersistStream;
+    IPageList* pIPageList;
+    ULARGE_INTEGER uliMaxSize;
+
+    if (NULL != ppIStorage &amp;&amp; NULL != ppIPageList)
+    {
+      // Zero the output pointers in case of errror.
+      *ppIStorage = NULL;
+      *ppIPageList = NULL;
+
+      // If NULL file name passed then use current file name.
+      pszFile = bNewFile ? pszFileName : m_szCurFileName;
+
+      // Use COM service to check if the file is out there and is actually
+      // a valid compound file.
+      hr = StgIsStorageFile(pszFile);
+      if (SUCCEEDED(hr))
+      {
+        // We have a compound file. Use COM service to open the compound file
+        // and obtain a IStorage interface.
+        hr = StgOpenStorage(
+               pszFile,
+               NULL,
+               STGM_DIRECT | STGM_READWRITE | STGM_SHARE_EXCLUSIVE,
+               NULL,
+               0,
+               &amp;pIStorage);
+        if (SUCCEEDED(hr))
+        {
+          // We have an IStorage. Now get the ClassID of the COM Server
+          // that handles Page Files.
+          hr = ReadClassStg(pIStorage, &amp;m_CidPageList);
+          if (SUCCEEDED(hr))
+          {
+            // We have a ClassID for a server. Now Open the single 'PageList'
+            // stream under the root storage.
+            hr = pIStorage-&gt;OpenStream(
+                   PAGELIST_USTR,
+                   0,
+                   STGM_READ | STGM_DIRECT | STGM_SHARE_EXCLUSIVE,
+                   0,
+                   &amp;pIStream);
+            if (SUCCEEDED(hr))
+            {
+              // Now use the previously obtained Class ID to create a
+              // COPageList object. Initially ask for IPageList interface.
+              hr = CoCreateInstance(
+                     m_CidPageList,
+                     NULL,
+                     CLSCTX_INPROC_SERVER,
+                     IID_IPageList  ,
+                     (PPVOID)&amp;pIPageList);
+              if (SUCCEEDED(hr))
+              {
+                // We have a new COPageList object. Now obtain the
+                // IPersistStream interface on it. The client assumes at
+                // this point that PageList COM objects support only the
+                // IPersistStream interface for their persistence.
+                hr = pIPageList-&gt;QueryInterface(
+                       IID_IPersistStream,
+                       (PPVOID)&amp;pIPersistStream);
+                if (SUCCEEDED(hr))
+                {
+                  // And as expected by this client, COPageList supports
+                  // the IPersistStream interface. Now use this interface
+                  // to ask the COPageList object to load the Page List.
+                  hr = pIPersistStream-&gt;Load(pIStream);
+
+                  // Done with IPersistStream for now so release it.
+                  pIPersistStream-&gt;Release();
+                }
+                else
+                  pIPageList-&gt;Release();
+              }
+
+              // Done with the stream for now so release it.
+              pIStream-&gt;Release();
+            }
+          }
+        }
+      }
+      else
+      {
+        // If there was no existing compound file use COM services to
+        // create a new compound file.
+        hr = StgCreateDocfile(
+               pszFile,
+               STGM_CREATE | STGM_DIRECT | STGM_READWRITE
+                 | STGM_SHARE_EXCLUSIVE,
+               0,
+               &amp;pIStorage);
+        if (SUCCEEDED(hr))
+        {
+          // We have created a new compound file. Now store the CLSID of
+          // COPageList.
+          hr = WriteClassStg(pIStorage, m_CidPageList);
+          if (SUCCEEDED(hr))
+          {
+            // Now Create the single 'PageList' stream under the root storage.
+            hr = pIStorage-&gt;CreateStream(
+                   PAGELIST_USTR,
+                   STGM_CREATE | STGM_WRITE | STGM_DIRECT | STGM_SHARE_EXCLUSIVE,
+                   0,
+                   0,
+                   &amp;pIStream);
+            if (SUCCEEDED(hr))
+            {
+              // Now use the Class ID to create a COPageList object. Initially
+              // ask for the IPageList interface.
+              hr = CoCreateInstance(
+                     m_CidPageList,
+                     NULL,
+                     CLSCTX_INPROC_SERVER,
+                     IID_IPageList  ,
+                     (PPVOID)&amp;pIPageList);
+              if (SUCCEEDED(hr))
+              {
+                // We have a new COPageList object. Now obtain the
+                // IPersistStream interface on it. The client assumes at
+                // this point that PageList COM objects support only the
+                // IPersistStream interface for their persistence.
+                hr = pIPageList-&gt;QueryInterface(
+                     IID_IPersistStream,
+                       (PPVOID)&amp;pIPersistStream);
+                if (SUCCEEDED(hr))
+                {
+                  // And as expected by this client, COPageList supports
+                  // the IPersistStream interface. Now use this interface
+                  // to ask the COPageList object to save an empty Page List.
+
+                  // First ask the COPageList object how much space the
+                  // next save would consume and then pre-allocate that
+                  // space in the stream.
+                  hr = pIPersistStream-&gt;GetSizeMax(&amp;uliMaxSize);
+                  if (SUCCEEDED(hr))
+                  {
+                    hr = pIStream-&gt;SetSize(uliMaxSize);
+                    if (SUCCEEDED(hr))
+                    {
+                      // Now save the new Page List into the
+                      // pre-allocated space.
+                      hr = pIPersistStream-&gt;Save(pIStream, TRUE);
+                    }
+                  }
+
+                  // Done with IPersistStream for now so release it.
+                  pIPersistStream-&gt;Release();
+                }
+
+                // Done with the stream for now so release it.
+                pIStream-&gt;Release();
+              }
+            }
+          }
+        }
+      }
+
+      if (SUCCEEDED(hr))
+      {
+        // COPageList is fully created and the page list is
+        // loaded. Assign a copy of COPageList's IPageList
+        // interface for use by the caller.
+        *ppIPageList = pIPageList;
+
+        // For performance, keep the Page List 'Document' file
+        // open (ie, don't release IStorage here) and give the
+        // caller a copy of the IStorage Pointer.
+        *ppIStorage = pIStorage;
+
+        // The page list was loaded and we have a current compound
+        // file name. Copy it for later use in saves and loads.
+        if (bNewFile)
+          lstrcpy(m_szCurFileName, pszFileName);
+      }
+    }
+
+    return (hr);
+  }
+</FONT> </PRE>
+
+<P>
+CPageFile::Load does double duty, either creating a new compound file or
+opening and loading an existing one. The file path name is passed and the
+StgIsStorageFile is called to determine if the file exists and is a valid
+compound file. If the file does not exist or is not a valid compound file,
+Load creates a new file in the same manner as in the New method above. If
+the file does exist, the StgOpenStorage function opens the compound file
+and obtain an IStorage interface pointer to the root storage in the file.
+All the stored elements of a previously saved page list is assumed present
+in the root storage branch. ReadClassStg is called to obtain the CLSID to
+use in creating the persistent COPageList object. The PageList stream is
+opened with the standard IStorage::OpenStream method. CoCreateInstance is
+called to create the persistent COPageList object. With COPageList
+created, the IPageList interface is used to QueryInterface for a pointer
+to the IPersistStream interface. Using the IPersistStream interface on the
+COPageList object, IPersistStream::Load directs the object to load its
+persistent object data from the stream.
+
+<P>
+CPageFile::Save is called in PERCLIEN to save the currently active
+COPageList persistent object. The following is CPageFile::Save from
+PAGEFILE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CPageFile::Save(
+            IStorage* pIStorage,
+            IPageList* pIPageList)
+  {
+    HRESULT hr = E_POINTER;
+    IStream* pIStream;
+    IPersistStream* pIPersistStream;
+
+    if (NULL != pIStorage &amp;&amp; NULL != pIPageList)
+    {
+      // Obtain the IPersistStream interface on the COPageList
+      // COM object.
+      hr = pIPageList-&gt;QueryInterface(
+             IID_IPersistStream,
+             (PPVOID)&amp;pIPersistStream);
+      if (SUCCEEDED(hr))
+      {
+        // Save if the data is dirty (ie, doesn't match file data).
+        if (S_FALSE != pIPersistStream-&gt;IsDirty())
+        {
+          // Use the existing IStorage to Open the single 'PageList' stream
+          // under the root storage.
+          hr = pIStorage-&gt;OpenStream(
+                 PAGELIST_USTR,
+                 0,
+                 STGM_WRITE | STGM_DIRECT | STGM_SHARE_EXCLUSIVE,
+                 0,
+                 &amp;pIStream);
+          if (SUCCEEDED(hr))
+          {
+            // Ask the persistent object to save itself in the stream
+            // and clear the PageList dirty bit.
+            hr = pIPersistStream-&gt;Save(pIStream, TRUE);
+
+            // Done with the stream for now so release it.
+            pIStream-&gt;Release();
+          }
+        }
+
+        // Done with IPersistStream for now so release it.
+        pIPersistStream-&gt;Release();
+      }
+    }
+
+    return (hr);
+  }
+</FONT> </PRE>
+
+<P>
+A pointer to the IStorage interface for the root storage of the currently
+open page list compound file is passed as well as a pointer to the
+IPageList interface for the persistent COPageList object. QueryInterface
+is called on IPageList to obtain a pointer to COPageList's IPersistStream
+interface. IPersistStream::IsDirty then asks the object if it needs to be
+saved. (&quot;Dirty&quot; here means that the object data in RAM does not
+match the data stored on file.) If the object does not need to be saved
+then Save releases IPersistStream and returns without saving. If the
+object does need saving then the IStorage interface is used to open the
+PageList stream. Note that CPageFile holds interface pointers for the
+storage and COPageList but does not retain any stream interface pointers.
+CPageFile freshly opens the stream as needed and closes it when done. With
+the PageList stream open, IPersistStream::Save is called on the COPageList
+persistent object to direct it to save its object data.
+
+<h4>Text Page Persistence (IPersistStreamInit)</h4>
+
+<P>
+You have seen how PERCLIEN uses the IPersistStream interface on the
+persistent COPageList object to load and save the page list. This section
+describes how PERCLIEN uses the IPersistStreamInit interface on the
+persistent COTextPage object to load and save text pages. The following is
+CGuiText::Load from GUITEXT.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CGuiText::Load(void)
+  {
+    HRESULT hr = E_FAIL;
+    IStream* pIStream;
+    IPersistStreamInit* pIPersistStreamInit;
+
+    // Can't do anything without a root storage.
+    if (NULL != m_pIStorage_Root)
+    {
+      // Use the root IStorage to open the existing stream for
+      // this particular Text Page. Load the data for the text page from
+      // the stream. This load internally uses the IPersistStreamInit
+      // features in a COTextPage object that is created and reconstituted
+      // from persistent storage.
+
+      // Open the single stream named by m_wszDataName. It is under
+      // the root storage.
+      hr = m_pIStorage_Root-&gt;OpenStream(
+             m_wszDataName,
+             0,
+             STGM_READWRITE | STGM_DIRECT | STGM_SHARE_EXCLUSIVE,
+             0,
+             &amp;pIStream);
+      if (SUCCEEDED(hr))
+      {
+        // Read the ClassID for the class of Component Objects that can deal
+        // with Text Page data.
+        hr = ReadClassStm(pIStream, &amp;m_CidTextPage);
+        if (SUCCEEDED(hr))
+        {
+          // Now use the obtained Class ID to create a COTextPage
+          // object. Initially ask for the ITextPage interface.
+          hr = CoCreateInstance(
+                 m_CidTextPage,
+                 NULL,
+                 CLSCTX_INPROC_SERVER,
+                 IID_ITextPage,
+                 (PPVOID)&amp;m_pITextPage);
+          if (SUCCEEDED(hr))
+          {
+            // We have a new COTextPage object. Now obtain the
+            // IPersistStreamInit interface on it. At this point in the
+            // client we are assuming that COTextPage uses only the
+            // IPersistStreamInit interface for its persistence.
+            hr = m_pITextPage-&gt;QueryInterface(
+                   IID_IPersistStreamInit,
+                   (PPVOID)&amp;pIPersistStreamInit);
+            if (SUCCEEDED(hr))
+            {
+              // And as expected by this client, COTextPage exposes
+              // the IPersistStreamInit interface. Now use this interface
+              // to ask the COTextPage object to load the Text Page data.
+              hr = pIPersistStreamInit-&gt;Load(pIStream);
+
+              // Done with IPersistStreamInit for now so release it.
+              pIPersistStreamInit-&gt;Release();
+            }
+          }
+        }
+        // Done with the interface held on the stream.
+        pIStream-&gt;Release();
+      }
+      else
+      {
+        // If there was no existing Stream then create a new one.
+        hr = m_pIStorage_Root-&gt;CreateStream(
+               m_wszDataName,
+               STGM_CREATE | STGM_READWRITE | STGM_DIRECT | STGM_SHARE_EXCLUSIVE,
+               0,
+               0,
+               &amp;pIStream);
+        if (SUCCEEDED(hr))
+        {
+          // Write the ClassID of the COTextPage component object class.
+          hr = WriteClassStm(pIStream, m_CidTextPage);
+          if (SUCCEEDED(hr))
+          {
+            // Now use the Class ID to create a COTextPage
+            // object. Initially ask for the ITextPage interface.
+            hr = CoCreateInstance(
+                   m_CidTextPage,
+                   NULL,
+                   CLSCTX_INPROC_SERVER,
+                   IID_ITextPage,
+                   (PPVOID)&amp;m_pITextPage);
+            if (SUCCEEDED(hr))
+            {
+              // We have a new COTextPage object. Now obtain the
+              // IPersistStreamInit interface on it. At this point in the
+              // client we are assuming that COTextPage uses only the
+              // IPersistStreamInit interface for its persistence.
+              hr = m_pITextPage-&gt;QueryInterface(
+                     IID_IPersistStreamInit,
+                     (PPVOID)&amp;pIPersistStreamInit);
+              if (SUCCEEDED(hr))
+              {
+                // And as expected by this client, COTextPage supports
+                // the IPersistStreamInit interface. Now use this interface
+                // to ask the COTextPage object to initialize a new empty
+                // text page. Then save it into the stream.
+                hr = pIPersistStreamInit-&gt;InitNew();
+                if (SUCCEEDED(hr))
+                  hr = pIPersistStreamInit-&gt;Save(pIStream, TRUE);
+
+                // Done with IPersistStreamInit for now so release it.
+                pIPersistStreamInit-&gt;Release();
+              }
+            }
+          }
+
+          // Done with the interface held on the stream.
+          pIStream-&gt;Release();
+
+          if (FAILED(hr))
+            m_pIStorage_Root-&gt;DestroyElement(m_wszDataName);
+        }
+      }
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+Like CPageFile::Load discussed in the preceding section, CGuiText::Load
+does double duty by either creating a new stream for the text page or
+opening and loading an existing one. If the text page stream is present it
+opens and loads from that stream. If the stream is not present, the stream
+is created and an empty text page is written into the stream. Load assumes
+the compound file is already opened and that CGuiText::m_pIStorage_Root
+has the IStorage interface for the file's root storage. Load also assumes
+that when CGuiText was initialized it was given the data name of the
+stream where the text page data is stored. This name is kept in
+CGuiText::m_wszDataName. This name is used to open or create the stream
+for the text page.
+
+<P>
+IStorage::OpenStream is called and if the stream exists, the COM
+ReadClassStm function is called to obtain the CLSID for the server object
+that can handle text page data. This CLSID is then used in a call to the
+COM CoCreateInstance function to create the COTextPage COM object in the
+PERTEXT server. A pointer to the ITextPage interface is initially
+requested. QueryInterface is also called to obtain a pointer to the
+IPersistStreamInit interface on the new COTextPage object.
+IPersistStreamInit::Load is then directs COTextPage to load its persistent
+object data from the opened stream.
+
+<P>
+If IStorage::OpenStream indicates that there is no existing stream with
+the name in m_wszDataName, then IStorage::CreateStream creates a new
+stream of this name. Because this is a new stream, the WriteClassStm COM
+function is called to store the CLSID for the class of components that can
+handle text page data. The COM CoCreateInstance function is called to
+create the COTextPage object in the PERTEXT server. A pointer to the
+ITextPage interface is initially requested. QueryInterface is also called
+to obtain a pointer to the IPersistStreamInit interface on the new
+COTextPage. Because this is an entirely new instance of COTextPage the
+IPersistStreamInit::InitNew method is called to initialize the new
+instance in RAM. With the new instance created, IPersistStreamInit::Save
+is finally used to save an empty text page into the stream. In contrast to
+the IPersistStream implementation used for page lists (described above),
+the InitNew method in IPersistStreamInit adds convenient provisions for
+initializing the new instance of COTextPage.
+
+<P>
+CGuiText::Save is called in PERCLIEN to save a currently active COTextPage
+persistent object. The following is CGuiText::Save from GUITEXT.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CGuiText::Save(void)
+  {
+    HRESULT hr = E_FAIL;
+    HCURSOR hCurWait = LoadCursor(NULL, IDC_WAIT);
+    HCURSOR hCurPrev;
+    INT iTextLength;
+    WCHAR* pwszText;
+    LARGE_INTEGER liSeek;
+    IStream* pIStream;
+    IPersistStreamInit* pIPersistStreamInit;
+
+    if (NULL != m_pIStorage_Root &amp;&amp; NULL != m_pITextPage)
+    {
+      // Change cursor to the hour glass.
+      hCurPrev = SetCursor(hCurWait);
+
+      // Open the single stream named by m_wszDataName. It is under
+      // the root storage.
+      hr = m_pIStorage_Root-&gt;OpenStream(
+             m_wszDataName,
+             0,
+             STGM_READWRITE | STGM_DIRECT | STGM_SHARE_EXCLUSIVE,
+             0,
+             &amp;pIStream);
+      if (SUCCEEDED(hr))
+      {
+        // First ask the edit control how long its text data is.
+        hr = m_pTextWin-&gt;GetLength(&amp;iTextLength);
+        if (SUCCEEDED(hr))
+        {
+          // Allocate some temporary space for the text.
+          pwszText = new WCHAR[iTextLength+4];
+          if (NULL != pwszText)
+          {
+            // Zero the text string.
+            memset(pwszText, 0, (iTextLength+2) * sizeof(WCHAR));
+
+            // Get the text from the the edit control.
+            hr = m_pTextWin-&gt;GetText(pwszText);
+            if (SUCCEEDED(hr))
+            {
+              // Put the text into the COTextPage object.
+              hr = m_pITextPage-&gt;PutText(pwszText, iTextLength);
+              if (SUCCEEDED(hr))
+              {
+                // Clear the TextWin changed flag.
+                m_bChanged = FALSE;
+
+                // Tell the COTextPage object to save itself
+                // (via its IPersistStreamInit interface).
+                hr = m_pITextPage-&gt;QueryInterface(
+                       IID_IPersistStreamInit,
+                       (PPVOID)&amp;pIPersistStreamInit);
+                if (SUCCEEDED(hr))
+                {
+                  // Recue Stream to start of page text data.
+                  LISet32(liSeek, sizeof(CLSID));
+                  hr = pIStream-&gt;Seek(liSeek, STREAM_SEEK_SET, NULL);
+                  if (SUCCEEDED(hr))
+                    hr = pIPersistStreamInit-&gt;Save(pIStream, TRUE);
+
+                  // Done with IPersistStreamInit for now so release it.
+                  pIPersistStreamInit-&gt;Release();
+                }
+              }
+            }
+            // Delete the temporary text buffer.
+            delete [] pwszText;
+          }
+          else
+            hr = E_OUTOFMEMORY;
+        }
+        // Done with the interface held on the stream.
+        pIStream-&gt;Release();
+      }
+
+      // Set Cursor back to what it was.
+      SetCursor(hCurPrev);
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+The stream whose name is kept in CGuiText::m_wszDataName is freshly opened
+and is released at the end. The streams for text pages are not kept open
+but are opened and closed as needed by CGuiText. With the existing stream
+open, CGuiText::Save works with the multi-line edit control to obtain a
+copy of the text of the current text page. The edit control is
+encapsulated in the CTextWin C++ object. A pointer to this object is kept
+in CGuiText::m_pTextWin. The text is obtained from CTextWin and
+ITextPage::PutText is called to put the text into the COTextPage object.
+COTextPage now has the text in RAM. QueryInterface is called to obtain a
+pointer to the IPersistStreamInit interface on the COTextPage object.
+IStream::Seek is called to reset the seek pointer of the stream to its
+start. Finally, IPersistStreamInit::Save is called to direct the
+COTextPage object to save its persistent object data to the stream.
+
+<h4>Drawing Page Persistence (IPersistStorage)</h4>
+
+<P>
+This lesson has now explained how PERCLIEN uses the IPersistStream
+interface on the persistent COPageList object to load and save the page
+list, and how PERCLIEN uses the IPersistStreamInit interface on the
+persistent COTextPage object to load and save text pages. This section
+describes how PERCLIEN uses the IPersistStorage interface on the
+persistent CODrawPage object to load and save drawing pages. The following
+is CGuiDraw::Load from GUIDRAW.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CGuiDraw::Load(void)
+  {
+    HRESULT hr = E_FAIL;
+    IPersistStorage* pIPersistStorage;
+
+    // Can't do anything without a root storage.
+    if (NULL != m_pIStorage_Root)
+    {
+      // Use the root IStorage to open the nested substorage for this
+      // particular DrawPage. Load the drawing data from the substorage.
+      // This load internally uses the IPersistStorage features in a
+      // created CODrawPage object to reconstitute the object from
+      // persistent storage. CODrawPage handles its own persistence that
+      // is client-controlled via its exposed IPersistStorage interface.
+
+      // Open the single storage named by m_wszDataName. It is under
+      // the root storage. The client here is in charge of the underlying
+      // storage that the client asks CODrawPage to use.
+      hr = m_pIStorage_Root-&gt;OpenStorage(
+             m_wszDataName,
+             NULL,
+             STGM_READWRITE | STGM_DIRECT | STGM_SHARE_EXCLUSIVE,
+             NULL,
+             0,
+             &amp;m_pIStorage_Page);
+      if (SUCCEEDED(hr))
+      {
+        // If the storage already exists, read the ClassID for the class of
+        // component objects that can deal with DrawPage data.
+        hr = ReadClassStg(m_pIStorage_Page, &amp;m_CidDrawPage);
+        if (SUCCEEDED(hr))
+        {
+          // Now use the obtained Class ID to create a CODrawPage
+          // object. Initially ask for the IDrawPage interface.
+          hr = CoCreateInstance(
+                 m_CidDrawPage,
+                 NULL,
+                 CLSCTX_INPROC_SERVER,
+                 IID_IDrawPage,
+                 (PPVOID)&amp;m_pIDrawPage);
+          if (SUCCEEDED(hr))
+          {
+            // We have a new CODrawPage object. Now obtain the
+            // IPersistStorage interface on it. At this point in the
+            // client we are assuming that CODrawPage objects use only
+            // the IPersistStorage interface for their persistence.
+            hr = m_pIDrawPage-&gt;QueryInterface(
+                   IID_IPersistStorage,
+                   (PPVOID)&amp;pIPersistStorage);
+            if (SUCCEEDED(hr))
+            {
+              // And as expected by this client, CODrawPage exposes
+              // the IPersistStorage interface. Now use this interface
+              // to ask the CODrawPage object to load the drawing data.
+              hr = pIPersistStorage-&gt;Load(m_pIStorage_Page);
+
+              // Done with IPersistStorage for now so release it.
+              pIPersistStorage-&gt;Release();
+            }
+          }
+        }
+      }
+      else
+      {
+        // If there was no existing page substorage then create a new one.
+        hr = m_pIStorage_Root-&gt;CreateStorage(
+               m_wszDataName,
+               STGM_CREATE | STGM_READWRITE | STGM_DIRECT | STGM_SHARE_EXCLUSIVE,
+               0,
+               0,
+               &amp;m_pIStorage_Page);
+        if (SUCCEEDED(hr))
+        {
+          // Write the ClassID of the CODrawPage component object class.
+          hr = WriteClassStg(m_pIStorage_Page, m_CidDrawPage);
+          if (SUCCEEDED(hr))
+          {
+            // Now use the Class ID to create a CODrawPage
+            // object. Initially ask for the IDrawPage interface.
+            hr = CoCreateInstance(
+                   m_CidDrawPage,
+                   NULL,
+                   CLSCTX_INPROC_SERVER,
+                   IID_IDrawPage,
+                   (PPVOID)&amp;m_pIDrawPage);
+            if (SUCCEEDED(hr))
+            {
+              // We have a new CODrawPage object. Now obtain the
+              // IPersistStorage interface on it. At this point in the
+              // client we are assuming that CODrawPage objects use only
+              // the IPersistStorage interface for their persistence.
+              hr = m_pIDrawPage-&gt;QueryInterface(
+                     IID_IPersistStorage,
+                     (PPVOID)&amp;pIPersistStorage);
+              if (SUCCEEDED(hr))
+              {
+                // And as expected by this client, CODrawPage supports
+                // the IPersistStorage interface. Now use this interface
+                // to ask the CODrawPage object to initialize a new empty
+                // drawing page and save it into the substorage.
+                hr = pIPersistStorage-&gt;InitNew(m_pIStorage_Page);
+
+                // Done with IPersistStorage for now so release it.
+                pIPersistStorage-&gt;Release();
+              }
+            }
+          }
+
+          if (FAILED(hr))
+            m_pIStorage_Page-&gt;DestroyElement(m_wszDataName);
+        }
+      }
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+Like the other load methods above, CGuiDraw::Load does double duty. It
+either creates a new storage for the drawing page or it opens and loads an
+existing one. If the drawing page storage is present, it opens and loads
+from that storage branch. If the storage is not present, the storage is
+created and an empty drawing page is written into the storage. Load
+assumes the compound file is already opened and that
+CGuiDraw::m_pIStorage_Root has the IStorage interface for the file's root
+storage. Load also assumes that when CGuiDraw was initialized it was given
+the data name of the storage where the drawing page data is stored. This
+name is kept in CGuiDraw::m_wszDataName. This name is used to open or
+create the storage for the drawing page.
+
+<P>
+IStorage::OpenStorage is called and if the storage exists, the COM
+ReadClassStg function obtains the CLSID for the server object that can
+handle drawing page data. This CLSID is then used in a call to the COM
+CoCreateInstance function to create the CODrawPage COM object in the
+PERDRAW server. A pointer to the IDrawPage interface is initially
+requested. QueryInterface is also called to obtain a pointer to the
+IPersistStorage interface on the new CODrawPage. IPersistStorage::Load is
+then used to direct CODrawPage to load its persistent object data from the
+opened storage.
+
+<P>
+If IStorage::OpenStorage indicates that there is no existing storage with
+the name in m_wszDataName, then a new storage of this name is created.
+IStorage::CreateStorage is called to perform the creation. Because this is
+a new sub-storage, the WriteClassStg COM function is called to store the
+CLSID for the class of components that can handle drawing page data. The
+COM CoCreateInstance function is called to create the CODrawPage object in
+the PERDRAW server. A pointer to the IDrawPage interface is initially
+requested. QueryInterface is also called to obtain a pointer to the
+IPersistStorage interface on the new CODrawPage. Since this is an entirely
+new instance of CODrawPage the IPersistStorage::InitNew is called to
+initialize the new CODrawPage persistent object. InitNew initializes
+CODrawPage's object data in RAM and also saves this empty drawing to the
+storage.
+
+<P>
+CGuiDraw::Save is called in PERCLIEN to save a currently active CODrawPage
+persistent object. The followin is CGuiDraw::Save from GUIDRAW.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CGuiDraw::Save(
+            void)
+  {
+    HRESULT hr = E_FAIL;
+    HCURSOR hCurWait = LoadCursor(NULL, IDC_WAIT);
+    HCURSOR hCurPrev;
+    IPersistStorage* pIPersistStorage;
+
+    if (NULL != m_pIStorage_Page &amp;&amp; NULL != m_pIDrawPage)
+    {
+      // Change cursor to the hour glass.
+      hCurPrev = SetCursor(hCurWait);
+
+      // Tell the CODrawPage object to save itself
+      // (via its IPersistStorage interface).
+      hr = m_pIDrawPage-&gt;QueryInterface(
+             IID_IPersistStorage,
+             (PPVOID)&amp;pIPersistStorage);
+      if (SUCCEEDED(hr))
+      {
+        // Perform the save with fSameAsLoad==TRUE.
+        hr = pIPersistStorage-&gt;Save(m_pIStorage_Page, TRUE);
+        if (SUCCEEDED(hr))
+        {
+          // This is the general save by the client. In the case of
+          // this application the client does not need to do any other
+          // intermediate save or write operations to the compound file
+          // prior to informing the server that client save operations
+          // are completed.
+          hr = pIPersistStorage-&gt;SaveCompleted(NULL);
+        }
+
+        // Done with IPersistStorage for now so release it.
+        pIPersistStorage-&gt;Release();
+      }
+
+      // Set Cursor back to what it was.
+      SetCursor(hCurPrev);
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+The CGuiDraw object uses the copy of the IDrawPage interface pointer it
+keeps in member m_pIDrawPage to QueryInterface for a pointer to the
+IPersistStorage interface on the CODrawPage object. IPersistStorage::Save
+is called to direct CODrawPage to save its persistent object data to the
+already opened storage (m_pIStorage_Page). Finally,
+IPersistStorage::SaveCompleted is called to complete the save operation.
+Other intervening save or write actions could be performed between the
+Save and the SaveCompleted but are not needed in this application.
+
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

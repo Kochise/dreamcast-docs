@@ -1,0 +1,221 @@
+===========================================================
+           INSIDE OLE BY KRAIG BROCKSCHMIDT
+                    COMPANION DISC
+       COPYRIGHT (C) 1995 BY KRAIG BROCKSCHMIDT
+===========================================================
+
+The MAKEALL.BAT file in the installation directory will
+build all of the programs in the sample tree, copying
+the necessary header files to the INC directory, the necessay
+import libraries to the LIB directory, and the build binaries
+(DLLs, EXE, type libraries) to the BUILD directory.
+
+The root MAKEALL.BAT file simply spawns the MAKEALL.BAT files
+found in each directory.  The latter build file will then
+run NMAKE in each subdirectory for that chapter and will copy
+the resulting files as necessary.  The MAKEALL.BAT files
+redirect all compiler output to a file called ERR.  Each sample
+directory will have its own ERR file, and after the build
+process is complete, BUILD\ERR will contain all the error
+output from all the samples.
+
+The MAKEFILE for each sample program sets a number of options,
+defines dependencies, and pulls in the files INOLE-A.MAK
+and INOLE-B.MAK.  These two files are found in the root
+directory of the sample code installation.
+
+INOLE-A.MAK is the one central location that defines symbols,
+compiler and linker flags, and any other common build variables.
+INOLE-B.MAK, on the other hand, defines the link scripts.
+
+If you type "nmake CLEAN" in any sample directory, the makefile
+will remove all built files from that directory.  To clean an
+entire directory, you can set the CLEAN environment variable
+by typing
+
+    set CLEAN=1
+
+at the command prompt, then running a MAKEALL.BAT file.  If you
+do this in the installation directory of the samples, the makefile
+system will remove all built files, freeing a tremendous amount
+of disk space.
+
+To reinstate the normal build process, type
+
+    set CLEAN=
+
+at the command prompt.
+
+
+NOTE: The make files on this disc are intended to be run from the
+command line with Visual C++.  If you are using another compiler
+then you will need to change the compiler and linker options
+in INOLE-A.MAK and INOLE-B.MAK, and double-check the MAKEFILE
+in each sample directory.
+
+
+
+
+
+
+
+
+                    BUILD OPTIONS
+
+With this build structure you are able to build the samples
+with or without debug, targeted for Win6 or Win32, and targeted
+for Unicode or ANSI character sets when compiling for Win32.
+In additions, some of the samples can compile to both
+Multiple-Document Interface (MDI) and Single-Document Interface
+(SDI) versions.
+
+The default settings will compile Win32 MDI ANSI-character samples
+with debug information.  A full build with these options will
+consume approximately 165MB of disk space; a no-debug build
+will consume about 112MB.  In both cases at least 5MB of extra
+space is necessary for temporary files.  Depending on your
+machine, a build can take up to several hours.
+
+
+
+To create builds without debug information, set the NODEBUG
+environment variable by typing
+
+	SET NODEBUG=1
+
+at the command prompt. To go back to a debug build, type
+
+	SET NODEBUG=
+
+to remove the NODEBUG variable from the environment.
+
+
+To create builds that use SDI instead of MDI, set the SDI
+environment variable by typing
+
+	SET SDI=1
+
+at the command prompt. To go back to MDI programs, type
+
+	SET SDI=
+
+to remove the SDI variable from the environment.  Note that
+you must rebuild the code in the CLASSLIB directory after
+changing this variable and before building any of the COSMO
+or PATRON samples in any other chapter.  The CLASSLIB\MAKEALL.BAT
+file will build a clean version of the CLASSLIB code and copy
+the necessary files into other directories.
+
+
+To create builds for Windows NT that use the Unicode character
+set, set the UNICODE environment variable by typing
+
+    SET UNICODE=1
+
+at the command prompt. To go back to ANSI programs, type
+
+    SET UNICODE=
+
+to remove the UNICODE variable from the environment.  Note that
+you must rebuild the code in both the CLASSLIB and INOLE
+directories after changing this variable, as many other samples
+depend on these core libraries.  So after changing the UNICODE
+variable be sure to run MAKEALL.BAT in both INOLE and CLASSLIB
+directories before attempting to build any other sample again.
+
+
+Finally, if you are running on a 16-bit operating system such
+as Windows 3.1x, set the WIN16 environment variable by typing
+
+    set WIN16=1
+
+at the comment prompt.  Because you'll normally not change this
+variable, it is helpful to include the line in you AUTOEXEC.BAT.
+
+
+For more detailed information about the effects of each of
+these variables, see INOLE-A.MAK.
+
+
+
+
+
+
+
+    HANDLING THE 32-BIT OLE UI LIBRARY
+
+Depending on the versions of Visual C++ and whether or not
+you have a Win32 SDK installed in your system, you may encounter
+compilation errors concerning the files OLEDLG.H and OLEDLG.LIB.
+
+These files are the header and import library for the OLE UI
+Library.  Prior to Windows 95 and Windows NT 3.51, which include
+this library as part of the system itself, the OLE UI Library was
+provided by Visual C++ itself.
+
+If you have the Win32 SDK for Windows 95 and Windows NT 3.51, then
+you should already have the necessary files on your machine.
+
+If you only have Visual C++ 2.0 or 2.1 and do not have the full
+Win32 SDK, then you will not have these files.  In that case you
+need to modify INOLE-A.MAK and INC\INOLE.H to reference the
+Visual C++ versions of these files.
+
+Inside INOLE-A.MAK you'll find this block of statements:
+
+
+    !ifdef UNICODE
+    DEFUNICODE = -DUNICODE -D_UNICODE
+    TLBDEFU    = -DUNICODE
+    UILIB32    = oledlg.lib
+    #UILIB32    = mfcuiw32.lib
+    !else
+    DEFUNICODE = -DWIN32ANSI
+    TLBDEFU    =
+    UILIB32    = oledlg.lib
+    #UILIB32    = mfcuia32.lib
+    !endif
+
+
+Add a "#" comment to the lines containing oledlg.lib and
+remove the "#" comment from the lines containing mfcuiw32.lib
+and mfcuia32.lib.
+
+
+Inside INC\INOLE.H you'll find this block of code:
+
+    #ifdef INC_OLEUI
+    #ifdef WIN32
+    #include <oledlg.h>
+    //#include <ole2ui.h>
+    #else
+    #include <ole2ui.h>
+    #endif
+    #endif
+
+
+Comment out the #include <oledlg.h> and remove the comment
+from #include <ole2ui.h>.
+
+Note that these changes are not encouraged as Windows NT 3.51 is
+a required upgrade for development purposes, and the Win32 SDK
+is necessary to compile this book's samples in their fully
+tested forms.
+
+
+
+
+
+
+
+        THE MIDL COMPILER FROM THE WIN32 SDK
+
+Besides the official system version of the OLE UI Library, the
+Win32 SDK for Windows 95 and Windows NT 3.51 is the only source
+at the time of writing for the Microsoft IDL compiler, known
+as MIDL.  This compiler, as well as various header files and
+import libraries from the Win32 RPC SDK, are only included
+with the full Win32 SDK itself.  Without the SDK you will not
+be able to compile and run several samples from Chapter 6
+and those from Chapter 9.  These samples require MIDL to generate
+custom OLE interfaces upon which these few samples depend.

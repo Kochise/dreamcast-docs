@@ -1,0 +1,1328 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>LICCLIEN COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="licserve.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="marshal.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="LICCLIEN">LICCLIEN - Client Application of Licensed Server</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The LICCLIEN sample examines how a client application uses licensed
+components provided by a COM server. LICCLIEN works with the COM servers
+of two previous samples, LICSERVE and DLLSERVE. It manipulates a set of
+components similar to those presented in DLLCLIEN: COCar, COUtilityCar,
+COLicCruiseCar, and COUtilityCruiseCar. In this lesson, the COCar and
+COUtilityCar components are obtained, as they were in DLLCLIEN, from the
+DLLSERVE server. This sample, however, uses a new licensed version of the
+COCruiseCar component that was presented in DLLSERVE and DLLCLIEN. This
+licensed component, COLicCruiseCar, is housed in a different server,
+LICSERVE.
+
+<P>
+Like DLLCLIEN, LICCLIEN.EXE creates its own COUtilityCruiseCar COM object,
+which is constructed by reusing the licensed COLicCruiseCar COM object by
+aggregation and augmenting it with a native IUtility interface. Because
+the COLicCruiseCar COM object class is a licensed aggregatable component,
+LICCLIEN illustrates nested aggregation involving a licensed component.
+
+<P>
+For functional descriptions and a tutorial code tour of LICCLIEN, see the
+Code Tour section in LICCLIEN.HTM. For details on the external user
+operation of LICCLIEN, see both the Usage and Operation sections in
+LICCLIEN.HTM. To read LICCLIEN.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the LICCLIEN lesson in the table of lessons. You can
+also achieve the same thing by clicking the LICCLIEN.HTM file after
+locating the main tutorial directory in the Windows Explorer. See also
+LICSERVE.HTM in the main tutorial directory for more details on how
+LICSERVE works and exposes its services to LICCLIEN. You must build the
+LICSERVE DLL before building LICCLIEN. The makefile for LICSERVE
+automatically registers that server in the system registry, so you must
+build LICSERVE before attempting to run LICCLIEN.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<p>LICCLIEN.EXE is an application that you can execute directly from
+Windows in the normal manner or from the Command Prompt window. No command
+line parameters are recognized by LICCLIEN.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">
+Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, LICCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="LICCLIEN\LICCLIEN.exe">
+Click here to run LICCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>OPERATION</h3>
+
+<P>
+The LICCLIEN.EXE application provides the user interface for this lesson.
+It exercises the components in the associated, but independent,
+LICSERVE.DLL and DLLSERVE.DLL servers. Here is a summary of operation from
+the standpoint of LICCLIEN.EXE as a COM client of the licensed component
+COLicCruiseCar in the LICSERVE.DLL COM server.
+
+<P>
+The COM objects that are used in the LICCLIEN and LICSERVE code samples
+represent sport utility vehicles. We invent some basic feature sets for
+modeling such car objects. These feature sets are implemented as interfaces
+to COM objects. The ICar interface provides some basic car behavior: Shift,
+Clutch, Speed, and Steer. The IUtility interface provides off-road utility
+systems: Offroad and Winch. The ICruise interface provides automatic cruise
+control facilities: Engage and Adjust.
+
+<P>
+The COCar and COUtilityCar components are constructed and housed in
+servers in the manner presented in the DLLCLIEN and DLLSERVE lessons. A
+COLicCruiseCar component is constructed using aggregation and is
+implemented as a licensed component in LICSERVE.DLL. COUtilityCruiseCar is
+constructed using aggregation and is implemented in LICCLIEN.EXE, which is
+built in this lesson. COUtilityCruiseCar reuses LicCruiseCar by
+aggregation to illustrate nested aggregation of a licensed component.
+
+<P>
+The menu system of LICCLIEN provides functionality similar to that of
+DLLCLIEN. The Car and UtilityCar menu operations are the same as those
+presented in DLLCLIEN and will not be detailed here. We will tour the
+internal operation of the LicCruiseCar and the UtilityCruiseCar menus. To
+simulate behavior when a component is unlicensed, we will also examine some
+changes made to the Log menu.
+
+<P>
+LICCLIEN.EXE provides menus for creating, releasing, and invoking methods
+for four components: COCar, COUtilityCar, COLicCruiseCar, and
+COUtilityCruiseCar. These objects have combinations of the ICar, IUtility,
+and ICruise interfaces. COCar objects expose the ICar interface.
+COUtilityCar objects expose the ICar and IUtility interfaces. COLicCruiseCar
+objects expose the ICar and ICruise interfaces. COUtilityCruiseCar objects
+expose the ICar, ICruise, and IUtility interfaces. As a result, COCar
+objects have only the basic car behavior (ICar). COUtilityCar objects have
+basic car behavior (ICar) with sport utility systems (IUtility).
+COLicCruiseCar objects have basic car behavior (ICar) with an automatic
+cruise control system (ICruise). COUtilityCruiseCar objects have basic car
+behavior (ICar), a cruise control system (ICruise), and a sport utility
+system (IUtility).
+
+<P>
+LICCLIEN.EXE presents a menu for each of these four main components. Each
+menu has commands that call the methods of the various available interfaces.
+The code samples (both LICCLIEN and LICSERVE) have trace message log
+statements throughout. When you exercise the objects from LICCLIEN.EXE, the
+main LICCLIEN window will display a log of internal activity in these
+components and their servers.
+
+<p>Menu Selection: File/Exit<br>
+Exits LICCLIEN.
+
+<p>Menu Selection: Car/Create<br>
+Creates a COCar COM object. A checkmark beside the menu item indicates that
+there is already an instance of the object.
+
+<p>Menu Selection: Car/Release<br>
+Releases the COCar COM object.
+
+<p>Menu Selection: Car/ICar::Shift<br>
+Calls the ICar::Shift method on the COCar object.
+
+<p>Menu Selection: Car/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COCar object.
+
+<p>Menu Selection: Car/ICar::Speed<br>
+Calls the ICar::Speed method on the COCar object.
+
+<p>Menu Selection: Car/ICar::Steer<br>
+Calls the ICar::Steer method on the COCar object.
+
+<p>Menu Selection: UtilityCar/Create<br>
+Creates the COUtilityCar COM object. A checkmark beside the menu item
+indicates that there is already an instance of the object.
+
+<p>Menu Selection: UtilityCar/Release<br>
+Releases the COUtilityCar COM object.
+
+<p>Menu Selection: UtilityCar/ICar::Shift<br>
+Calls the ICar::Shift method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/ICar::Speed<br>
+Calls the ICar::Speed method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/ICar::Steer<br>
+Calls the ICar::Steer method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/IUtility::Offroad<br>
+Calls the IUtility::Offroad method on the COUtilityCar object.
+
+<p>Menu Selection: UtilityCar/IUtility::Winch<br>
+Calls the IUtility::Winch method on the COUtilityCar object.
+
+<p>Menu Selection: LicCruiseCar/Create<br>
+Creates the COLicCruiseCar COM object. A checkmark beside the menu item
+indicates that there is already an instance of the object.
+
+<p>Menu Selection: LicCruiseCar/Release<br>
+Releases the COLicCruiseCar COM object.
+
+<p>Menu Selection: LicCruiseCar/ICar::Shift<br>
+Calls the ICar::Shift method on the COLicCruiseCar object.
+
+<p>Menu Selection: LicCruiseCar/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COLicCruiseCar object.
+
+<p>Menu Selection: LicCruiseCar/ICar::Speed<br>
+Calls the ICar::Speed method on the COLicCruiseCar object.
+
+<p>Menu Selection: LicCruiseCar/ICar::Steer<br>
+Calls the ICar::Steer method on the COLicCruiseCar object.
+
+<p>Menu Selection: LicCruiseCar/ICruise::Engage<br>
+Calls the ICruise::Engage method on the COLicCruiseCar object.
+
+<p>Menu Selection: LicCruiseCar/ICruise::Adjust<br>
+Calls the ICruise::Adjust method on the COLicCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/Get License Key<br>
+Calls the IClassFactory2::RequestLicKey method to obtain the internal
+license key string for the COLicCruiseCar component and stores the key
+obtained as a run-time license key for later use by the client. A checkmark
+beside the menu item indicates that the key has already been obtained.
+
+<p>Menu Selection: UtilityCruiseCar/Clear License Key<br>
+Clears the run-time license key string obtained for the COLicCruiseCar
+component.
+
+<p>Menu Selection: UtilityCruiseCar/Create with Key<br>
+Creates the COUtilityCruiseCar COM object using the run-time license key
+obtained previously for the aggregated LicCruiseCar COM object. A checkmark
+beside the menu item indicates that there is already an instance of the
+object.
+
+<p>Menu Selection: UtilityCruiseCar/Release<br>
+Releases the COUtilityCruiseCar COM object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Shift<br>
+Calls the ICar::Shift method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Clutch<br>
+Calls the ICar::Clutch method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Speed<br>
+Calls the ICar::Speed method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICar::Steer<br>
+Calls the ICar::Steer method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICruise::Engage<br>
+Calls the ICruise::Engage method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/ICruise::Adjust<br>
+Calls the ICruise::Adjust method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/IUtility::Offroad<br>
+Calls the IUtility::Offroad method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: UtilityCruiseCar/IUtility::Winch<br>
+Calls the IUtility::Winch method on the COUtilityCruiseCar object.
+
+<p>Menu Selection: Log/Clear<br>
+Clears the trace message log display.
+
+<p>Menu Selection: Log/Lic Server<br>
+Engages or disengages trace logging from the LICSERVE server. A checkmark
+beside the menu item indicates that logging from the LICSERVE server is
+engaged. If logging is active, the server is loaded, because the
+COLicCarSample component must be created to support logging.
+
+<p>Menu Selection: Loc/Dll Server<br>
+Engages or disengages trace logging from the DLLSERVE server. A checkmark
+beside the menu item indicates that logging from the DLLSERVE server is
+engaged. If logging is active, the server is loaded, because the
+DllCarSample component must be created to support logging.
+
+<p>Menu Selection: Log/Logging<br>
+Toggles the trace message logging facility on or off. A checkmark beside
+the menu item indicates that logging is on. Logging can be engaged but
+simply turned on or off. Unchecking this command turns the trace message
+logging facility off but does not disengage the logging mechanisms.
+
+<p>Menu Selection: Log/Copy<br>
+Copies the current contents of the trace message log to the Windows
+Clipboard.
+
+<P>
+Menu Selection: Help/LICCLIEN Tutorial<br>
+Opens the LICCLIEN.HTM tutorial file in the Web browser.
+
+<P>
+Menu Selection: Help/LICSERVE Tutorial<br>
+Opens the LICSERVE.HTM tutorial file in the Web browser.
+
+<P>
+Menu Selection: Help/DLLSERVE Tutorial<br>
+Opens the DLLSERVE.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/Read Source File<br>
+Displays the Open common dialog box so you can open a source file from this
+lesson or another one in the Windows Notepad.
+
+<p>Menu Selection: Help/About LICCLIEN<br>
+Displays the About dialog box for this application, a standard part of
+this series of code samples. The code illustrates how to program the use
+of the CAboutBox class provided by APPUTIL.LIB.
+
+<p>Menu Selection: Help/About LICSERVE<br>
+Displays the About dialog box for LICSERVE.DLL, which is used by this
+application. In this series of code samples, partner DLLs like LICSERVE
+are given their own About dialog box in the native resources of the DLL.
+This menu item calls the DLL function that displays this dialog box.
+
+<p>Menu Selection: Help/About DLLSERVE<br>
+Displays the About dialog box for DLLSERVE.DLL, which is used by this
+application. In this series of code samples, partner DLLs like DLLSERVE are
+given their own About dialog box in the native resources of the DLL. This
+menu item calls the DLL function that displays this dialog box.<br>
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files          Description</u>
+LICCLIEN.TXT   Short sample description.
+MAKEFILE       The generic makefile for building the code sample application
+               of this tutorial lesson.
+LICCLIEN.H     The include file for the LICCLIEN application. Contains
+               class declarations, function prototypes, and resource
+               identifiers.
+LICCLIEN.CPP   The main implementation file for LICCLIEN.EXE. Has WinMain
+               and CMainWindow implementation, as well as the main menu
+               dispatching.
+LICCLIEN.RC    The application resource definition file.
+LICCLIEN.ICO   The application icon resource.
+UTCRUCAR.H     The class declaration for the COUtilityCruiseCar COM object.
+UTCRUCAR.CPP   Implementation file for the COUtilityCruiseCar COM object.
+               Also has the definition of the CreateUtilityCruiseCar
+               function.
+ </FONT> </PRE>
+
+<P>
+This code sample is based on the code in DLLCLIEN, which is based on the
+code in COMUSER, which is based on the code in DLLUSER, which in turn is
+based on the code in EXESKEL. See the code tours in those samples for more
+details on using the application skeleton and the DLLs.
+
+<P>
+LICCLIEN uses many of the utility classes and services provided by
+APPUTIL. For more details on APPUTIL, study the APPUTIL library source
+code in the sibling APPUTIL directory and APPUTIL.HTM in the main tutorial
+directory.
+
+<P>
+LICCLIEN illustrates what must be done in the client application to use a
+licensed component from a COM server. We will use LICCLIEN to demonstrate
+the use of licensed and unlicensed components, and we will examine trace
+logs of internal activity in various situations.
+
+<P>
+We start in LICCLIEN.CPP. The following files are included, one of which
+is new for this code sample.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  #include &lt;windows.h&gt;
+  #include &lt;ole2.h&gt;
+  #include &lt;initguid.h&gt;
+  #include &lt;olectl.h&gt;
+  #include &lt;commdlg.h&gt;
+  #include &lt;apputil.h&gt;
+  #include &lt;icars.h&gt;
+  #include &lt;carguids.h&gt;
+  #include &quot;licclien.h&quot;
+  #include &quot;utcrucar.h&quot;
+ </FONT> </PRE>
+
+<P>
+Because this module is going to implement IClassFactory2, we must make
+appropriate declarations by including OLECTL.H. This file should be
+included after OLE2.H and INITGUID.H. OLECTL.H was not part of early
+releases of the Platform SDK, but instead was part of the Control
+Development Kit (CDK). In recent releases, OLECTL.H is part of the
+Platform SDK.
+
+<P>
+As in the previous DLLCLIEN code sample, we include ICARS.H, located in
+the sibling \INC directory, to get the car-related interface abstract base
+class declarations. We include CARGUIDS.H, also located in the sibling
+\INC directory, for the associated GUID definitions and the CLSIDs for the
+car-related component types (CLSID_DllCar, CLSID_DllUtilityCar,
+CLSID_LicCruiseCar, CLSID_LicCarSample, and CLSID_DllCarSample).
+
+<P>
+The LICCLIEN application's InitInstance method has some interesting points.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  BOOL CMainWindow::InitInstance(
+         HINSTANCE hInstance,
+         int nCmdShow)
+  {
+    BOOL bOk = FALSE;
+    HWND hWnd;
+
+    // Create the Message Box and Message Log objects.
+    m_pMsgBox = new CMsgBox;
+    m_pMsgLog = new CMsgLog;
+
+    if (NULL != m_pMsgBox &amp;&amp; NULL != m_pMsgLog)
+    {
+      // Note, the Create method sets the m_hWnd member so we don't
+      // need to set it explicitly here first.
+
+      // Here is the create of this window. Size the window reasonably.
+      // Create sets both m_hInst and m_hWnd.
+      hWnd = Create(
+               TEXT(MAIN_WINDOW_CLASS_NAME_STR),
+               TEXT(MAIN_WINDOW_TITLE_STR),
+               WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX
+                 | WS_MAXIMIZEBOX | WS_THICKFRAME,
+               CW_USEDEFAULT,
+               CW_USEDEFAULT,
+               ::GetSystemMetrics(SM_CXSCREEN)*3/5,
+               ::GetSystemMetrics(SM_CYSCREEN)*3/5,
+               NULL,
+               NULL,
+               hInstance);
+      if (hWnd)
+      {
+        // Ensure the new window is shown on screen and its content is
+        // painted.
+        ::ShowWindow(m_hWnd, nCmdShow);
+        ::UpdateWindow(m_hWnd);
+
+        // Build a path to where the help file should be (it should be in
+        // the same directory as the .EXE but with the .HLP extension.
+        MakeFamilyPath(hInstance, m_szHelpFile, TEXT(HELP_FILE_EXT));
+
+        // Init the Message Box object.
+        if (m_pMsgBox-&gt;Init(m_hInst, m_hWnd))
+        {
+          // Create the Trace Message Log ListBox as a child window that
+          //   fits the client area of the Main Window (the TRUE 3rd
+          //   argument specifies such an inside child).
+          // If you want the Trace Message Log in a separate (but owned)
+          //   window, then pass a FALSE instead for the 3rd argument.
+          if (m_pMsgLog-&gt;Create(m_hInst, m_hWnd, TRUE))
+          {
+            HRESULT hr;
+
+            // Assign the global MsgLog pointer.
+            g_pMsgLog = m_pMsgLog;
+            // Use macro to log an initial start messsage.
+            LOGID(IDS_START_MESSAGE_LOG);
+
+            LOG(&quot;C: Start LICSERVE Server Trace Logging.&quot;);
+            // Now ask COM for the ISample interface to the server's
+            // LicCarSample component.  This effectively loads the
+            // LICSERVE DLL.
+            hr = CoCreateInstance(
+                   CLSID_LicCarSample,
+                   NULL,
+                   CLSCTX_INPROC_SERVER,
+                   IID_ISample,
+                   (PPVOID)&amp;m_pLicCarSample);
+            if (SUCCEEDED(hr))
+            {
+              hr = m_pLicCarSample-&gt;Init(m_hWnd, g_pMsgLog);
+              if (SUCCEEDED(hr))
+              {
+                HMENU hMenu  = ::GetMenu(m_hWnd);
+
+                ::CheckMenuItem(
+                    hMenu,
+                    IDM_LOG_LICSERVER,
+                    MF_BYCOMMAND | MF_CHECKED);
+
+                LOG(&quot;C: Start DLLSERVE Server Trace Logging.&quot;);
+                // Also set up logging from the subordinate DLLSERVE server
+                // to the client as well.
+                hr = CoCreateInstance(
+                       CLSID_DllCarSample,
+                       NULL,
+                       CLSCTX_INPROC_SERVER,
+                       IID_ISample,
+                       (PPVOID)&amp;m_pDllCarSample);
+                if (SUCCEEDED(hr))
+                {
+                  hr = m_pDllCarSample-&gt;Init(m_hWnd, g_pMsgLog);
+                  bOk = SUCCEEDED(hr);
+                  if (bOk)
+                  {
+                    ::CheckMenuItem(
+                        hMenu,
+                        IDM_LOG_DLLSERVER,
+                        MF_BYCOMMAND | MF_CHECKED);
+                  }
+                  else
+                  {
+                     RELEASE_INTERFACE(m_pDllCarSample);
+                     // We ask COM to unload any unused COM Servers.
+                     CoFreeUnusedLibraries();
+                  }
+                }
+                else
+                  m_pMsgBox-&gt;ErrorID(IDS_NODLLSERVER);
+              }
+              else
+              {
+                RELEASE_INTERFACE(m_pLicCarSample);
+                // We ask COM to unload any unused COM Servers.
+                CoFreeUnusedLibraries();
+              }
+            }
+            else
+              m_pMsgBox-&gt;ErrorID(IDS_NOLICSERVER);
+          }
+        }
+      }
+    }
+
+    if (!bOk)
+    {
+      DELETE_POINTER(m_pMsgBox);
+      DELETE_POINTER(m_pMsgLog);
+    }
+
+    return (bOk);
+  }
+ </FONT> </PRE>
+
+<P>
+After the CMainWindow is created and the MsgBox facility is initialized,
+trace logging is set up for two servers using their respective CarSample
+components, LicCarSample and DllCarSample. We store pointers to the
+ISample interfaces on these components in the corresponding CMainWindow
+member variables, m_pLicCarSample and m_pDllCarSample. The ISample::Init
+methods are then called to set up logging from those servers to this
+client's logging display. The g_pMsgLog value is passed in the calls to
+Init. By creating these CarSample components as COM object instances, the
+LICSERVE and DLLSERVE servers are loaded early during execution of the
+InitInstance method. This is similar to the behavior of DLLCLIEN; however,
+in this lesson we'll have reason to force these servers to be unloaded.
+More on this later, when we look at the new selections in the Log menu.
+
+<P>
+The CMainWindow::DoMenu method in LICCLIEN.CPP contains the code for the
+Car and UtilityCar menus. This code is identical to the corresponding
+menu code in DLLCLIEN and in fact operates identically, because it
+exercises components in DLLSERVE. The LicCruiseCar menu code takes the
+same form as the code for the CruiseCar menu in DLLCLIEN, but when
+CoCreateInstance is called, the class factory for the LicCruiseCar
+component in the LICSERVE server is invoked.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ...
+  ...
+  // Call COM service to create an instance.
+  hr = CoCreateInstance(
+         CLSID_LicCruiseCar,
+         NULL,
+         CLSCTX_INPROC_SERVER,
+         IID_IUnknown,
+         (PPVOID)&amp;m_pLicCruiseCar);
+  if (SUCCEEDED(hr))
+  {
+    ::CheckMenuItem(
+        hMenu,
+        IDM_CCAR_CREATE,
+        MF_BYCOMMAND | MF_CHECKED);
+  }
+  else
+  {
+    LOG(&quot;C: ???? LicCruiseCar creation failed.&quot;);
+    if (CLASS_E_NOTLICENSED == hr)
+      m_pMsgBox-&gt;ErrorID(IDS_NOLICENSE);
+  }
+  ...
+  ...
+ </FONT> </PRE>
+
+<P>
+Though this code looks the same in LICCLIEN as it did in DLLCLIEN, the
+server code that it executes is different. The LicCruiseCar class factory
+in LICSERVE implements IClassFactory2, not IClassFactory. The
+CoCreateInstance function will therefore call
+IClassFactory2::CreateInstance to check for a valid machine license. If
+the LICSERVE server did not detect a valid machine license on
+initialization, the CoCreateInstance call in LICCLIEN would fail,
+returning CLASS_E_NOTLICENSED, and an error message would be displayed to
+indicate that the requested component is not licensed.
+
+<P>
+The UtilityCruiseCar menu has several new menu items: Get License Key,
+Clear License Key, and Create with Key. The license key being used here
+controls creation of the COLicCruiseCar component and not the
+COUtilityCruiseCar object itself. The COUtilityCruiseCar COM object is
+created in this client as an object that aggregates the COLicCruiseCar
+component provided by the LICSERVE server. We will look at each of these
+menu items in turn. Here is Get License Key:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  case IDM_UCRU_GETLICKEY:
+    LOG(&quot;C: === UtilityCruiseCar Menu: Get License Key.&quot;);
+    // Get a class factory for LicCruiseCar and issue IClassFactory's
+    // CreateInstance method to manufacture a COLicCruiseCar COM object.
+    hr = CoGetClassObject(
+           CLSID_LicCruiseCar,
+           CLSCTX_INPROC_SERVER,
+           NULL,
+           IID_IClassFactory2,
+           (PPVOID)&amp;pICF2LicCruiseCar);
+    if (SUCCEEDED(hr))
+    {
+      LOG(&quot;C: LicCruiseCar's IClassFactory2 obtained.&quot;);
+      hr = pICF2LicCruiseCar-&gt;RequestLicKey(0, &amp;m_bstrLicKey);
+      pICF2LicCruiseCar-&gt;Release();
+    }
+
+    if (SUCCEEDED(hr))
+    {
+      LOG(&quot;C: Obtained LicCruiseCar's Runtime License Key.&quot;);
+      ::CheckMenuItem(
+          hMenu,
+          IDM_UCRU_GETLICKEY,
+          MF_BYCOMMAND | MF_CHECKED);
+    }
+    else
+      LOG(&quot;C: Failed to Obtain LicCruiseCar's Runtime License Key.&quot;);
+    break;
+ </FONT> </PRE>
+
+<P>
+The CoGetClassObject COM API function obtains the IClassFactory2 interface
+on the class factory for the COLicCruiseCar component. This class factory
+resides in the LICSERVE server. Upon obtaining the interface, we call the
+IClassFactory2::RequestLicKey method to obtain the license key. We cache
+this license key string for later use by the
+IClassFactory2::CreateInstanceLic method.
+
+<P>
+The Clear License Key on the UtilityCruiseCar menu simply frees the string
+that was obtained above.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  case IDM_UCRU_CLEARLICKEY:
+    LOG(&quot;C: === UtilityCruiseCar Menu: Clear License Key.&quot;);
+    SysFreeString(m_bstrLicKey);
+    m_bstrLicKey = NULL;
+    ::CheckMenuItem(
+        hMenu,
+        IDM_UCRU_GETLICKEY,
+        MF_BYCOMMAND | MF_UNCHECKED);
+    break;
+ </FONT> </PRE>
+
+<P>
+The Create with Key menu item passes the license key string to the
+CreateUtilityCruiseCar function. If creation fails because the string
+does not match the internal license key string (the function returns
+CLASS_E_NOTLICENSED), an error message is displayed, indicating that an
+attempt was made to use a component (in this case the LicCruiseCar
+component) that does not have a run-time license.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  case IDM_UCRU_CREATE:
+    LOG(&quot;C: === UtilityCruiseCar Menu: Create with Key.&quot;);
+    if (NULL == m_pUtilityCruiseCar)
+    {
+      // Call a create function to create an instance.
+      hr = CreateUtilityCruiseCar(
+             NULL,
+             IID_IUnknown,
+             m_bstrLicKey,
+             (PPVOID)&amp;m_pUtilityCruiseCar);
+      if (SUCCEEDED(hr))
+      {
+        ::CheckMenuItem(
+            hMenu,
+            IDM_UCRU_CREATE,
+            MF_BYCOMMAND | MF_CHECKED);
+      }
+      else
+      {
+        LOG(&quot;C: ???? UtilityCruiseCar creation failed.&quot;);
+        if (CLASS_E_NOTLICENSED == hr)
+          m_pMsgBox-&gt;ErrorID(IDS_NORUNLICENSE);
+      }
+    }
+    else
+      LOG(&quot;C: ???? UtilityCruiseCar already exists.&quot;);
+    break;
+ </FONT> </PRE>
+
+<p>Here is the CreateUtilityCruiseCar function from UTCRUCAR.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CreateUtilityCruiseCar(
+            IUnknown* pUnkOuter,
+            REFIID riid,
+            BSTR bstrLicKey,
+            PPVOID ppv)
+  {
+    HRESULT hr;
+    COUtilityCruiseCar* pCob;
+
+    LOGF1(&quot;C: CreateUtilityCruiseCar. pUnkOuter=0x%X.&quot;,pUnkOuter);
+
+    // If the creation call is requesting aggregation (pUnkOuter != NULL),
+    // the COM rules state the IUnknown interface MUST also be concomitantly
+    // requested. If it is not so requested ( riid != IID_IUnknown), then
+    // an error must be returned indicating that no aggregate creation of
+    // the COUtilityCruiseCar COM Object can be performed using anything
+    // other than a controlling IUnknown interface.
+    if (NULL != pUnkOuter &amp;&amp; riid != IID_IUnknown)
+      hr = CLASS_E_NOAGGREGATION;
+    else
+    {
+      // Instantiate a COUtilityCruiseCar COM Object.
+      pCob = new COUtilityCruiseCar(pUnkOuter);
+      if (NULL != pCob)
+      {
+        // If we have succeeded in instantiating the COUtilityCruiseCar
+        // object, we initialize it to offer its interfaces.
+        hr = pCob-&gt;Init(bstrLicKey);
+        if (SUCCEEDED(hr))
+        {
+          // We QueryInterface this new COM Object not only to deposit the
+          // main interface pointer to the caller's pointer variable, but to
+          // also automatically bump the Reference Count on the new COM
+          // Object after handing out this *ppv reference to it.
+          hr = pCob-&gt;QueryInterface(riid, (PPVOID)ppv);
+        }
+      }
+      else
+        hr = E_OUTOFMEMORY;
+    }
+
+    if (SUCCEEDED(hr))
+    {
+      LOGF1(&quot;C: CreateUtilityCruiseCar Succeeded. *ppv=0x%X.&quot;,*ppv);
+    }
+    else
+    {
+      LOG(&quot;C: CreateUtilityCruiseCar Failed.&quot;);
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+This function accepts the run-time license key string (bstrLicKey) and
+passes it to the Init method of the newly created COUtilityCruiseCar COM
+object. The Init method is usually called when inner COM objects are
+reused to create the COM object. Here is the COUtilityCruiseCar::Init
+method from UTCRUCAR.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT COUtilityCruiseCar::Init(
+            BSTR bstrLicKey)
+  {
+    HRESULT hr;
+    IClassFactory2* pICF2LicCruiseCar;
+
+    // Set up the right pIUnknown for delegation. If we are being
+    // aggregated, then we pass the pUnkOuter in turn to any COM objects
+    // that we are aggregating. m_pUnkOuter was set in the Constructor.
+    IUnknown* pUnkOuter = (NULL == m_pUnkOuter) ? this : m_pUnkOuter;
+
+    LOG(&quot;C: COUtilityCruiseCar::Init.&quot;);
+
+    // Get a class factory for LicCruiseCar and issue IClassFactory's
+    // CreateInstance method to manufacture a COLicCruiseCar COM object.
+    hr = CoGetClassObject(
+           CLSID_LicCruiseCar,
+           CLSCTX_INPROC_SERVER,
+           NULL,
+           IID_IClassFactory2,
+           (PPVOID)&amp;pICF2LicCruiseCar);
+    if (SUCCEEDED(hr))
+    {
+      LOG(&quot;C: COUtilityCruiseCar::Init IClassFactory2 obtained.&quot;);
+      hr = pICF2LicCruiseCar-&gt;CreateInstanceLic(
+                                pUnkOuter,
+                                NULL,
+                                IID_IUnknown,
+                                bstrLicKey,
+                                (PPVOID)&amp;m_pUnkCruiseCar);
+      pICF2LicCruiseCar-&gt;Release();
+
+      if (SUCCEEDED(hr))
+      {
+        LOG(&quot;C: COUtilityCruiseCar::Init Created using License Key.&quot;);
+      }
+      else
+      {
+        LOG(&quot;C: COUtilityCruiseCar::Init Unable to Create LicCruiseCar.&quot;);
+      }
+    }
+
+    return (hr);
+  }
+ </FONT> </PRE>
+
+<P>
+The COUtilityCruiseCar object is made by creating and aggregating a
+LicCruiseCar component. Why aggregation? Because the CreateUtilityCruiseCar
+function that was called in the code for the Create with Key command passed
+a NULL for the first pUnkOuter argument. That NULL pointer was eventually
+passed to this Init method, where the logic assigns to pUnkOuter the 'this'
+pointer of the COUtilityCruiseCar object itself. This pUnkOuter is then
+passed to the CreateInstanceLic method. The CoGetClassObject COM API
+function is called to obtain the IClassFactory2 interface of the class
+factory for CLSID_LicCruiseCar. The CreateInstanceLic method of this
+interface is then called to create the aggregated COLicCruiseCar COM object.
+At this point, we don't really need to know that the LICSERVE server
+provides this COLicCruiseCar object.
+
+<P>
+We are now ready to tour some trace logs of internal behavior. This lesson
+demonstrates two kinds of licensing behavior. The first creates a
+machine-licensed component by calling the IClassFactory::CreateInstance
+method. We saw in the code above that the class factory for COLicCruiseCar
+implements IClassFactory2, whose CreateInstance method can create a
+component only if the server has found a valid machine license.
+
+<P>
+The second acquires a run-time license and later uses it to create a
+COUtilityCruiseCar component. We'll look at both licensing scenarios
+internally in the following trace logs.
+
+<P>
+Here is the trace for the Create command on the LicCruiseCar menu:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === LicCruiseCar Menu: Create.
+  P: DllGetClassObject: Requesting CFLicCruiseCar.
+  P: CFLicCruiseCar::CImpIClassFactory Constructor. Non-Aggregating.
+  P: CFLicCruiseCar Constructor. m_pUnkOuter=0x0.
+  P: CServer::ObjectsUp. New cObjects=2.
+  P: CFLicCruiseCar::QueryInterface. pIClassFactory returned.
+  P: CFLicCruiseCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  P: CFLicCruiseCar::AddRef. New cRefs=1.
+  P: CFLicCruiseCar::CImpIClassFactory::CreateInstance. pUnkOuter=0x0.
+  P: CFLicCruiseCar::CreatLicCruiseCar. pUnkOuter=0x0.
+  P: COLicCruiseCar::CImpICruise Constructor. Non-Aggregating.
+  P: COLicCruiseCar Constructor. m_pUnkOuter=0x0.
+  P: CServer::ObjectsUp. New cObjects=3.
+  P: COLicCruiseCar::Init.
+  S: DllGetClassObject: Requesting CFCar.
+  S: CFCar::CImpIClassFactory Constructor. Non-Aggregating.
+  S: CFCar Constructor. m_pUnkOuter=0x0.
+  S: CServer::ObjectsUp. New cObjects=2.
+  S: CFCar::QueryInterface. pIClassFactory returned.
+  S: CFCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  S: CFCar::AddRef. New cRefs=1.
+  S: CFCar::CImpIClassFactory::CreateInstance. pUnkOuter=0x66091C.
+  S: COCar::CImpICar Constructor. Aggregating.
+  S: COCar Constructor. m_pUnkOuter=0x66091C.
+  S: CServer::ObjectsUp. New cObjects=3.
+  S: COCar::QueryInterface. 'this' pIUnknown returned.
+  S: COCar::AddRef. New cRefs=1.
+  S: CFCar::CImpIClassFactory::CreateInstance Succeeded. *ppv=0x66096C.
+  S: CFCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  S: CFCar::Release. New cRefs=0.
+  S: CServer::ObjectsDown. New cObjects=2.
+  S: CFCar::Destructor.
+  S: CFCar::CImpIClassFactory Destructor.
+  P: COLicCruiseCar::Init (New Aggregation of COCar) Succeeded.
+  P: COLicCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  P: COLicCruiseCar::AddRef. New cRefs=1.
+  P: CFLicCruiseCar::CreateLicCruiseCar Succeeded. *ppv=0x66091C.
+  P: CFLicCruiseCar::CImpIClassFactory::CreateInstance Success. *ppv=0x66091C.
+  P: CFLicCruiseCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  P: CFLicCruiseCar::Release. New cRefs=0.
+  P: CServer::ObjectsDown. New cObjects=2.
+  P: CFLicCruiseCar::Destructor.
+  P: CFLicCruiseCar::CImpIClassFactory Destructor.
+ </FONT> </PRE>
+
+<P>
+First, notice the new 'P:' indicator. Because we're using nested aggregated
+components from two different servers, we use a different trace log code for
+each server: 'S:' for behavior inside DLLSERVE and 'P:' for behavior inside
+the protected LICSERVE. As in previous trace logs, we retain the 'C:' for
+behavior in the Client.
+
+<P>
+We'll break this trace sequence into pieces for easier reading:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === LicCruiseCar Menu: Create.
+  P: DllGetClassObject: Requesting CFLicCruiseCar.
+  P: CFLicCruiseCar::CImpIClassFactory Constructor. Non-Aggregating.
+  P: CFLicCruiseCar Constructor. m_pUnkOuter=0x0.
+  P: CServer::ObjectsUp. New cObjects=2.
+  P: CFLicCruiseCar::QueryInterface. pIClassFactory returned.
+  P: CFLicCruiseCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  P: CFLicCruiseCar::AddRef. New cRefs=1.
+ </FONT> </PRE>
+
+<P>
+When the client calls CoGetClassObject, the COM implementation locates
+the server for the class factory and asks the server (using the server's
+DllGetClassObject function) for the IClassFactory interface to the class
+factory. In this case, we see the LICSERVE log event indicating that the
+CFLicCruiseCar factory is requested. This means that LICSERVE is loaded.
+The constructors of both the new CFLicCruiseCar COM object and its nested
+implementation of the IClassFactory interface are executed. The CServe
+server control object for LICSERVE increments its object count to 2.
+This counts the LicCarSample object that supports logging and the new
+CFLicCruiseCar COM object. As the CFLicCruiseCar COM object is created,
+we see the QueryInterface call on the requested output pointer
+(pIClassFactory) and the resultant call to AddRef on that pointer.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  P: CFLicCruiseCar::CImpIClassFactory::CreateInstance. pUnkOuter=0x0.
+  P: CFLicCruiseCar::CreateLicCruiseCar. pUnkOuter=0x0.
+  P: COLicCruiseCar::CImpICruise Constructor. Non-Aggregating.
+  P: COLicCruiseCar Constructor. m_pUnkOuter=0x0.
+  P: CServer::ObjectsUp. New cObjects=3.
+ </FONT> </PRE>
+
+<P>
+Next, COM calls CreateInstance on the IClassFactory interface. This
+results in an unconditional call to CreateLicCruiseCar. We saw in the
+LICSERVE lesson that the class factory for COLicCruiseCar took licensing
+into account, and calls to its CreateInstance method would succeed only if
+the machine license was verified. In this example, creation is successful,
+because a valid machine license was found when LICSERVE was initially
+loaded.
+
+<P>
+The CreateLicCruiseCar method proceeds, and the constructors for the
+COLicCruiseCar COM object are executed. The LICSERVE server increments
+its object count to 3.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  P: COLicCruiseCar::Init.
+  S: DllGetClassObject: Requesting CFCar.
+  S: CFCar::CImpIClassFactory Constructor. Non-Aggregating.
+  S: CFCar Constructor. m_pUnkOuter=0x0.
+  S: CServer::ObjectsUp. New cObjects=2.
+  S: CFCar::QueryInterface. pIClassFactory returned.
+  S: CFCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  S: CFCar::AddRef. New cRefs=1.
+ </FONT> </PRE>
+
+<P>
+Because COLicCruiseCar aggregates a COCar object, the COLicCruiseCar::Init
+method must call CoCreateInstance to create this inner component. The
+server managing COCar components is DLLSERVE, so 'S:' appears at the
+beginning of these log entries. DllGetClassObject is called, and the CFCar
+class factory COM object is created. For this server, the object count is
+only 2: counting the DllCarSample object and the new class factory object.
+QueryInterface and AddRef are called on the returned IClassFactory
+interface.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  S: CFCar::CImpIClassFactory::CreateInstance. pUnkOuter=0x66091C.
+  S: COCar::CImpICar Constructor. Aggregating.
+  S: COCar Constructor. m_pUnkOuter=0x66091C.
+  S: CServer::ObjectsUp. New cObjects=3.
+  S: COCar::QueryInterface. 'this' pIUnknown returned.
+  S: COCar::AddRef. New cRefs=1.
+  S: CFCar::CImpIClassFactory::CreateInstance Succeeded. *ppv=0x66096C.
+  S: CFCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  S: CFCar::Release. New cRefs=0.
+  S: CServer::ObjectsDown. New cObjects=2.
+  S: CFCar::Destructor.
+  S: CFCar::CImpIClassFactory Destructor.
+ </FONT> </PRE>
+
+<P>
+COM uses the obtained IClassFactory interface to call the CreateInstance
+method. The COCar COM object is created in DLLSERVE: the constructors are
+executed, the server's object count is incremented to 3, and
+QueryInterface and AddRef are called on the new COM object. When
+CreateInstance returns, COM releases the IClassFactory interface. The
+reference count of CFCar is decremented to 0, the server's object count is
+decremented to 2, and the CFCar object's destructors are executed as the
+class factory is destroyed. The final DLLSERVE object count is 2, one for
+the new COCar object and one for the DllCarSample utility object.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  P: COLicCruiseCar::Init (New Aggregation of COCar) Succeeded.
+  P: COLicCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  P: COLicCruiseCar::AddRef. New cRefs=1.
+  P: CFLicCruiseCar::CreateLicCruiseCar Succeeded. *ppv=0x66091C.
+  P: CFLicCruiseCar::CImpIClassFactory::CreateInstance Success. *ppv=0x66091C.
+  P: CFLicCruiseCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  P: CFLicCruiseCar::Release. New cRefs=0.
+  P: CServer::ObjectsDown. New cObjects=2.
+  P: CFLicCruiseCar::Destructor.
+  P: CFLicCruiseCar::CImpIClassFactory Destructor.
+ </FONT> </PRE>
+
+<P>
+Execution returns to the COLicCruiseCar::Init method, and the new COCar
+object is successfully aggregated. Creation of the COLicCruiseCar object
+continues with calls to QueryInterface and AddRef on the object's
+IUnknown. The COLicCruiseCar has been successfully created. The
+IClassFactory interface on CFLicCruiseCar is released, decrementing its
+reference count to 0. As a result, the CFLicCruiseCar class factory is
+destroyed, and the object count of the LICSERVE server is decremented to
+2: one for the new COLicCruiseCar object and one for the COLicCarSample
+utility object.
+
+<P>
+At this point, the LICCLIEN client has successfully requested that a
+COLicCruiseCar object be created, and it has obtained a pointer to that
+object's IUnknown interface.
+
+<P>
+The matching release of this IUnknown interface is straightforward.
+Here's the log after the user chooses the Release command from LICCLIEN's
+LicCruiseCar menu:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === LicCruiseCar Menu: Release.
+  P: COLicCruiseCar::Release. New cRefs=0.
+  P: CServer::ObjectsDown. New cObjects=1.
+  P: COLicCruiseCar::Destructor.
+  S: COCar::Release. New cRefs=0.
+  S: CServer::ObjectsDown. New cObjects=1.
+  S: COCar::Destructor.
+  S: COCar::CImpICar Destructor.
+  P: COLicCruiseCar::CImpICruise Destructor.
+  S: DllCanUnloadNow. cObjects=1, cLocks=0.
+  P: DllCanUnloadNow. cObjects=1, cLocks=0.
+ </FONT> </PRE>
+
+<P>
+In LICSERVE, the COLicCruiseCar object's IUnknown reference is decremented
+to 0, causing the object to be deleted. The server decrements its object
+count to 1. The destructor of COLicCruiseCar is executed, and the
+IUnknown of the COCar object is released, decrementing its reference count
+to 0. The object count of the DLLSERVE server is now decremented to 1, and
+the destructors for the COCar COM object are executed. Control returns to
+the LICSERVE server, and the destructor of the COLicCruiseCar object is
+called. After all this, CoFreeUnusedLibraries is called, and this
+function calls each server's DllCanUnloadNow function. The servers won't
+be unloaded, because each has an object count of 1: for the CarSample
+utility component.
+
+The next topic of internal study is run-time licensing. To simulate
+run-time licensing, menu items in both the UtilityCruiseCar menu and
+the Log menu of LICCLIEN will be used. The simulation sequence is as
+follows:
+
+<ol>
+<li>Start LICCLIEN.EXE.
+
+<li>From the UtilityCruiseCar menu, choose Get License Key.
+   This causes the client to acquire the server's license key and to save
+   this value (simulating a persistent saving of it).
+
+<li>In the Command Prompt window, rename the LICSERVE server's machine
+   license file. For example, rename LICSERVE.LIC to L.LIC.
+   This action effectively hides the license file.
+
+<li>From the Log menu, choose Lic Server. Repeat this step to achieve
+   an unload and then reload of the LICSERVE server..
+   If the LICSERVE server has only the LicCarSample object, which
+   supports logging activity, the Lic Server command loads or unloads
+   the LICSERVE server. When the server is reloaded, CheckLicense will
+   attempt to verify the machine license and detect that the license file
+   is missing. This simulates the typical situation in a software package
+   that includes the server components. The machine license would normally
+   not be included in the package.
+
+<li>From the LicCruiseCar menu, choose Create.
+   The command will fail, because the machine license file is missing.
+   This simulates an attempte to use components in an unlicensed copy of
+   the server.
+
+<li>From the UtilityCruiseCar menu, choose Create Using Key.
+   This command will succeed in creating a COUtilityCruiseCar component,
+   which internally creates a LicCruiseCar licensed component. Instead
+   of calling CreateInstance, Create Using Key calls
+   IClassFactory2::CreateInstanceLic, which uses the stored copy of
+   the run-time license key. This simulates the normal run-time licensing
+   behavior of the client in a package with a resold copy of the server.
+</ol>
+
+<p>
+Here is the trace log for step 2, the Get License Key command:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === UtilityCruiseCar Menu: Get License Key.
+  P: DllGetClassObject: Requesting CFLicCruiseCar.
+  P: CFLicCruiseCar::CImpIClassFactory Constructor. Non-Aggregating.
+  P: CFLicCruiseCar Constructor. m_pUnkOuter=0x0.
+  P: CServer::ObjectsUp. New cObjects=2.
+  P: CFLicCruiseCar::QueryInterface. pIClassFactory2 returned.
+  P: CFLicCruiseCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  P: CFLicCruiseCar::AddRef. New cRefs=1.
+  C: LicCruiseCar's IClassFactory2 obtained.
+  P: CFLicCruiseCar::CImpIClassFactory::RequestLicKey.
+  P: CFLicCruiseCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  P: CFLicCruiseCar::Release. New cRefs=0.
+  P: CServer::ObjectsDown. New cObjects=1.
+  P: CFLicCruiseCar::Destructor.
+  P: CFLicCruiseCar::CImpIClassFactory Destructor.
+  C: Obtained LicCruiseCar's Runtime License Key.
+ </FONT> </PRE>
+
+<P>
+The client calls the CoGetClassObject COM API function to obtain an
+IClassFactory2 interface on the class factory for LicCruiseCar components.
+The factory is created, and the IClassFactory2::RequestLicKey method is
+called. The license key is obtained, the interface is released, and the
+CFLicCruiseCar class factory is destroyed normally.
+
+<P>
+We now perform step 3 and hide the machine license file, LICSERVE.LIC.
+We then restart the LICSERVE server using the Lic Server command. Here
+is the log of that sequence (step 4 above):
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: Stop LICSERVE Server Trace Logging.
+  P: COLicCarSample::CImpISample::Release. Delegating. New cI=0.
+  P: COLicCarSample::Release. New cRefs=0.
+  P: CServer::ObjectsDown. New cObjects=0.
+  P: COLicCarSample::Destructor.
+  P: COLicCarSample::CImpISample Destructor.
+  P: DllCanUnloadNow. cObjects=0, cLocks=0.
+  S: DllCanUnloadNow. cObjects=1, cLocks=0.
+
+  C: Start LICSERVE Server Trace Logging.
+  P: --- LICSERVE.DLL now logging to Client ---
+ </FONT> </PRE>
+
+<P>
+The ISample interface on the COLicCarSample object is released. Its
+reference count goes to 0, and the object is destroyed. The server
+decrements its object count to 0. When CoFreeUnusedLibraries is called
+after this release, COM calls the server to see if it should be unloaded.
+As the log shows, DllCanUnloadNow is called for each server. For the
+LICSERVE server, the object count is 0, so COM unloads the server DLL. We
+select this menu item again to re-engage LICSERVE server logging, which
+reloads the server. At this point, LICSERVE detects that the license file
+is missing.
+
+<P>
+We can confirm this by attempting to create a COLicCruiseCar component
+using the Create command on the LicCruiseCar menu. Here's what the log
+looks like with this attempt (step 5 above):
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === LicCruiseCar Menu: Create.
+  P: DllGetClassObject: Requesting CFLicCruiseCar.
+  P: CFLicCruiseCar::CImpIClassFactory Constructor. Non-Aggregating.
+  P: CFLicCruiseCar Constructor. m_pUnkOuter=0x0.
+  P: CServer::ObjectsUp. New cObjects=2.
+  P: CFLicCruiseCar::QueryInterface. pIClassFactory returned.
+  P: CFLicCruiseCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  P: CFLicCruiseCar::AddRef. New cRefs=1.
+  P: CFLicCruiseCar::CImpIClassFactory::CreateInstance. pUnkOuter=0x0.
+  P: CFLicCruiseCar::CImpIClassFactory::CreateInstance. No Machine License.
+  P: CFLicCruiseCar::CImpIClassFactory::CreateInstance Failed.
+  P: CFLicCruiseCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  P: CFLicCruiseCar::Release. New cRefs=0.
+  P: CServer::ObjectsDown. New cObjects=1.
+  P: CFLicCruiseCar::Destructor.
+  P: CFLicCruiseCar::CImpIClassFactory Destructor.
+  C: ???? LicCruiseCar creation failed.
+ </FONT> </PRE>
+
+<P>
+Compare this with the trace log studied earlier for this same menu
+selection. The call to CoCreateInstance causes COM to obtain an
+IClassFactory interface on an appropriate class factory (CFLicCruiseCar)
+in the LICSERVE server. The CreateInstance method is attempted as before.
+But now we see the cascade of failure as the absence of a machine license
+is discovered. When the call stack unwinds back to the client, an error
+message is displayed.
+
+<P>
+For the final confirmation of run-time licensing, we perform step 6 and
+choose the Create with Key command from the UtilityCruiseCar menu. Here
+is the trace log, with some blank lines indicating sections for comment:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  C: === UtilityCruiseCar Menu: Create with Key.
+  C: CreateUtilityCruiseCar. pUnkOuter=0x0.
+  C: COUtilityCruiseCar::CImpIUtility Constructor. Non-Aggregating.
+  C: COUtilityCruiseCar Constructor. m_pUnkOuter=0x0.
+  C: COUtilityCruiseCar::Init.
+  P: DllGetClassObject: Requesting CFLicCruiseCar.
+  P: CFLicCruiseCar::CImpIClassFactory Constructor. Non-Aggregating.
+  P: CFLicCruiseCar Constructor. m_pUnkOuter=0x0.
+  P: CServer::ObjectsUp. New cObjects=2.
+  P: CFLicCruiseCar::QueryInterface. pIClassFactory2 returned.
+  P: CFLicCruiseCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  P: CFLicCruiseCar::AddRef. New cRefs=1.
+  C: COUtilityCruiseCar::Init IClassFactory2 obtained.
+
+  P: CFLicCruiseCar::CImpIClassFactory::CreateInstanceLic.
+  P: CFLicCruiseCar::CreateLicCruiseCar. pUnkOuter=0x7706EC.
+  P: COLicCruiseCar::CImpICruise Constructor. Aggregating.
+  P: COLicCruiseCar Constructor. m_pUnkOuter=0x7706EC.
+  P: CServer::ObjectsUp. New cObjects=3.
+
+  P: COLicCruiseCar::Init.
+  S: DllGetClassObject: Requesting CFCar.
+  S: CFCar::CImpIClassFactory Constructor. Non-Aggregating.
+  S: CFCar Constructor. m_pUnkOuter=0x0.
+  S: CServer::ObjectsUp. New cObjects=2.
+  S: CFCar::QueryInterface. pIClassFactory returned.
+  S: CFCar::CImpIClassFactory::Addref. Delegating. New cI=1.
+  S: CFCar::AddRef. New cRefs=1.
+  S: CFCar::CImpIClassFactory::CreateInstance. pUnkOuter=0x7706EC.
+  S: COCar::CImpICar Constructor. Aggregating.
+  S: COCar Constructor. m_pUnkOuter=0x7706EC.
+  S: CServer::ObjectsUp. New cObjects=3.
+  S: COCar::QueryInterface. 'this' pIUnknown returned.
+  S: COCar::AddRef. New cRefs=1.
+  S: CFCar::CImpIClassFactory::CreateInstance Succeeded. *ppv=0x661230.
+  S: CFCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  S: CFCar::Release. New cRefs=0.
+  S: CServer::ObjectsDown. New cObjects=2.
+  S: CFCar::Destructor.
+  S: CFCar::CImpIClassFactory Destructor.
+
+  P: COLicCruiseCar::Init (New Aggregation of COCar) Succeeded.
+  P: COLicCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  P: COLicCruiseCar::AddRef. New cRefs=1.
+  P: CFLicCruiseCar::CreateLicCruiseCar Succeeded. *ppv=0x6611E0.
+  P: CFLicCruiseCar::CImpIClassFactory::Release. Delegating. New cI=0.
+  P: CFLicCruiseCar::Release. New cRefs=0.
+  P: CServer::ObjectsDown. New cObjects=2.
+  P: CFLicCruiseCar::Destructor.
+  P: CFLicCruiseCar::CImpIClassFactory Destructor.
+  C: COUtilityCruiseCar::Init Created LicCruiseCar using License Key.
+  C: COUtilityCruiseCar::Init Succeeded.
+  C: COUtilityCruiseCar::QueryInterface. 'this' pIUnknown returned.
+  C: COUtilityCruiseCar::AddRef. New cRefs=1.
+  C: CreateUtilityCruiseCar Succeeded. *ppv=0x7706EC.
+ </FONT> </PRE>
+
+<P>
+LICCLIEN calls the CreateUtilityCruiseCar function. This function creates
+a new COUtilityCruiseCar COM object and calls the object's Init method to
+create any inner objects. In this case, the important one is the licensed
+COLicCruiseCar object that will be aggregated as part of the
+COUtilityCruiseCar object. As before, the class factory is obtained. In
+this case, however, the IClassFactory2 interface is explicitly requested,
+because to create an instance of COLicCruiseCar with a run-time license,
+the IClassFactory2::CreateInstanceLic method must be called.
+
+<P>
+This method is called by the client, and the saved license key string is
+passed as an argument. The resultant creation of a new COLicCruiseCar
+succeeds because the license key string is a match. If it was not, we
+would see a cascade of failure, and the object would not be created.
+
+<P>
+As part of this COLicCruiseCar object, an inner COCar object must be
+created and aggregated. The COLicCruiseCar::Init method gets the class
+factory (CFCar in server DLLSERVE) and creates a COCar COM object. This
+sequence is the same as in other creations of COLicCruiseCar components.
+
+<P>
+The COLicCruiseCar is created, and the class factory is released. LICSERVE
+ends up with an object count of 2, one for the new COLicCruiseCar object
+and one for the LicCarSample utility component. Control returns to the
+client, where the trace log shows the final success of the
+CreateUtilityCruiseCar function.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

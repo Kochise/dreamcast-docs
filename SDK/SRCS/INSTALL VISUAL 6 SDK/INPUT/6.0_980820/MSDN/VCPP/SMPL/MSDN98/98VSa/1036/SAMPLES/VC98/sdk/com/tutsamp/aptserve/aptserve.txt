@@ -1,0 +1,150 @@
+
+APTSERVE - Apartment Model Local Server
+
+
+SUMMARY
+=======
+
+The apartment model is a way of COM programming that associates a single
+thread of execution with a family of COM objects in such a way that an
+object in the family will be executed only on the thread of its apartment.
+When this arrangement is constructed in a server, COM plays a role in
+enforcing the single-thread rule for objects in the apartment by ensuring
+that client calls on any thread to objects in a server apartment will only
+be executed on the thread of the apartment.
+
+The APTSERVE sample begins with the car-related COM Objects of the
+previous LOCSERVE sample and rehouses them in an out-of-process local
+server, APTSERVE.EXE, that uses the apartment threading model. To do so
+requires little change to the COM objects themselves (COCar, COUtilityCar,
+and COCruiseCar). The COCruiseCar object required some changes. In
+LOCSERVE COCruiseCar reused the COCar object using aggregation. Since this
+sample rehouses these objects within different apartments, COCruiseCar
+must be recoded to reuse COCar using containment. But most importantly,
+the server housing must undergo significant revision. This sample
+introduces the new facilities to partition each class factory and its
+created object instances into a separate apartment.
+
+In this sample, an out-of-process COM server is partitioned into three
+single-threaded apartments, each corresponding to the component types seen
+in previous samples: AptCar, AptUtilityCar, and AptCruiseCar. These
+components are known by their CLSIDs as: CLSID_AptCar,
+CLSID_AptUtilityCar, and CLSID_AptCruiseCar. Appropriate class factories
+for those components are also provided: CFCar, CFUtilityCar, and
+CFCruiseCar. As compared to the implementation of these class factories in
+previous lessons, no significant change to the class factories themselves
+is required in this sample.
+
+In the series of COM tutorial code samples, APTSERVE works with the
+APTCLIEN code sample to illustrate APTSERVE's partitioning of the server
+facilities for creating and manipulating components within separate
+apartments and to show how the components are accessed by a client.
+
+For functional descriptions and a tutorial code tour of APTSERVE, see the
+Code Tour section in APTSERVE.HTM. For details on the programmatic usage
+of APTSERVE, see the Usage section in APTSERVE.HTM. To read APTSERVE.HTM,
+run TUTORIAL.EXE in the main tutorial directory and click the APTSERVE
+lesson in the table of lessons. You can also achieve the same thing by
+clicking the APTSERVE.HTM file after locating the main tutorial directory
+in the Windows Explorer. See also APTCLIEN.HTM in the main tutorial
+directory for more details on the APTCLIEN client application and how it
+works with APTSERVE.EXE.
+
+You must build APTSERVE.EXE before building or running APTCLIEN. The
+accompanying makefile automatically registers APTSERVE components in the
+registry. These components must be registered before APTSERVE is available
+to outside COM clients as a server for those components. This registration
+is done using the REGISTER.EXE utility built in the earlier REGISTER
+lesson. To build or run APTSERVE, you should build the REGISTER code
+sample first.
+
+Like its predecessors, APTSERVE uses many of the utility classes and
+services provided by APPUTIL. For more details on APPUTIL, study the
+APPUTIL library's source code and APPUTIL.HTM, located in the main
+tutorial directory.
+
+As an out-of-process local server with apartment threading, APTSERVE
+relies on standard marshaling for clients to use its interfaces across
+both thread and process boundaries. Such marshaling is provided in the
+MARSHAL.DLL server built in the previous lesson. To build or run APTSERVE,
+you should build the MARSHAL code sample first.
+
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+Like the LOCSERVE/LOCCLIEN pair, APTSERVE uses APPUTIL's CSendLog trace
+logging facility to allow display of internal APTSERVE behavior integrated
+with client behavior in the APTCLIEN log display. See APTCLIEN.HTM for
+more details setting up this logging operation. See LOCSERVE.HTM for
+details on how CSendLog works.
+
+Usage
+-----
+
+The APTSERVE application is meant to be used as an out-of-process COM
+server. Out-of-process servers like APTSERVE are registered in the system
+registry, and APTSERVE has built-in support for registering its
+components. It accepts the following command line switches to register and
+unregister:
+
+    -RegServer or /RegServer to register
+    -UnregServer or /UnregServer to unregister
+
+String matches on these switches are case-insensitive. APTSERVE also
+recognizes the standard -Embedding or /Embedding switch, which directs it
+to run as an out-of-process server. This switch normally means that the
+server will remain hidden when run by COM on behalf of a client. However,
+for the tutorial purposes of this sample, APTSERVE can be run visible when
+controlled by a client. You can manually direct APTSERVE to run visible by
+starting it with an explicit -Embedding switch on its command line prior
+to running the APTCLIEN client. If you attempt to run APTSERVE as a
+stand-alone application with no command line switches, it will exit with
+an error.
+
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the APTSERVE directory:
+
+  nmake register
+
+You can also directly invoke the REGISTER.EXE command at the command prompt
+while in the APTSERVE directory.
+
+  ..\register\register.exe aptserve.exe
+
+These registration commands require a prior build of the REGISTER sample
+in this series, as well as a prior build of APTSERVE.EXE.
+
+
+FILES
+=====
+
+Files        Description
+
+APTSERVE.TXT This file.
+MAKEFILE     The generic makefile for building the APTSERVE.EXE
+             code sample of this tutorial lesson.
+APTSERVE.H   The include file for the APTSERVE application. Contains
+             class declarations, function prototypes, and resource
+             identifiers.
+APTSERVE.CPP The main implementation file for APTSERVE.EXE. Has WinMain
+             and CMainWindow implementation, as well as the main menu
+             dispatching.
+APTSERVE.RC  The resource definition file for the executable.
+APTSERVE.ICO The icon resource for the executable.
+SERVER.H     The include file for the server control C++ object. Also
+             used for APTSERVE externs.
+SERVER.CPP   The implementation file for the server control object.
+             Manages apartment threads, object counts, server lifetime,
+             and the creation of class factories.
+FACTORY.H    The include file for the server's class factory COM objects.
+FACTORY.CPP  The implementation file for the server's class factories.
+CAR.H        The include file for the COCar COM object class.
+CAR.CPP      The implementation file for the COCar COM object class.
+UTILCAR.H    The include file for the COUtililtyCar COM object class.
+UTILCAR.CPP  The implementation file for the COUtilityCar COM object class.
+CRUCAR.H     The include file for the COCruiseCar COM object class.
+CRUCAR.CPP   The implementation file for the COCruiseCar COM object class.
+

@@ -1,0 +1,104 @@
+
+REMCLIEN -- Distributed COM (DCOM) Remote Client
+
+
+SUMMARY
+=======
+
+The REMCLIEN sample shows how a client can access and control components
+in an out-of-process remote server. In this lesson the previously studied
+out-of-process server APTSERVE is used, but now it is accessed across
+machine boundaries by REMCLIEN. In earlier lessons, APTCLIEN accessed
+APTSERVE's components on the same machine by crossing only process and
+thread boundaries.
+
+No changes to APTSERVE are required for REMCLIEN to work. Distributed COM
+(DCOM) supports local/remote transparency between client and server.
+
+The REMCLIEN sample presents the car-related components that were studied
+in previous lessons. These COM objects use the following interfaces: ICar,
+IUtility, and ICruise. REMCLIEN works in conjunction with the separate
+APTSERVE.EXE, which provides the COCar, COUtilityCar, and COCruiseCar
+COM objects.
+
+REMCLIEN.EXE creates its own COUtilityCruiseCar COM object by reusing the
+COCruiseCar COM object by containment and augmenting it with a native
+implementation of the IUtility interface. Because the COCruiseCar COM
+object class is a composite--that is, it reuses an inner COCar object by
+containment--REMCLIEN illustrates nested reuse of COM objects. The
+composite COUtilityCruiseCar object reuses COCruiseCar, another composite
+COM object, by containment. COCruiseCar further reuses the COCar COM
+object by containment.
+
+The composition of COUtilityCruiseCar is also interesting because
+the COUtilityCruiseCar object's containment of the COCruiseCar object
+crosses the machine boundary between REMCLIEN and the out-of-process
+remote server APTSERVE.EXE. REMCLIEN uses standard marshaling
+support for the custom interfaces it uses on the COCruiseCar object. This
+marshaling support was separately built as MARSHAL.DLL in the earlier
+MARSHAL code sample.
+
+For functional descriptions and a tutorial code tour of REMCLIEN, see the
+Code Tour section in REMCLIEN.HTM. For details on the external user
+operation of REMCLIEN, see both the Usage and Operation sections in
+REMCLIEN.HTM. To read REMCLIEN.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the REMCLIEN lesson in the table of lessons. You can
+also achieve the same thing by clicking the REMCLIEN.HTM file after
+locating the main tutorial directory in the Windows Explorer. See also
+APTSERVE.HTM in the main tutorial directory for more details on how
+APTSERVE works and exposes its services to REMCLIEN. The makefile for
+APTSERVE automatically registers that server in the registry of the host
+machine, so you must build APTSERVE on the remote machine before
+attempting to run REMCLIEN.
+
+Because client and server reside in separate processes on different
+machines, both REMCLIEN and APTSERVE rely on marshaling for the ICar,
+IUtility, and ICruise interfaces. This support was provided by the
+previous MARSHAL code sample, so you must also build the MARSHAL code
+sample on both machines prior to building and running REMCLIEN with
+APTSERVE.
+
+To set up for the proper operation of REMCLIEN on one machine to control
+APTSERVE on the other, both machines must be running Windows NT
+Workstation 4.0 or above. Earlier versions do not support Distributed COM
+(DCOM). The two machine must be connected in a properly configured
+network. For details on setting up a network, see your Windows NT product
+documentation or the Windows NT Resource Kit. Also see the "Network and
+Setup Issues" section at the end of this tutorial text for more details on
+machine and network setup for running REMCLIEN.
+
+For general details on setting up your system to build and test Win32 code
+samples such as those in this COM Tutorial series, see TUTORIAL.HTM. The
+supplied MAKEFILE is Microsoft NMAKE-compatible. To create a debug build,
+issue the NMAKE command in the Command Prompt window.
+
+Usage
+-----
+
+REMCLIEN is an application that you can execute directly from Windows in
+the normal manner or from the Command Prompt window. No command line
+parameters are recognized by REMCLIEN. REMCLIEN will not currently run on
+the Windows 95 operating system until the necessary Distributed COM is
+supported there.
+
+
+FILES
+=====
+
+Files          Description
+
+REMCLIEN.TXT   This file.
+MAKEFILE       The generic makefile for building the code sample
+               application of this tutorial lesson.
+REMCLIEN.H     The include file for the REMCLIEN application. Contains
+               class declarations, function prototypes, and resource
+               identifiers.
+REMCLIEN.CPP   The main implementation file for REMCLIEN.EXE. Has WinMain
+               and CMainWindow implementation, as well as the main menu
+               dispatching.
+REMCLIEN.RC    The application resource definition file.
+REMCLIEN.ICO   The application icon resource.
+UTCRUCAR.H     The class declaration for the COUtilityCruiseCar COM object.
+UTCRUCAR.CPP   Implementation file for the COUtilityCruiseCar COM object.
+               Also has the definition of the CreateUtilityCruiseCar
+               function.

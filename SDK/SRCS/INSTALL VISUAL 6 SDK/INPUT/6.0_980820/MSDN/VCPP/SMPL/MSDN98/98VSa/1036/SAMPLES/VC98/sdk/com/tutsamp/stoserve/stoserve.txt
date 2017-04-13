@@ -1,0 +1,138 @@
+
+STOSERVE - Structured Storage in an in-process server
+
+
+SUMMARY
+=======
+
+The STOSERVE sample introduces the COPaper COM object, which models a
+sheet of white drawing paper. COPaper objects expose a set of features for
+free-form drawing on the paper surface using "ink" of specified color and
+width. The functionality is outwardly similar to other "scribble" C++
+tutorial samples. The difference in the STOSERVE/STOCLIEN samples is an
+architecture based primarily on COM technology. The electronic drawing
+paper features of COPaper objects are available to clients through a
+custom IPaper interface. COPaper implements the IPaper interface. A clear
+architectural distinction is kept between client and server. No graphical
+user interface (GUI) is provided by COPaper. The design of the COPaper
+object relies on the client for all GUI behavior. COPaper encapsulates
+only the server-based capture and storage of the drawn ink data.
+
+The ink data that is drawn on the COPaper surface can be stored in and
+loaded from COM compound files. The IPaper Save and Load methods accept an
+IStorage interface pointer. COPaper uses this client-provided IStorage
+interface to store the drawing data.
+
+The primary focus of this code sample is on the use of COM structured
+storage services as provided in the COM compound files implementation. The
+use of the standard IStorage and IStream interfaces is covered. STOSERVE
+works with the STOCLIEN code sample to illustrate the joint use of
+compound file storage by client and server.
+
+COPaper is housed in an in-process server and is made publicly available
+as a custom COM component. Like all other servers in this tutorial series,
+STOSERVE is a self-registering COM server. It makes the COPaper object
+type available to clients as the DllPaper component using a
+CLSID_DllPaper registration in the Registry.
+
+As was the case in the previous CONSERVE server, connectable object
+features are supported in COPaper. The IConnectionPointContainer interface
+is exposed, and an appropriate connection point is implemented. In this
+context, an outgoing custom IPaperSink interface is declared for use in
+sending notifications to the client.
+
+The two IPaper and IPaperSink custom interfaces are declared in IPAPER.H
+located in the common sibling \INC directory. The GUIDs for the interfaces
+and objects are defined in PAPGUIDS.H located in that same common include
+directory.
+
+The CThreaded facility in APPUTIL is used by STOSERVE to achieve thread
+safety, as it was in the FRESERVE sample. COPaper objects are derived from
+the CThreaded class and inherit its OwnThis and UnOwnThis methods. These
+methods allow only one thread at a time to have access to the STOSERVE
+server and to COPaper objects managed by the server.
+
+For functional descriptions and a tutorial code tour of STOSERVE, see the
+Code Tour section in STOSERVE.HTM. For details on setting up the
+programmatic usage of STOSERVE, see the Usage section in STOSERVE.HTM. To
+read STOSERVE.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the STOSERVE lesson in the table of lessons. You can also achieve
+the same thing by clicking the STOSERVE.HTM file after locating the main
+tutorial directory in the Windows Explorer. See also STOCLIEN.HTM in the
+main tutorial directory for more details on the STOCLIEN client
+application and how it works with STOSERVE.DLL. You must build
+STOSERVE.DLL before building or running STOCLIEN.
+
+STOSERVE's makefile automatically registers STOSERVE's DllPaper COM
+component in the registry. This component must be registered before
+STOSERVE is available to outside COM clients as a server for that
+component. This self-registration is done using the REGISTER.EXE utility
+built in the REGISTER sample. To build or run STOSERVE, you should build
+the REGISTER code sample first.
+
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+Usage
+-----
+
+To use STOSERVE, a client program does not need to include STOSERVE.H or
+link to STOSERVE.LIB. A COM client of STOSERVE obtains access solely
+through its object's CLSID and COM services. For STOSERVE, that CLSID is
+CLSID_DllPaper (defined in file PAPGUIDS.H in the \INC sibling directory).
+The STOCLIEN code sample shows how the client obtains this access.
+
+STOSERVE is a DLL that is intended primarily as a COM server. Although it
+can be implicitly loaded by linking to its associated .LIB file, it is
+normally used after an explicit LoadLibrary call, usually from within the
+COM function CoGetClassObject. STOSERVE is a self-registering in-process
+server.
+
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the STOSERVE directory:
+
+  nmake register
+
+You can also directly invoke the REGISTER.EXE command at the command prompt
+while in the STOSERVE directory.
+
+  ..\register\register.exe stoserve.dll
+
+These registration commands require a prior build of the REGISTER sample
+in this series, as well as a prior build of STOSERVE.DLL.
+
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Win32 Platform SDK and Visual C++
+include a utility, REGSVR32.EXE, which can be used in a similar fashion to
+register in-process servers and marshaling DLLs.
+
+
+FILES
+=====
+
+Files         Description
+
+STOSERVE.TXT  This file.
+MAKEFILE      The generic makefile for building the STOSERVE.DLL
+              code sample of this lesson.
+STOSERVE.H    The include file for declaring as imported or defining as
+              exported the service functions in STOSERVE.DLL.
+STOSERVE.CPP  The main implementation file for STOSERVE.DLL. Has DllMain
+              and the COM server functions (for example, DllGetClassObject).
+STOSERVE.DEF  The module definition file. Exports server housing functions.
+STOSERVE.RC   The DLL resource definition file for the executable.
+STOSERVE.ICO  The icon resource for the executable.
+SERVER.H      The include file for the server control C++ object.
+SERVER.CPP    The implementation file for the server control C++ object.
+FACTORY.H     The include file for the server's class factory COM objects.
+FACTORY.CPP   The implementation file for the server's class factories.
+CONNECT.H     The include file for the connection point enumerator,
+              connection point, and connection enumerator classes.
+CONNECT.CPP   The implementation file for the connection point enumerator,
+              connection point, and connection enumerators objects.
+PAPER.H       The include file for the COPaper COM object class.
+PAPER.CPP     The implementation file for the COPaper COM object class
+              and the connection points.

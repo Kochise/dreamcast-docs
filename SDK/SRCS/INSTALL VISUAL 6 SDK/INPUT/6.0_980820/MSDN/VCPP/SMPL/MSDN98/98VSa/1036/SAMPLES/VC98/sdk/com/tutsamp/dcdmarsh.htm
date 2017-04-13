@@ -1,0 +1,316 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>DCDMARSH COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="perclien.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="dcdserve.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="DCDMARSH">DCDMARSH - Standard Marshaling for DCOM</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The DCDMARSH sample builds the DCDMARSH.DLL proxy/stub server.
+DCDMARSH.DLL works with DCDSERVE.EXE and DCOMDRAW.EXE to provide standard
+marshaling of the ISharePaper and IPaperSink custom interfaces across
+process and machine boundaries. In this set of samples, DCDMARSH.DLL is
+the marshaling server, DCDSERVE.EXE is the out-of-process component
+server, and DCOMDRAW.EXE is the client. As a Distributed COM (DCOM)
+sample, DCOMDRAW.EXE creates and uses components housed in the
+DCDSERVE.EXE server. Multiple DCOMDRAW clients running on multiple
+computers connected to a network can access a shared single COPaper object
+housed in the DCDSERVE.EXE server. Compared to previous samples requiring
+marshaling across process or machine boundaries, DCDMARSH requires no
+significant differences in how you provide standard marshaling for your
+custom interfaces. This lesson is therefore almost completely based on the
+standard marshaling techniques that were used in the MARSHAL sample. See
+the MARSHAL lesson for more details on these techniques.
+
+<P>
+The Microsoft Interface Definition Language (MIDL) compiler is used to
+compile the interface specifications (expressed using the MIDL language in
+the PAPINT.IDL file). Microsoft provides the MIDL.EXE as part of the
+Platform SDK. The MIDL compilation of PAPINT.IDL generates the PAPINT.H,
+PAPINT_I.C, PAPINT_P.C, and DLLDATA.C source files. The primary source for
+the DCDMARSH sample is in the PAPINT.IDL file. It contains the IDL
+specifications for the interfaces that DCDSERVE.DLL marshals. After the
+makefile copies the MIDL-generated PAPINT.H file to the common INC
+directory, PAPINT.H is available for use by such samples as DCDMARSH and
+DCOMDRAW.
+
+<P>
+For functional descriptions and a tutorial code tour of the DCDMARSH
+sample, see the Code Tour section in DCDMARSH.HTM. For details on setting
+building and registering DCDMARSH.DLL, see the Usage section in
+DCDMARSH.HTM. To read DCDMARSH.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the DCDMARSH lesson in the table of lessons. You can
+do the same thing by double-clicking the DCDMARSH.HTM file after locating
+the main tutorial directory in the Windows Explorer. See also DCDSERVE.HTM
+and DCOMDRAW.HTM in the main tutorial directory for more details on this
+client and server and how DCDMARSH.DLL supports their operation. Because
+those code samples rely on DCDMARSH.DLL, you must build it before building
+or running DCOMDRAW and DCDSERVE. DCDMARSH's makefile automatically
+registers DCDMARSH's proxy and stub interface marshalers in the system
+registry. This registration must be done before these interfaces can be
+used by COM clients or servers in the DCDSERVE and DCOMDRAW samples.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE
+is Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<P>
+DCDMARSH.DLL is built solely as a marshaling DLL for certain interfaces.
+Although it can be implicitly loaded by linking to its associated .LIB
+file, it is normally used on behalf of a COM client using the interfaces
+across apartment, process, or machine boundaries. In these cases COM loads
+this DLL when needed. Before COM can find and load DCDMARSH.DLL to provide
+marshaling for its supported interfaces, the DCDMARSH server must be
+registered in the registry as the marshaling server for those interfaces.
+DCDMARSH is a self-registering in-process server. It exports the standard
+DllRegisterServer and DllUnregisterServer functions.
+
+<P>
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the DCDMARSH directory:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  nmake register
+ </FONT> </PRE>
+
+<P>
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the DCDMARSH directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ..\register\register.exe dcdmarsh.dll
+ </FONT> </PRE>
+
+<P>
+These registration commands require a prior build of the REGISTER sample
+in this series, as well as a prior build of DCDMARSH.DLL.
+
+<P>
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Platform SDK and Visual C++&reg;
+include a utility, REGSVR32.EXE, that can be used in a similar fashion to
+register in-process servers and marshaling DLLs.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files        Description</u>
+DCDMARSH.TXT Short description of the sample.
+MAKEFILE     The generic makefile for building the code sample.
+DCDMARSH.DEF The module definition file. Exports server housing functions.
+PAPINT.IDL   The MIDL interface specifications for ISharePaper and
+             IPaperSink.
+PAPINT.H     Generated by compiling PAPINT.IDL. The interface include
+             file for the specified interfaces. Included by other modules.
+PAPINT_I.C   Generated by compiling PAPINT.IDL. The data definitions
+             of the GUIDs for the marshaled interfaces.
+PAPINT_P.C   Generated by compiling PAPINT.IDL. The actual proxy and
+             stub functions for the interface methods.
+DLLDATA.C    Generated by compiling PAPINT.IDL. DLL data routines for
+             the proxies and default definitions for the DllMain,
+             DllRegisterServer, and DllUnregisterServer functions.
+ </FONT> </PRE>
+
+<P>
+PAPINT.IDL contains the principal source code for this sample. Here are
+the IDL interface specifications from PAPINT.IDL for the ISharePaper and
+IPaperSink interfaces.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  [uuid(0002da31-0000-0000-c000-000000000046),
+      object
+  ]
+  interface ISharePaper : IUnknown
+  {
+    import &quot;unknwn.idl&quot;;
+
+    HRESULT InitPaper(
+              [in,out] RECT* pWinRect,
+              [out]    BOOL* pbFirst);
+    HRESULT Lock(
+              [in] BOOL bLock);
+    HRESULT Load(
+              [out] RECT* pWinRect);
+    HRESULT Save(
+              void);
+    HRESULT InkStart(
+              [in] SHORT nX,
+              [in] SHORT nY,
+              [in] SHORT nInkWidth,
+              [in] COLORREF crInkColor);
+    HRESULT InkDraw(
+              [in] SHORT nX,
+              [in] SHORT nY);
+    HRESULT InkStop(
+              [in] SHORT nX,
+              [in] SHORT nY);
+    HRESULT GetInk(
+              [in] LONG lIndex,
+              [out] SHORT* pnInkType,
+              [out] SHORT* pnX,
+              [out] SHORT* pnY,
+              [out] SHORT* pnInkWidth,
+              [out] COLORREF* pcrInkColor);
+    HRESULT Erase(
+              void);
+    HRESULT Resize(
+              [in] LONG lWidth,
+              [in] LONG lHeight);
+  }
+
+  [uuid(0002da34-0000-0000-c000-000000000046),
+      object
+  ]
+  interface IPaperSink : IUnknown
+  {
+    import &quot;unknwn.idl&quot;;
+
+    HRESULT Locked(
+              void);
+    HRESULT Unlocked(
+              void);
+    HRESULT Loaded(
+              void);
+    HRESULT Saved(
+              void);
+    HRESULT InkStart(
+              [in] SHORT nX,
+              [in] SHORT nY,
+              [in] SHORT nInkWidth,
+              [in] COLORREF crInkColor);
+    HRESULT InkDraw(
+              [in] SHORT nX,
+              [in] SHORT nY);
+    HRESULT InkStop(
+              [in] SHORT nX,
+              [in] SHORT nY);
+    HRESULT Erased(
+              void);
+    HRESULT Resized(
+              [in] LONG lWidth,
+              [in] LONG lHeight);
+  }
+
+  cpp_quote (&quot;// The types of Ink Data.&quot;)
+  cpp_quote (&quot;#define INKTYPE_NONE  0&quot;)
+  cpp_quote (&quot;#define INKTYPE_START 1&quot;)
+  cpp_quote (&quot;#define INKTYPE_DRAW  2&quot;)
+  cpp_quote (&quot;#define INKTYPE_STOP  3&quot;)
+</FONT> </PRE>
+
+<P>
+The custom IPaperSink interface is the same interface used in the
+connectable-object features of the STOSERVE, STOCLIEN, PERDRAW, and
+PERCLIEN samples. In those samples the IPaperSink interface required no
+marshaling because the servers were all in-process servers. Now, for the
+first time in the series, connectable-object technology is shown operating
+across both process and machine boundaries in DCDSERVE and DCOMDRAW. Thus,
+the custom IPaperSink now requires the standard marshaling support
+provided by the DCDMARSH.DLL of this sample. The COPaper object in the
+DCDSERVE server calls methods in IPaperSink to make event notifications to
+the connection sink in the DCOMDRAW client. See such earlier samples as
+STOSERVE and STOCLIEN for more details on how the IPaperSink interface
+works as a connectable-object interface.
+
+<P>
+The custom ISharePaper interface is similar to the IPaper and IDrawPage
+interfaces used in the STOSERVE, STOCLIEN, PERDRAW, and PERCLIEN samples.
+These interfaces are implemented to expose a set of features for free-form
+drawing on an electronic paper surface using &quot;ink&quot; of specified
+color and width. This functionality is outwardly similar to the
+&quot;scribble&quot; tutorial samples in many versions of the Microsoft
+Visual C++ product. See earlier samples like STOSERVE and STOCLIEN for
+more details on how the ISharePaper interface works as a drawing
+interface.
+
+<P>
+The &quot;cpp_quote&quot; directives shown above simply pass the quoted
+text through the MIDL compilation process to the output PAPINT.H file.
+They generate #define macros for use during C++ compilation. For the
+modules that include PAPINT.H at C++ compilation time, these macros
+specify the possible ink data types used in the drawing process. This
+illustrates an additional way to use the .IDL file as a primary repository
+of specification for important aspects of the interfaces to be marshaled.
+
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

@@ -1,0 +1,424 @@
+/*************************************************************************
+**
+**    OLE Automation BrowseHelper Object.
+**
+**    browseh.odl
+**
+**    Object Description source file.
+**
+**     Written by Microsoft Product Support Services, Windows Developer Support
+**    (c) Copyright Microsoft Corp. 1994 All Rights Reserved
+**
+*************************************************************************/ 
+
+
+[
+  uuid(19FEEEC0-4104-101B-B826-00DD01103DE1),              // LIBID_BrowseHelper
+  helpstring("BrowseHelper 1.0 Type Library"),
+  version(1.0)
+] 
+library BrowseHelper
+{
+#ifdef WIN32
+    importlib("stdole2.tlb");
+#else
+    importlib("stdole.tlb");
+#endif 
+    importlib("mydisp.tlb"); 
+    
+    // Forward declarations      
+    interface IArrayDesc;   
+    
+    typedef enum {
+       TYPE_FUNCTION = 0,
+       TYPE_PROPERTY = 1,
+       TYPE_CONSTANT = 2,
+       TYPE_PARAMETER = 3
+   } OBJTYPE;
+
+    
+    [
+      uuid(19FEEECC-4104-101B-B826-00DD01103DE1),          // IID_ICollection                
+      helpstring("Generic collection."),
+      odl
+    ]
+    interface ICollection : CMyDispatch                         
+    {                
+      [propget, helpstring("Returns number of items in collection.")]
+      long Count();
+
+      [propget, id(0), helpstring("Given an integer index, returns one of the items in the collection")]
+      IDispatch * Item([in] long Index);
+                        
+      [propget, restricted, id(-4)]    // -4 is DISPID_NEWENUM. Must be propget.
+      IUnknown * _NewEnum();           
+    }  
+        
+    [
+      uuid(19FEEEC3-4104-101B-B826-00DD01103DE1),          // IID_ITypeLibrary                    
+      helpstring("TypeLibrary object."),
+      odl
+    ]
+    interface ITypeLibrary : CMyDispatch                         
+    {
+      [propget, helpstring("Returns the name.")]
+      BSTR Name(void);
+        
+      [propget, helpstring("Returns the documentation string.")]
+      BSTR Documentation(void);
+        
+      [propget, helpstring("Returns the help context.")]
+      long HelpContext(void);
+        
+      [propget, helpstring("Returns the help file.")]
+      BSTR HelpFile(void);
+      
+      [propget, helpstring("Returns Locale ID.")]
+      long LocaleID(void);  
+      
+      [propget, helpstring("Returns Major Version.")]
+      int MajorVersion(void);
+      
+      [propget, helpstring("Returns Minor Version.")]
+      int MinorVersion(void);
+        
+      [propget, helpstring("Returns collection of TypeInfos.")]
+      ICollection* TypeInfos(void);
+	  
+	  [propget, helpstring("Returns GUID as a string.")]
+      BSTR GUIDAsString(void);
+    }      
+    
+    [
+      uuid(19FEEEC4-4104-101B-B826-00DD01103DE1),          // IID_ITypeInformation                    
+      helpstring("TypeInfo object."),
+      odl
+    ]
+    interface ITypeInformation : CMyDispatch                         
+    {
+      [propget, helpstring("Returns the name.")]
+      BSTR Name(void);
+        
+      [propget, helpstring("Returns the documentation string.")]
+      BSTR Documentation(void);
+        
+      [propget, helpstring("Returns the help context.")]
+      long HelpContext(void);
+        
+      [propget, helpstring("Returns the help file.")]
+      BSTR HelpFile(void);
+      
+      [propget, helpstring("Returns TYPEKIND.")]
+      TYPEKIND TypeInfoKind(void);
+
+      [propget, helpstring("Returns TYPEFLAGS")]
+      short TypeFlags();
+
+	  [propget, helpstring("Returns GUID as a string.")]
+      BSTR GUIDAsString(void);
+      
+      HRESULT _InitTypeInfo([in]LPTYPEINFO ptinfo);                                                              
+    }
+    
+    [
+      uuid(19FEEEC2-4104-101B-B826-00DD01103DE1),          // IID_IBrowseHelper               
+      helpstring("BrowseHelper object."),
+      odl
+    ]
+    interface IBrowseHelper : CMyDispatch                         
+    {
+      [helpstring("Opens and browses the specified type library and returns TypeLibrary object")]
+      ITypeLibrary* BrowseTypeLibrary([in] BSTR TypeLibraryPath);                                    
+    }  
+
+    
+    [
+      uuid(19FEEED1-4104-101B-B826-00DD01103DE1),          // IID_ITypeDesc                  
+      helpstring("TypeDescription object."),
+      odl
+    ]
+    interface ITypeDesc : CMyDispatch                         
+    {        
+      [propget, helpstring("Returns the type as VARTYPE.")]
+      short Type(void);
+      
+      [propget, helpstring("Returns a TypeInformation object with more information about the VT_USERDEFINED type.")]
+      ITypeInformation* UserDefinedDesc(void);    
+      
+      [propget, helpstring("Returns an ArrayDesc with more information about the VT_CARRAY type.")]
+      IArrayDesc* ArrayDesc(void);
+        
+      [propget, helpstring("Returns a TypeDesc object with more information about the VT_PTR type.")]
+      ITypeDesc* PointerDesc(void);
+    } 
+    
+    [
+      uuid(19FEEED3-4104-101B-B826-00DD01103DE1),          // IID_IArrayBound                
+      helpstring("ArrayBound object."),
+      odl
+    ]
+    interface IArrayBound : CMyDispatch                         
+    {        
+      [propget, helpstring("Number of elements in this dimension of the array.")]
+      long ElementsCount(void); 
+      
+      [propget, helpstring("Lower bound in this dimension of the array.")]
+      long LowerBound(void);
+    } 
+    
+        
+    [
+      uuid(19FEEED2-4104-101B-B826-00DD01103DE1),          // IID_IArrayDesc                 
+      helpstring("ArrayDesc object."),
+      odl
+    ]
+    interface IArrayDesc : CMyDispatch                         
+    {        
+      [propget, helpstring("Returns the array element type.")]
+      ITypeDesc* ElementType(void); 
+      
+      [propget, helpstring("Returns a collection of array bounds.")]
+      ICollection* ArrayBounds(void);
+    } 
+    
+    [
+      uuid(19FEEEC5-4104-101B-B826-00DD01103DE1),          // IID_IInterface                    
+      helpstring("Interface object."),
+      odl
+    ]
+    interface IInterface : ITypeInformation                     
+    {      
+      [propget, helpstring("Returns collection of functions.")]
+      ICollection* Functions(void);
+
+	  [propget, helpstring("Returns base interface.")]
+      IInterface* BaseInterface(void);
+    } 
+    
+    [
+      uuid(19FEEEC6-4104-101B-B826-00DD01103DE1),          // IID_IDispinterface                    
+      helpstring("Dispinterface object."),
+      odl
+    ]
+    interface IDispinterface : ITypeInformation                     
+    {
+      [propget, helpstring("Returns collection of properties.")]
+      ICollection* Properties(void);
+        
+      [propget, helpstring("Returns collection of methods.")]
+      ICollection* Methods(void);
+
+      [propget, helpstring("Return Interface part of dual interface, if this is a dual interface.")]
+      IInterface* Interface(void);
+    }  
+    
+    [
+      uuid(19FEEEC7-4104-101B-B826-00DD01103DE1),          // IID_IModule                   
+      helpstring("Module object."),
+      odl
+    ]
+    interface IModule : ITypeInformation                     
+    {      
+      [propget, helpstring("Returns collection of functions.")]
+      ICollection* Functions(void);
+    }  
+    
+    [
+      uuid(19FEEEC8-4104-101B-B826-00DD01103DE1),          // IID_ICoClass                    
+      helpstring("CoClass object."),
+      odl
+    ]
+    interface ICoClass : ITypeInformation                         
+    {
+      [propget, helpstring("Returns collection of interfaces/dispinterfaces.")]
+      ICollection* Interfaces(void);        
+    } 
+    
+    [
+      uuid(19FEEECD-4104-101B-B826-00DD01103DE1),          // IID_IEnum                  
+      helpstring("Enum object."),
+      odl
+    ]
+    interface IEnum : ITypeInformation                         
+    {
+      [propget, helpstring("Returns collection of enumerated elements.")]
+      ICollection* Elements(void);       
+    }   
+    
+    [
+      uuid(19FEEECE-4104-101B-B826-00DD01103DE1),          // IID_IStruct                  
+      helpstring("Struct object."),
+      odl
+    ]
+    interface IStruct : ITypeInformation                         
+    {
+      [propget, helpstring("Returns collection of structure members.")]
+      ICollection* Members(void);       
+    }  
+    
+    [
+      uuid(19FEEECF-4104-101B-B826-00DD01103DE1),          // IID_IStruct                  
+      helpstring("Struct object."),
+      odl
+    ]
+    interface IUnion : ITypeInformation                         
+    {
+      [propget, helpstring("Returns collection of union members.")]
+      ICollection* Members(void);       
+    }    
+    
+    [
+      uuid(19FEEED0-4104-101B-B826-00DD01103DE1),          // IID_IAlias                 
+      helpstring("Alias object."),
+      odl
+    ]
+    interface IAlias : ITypeInformation                         
+    {
+      [propget, helpstring("Returns Base Type.")]
+      ITypeDesc* BaseType();       
+    }                                                                     
+    
+    [
+      uuid(19FEEEC9-4104-101B-B826-00DD01103DE1),          // IID_IFunction                    
+      helpstring("Function object."),
+      odl
+    ]
+    interface IFunction : CMyDispatch                         
+    {
+      [propget, helpstring("Returns name.")]
+      BSTR Name();   
+      
+      [propget, helpstring("Returns the documentation string.")]
+      BSTR Documentation(void);
+        
+      [propget, helpstring("Returns the help context.")]
+      long HelpContext(void);
+        
+      [propget, helpstring("Returns the help file.")]
+      BSTR HelpFile(void);
+      
+      [propget, helpstring("Returns a ITypeDesc object that describes the return type of function.")]
+      ITypeDesc* ReturnType();
+      
+      [propget, helpstring("Returns collection of parameters of function.")]
+      ICollection* Parameters(); 
+      
+      [propget, helpstring("Returns Memid (Also called DISPID).")]
+      MEMBERID Memberid(); 
+      
+      [propget, helpstring("Returns calling convention.")]
+      CALLCONV CallConvention();
+      
+      [propget, helpstring("Returns FUNCKIND.")]
+      FUNCKIND FuncKind();
+      
+      [propget, helpstring("Returns INVOKEKIND.")]
+      INVOKEKIND InvocationKind();
+      
+	  [propget, helpstring("Returns FUNCDESC.cParamsOpt, the number of optional parameters")]
+      short NumberOfOptionalParams();
+
+	  [propget, helpstring("Returns FUNCDESC.oVft, offset in vtbl")]
+      short OffsetInVtbl();
+
+	  [propget, helpstring("Returns FUNCDESC.wfuncFlags")]
+      unsigned short FuncFlags();
+
+	  [propget, helpstring("Returns kind of object (function == 0).")]
+      OBJTYPE Kind();
+      
+    }
+    
+    [
+      uuid(19FEEECA-4104-101B-B826-00DD01103DE1),          // IID_IProperty                
+      helpstring("Property object."),
+      odl
+    ]
+    interface IProperty : CMyDispatch                         
+    {
+      [propget, helpstring("Returns name.")]
+      BSTR Name();   
+      
+      [propget, helpstring("Returns the documentation string.")]
+      BSTR Documentation(void);
+        
+      [propget, helpstring("Returns the help context.")]
+      long HelpContext(void);
+        
+      [propget, helpstring("Returns the help file.")]
+      BSTR HelpFile(void);
+
+      [propget, helpstring("Returns a ITypeDesc object that describes the type of property.")]
+      ITypeDesc* Type();
+      
+      [propget, helpstring("Returns memid.")]
+      MEMBERID Memberid();
+      
+      [propget, helpstring("Returns kind of object (property == 1).")]
+      OBJTYPE Kind();
+   
+    }  
+    
+    [
+      uuid(19FEEED4-4104-101B-B826-00DD01103DE1),          // IID_IConstant              
+      helpstring("Symbolic constant."),
+      odl
+    ]
+    interface IConstant : CMyDispatch                         
+    {
+      [propget, helpstring("Returns name.")]
+      BSTR Name();   
+      
+      [propget, helpstring("Returns the documentation string.")]
+      BSTR Documentation(void);
+        
+      [propget, helpstring("Returns the help context.")]
+      long HelpContext(void);
+        
+      [propget, helpstring("Returns the help file.")]
+      BSTR HelpFile(void);
+
+      [propget, helpstring("Returns a ITypeDesc object that describes the type of constant.")]
+      ITypeDesc* Type();
+      
+      [propget, helpstring("Returns value of constant.")]
+      VARIANT Value();   
+      
+      [propget, helpstring("Returns memid.")]
+      MEMBERID Memberid();
+      
+      [propget, helpstring("Returns kind of object (constant == 2).")]
+      OBJTYPE Kind();   
+    }
+    
+    [
+      uuid(19FEEECB-4104-101B-B826-00DD01103DE1),          // IID_IParameter               
+      helpstring("Parameter object."),
+      odl
+    ]
+    interface IParameter: CMyDispatch                         
+    {
+      [propget, helpstring("Returns name of parameter.")]
+      BSTR Name();
+
+      [propget, helpstring("Returns a ITypeDesc object that describes the type of parameter.")]
+      ITypeDesc* Type();    
+      
+      [propget, helpstring("Returns IDL flags of parameter.")]
+      int IDLFlags();
+      
+      [propget, helpstring("Returns kind of object (parameter == 3).")]
+      OBJTYPE Kind();    
+    }
+    
+    [
+      uuid(19FEEEC1-4104-101B-B826-00DD01103DE1),          // CLSID_TypeLibrary
+      helpstring("BrowseHelper Class"),
+      appobject
+    ]                                             
+    coclass BrowseHelper
+    {   
+      interface IBrowseHelper;
+    }
+}
+

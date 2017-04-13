@@ -1,0 +1,882 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>LICSERVE COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="dllclien.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="licclien.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="LICSERVE">LICSERVE - DLL Licensed Server</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The LICSERVE sample introduces licensed components. LICSERVE modifies the
+COCruiseCar component of the DLLSERVE code sample and houses it as a
+licensed LicCruiseCar component in the LICSERVE.DLL COM server. This
+in-process server provides the components LicCruiseCar and LicCarSample.
+LicCarSample is the utility component that allows clients access to this
+server's logged behavior.
+
+<P>
+LICSERVE provides class factories for each of these components. The class
+factory for the LicCruiseCar component implements IClassFactory2, instead of
+the usual IClassFactory, to provide the licensing mechanism for this
+component. The LicCarSample component is not licensed and thus implements
+IClassFactory.
+
+<P>
+In the series of COM tutorial code samples, LICSERVE works with the
+LICCLIEN code sample to illustrate LICSERVE's COM server facilities for
+creating licensed components and supporting the subsequent manipulation of
+those components by the LICCLIEN.EXE client.
+
+<P>
+For functional descriptions and a tutorial code tour of LICSERVE, see the
+Code Tour section in LICSERVE.HTM. For details on setting up the
+programmatic usage of LICSERVE, see the Usage section in LICSERVE.HTM. To
+read LICSERVE.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the LICSERVE lesson in the table of lessons. You can also achieve
+the same thing by clicking the LICSERVE.HTM file after locating the main
+tutorial directory in the Windows Explorer. See also LICCLIEN.HTM in the
+main tutorial directory for more details on the LICCLIEN client
+application and how it works with LICSERVE.EXE itself. You must build
+LICSERVE.DLL before building or running LICCLIEN. LICSERVE's makefile
+automatically registers LICSERVE's components in the system registry.
+These components must be registered before LICSERVE is available to
+outside COM clients as a server for those components. This registration is
+done using the REGISTER.EXE utility built in the earlier REGISTER lesson.
+To build or run LICSERVE, you should build the REGISTER code sample first.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE
+is Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<P>
+LICSERVE is a DLL that is meant to be used primarily as a licensed COM
+server. Though it can be implicitly loaded by linking to its associated
+.LIB file, it is normally used after an explicit LoadLibrary call, usually
+from COM's CoGetClassObject function. Servers like LICSERVE are registered
+in the registry. To use LICSERVE in a COM client program, a client does not
+need to include LICSERVE.H or link to LICSERVE.LIB. A COM client of LICSERVE
+obtains access solely through its components' CLSIDs and COM services. For
+LICSERVE, those CLSIDs are CLSID_LicCruiseCar and CLSID_LicCarSample. The
+LICCLIEN sample shows how this is done with the LicCruiseCar component that
+is licensed in the LICSERVE server.
+
+<P>
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the LICSERVE directory:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  nmake register
+ </FONT> </PRE>
+
+<P>
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the LICSERVE directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ..\register\register.exe licserve.dll
+ </FONT> </PRE>
+
+<P>
+These registration commands require a prior build of the REGISTER sample
+in this series, as well as a prior build of LICSERVE.DLL.
+
+<P>
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Win32 Platform SDK and Visual
+C++&reg; include a utility, REGSVR32.EXE, which can be used in a similar
+fashion to register in-process servers and marshaling DLLs.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">
+Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, LICCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="LICCLIEN\LICCLIEN.exe">
+Click here to run LICCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files        Description</u>
+LICSERVE.TXT Short sample description.
+MAKEFILE     The generic makefile for building the LICSERVE.DLL
+             code sample of this tutorial lesson.
+LICSERVE.H   The include file for declaring as imported or defining as
+             exported the service functions in LICSERVE.DLL.
+LICSERVE.CPP The main implementation file for LICSERVE.DLL. Has DllMain
+             and the COM server functions (for example, DllGetClassObject).
+LICSERVE.DEF The module definition file. Exports server housing functions.
+LICSERVE.RC  The DLL resource definition file for the executable.
+LICSERVE.LIC The license file for this licensed COM server.
+LICSERVE.ICO The icon resource for the executable.
+SERVER.H     The include file for the server control C++ object. Also has
+             resource identifiers for resources stored in LICSERVE.DLL and
+             other extern declarations that are used internally within the
+             modules of LICSERVE.DLL.
+SERVER.CPP   The implementation file for the Server Control object.
+FACTORY.H    The include file for the server's class factory COM objects.
+FACTORY.CPP  The implementation file for the server's class factories.
+CRUCAR.H     The include file for the COLicCruiseCar COM object class.
+CRUCAR.CPP   The implementation file for the COLicCruiseCar COM object
+             class.
+SAMPLE.H     The include file for the COLicCarSample COM object class.
+SAMPLE.CPP   The implementation file for the COLicCarSample COM object
+             class.
+ </FONT> </PRE>
+
+<P>
+This code sample is based on the code in the DLLSERVE lesson. This lesson
+begins with the COCruiseCar component studied in DLLSERVE lesson and
+modifies it into a licensed component, COLicCruiseCar, which is housed in
+the LICSERVE server. The bulk of this work is done in the class factory,
+where the IClassFactory2 interface is implemented instead of the usual
+IClassFactory interface. COLicCruiseCar is an aggregatable COM object
+that also aggregates the COCar COM object provided by the in-process
+server DLLSERVE. The LICSERVE in-process server uses this unlicensed COM
+object from another in-process server to provide the licensed
+COLicCruiseCar component to outside clients. The next lesson, LICCLIEN,
+illustrates just such a client.
+
+<P>
+LICSERVE also provides the necessary utility COM object, COLicCarSample,
+to permit trace logging of behavior inside LICSERVE components to appear
+in the client's trace logging display.
+
+<P>
+The main objective of the LICSERVE and LICCLIEN code samples is to show
+the mechanisms required to license and verify licensing of a component
+(LicCruiseCar).
+
+<P>
+LICSERVE uses many of the utility classes and services provided by
+APPUTIL. For more details on APPUTIL, study the APPUTIL library's source
+code in the sibling APPUTIL directory and APPUTIL.HTM in the main tutorial
+directory.
+
+<P>
+Like the DLLSERVE server, LICSERVE is self-registering. See the DLLSERVE
+lesson for more details on this process. For LICSERVE, the code for
+self-registration is in the DllRegisterServer and DllUnregisterServer
+functions in LICSERVE.CPP. Two new components are registered,
+CLSID_LicCruiseCar and CLSID_LicCarSample. These CLSIDs are defined in
+the global CARGUIDS.H in the \INC sibling directory.
+
+<P>
+In this lesson we'll concentrate on what it takes to license the
+COLicCruiseCar component. Other aspects of this code sample are very much
+the same as the DLLSERVE code sample.
+
+<P>
+We start the tour in LICSERVE.CPP. There is nothing significantly
+different with the DllGetClassObject and DllCanUnloadNow functions that
+were studied in DLLSERVE. However, there is something significantly new
+in the DLL_PROCESS_ATTACH case of the DllMain function. Here is DllMain:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  BOOL WINAPI DllMain(
+                HINSTANCE hDllInst,
+                DWORD fdwReason,
+                LPVOID lpvReserved)
+  {
+    BOOL bResult = TRUE;
+
+    // Dispatch this main call based on the reason it was called.
+    switch (fdwReason)
+    {
+      case DLL_PROCESS_ATTACH:
+        // The DLL is being loaded for the first time by a given process.
+        // Perform per-process initialization here. If the initialization
+        // is successful, return TRUE; if unsuccessful, return FALSE.
+        bResult = FALSE;
+        if (UnicodeOk())
+        {
+          // Instantiate the CServer utility class.
+          g_pServer = new CServer;
+          if (NULL != g_pServer)
+          {
+            // Remember the DLL Instance handle.
+            g_pServer-&gt;m_hDllInst = hDllInst;
+
+            // Create a MsgBox object.
+            g_pServer-&gt;m_pMsgBox = new CMsgBox;
+            if (NULL != g_pServer-&gt;m_pMsgBox)
+            {
+              // Check for valid Machine License.
+              g_pServer-&gt;CheckLicense();
+              bResult = TRUE;
+            }
+          }
+        }
+        break;
+
+      case DLL_PROCESS_DETACH:
+        ...
+        break;
+
+      case DLL_THREAD_ATTACH:
+        ...
+        break;
+
+      case DLL_THREAD_DETACH:
+        ...
+        break;
+
+      default:
+        break;
+    }
+
+    return (bResult);
+  }
+ </FONT> </PRE>
+
+<P>
+The significant difference here is the g_pServer-&gt;CheckLicense call.
+CheckLicense is a new licensing-related method of the server control
+object (CServer). Here is what the CServer class declaration in SERVER.H
+looks like with added support for license management.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class CServer
+  {
+    public:
+      CServer(void);
+      ~CServer(void);
+
+      void Lock(void);
+      void Unlock(void);
+      void ObjectsUp(void);
+      void ObjectsDown(void);
+      BOOL CheckLicense(void);
+
+      // A place to store the handle to loaded instance of this DLL module.
+      HINSTANCE m_hDllInst;
+
+      // A place to store a client's parent window.
+      HINSTANCE m_hWndParent;
+
+      // A Pointer to a Message Box object.
+      CMsgBox* m_pMsgBox;
+
+      // Global DLL Server living Object count.
+      LONG m_cObjects;
+
+      // Global DLL Server Client Lock count.
+      LONG m_cLocks;
+
+      // The Machine License key string for the LICSERVE server.
+      CHAR m_szLicenseKey[MAX_LICENSEKEY];
+
+      // Length of the global g_szLicenseKey string.
+      UINT m_cLicenseLen;
+
+      // Machine license verified.
+      BOOL m_bLicensed;
+  };
+ </FONT> </PRE>
+
+<P>
+The CheckLicense method returns TRUE if the license was verified and FALSE
+if not. An ASCII m_szLicenseKey string is defined to contain a unique
+license key string that is hard-coded for this server. This key string
+provides what is called the machine license for the server. In this
+scheme, the entire server is licensed for use on the machine through this
+one key. For those components housed within the server that you want to
+license, you implement their class factories using IClassFactory2. We'll
+look at this shortly.
+
+<P>
+The key string is initialized in the CServer::CServer constructor (in
+SERVER.CPP) as follows:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  CServer::CServer(void)
+  {
+    // Init the Server License Key string.
+    lstrcpyA(
+      m_szLicenseKey,
+      &quot;LICSERVE 1.0 - Component Server - Copyright 1996-1997 Microsoft Corp.&quot;);
+
+    // Zero the Object and Lock counts for this attached process.
+    m_cObjects = 0;
+    m_cLocks = 0;
+
+    return;
+  }
+ </FONT> </PRE>
+
+<P>
+We force the use of the ASCII lstrcpyA function because the key string is
+specified in CServer as a CHAR ASCII string and not as a more general
+TCHAR, which would compile to either Unicode or ANSI. This reliance on
+ASCII is merely a convenience, since the license file (where the matching
+license key string should be found, in this case LICSERVE.LIC) is also
+provided by us--the builders of this server--as part of the server. We
+control the format of the license file. To read an ASCII text file and
+match two ASCII text strings is easy. However, we could make the license
+key a Unicode or even an encrypted binary sequence if we were so inclined.
+
+<P>
+The internal license key used in this code sample is chosen to match the
+first text line of an outside ASCII text file. Here is that entire
+LICSERVE.LIC text file.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  LICSERVE 1.0 - Component Server - Copyright 1996-1997 Microsoft Corp.
+
+  Warning: This product is licensed to you pursuant to the terms of the
+  license agreement included with the original software, and is protected
+  by copyright law and international treaties. Unauthorized reproduction
+  or distribution may result in severe civil and criminal penalties, and
+  will be prosecuted to the maximum extent possible under the law.
+ </FONT> </PRE>
+
+<P>
+If this file's copyright line is tampered with in any way, or if the file
+is absent, the server's class factories won't create any instances of
+their respective components. The presence of this file constitutes a
+machine license for the LICSERVE comonents. We'll explore this idea in
+more detail later.
+
+<P>
+CServer also has two other new data members, m_cLicenseLen and
+m_bLicensed. They are for later use by the various license-related methods
+in the server. CServer::CheckLicense assigns both of these values. Here is
+CheckLicense (in SERVER.CPP):
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  BOOL CServer::CheckLicense(void)
+  {
+    TCHAR  szPath[MAX_PATH];
+    CHAR   szLicKeyRead[MAX_LICENSEKEY];
+    UINT   cbRead;
+    ULONG  cbWasRead;
+    UINT   cb;
+    HANDLE hFile;
+
+    // Assume license not verified to start.
+    m_bLicensed = FALSE;
+
+    // Assume the license key string is ASCII and count its length.
+    m_cLicenseLen = cb = lstrlenA(m_szLicenseKey);
+
+    // Get the module path. Then parse and replace DLL extension with LIC.
+    MakeFamilyPath(m_hDllInst, szPath, TEXT(LICENSE_FILE_EXT));
+
+    // Open the xx.LIC file and read in and check the license key for
+    // a match.
+    hFile = CreateFile(
+              szPath,
+              GENERIC_READ,
+              FILE_SHARE_READ,
+              NULL,
+              OPEN_EXISTING,
+              FILE_ATTRIBUTE_NORMAL,
+              NULL);
+
+    if (INVALID_HANDLE_VALUE != hFile)
+    {
+      cbRead = cb * sizeof(CHAR);
+      ReadFile(hFile, szLicKeyRead, cbRead, &amp;cbWasRead, NULL);
+      CloseHandle(hFile);
+      if (cbRead == cbWasRead)
+        if (0 == memcmp(m_szLicenseKey, szLicKeyRead, cb))
+          m_bLicensed = TRUE;
+    }
+
+    LOGF1(&quot;P: CServer::CheckLicense. bLicensed=%i.&quot;, m_bLicensed);
+
+    return m_bLicensed;
+  }
+ </FONT> </PRE>
+
+<P>
+CheckLicense first calculates the length of the internally held license
+key string and assigns it to m_bLicenseLen for later use. It then calls
+APPUTIL's MakeFamilyPath function to construct the path name to the
+LICSERVE.LIC license file. It calls the CreateFile function to open
+this license file for reading. If successful, it calls the ReadFile
+function to read a series of bytes from the front of the file. The number
+of bytes read is equal to the length of the internally stored license key
+string (the length assigned above to m_cLicenseLen). This program logic
+assumes that a copy of the internally held license key is stored at the
+beginning of the LICSERVE.LIC file. The call to memcmp, a C standard
+library function, compares the internal license key with the one read from
+the .LIC file.
+
+<P>
+If the two license key strings match, m_bLicensed is set to TRUE. If they
+do not, m_bLicensed is FALSE. The m_bLicensed Boolean variable specifies
+if the server module has verified the presence of the machine license file
+and is used by licensing functionality in the server (for example, the
+class factories). We will see how this variable is used later in this code
+tour.
+
+<P>
+Class factories are where the core of the licensing mechanism resides. For
+those components we want to protect with a license in this server, we
+implement IClassFactory2 instead of IClassFactory in their class factory.
+In this server we are protecting only one component, COLicCruiseCar. Here
+is the class factory declaration for the class factory CFLicCruiseCar in
+FACTORY.H:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class CFLicCruiseCar : public IUnknown
+  {
+    public:
+      // Main Object Constructor &amp; Destructor.
+      CFLicCruiseCar(IUnknown* pUnkOuter, CServer* pServer);
+      ~CFLicCruiseCar(void);
+
+      // A general method for initializing a newly created CFLicCruiseCar.
+      HRESULT Init(void);
+
+      // IUnknown methods. Main object, non-delegating.
+      STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+      STDMETHODIMP_(ULONG) AddRef(void);
+      STDMETHODIMP_(ULONG) Release(void);
+
+    private:
+      // A private unconditional create for LicCruiseCar.
+      STDMETHODIMP CreateLicCruiseCar(IUnknown*, REFIID, PPVOID);
+
+      // We declare nested class interface implementations here.
+
+      // We implement the IClassFactory2 interface on this LicCruiseCar
+      // Class Factory to license these COM objects.
+      class CImpIClassFactory : public IClassFactory2
+      {
+        public:
+          // Interface Implementation Constructor &amp; Destructor.
+          CImpIClassFactory(
+            CFLicCruiseCar* pBackObj,
+            IUnknown* pUnkOuter,
+            CServer* pServer);
+          ~CImpIClassFactory(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // IClassFactory methods.
+          STDMETHODIMP         CreateInstance(IUnknown*, REFIID, PPVOID);
+          STDMETHODIMP         LockServer(BOOL);
+
+          // IClassFactory2 methods.
+          STDMETHODIMP         GetLicInfo(LPLICINFO);
+          STDMETHODIMP         RequestLicKey(DWORD, BSTR*);
+          STDMETHODIMP         CreateInstanceLic(
+                                 IUnknown*,
+                                 IUnknown*,
+                                 REFIID,
+                                 BSTR,
+                                 PPVOID);
+
+        private:
+          // Data private to this interface implementation of IClassFactory.
+          ULONG            m_cRefI;       // Interface Ref Count (debug).
+          CFLicCruiseCar*  m_pBackObj;    // Parent Object back pointer.
+          IUnknown*        m_pUnkOuter;   // Outer unknown for Delegation.
+          CServer*         m_pServer;     // Server Control Object.
+      };
+
+      // Make the otherwise private and nested IClassFactory interface
+      // implementation a friend to COM object instantiations of this
+      // selfsame CFLicCruiseCar COM object class.
+      friend CImpIClassFactory;
+
+      // Private data of CFLicCruiseCar COM objects.
+
+      // Nested IClassFactory implementation instantiation.
+      CImpIClassFactory m_ImpIClassFactory;
+
+      // Main Object reference count.
+      ULONG             m_cRefs;
+
+      // Outer unknown (aggregation &amp; delegation). Used when this
+      // CFLicCruiseCar object is being aggregated. Otherwise it is used
+      // for delegation if this object is reused via containment.
+      IUnknown*         m_pUnkOuter;
+
+      // Pointer to this component server's control object.
+      CServer*          m_pServer;
+  };
+ </FONT> </PRE>
+
+<P>
+A CreateLicCruiseCar method is provided as an internal unconditional
+create function. This method creates a new COLicCruiseCar object
+regardless of any licensing conditions. It is conditionally called from
+two different license-aware creation methods, CreateInstance and
+CreateInstanceLic.
+
+<P>
+The IClassFactory interface is implemented as the nested class
+CImpIClassFactory, a pattern that should be familiar by now. As noted
+above, the CImpIClassFactory implementation is derived from
+IClassFactory2. Thus it must implement three methods (GetLicInfo,
+RequestLicKey, and CreateInstanceLic) in addition to the usual
+IClassFactory methods CreateInstance and LockServer. The rest of this
+CFLicCruiseCar class factory declaration is essentially the same as that
+presented in the DLLSERVE code sample's CFCruiseCar class factory. The
+CFCruiseCar::QueryInterface does one thing worthy of comment.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP CFLicCruiseCar::QueryInterface(
+                 REFIID riid,
+                 PPVOID ppv)
+  {
+    HRESULT hr = E_NOINTERFACE;
+    *ppv = NULL;
+
+    if (IID_IUnknown == riid)
+    {
+      *ppv = this;
+      LOG(&quot;P: CFLicCruiseCar::QueryInterface. 'this' pIUnknown returned.&quot;);
+    }
+    else if (IID_IClassFactory == riid)
+    {
+      *ppv = &amp;m_ImpIClassFactory;
+      LOG(&quot;P: CFLicCruiseCar::QueryInterface. pIClassFactory returned.&quot;);
+    }
+    else if (IID_IClassFactory2 == riid)
+    {
+      *ppv = &amp;m_ImpIClassFactory;
+      LOG(&quot;P: CFLicCruiseCar::QueryInterface. pIClassFactory2 returned.&quot;);
+    }
+
+    if (NULL != *ppv)
+    {
+      // We've handed out a pointer to the interface so obey the COM rules
+      // and AddRef the reference count.
+      ((LPUNKNOWN)*ppv)-&gt;AddRef();
+      hr = NOERROR;
+    }
+
+    return (hr);
+  }
+ </FONT> </PRE>
+
+<P>
+Since IClassFactory2 is derived from abstract base class IClassFactory, if
+we implement IClassFactory2 we must also implement IClassFactory methods.
+If QueryInterface requests either the IClassFactory or IClassFactory2
+interface, we can safely return the same pointer, the one to the
+IClassFactory2 interface implementation.
+
+<P>
+We next turn to the implementations of the licensing-aware class factory
+methods. Here is the IClassFactory CreateInstance method in FACTORY.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP CFLicCruiseCar::CImpIClassFactory::CreateInstance(
+                 IUnknown* pUnkOuter,
+                 REFIID riid,
+                 PPVOID ppv)
+  {
+    HRESULT hr = CLASS_E_NOTLICENSED;
+
+    if (g_pServer-&gt;m_bLicensed)
+      hr = m_pBackObj-&gt;CreateLicCruiseCar(pUnkOuter, riid, ppv);
+    else
+    {
+      LOG(&quot;P: CImpIClassFactory::CreateInstance. No Machine License.&quot;);
+      g_pServer-&gt;m_pMsgBox-&gt;ErrorID(IDS_NOLICENSE);
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+The unconditional CreateLicCruiseCar function is called only if
+CheckLicense previously set m_bLicensed to TRUE when the server was first
+initialized for a given process. If the machine license was not verified,
+CheckLicense displays an error message indicating to the user that the
+client application is attempting to run with a component that is not
+licensed for use on this machine.
+
+<P>
+GetLicInfo is one of the methods required by IClassFactory2:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP CFLicCruiseCar::CImpIClassFactory::GetLicInfo(
+                 LPLICINFO pLicInfo)
+  {
+    HRESULT hr = NOERROR;
+
+    LOG(&quot;P: CFLicCruiseCar::CImpIClassFactory::GetLicInfo.&quot;);
+
+    if (NULL != pLicInfo)
+    {
+      pLicInfo-&gt;cbLicInfo = sizeof(LICINFO);
+
+      // Inform whether RequestLicKey will work.
+      pLicInfo-&gt;fRuntimeKeyAvail = g_pServer-&gt;m_bLicensed;
+
+      // Inform whether the standard CreateInstance will work.
+      pLicInfo-&gt;fLicVerified = g_pServer-&gt;m_bLicensed;
+    }
+    else
+      hr = E_POINTER;
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+This method writes appropriate values to the LICINFO structure whose
+address is passed in the pLicInfo parameter. The two important values in
+this structure are fRuntimeKeyAvail and fLicVerified. The fRuntimeKeyAvail
+member is set to the value that was returned by CheckLicense. This flag
+indicates in advance whether the RequestLicKey method can be attempted. If
+the server found no machine license, it will not (and should not) provide
+the internal license key to any caller of the RequestLicKey method. The
+fLicVerified member indicates whether the server verified that there is at
+least a machine license for the server.
+
+<P>
+Here is the IClassFactory2 RequestLicKey method (again in file FACTORY.CPP).
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP CFLicCruiseCar::CImpIClassFactory::RequestLicKey(
+                 DWORD dwReserved,
+                 BSTR* pbstrKey)
+  {
+    HRESULT hr = CLASS_E_NOTLICENSED;
+    OLECHAR szLicKey[MAX_LICENSEKEY];
+
+    LOG(&quot;P: CFLicCruiseCar::CImpIClassFactory::RequestLicKey.&quot;);
+
+    // Only return the license key if the server machine license was
+    // verified.
+    if (g_pServer-&gt;m_bLicensed)
+    {
+      // Convert our ANSI license string to Wide Char and then alloc as
+      // a BSTR.
+      mbstowcs(szLicKey, g_pServer-&gt;m_szLicenseKey,
+      g_pServer-&gt;m_cLicenseLen); *pbstrKey = SysAllocString(szLicKey);
+      hr = (NULL != *pbstrKey) ? NOERROR : E_OUTOFMEMORY;
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+RequestLicKey returns the license key in the form of a BSTR. In 32-bit
+COM, these basic strings are like zero-terminated Unicode strings, except
+that they are preceded by a DWORD value indicating the length of the
+string. BSTR variables are used heavily in OLE Automation and have come to
+us from Microsoft Visual Basic&reg;. COM/OLE provides a set of API
+functions to manipulate these BSTRs, such as the SysAllocString call
+above. There is also a matching SysFreeString function that must be called
+to free these allocated BSTRs.
+
+<P>
+The RequestLicKey method is used to request a run-time license key from
+the server. The idea is that during development, the developer (or a
+development tool) can request from the server a copy of its internal
+license key. This request can succeed only if there is already a machine
+license with the server. Once obtained, the license key copy can be
+stored persistently for use by a client application that uses and ships
+with the server. Later, the client application can use this persistently
+stored license key to create a licensed component by calling the
+CreateInstanceLic method, which accepts the key as an argument.
+
+<P>
+The client application can succeed at this even if the machine license
+file does not accompany the server. In this situation, the normal call to
+IClassFactory::CreateInstance would fail, but a call to
+IClassFactory2::CreateInstanceLic would succeed.
+
+<P>
+Here is the IClassFactory2 CreateInstanceLic method in FACTORY.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP CFLicCruiseCar::CImpIClassFactory::CreateInstanceLic(
+                 IUnknown* pUnkOuter,
+                 IUnknown* pUnkReserved,
+                 REFIID riid,
+                 BSTR bstrKey,
+                 PPVOID ppvCob)
+  {
+    HRESULT hr;
+    BOOL    bMatch = FALSE;
+    BSTR    bstrTemp;
+    UINT    cch = g_pServer-&gt;m_cLicenseLen;
+    OLECHAR szLicKey[MAX_LICENSEKEY];
+
+    *ppvCob = NULL;
+
+    // Convert our ANSI license string to Wide Char and then alloc as BSTR.
+    mbstowcs(szLicKey, g_pServer-&gt;m_szLicenseKey, cch);
+    bstrTemp = SysAllocString(szLicKey);
+    if (NULL != bstrTemp)
+    {
+      if (NULL != bstrKey)
+        bMatch = (0 == memcmp(bstrTemp, bstrKey, cch * sizeof(OLECHAR)));
+
+      SysFreeString(bstrTemp);
+
+      if (bMatch)
+        hr = m_pBackObj-&gt;CreateLicCruiseCar(pUnkOuter, riid, ppvCob);
+      else
+      {
+        LOG(&quot;P: CImpIClassFactory::CreateInstanceLic. No Runtime License.&quot;);
+        g_pServer-&gt;m_pMsgBox-&gt;ErrorID(IDS_NORUNLICENSE);
+        hr = CLASS_E_NOTLICENSED;
+      }
+    }
+    else
+      hr = E_OUTOFMEMORY;
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+The license key is passed as a BSTR, so we convert the internal license
+key string to a BSTR and then compare the two. If there is a match, we
+have a run-time license and can create an instance of the COLicCruiseCar
+and pass back the requested interface on it. If there is not a match, an
+error message is displayed to inform the user that the component is not
+licensed for run-time use.
+
+<P>
+What we've seen so far is that when the server DLL is attached to a
+process, it checks for the presence of the machine .LIC license file and
+tries to match its internal key to the key in the license file. If a match
+is found, the CFLicCruiseCar class factory will permit a normal call to
+IClassFactory::CreateInstance. Otherwise, it won't. In this tutorial
+sample, if the machine license is found, the client can also call
+IClassFactory2::RequestLicKey to obtain a copy of the internal license
+key. It can store this run-time license key to later create an instance by
+calling the IClassFactory2::CreateInstanceLic method.  In actual
+applications the client would not call RequestLicKey. This call would be
+used during development only to obtain the run-time license key for the
+component in the server.
+
+<P>
+Run-time licensing is intended for component servers that are purchased in
+binary form by a developer and resold with the developer's client
+application. During development, the developer uses some tool that acts as
+a temporary client of the licensed component and calls
+IClassFactory2::RequestLicKey to obtain the run-time license key. This
+call would succeed because a machine license for the component would be
+present as part of the development kit purchased by the developer for the
+component. The developer would then use the run-time license key value in
+compiling the retail client application.
+
+<P>
+In a typical licensing scheme, the run-time key value is compiled into the
+client executable and used at run-time in calls to
+IClassFactory2::CreatInstanceLic. Then, when the retail client application
+is later sold by the developer in a package with the accompanying server
+component, the machine license file is not included in the package. In
+this case, only the client with the proper built-in, run-time license key
+will work with the resold component. This protects the component vendor
+from unauthorized copies of the component working with any client
+application that can call the component's IClassFactory::CreateInstance.
+Since the machine license file is absent, IClassFactory::CreateInstance
+will fail, returning error CLASS_E_NOTLICENSED.
+
+<P>
+Before leaving the class factories in FACTORY.CPP, we should note that an
+implementation of a CFLicCarSample factory is provided in a way very
+similar to what was studied in the DLLSERVE lesson. As before, this
+CarSample utility component is used to display trace logging of this
+server's behavior in the client's logging display and to provide an About
+dialog box from the server.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

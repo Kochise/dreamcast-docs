@@ -1,0 +1,1095 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>PERSERVE COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="stoclien.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="pertext.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="PERSERVE">
+PERSERVE - IPersistStream Persistent Object Server</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The PERSERVE sample introduces persistent COM objects. This is the first
+of four samples covering various techniques for implementing COM object
+persistence. PERSERVE covers persistence using the implementation of the
+IPersistStream standard interface. PERTEXT covers persistence using the
+implementation of the IPersistStreamInit standard interface. PERDRAW
+covers persistence using the implementation of the IPersistStorage
+standard interface. PERCLIEN covers how a client exploits the different
+kind of persistence supported by each of the components in the PERSERVE,
+PERTEXT, and PERDRAW servers.
+
+<P>
+The PERSERVE sample introduces the COPageList COM object, which
+encapsulates a page list. The list contains elements that correspond to
+pages of text or drawing data. COPageList objects expose a set of
+interfaces that make the objects connectable, persistent managers of the
+list data. Client access to this data is available through an IPageList
+custom interface. COPageList implements the IPageList interface.
+
+<P>
+A clear architectural distinction is kept between client and server.
+COPageList provides no graphical user interface (GUI). Instead, the
+COPageList object relies on the client for all GUI behavior.
+
+<P>
+The PERCLIEN client provides the GUI display and manages the list of pages
+the content of which are stored in a compound file that contains both the
+contents of the list and of each page in that list. The user of PERCLIEN
+can edit the content of two type of pages: Text pages and drawing pages.
+Text pages have text data that the user can edit using a simple windowed
+text editor. Drawing pages have drawing data that the user can edit using
+free-form, scribble-like functionality based on the earlier STOSERVE and
+STOCLIEN samples. Both types of editing are done in separate client
+windows. The details of the client are covered in the PERCLIEN sample. For
+more information, see PERCLIEN.HTM.
+
+<P>
+Storage in the compound file is achieved because the components provide
+persistent COM objects that encapsulate the page list and edited page
+data. PERSERVE houses a persistent object that encapsulates the single
+page list kept in each compound file containing such pages. PERTEXT houses
+a persistent object that encapsulates the edited text data for each text
+page. PERDRAW houses a persistent object that encapsulates the drawing
+data for each drawing page.
+
+<P>
+The COPageList object in the this PERSERVE sample encapsulates the
+persistent page list data. COPageList implements the IPersistStream
+standard interface to expose control of the page list storage located in
+the client-provided stream of a compound file. The COTextPage object in
+the PERTEXT sample encapsulates the data of an edited text page.
+COTextPage implements the IPersistStreamInit standard interface to expose
+control of the text data storage that is located in the client-provided
+stream of a compound file. In contrast to these stream-based persistent
+objects, the CODrawPage object in the PERDRAW sample encapsulates the
+persistent drawing-ink data. CODrawPage implements the IPersistStorage
+standard interface to expose control of the drawing's ink data storage
+located in the client-provided substorage of a compound file.
+
+<P>
+This code sample focuses primarily on COPageList's implementation of the
+IPersistStream interface to provide stream-based persistence for a COM
+object. PERSERVE works with the PERCLIEN code sample to illustrate the
+joint use by client and server of this IPersistStream-based persistence.
+
+<P>
+COPageList's support for object persistence is the primary means
+of storing the page list data. COPageList stores its list data in a
+stream under the root storage of a structured-storage compound file. The
+compound file has a unique format because of the various streams and
+storages used. The client identifies these compound files as page files
+with a .PAG extension. Only one page-list stream is present in each page
+file. The client controls the use of the containing compound file and
+provides COPageList with an IStream pointer for its use in loading and
+saving its list data in the compound file. The IStream pointer is passed
+to COPageList in method calls to the IPersistStream interface.
+
+<P>
+COPageList also exposes an IPageList custom interface to manipulate the
+encapsulated list data. IPageList exposes the Get, Set, Add, Delete, and
+Clear methods.
+
+<P>
+Connectable object features are also supported in COPageList. The
+IConnectionPointContainer interface is exposed, and an appropriate
+connection point is implemented. In this context, an outgoing custom
+IPageListSink interface is declared to send notifications to the client.
+
+<P>
+The two IPageList and IPageListSink custom interfaces are declared in
+IPAGES.H located in the common INC directory. PAGEGUID.H, which contains
+the GUIDs for the interfaces and objects, is located in that same
+directory.
+
+<P>
+The PERSERVE sample uses the CThreaded facility in APPUTIL to achieve
+thread safety in the server housing and the class factory. Because
+PERSERVE.DLL is generally accessed from a Single Threaded Apartment (STA)
+as an in-process server, COPageList instances are not coded as
+thread-safe. The CLSID_PageList component is registered as supporting the
+apartment threading model.
+
+<P>
+For functional descriptions and a tutorial code tour of PERSERVE, see the
+Code Tour section in PERSERVE.HTM. For details on setting up the
+programmatic usage of PERSERVE.DLL, see the Usage section in PERSERVE.HTM.
+To read PERSERVE.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the PERSERVE lesson in the table of lessons. You can also do the
+same thing by double-clicking the PERSERVE.HTM file after locating the
+main tutorial directory in Windows Explorer. See also PERCLIEN.HTM in the
+main tutorial directory for more details on the PERCLIEN client
+application and how it works with PERSERVE.DLL. You must build
+PERSERVE.DLL before running the PERCLIEN sample.
+
+<P>
+The PERSERVE server provides a PageList component that can create
+instances of the COPageList COM object. COPageList is housed in the
+PERSERVE.DLL in-process server and is made publicly available as a custom
+COM component. Like all other servers in this tutorial series,
+PERSERVE.DLL is a self-registering COM server. It makes the COPageList
+object type available to clients as the PageList component in the PERSERVE
+server using a CLSID_PageList registration in the Registry.
+
+<P>
+PERSERVE's makefile automatically registers its PageList COM component in
+the registry, which it must do before clients can use PERSERVE.DLL as a
+server for the PageList component. This self-registration is started in
+the makefile using the REGISTER.EXE utility built in the REGISTER sample.
+To build or run PERSERVE.DLL, you must build the REGISTER code sample
+first.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<p>
+To use PERSERVE, a client program does not need to include PERSERVE.H or
+link to PERSERVE.LIB. A COM client of PERSERVE obtains access solely
+through COM services and the PageList object's CLSID. For PERSERVE, that
+CLSID is CLSID_PageList (defined in file PAGEGUID.H in the INC sibling
+directory). For more information about how the client obtains this access,
+see the PERCLIEN code sample.
+
+<p>
+PERSERVE.DLL is intended primarily as a COM server. Although it can be
+implicitly loaded by linking to its associated .LIB file, it is normally
+used after an explicit LoadLibrary call, usually from within the
+CoGetClassObject function. PERSERVE is a self-registering in-process
+server.
+
+<P>
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the PERSERVE directory:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  nmake register
+ </FONT> </PRE>
+
+<P>
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the PERSERVE directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ..\register\register.exe perserve.dll
+ </FONT> </PRE>
+
+<P>
+These registration commands require a prior build of both the REGISTER
+sample and PERSERVE.DLL.
+
+<P>
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Microsoft Platform SDK and Visual
+C++&reg; include a utility, REGSVR32.EXE, which you can use in a similar
+fashion to register in-process servers and marshaling DLLs.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, PERCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="perclien\perclien.exe">Click here to run PERCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files         Description</u>
+PERSERVE.TXT  Short description of sample.
+MAKEFILE      The generic makefile for building the PERSERVE.DLL
+              code sample of this lesson.
+PERSERVE.H    The include file for declaring as imported or defining as
+              exported the service functions in PERSERVE.DLL.
+PERSERVE.CPP  The main implementation file for PERSERVE.DLL. Has DllMain
+              and the COM server functions (for example, DllGetClassObject).
+PERSERVE.DEF  The module definition file. Exports server housing functions.
+PERSERVE.RC   The DLL resource definition file for the executable.
+PERSERVE.ICO  The icon resource for the executable.
+SERVER.H      The include file for the server control C++ object.
+SERVER.CPP    The implementation file for the server control C++ object.
+FACTORY.H     The include file for the server's class factory COM objects.
+FACTORY.CPP   The implementation file for the server's class factories.
+CONNECT.H     The include file for the connection point enumerator,
+              connection point, and connection enumerator classes.
+CONNECT.CPP   The implementation file for the connection point enumerator,
+              connection point, and connection enumerators objects.
+PAGELIST.H    The include file for the COPageList COM object class.
+PAGELIST.CPP  The implementation file for the COPageList COM object class
+              and the connection points.
+ </FONT> </PRE>
+
+<p>
+PERSERVE uses many of the utility classes and services provided by
+APPUTIL. For more details on APPUTIL, study the APPUTIL library's source
+code in the sibling APPUTIL directory and APPUTIL.HTM in the main tutorial
+directory.
+
+<p>
+This sample is part of a graduated series of tutorial code samples and
+assumes that you have had some exposure to the previous samples. It does
+not revisit earlier topics such as basic interface implementation
+techniques, COM object construction, in-process server construction,
+class-factory construction, connectable object construction, and
+techniques of using structured storage in compound files. For information
+on these topics, study the earlier tutorial samples.
+
+<p>The major topics covered in this code tour are:
+
+<ul>
+<li>How PERSERVE is designed to work with connected clients
+
+<li>COPageList's use of the IPageList interface for managing page lists.
+
+<li>The data constructs that make up COPageList's persistent data.
+
+<li>COPageList's implementation of the IPersistStream interface to provide
+    persistence.
+
+<li>COPageList's use of the IPageListSink interface for client notifications.
+
+</ul>
+
+<p>
+The COPageList COM object is the single object type managed by this
+PERSERVE in-process server. COPageList is a connectable COM object with an
+implementation of the IConnectionPointContainer standard interface, an
+implementation of the IPersistStream standard interface, and an
+implementation of the IPageList custom interface.
+
+<P>
+COPageList exposes the IPageList custom interface so clients can perform a
+small set of operations on the page list that is encapsulated by
+COPageList. The following is a summary of the IPageList methods from
+IPAGES.H located in the common INC directory:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  Get
+    Get a page list item for a given page number. This includes
+    open status, page type, page title, and page data name.
+
+  Set
+    Put a page list item of specified page number with the page's
+    title and open status.
+
+  Add
+    Add a new page list item of specified type with specified title.
+
+  Delete
+    Delete the page list item that correspondes to the specified page
+    number.
+
+  Clear
+    Clear (and delete) all page list items from the page list.
+</FONT> </PRE>
+
+<P>
+Get, Set, Add, and Delete all act upon individual list entries, while
+Clear acts upon the entire list. The implementation of IPageList is
+straightforward and is not covered in detail here. A set of properties for
+the list is maintained and the list array itself is maintained. For more
+details, see PAGELIST.H and PAGELIST.CPP.
+
+<p>
+COPageList manages the array of its list data in RAM. However, because
+COPageList is also a persistent object, it also manages the persistent
+image of this list data in a stream of a structured storage compound file.
+COPageList exposes an implementation of the IPersistStream interface so
+that clients can control the persistence features of COPageList. The
+principal focus of this sample is COPageList's implementation of
+IPersistStream.
+
+<p>
+The client is responsible for a presentation of the list to the user.
+PERCLIEN does this with a standard List Box control. The client uses the
+IPageList interface on COPageList to obtain the data to display in this
+list box and to update COPageList with any user-requested changes to the
+list data. The client does not primarily manage the list data. COPageList
+does this in the PERSERVE server. The client does manage creation or
+opening of the compound file containing the list data. When the client
+needs to control the persistence of COPageList it specifies an IStream
+interface to COPageList. This is typically done during such IPersistStream
+method-calls as Load and Save. COPageList then uses that stream for all
+persistent storage of its object-state data.
+
+<P>
+Two major data constructs are stored for this object-state data: a page
+list item and the page list properties. The page list data contains an
+array of the following PAGEITEM structures whose format is declared in
+PAGELIST.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // The PageList item structure.
+  typedef struct _PAGEITEM
+  {
+    SHORT     nType;                       // Page Type.
+    BOOL      bOpen;                       // Page Open status.
+    INT       iPage;                       // Page Number.
+    WCHAR     wszDataName[PAGE_NAME_SIZE]; // Page Storage/Stream Data Name.
+    WCHAR     wszTitle[PAGE_TITLE_SIZE];   // Page Title.
+  } PAGEITEM;
+</FONT> </PRE>
+
+<P>
+The nType member contains the page type. Currently the following types
+are defined in the IPAGES.H file found in the common INC directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // Here are the page types.
+  #define PAGETYPE_NONE    0
+  #define PAGETYPE_DELETED 1
+  #define PAGETYPE_TEXT    2
+  #define PAGETYPE_DRAWING 3
+</FONT> </PRE>
+
+<P>
+The bOpen Boolean member is for future evolution of the application, and
+is not used by the PERCLIEN client. The intention is to allow a client to
+restore the opened pages across invocations of the client and doing this
+requires persistence on the open status of the opened pages.
+
+<P>
+The iPage member is the page sequence number of the list item. It is used
+to associate the client's list box item with the associated page data. For
+example, the client may want to delete the page after the list is loaded
+from persistent storage. A delete call (through IPageList::Delete) would
+specify the page number of the page to delete. Because of deletes and
+other activity on COPageList's dynamic page list, the array index of the
+items in COPageList's list array may not match the associated page number.
+Thus, the page associated with the list item that the user sees in the
+client must be found in COPageList's list array by finding a match on the
+iPage member. The pages are numbered within the array and are not numbered
+according to their &quot;slot&quot; in the dynamic list array.
+
+<P>
+The wszDataName member is the name of the stream in which the page's data
+is stored. This page data is the text data of text pages and the drawing
+data of drawing pages. Note that this stream name is a wide character
+string that supports Unicode. Each page in the compound file has such a
+named stream for its data. The stream name is an internal, automatically
+generated name of the forms, Drawing00000 or Text00000. The generation
+algorithm for this data stream name (see the NextName internal method in
+PAGELIST.CPP) guarantees that this name will always be unique within the
+same compound file. PAGE_NAME_SIZE is defined in IPAGES.H as 16. Likewise,
+PAGE_TITLE_SIZE is defined in IPAGES.H as 64.
+
+<P>
+The wszTitle member is the user displayable title of the page. This title
+is displayed for each page in the client list box. This title is a wide
+character string.
+
+<P>
+The other important persistent data that is stored in the page list's data
+stream is a set of properties for the page list. These are properties of
+the page list and not properties of individual pages and characterize the
+contents of the entire compound file. The following is the PAGELISTPROPS
+structure from PAGELIST.H:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // Properties of the PageList.
+  typedef struct _PAGELISTPROPS
+  {
+    LONG lPageListVersion;
+    LONG lPageListSize;
+    LONG lPageNameCounter;
+    WCHAR wszTitle[PAGE_TITLE_SIZE];
+    WCHAR wszAuthor[PAGE_TITLE_SIZE];
+    WCHAR wszReserved1[PAGE_TITLE_SIZE];
+  } PAGELISTPROPS;
+</FONT> </PRE>
+
+<P>
+The lPageListVersion member holds a version number for the page list.
+This allows the first member to be checked to determine possible
+variations in treatment based on the page list version.
+
+<P>
+The lPageListSize member holds the number of page list items in the
+page list array.
+
+<P>
+The lPageNameCounter member holds a counter used in generating unique
+data names for streams and storages used in the compound file.
+
+<P>
+The wszTitle, wszAuthor, and wszReserved1 members are for future evolution
+of the application and are not used by PERSERVE or PERCLIEN.
+
+<p>
+In the division of labor between client and server, COPageList does not
+create the compound file that is used to store page list data. The client
+uses the IPersistStream interface for both the Save and Load of the
+COPageList's persistent data. The client passes an IStream interface
+pointer for a stream located in an existing compound file. COPageList then
+uses the IStream interface to read and write data in the compound file.
+
+<P>
+Here is the declaration of the COPageList COM object from PAGELIST.H:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class COPageList : public IUnknown
+  {
+    public:
+      // Main Object Constructor & Destructor.
+      COPageList(IUnknown* pUnkOuter, CServer* pServer);
+      ~COPageList(void);
+
+      // A general public method for initializing this newly created
+      // object. Creates any subordinate arrays, structures, or objects.
+      // Not exposed as part of an interface. Used by Class Factory.
+      HRESULT Init(void);
+
+      // Main object IUnknown methods. Non-delegating.
+      STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+      STDMETHODIMP_(ULONG) AddRef(void);
+      STDMETHODIMP_(ULONG) Release(void);
+
+    private:
+      // We declare nested class interface implementations here.
+
+      class CImpIConnectionPointContainer : public IConnectionPointContainer
+      {
+        public:
+          // Interface Implementation Constructor & Destructor.
+          CImpIConnectionPointContainer(COPageList* pCO, IUnknown* pUnkOuter);
+          ~CImpIConnectionPointContainer(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // IConnectionPointContainer methods.
+          STDMETHODIMP         FindConnectionPoint(REFIID, IConnectionPoint**);
+          STDMETHODIMP         EnumConnectionPoints(IEnumConnectionPoints**);
+
+        private:
+          // Data private to this interface implementation.
+          COPageList*   m_pCO;          // Parent Object back pointer.
+          IUnknown*     m_pUnkOuter;    // Outer unknown for Delegation.
+      };
+
+      class CImpIPersistStream : public IPersistStream
+      {
+        public:
+          // Interface Implementation Constructor & Destructor.
+          CImpIPersistStream(COPageList* pCO, IUnknown* pUnkOuter);
+          ~CImpIPersistStream(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // IPersistStream methods.
+          STDMETHODIMP         GetClassID(CLSID* pClassID);
+          STDMETHODIMP         IsDirty(void);
+          STDMETHODIMP         Load(IStream* pIStream);
+          STDMETHODIMP         Save(IStream* pIStream, BOOL bClearDirty);
+          STDMETHODIMP         GetSizeMax(ULARGE_INTEGER* pcbSize);
+
+        private:
+          // Data private to this interface implementation.
+          COPageList*   m_pCO;          // Parent Object back pointer.
+          IUnknown*     m_pUnkOuter;    // Outer unknown for Delegation.
+      };
+
+      class CImpIPageList : public IPageList
+      {
+        public:
+          // Interface Implementation Constructor & Destructor.
+          CImpIPageList(COPageList* pCO, IUnknown* pUnkOuter);
+          ~CImpIPageList(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // IPageList methods.
+          STDMETHODIMP         Get(
+                                   INT     iPage,
+                                   BOOL*   pbOpen,
+                                   SHORT*  pnType,
+                                   WCHAR*  pwszTitle,
+                                   WCHAR*  pwszDataName);
+          STDMETHODIMP         Set(
+                                   INT     iPage,
+                                   SHORT   nOpenStatus,
+                                   WCHAR*  pwszNewTitle);
+          STDMETHODIMP         Add(
+                                   INT   iPage,
+                                   SHORT nType,
+                                   WCHAR* pwszTitle,
+                                   INT* piNewPage);
+          STDMETHODIMP         Delete(INT iPage);
+          STDMETHODIMP         Clear(void);
+
+        private:
+          // Private utility methods of this interface implementation.
+          HRESULT FindSlot(INT iPage, LONG* plSlot);
+          HRESULT NextSlot(INT iPage, LONG* plSlot);
+          HRESULT NextName(SHORT nType, WCHAR* pwszDataName);
+
+          // Data private to this interface implementation of IPageList.
+          COPageList*   m_pCO;          // Parent Object back pointer.
+          IUnknown*     m_pUnkOuter;    // Outer unknown for Delegation.
+      };
+
+      // Make the otherwise private and nested interface implementations
+      // friends to COM object instantiations of this COM object class.
+      friend CImpIConnectionPointContainer;
+      friend CImpIPersistStream;
+      friend CImpIPageList;
+
+      // Private method of main connectable COPageList COM object to
+      // broadcast event notifications to all connected listening sinks.
+      HRESULT NotifySinks(PAGELIST_EVENT PageListEvent, INT iPage);
+
+      // Private method to Clear entire page list array.
+      HRESULT Clear(void);
+
+      // Private data of COPageList COM objects.
+
+      // Nested IConnectionPointContainer implementation instantiation.
+      CImpIConnectionPointContainer m_ImpIConnectionPointContainer;
+
+      // Nested IPersistStream implementation instantiation.
+      CImpIPersistStream m_ImpIPersistStream;
+
+      // Nested IPageList implementation instantiation. This IPageList
+      // interface is instantiated as a native interface of COPageList.
+      CImpIPageList     m_ImpIPageList;
+
+      // Main Object reference count.
+      ULONG             m_cRefs;
+
+      // Outer unknown (aggregation & delegation).
+      IUnknown*         m_pUnkOuter;
+
+      // Pointer to this component server's control object.
+      CServer*          m_pServer;
+
+      // The array of connection points for this connectable COM object.
+      IConnectionPoint* m_aConnectionPoints[MAX_CONNECTION_POINTS];
+
+      // The following private data and methods constitute the working
+      // heart of COPageList as an actual application object.
+      PAGELISTPROPS     m_PageListProps;// For file storage.
+      PAGEITEM*         m_paPageList;   // Dynamic page list array pointer.
+      LONG              m_lPageListEnd; // Current end of the page list.
+      LONG              m_lPageListMax; // Current end of the page list array.
+      BOOL              m_bDirty;       // RAM doesn't match file--save needed.
+      CLSID             m_ClassID;      // CLSID of this COM Object.
+  };
+</FONT> </PRE>
+
+<P>
+COPageList has nested implementations of the IUnknown,
+IConnectionPointContainer, IPersistStream, and IPageList interfaces. The
+techniques of these interface implementations follow the pattern used in
+many previous samples. Implementation of IUnknown was introduced in the
+COMOBJ sample. IConnectionPointContainer was introduced in the CONSERVE
+sample. IPageList is a custom interface that is introduced in this sample,
+but its implementation is very similar to custom interface implementations
+in previous samples.
+
+<P>
+The m_PageListProps member is a structure holds various properties of the
+page list. See above for a summary. The m_bDirty member is used internally
+to determine when the RAM-resident page list array has changed relative to
+the last time it was loaded from or saved to persistent storage. The
+m_ClassID stores the CLSID of the COPageList component for later use
+within the methods of COPageList. The m_lPageListEnd and m_lPageListMax
+members are used to maintain the currently active content of the page list
+array. The index of the current end of the array is kept in
+m_lPageListEnd. This end index can vary up to the maximum index kept in
+m_lPageListMax. The array can grow dynamically at run-time.
+
+<P>
+COPageList manages this page list array in RAM. The main pointer to this
+array is kept in the m_paPageList variable. The array is initially
+allocated during IPersistStream::Load after COPageList is created. The
+Load method is covered in more detail below.
+
+<P>
+The implementation of the IPersistStream standard interface deserves a
+more detailed examination. By studying each of the IPersistStream methods,
+you can see how the implementation of the IPersistStream interface gives
+persistence to the property and page list data in COPageList. If you have
+not used streams (IStream) or storages (IStorage) in structured storage
+compound files, see the STOSERVE and STOCLIEN samples for coverage of this
+topic. The IPersistStream methods declared above are as follows:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+    STDMETHODIMP         GetClassID(CLSID* pClassID);
+    STDMETHODIMP         IsDirty(void);
+    STDMETHODIMP         Load(IStream* pIStream);
+    STDMETHODIMP         Save(IStream* pIStream, BOOL bClearDirty);
+    STDMETHODIMP         GetSizeMax(ULARGE_INTEGER* pcbSize);
+</FONT> </PRE>
+
+<P>
+Clients call the GetClassID method to obtain from COPageList its component
+CLSID. This method is really inherited from the IPersist interface from
+which IPersistStream is derived. The following is the implementation of
+GetClassID from PAGELIST.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COPageList::CImpIPersistStream::GetClassID(
+                 CLSID* pClassID)
+  {
+    HRESULT hr = E_POINTER;
+
+    if (NULL != pClassID)
+    {
+      // Use overloaded '=' operator to copy the Class ID.
+      *pClassID = m_pCO-&gt;m_ClassID;
+      hr = NOERROR;
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+This simple method uses the overloaded '=' operator to copy COPageList's
+main copy of the CLSID to the client's address space using the specified
+pClassID pointer. The convenient overloading of the '=' operator is
+provided in the COM and OLE header files included at the front of
+PAGELIST.CPP. The m_ClassID value was initially assigned the value
+CLSID_PageList in COPageList's constructor. CLSID_PageList is defined in
+PAGEGUID.H located in the common INC directory. This file also contains
+other GUIDs--such as interface IIDs--that are used in the PERSERVE,
+PERTEXT, PERDRAW, and PERCLIEN samples.
+
+<P>
+Clients call the IsDirty method to determine if changes have been made to
+this COPageList's persistent data since it was last loaded, initialized,
+or saved. The following is the implementation of IsDirty from
+PAGELIST.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COPageList::CImpIPersistStream::IsDirty(
+                 void)
+  {
+    HRESULT hr = E_FAIL;
+
+    hr = m_pCO-&gt;m_bDirty ? S_OK : S_FALSE;
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+This method simply returns the current &quot;dirty&quot; status of the
+RAM-resident data in terms of the standard HRESULT return codes of S_OK or
+S_FALSE. S_OK means the data needs saving; S_FALSE means the data matches
+its counterpart in persistent storage.
+
+<P>
+Clients call the Load method is called to command COPageList to load its
+persistent data from a specified stream in a compound file starting at the
+current seek pointer offset. Thus, the client supplies the stream to
+COPageList; the stream is not created by COPageList. The Load method
+assumes that the stream's seek pointer is the same as it was before Save
+was last called. The method must leave the seek pointer with the same
+value it had when Save was last completed regardless of success or failure
+of the load. The rationale for these seek pointer rules is that
+IPersistStream can support a consecutive series of stored COPageList
+object states. The client controls the stream and, if the seek pointer
+rules are followed within Load and Save, then the client can issue a
+series of Save calls. Between these calls the client may issue other
+interface calls to COPageList that could change the data state of
+COPageList. The consecutive series that are saved would then reflect
+different data states of the same COPageList object.
+
+<P>
+The Load method implementation should not store a copy of the
+passed pIStream pointer within COPageList. The passed stream interface
+pointer should be used only within this method call. Here is the
+implementation of Load from PAGELIST.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COPageList::CImpIPersistStream::Load(
+                 IStream* pIStream)
+  {
+    HRESULT hr = E_POINTER;
+    PAGEITEM* paPageList;
+    ULONG ulToRead, ulReadIn;
+    LONG lNewArraySize;
+    PAGELISTPROPS NewProps;
+
+    if (NULL != pIStream)
+    {
+      // We have the PageList data stream. First read the
+      // PageList Properties.
+      ulToRead = sizeof(PAGELISTPROPS);
+      hr = pIStream-&gt;Read(
+                       &NewProps,
+                       ulToRead,
+                       &ulReadIn);
+      if (SUCCEEDED(hr) && ulToRead != ulReadIn)
+        hr = E_FAIL;
+      if (SUCCEEDED(hr))
+      {
+        // Deal with the different PageList versions.
+        switch (NewProps.lPageListVersion)
+        {
+          case PAGELIST_VERSION10:
+            // Allocate a page list array big enough--add some extra
+            // for later expansion by user.
+            lNewArraySize = NewProps.lPageListSize + PAGELIST_ALLOC;
+            paPageList = new PAGEITEM[(LONG) lNewArraySize];
+            if (NULL != paPageList)
+            {
+              // Delete the entire old Page List array.
+              if (NULL != m_pCO-&gt;m_paPageList)
+                delete [] m_pCO-&gt;m_paPageList;
+
+              // Assign the new array.
+              m_pCO-&gt;m_paPageList = paPageList;
+              m_pCO-&gt;m_lPageListMax = lNewArraySize;
+
+              // Now read the complete array of Page List items.
+              ulToRead = NewProps.lPageListSize * sizeof(PAGEITEM);
+              hr = pIStream-&gt;Read(m_pCO-&gt;m_paPageList, ulToRead, &ulReadIn);
+              if (SUCCEEDED(hr) && ulToRead != ulReadIn)
+                hr = E_FAIL;
+              if (SUCCEEDED(hr))
+              {
+                // Rig COPageList to use the PAGELISTPROPS info.
+                m_pCO-&gt;m_lPageListEnd = NewProps.lPageListSize - 1;
+
+                // Copy the new properties into current properties.
+                memcpy(
+                  &m_pCO-&gt;m_PageListProps,
+                  &NewProps,
+                  sizeof(PAGELISTPROPS));
+              }
+            }
+            else
+              hr = E_OUTOFMEMORY;
+            break;
+          default:
+            hr = E_FAIL;  // Bad version.
+            break;
+        }
+      }
+    }
+
+    // Notify all other connected clients that PageList is now loaded.
+    // If we didn't load then clear to a safe, empty Page List array.
+    if (SUCCEEDED(hr))
+      m_pCO-&gt;NotifySinks(PAGELIST_EVENT_LOADED,0);
+    else
+      m_pCO-&gt;Clear();
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+Load is called by a client when this COPageList object already has a
+persistent state stored in a stream. A complete copy of that state data is
+read from the stream into newly allocated, RAM-resident space for the
+data. Two kinds of state data are concatenated in the stream: a group of
+object properties followed by the page list array. The Load method first
+reads the PAGELISTPROPS properties structure into a temporary NewProps. If
+the load is successful, these properties are copied to
+COPageList::m_PageListProps. This is done to allow reverting to the
+current COPageList data if the entire load of new data is not safely
+completed.
+
+<P>
+After the m_PageListProps are read, the lPageListVersion property is used
+in a switch statement. This allows for different load behavior or data
+formats based on the version of the data that was stored. Because the
+version number is the first thing in the stream's object data, it can be
+read independently to determine how to deal with the data that follows.
+The lPageListSize property is used to allocate a new array in RAM that is
+big enough for the array data stored in the stream. After the array is
+allocated, the page list data is read into that array from the stream. At
+this point COPageList has been loaded from persistent storage.
+
+<P>
+If the load is successful, a call to the internal NotifySinks method
+notifies all connected clients that the load was completed. This
+notification to the client usually triggers an appropriate display of the
+newly loaded data. This notification makes use of COPageList's connectable
+object features. If the load was unsuccessful, a call to the internal
+Clear method clears the page list to a safe, empty list.
+
+<P>
+Clients call the Save method to command COPageList to save its persistent
+data from RAM to a specified stream in a compound file starting at the
+current seek pointer offset. As with the Load method, the client supplies
+the stream interface to Save. On exit from this method the seek pointer is
+assumed to be at the end of the data saved. Again, as with the Load
+method, the rules governing the seek pointer in the Load and Save methods
+allow a series of contiguous persistent objects to be saved into the same
+stream.
+
+<P>
+The Save method implementation should not store a copy of the passed
+pIStream pointer within COPageList. The passed stream interface pointer
+should be used only within this method call. The following is the
+implementation of Save from PAGELIST.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COPageList::CImpIPersistStream::Save(
+                 IStream* pIStream,
+                 BOOL bClearDirty)
+  {
+    HRESULT hr = E_POINTER;
+    ULONG ulToWrite, ulWritten;
+
+    if (NULL != pIStream)
+    {
+      // Got a stream. Now write data into it.
+      // First write PAGELISTPROPS structure.
+      m_pCO-&gt;m_PageListProps.lPageListSize = m_pCO-&gt;m_lPageListEnd + 1;
+      ulToWrite = sizeof(PAGELISTPROPS);
+      hr = pIStream-&gt;Write(&m_pCO-&gt;m_PageListProps, ulToWrite, &ulWritten);
+      if (SUCCEEDED(hr) && ulToWrite != ulWritten)
+        hr = STG_E_CANTSAVE;
+      if (SUCCEEDED(hr))
+      {
+        // Now write the complete array of Page List Data.
+        ulToWrite = m_pCO-&gt;m_PageListProps.lPageListSize * sizeof(PAGEITEM);
+        hr = pIStream-&gt;Write(m_pCO-&gt;m_paPageList, ulToWrite, &ulWritten);
+        if (SUCCEEDED(hr) && ulToWrite != ulWritten)
+          hr = STG_E_CANTSAVE;
+        if (SUCCEEDED(hr))
+        {
+          // Clear this COM object's dirty flag if instructed. Otherwise,
+          // preserve its content.
+          if (bClearDirty)
+            m_pCO-&gt;m_bDirty = FALSE;
+        }
+      }
+    }
+
+    // Notify all other connected clients that PageList is now saved.
+    if (SUCCEEDED(hr))
+      m_pCO-&gt;NotifySinks(PAGELIST_EVENT_SAVED,-1);
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+The Save method is essentially the reverse of the Load method. The content
+of COPageList's m_PageListProps structure is written into the specified
+stream at the stream's current seek pointer offset. This structure is
+essentially a properties header at the front of the state data. If the
+PAGELISTPROPS data is successfully saved, the current array of page list
+data (located in RAM at m_paPageList) is written to the stream. The seek
+pointer is left pointing just past the end of the saved array. In either
+of these data writes to the stream, if the amount of data actually written
+does not equal the amount attempted, the Save method is aborted and
+returns STG_E_CANTSAVE.
+
+<P>
+A bClearDirty parameter determines if this method should clear
+COPageList's m_bDirty flag. If bClearDirty is TRUE then
+COPageList::m_bDirty is set to FALSE (that is, cleared). Usually, a Save
+will achieve a match between the RAM-resident data and its corresponding
+image stored in the stream. However, there may be cases when you want to
+issue a save to a stream while not clearing COPageList's dirty flag. This
+might occur if the client is saving a copy of the data state to a stream
+that is different than the current unsaved stream. If COPageList is not
+saved to the original unsaved stream, the state of m_bDirty would need to
+be preserved across the operation. A value of FALSE for the bClearDirty
+parameter accomplishes this preservation.
+
+<P>
+If the save is successful, a call to the internal NotifySinks method
+notifies all connected clients that the save was completed.
+
+<P>
+Clients call the GetSizeMax method to obtain the maximum size of the state
+data that can be saved when the Save method is next called. The following
+is the implementation of GetSizeMax from PAGELIST.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COPageList::CImpIPersistStream::GetSizeMax(
+                 ULARGE_INTEGER* pcbSize)
+  {
+    HRESULT hr = E_POINTER;
+    DWORD dwProps, dwData;
+
+    if (NULL != pcbSize)
+    {
+      dwProps = sizeof(PAGELISTPROPS);
+      dwData = (m_pCO-&gt;m_lPageListEnd+1) * sizeof(PAGEITEM);
+      ULISet32(*pcbSize, dwProps+dwData);
+      hr = NOERROR;
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+The caller passes the address of a ULARGE_INTEGER variable that the
+GetSizeMax method assigns. The client can use this to set the size of a
+stream using IStream::SetSize, which may be necessary if the client is
+saving multiple objects in the same stream. If known in advance within
+COPageList, GetSizeMax should return the maximum potential size that a
+future Save would consume in the stream.
+
+<p>
+COPageList exposes the IConnectionPointContainer interface so clients can
+connect to COPageList in order to receive notifications of specified
+events that occur in COPageList. Exposing this interface makes COPageList
+a connectable object. A client can call QueryInterface for this interface
+and use it to obtain the object's connection points.
+
+<p>
+Basically, the client implements what is called a <i>sink</i> which is
+sink object with a sink interface. The sink interface receives outgoing
+event notification calls from COPageList after the sink is properly
+connected by the client to a COPageList instance. The client makes the
+connection by using a connection point object that is managed by
+COPageList. There can be numerous connection points on a single
+connectable COM object. In the PERSERVE sample, COPageList has only one
+connection point, which handles page list events. For more details about
+how clients participate, see the PERCLIEN sample.
+
+<p>
+Any number of clients can connect to a single connection point. The
+CONNPOINT_PAGELISTSINK connection point in COPageList maintains a group of
+connections that can grow dynamically at run time. The full implementation
+of COPageList's connectable object support is coded in files CONNECT.H and
+CONNECT.CPP and will not be covered here. The construction is very similar
+to that in the CONSERVE code sample.
+
+<p>
+The PERCLIEN client implements appropriate sink objects for the connection
+points it expects to find in COPageList. From the context of COPageList,
+the sink object that PERCLIEN implements exposes the IPageListSink
+interface. This is the outgoing interface used by COPageList to notify
+PERCLIEN of various events in COPageList. Here is a summary of the methods
+in IPageListSink from IPAGES.H in the common INC directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  Loaded
+    The PageList was loaded from persistent storage.
+
+  Saved
+    The PageList was saved to persistent storage.
+
+  Cleared
+    The entire PageList was cleared.
+
+  PageAdded(INT iPage);
+    A new PageItem was added to the PageList.
+
+  PageDeleted(INT iPage);
+    A PageItem was deleted from the PageList.
+
+  PageSet(INT iPage);
+    A PageItem entry was set with new data.
+</FONT> </PRE>
+
+<p>
+These methods are largely self-explanatory. Although the sink must
+implement all these methods in some fashion, many are implemented as stubs
+and are not used in the PERSERVE or PERCLIEN samples.
+
+<p>
+An important method used in these samples is the Loaded method. When
+the client tells COPageList to load a new page list from file, COPageList
+needs a way to notify the client when the new data is loaded. To do this,
+COPageList calls IPageListSink::Loaded on the client sink. The client is
+thereby signaled that it can display the newly loaded data.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

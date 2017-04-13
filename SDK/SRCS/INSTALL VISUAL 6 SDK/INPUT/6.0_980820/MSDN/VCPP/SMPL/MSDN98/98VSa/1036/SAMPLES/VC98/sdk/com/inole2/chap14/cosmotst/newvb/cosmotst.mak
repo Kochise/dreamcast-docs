@@ -1,0 +1,17 @@
+Form=COSMOTST.FRM
+ProjWinSize=96,706,327,159
+ProjWinShow=2
+IconForm="Form1"
+ExeName="COSMOTST.exe"
+Command=""
+Name="COSMOTST"
+HelpContextID="0"
+StartMode=0
+VersionCompatible32="0"
+VersionCompatible="0"
+MajorVer=1
+MinorVer=0
+RevisionVer=0
+AutoIncrementVer=0
+ServerSupportFiles=0
+VersionCompanyName="Microsoft"

@@ -1,0 +1,1216 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>DCDSERVE COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="dcdmarsh.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="dcomdraw.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="DCDSERVE">DCDSERVE - DCOM Server Using Security</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The DCOMDRAW, DCDSERVE, and DCDMARSH samples together form a distributed
+drawing application. Using Distributed COM (DCOM) technology, they allow
+users on different client machines in a network to interactively draw on a
+shared drawing. All DCOMDRAW clients see the same drawing and any client
+can take ownership of the pen to draw. The user of DCOMDRAW can use a
+mouse or tablet device to draw in the client window and can choose the
+color and width of the electronic ink. As clients draw, the application
+echoes the drawing activity from DCDSERVE to all connected clients using
+DCOM over the network. Although these samples do not build an optimized
+and complete application, the functionality is suggestive of the shared
+whiteboards offered by some workgroup applications.
+
+<P>
+In addition to providing a standard way to construct applications from
+re-usable software components, COM technology fosters a strong
+architectural separation between client and server. This separation has
+been the repeated pattern in previous samples of this series. For example,
+the STOSERVE server houses a COPaper COM object that is used by the
+STOCLIEN client. Although they are a client/server pair, the STOCLIEN and
+STOSERVE samples use an in-process server for the COPaper COM object. With
+the DCOMDRAW and DCDSERVE client/server samples the architectural
+separation between client and server is retained but the COPaper COM
+object is housed in an out-of-process server, DCDSERVE. COPaper implements
+a custom ISharePaper interface to permit multiple clients to use the
+COPaper object simultaneously. The application also requires a DCDMARSH
+server to provide standard marshaling for the custom interfaces used
+across process and machine boundaries.
+
+<P>
+Although DCOMDRAW, DCDSERVE, and DCDMARSH can work on the same machine
+across process boundaries, the main goal is to provide a distributed
+application that enables multiple DCOMDRAW clients on different machines
+to access a shared single drawing object housed in a DCDSERVE server
+running on a common server machine. A typical scenario would have numerous
+client machines hooked to an intranet consisting of a Windows NT network
+domain or peer-to-peer workgroup. DCOMDRAW can then run on any of these
+client machines. DCDSERVE is installed and runs on a common server machine
+in the domain. The user of the DCOMDRAW client can interactively choose
+the remote server machine to determine which DCDSERVE COM server to use
+for the shared drawing.
+
+<P>
+Like the STOSERVE sample, which provided the CLSID_DllPaper component,
+DCDSERVE provides the CLSID_SharePaper component. Using this component,
+DCDSERVE uses the SharePaper comonent to manage a shared, single COPaper
+COM object that models a sheet of white drawing paper. Interface methods
+on COPaper objects enable free-form drawing on the paper surface using
+&quot;ink&quot; of specified color and width. This functionality is
+outwardly similar to the &quot;scribble&quot; tutorial samples in many
+versions of the Microsoft Visual C++&reg; product. The electronic drawing
+paper features of COPaper objects are available to clients through a
+custom ISharePaper interface. COPaper implements the ISharePaper
+interface. A clear architectural distinction is kept between client and
+server. No graphical user interface (GUI) is provided by COPaper. Instead,
+the COPaper object relies on the client for all GUI behavior. COPaper
+encapsulates only the server-based capture and storage of the drawn ink
+data.
+
+<p>
+The ink data that is drawn on the COPaper surface can be stored in and
+loaded from compound files. The ISharePaper::Save and ISharePaper::Load
+method implementations in COPaper use structured storage to store the
+current data of the shared drawing in a compound file kept with DCDSERVE
+on the machine acting as the common server.
+
+<P>
+The primary focus of this sample is how to construct a single, shared, and
+thread-safe COM object on the server side and how to take care of DCOM
+security in the networked context of multiple clients of that shared
+object. The sample covers both process and activation DCOM security. A
+simple shared drawing sample is used to study these issues in a
+Distributed COM client/server application.
+
+<p>
+COPaper is housed in an out-of-process server and is made publicly
+available as a custom COM component. Like all other servers in this
+tutorial series, DCDSERVE.EXE is a self-registering COM server. It makes
+the COPaper object type available to clients as the SharePaper component
+using a CLSID_SharePaper registration in the Registry.
+
+<p>
+As was the case in the previous STOSERVE server, the COPaper object in
+DCDSERVE supports connectable-object features. COPaper exposes the
+IConnectionPointContainer interface and implements an appropriate
+connection point. In this context, an outgoing custom IPaperSink interface
+is declared for use in sending notifications to the DCOMDRAW client. The
+use of COM connection-point technology in this sample is significant
+because it is used in a DCOM setting across machine boundaries. The
+connection points are used to echo highly interactive mouse-motion events
+across the network to DCOMDRAW clients that are connected to the same
+COPaper drawing. Despite the overhead of DCOM, RPC, and marshaling, the
+DCDSERVE and DCOMDRAW samples demonstrate that COM's connectable-object
+technology can play a role in DCOM-based applications.
+
+<p>
+The two ISharePaper and IPaperSink custom interfaces are declared in
+PAPINT.H, which is located in the common INC directory. PAPINT.H is
+automatically generated in the DCDMARSH sample. The GUIDs for the
+interfaces and objects are defined in PAPGUIDS.H located in that same
+directory.
+
+<p>
+The CThreaded facility in APPUTIL is used by DCDSERVE to achieve thread
+safety, as it was in the FRESERVE sample. COPaper objects are derived from
+the CThreaded class and inherit its OwnThis and UnOwnThis methods. These
+methods allow only one thread at a time to have access to the DCDSERVE
+server and to the shared single COPaper object managed by the server.
+Because the Single Threaded Apartment (STA) model is in effect for both
+DCDSERVE and DCOMDRAW, this thread safety is not actually needed for
+COPaper but is still appropriate for the DCDSERVE server housing.
+
+<P>
+Because client and server run in separate processes--usually on different
+machines--both DCDSERVE and DCOMDRAW rely on standard marshaling for the
+ISharePaper and IPaperSink custom interfaces. This support is provided by
+the DCDMARSH code sample, so you must also build (or otherwise register)
+DCDMARSH.DLL on both machines prior to building and running DCDSERVE and
+DCOMDRAW across machines.
+
+<P>
+To set up for the proper operation of a DCOMDRAW client on one machine to
+control the common DCDSERVE server on another, both machines must have
+DCOM (Distributed COM) installed. DCOM is included in Windows NT 4.0 or
+later and in Windows 98. For Windows 95 you must install the DCOM95 add
+on. The multiple machines must be connected in a properly configured
+network. For details on setting up a network, see your Windows NT product
+documentation or the Windows NT Resource Kit. For more details on machine
+and network setup for running with DCOM, see also the &quot;Network and
+Setup Issues&quot; section at the end of the REMCLIEN lesson. Note that
+the less restrictive security in Windows 95 and Windows 98 prevents the
+SCM under DCOM from automatically launching DCDSERVE on behalf of a remote
+DCOMDRAW client. You must manually pre-launch DCDSERVE on these operating
+systems if you are attempting a remote load of DCDSERVE from a DCOMDRAW
+running on another machine. The DCDSERVE and DCOMDRAW lessons assume that
+you install DCDSERVE.EXE on a machine running Windows NT Server or
+Workstation.
+
+<p>
+For functional descriptions and a tutorial code tour of DCDSERVE, see the
+Code Tour section in DCDSERVE.HTM. For details on setting up the
+programmatic usage of DCDSERVE, see the Usage section in DCDSERVE.HTM. To
+read DCDSERVE.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the DCDSERVE lesson in the table of lessons. You can do the same
+thing in the Windows Explorer by double-clicking the DCDSERVE.HTM file
+after locating the main tutorial directory. For more details on the
+DCOMDRAW client and how it works with DCDSERVE.DLL, see DCOMDRAW.HTM in
+the main tutorial directory. You must build DCDSERVE.DLL before building
+or running DCOMDRAW.
+
+<p>
+DCDSERVE's makefile automatically registers DCDSERVE's SharePaper COM
+component in the registry. This component must be registered before
+DCDSERVE is available to outside COM clients as a server for that
+component. To register the SharePaper component, the makefile uses the
+REGISTER.EXE utility built in the REGISTER sample. Therefore you must
+build the REGISTER sample before you can build or run DCDSERVE.
+
+<p>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<h4>Usage</h4>
+
+<P>
+The DCDSERVE executable is meant to be used as an out-of-process COM
+server. Out-of-process servers like DCDSERVE are registered in the system
+registry, and DCDSERVE has built-in support for registering its
+components. It accepts the following command line switches to register and
+unregister:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  -RegServer or /RegServer to register
+  -UnregServer or /UnregServer to unregister
+</FONT> </PRE>
+
+<P>
+String matches on these switches are case-insensitive. DCDSERVE also
+recognizes the standard -Embedding or /Embedding switch, which directs it
+to run as an out-of-process server. This switch normally means that the
+server remains hidden when COM runs it on behalf of a client. As an
+out-of-process server, DCDSERVE is not designed to run as a stand-alone
+application with a visable GUI. If you attempt to run DCDSERVE as a
+stand-alone application with no command line switches, it will exit with
+an error.
+
+<P>
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the DCDSERVE directory:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  nmake register
+ </FONT> </PRE>
+
+<P>
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the DCDSERVE directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ..\register\register.exe dcdserve.exe
+ </FONT> </PRE>
+
+<P>
+These registration commands require a prior build of the REGISTER sample
+in this series, as well as a prior build of DCDSERVE.EXE.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, DCOMDRAW.EXE is the
+client executable to run for this sample.
+
+<a href="DCOMDRAW\DCOMDRAW.EXE">Click here to run DCOMDRAW.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Select the
+"Open it" radio button and then click the OK button.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files          Description</u>
+DCDSERVE.TXT Short description of sample.
+MAKEFILE     The generic makefile for building the DCDSERVE.EXE
+             code sample of this tutorial lesson.
+DCDSERVE.H   The include file for the DCDSERVE application. Contains
+             class declarations, function prototypes, and resource
+             identifiers.
+DCDSERVE.CPP The main implementation file for DCDSERVE.EXE. Has WinMain
+             and CMainWindow implementation, as well as the main menu
+             dispatching.
+DCDSERVE.RC  The resource definition file for the executable.
+DCDSERVE.PAP A default paper drawing file for the application.
+DCDSERVE.ICO The icon resource for the executable.
+SERVER.H     The include file for the server control C++ object. Also
+             used for DCDSERVE externs.
+SERVER.CPP   The implementation file for the server control object.
+             Manages object counts, server lifetime, and the creation
+             of class factories.
+FACTORY.H    The include file for the server's class factory COM objects.
+FACTORY.CPP  The implementation file for the server's class factories.
+CONNECT.H    The include file for the connection point enumerator,
+             connection point, and connection enumerator classes.
+CONNECT.CPP  The implementation file for the connection point enumerator,
+             connection point, and connection enumerator objects.
+PAPER.H      The include file for the COPaper COM object class.
+PAPER.CPP    The implementation file for the COPaper COM object class
+             and the connection points.
+</FONT> </PRE>
+
+<P>
+DCDSERVE uses many of the utility classes and services provided by
+APPUTIL. For more details on APPUTIL, study the APPUTIL library's source
+code in the sibling APPUTIL directory and APPUTIL.HTM in the main tutorial
+directory.
+
+<P>
+This sample is part of a graduated series of tutorial samples. This tour
+assumes that you have some exposure to those previous samples. It does not
+revisit basic interface implementation techniques, COM object
+construction, out-of-process server construction, class factory
+construction, and connectable object construction. For information on
+these topics, study the earlier tutorial samples.
+
+<P>
+The major topics covered in this code tour are:
+<ul>
+  <li>an overview of how DCDSERVE works
+  <li>thread-safe mechanisms in DCDSERVE
+  <li>shared single object construction
+  <li>process security in DCDSERVE
+  <li>activation security in DCDSERVE
+  <li>installing DCDSERVE on the server machine
+</ul>
+
+<h4>DCDSERVE: A Distributed Shared Drawing Server</h4>
+
+<P>
+The COPaper COM object is the single object type managed by the DCDSERVE
+out-of-process server. COPaper is constructed as an aggregatable COM
+object with a native implementation of the ISharePaper interface. COPaper
+exposes the ISharePaper interface to allow clients to perform a small set
+of drawing operations on a COPaper instance. The COPaper object
+encapsulates data that defines a single drawing surface that models a
+white sheet of paper. This lesson does not cover ISharePaper methods in
+detail here because they are very similar to methods in the IPaper and
+IDrawPage interfaces studied in the STOSERVE, STOCLIEN, PERDRAW, and
+PERCLIEN samples.
+
+<P>
+ISharePaper does have Load and Save methods clients can use to direct
+COPaper to save or load the current shared drawing to or from compound
+file storage. Much like the STOSERVE sample, the drawing consists of a
+dynamic array of &quot;ink&quot; data which COPaper manages. Unlike the
+STOCLIEN and STOSERVE samples which kept the compound file with the
+client, the compound file for the drawing in DCDSERVE and DCOMDRAW samples
+is kept with the server. This is because the drawing data is shared by
+clients on different machines on the network. The default compound file is
+DCDSERVE.PAP and it is located with DCDSERVE. If no default file is there
+then a new one of that name is created with a blank drawing in it.
+
+<P>
+A client uses the ISharePaper interface to deposit ink into DCDSERVE's
+current drawing. As a DCOMDRAW client sends these ink data points to
+COPaper, they are retained and sent to all connected clients using COM
+connectable-object technology. A custom IPaperSink interface is used to
+call back from COPaper to the client's event sinks. Although it is largely
+transparent, the calls to and from COPaper that underlie the drawing
+behavior rely on the DCOM infastructure to conduct interface calls between
+client and server across the network.
+
+<P>
+On the client side in DCOMDRAW a master/slave relationship is maintained.
+Slave clients do not have ownership of the drawing pen and are passively
+&quot;listening&quot; for new drawing data. They immediately display any
+new ink data they receive. A master client has ownership of the drawing
+pen and can drive the drawing process. As drawing occurs in the master
+client it is immediately displayed in that client as well as sent to the
+connected slave clients. The master client also currently owns the load
+and save operations. The first client that loads the remote DCDSERVE
+drawing becomes the master until it relinquishes that role by the Give Pen
+menu choice. Other instances of DCOMDRAW that connect to this drawing will
+become slave clients to that drawing's contents. If no master client
+currently owns the pen then ownership can be acquired by the Take Pen menu
+choice an any of the other slave clients. When a slave client takes the
+pen it becomes a master client.
+
+<h4>Thread Safety in DCDSERVE</h4>
+
+<P>
+The master/slave logic supported by COPaper in DCDSERVE helps preclude
+conflicting access to the shared drawing by multiple threads. However, all
+clients may also ask for drawing data during asynchronous re-painting.
+Such a re-paint might occur when a DCOMDRAW client window is topped after
+being covered. Thus, it is likely that while a master client is actively
+drawing to the surface, other clients could be asynchronously requesting
+ink data for their own re-paints of the current drawing. Because both the
+DCDSERVE server and the DCOMDRAW client use the Single Threaded Apartment
+(STA) model, this mutually exclusive access to COPaper is ensured by COM.
+
+<h4>Constructing a Shared Single Object Server</h4>
+
+<P>
+The STOSERVE server (in the earlier STOSERVE sample) houses a COPaper COM
+object very similar to the COPaper object housed in this DCDSERVE server.
+Although their C++ class names are the same, they are distinctly different
+COM objects because they are different COM components--an instance of one
+created using CLSID_DllPaper, an instance of the other using
+CLSID_SharePaper. When a STOCLIEN client requested a new COPaper object
+using CLSID_DllPaper, the STOSERVE server's class factory creates a
+separate new instance of COPaper. This is the behavior usually needed in
+COM-based applications. However, in distributed applications often
+multiple clients need to access the same instance of a shared COM object.
+DCDSERVE provides a server housing that supports this. When a client
+requests a new COPaper object using CLSID_SharePaper, DCDSERVE's class
+factory creates a new one if it does not yet exist. But after the first
+instance of COPaper exists, any subsequent create calls by clients return
+the existing COPaper. This is sometimes called a &quot;singleton&quot; COM
+component. Only one instance is ever created and that instance is shared
+by all clients.
+
+<P>
+This section describes one way to construct the class factory to
+manufacture a shared single COM object.
+
+<P>
+To determine if a COPaper object has been created, a pointer to the new
+object's principal IUnknown is kept in the CServer control object as
+member m_pCOPaper. Initialized to NULL in the CServer constructor, it is
+assigned after the first object instance is created. It is subsequently
+used in any new requests for object creation. A non-NULL value of this
+variable can be used as a flag to determine if an attempt to create a new
+COPaper object is the first. Here is the ObjectFirst method of CServer
+from DCDSERVE's SERVER.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  BOOL CServer::ObjectFirst(void)
+  {
+    BOOL bFirst = TRUE;
+
+    if (OwnThis())
+    {
+      bFirst = (NULL == m_pCOPaper);
+
+      UnOwnThis();
+    }
+
+    return bFirst;
+  }
+</FONT> </PRE>
+
+<P>
+This method is called by the class factory to determine if this is the
+first object creation, and if it is, the method returns TRUE. Since the
+m_pCOPaper variable is in the global server housing it needs protection by
+an OwnThis/UnOwnThis pair.
+
+<P>
+When the first object is created, the ObjectSet method of CServer is
+called to set the m_pCOPaper IUnknown pointer variable to point the
+principal IUnknown of the new COPaper object. This assignment also tells
+the server and the class factory that the initial instance of COPaper now
+exists. Here is ObjectSet from SERVER.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CServer::ObjectSet(IUnknown* pCob)
+  {
+    HRESULT hr = NOERROR;
+
+    if (OwnThis())
+    {
+      m_pCOPaper = pCob;
+
+      UnOwnThis();
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+To create a COPaper object, a client typically calls CoCreateInstance or
+calls CoGetClassObject followed by a call to the CreateInstance method of
+the obtained class factory. In both cases the CreateInstance call requests
+an initial interface on the new COM object. This is done internally using
+a QueryInterface call on the object to return the desired interface. To
+support this on the shared single instance of COPaper, the ObjectQI method
+is implemented in CServer. Here is ObjectQI from SERVER.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CServer::ObjectQI(REFIID riid, PPVOID ppv)
+  {
+    HRESULT hr = E_FAIL;
+
+    if (OwnThis())
+    {
+      hr = m_pCOPaper-&gt;QueryInterface(riid, ppv);
+
+      UnOwnThis();
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+The m_pCOPaper pointer to the single COPaper object is used to perform
+a call to COPaper's QueryInterface.
+
+<P>
+With this thread-safe support in the global CServer object, the class
+factory's CreateInstance method can now determine if it is doing the first
+create or a subsequent one. Here is CFPaper's CreateInstance method from
+DCDSERVE's FACTORY.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP CFPaper::CImpIClassFactory::CreateInstance(
+                 IUnknown* pUnkOuter,
+                 REFIID riid,
+                 PPVOID ppv)
+  {
+    HRESULT hr = E_POINTER;
+    COPaper* pCob = NULL;
+
+    if (NULL != ppv)
+    {
+      // NULL the output pointer.
+      *ppv = NULL;
+      hr = E_FAIL;
+
+      // If the creation call is requesting aggregation (pUnkOuter != NULL),
+      // the COM rules state the IUnknown interface MUST also be concomitantly
+      // be requested.  If it is not so requested (riid != IID_IUnknown) then
+      // an error must be returned indicating that no aggregate creation of
+      // the CFPaper COM Object can be performed.
+      if (NULL != pUnkOuter &amp;&amp; riid != IID_IUnknown)
+        hr = CLASS_E_NOAGGREGATION;
+      else
+      {
+        if (m_pServer-&gt;ObjectFirst())
+        {
+          // Instantiate a COPaper COM Object.
+          pCob = new COPaper(pUnkOuter, m_pServer);
+          if (NULL != pCob)
+          {
+            // Create and initialize any subordinate objects.
+            hr = pCob-&gt;Init();
+            if (SUCCEEDED(hr))
+            {
+              // We successfully created the new COM object so tell the
+              // server to increment its global server object count.
+              m_pServer-&gt;ObjectsUp();
+
+              // We QueryInterface this new COM Object not only to deposit the
+              // main interface pointer to the caller's pointer variable, but
+              // to also automatically bump the Reference Count on the new COM
+              // Object after handing out this reference to it.
+              hr = pCob-&gt;QueryInterface(riid, (PPVOID)ppv);
+              if (SUCCEEDED(hr))
+              {
+                // Rig so that any subsequent creates get the same shared
+                // single object.
+                m_pServer-&gt;ObjectSet(pCob);
+              }
+              else
+              {
+                delete pCob;
+                m_pServer-&gt;ObjectsDown();
+              }
+
+            }
+            else
+              delete pCob;
+          }
+          else
+            hr = E_OUTOFMEMORY;
+        }
+        else
+          hr = m_pServer-&gt;ObjectQI(riid, ppv);
+      }
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+The code calls CServer::ObjectFirst and if ObjectFirst returns TRUE then
+the single COPaper object is created and initialized. After successful
+creation, a pointer to the object is passed to CServer::ObjectSet to
+assign CServer's internal, protected m_pCOPaper pointer. This is a
+thread-safe call and after it returns, any subsequent calls to
+CServer::ObjectFirst will return FALSE. CServer's ObjectsUp method is
+called to increment the object count. This count will never exceed 1
+reflecting the single COPaper object in existence. As seen many times in
+this sample series, server lifetime is linked to object lifetimes. There
+is simply only one living object. The COPaper object's lifetime is
+determined by reference counts. When the last client calls Release on the
+ISharePaper interface that it holds on COPaper, the object terminates.
+During this termination COPaper deletes itself and calls CServer's
+ObjectDown method to decrement the server object count from 1 to 0 causing
+the exit of the DCDSERVE server. This is the familiar logic governing
+server and object lifetime seen in earlier servers in the COM tutorial
+series. The only difference is that DCDSERVE's server object count never
+exceeds 1.
+
+<P>
+Note that this means that when new clients request the creation of
+COPaper, the object count is not increased even though CreateInstance
+completed successfully and the client was given the requested interface to
+an object. From the client's perspective, a new object was created. In a
+way the client is fooled into accepting an existing object as a new
+object.
+
+<P>
+As in previous samples, the QueryInterface method of the object's
+principal IUnknown is used to return the requested interface pointer to
+the calling client. When the above call to CServer::ObjectFirst returns
+FALSE, the single COPaper object already exists. In this case, all that is
+needed is a call to CServer::ObjectQI to return to the client the
+requested interface on the existing object.
+
+<h4>Process Security in DCDSERVE</h4>
+
+<P>
+COM-based client/server applications that run on the same machine usually
+run under the authority of a single currently-logged-on user. However,
+when the client and server run on different machines that are separated by
+a network, it is very likely that different users will be logged on to
+those machines. In fact, the machine where the COM server runs may not
+have any user logged on. To launch and access a server in a DCOM
+application, both client and server must fulfill certain security
+requirements.
+
+<P>
+There are various levels of security that can be established in both the
+client and the server. For example, on the server side, specific security
+can be established for the entire server process, for each object
+instance, or for each method call. There are also different techniques for
+establishing these levels of security. For example, named values in the
+registry entries for the server can determine who can access the server
+after it is launched. Or helper functions can be called at server run-time
+to establish security for the server process. There are often multiple
+techniques to achieve the same control over the security context.
+
+<P>
+The server's settings in the system registry can be used to determine
+security for the server. Such registry settings are valuable for legacy
+COM-based applications that have no built-in code to establish their
+security context at runtime. DCOM, however, does support coding this
+security within the server. This sample demonstrates only some of the many
+possibel ways to establish security in the server. The DCOMDRAW client
+must also participate with a compatible client security context. For
+coverage of how the client handles DCOM security, see the DCOMDRAW lesson.
+
+<P>
+For client calls to ISharePaper methods across the network to act upon
+COPaper, the call must be acting under an identity that is both
+authenticated and authorized to perform the action. Authentication is the
+recognition of the calling client (that is, the calling agent is
+recognized to be who it claims to be). Authorization is the confirmation
+that the calling client has permission to perform the action.
+
+<P>
+DCDSERVE uses a call to CoInitializeSecurity to establish a security
+context for the entire server process. Here is that call in a fragment
+from the WinMain function in DCDSERVE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ...
+  ...
+  // If we were compiled for UNICODE and the platform seems OK with this
+  // then proceed.  Else we error and exit the app.
+  if (UnicodeOk())
+  {
+    // Ensure that DCOM (Distributed COM) is installed.
+    if (DComOk())
+    {
+      // Call to initialize the COM Library.  Use the SUCCEEDED macro
+      // to detect success.  If fail then exit app with error message.
+      if (SUCCEEDED(CoInitialize(NULL)))
+      {
+        // Initialize for server security.
+        hr = CoInitializeSecurity(
+               NULL,                        //Points to security descriptor
+               -1,                          //Count of entries in asAuthSvc
+               NULL,                        //Array of names to register
+               NULL,                        //Reserved for future use
+               RPC_C_AUTHN_LEVEL_NONE,      //Default authentication level
+                                            // for proxies
+               RPC_C_IMP_LEVEL_IMPERSONATE, //Default impersonation level
+                                            // for proxies
+               NULL,                        //Reserved; must be set to NULL
+               EOAC_NONE,                   //Additional client or
+                                            // server-side capabilities
+               NULL);                       //Reserved for future use
+        if (SUCCEEDED(hr))
+        {
+          // If we succeeded in initializing the COM Library we proceed to
+          // initialize the application.  If we can't init the application
+          // then we signal shut down with an error message exit.
+          iRun = InitApplication(hInstance);
+          if (iRun)
+          {
+            ...
+            Run the server
+            ...
+          }
+        }
+        else
+          Error: Could not initialize security.
+      }
+      else
+        Error: Could not initialize COM.
+    }
+    else
+      Error: DCOM is not available.
+  }
+  else
+    Error: Platform can not accept Unicode.
+  ...
+  ...
+</FONT> </PRE>
+
+<P>
+This CoInitializeSecurity call is made after the CoInitialize call that
+initializes COM. Here is the prototype for CoInitializeSecurity with the
+parameters values passed in the above call:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CoInitializeSecurity(
+
+            PSECURITY_DESCRIPTOR pSD,
+              // NULL: Points to security descriptor that can contain
+              // DACLs (Discretionary ACLs) that grant or deny access
+              // to specific users. The SACL in the SD must be NULL.
+              // If pSD is NULL then no ACL checking will be done.
+              // DCOM will abide by the AccessPermission value that
+              // exists for the server's AppID key in the registry.
+
+            DWORD cAuthSvc,
+              // -1: Count of entries in asAuthSvc. If 0, register no
+              // services. If -1, COM picks the number of authentication
+              // services.
+
+            SOLE_AUTHENTICATION_SERVICE* asAuthSvc,
+              // NULL: Array of authentication/authorization principal
+              // service names to register. NULL means that the default
+              // authentication/authorization principal for each proxy
+              // will be negotiated.
+
+            void* pReserved1,
+              // NULL: Reserved for future use; must be NULL.
+
+            DWORD dwAuthnLevel,
+              // RPC_C_AUTHN_LEVEL_NONE: Default authentication level
+              // for proxies. RPC_C_AUTHN_LEVEL_NONE means that no
+              // authentication is used in this process.
+
+            DWORD dwImpLevel,
+              // RPC_C_IMP_LEVEL_IMPERSONATE: Default impersonation level
+              // for proxies. RPC_C_IMP_LEVEL_IMPERSONATE means that the
+              // server can impersonate the client identity.
+
+            RPC_AUTH_IDENTITY_HANDLE pAuthInfo,
+              // NULL: Reserved for future use; must be NULL.
+
+            DWORD dwCapabilities,
+              // EOAC_NONE: Additional client or server-side capabilities.
+              // EOAC_NONE means no additional capabilities are used.
+
+            void* pReserved2);
+              // NULL: Reserved for future use; must be NULL.
+</FONT> </PRE>
+
+<P>
+The RPC_C_AUTHN_LEVEL_NONE value for the dwAuthnLevel parameter and the
+RPC_C_IMP_LEVEL_IMPERSONATE value for dwImpLevel parameter are the only
+significant values in DCDSERVE's use of this call. With these values, the
+CoInitializeSecurity call essentially opens the security door for clients
+of the DCDSERVE process.
+
+<h4>Activation Security in DCDSERVE</h4>
+
+<P>
+With the above run-time process security in effect in DCDSERVE, the
+DCOMDRAW client can freely call the COPaper object in the server once
+DCDSERVE is running. But there are additional security issues involved
+with launching DCDSERVE in the first place. When the DCOMDRAW client calls
+to create the first remote COPaper, DCOM will check DCDSERVE's security
+attributes before launching it. If no such attributes are registered then
+a default set of attributes will be used. Two of these attributes are
+kept in the system registry. These are the DefaultLaunchPermission and
+DefaultAccessPermission named values of the following key in the
+registry:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HKEY_LOCAL_MACHINE\Software\Microsoft\OLE
+</FONT> </PRE>
+
+<P>
+These named values contain a binary ACL (Access Control List) specifying
+the system default set of users that have permission to launch or access
+objects. On a newly installed Windows NT system these default users
+include Administrators, SYSTEM, and INTERACTIVE user groups. You can view
+and change these default values using the DCOMCNFG.EXE utility that is
+included with Windows NT version 4 or later. These values are the default
+values that are used when no others are specifically set up by servers and
+clients. Because security can be set appropriately for individual servers
+and clients, changing the system default values is usually not
+recommended.
+
+<P>
+For a server like DCDSERVE, another registry key is used to store the
+security attributes for the server and its components. This is the AppID
+key for the server. Like CLSIDs, AppIDs are GUIDs (Globally Unique
+Identifiers). AppIDs provide a way to collect servers and components into
+one group each member of which has the same security attributes. When DCOM
+is presented with a CLSID to create a new object, it can consult the AppID
+stored in the registry on the CLSID to determine the security attributes
+for the server and its components. These attributes tell DCOM how the
+server can be activated, who can activate it, and who can later access it.
+This AppID information is new in this sample series. Before, when no AppID
+was present, the system's default security attributes were transparently
+used. Now, in DCDSERVE, an explicit AppID value is added to the registry
+to determine explicitly the necessary security attributes for the server.
+DCDSERVE's self-registration code registers an AppID for the server's
+CLSID_SharePaper component. Here is the DCDSERVE's RegisterServer method
+from DCDSERVE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  BOOL CMainWindow::RegisterServer(void)
+  {
+    BOOL     bOk = TRUE;
+    TCHAR    szID[GUID_SIZE+1];
+    TCHAR    szCLSID[GUID_SIZE+32];
+    TCHAR    szAPPID[GUID_SIZE+32];
+    TCHAR    szModulePath[MAX_PATH];
+    TCHAR    szExeName[MAX_PATH];
+
+    szID[0] = 0;
+    szCLSID[0] = 0;
+    szAPPID[0] = 0;
+    szModulePath[0] = 0;
+    szExeName[0] = 0;
+
+    // Obtain the path to this module's executable file for later use.
+    GetModuleFileName(
+      g_pServer-&gt;m_hInstServer,
+      szModulePath,
+      sizeof(szModulePath)/sizeof(TCHAR));
+
+    // Obtain the file name of this module's executable for later use.
+    // GetExeName is an APPUTIL convenience function.
+    GetExeName(
+      g_pServer-&gt;m_hInstServer,
+      szExeName);
+
+    /*---------------------------------------------------------------------
+      Create registry entries for the SharePaper Component.
+    ---------------------------------------------------------------------*/
+    // Create some base key strings.
+    StringFromGUID2(CLSID_SharePaper, szID, GUID_SIZE);
+    lstrcpy(szCLSID, TEXT(&quot;CLSID\\&quot;));
+    lstrcat(szCLSID, szID);
+    lstrcpy(szAPPID, TEXT(&quot;APPID\\&quot;));
+    lstrcat(szAPPID, szID);
+
+    /*---------------------------------------------------------------------
+      Create ProgID keys.
+    ---------------------------------------------------------------------*/
+    SetRegKeyValue(
+      TEXT(&quot;CTS.SharePaper.1&quot;),
+      NULL,
+      TEXT(&quot;SharePaper Component - DCDSERVE Code Sample&quot;));
+    SetRegKeyValue(
+      TEXT(&quot;CTS.SharePaper.1&quot;),
+      TEXT(&quot;CLSID&quot;),
+      szID);
+
+    /*---------------------------------------------------------------------
+      Create VersionIndependentProgID keys.
+    ---------------------------------------------------------------------*/
+    SetRegKeyValue(
+      TEXT(&quot;CTS.SharePaper&quot;),
+      NULL,
+      TEXT(&quot;SharePaper Component - DCDSERVE Code Sample&quot;));
+    SetRegKeyValue(
+      TEXT(&quot;CTS.SharePaper&quot;),
+      TEXT(&quot;CurVer&quot;),
+      TEXT(&quot;CTS.SharePaper.1&quot;));
+    SetRegKeyValue(
+      TEXT(&quot;CTS.SharePaper&quot;),
+      TEXT(&quot;CLSID&quot;),
+      szID);
+
+    /*---------------------------------------------------------------------
+      Create entries under CLSID.
+    ---------------------------------------------------------------------*/
+    SetRegKeyValue(
+      szCLSID,
+      NULL,
+      TEXT(&quot;SharePaper Component - DCDSERVE Code Sample&quot;));
+    SetRegKeyValue(
+      szCLSID,
+      TEXT(&quot;ProgID&quot;),
+      TEXT(&quot;CTS.SharePaper.1&quot;));
+    SetRegKeyValue(
+      szCLSID,
+      TEXT(&quot;VersionIndependentProgID&quot;),
+      TEXT(&quot;CTS.SharePaper&quot;));
+    SetRegKeyValue(
+      szCLSID,
+      TEXT(&quot;NotInsertable&quot;),
+      NULL);
+    SetRegKeyValue(
+      szCLSID,
+      TEXT(&quot;LocalServer32&quot;),
+      szModulePath);
+    AddRegNamedValue(
+      szCLSID,
+      NULL,
+      TEXT(&quot;AppID&quot;),
+      szID);
+
+    /*---------------------------------------------------------------------
+      Create entries under APPID.
+    ---------------------------------------------------------------------*/
+    SetRegKeyValue(
+      szAPPID,
+      NULL,
+      TEXT(&quot;CTS.SharePaper.1&quot;));
+    SetRegKeyValue(
+      TEXT(&quot;AppID&quot;),
+      szExeName,
+      NULL);
+    AddRegNamedValue(
+      TEXT(&quot;AppID&quot;),
+      szExeName,
+      TEXT(&quot;AppID&quot;),
+      szID);
+
+    return bOk;
+  }
+</FONT> </PRE>
+
+<P>
+Note that the keys created here are all under the main HKEY_CLASSES_ROOT
+branch of the registry. The HKEY_LOCAL_MACHINE\SOFTWARE\Classes branch
+could alternately be used because it is functionally identical to the
+HKEY_CLASSES_ROOT branch. As seen in previous server samples in this
+series, the usual ProgID, VersionIndependentProgID, and CLSID keys are
+stored in the registry. The AppID scheme that RegisterServer sets up is as
+follows. A named value, &quot;AppID&quot;, is added to the CLSID key for
+the CTS.SharePaper component. The following is the location of that CLSID
+key:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HKEY_CLASSES_ROOT\CLSID\{0002DA32-0000-0000-C000-000000000046}
+</FONT> </PRE>
+
+To this key the following named value (of string type, REG_SZ) is added:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  Name       Value
+  ----       --------------------------------------
+  AppID      {0002DA32-0000-0000-C000-000000000046}
+</FONT> </PRE>
+
+<P>
+Similar to the CLSID branch, the AppIDs are stored in an AppID branch in
+the registry. Thus, the following key is stored as the AppID entry for
+DCDSERVE and its CTS.SharePaper component.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HKEY_CLASSES_ROOT\AppID\{0002DA32-0000-0000-C000-000000000046}
+</FONT> </PRE>
+
+<P>
+In this sample the CLSID GUID string is used as the AppID GUID string as
+well. This AppID key in the registry is where the named security values
+are assigned. For example, the following named values are assigned to this
+key in the DCDSERVE sample when DCDSERVE is installed on the server
+machine.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  Name              Value
+  ----              -------------------------------------------------------
+  LaunchPermission  ACL in binary form (type REG_BINARY).
+  AccessPermission  ACL in binary form (type REG_BINARY).
+  RunAs             User account of the form: Domain\User
+                    When specified, this is the account under which the
+                    DCDSERVE server and its SharePaper component are run.
+                    A hidden password corresponding to this account is
+                    also stored.
+</FONT> </PRE>
+
+<P>
+These security values are not assigned in the RegisterServer method above.
+These values could be assembled programatically using the Windows NT Win32
+security functions and then assigned in the registry using functions like
+RegSetValueEx. RegisterServer could be expanded to perform this activity
+at self-registration time. However, in this lesson, the DCOMCNFG utility
+is used to manually &quot;install&quot; DCDSERVE's SharePaper component
+(see details in the &quot;Installing DCDSERVE&quot; section below). For
+more details on how to programmatically assign these security values see
+the DCOMPERM sample in the Platform SDK (currently located at
+\MSSDK\SAMPLES\WIN32\WINNT\SECURITY\DCOMPERM in the installed SDK).
+
+<P>
+To complete the registration of the AppID a module entry is also required.
+The following key is stored:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HKEY_CLASSES_ROOT\AppID\DCDSERVE.EXE
+</FONT> </PRE>
+
+<P>
+This key in turn is assigned the following named value (of type REG_SZ):
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  Name       Value
+  ----       --------------------------------------
+  AppID      {0002DA32-0000-0000-C000-000000000046}
+</FONT> </PRE>
+
+<P>
+Given the module name, the server's AppID entry can be located in the
+registry. Likewise, given the CLSID for a component, the appropriate AppID
+entry can be located. Thus, there are several avenues in the registry back
+to the AppID entry containing the security attributes.
+
+<a name="Installing"></a><h4>Installing DCDSERVE</h4>
+
+<P>
+This lesson assumes that the DCDSERVE will be installed on a Windows NT
+(Server or Workstation) machine. This is the machine on the network that
+is intended to store the shared drawing. In this Distributed COM sample,
+the DCOMDRAW client can run on a variety of other machines (for example,
+running Windows 95, Windows NT Workstation, Windows NT Server, or Windows
+98). One easy way to get started is to compile the complete sample set on
+the intended server machine and then copy the samples (with compiled
+executables) over the network to the client machines. On the client
+machines, the copies of the samples must have the servers registered on
+that machine as well. To do this run the REGALL.BAT file in the main
+tutorial directory. You can compile the entire sample set by running the
+LOGMALL.BAT batch file in the main tutorial directory. This batch file
+assumes that you have your development environment set up properly for
+Win32 and COM development. For more details, see
+<a href="using.htm#building"> Building the Code Samples.</a>
+
+<P>
+Installing DCDSERVE on the intended server machine first requires that
+DCDSERVE be directed register itself. Compiling the sample or running
+REGALL.BAT will do this. After the registration, the DCOMCNFG utility is
+used to manually perform additional security configuration. Follow these
+steps to use DCOMCNFG to set the security for DCDSERVE:
+
+<ol>
+<li>Login on the common server machine intended for DCDSERVE. This must
+    be an account that has administrator privileges.</li>
+
+<li>Make sure DCDSERVE is compiled and/or registered on the intended
+    common server machine.</li>
+
+<li>Add the dedicated user account under which DCDSERVE and the SharePaper
+    component will run.
+  <ol>
+    <li>Choose the &quot;User Manager&quot; choice on the
+        &quot;Administrative Tools&quot; menu.</li>
+    <li>In the &quot;User Manager&quot; choose the &quot;New User&quot;
+         choice on the &quot;User&quot; menu.</li>
+    <li>In the &quot;New User&quot; dialog, enter the following values
+        (within the square brackets):
+        <ul>
+        <li>&quot;User Name:&quot; [DCOMDraw]</li>
+        <li>&quot;Full Name:&quot; [DCOM Draw Code Sample]</li>
+        <li>&quot;Description:&quot; [COM Tutorial Sample]</li>
+        <li>&quot;Password:&quot; [public]</li>
+        <li>&quot;Confirm Password:&quot; [public]</li>
+        </ul> </li>
+    <li>In the &quot;New User&quot; dialog:
+        <ol>
+        <li>Check (or uncheck) boxes so that the following boxes are checked:
+            &quot;User Cannot Change Password&quot; and
+            &quot;Password Never Expires&quot;</li>
+        <li>Click the &quot;Groups&quot; button and in the
+            &quot;Group Memberships&quot; dialog add the DCOMDraw account
+            to all Administrator, User, and Guest groups.</li>
+        <li>Click the &quot;Add&quot; button to add the new
+            &quot;DCOMDraw&quot; user.</li>
+        <li>Click the &quot;Cancel&quot; button to exit the
+            &quot;New User&quot; dialog.</li>
+        </ol> </li>
+    <li>Back in the &quot;User Manager&quot;:
+        <ol>
+        <li>Double click the &quot;Administrators&quot; entry in the
+            &quot;Groups&quot; column.</li>
+        <li>In the &quot;Local Group Properties&quot; dialog click the
+            &quot;Add&quot; button.</li>
+        <li>In the &quot;Add Users and Groups&quot; dialog:
+            <ol>
+            <li>Select the network domain (in the top drop-down list) that
+                your intended DCOMDRAW client users will logging into.</li>
+            <li>Select the DCOMDraw entry in the &quot;Names&quot;
+                list box.</li>
+            <li>Click the &quot;Add&quot; button. An entry should appear
+                in the &quot;Add Names&quot; box.</li>
+            <li>Click the &quot;OK&quot; button to add the new domain login
+                local administrator account.</li>
+            </ol> </li>
+        <li>In the &quot;Local Group Properties&quot; dialog click the
+            &quot;OK&quot; button.</li>
+        </ol></li>
+    <li>Exit the &quot;User Manager&quot; by choosing &quot;Exit&quot;
+        on the &quot;User&quot; menu.</li>
+  </ol></li>
+
+<li>Run the DCOMCNFG utility by choosing the &quot;Run&quot; choice on
+    the desktop &quot;Start&quot; menu--just enter DCOMCNFG. DCOMCNFG.EXE
+    is located in the \WINNT\SYSTEM32 directory.
+    <ol>
+    <li>Select the &quot;SharePaper Component&quot; in the
+        &quot;Applications&quot; list.</li>
+    <li>Click the &quot;Properties&quot; button.</li>
+    <li>Click the &quot;Security&quot; tab.</li>
+    <li>Select the &quot;Use custom access permissions&quot; radio button and
+        click the &quot;Edit&quot; button for it.</li>
+    <li>In the &quot;Registry Value Permissions&quot; dialog click the
+        &quot;Add&quot; button.</li>
+    <li>In the &quot;Add Users and Group&quot; dialog select the
+        &quot;Everyone&quot; entry in the &quot;Names&quot; list and click
+        the &quot;Add&quot; button.</li>
+    <li>Click the &quot;OK&quot; button in the
+        &quot;Registry Value Permissions&quot; dialog. This assigns the
+        AppID's &quot;AccessPermissions&quot; value in the registry.</li>
+    <li>Back in the &quot;Security&quot; tab, select the
+        &quot;Use custom launch permissions&quot; radio button and click
+        the &quot;Edit&quot; button for it.</li>
+    <li>In the &quot;Registry Value Permissions&quot; dialog click the
+        &quot;Add&quot; button.</li>
+    <li>In the &quot;Add Users and Groups&quot; dialog select the
+        &quot;Everone&quot; entry in the &quot;Names&quot; list and
+        click the &quot;Add&quot; button.</li>
+    <li>Click the &quot;OK&quot; button in the
+        &quot;Registry Value Permissions&quot; dialog. This assigns the
+        AppID's &quot;LaunchPermissions&quot; value in the registry.</li>
+    <li>Click the &quot;Identity&quot; tab and select the
+        &quot;This user&quot; radio button.</li>
+    <li>Enter the following user values (within the square brackets). If you
+        are operating in a network domain click the &quot;Browse&quot;
+        button to select the appropriate MYDOMAIN\DCOMDraw user account
+        (where MYDOMAIN is the network domain in which client users will
+        be logged in).
+        <ul>
+        <li>&quot;User:&quot; [MYDOMAIN\DCOMDraw]</li>
+        <li>&quot;Password:&quot; [public]</li>
+        <li>&quot;Confirm Password:&quot; [public]</li>
+        </ul> </li>
+    <li>Click the &quot;OK&quot; button to complete the properties for
+        the SharePaper component. This assigns the AppID's &quot;RunAs&quot;
+        value in the registry.</li>
+    <li>Finally, click the &quot;OK&quot; button to close the
+        DCOMCNFG utility.</li>
+    </ol></li>
+</ol>
+
+<P>
+At this point DCOMDRAW clients should be able to launch and access the
+SharePaper component in DCDSERVE. The security scheme above uses a
+dedicated DCOMDraw account on the server machine. If DCOMCNFG has been
+used to set the &quot;Launching User&quot; as the identity under which
+DCDSERVE is launched then DCOM would launch separate instances of DCDSERVE
+because the remote client logins are likely different within the network
+domain or workgroup. By launching and accessing the SharePaper component
+under the same identity, DCOM will use the same instance of DCDSERVE if it
+is already running. Of course, this is required if the same COPaper
+instance is to be shared by all DCOMDRAW clients.
+
+<P>
+Note that to run DCOMDRAW on a client machine to access the above
+installation of DCDSERVE on a server machine requires that DCDSERVE (and
+DCDMARSH) be registered on the client machine as well. This is because
+DCOMDRAW initially loads a COPaper drawing from the locally registered
+DCDSERVE on the client machine. See the DCOMDRAW lesson for more details.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

@@ -1,0 +1,1598 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>PERDRAW COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="pertext.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="perclien.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="PERDRAW">
+PERDRAW - IPersistStorage Persistent Object Server</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+PERDRAW is the third sample in a group of samples that illustrate various
+techniques for implementing COM object persistence. The first sample,
+PERSERVE, illustrates persistence by implementing the IPersistStream
+standard interface. The second sample, PERTEXT, illustrates persistence by
+implementing the IPersistStreamInit standard interface. This sample,
+PERDRAW, illustrates persistence by implementing the IPersistStorage
+standard interface. The fourth sample, PERCLIEN, shows how a client
+exploits the kinds of persistence provided by the PERSERVE, PERTEXT, and
+PERDRAW server components.
+
+<P>
+The PERDRAW sample introduces the CODrawPage COM object, which models a
+sheet of white drawing paper. CODrawPage objects expose a set of features
+for free-form drawing on a virtual surface using &quot;ink&quot; of
+specified color and width. CODrawPage is based on the scribble-like
+functionality of the COPaper object from the STOSERVE sample.
+
+<P>
+CODrawPage objects expose a set of interfaces whose methods make the
+objects connectable, persistent managers of the drawing data. Clients
+access this data through an IDrawPage custom interface exposed by
+CODrawPage.
+
+<P>
+PERDRAW maintains a clear architectural distinction between client and
+server. Among other things, CODrawPage provides no graphical user
+interface (GUI); instead, the CODrawPage object relies on the client for
+all GUI behavior.
+
+<P>
+The PERCLIEN client provides the GUI display and manages a list of pages,
+the contents of which are stored in a compound file that contains both the
+contents of the list and of each page in that list. The user of PERCLIEN
+can edit the content of two types of pages: text pages and drawing pages.
+Text pages have data that the user can edit using a simple windowed text
+editor. Drawing pages have drawing data that the user can edit using
+free-form, scribble-like functionality based on the earlier STOSERVE and
+STOCLIEN samples. Both kinds of editing are done in separate client
+windows. For more details see PERCLIEN.HTM.
+
+<P>
+Storage in the compound file is achieved because the components provide
+persistent COM objects that encapsulate the page list and edited page
+data. PERSERVE houses a persistent object that encapsulates the single
+page list kept in each compound file containing such pages. PERTEXT houses
+a persistent object that encapsulates the edited text data for each text
+page. PERDRAW houses a persistent object that encapsulates the drawing
+data for each drawing page.
+
+<P>
+The COPageList object in the PERSERVE sample encapsulates the persistent
+page list data. COPageList implements the IPersistStream standard
+interface to expose control of the page list storage located in the
+client-provided stream of a compound file. The COTextPage object in the
+previous PERTEXT sample encapsulates the data of an edited text page.
+COTextPage implements the IPersistStreamInit standard interface to expose
+control of the text data storage that is located in the client-provided
+stream of a compound file. In contrast to these stream-based persistent
+objects, the CODrawPage object in this PERDRAW sample encapsulates the
+persistent drawing-ink data that comprises a drawing. CODrawPage
+implements the IPersistStorage standard interface to expose control of the
+drawing-ink data storage located in the client-provided substorage of a
+compound file.
+
+<P>
+This code sample focuses primarily on the CODrawPage implementation of the
+IPersistStorage interface to provide storage-based persistence for a COM
+object. PERDRAW works with the PERCLIEN sample to demonstrate the joint
+use by client and server of this IPersistStorage-based persistence.
+
+<P>
+CODrawPage's support for object persistence is the primary means of
+storing the ink data of the drawing page. CODrawPage stores its ink data
+in client-provided substorages located in a structured storage compound
+file. The compound file has a unique format because of the various streams
+and storages used. The client identifies these compound files as page
+files with a .PAG file extension. The client controls the use of the
+containing compound file and provides CODrawPage with an IStorage pointer
+to load and save its drawing data in the compound file. The IStorage
+pointer is passed to CODrawPage in calls to the IPersistStorage interface
+methods.
+
+<P>
+CODrawPage also exposes an IDrawPage custom interface to manipulate the
+drawing data that is encapsulated by the drawing page. IDrawPage exposes
+the InkStart, InkDraw, InkStop, Clear, Resize, and Redraw methods.
+
+<P>
+CODrawPage also supports connectable object features. It exposes the
+IConnectionPointContainer interface, an appropriate connection point is
+implemented, and an outgoing custom IDrawPageSink interface is declared to
+send notifications to the client.
+
+<P>
+The two IDrawPage and IDrawPageSink custom interfaces are declared in
+IPAGES.H, which is  located in the common INC directory. PAGEGUID.H, which
+contains the GUID definitions for the for the interfaces and objects, is
+in that same directory.
+
+<P>
+The PERDRAW sample uses the CThreaded facility in APPUTIL to achieve thread
+safety in the server housing and the class factory. Because PERDRAW.DLL is
+generally accessed from a Single Threaded Apartment (STA) as an in-process
+server, CODrawPage instances are not coded as thread-safe using the
+CThreaded facility. The CLSID_DrawPage component is registered as
+supporting the apartment threading model.
+
+<P>
+For functional descriptions and a tutorial code tour of the PERDRAW
+sample, see the Code Tour section in PERDRAW.HTM. For details on setting
+up the programmatic usage of PERDRAW.DLL, see the Usage section in
+PERDRAW.HTM. To read PERDRAW.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the PERDRAW lesson in the table of lessons. You can do
+the same thing by double-clicking the PERDRAW.HTM file after locating the
+main tutorial directory in Windows Explorer. For more details on the
+PERCLIEN client application and how it works with PERDRAW.DLL, see
+PERCLIEN.HTM in the main tutorial directory. You must build PERDRAW.DLL
+before running the PERCLIEN sample.
+
+<P>
+The PERDRAW server provides a DrawPage component that can create instances
+of the CODrawPage COM object. CODrawPage is housed in the PERDRAW.DLL
+in-process server and is made publicly available as a custom COM
+component. Like all other servers in this tutorial series, PERDRAW.DLL is
+a self-registering COM server. It makes the CODrawPage object type
+available to clients as the DrawPage component in the PERDRAW server using
+a CLSID_DrawPage registration in the Registry.
+
+<P>
+PERDRAW's makefile automatically registers its DrawPage COM component in
+the registry, which it must do before clients can use PERDRAW.DLL as a
+server for the DrawPage component. This self-registration is started in
+the makefile using the REGISTER.EXE utility built in the REGISTER sample.
+To build or run PERDRAW.DLL, you must build the REGISTER code sample
+first.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<p>
+To use PERDRAW.DLL, a client program does not need to include PERDRAW.H or
+link to PERDRAW.LIB. A COM client of PERDRAW.DLL obtains access solely
+through its object's CLSID and COM services. For PERDRAW, that CLSID is
+CLSID_DrawPage (defined in PAGEGUID.H in the common INC directory).
+The PERCLIEN code sample shows how the client obtains this access.
+
+<p>
+PERDRAW.DLL is intended primarily as a COM server. Although it can be
+implicitly loaded by linking to its associated .LIB file, it is normally
+used after an explicit LoadLibrary call, usually from within COM's
+CoGetClassObject function. PERDRAW is a self-registering in-process
+server.
+
+<P>
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the PERDRAW directory:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  nmake register
+ </FONT> </PRE>
+
+<P>
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the PERDRAW directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ..\register\register.exe perdraw.dll
+ </FONT> </PRE>
+
+<P>
+These registration commands require a prior build of both the REGISTER
+sample and PERDRAW.DLL.
+
+<P>
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Microsoft&reg; Platform SDK and
+Visual C++&reg; include a utility, REGSVR32.EXE, which can be used in a
+similar fashion to register in-process servers and marshaling DLLs.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, PERCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="perclien\perclien.exe">Click here to run PERCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files         Description</u>
+PERDRAW.TXT   Short description of the sample.
+MAKEFILE      The generic makefile for building the PERDRAW.DLL
+              code sample of this lesson.
+PERDRAW.H     The include file for declaring as imported or defining as
+              exported the service functions in PERDRAW.DLL.
+PERDRAW.CPP   The main implementation file for PERDRAW.DLL. Has DllMain
+              and the COM server functions (for example, DllGetClassObject).
+PERDRAW.DEF   The module definition file. Exports server housing functions.
+PERDRAW.RC    The DLL resource definition file for the executable.
+PERDRAW.ICO   The icon resource for the executable.
+SERVER.H      The include file for the server control C++ object.
+SERVER.CPP    The implementation file for the server control C++ object.
+FACTORY.H     The include file for the server's class factory COM objects.
+FACTORY.CPP   The implementation file for the server's class factories.
+CONNECT.H     The include file for the connection point enumerator,
+              connection point, and connection enumerator classes.
+CONNECT.CPP   The implementation file for the connection point enumerator,
+              connection point, and connection enumerators objects.
+DRAWPAGE.H    The include file for the CODrawPage COM object class.
+DRAWPAGE.CPP  The implementation file for the CODrawPage COM object class
+              and the connection points.
+</FONT> </PRE>
+
+<p>
+The PERDRAW sample uses many of the utility classes and services provided
+by APPUTIL. For more details on APPUTIL, study the APPUTIL library's
+source code in the APPUTIL directory and read the APPUTIL.HTM lesson in
+the main tutorial directory.
+
+<p>
+This sample is part of a graduated series of tutorial code samples and
+assumes that you have had some exposure to those samples. It does not
+revisit basic interface implementation techniques, COM object
+construction, in-process server construction, class factory construction,
+connectable object construction, or use of structured storage in compound
+files. For information on these topics, study the earlier tutorial
+samples.
+
+<p>The major topics covered in this code tour are:
+
+<ul>
+<li>How PERDRAW is designed to work with connected clients
+
+<li>CODrawPage's use of the IDrawPage interface for managing text pages.
+
+<li>The data constructs that make up CODrawPage's persistent data.
+
+<li>CODrawPage's implementation of the IPersistStorage interface to
+    provide persistence.
+
+<li>CODrawPage's use of the IDrawPageSink interface for client notifications.
+
+</ul>
+
+<p>
+The CODrawPage COM object is the single object type managed by the PERDRAW
+in-process server. CODrawPage is constructed as a connectable COM object
+that implements the IConnectionPointContainer standard interface, the
+IPersistStorage standard interface, and the IDrawPage custom interface.
+
+<P>
+CODrawPage exposes the IDrawPage custom interface so clients can perform a
+set of operations on the drawing data that is encapsulated by CODrawPage.
+Here is a summary of the IDrawPage methods from IPAGES.H located in the
+common INC directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  InkStart
+    Client starts color ink drawing to the drawing surface.
+
+  InkDraw
+    Client puts ink data points on the drawing surface.
+
+  InkStop
+    Client stops ink drawing to the drawing surface.
+
+  Clear
+    Clear the current drawing content. Notify sinks.
+    Mark dirty flag if bSaveNeeded==TRUE.
+
+  Resize
+    Resize the drawing rectangle size.
+
+  Redraw
+    Redraw content of drawing object via sink notification.
+</FONT> </PRE>
+
+<P>
+The implementation of IDrawPage is straightforward. A set of properties
+for the drawing page and the drawing data itself are maintained. The
+functionality is very similar to the scribble-like functionality in the
+IPaper interface that is implemented in the STOSERVE and STOCLIEN samples.
+For more details on the implementation of IDrawPage, see DRAWPAGE.H and
+DRAWPAGE.CPP.
+
+<p>
+CODrawPage manages its drawing data in RAM. However, since CODrawPage is
+also a persistent object, it also manages the persistent representation of
+this drawing data in a stream of a structured storage compound file.
+CODrawPage exposes the IPersistStorage interface so that client's can
+control the persitence features of CODrawPage. This samples focuses
+primarily on CODrawPage's implementation of IPersistStorage.
+
+<p>
+The client is responsible for displaying the drawing to the user. The
+PERCLIEN sample does this using a separate drawing window. The client uses
+the IDrawPage interface on CODrawPage to obtain the data to display in
+that window and to update CODrawPage with any user-requested changes to
+the drawing data. The client cooperates with CODrawPage to manage the
+drawing data. The client manages the creation or opening of a storage in
+the compound file containing the data. When the client needs to control
+the persistence of CODrawPage it passes an IStorage interface pointer to
+CODrawPage, usually during such IPersistStorage method calls as InitNew,
+Load, and Save. CODrawPage then uses that storage to store persistently
+all its object state data. CODrawPage creates streams under the provided
+storage and uses them for the actual storage of its object state data.
+
+<P>
+CODrawPage stores two major data constructs for its object state data: the
+ink data which makes up the drawing and the drawing page properties. The
+ink data is stored in a stream created under the storage branch provided.
+This stream always has the name &quot;DRAWDATA&quot;. The ink data is
+stored as an array of INKDATA structures. The following is the INKDATA
+structure from DRAWPAGE.H:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // The Ink Data structure.
+  typedef struct _INKDATA
+  {
+    SHORT nType;            // Ink Type.
+    SHORT nX;               // X-coordinate of ink point.
+    SHORT nY;               // Y-coordinate of ink point.
+    SHORT nWidth;           // Ink line width.
+    COLORREF crColor;       // Ink color.
+  } INKDATA;
+</FONT> </PRE>
+
+<P>
+Each of these INKDATA structure elements in the array represents an ink
+point of specific color and width. The drawing is made up of these ink
+points.
+
+<P>
+The nType member holds the ink type of the point. The following ink types
+are defined in DRAWPAGE.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+// The types of Ink Data.
+  #define INKTYPE_NONE  0
+  #define INKTYPE_START 1
+  #define INKTYPE_DRAW  2
+  #define INKTYPE_STOP  3
+</FONT> </PRE>
+
+<P>
+The nX and nY members specify the pixel coordinates of the ink point, the
+nWidth member specifies the ink line width in pixels, and the crColor
+member specifies the color of the ink point.
+
+<P>
+The drawing page's persistent properties are also stored in a stream
+created under the storage branch provided. That stream always has the name
+&quot;DRAWPROPS&quot;. The following is the DRAWPROPS structure from
+DRAWPAGE.H:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // Properties of our electronic DrawPage.
+  typedef struct _DRAWPROPS
+  {
+    LONG lInkDataVersion;
+    LONG lInkArraySize;
+    COLORREF crWinColor;
+    RECT WinRect;
+    WCHAR wszTitle[PAGE_TITLE_SIZE];
+    WCHAR wszAuthor[PAGE_TITLE_SIZE];
+    WCHAR wszReserved1[PAGE_TITLE_SIZE];
+  } DRAWPROPS;
+</FONT> </PRE>
+
+<P>
+The lInkDataVersion member holds a version number for the ink data in the
+drawing page. This allows the first member to be checked to determine
+possible variations in treatment based on the format version.
+
+<P>
+The lInkArraySize member holds the current size of the ink data array.
+
+<P>
+The crWinColor member holds the current background color of the display
+window. The default for this color is white.
+
+<P>
+The WinRect member holds the current drawing surface rectangle. This is
+for future evolution of the application and is not used in this sample. As
+a persistent property, it can be used to save and restore the display
+window size.
+
+<P>
+The wszTitle, wszAuthor, and wszReserved1 members are for future evolution
+of the application and are not used by PERDRAW or PERCLIEN.
+
+<p>
+In the division of labor between client and server, CODrawPage does not
+create the compound file that is used to store drawing page data. To save
+and load the persistent data of CODrawPage, the client uses the
+IPersistStorage interface Save and Load methods, passing an IStorage
+interface pointer for a storage branch located in an existing compound
+file. CODrawPage then uses the IStorage interface to read data from and
+write data to the compound file. As mentioned above, CODrawPage creates
+DRAWDATA and DRAWPROPS streams under the provided storage branch.
+
+<P>
+The following is the declaration of the CODrawPage COM object from
+DRAWPAGE.H:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class CODrawPage : public IUnknown
+  {
+    public:
+      // Main Object Constructor & Destructor.
+      CODrawPage(IUnknown* pUnkOuter, CServer* pServer);
+      ~CODrawPage(void);
+
+      // A general public method for initializing this newly created
+      // object. Creates any subordinate arrays, structures, or objects.
+      // Not exposed as part of an interface. Used in Class Factory.
+      HRESULT Init(void);
+
+      // IUnknown methods. Main object, non-delegating.
+      STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+      STDMETHODIMP_(ULONG) AddRef(void);
+      STDMETHODIMP_(ULONG) Release(void);
+
+    private:
+      // We declare nested class interface implementations here.
+
+      class CImpIConnectionPointContainer : public IConnectionPointContainer
+      {
+        public:
+          // Interface Implementation Constructor & Destructor.
+          CImpIConnectionPointContainer(CODrawPage* pCO, IUnknown* pUnkOuter);
+          ~CImpIConnectionPointContainer(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // IConnectionPointContainer methods.
+          STDMETHODIMP         FindConnectionPoint(REFIID, IConnectionPoint**);
+          STDMETHODIMP         EnumConnectionPoints(IEnumConnectionPoints**);
+
+        private:
+          // Data private to this interface implementation.
+          CODrawPage*   m_pCO;          // Parent COM Object back pointer.
+          IUnknown*     m_pUnkOuter;    // Outer unknown for Delegation.
+      };
+
+      class CImpIPersistStorage : public IPersistStorage
+      {
+        public:
+          // Interface Implementation Constructor & Destructor.
+          CImpIPersistStorage(CODrawPage* pCO, IUnknown* pUnkOuter);
+          ~CImpIPersistStorage(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // IPersistStorage methods.
+          STDMETHODIMP         GetClassID(CLSID* pClassID);
+          STDMETHODIMP         IsDirty(void);
+          STDMETHODIMP         InitNew(IStorage* pIStorage);
+          STDMETHODIMP         Load(IStorage* pIStorage);
+          STDMETHODIMP         Save(IStorage* pIStorage, BOOL bSameAsLoad);
+          STDMETHODIMP         SaveCompleted(IStorage* pIStorage);
+          STDMETHODIMP         HandsOffStorage(void);
+
+        private:
+          // Data private to this interface implementation.
+          CODrawPage*   m_pCO;            // Parent COM Object back pointer.
+          IUnknown*     m_pUnkOuter;      // Outer unknown for Delegation.
+          IStorage*     m_pIStorage;      // Main DrawPage storage.
+          IStream*      m_pIStream_Props; // Stream for Drawing Properties.
+          IStream*      m_pIStream_Data;  // Stream for Drawing Ink Data.
+      };
+
+      class CImpIDrawPage : public IDrawPage
+      {
+        public:
+          // Interface Implementation Constructor & Destructor.
+          CImpIDrawPage(CODrawPage* pCO, IUnknown* pUnkOuter);
+          ~CImpIDrawPage(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // IDrawPage methods.
+          STDMETHODIMP         InkStart(
+                                 SHORT nX,
+                                 SHORT nY,
+                                 SHORT nWidth,
+                                 COLORREF crInkColor);
+          STDMETHODIMP         InkDraw(SHORT nX, SHORT nY);
+          STDMETHODIMP         InkStop(SHORT nX, SHORT nY);
+          STDMETHODIMP         Clear(BOOL bSaveNeeded);
+          STDMETHODIMP         Resize(SHORT nWidth, SHORT nHeight);
+          STDMETHODIMP         Redraw(void);
+
+        private:
+          // Private utility methods of this interface implementation.
+          HRESULT NextSlot(void);
+
+          // Data private to this interface implementation of IDrawPage.
+          CODrawPage*   m_pCO;          // Parent COM Object back pointer.
+          IUnknown*     m_pUnkOuter;    // Outer unknown for Delegation.
+      };
+
+      // Make the otherwise private and nested interface implementations
+      // friends to COM object instantiations of this CODrawPage
+      // COM object class.
+      friend CImpIConnectionPointContainer;
+      friend CImpIPersistStorage;
+      friend CImpIDrawPage;
+
+      // Private Methods of CODrawPage COM objects.
+
+      // Private method of main connectable CODrawPage COM object to
+      // broadcast event notifications to all connected listening sinks.
+      HRESULT NotifySinks(
+                DRAWPAGE_EVENT DrawPageEvent,
+                SHORT nX,
+                SHORT nY,
+                SHORT nInkWidth,
+                COLORREF crInkColor);
+
+      // Private data of CODrawPage COM objects.
+
+      // Nested IConnectionPointContainer implementation instantiation.
+      CImpIConnectionPointContainer m_ImpIConnectionPointContainer;
+
+      // Nested IPersistStorage implementation instantiation.
+      CImpIPersistStorage m_ImpIPersistStorage;
+
+      // Nested IDrawPage implementation instantiation. Custom interface.
+      CImpIDrawPage     m_ImpIDrawPage;
+
+      // Main Object reference count.
+      ULONG             m_cRefs;
+
+      // Outer unknown (aggregation & delegation).
+      IUnknown*         m_pUnkOuter;
+
+      // Pointer to this component server's control object.
+      CServer*          m_pServer;
+
+      // The array of connection points for this connectable COM object.
+      IConnectionPoint* m_aConnectionPoints[MAX_CONNECTION_POINTS];
+
+      // The following private data is the working heart of DrawPage objects.
+      RECT              m_WinRect;        // Current window rectangle.
+      COLORREF          m_crWinColor;     // Current window background color.
+      COLORREF          m_crInkColor;     // Current ink color.
+      SHORT             m_nInkWidth;      // Current ink width.
+      LONG              m_lInkDataEnd;    // Current end of the ink data.
+      LONG              m_lInkDataMax;    // Current max end of the ink data.
+      INKDATA*          m_paInkData;      // Dynamic Ink data array pointer.
+      DRAWPROPS         m_DrawProps;      // Drawing Page properties.
+      CLSID             m_ClassID;        // CLSID of this COM Object.
+      UINT              m_ClipFmt;        // ClipBoard format.
+      PERSTGSTATE       m_StgState;       // Persistent Storage State.
+      BOOL              m_bDirty;         // RAM no match file--save needed.
+  };
+</FONT> </PRE>
+
+<P>
+CODrawPage has nested implementations of the IUnknown,
+IConnectionPointContainer, IPersistStorage, and IDrawPage interfaces. The
+techniques of these interface implementations follow the pattern used in
+earlier samples. Implementation of IUnknown was introduced in the COMOBJ
+sample. IConnectionPointContainer was introduced in the CONSERVE sample.
+This sample introduces the IPersistStorage standard interface with more
+detail below. This sample also introduces the IDrawPage custom interface
+but its implementation is very similar to the custom interface
+implemementations in earlier samples. For example, see the IPaper
+interface covered in the STOSERVE sample.
+
+<P>
+The m_DrawProps member is a DRAWPROPS structure that contains the
+properties of the drawing page. The m_ClassID holds the CLSID of the
+CODrawPage component for later use within the method implementations of
+CODrawPage. The m_ClipFmt member holds an identifier for the clipboard
+format associated with the ink data in the drawing. (This is for future
+evolution of the application and would be used if cut and paste edit
+operations were supported for ink data.) CODrawPage uses the m_bDirty
+member internally to determine when the resident drawing data has
+changed relative to the last time it was loaded from or saved to
+persistent storage.
+
+<P>
+The m_StgState member holds the current persistent storage state of
+CODrawPage and is discussed later in this lesson.
+
+<P>
+CODrawPage keeps the ink data in a RAM-resident array, pointer to which is
+kept in the m_paInkData variable. This array is initially allocated in the
+internal CODrawPage::Init method immediately after CODrawPage is created,
+but it is also deleted and recreated during the IPersistStorage::Load
+method. The m_lInkDataEnd member holds the array index of the current end
+of the array. The m_lInkDataMax member holds the current maximum value
+that m_lInkDataEnd can have. The array grows dynamically within the
+current upper bound set in m_lInkDataMax. If m_lInkDataEnd reaches
+m_lInkDataMax, then additional array space is allocated and m_lInkDataMax
+is assigned a new value.
+
+<P>
+The following IPersistStorage methods are declared:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // IPersistStorage methods.
+  STDMETHODIMP GetClassID(CLSID* pClassID);
+  STDMETHODIMP IsDirty(void);
+  STDMETHODIMP InitNew(IStorage* pIStorage);
+  STDMETHODIMP Load(IStorage* pIStorage);
+  STDMETHODIMP Save(IStorage* pIStorage, BOOL bSameAsLoad);
+  STDMETHODIMP SaveCompleted(IStorage* pIStorage);
+  STDMETHODIMP HandsOffStorage(void);
+</FONT> </PRE>
+
+<P>
+Examining these methods in detail shows how the IPersistStorage interface
+implements persistence for the property and ink data in CODrawPage. The
+InitNew, Load, Save, and SaveCompleted methods accept an IStorage
+interface pointer. If you have not used streams (IStream) or storages
+(IStorage) in structured storage compound files, see the STOSERVE and
+STOCLIEN lesons for coverage of this topic.
+
+<P>
+Objects that implement IPersistStorage read and write their state data in
+a storage branch of a compound file. Like IPersistStreamInit,
+IPersistStorage supports object initialization with an InitNew method.
+IPersistStorage also imposes a protocol between client and object that
+handles situations when the client needs to control the underlying
+compound file and must tell the object to relinquish control of any open
+storage or stream elements in may own in the compound file. In conjunction
+with an internally maintained storage state, the Save, SaveCompleted, and
+HandsOffStorage methods ensure that the client abides by the protocol.
+
+<P>
+The protocol is based on certain rules governing transition to and from
+various object states. Objects that implement their persistence using
+IPersistStorage must abide these rules. CODrawPage's m_StgState member
+holds the current storage state of CODrawPage and is assigned values based
+on the state. The following state values are from APPUTIL.H, which is
+located in the common INC directory. This enumeration is defined in the
+common APPUTIL.H because many persistent objects in separate applications
+might use it.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // An enumeration of persistent storage states for use in the
+  // implementation of IPersistStorage.
+  typedef enum
+  {
+    PERS_UNINIT = 0,  // Uninitialized.
+    PERS_SCRIBBLE,    // Write     permitted; Read     permitted.
+    PERS_NOSCRIBBLE,  // Write NOT permitted; Read     permitted.
+    PERS_HANDSOFF     // Write NOT permitted; Read NOT permitted.
+  } PERSTGSTATE;
+</FONT> </PRE>
+
+<P>
+PERS_UNINIT represents the unitialized state of CODrawPage. PERS_SCRIBBLE
+represents the normal state of read and write access by CODrawPage to its
+persistent storage. During this state, CODrawPage can hold open pointers
+to any elements in its persistent storage. PERS_NOSCRIBBLE represents the
+state in which CODrawPage can read but not write its persistent storage.
+This is a 'zombie' state in which CODrawPage's methods cannot perform any
+incremental writes to storage. This state exists between calls to Save and
+SaveCompleted. While in this state a client often continues to write to
+other parts of the compound file. This allows the client to gather several
+save operations for the compound file--perhaps for several different
+persistent objects--into one save operation. When done with this operation
+the client calls SaveCompleted on the appropriate PERS_NOSCRIBBLE objects.
+PERS_HANDSOFF represents the state in which CODrawPage can neither read
+nor write to its persistent storage. In this state CODrawPage has no valid
+interface pointers to its persistent storage.
+
+<P>
+The InitNew, Load, Save, SaveCompleted, and HandsOffStorage methods manage
+storage state. Both InitNew and Load change the state from PERS_UNINIT to
+PERS_SCRIBBLE. Save changes the state from PERS_SCRIBBLE to
+PERS_NOSCRIBBLE. HandsOffStorage changes the state from PERS_SCRIBBLE to
+PERS_HANDSOFF or from PERS_NOSCRIBBLE to PERS_HANDSOFF. SaveCompleted
+changes the state from PERS_NOSCRIBBLE to PERS_SCRIBBLE or from
+PERS_HANDSOFF to PERS_SCRIBBLE.
+
+<P>
+The client calls SaveCompleted to enable normal read and write access for
+an object in either the PERS_NOSCRIBBLE or PERS_HANDSOFF state. The client
+calls HandsOffStorage to prevent the object from reading or writing to its
+persistent storage. This would typically occur when the client is
+performing some action on the underlying compound file and needs to
+prevent the CODrawPage from reading or writing to a compound file while
+the file is undergoing global changes. For example, if the client is
+renaming the file, CODrawPage must be prevented from attempting any
+modifications to the data in the file during the rename operation. If the
+client calls HandsOffStorage before calling Save, CODrawPage must release
+all the interface pointers it holds for storages in the compound file.
+Since no interface pointers are available after these releases, a
+PERS_HANDSOFF state that absolutely prevents CODrawPage from accessing its
+persistent storage is needed. To enable CODrawPage to read and write its
+persistent storage again, the client passes a fresh IStorage interface in
+the SaveCompleted method.
+
+<P>
+The GetClassID method is called by clients of CODrawPage to obtain its
+component CLSID. This method is actually inherited from the IPersist
+interface from which IPersistStorage is derived. Here is the
+implementation of GetClassID from DRAWPAGE.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP CODrawPage::CImpIPersistStorage::GetClassID(
+                 CLSID* pClassID)
+  {
+    HRESULT hr = E_POINTER;
+
+    if (NULL != pClassID)
+    {
+      // Use overloaded '=' operator to copy the Class ID to caller.
+      *pClassID = m_pCO->m_ClassID;
+      hr = NOERROR;
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+This simple method uses the overloaded &quot;=&quot; operator to copy
+CODrawPage's main copy of the CLSID to the client's address space using
+pClassID. The convenient overloading of the &quot;=&quot; operator is
+provided in the COM and OLE header files that are included at the front of
+DRAWPAGE.CPP. The CODrawPage constructor initially assigned the value
+CLSID_DrawPage to m_ClassID. CLSID_DrawPage is defined in the PAGEGUID.H
+file, which also contains other GUIDs--such as interface IIDs--that are
+used in the PERSERVE, PERTEXT, PERDRAW, and PERCLIEN samples. PAGEGUID.H
+is in the common INC directory.
+
+<P>
+The IsDirty method is called by clients when they need to determine if
+changes were made to this CODrawPage's persistent data since it was last
+loaded, initialized, or saved. The following is the implementation of
+IsDirty from DRAWPAGE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP CODrawPage::CImpIPersistStorage::IsDirty(
+                 void)
+  {
+    HRESULT hr;
+
+    hr = m_pCO->m_bDirty ? S_OK : S_FALSE;
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+This method simply returns the current &quot;dirty&quot; status of the
+RAM-resident data in terms of the standard HRESULT return codes of S_OK or
+S_FALSE. S_OK means that the data has changed and needs saving; S_FALSE
+means the data matches its counterpart in persistent storage.
+
+<P>
+Clients call the InitNew method to direct CODrawPage to initialize its
+object state data in RAM for the first time. InitNew is called instead of
+Load when the newly created object instance must be initialized with new
+data rather than with persistent data previously saved in a storage. Load
+and InitNew are never called on the same instance of CODrawPage. The
+following is the implementation of InitNew from DRAWPAGE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP CODrawPage::CImpIPersistStorage::InitNew(
+                 IStorage* pIStorage)
+  {
+    HRESULT hr = E_UNEXPECTED;
+    ULONG ulToWrite, ulWritten;
+
+    // There is no previous persistent data for this CODrawPage object.
+    // Create and init new persistence data for an empty drawing page.
+
+    // Return E_UNEXPECTED error if not in the UNINIT state.
+    if (PERS_UNINIT == m_pCO->m_StgState)
+    {
+      if (NULL != pIStorage)
+      {
+        // Create the Properties stream.
+        hr = pIStorage->CreateStream(
+               WSZ_DRAWPROPS,
+               STGM_CREATE | STGM_DIRECT
+                 | STGM_READWRITE | STGM_SHARE_EXCLUSIVE,
+               0,
+               0,
+               &m_pIStream_Props);
+        if (SUCCEEDED(hr))
+        {
+          // Create the Ink Data stream.
+          hr = pIStorage->CreateStream(
+                  WSZ_DRAWDATA,
+                  STGM_CREATE | STGM_DIRECT
+                    | STGM_READWRITE | STGM_SHARE_EXCLUSIVE,
+                  0,
+                  0,
+                  &m_pIStream_Data);
+          if (SUCCEEDED(hr))
+          {
+            // Write the clipboard format and User Type Name info.
+            hr = WriteFmtUserTypeStg(
+                   pIStorage,
+                   m_pCO->m_ClipFmt,
+                   SZ_CLIPUSERTYPE);
+          }
+        }
+      }
+      else
+        hr = E_POINTER;
+
+      if (SUCCEEDED(hr))
+      {
+        // Preallocate stream space by writing the DRAWPROPS structure.
+        m_pCO->m_DrawProps.lInkArraySize = m_pCO->m_lInkDataEnd+1;
+        m_pCO->m_DrawProps.crWinColor = m_pCO->m_crWinColor;
+        m_pCO->m_DrawProps.WinRect.right = m_pCO->m_WinRect.right;
+        m_pCO->m_DrawProps.WinRect.bottom = m_pCO->m_WinRect.bottom;
+        ulToWrite = sizeof(DRAWPROPS);
+        hr = m_pIStream_Props->Write(
+               &m_pCO->m_DrawProps,
+               ulToWrite,
+               &ulWritten);
+        if (SUCCEEDED(hr) && ulToWrite != ulWritten)
+          hr = STG_E_CANTSAVE;
+        if (SUCCEEDED(hr))
+        {
+          // Preallocate stream space by writing the initial Ink Data array.
+          ulToWrite = m_pCO->m_DrawProps.lInkArraySize * sizeof(INKDATA);
+          hr = m_pIStream_Data->Write(
+                 m_pCO->m_paInkData,
+                 ulToWrite,
+                 &ulWritten);
+          if (SUCCEEDED(hr) && ulToWrite != ulWritten)
+            hr = STG_E_CANTSAVE;
+          if (FAILED(hr))
+          {
+            // Release ink data stream if error writing.
+            m_pIStream_Data->Release();
+          }
+        }
+        else
+        {
+          // Release property stream if error writing.
+          m_pIStream_Props->Release();
+        }
+
+        if (SUCCEEDED(hr))
+        {
+          // Keep open storage pointer around for use in later incremental or
+          // low-memory calls of Save. AddRef the interface pointer copy.
+          m_pIStorage = pIStorage;
+          m_pIStorage->AddRef();
+
+          // Switch the persistent storage state to the scribble state.
+          m_pCO->m_StgState = PERS_SCRIBBLE;
+        }
+      }
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+InitNew first checks m_StgState and fails with the E_UNEXPECTED
+error if CODrawPage is already initialized. During InitNew the object
+should create and open every storage and stream element it expects to
+access, including any elements it will later require in a low-memory
+save situation. To help preclude later problems if the storage medium is
+full, InitNew should also pre-allocate an appropriate amount of stream
+space. It can do this using IStream::SetSize or by simply writing an
+initial place-holder object state. The above InitNew writes such a
+place-holder object state.
+
+<P>
+InitNew begins by using the methods of the passed IStorage interface to
+create both the DRAWPROPS and DRAWDATA streams. It then writes the
+identifier for the clipboard format. If those steps succeed, it
+pre-allocates stream space by writing appropriate initial data to the
+newly created DRAWPROPS and DRAWDATA streams. InitNew keeps a copy of the
+IStorage pointer that was passed into it, which CODrawPage uses later.
+InitNew also performs an AddRef on the pointer copy. Finally, InitNew
+changes the CODrawPage storage state from PERS_UNINIT to PERS_SCRIBBLE.
+
+<P>
+The Load method directs CODrawPage to load its persistent state from an
+open storage branch whose IStorage interface is passed. Load assumes that
+the expected storage structure (that is, the particular substorages and
+streams that contain the entire object state data) are present in the
+specified storage branch. The following code is the implementation of Load
+from DRAWPAGE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP CODrawPage::CImpIPersistStorage::Load(
+                 IStorage* pIStorage)
+  {
+    HRESULT hr = E_UNEXPECTED;
+    ULONG ulToRead, ulReadIn;
+    LONG lNewArraySize;
+    INKDATA* paInkData;
+    DRAWPROPS NewProps;
+
+    // Return E_UNEXPECTED error if not in the UNINIT state.
+    if (PERS_UNINIT == m_pCO->m_StgState)
+    {
+      if (NULL != pIStorage)
+      {
+        // Open the existing DrawPage properties stream.
+        hr = pIStorage->OpenStream(
+               WSZ_DRAWPROPS,
+               0,
+               STGM_READWRITE | STGM_DIRECT | STGM_SHARE_EXCLUSIVE,
+               0,
+               &m_pIStream_Props);
+        if (SUCCEEDED(hr))
+        {
+          // Open the existing DrawPage ink data stream.
+          hr = pIStorage->OpenStream(
+                 WSZ_DRAWDATA,
+                 0,
+                 STGM_READWRITE | STGM_DIRECT | STGM_SHARE_EXCLUSIVE,
+                 0,
+                 &m_pIStream_Data);
+          if (SUCCEEDED(hr))
+          {
+            // Read the DrawPage properties from the their stream.
+            ulToRead = sizeof(DRAWPROPS);
+            hr = m_pIStream_Props->Read(&NewProps, ulToRead, &ulReadIn);
+            if (SUCCEEDED(hr) && ulToRead != ulReadIn)
+              hr = STG_E_READFAULT;
+            if (SUCCEEDED(hr))
+            {
+              // Read the Ink Data of the drawing from its stream.
+              // Deal with the different versions of ink data format.
+              switch (NewProps.lInkDataVersion)
+              {
+                case INKDATA_VERSION20:
+                  // Allocate an ink data array big enough--add some extra.
+                  lNewArraySize = NewProps.lInkArraySize + INKDATA_ALLOC;
+                  paInkData = new INKDATA[(LONG) lNewArraySize];
+                  if (NULL != paInkData)
+                  {
+                    // Delete the entire old ink data array.
+                    delete [] m_pCO->m_paInkData;
+
+                    // Assign the new array.
+                    m_pCO->m_paInkData = paInkData;
+                    m_pCO->m_lInkDataMax = lNewArraySize;
+
+                    // Now read the complete array of Ink Data.
+                    ulToRead = NewProps.lInkArraySize * sizeof(INKDATA);
+                    hr = m_pIStream_Data->Read(
+                           m_pCO->m_paInkData,
+                           ulToRead,
+                           &ulReadIn);
+                    if (SUCCEEDED(hr) && ulToRead != ulReadIn)
+                      hr = STG_E_READFAULT;
+                    if (SUCCEEDED(hr))
+                    {
+                      // Rig CODrawPage to use the DRAWPROPS info.
+                      m_pCO->m_lInkDataEnd = NewProps.lInkArraySize-1;
+                      m_pCO->m_crWinColor = NewProps.crWinColor;
+                      m_pCO->m_WinRect.right = NewProps.WinRect.right;
+                      m_pCO->m_WinRect.bottom = NewProps.WinRect.bottom;
+
+                      // Copy the new properties into current properties.
+                      memcpy(
+                        &m_pCO->m_DrawProps,
+                        &NewProps,
+                        sizeof(DRAWPROPS));
+
+                      // We are loaded and clean (ie, CODrawPage data
+                      // matches file data). Clear dirty flag.
+                      m_pCO->m_bDirty = FALSE;
+                    }
+                    else
+                    {
+                      // Release data stream if error reading.
+                      m_pIStream_Data->Release();
+                    }
+                  }
+                  else
+                    hr = E_OUTOFMEMORY;
+                  break;
+                default:
+                  hr = E_FAIL;  // Bad version.
+                  break;
+              }
+            }
+            else
+            {
+              // Release property stream if error reading.
+              m_pIStream_Props->Release();
+            }
+          }
+        }
+
+        if (SUCCEEDED(hr))
+        {
+          // Keep open storage pointer around for use in later incremental
+          // or low-memory calls of Save. AddRef the interface pointer copy.
+          m_pIStorage = pIStorage;
+          m_pIStorage->AddRef();
+
+          // Switch the persistent storage state to the scribble state.
+          m_pCO->m_StgState = PERS_SCRIBBLE;
+        }
+      }
+      else
+        hr = E_POINTER;
+    }
+
+    // Notify all other connected clients that DrawPage is now loaded.
+    if (SUCCEEDED(hr))
+      m_pCO->NotifySinks(DRAWPAGE_EVENT_LOADED, 0, 0, 0, 0);
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+The Load method is called instead of the InitNew method when this
+CODrawPage object already has a persistent state stored in a storage. A
+complete copy of that state data is read from the storage into newly
+allocated, RAM-resident space. Two kinds of state data, a group of object
+properties from a DRAWPROPS stream and the ink data array from a DRAWDATA
+stream, are loaded from the storage.
+
+<P>
+Load begins by checking m_StgState and fails returning E_UNEXPECTED if the
+storage state of CODrawPage is not PERS_UNINIT. Then, instead of creating
+streams for DRAWPROPS and DRAWDATA as does the InitNew method, Load opens
+these two existing streams. Load assumes that the entire set of necessary
+persistence elements is under the provided storage branch that is accessed
+by the passed pIStorage interface pointer. If Load opens these two streams
+successfully, the method reads the DRAWPROPS properties into a temporary
+NewProps structure. At the end of the successful Load, NewProps is copied
+to CODrawPage::m_DrawProps to allow reverting to the current CODrawPage
+state data if the entire load of new data is not successfully completed.
+
+<P>
+After the DRAWPROPS structure is read in, the lInkDataVersion property is
+used in a switch statement. This allows for different load behavior to
+accomodate different data formats based on the version of the data that
+was stored. Because the version number is the first thing in the stream's
+data for the object properties, it can be read separately to determine how
+to subsequently read and deal with the properties data that follows and
+with the content of the DRAWDATA stream.
+
+<P>
+The Load method then deletes the existing ink data array and uses the
+lInkArraySize property to allocate a new ink data array in RAM that is big
+enough for the drawing data to be read. This allocation includes an
+additional amount specified by INKDATA_ALLOC for expansion in anticipation
+of drawing activity in the client. Once the allocation is successful, the
+ink data array is read in from the DRAWDATA stream. If the read is
+successful, Load copies the NewProps structure to CODrawPage's
+m_DrawProps. At this point CODrawPage has been loaded from persistent
+storage. Since this load has caused the in-RAM data to match the data in
+the file, the m_bDirty flag is set to FALSE, meaning that a save is not
+needed to achieve such a match.
+
+<P>
+If the preceding is succeeds, a copy of the open IStorage interface
+pointer is kept in CODrawPage's m_pIStorage member for later use, and an
+appropriate AddRef called on this copied interface. This retained copy of
+the IStorage pointer is in contrast to the IPersistStream[Init] interfaces
+which prohibit the keeping of stream pointers in the object. At the end of
+Load, CODrawPage's storage state is changed from PERS_UNINIT to
+PERS_SCRIBBLE by assigning the m_StgState member.
+
+<P>
+If the Load method is finally successful, a call to the internal
+NotifySinks method notifies all connected clients that the load was
+completed. This notification to the client makes use of CODrawPage's
+connectable object features and usually triggers an appropriate display of
+the newly loaded data.
+
+<P>
+Clients call the Save method to direct CODrawPage to save its persistent
+data from RAM to a specified storage in a compound file. As with the Load
+method, the client supplies a storage interface parameter to the Save
+method. The following is the implementation of Save from DRAWPAGE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP CODrawPage::CImpIPersistStorage::Save(
+                 IStorage* pIStorage,
+                 BOOL bSameAsLoad)
+  {
+    HRESULT hr = E_UNEXPECTED;
+    IStream* pIStream_Props;
+    IStream* pIStream_Data;
+
+    // Return E_UNEXPECTED error if not in the Scribble state.
+    if (PERS_SCRIBBLE == m_pCO->m_StgState)
+    {
+      if (bSameAsLoad)
+      {
+        LARGE_INTEGER li;
+
+        // If SameAsLoad use copies of the existing open stream pointers.
+        pIStream_Props = m_pIStream_Props;
+        pIStream_Data = m_pIStream_Data;
+
+        // AddRef these copies; they are released below.
+        pIStream_Props->AddRef();
+        pIStream_Data->AddRef();
+
+        // We're going to do a fresh save to existing open elements.
+        // So recue the stream seek pointers to their start.
+        LISet32(li, 0);
+        pIStream_Props->Seek(li, STREAM_SEEK_SET, NULL);
+        pIStream_Data->Seek(li, STREAM_SEEK_SET, NULL);
+
+        hr = NOERROR;
+      }
+      else
+      {
+        // If not SameAsLoad (save to a different storage) then return the
+        // E_POINTER error if a NULL pIStroage was passed.
+        if (NULL != pIStorage)
+        {
+          // If we are saving new persistent image of the object to a
+          // different storage then create all the necessary persistent
+          // storage elements.
+
+          // Create the Properties stream.
+          hr = pIStorage->CreateStream(
+                 WSZ_DRAWPROPS,
+                 STGM_CREATE | STGM_DIRECT
+                   | STGM_READWRITE | STGM_SHARE_EXCLUSIVE,
+                 0,
+                 0,
+                 &pIStream_Props);
+          if (SUCCEEDED(hr))
+          {
+            // Create the Ink Data stream.
+            hr = pIStorage->CreateStream(
+                    WSZ_DRAWDATA,
+                    STGM_CREATE | STGM_DIRECT
+                      | STGM_READWRITE | STGM_SHARE_EXCLUSIVE,
+                    0,
+                    0,
+                    &pIStream_Data);
+            if (SUCCEEDED(hr))
+            {
+              // Write the clipboard format and User Type Name info.
+              hr = WriteFmtUserTypeStg(
+                     pIStorage,
+                     m_pCO->m_ClipFmt,
+                     SZ_CLIPUSERTYPE);
+            }
+          }
+        }
+        else
+          hr = E_POINTER;
+      }
+
+      // Now perform the saves of the persistent data elements.
+      if (SUCCEEDED(hr))
+      {
+        ULONG ulToWrite, ulWritten;
+
+        // Save the DrawPage properties in a dedicated stream.
+        m_pCO->m_DrawProps.lInkArraySize = m_pCO->m_lInkDataEnd+1;
+        m_pCO->m_DrawProps.crWinColor = m_pCO->m_crWinColor;
+        m_pCO->m_DrawProps.WinRect.right = m_pCO->m_WinRect.right;
+        m_pCO->m_DrawProps.WinRect.bottom = m_pCO->m_WinRect.bottom;
+        ulToWrite = sizeof(DRAWPROPS);
+        hr = pIStream_Props->Write(&m_pCO->m_DrawProps, ulToWrite, &ulWritten);
+        if (SUCCEEDED(hr) && ulToWrite != ulWritten)
+          hr = STG_E_CANTSAVE;
+        if (SUCCEEDED(hr))
+        {
+          // Save the DrawPage ink data in a dedicated stream.
+          ulToWrite = m_pCO->m_DrawProps.lInkArraySize * sizeof(INKDATA);
+          hr = pIStream_Data->Write(m_pCO->m_paInkData, ulToWrite, &ulWritten);
+          if (SUCCEEDED(hr) && ulToWrite != ulWritten)
+            hr = STG_E_CANTSAVE;
+        }
+
+        // Release any temporary streams used.
+        pIStream_Props->Release();
+        pIStream_Data->Release();
+
+        if (SUCCEEDED(hr))
+        {
+          // Since the persistent save is now done for this object the
+          // file matches the object. So set object's dirty flag to FALSE.
+          if (bSameAsLoad)
+            m_pCO->m_bDirty = FALSE;
+
+          // Switch the persistent storage state to the NoScribble state.
+          // After this Save this object cannot scribble to its persistent
+          // storage again until the client grants this freedom by calling
+          // SaveCompleted which switches this object to the Scribble state.
+          m_pCO->m_StgState = PERS_NOSCRIBBLE;
+        }
+      }
+    }
+
+    // Notify all other connected clients that DrawPage is now saved.
+    if (SUCCEEDED(hr))
+      m_pCO->NotifySinks(DRAWPAGE_EVENT_SAVED, 0, 0, 0, 0);
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+Clients pass a bSameAsLoad parameter to determine whether the Save method
+will save the object state to the object's current storage branch or to a
+newly specified one. When bSameAsLoad is TRUE, the object state is saved
+to the currently opened storage (that is, the same storage previously
+passed to the Load or InitNew methods). This save operation can consist of
+incremental writes of only the items that need saving in the current
+storage--which can be all items--without using any extra memory and
+without opening or creating any storages or streams. Passing bSaveAsLoad
+as FALSE allows the client to tell the object to save its state to a
+different storage while keeping its current storage open. The client can
+use this to perform such actions as writing a copy of an object into a
+storage other than the current storage that the object was loaded from.
+All persistent data is written to the newly specified storage. The
+object's currently open storage remains open and unaffected when
+bSameAsLoad is FALSE.
+
+<P>
+The Save method saves the object's persistent state data to the currently
+open storage or to a newly specified storage depending on the bSameAsLoad
+parameter. Both during and after Save (and Regardless of the bSameAsLoad
+value), the object continues to hold its present pointers to opened
+storage elements. But after Save, the object cannot scribble on its data
+until the SaveCompleted method is called.
+
+<P>
+Save must not fail if an out-of-memory condition is encountered. This
+safety is ensured in InitNew or Load when they pre-open storage elements
+and hold pointers to any elements later needed by Save.
+
+<P>
+Save first checks m_StgState and fails by returning E_UNEXPECTED if the
+storage state of CODrawPage is not PERS_SCRIBBLE. If the bSaveAsLoad
+parameter is TRUE, The method makes temporary copies of the IStream
+pointers for DRAWPROPS and DRAWDATA and calls AddRef on the pointer
+copies, which will be released later in the Save method. Since these are
+currently open streams they only need to have their seek pointers reset to
+the start of the streams. If the bSaveAsLoad parameter is FALSE, new
+DRAWPROPS and DRAWDATA streams are created in the specified new storage.
+The clipboard format is also written into the new storage.
+
+<P>
+The Save method then saves the CODrawPage properties and ink data array to
+their respective DRAWPROPS and DRAWDATA streams. If the save is
+successful, CODrawPage's m_bDirty flag is cleared to FALSE, but only if
+bSaveAsLoad is TRUE. A current TRUE value of m_bDirty is not cleared after
+the save is done to a storage different from the currently open one. This
+ensures that any needed save to the current storage will also be done
+later.
+
+<P>
+If the Save method is finally successful, the method changes CODrawPage's
+storage state from PERS_SCRIBBLE to PERS_NOSCRIBBLE and calls the internal
+NotifySinks method to notify all connected clients that the save was
+completed.
+
+<P>
+The client calls the SaveCompleted method to tell CODrawPage that the
+client has completed its overall save operations freeing the object to
+write (that is, &quot;scribble&quot;) to its persistent data elements. The
+following is the implementation of SaveCompleted from DRAWPAGE.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP CODrawPage::CImpIPersistStorage::SaveCompleted(
+                 IStorage* pIStorage)
+  {
+    HRESULT hr = E_UNEXPECTED;
+    IStream* pIStream_Props;
+    IStream* pIStream_Data;
+    BOOL bOk;
+    PERSTGSTATE StgState = m_pCO->m_StgState;
+
+    // Return E_UNEXPECTED error if storage is NOT in either the
+    // No-scribble or Hands-off state.
+    bOk = (StgState == PERS_NOSCRIBBLE || StgState == PERS_HANDSOFF);
+    if (bOk)
+    {
+      // Return E_UNEXPECTED if in Hands-off state but pIStorage is NULL.
+      if (StgState == PERS_HANDSOFF && NULL == pIStorage)
+        bOk = FALSE;
+      else
+        hr = NOERROR;
+    }
+
+    if (bOk)
+    {
+      if (NULL != pIStorage)
+      {
+        // If specified storage is non-NULL, release all storage elements
+        // and use the specified pIStorage to re-open those elements.
+        // If pIStorage == NULL then we need do nothing since we already
+        // have all the pointers to storage elements needed for Save.
+
+        // First ensure we can open the property and data streams
+        hr = pIStorage->OpenStream(
+               WSZ_DRAWPROPS,
+               0,
+               STGM_DIRECT | STGM_READWRITE | STGM_SHARE_EXCLUSIVE,
+               0,
+               &pIStream_Props);
+        if (SUCCEEDED(hr))
+        {
+          hr = pIStorage->OpenStream(
+                 WSZ_DRAWDATA,
+                 0,
+                 STGM_DIRECT | STGM_READWRITE | STGM_SHARE_EXCLUSIVE,
+                 0,
+                 &pIStream_Data);
+          if (SUCCEEDED(hr))
+          {
+            // Release the current stream elements and the main storage.
+            RELEASE_INTERFACE(m_pIStream_Props);
+            RELEASE_INTERFACE(m_pIStream_Data);
+            RELEASE_INTERFACE(m_pIStorage);
+
+            // Reassign the storage and stream interface pointers.
+            m_pIStorage = pIStorage;
+            m_pIStorage->AddRef();
+            m_pIStream_Props = pIStream_Props;
+            m_pIStream_Data = pIStream_Data;
+          }
+        }
+      }
+
+      if (SUCCEEDED(hr))
+      {
+        // Switch the persistent storage state back to the scribble state.
+        m_pCO->m_StgState = PERS_SCRIBBLE;
+
+        // Since save is completed, no save is needed. So set object's
+        // dirty flag to FALSE.
+        m_pCO->m_bDirty = FALSE;
+      }
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+SaveCompleted accepts an IStorage pointer. If this pointer is not NULL,
+then SaveCompleted must release any interface pointers for storage
+elements that it currently holds and reopen all those elements within the
+specified new storage. If the IStorage parameter is NULL then the release
+and reopen is not needed and the object can once again write to its
+expected elements in the currently open storage.
+
+<P>
+SaveCompleted first confirms that CODrawPage's m_bStgState is in neither
+the PERS_NOSCRIBBLE nor PERS_HANDSOFF state. If it is in either of these
+states then SaveCompleted fails and returns the E_UNEXPECTED error. This
+error is also returned if the object is in the PERS_HANDSOFF state and the
+pIStorage parameter is non-NULL. Clients must not call SaveCompleted when
+the object is in the PERS_HANDSOFF state.
+
+<P>
+If the object is in the proper state and if a non-NULL IStorage parameter
+is passed, SaveCompleted uses the new storage to open the DRAWPROPS and
+DRAWDATA streams, releasing the previously held pointers for those streams
+and retaining the new ones. Finally, if SaveCompleted is successful,
+CODrawPage's storage state is changed to PERS_SCRIBBLE. CODrawPage's
+m_bDirty flag is also cleared to FALSE to indicate the fact that a save is
+not needed because the object data in RAM now matches the data saved to
+storage.
+
+<P>
+Clients call the HandsOffStorage method to tells the CODrawPage object to
+release the pointers it holds to all of its persistent data elements and
+to places the object into the PERS_HANDSOFF state. When in the
+PERS_HANDSOFF state the object must refrain from writing to its persistent
+storage until the SaveCompleted method is called to free the object to
+write to its persistent data elements. The following is the implementation
+of HandsOffStorage from DRAWPAGE.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP CODrawPage::CImpIPersistStorage::HandsOffStorage(
+                 void)
+  {
+    HRESULT hr = E_UNEXPECTED;
+    PERSTGSTATE StgState = m_pCO->m_StgState;
+
+    // Return E_UNEXPECTED error if NOT in scribble or no-scribble state.
+    if (StgState == PERS_NOSCRIBBLE || StgState == PERS_SCRIBBLE)
+    {
+      // Release the current stream elements and the main storage.
+      // This NULLs these interface pointers (via the release macro).
+      RELEASE_INTERFACE(m_pIStream_Props);
+      RELEASE_INTERFACE(m_pIStream_Data);
+      RELEASE_INTERFACE(m_pIStorage);
+
+      // Switch the persistent storage state to the Hands-off state.
+      m_pCO->m_StgState = PERS_HANDSOFF;
+      hr = NOERROR;
+    }
+
+    return hr;
+  }
+</FONT> </PRE>
+
+<P>
+The HandsOffStorage method fails and returns the E_UNEXPECTED error if
+CODrawPage is in neither the PERS_SCRIBBLE nor the PERS_NOSCRIBBLE storage
+state. If it is in either of these states the method releases the open
+DRAWPROPS stream, the open DRAWDATA stream, and the main open storage
+branch. Finally, it changes the storage state to PERS_HANDSOFF.
+
+<p>
+CODrawPage exposes the IConnectionPointContainer interface so clients can
+connect to CODrawPage to receive notifications of certain events that
+occur in CODrawPage. Exposing this interface makes CODrawPage a
+connectable object, and a client can call QueryInterface for
+IConnectionPointContainer and use it to obtain the object's connection
+points. The client participation in this scheme is covered in the
+associated PERCLIEN lesson.
+
+<p>
+The client implements what is called a <i>sink</i> in the form of a sink
+object with a sink interface. The sink interface receives outgoing event
+notification calls from CODrawPage after the client connects the sink to a
+CODrawPage instance. The client makes the connection by using an
+IConnectionPoint interface on a connection point object that is managed by
+CODrawPage. There can be numerous connection points on a single
+connectable COM object. In the PERDRAW sample, CODrawPage has only one
+connection point to handle draw page events.
+
+<p>
+Any number of clients can connect to a single connection point. The
+CONNPOINT_DRAWPAGESINK connection point in CODrawPage maintains a group of
+connections that can grow dynamically at run time. The full implementation
+of CODrawPage's connectable object support is coded in files CONNECT.H and
+CONNECT.CPP and is not be covered here. The construction is very similar
+to that in the CONSERVE sample.
+
+<p>
+The PERCLIEN client implements appropriate sink objects for the connection
+points it expects to find in CODrawPage. From the context of CODrawPage,
+the single sink object that PERCLIEN implements exposes the IDrawPageSink
+interface. This is the outgoing interface that CODrawPage uses to notify
+PERCLIEN of various events in CODrawPage. The following summarizes the
+methods in IDrawPageSink, which is from IPAGES.H in the common INC
+directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  Loaded
+    The DrawPage was loaded from persistent storage.
+
+  Saved
+    The DrawPage was saved to persistent storage.
+
+  InkStart
+    A client started a color ink drawing sequence. The server echoes
+    this event to connected clients in case they wish to track the
+    drawing as it occurs.
+
+  InkDraw
+    A client is putting ink data points on the drawing surface. The server
+    echoes this event to connected clients in case they wish to track the
+    drawing as it occurs.
+
+  InkStop
+    A client stopped its ink drawing sequence. The server echoes this
+    event to connected clients in case they wish to track the drawing as
+    it occurs.
+
+  Cleared
+    A client has erased/cleared the entire DrawPage.
+
+  Resized
+    A client has resized the drawing window.
+</FONT> </PRE>
+
+<p>
+These methods are largely self-explanatory. The Loaded, Cleared, and
+Resized methods implemented in the client sink will typically trigger a
+redisplay of the drawing page. Although the sink must implement all of
+these methods in some fashion, many are implemented as stubs and are not
+used in the PERDRAW or PERCLIEN samples.
+
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

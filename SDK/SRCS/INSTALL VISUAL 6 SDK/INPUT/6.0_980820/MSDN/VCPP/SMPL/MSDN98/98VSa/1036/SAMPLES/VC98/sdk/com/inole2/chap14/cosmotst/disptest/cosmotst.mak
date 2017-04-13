@@ -1,0 +1,6 @@
+COSMOTST.FRM
+C:\C\BIN\MSOLE2.VBX
+C:\C\BIN\MSOLE2.BAS
+ProjWinSize=96,706,194,128
+ProjWinShow=2
+IconForm="Form1"

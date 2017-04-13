@@ -1,0 +1,770 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>CONCLIEN COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="conserve.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="stoserve.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="CONCLIEN">CONCLIEN - Client of Connectable Object Server</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The CONCLIEN sample creates and uses the connectable COBall COM object
+that is housed in the CONSERVE server as the DllSndBall component. The
+CONCLIEN client creates one COBall object and controls it through the
+IBall interface that the object exposes. CONCLIEN sets up a system timer
+to use IBall to periodically move the ball and obtain updates of data
+describing the COBall object's position, size, and color. It uses that
+data, obtained by calling the IBall::GetBall method, to display graphical
+snapshot images of the ball in the client's main window.
+
+<P>
+CONCLIEN also implements a COBallSink COM object and connects it to an
+appropriate connection point in the server's COBall object. In response to
+the system timer's WM_TIMER messages, which are sent periodically to the
+display window, CONCLIEN uses the IBall interface to move and paint images
+of the ball. COBall also sends notifications back to CONCLIEN, using the
+IBallSink interface, when the ball bounces off of a side of its bounding
+rectangle. CONCLIEN responds to these event notifications to produce a
+different sound when the ball collides with a Top, Side, or Bottom
+boundary of the display window.
+
+<P>
+For functional descriptions and a tutorial code tour of CONCLIEN, see the
+Code Tour section in CONCLIEN.HTM. For details on the external user
+operation of CONCLIEN, see both the Usage and Operation sections in
+CONCLIEN.HTM. To read CONCLIEN.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the CONCLIEN lesson in the table of lessons. You can
+also achieve the same thing by clicking the CONCLIEN.HTM file after
+locating the main tutorial directory in the Windows Explorer. See also
+CONSERVE.HTM in the main tutorial directory for more details on how
+CONSERVE works and exposes its services to CONCLIEN. You must build the
+CONSERVE DLL before building CONCLIEN. The makefile for CONSERVE
+automatically registers that server in the system registry, so you must
+build CONSERVE before attempting to run CONCLIEN.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<P>
+CONCLIEN is an application that you can execute directly from Windows in
+the normal manner or from the Command Prompt window. No command line
+parameters are recognized by CONCLIEN.
+
+<P>
+The Win32 Beep function is used in this sample to produce ball bounce
+sounds of various frequencies. This works under Windows NT 4.0 and later.
+Under the Windows 95 operating system, the Win32 Beep function currently
+uses whatever is assigned in the Control Panel's Sound dialog for the
+default sound and thus ignores the frequency values passed to Beep. Under
+current releases of Windows 95, the sound will not be different when the
+ball collides with the top, bottom, or side of the display window.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">
+Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, CONCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="CONCLIEN\CONCLIEN.exe">
+Click here to run CONCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>OPERATION</h3>
+
+<P>
+The CONCLIEN.EXE application provides the user interface for this lesson.
+It exercises the associated, but independent, CONSERVE.DLL to demonstrate
+connectable objects.
+
+<P>
+Here is a summary of operation from the standpoint of CONCLIEN.EXE as a
+client of the CONSERVE.DLL COM server.
+
+<P>
+There is a minimal menu in CONCLIEN. Most of the ball moving operation is
+automatic. The main application window's client area is used for visual
+display of the moving ball.
+
+<p>Menu Selection: File/Exit<br>
+Exits CONCLIEN.
+
+<p>Menu Selection: Sound/Connect Ball Sound<br>
+Connects the COBallSink object's IBallSink interface to the COBall<br>
+object's BallSink connection point. Ball bounce sounds are the result.<br>
+A check mark on this menu choice indicates that the sound events are<br>
+connected.
+
+<p>Menu Selection: Sound/Disconnect Ball Sound<br>
+Disconnects the COBallSink object's IBallSink interface from the COBall<br>
+object's BallSink connection point. Ball bounce sounds are disabled. A<br>
+check mark on this menu choice indicates that the sound events are<br>
+disconnected.
+
+<P>Menu Selection: Help/CONCLIEN Tutorial<br>
+Opens the CONCLIEN.HTM tutorial file in the Web browser.
+
+<P>Menu Selection: Help/CONSERVE Tutorial<br>
+Opens the CONSERVE.HTM tutorial file in the Web browser.
+
+<p>Menu Selection: Help/Read Source File<br>
+Displays the Open common dialog box so you can open a source file from<br>
+this lesson or another one in the Windows Notepad.
+
+<p>Menu Selection: Help/About CONCLIEN<br>
+Displays the About dialog box for this application, a standard part of<br>
+this series of code samples.<br>
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files          Description</u>
+CONCLIEN.TXT   Short sample description.
+MAKEFILE       The generic makefile for building the code sample
+               application of this tutorial lesson.
+CONCLIEN.H     The include file for the CONCLIEN application. Contains
+               class declarations, function prototypes, and resource
+               identifiers.
+CONCLIEN.CPP   The main implementation file for CONCLIEN.EXE. Has WinMain
+               and CMainWindow implementation, as well as the main menu
+               dispatching.
+CONCLIEN.RC    The application resource definition file.
+CONCLIEN.ICO   The application icon resource.
+SINK.H         The class declaration for the COBallSink class.
+SINK.CPP       Implementation file for the COBallSink class.
+GUIBALL.H      The class declaration for the CGuiBall C++ class.
+GUIBALL.CPP    Implementation file for the CGuiBall C++ class.
+ </FONT> </PRE>
+
+<P>
+CONCLIEN uses many of the utility classes and services provided by
+APPUTIL. For more details on APPUTIL, study the APPUTIL library source
+code in the sibling \APPUTIL directory and APPUTIL.HTM in the main
+tutorial directory.
+
+<P>
+The program logic governing the ball's motion is encapsulated in the
+COBall object. See the CONSERVE sample and CONSERVE.HTM for details.
+
+<P>
+The major topics covered in this code tour are:
+
+<ul>
+<li>An overview of how CONCLIEN works as a client of connectable objects
+<li>CGuiBall's support for connectable objects
+<li>The COBallSink object
+<li>The IBallSink interface
+<li>Use of the system timer
+<li>Shutdown of the client and server
+</ul>
+
+<P>
+When you first start CONCLIEN, the moving ball starts automatically.
+CONCLIEN issues various sounds when the ball bounces against a boundary of
+the display window. The sounds can be disabled using the Sound menu's
+Disconnect Ball Sound command. The sounds can be enabled using the Sound
+menu's Connect Ball Sound command. These commands connect or disconnect a
+sink object in CONCLIEN to or from an associated connection point in the
+server's COBall object. The COBallSink object in CONCLIEN implements the
+custom IBallSink interface designed specifically for ball bounce events.
+To connect the sound events, a pointer to this interface is given to a
+connection point object in CONSERVE's COBall object. The COBall object
+determines when the bounce events occur. When such an event occurs, COBall
+calls the proper IBallSink method to notify the client of the bounce
+event. The IBall interface is regarded as an incoming interface of the
+COBall object; the IBallSink interface can be regarded as an outgoing
+interface of the COBall object.
+
+<P>
+As in the FRECLIEN sample, CONCLIEN uses a CGuiBall C++ class to
+encapsulate the data and behavior of the client's graphical user interface
+(GUI) moving ball image. This class was presented in detail in the
+FRECLIEN sample. We'll focus below on the sink and connection related code
+that must be added to CGuiBall to use the COBall connectable object in
+CONSERVE.
+
+<P>
+Here is the declaration of the CONCLIEN's CGuiBall class from GUIBALL.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class CGuiBall
+  {
+    public:
+      CGuiBall(void);
+      ~CGuiBall(void);
+      BOOL Init(HWND hWnd);
+      void PaintBall(void);
+      void Restart(void);
+      void PaintWin(void);
+      void BounceBottom(void);
+      void BounceSide(void);
+      void BounceTop(void);
+      HRESULT ConnectBallSink(void);
+      HRESULT DisconnectBallSink(void);
+
+    private:
+      HWND       m_hWnd;
+      IBall*     m_pIBall;
+      COLORREF   m_crColor;
+      POINT      m_OldPos;
+      POINT      m_OldExt;
+      IUnknown*  m_pCOBallSink;
+      DWORD      m_dwBallSink;
+      DWORD      m_dwBounceSndDur;
+      DWORD      m_dwBounceBotFreq;
+      DWORD      m_dwBounceSideFreq;
+      DWORD      m_dwBounceTopFreq;
+
+      IConnectionPoint* GetConnectionPoint(REFIID riid);
+  };
+ </FONT> </PRE>
+
+<P>
+This C++ object encapsulates all the GUI ball behavior in the client.
+Three methods are provided to handle bounce events: BounceBottom,
+BounceSide, and BounceTop. A private method, GetConnectionPoint, is used
+internally to obtain the COBall object's connection point interface that
+corresponds to a specified sink interface IID. ConnectBallSink and
+DisconnectBallSink methods are also provided to connect and disconnect the
+client sink to or from its matching connection point in the server's
+COBall object.
+
+<P>
+Here is ConnectBallSink from GUIBALL.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HRESULT CGuiBall::ConnectBallSink(void)
+  {
+    HRESULT hr = E_FAIL;
+    DWORD dwKey;
+    IConnectionPoint* pConnPoint;
+
+    if (!m_dwBallSink)
+    {
+      // Get the Ball Sink connection point.
+      pConnPoint = GetConnectionPoint(IID_IBallSink);
+      if (NULL != pConnPoint)
+      {
+        // Connect the object in the server to the Ball Sink in this client.
+        hr = pConnPoint-&gt;Advise(m_pCOBallSink, &amp;dwKey);
+        if (SUCCEEDED(hr))
+          m_dwBallSink = dwKey;
+
+        // Release the connection point. We're done with it.
+        RELEASE_INTERFACE(pConnPoint);
+      }
+    }
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+The connection point is obtained and passed in an Advise call to
+establish the connection. The Advise method is presented in the CONSERVE
+code sample. The pointer to the connection point is obtained temporarily
+and is released above after the Advise method returns.
+
+<P>
+After CGuiBall is first created in CONCLIEN, ConnectBallSink is called to
+connect CONCLIEN's sink to enable ball sounds. See
+CMainWindow::InitInstance in CONCLIEN.CPP.
+
+<P>
+The main process thread uses CGuiBall by calling the public methods Init,
+Restart, PaintBall, and PaintWin. The server's COBall object is accessed
+through an IBall interface pointer, m_pIBall, privately held in CGuiBall.
+Thus client calls through the IBall interface on CONSERVE's COBall object
+are encapsulated within the methods of CGuiBall.
+
+<P>
+CGuiBall has an Init method, in which an instance of CONSERVE's COBall
+object is created. Here is the CGuiBall::Init method definition from
+GUIBALL.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  BOOL CGuiBall::Init(
+         HWND hWnd)
+  {
+    BOOL bOk = FALSE;
+    HRESULT hr;
+    COBallSink* pCob = NULL;
+
+    if (hWnd)
+    {
+      m_hWnd = hWnd;
+
+      // Call COM service to create a COBall instance. We are not
+      // aggregating it so we ask for its IBall interface directly.
+      hr = CoCreateInstance(
+             CLSID_DllSndBall,
+             NULL,
+             CLSCTX_INPROC_SERVER,
+             IID_IBall,
+             (PPVOID)&amp;m_pIBall);
+      if (SUCCEEDED(hr))
+      {
+        // Create the COBallSink Sink object to receive COBall events.
+        pCob = new COBallSink(NULL, this);
+        if (NULL != pCob)
+        {
+          // Save a pointer to the COBall IUnknown interface. AddRef
+          // because of this saved copy.
+          m_pCOBallSink = pCob;
+          m_pCOBallSink-&gt;AddRef();
+        }
+        else
+          hr = E_OUTOFMEMORY;
+
+        if (SUCCEEDED(hr))
+        {
+          // Set up the client process to periodically move &amp; paint the ball
+          // thru WM_TIMER messages to the specified hWnd's Window proc.
+          SetTimer(hWnd, 1, BALL_PAINT_DELAY, NULL);
+          bOk = TRUE;
+        }
+      }
+    }
+
+    return (bOk);
+  }
+ </FONT> </PRE>
+
+<P>
+The COM function CoCreateInstance is called to create an instance of the
+CONSERVE server's COBall object specified by its CLSID, CLSID_DllSndBall.
+This CLSID is defined in BALLGUID.H, located in the sibling \INC
+directory. Because aggregation is not required, CoCreateInstance directly
+requests the IBall interface, which on return is stored in CGuiBall's
+m_pIBall member. Once the server has created a COBall object, a COBallSink
+object is created here in the client. A pointer to this sink object's
+IUnknown is assigned to CGuiBall's m_pCOBallSink member. CGuiBall's Init
+method also starts a system timer that will periodically send WM_TIMER
+messages to the display window's window procedure. In this case the
+procedure is CMainWindow::WindowProc.
+
+<P>
+The COBallSink COM object is created locally in the client. This object
+implements a custom sink event interface, IBallSink. The COBall object
+calls the methods of IBallSink to notify CONCLIEN of events that occur in
+COBall. Here is the declaration of IBallSink from IBALL.H in the sibling
+\INC directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  DECLARE_INTERFACE_(IBallSink, IUnknown)
+  {
+    // IUnknown methods.
+    STDMETHOD(QueryInterface) (THIS_ REFIID, PPVOID) PURE;
+    STDMETHOD_(ULONG,AddRef)  (THIS) PURE;
+    STDMETHOD_(ULONG,Release) (THIS) PURE;
+
+    // IBallSink methods.
+    STDMETHOD(BounceBottom)   (THIS) PURE;
+    STDMETHOD(BounceLeft)     (THIS) PURE;
+    STDMETHOD(BounceRight)    (THIS) PURE;
+    STDMETHOD(BounceTop)      (THIS) PURE;
+  };
+ </FONT> </PRE>
+
+<P>
+This custom interface declares methods for ball bounce events. A method is
+provided for each of the four boundaries that the ball can collide with in
+a bounding rectangle: the bottom, left, right, or top.
+
+<P>
+The COBallSink object implements the IBallSink interface and its methods.
+This COM object is created solely in the client to receive IBallSink event
+calls from the COBall server object. The COBallSink object is coded in
+SINK.H and SINK.CPP. Here is the COBallSink class declaration from SINK.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class COBallSink : public IUnknown
+  {
+    public:
+      // Main Object Constructor &amp; Destructor.
+      COBallSink(IUnknown* pUnkOuter, CGuiBall* pGuiBall);
+      ~COBallSink(void);
+
+      // IUnknown methods. Main object, non-delegating.
+      STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+      STDMETHODIMP_(ULONG) AddRef(void);
+      STDMETHODIMP_(ULONG) Release(void);
+
+    private:
+      // We declare nested class interface implementations here.
+
+      class CImpIBallSink : public IBallSink
+      {
+        public:
+          // Interface Implementation Constructor &amp; Destructor.
+          CImpIBallSink(COBallSink* pBackObj, IUnknown* pUnkOuter);
+          ~CImpIBallSink(void);
+
+          // IUnknown methods.
+          STDMETHODIMP         QueryInterface(REFIID, PPVOID);
+          STDMETHODIMP_(ULONG) AddRef(void);
+          STDMETHODIMP_(ULONG) Release(void);
+
+          // IBallSink methods.
+          STDMETHODIMP         BounceBottom(void);
+          STDMETHODIMP         BounceLeft(void);
+          STDMETHODIMP         BounceRight(void);
+          STDMETHODIMP         BounceTop(void);
+
+        private:
+          // Data private to this interface implementation of IBall.
+          COBallSink*  m_pBackObj;     // Parent Object back pointer.
+          IUnknown*    m_pUnkOuter;    // Outer unknown for Delegation.
+      };
+
+      // Make the otherwise private and nested IBall interface
+      // implementation a friend to COM object instantiations of this
+      // COBall COM object class.
+      friend CImpIBallSink;
+
+      // Private data of COBallSink COM objects.
+
+      // Nested IBallSink implementation instantiation. This IBall interface
+      // is instantiated inside this COBallSink object as a native interface.
+      CImpIBallSink    m_ImpIBallSink;
+
+      // Main Object reference count.
+      ULONG            m_cRefs;
+
+      // Outer unknown (aggregation delegation). Used when this COM object
+      // is being aggregated.
+      IUnknown*        m_pUnkOuter;
+
+      // Pointer to the main object that can service the Sink events.
+      CGuiBall*        m_pGuiBall;
+  };
+ </FONT> </PRE>
+
+<P>
+The IBallSink interface is coded as a nested interface within the
+COBallSink COM object. A pointer to a C++ object that can handle the sink
+events is maintained in the m_pGuiBall member variable. This value is
+passed at creation time to the COBallSink constructor, as shown earlier in
+the CGuiBall::Init method, where COBallSink's constructor was passed
+CGuiBall's 'this' pointer.
+
+<P>
+IBallSink's BounceRight method implementation is representative of the
+others. Here it is, from SINK.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  STDMETHODIMP COBallSink::CImpIBallSink::BounceRight(
+                 void)
+  {
+    HRESULT hr = NOERROR;
+
+    // Ask the GUI Ball to issue an appropriate sound indicating the ball
+    // bouncing off the right boundary.
+    m_pBackObj-&gt;m_pGuiBall-&gt;BounceSide();
+
+    return hr;
+  }
+ </FONT> </PRE>
+
+<P>
+In this nested interface implementation, the m_pBackObj pointer is used to
+refer back to COBallSink's m_pGuiBall pointer, which is used, in turn, to
+call CGuiBall's BounceSide method, which issues a sound. Both the Left and
+Right bounce event notifications that are sent through IBallSink calls are
+dispatched in COBallSink to the same CGuiBall::BounceSide method. Here it
+is from GUIBALL.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  void CGuiBall::BounceSide(void)
+  {
+    // Use the Win32 Beep call.
+    Beep(m_dwBounceSideFreq, m_dwBounceSndDur);
+
+    return;
+  }
+ </FONT> </PRE>
+
+<P>
+This implementation is also representative of CGuiBall's other
+event-handling methods, BounceTop and BounceBottom. The Win32 Beep
+function is called to produce a different sound when the ball collides
+with the top, side, or bottom boundary.
+
+<P>
+The main process relies on the recurrent system timer's WM_TIMER messages.
+This was set up within the Init method of CGuiBall shown earlier. These
+periodic timer messages drive the client's display process. Each WM_TIMER
+message sent to the main window procedure is honored by a call to the
+COBall::PaintBall method to move the ball, obtain the ball's resultant
+display data, and paint an image of the ball. Here is the main window
+procedure from CONCLIEN.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  LRESULT CMainWindow::WindowProc(
+            UINT uMsg,
+            WPARAM wParam,
+            LPARAM lParam)
+  {
+    LRESULT lResult = FALSE;
+
+    switch (uMsg)
+    {
+      case WM_CREATE:
+        break;
+
+      case WM_SIZE:
+        // Handle a resize of this window.
+        // Clear window and Restart the ball from upper left.
+        m_wWidth = LOWORD(lParam);
+        m_wHeight = HIWORD(lParam);
+        m_pGuiBall-&gt;Restart();
+        // Turn off sounds if app is minimized.
+        if (SIZE_MINIMIZED == wParam)
+          DoMenu(IDM_SOUND_BALL_OFF, 0);
+        break;
+
+      case WM_TIMER:
+        // This is our timed attempt to continuously move &amp; paint the ball.
+        // In this app PaintBall both moves and paints the ball.
+        m_pGuiBall-&gt;PaintBall();
+        break;
+
+      case WM_COMMAND:
+        // Dispatch and handle any Menu command messages received.
+        lResult = DoMenu(wParam, lParam);
+        break;
+
+      case WM_CHAR:
+        if (wParam == 0x1b)
+        {
+          // Exit this app if user hits ESC key.
+          PostMessage(m_hWnd,WM_CLOSE,0,0);
+          break;
+        }
+      case WM_LBUTTONUP:
+      case WM_PAINT:
+        // If something major happened or user clicks or hits key then
+        // repaint the whole window.
+        m_pGuiBall-&gt;PaintWin();
+        break;
+
+      case WM_CLOSE:
+        // The user selected Close on the main window's System menu.
+      case WM_QUIT:
+        // If the app is quit by the File/Exit main menu then close
+        // any associated help windows too.
+        ::WinHelp(m_hWnd, m_szHelpFile, HELP_QUIT, 0);
+      default:
+        // Defer all messages NOT handled here to the Default Window Proc.
+        lResult = ::DefWindowProc(m_hWnd, uMsg, wParam, lParam);
+        break;
+    }
+
+    return(lResult);
+  }
+ </FONT> </PRE>
+
+<P>
+The CGuiBall::PaintBall method is called to paint the ball when the
+WM_TIMER messages arrive. Other main client application messages of
+interest are WM_SIZE, WM_PAINT, and WM_LBUTTONUP. For WM_SIZE, if the user
+resizes the client application's main window, CGuiBall::Restart is called.
+Restart calls COBall::Reset, which relocates the ball to the upper left
+corner of the window and also resets the ball size. If WM_SIZE was sent
+because the CONCLIEN application was minimized, then ball sounds are
+disabled. If the user clicks the left mouse button (causing WM_LBUTTONUP)
+or a general WM_PAINT condition occurs, the window is repainted, but the
+ball is not reset. In response to WM_CHAR, if the user pressed the ESC
+key, the application is sent the WM_CLOSE message to shut down CONCLIEN
+and CONSERVE.
+
+<P>
+The operating system responds to a WM_CLOSE message by destroying the
+window. It sends a WM_DESTROY message to CMainWidow::WindowProc where it
+causes a delete of the CMainWindow object. The delete causes CMainWindow's
+destructor to run. Here is the destructor from CONCLIEN.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  CMainWindow::~CMainWindow()
+  {
+    // CMainWindow is derived from CVirWindow which traps the WM_DESTROY
+    // message and causes a delete of CMainWindow which in turn causes this
+    // destructor to run. The WM_DESTROY results when the window is destoyed
+    // after a close of the window. Prior to exiting the main message loop:
+
+    // We delete the CGuiBall and CMsgBox objects that were made in
+    // Initinstance.
+    DELETE_POINTER(m_pGuiBall);
+    DELETE_POINTER(m_pMsgBox);
+
+    // We then post a WM_QUIT message to cause an exit of the main thread's
+    // message loop and an exit of this instance of the application.
+    PostQuitMessage(0);
+  }
+ </FONT> </PRE>
+
+<P>
+The destructor, in turn, deletes the application's instance of CGuiBall.
+The deletion of m_pGuiBall executes the CGuiBall destructor. This
+destructor shuts down the client's sink object, COBallSink, and the
+server's COBall object with its connectable object support. Here is the
+CGuiBall destructor from file GUIBALL.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  CGuiBall::~CGuiBall(void)
+  {
+    BOOL bOk = TRUE;
+
+    // Kill the client's app timer that drives repaints. Stops the WM_TIMER
+    // messages to the display window.
+    KillTimer(m_hWnd, 1);
+
+    if (m_pIBall)
+    {
+      // Call down to the server's COBall and tell it about the shutdown.
+      // This sets COBall's m_bAlive to FALSE and thus neutralizes all
+      // subsequent Move calls and thus prevents any more NotifySinks calls
+      // from within the Move method.
+      m_pIBall-&gt;Move(FALSE);
+
+      // Disconnect all Sinks--currently only one: BallSink. This officially
+      // stops all BallSink notifications.
+      DisconnectBallSink();
+
+      // Release the reference to the BallSink object.
+      RELEASE_INTERFACE(m_pCOBallSink);
+
+      // Release the main interface pointer copy held in CGuiBall.
+      RELEASE_INTERFACE(m_pIBall);
+    }
+  }
+ </FONT> </PRE>
+
+<P>
+The system timer that sends WM_TIMER messages is killed. COBall's
+IBall::Move method is told to kill any future ball movement. This prevents
+any future NotifySinks calls from within the Move method. The connection
+between the BallSink and the COBall's connection point is severed by a
+call to CGuiBall::DisconnectBallSink. This method obtains the interface
+pointer to the associated connection point in COBall and calls the
+connection point's Unadvise method to terminate the connection. Finally,
+the remaining interface references to the COBallSink and the COBall are
+released. These final releases cause the destructors of these objects to
+run. The COBall destructor does final releases on the connection points in
+COBall, which destroys those objects in the server.
+
+<P>
+CMainWindow's destructor finally posts a WM_QUIT message to the
+application's main messgae loop. This causes an exit of the loop. Here is
+the message loop from the WinMain function in CONCLIEN.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ...
+  while (GetMessage(&amp;msg, NULL, 0, 0))
+  {
+    if (!TranslateAccelerator(pWin-&gt;GetHwnd(), hAccel, &amp;msg))
+    {
+      TranslateMessage(&amp;msg);
+      DispatchMessage(&amp;msg);
+    }
+  }
+
+  // We also ask COM to unload any unused COM Servers, including our
+  // friend, CONSERVE.
+  CoFreeUnusedLibraries();
+  ...
+ </FONT> </PRE>
+
+<p>
+After all this shutdown activity, a call to COM's CoFreeUnusedLibraries
+function ensures that all unused COM server's that were loaded for
+CONCLIEN are unloaded. The CONCLIEN application is then exited and is
+itself unloaded.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

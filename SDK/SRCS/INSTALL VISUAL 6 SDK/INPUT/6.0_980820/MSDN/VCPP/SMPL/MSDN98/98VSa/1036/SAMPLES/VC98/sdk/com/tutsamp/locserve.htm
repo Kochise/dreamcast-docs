@@ -1,0 +1,957 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>LOCSERVE COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="marshal2.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="locclien.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="LOCSERVE">LOCSERVE - Local Server</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The LOCSERVE sample begins with the car-related COM Objects of the previous
+DLLSERVE sample and rehouses them in an out-of-process local server,
+LOCSERVE.EXE. To do so requires little change to the COM objects themselves
+(COCar, COUtilityCar, and COCruiseCar). This sample introduces the new
+facilities to house them in a out-of-process COM server, including class
+factories for each component.
+
+<P>
+This out-of-process server provides the following components: LocCar,
+LocUtilityCar, and LocCruiseCar.
+
+<P>
+In the series of COM tutorial code samples, LOCSERVE works with the
+LOCCLIEN code sample to illustrate LOCSERVE's out-of-process local server
+facilities for creating components that can be used by an EXE client and
+the subsequent manipulation of those components by LOCCLIEN.EXE.
+
+<P>
+For functional descriptions and a tutorial code tour of LOCSERVE, see the
+Code Tour section in LOCSERVE.HTM. For details on setting up the
+programmatic usage of LOCSERVE, see the Usage section in LOCSERVE.HTM. To
+read LOCSERVE.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the LOCSERVE lesson in the table of lessons. You can also achieve
+the same thing by clicking the LOCSERVE.HTM file after locating the main
+tutorial directory in the Windows Explorer. See also LOCCLIEN.HTM in the
+main tutorial directory for more details on the LOCCLIEN client
+application and how it works with LOCSERVE.EXE itself. You must build
+LOCSERVE.EXE before building or running LOCCLIEN. LOCSERVE's makefile
+automatically registers LOCSERVE's components in the registry. These
+components must be registered before LOCSERVE is available to outside COM
+clients as a server for those components. This registration is done using
+the REGISTER.EXE utility built in the earlier REGISTER lesson. To build or
+run LOCSERVE, you should build the REGISTER code sample first.
+
+<P>
+As an out-of-process local server, LOCSERVE relies on standard marshaling
+for clients to use its interfaces across process boundaries. Such standard
+marshaling for the interfaces used in LOCSERVE's COM objects is provided
+in the MARSHAL.DLL server built in the previous lesson. To build or run
+LOCSERVE, you should build the MARSHAL code sample first.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE
+is Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+<h4>Usage</h4>
+
+<P>
+LOCSERVE is an application that is meant to be used as an out-of-process
+COM server. Out-of-process servers like LOCSERVE are registered in the
+system registry, and LOCSERVE has built-in support for registering its
+components. It accepts the following command line switches to register and
+unregister:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  -RegServer or /RegServer to register
+  -UnregServer or /UnregServer to unregister
+ </FONT> </PRE>
+
+<P>
+String matches on these switches are case-insensitive. As an out-of-process
+server, LOCSERVE also recognizes the standard -Embedding or /Embedding
+switch, which directs it to run as such a server. In this sample, that means
+LOCSERVE will run hidden. If you attempt to run LOCSERVE as a stand-alone
+application, it will exit with an error. You can manually direct LOCSERVE to
+run visible by starting it with an explicit -Embedding switch on its command
+line prior to running the LOCCLIEN client.
+
+<P>
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the LOCSERVE directory:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  nmake register
+ </FONT> </PRE>
+
+<P>
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the LOCSERVE directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ..\register\register.exe locserve.exe
+ </FONT> </PRE>
+
+<P>
+These registration commands require a prior build of the REGISTER sample
+in this series, as well as a prior build of LOCSERVE.EXE.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">
+Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, LOCCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="LOCCLIEN\LOCCLIEN.exe">
+Click here to run LOCCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files        Description</u>
+LOCSERVE.TXT Short sample description.
+MAKEFILE     The generic makefile for building the LOCSERVE.EXE
+             code sample of this tutorial lesson.
+LOCSERVE.H   The include file for the LOCSERVE application. Contains
+             class declarations, function prototypes, and resource
+             identifiers.
+LOCSERVE.CPP The main implementation file for LOCSERVE.EXE. Has WinMain
+             and CMainWindow implementation, as well as the main menu
+             dispatching.
+LOCSERVE.RC  The resource definition file for the executable.
+LOCSERVE.ICO The icon resource for the executable.
+SERVER.H     The include file for the server control C++ object. Also
+             used for LOCSERVE externs.
+SERVER.CPP   The implementation file for the server control object.
+             Manages object counts and creation of class factories.
+FACTORY.H    The include file for the server's class factory COM objects.
+FACTORY.CPP  The implementation file for the server's class factories.
+CAR.H        The include file for the COCar COM object class.
+CAR.CPP      The implementation file for the COCar COM object class.
+UTILCAR.H    The include file for the COUtililtyCar COM object class.
+UTILCAR.CPP  The implementation file for the COUtilityCar COM object class.
+CRUCAR.H     The include file for the COCruiseCar COM object class.
+CRUCAR.CPP   The implementation file for the COCruiseCar COM object class.
+ </FONT> </PRE>
+
+<P>
+With this LOCSERVE code sample, we cross process boundaries for the first
+time when the client manipulates components in the server. With DLLSERVE,
+we saw a server that was registered as in-process and was loaded by COM on
+behalf of clients and unloaded by COM when no longer needed by any clients.
+We saw the in-process server housing in DLLSERVE.DLL and how that housing
+implemented and exposed its class factories.
+
+<P>
+With LOCSERVE, these server housing schemes are different. As a separate
+EXE application with its own message loop, the server itself must take on
+more responsibility for its lifetime and must expose its class factories
+to COM differently.
+
+<P>
+Though not essential to the COM nature of this out-of-process local server,
+the logging facility that we used previously to enhance the tutorial value
+of these code samples needs significant changes to accommodate
+cross-process trace logging from the server to the client.
+
+<P>
+In a general sense, LOCSERVE is an EXE version of DLLSERVE. As COM servers,
+they both offer the same components: COCar, COUtilityCar, and COCruiseCar.
+They both also provide appropriate class factories for those components:
+CFCar, CFUtilityCar, and CFCruiseCar.
+
+<P>
+The main point of this LOCSERVE code sample is to illustrate the
+mechanisms required to render its COM objects into components by housing
+them in an out-of-process server.
+
+<P>
+Like its predecessors, LOCSERVE uses many of the utility classes and
+services provided by APPUTIL. For more details on APPUTIL, study the
+APPUTIL library's source code in the sibling APPUTIL directory and
+APPUTIL.HTM in the main tutorial directory.
+
+<P>
+Also like its server predecessors, LOCSERVE is self-registering, and its
+makefile uses REGISTER.EXE (built in the REGISTER lesson) to register
+LOCSERVE. We'll look first at the support for this facility that is
+provided in LOCSERVE. We will then see how and when the class factories
+are built. We'll tour the mechanism for control of the server as objects
+are created and deleted. We'll look at the changes made to the COM object
+classes of the components themselves. Finally, we'll look at the mechanism
+needed to log internal server behavior to the client's trace log display.
+
+<P>
+We start in LOCSERVE.CPP with the following registration-related code in
+the WinMain function:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ...
+  ...
+  // Check command line for switches to register or unregister
+  // this server's managed components. iRun will be set to 2
+  // to signal an immediate and quiet exit of this application
+  // if such registration or unregistration is requested.
+  if (0 == lstrcmpiA(lpCmdLine, &quot;-RegServer&quot;)
+      || 0 == lstrcmpiA(lpCmdLine, &quot;/RegServer&quot;))
+  {
+    if (pWin-&gt;RegisterServer())
+      iRun = 2;
+  }
+  else if (0 == lstrcmpiA(lpCmdLine, &quot;-UnregServer&quot;)
+           || 0 == lstrcmpiA(lpCmdLine, &quot;/UnregServer&quot;))
+  {
+    if (pWin-&gt;UnregisterServer())
+      iRun = 2;
+  }
+  ...
+  ...
+ </FONT> </PRE>
+
+<P>
+WinMain has been toured in previous lessons. The logic above shows how an
+out-of-process server can honor self-registration requests by recognizing
+certain standard switches on its command line. The above code runs after
+CMainWindow has been created, but before InitInstance is called and the
+main message loop is entered. The code checks the command line (using
+pointer lpCmdLine, passed with the call to WinMain) for the appropriate
+switches. The explicit ANSI variants of lstrcmpi are used, because the
+command line is available only in ANSI, even if this application is
+compiled for Unicode.
+
+<P>
+The string comparisons are case-insensitive. If switch -RegServer was
+specified on the command line, then CMainWindow::RegisterServer is called.
+Similarly, if switch -UnregServer was specified,
+CMainWindow::UnregisterServer is called. In the REGISTER code sample, we saw
+how these switches might have been specified when REGISTER started
+LOCSERVE.EXE with a call to WinExec. The switches can also be specified
+manually if LOCSERVE is started in the Command Prompt window. After the
+appropriate registration or unregistration function is called, an iRun
+variable is set to 2 to indicate that LOCSERVE will be exited immediately
+without entering its message loop.
+
+<P>
+Here is a portion of RegisterServer that registers the LocCar component:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  BOOL CMainWindow::RegisterServer(void)
+  {
+    BOOL  bOk = TRUE;
+    TCHAR szID[GUID_SIZE+1];
+    TCHAR szCLSID[GUID_SIZE+32];
+    TCHAR szModulePath[MAX_PATH];
+
+    // Obtain the path to this module's executable file for later use.
+    GetModuleFileName(
+      g_pServer-&gt;m_hInstServer,
+      szModulePath,
+      sizeof(szModulePath)/sizeof(TCHAR));
+
+    /*---------------------------------------------------------------------
+      Create registry entries for the LocCar Component.
+    ---------------------------------------------------------------------*/
+    // Create some base key strings.
+    StringFromGUID2(CLSID_LocCar, szID, GUID_SIZE);
+    lstrcpy(szCLSID, TEXT(&quot;CLSID\\&quot;));
+    lstrcat(szCLSID, szID);
+
+    // Create ProgID keys.
+    SetRegKeyValue(
+      TEXT(&quot;LocCar1.0&quot;),
+      NULL,
+      TEXT(&quot;LocCar Component - LOCSERVE Code Sample&quot;));
+    SetRegKeyValue(
+      TEXT(&quot;LocCar1.0&quot;),
+      TEXT(&quot;CLSID&quot;),
+      szID);
+
+    // Create VersionIndependentProgID keys.
+    SetRegKeyValue(
+      TEXT(&quot;LocCar&quot;),
+      NULL,
+      TEXT(&quot;LocCar Component - LOCSERVE Code Sample&quot;));
+    SetRegKeyValue(
+      TEXT(&quot;LocCar&quot;),
+      TEXT(&quot;CurVer&quot;),
+      TEXT(&quot;LocCar1.0&quot;));
+    SetRegKeyValue(
+      TEXT(&quot;LocCar&quot;),
+      TEXT(&quot;CLSID&quot;),
+      szID);
+
+    // Create entries under CLSID.
+    SetRegKeyValue(
+      szCLSID,
+      NULL,
+      TEXT(&quot;LocCar Component - LOCSERVE Code Sample&quot;));
+    SetRegKeyValue(
+      szCLSID,
+      TEXT(&quot;ProgID&quot;),
+      TEXT(&quot;LocCar1.0&quot;));
+    SetRegKeyValue(
+      szCLSID,
+      TEXT(&quot;VersionIndependentProgID&quot;),
+      TEXT(&quot;LocCar&quot;));
+    SetRegKeyValue(
+      szCLSID,
+      TEXT(&quot;NotInsertable&quot;),
+      NULL);
+    SetRegKeyValue(
+      szCLSID,
+      TEXT(&quot;LocalServer32&quot;),
+      szModulePath);
+
+  /*-------------------------------------------------------------------------
+    Create registry entries for the LocUtilityCar Component.
+  -------------------------------------------------------------------------*/
+      ...
+      ... Similar to above code for LocCar.
+      ...
+
+  /*-------------------------------------------------------------------------
+    Create registry entries for the LocCruiseCar Component.
+  -------------------------------------------------------------------------*/
+      ...
+      ... Similar to above code for LocCar.
+      ...
+
+    return bOk;
+  }
+ </FONT> </PRE>
+
+<P>
+This registration code is very similar to that used in DLLSERVE for its
+DllCar component. The CLSID_LocCar (defined in CARGUIDS.H) is used for
+this component. CARGUIDS.H is found in the sibling INC directory. The main
+difference is the 'LocalServer32' entry. After such registration code is
+run (for example, as this server is built), you can run the Registry
+Editor (REGEDT32.EXE in Windows NT, REGEDIT.EXE in Windows 95) and peruse
+the registered entries. The registry entries look like this for the LocCar
+component:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  HKEY_CLASSES_ROOT
+    \CLSID
+       \{0002DA0A-0000-0000-C000-000000000046} = &quot;LocCar Component - LOCSERVE Code Sample&quot;
+           \ProgID = &quot;LocCar1.0&quot;
+           \VersionIndependentProgID = &quot;LocCar&quot;
+           \NotInsertable
+           \LocalServer32 = &quot;D:\TUTSAMP\LOCSERVE\LOCSERVE.EXE&quot;
+    ...
+    ...
+    \LocCar = &quot;LocCar Component - LOCSERVE Code Sample&quot;
+       \CurVer = &quot;LocCar1.0&quot;
+       \CLSID = &quot;{0002DA0A-0000-0000-C000-000000000046}&quot;
+    ...
+    ...
+    \LocCar1.0 =&quot;LocCar Component - LOCSERVE Code Sample&quot;
+       \CLSID = &quot;{0002DA0A-0000-0000-C000-000000000046}&quot;
+ </FONT> </PRE>
+
+<p>
+Separate entries under HKEY_CLASSES_ROOT are written for the ProgID
+(LocCar1.0) and the VersionIndependentProgID (LocCar). Both refer
+unambiguously to the main HKEY_CLASSES_ROOT\CLSID entry. Under this entry
+are indications that the server is not insertable as an object in an COM
+compound document. The LocalServer32 entry has the path location of the
+server's executable. COM can thus start this server on behalf of a client
+when given the right CLSID.
+
+<p>
+The UnregisterServer call, also in LOCSERVE.CPP, simply removes from the
+registry all the entries that are written by RegisterServer.
+
+<p>
+The LOCSERVE application does have a skeleton menu in its main window. As
+a hidden server, it doesn't need a menu at all, but it has one here for
+debugging and tutorial purposes. For example, CMainWindow::DoMenu honors
+the IDM_HELP_ABOUT case. In previous code samples, the server could be
+directed to show its About dialog box from the client. This is not of
+major importance, but we illustrate it here by having the client send a
+message to LOCSERVE's main window. More on this in the LOCCLIEN code
+tour.
+
+<p>
+When LOCSERVE is started by COM on behalf of a client, COM uses a standard
+-Embedding command line switch to notify the server that it has been
+invoked as a server. Code in the WinMain function handles this switch and
+sets up LOCSERVE as a server of its components. Here is a code fragment
+from WinMain (in file LOCSERVE.CPP):
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ...
+  ...
+  if (FALSE == iRun)
+  {
+    // If we did not process a command line switch that
+    // requires immediate exit, then initialize an instance of
+    // the new CMainWindow. This entails creating the main window.
+    // Note: if InitInstance fails, then it would have already
+    // deleted pWin so we wouldn't need to delete it here.
+    if (pWin-&gt;InitInstance(hInstance, nCmdShow))
+    {
+      // Create and register the Class Factories.  But only do so
+      // if this application has been started by COM as indicated
+      // by the -Embedding command line switch.
+      if (0 == lstrcmpiA(lpCmdLine, &quot;-Embedding&quot;)
+          || 0 == lstrcmpiA(lpCmdLine, &quot;/Embedding&quot;))
+        iRun = g_pServer-&gt;OpenFactories();
+    }
+  }
+  ...
+  ...
+ </FONT> </PRE>
+
+<p>
+In addition to creating the main window, InitInstance also sets up logging
+from this server to the LOCCLIEN client's trace log display. More on this
+later.
+
+<p>
+The important thing now is the OpenFactories call above: it is called only
+if the -Embedding switch is detected. Regardless of whether this
+application was compiled for Unicode, the command line is always ANSI, so
+the ANSI-only version of the lstrcmpi string utility function is used.
+The g_pServer pointer points to this server's CServer server control
+object. For this out-of-process server, CServe has two important new
+methods that it did not have in DLLSERVE. One, OpenFactories, creates and
+registers all the class factories. The other, CloseFactories, shuts them
+all down.
+
+<p>
+We see above when OpenFactories is called. Its matching CloseFactories
+call is made in CMainWindow's destructor in LOCSERVE.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ...
+  // Close down the factories (ie, Revoke and release the Class Factories).
+  if (NULL != g_pServer)
+    g_pServer-&gt;CloseFactories();
+  ...
+ </FONT> </PRE>
+
+<P>
+The shutdown sequence is initiated by the server itself on the basis of
+the object and lock counts. For example, see the listing below of the
+ObjectsDown method of CServer. ObjectsDown detects when there are no
+longer any existing COM objects or lock counts. If there are none it
+issues the following call causing an eventual execution of CMainWindow's
+destructor.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  PostMessage(m_hWndServer, WM_CLOSE, 0, 0L);
+ </FONT> </PRE>
+
+<P>
+When the application's main window is closed in response to the WM_CLOSE
+message, the main window procedure is called with the WM_DESTROY message.
+This message is sent when the window is being destroyed in response to a
+close of the window. Because CMainWindow is derived from APPUTIL's
+CVirWindow, WM_DESTROY is trapped by CVirWindow's WindowProc function
+where a delete of CMainWindow is performed. This runs the CMainWindow
+destructor which calls CloseFactories as above. After CloseFactories shuts
+down all the class factories, the destructor finally posts a WM_QUIT
+message to the server application's main thread and causes the exit of the
+thread's message loop. After this the server application is exited.
+
+<P>
+We will tour the class factory code in more detail. CServer is used to
+manage creation and destruction of the class factories. Here is the
+CServe declaration in SERVER.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class CServer
+  {
+    public:
+      CServer(void);
+      ~CServer(void);
+
+      void Lock(void);
+      void Unlock(void);
+      void ObjectsUp(void);
+      void ObjectsDown(void);
+      BOOL OpenFactories(void);
+      BOOL CloseFactories(void);
+
+      // A place to store the server's instance handle.
+      HINSTANCE m_hInstServer;
+
+      // A place to store the server's main window.
+      HINSTANCE m_hWndServer;
+
+      // Global DLL Server living Object count.
+      LONG m_cObjects;
+
+      // Global DLL Server Client Lock count.
+      LONG m_cLocks;
+
+      // Some member variables to store pointers to Class Factories.
+      IUnknown* m_pCFCar;
+      IUnknown* m_pCFUtilityCar;
+      IUnknown* m_pCFCruiseCar;
+
+      // Some member variables to store Class Factory registration keys.
+      DWORD m_dwCFCar;
+      DWORD m_dwCFUtilityCar;
+      DWORD m_dwCFCruiseCar;
+  };
+ </FONT> </PRE>
+
+<P>
+Much of this code is the same as that in previous servers in this sample
+series. We see the prototypes for the OpenFactories and CloseFactories
+methods. We notice storage for pointers to the IUnknowns of the three
+class factories (m_pCFCar, m_pCFUtilityCar, m_pCFCruiseCAr) and storage
+for registration keys for the class factories (m_dwCFCar,
+m_dwCFUtilityCar, m_dwCFCruiseCar). This registration is different from
+writing entries in the system registry. The class factories are
+registered with COM at run-time, and COM provides a key or token for each
+registered class factory. Each token is later used to revoke the
+registration with COM for each class factory. The registration code
+informs COM that a class factory exists. Because the client has no direct
+way to call the server to create a class factory on demand, an
+out-of-process server must create them all during its initialization and
+destroy them all just before exiting.
+
+<P>
+Here is OpenFactories in SERVER.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  BOOL CServer::OpenFactories(void)
+  {
+    BOOL bOk = FALSE;
+    HRESULT hr;
+
+    LOG(&quot;L: CServer::OpenFactories. Begin.&quot;);
+
+    // Build and register the LocCar factory.
+    m_pCFCar = new CFCar(NULL, this);
+    if (NULL != m_pCFCar)
+    {
+      // AddRef this cached pointer to the Class Factory.
+      m_pCFCar-&gt;AddRef();
+
+      // Now register this class factory with COM.
+      hr = CoRegisterClassObject(
+             CLSID_LocCar,
+             m_pCFCar,
+             CLSCTX_LOCAL_SERVER,
+             REGCLS_MULTIPLEUSE,
+             &amp;m_dwCFCar);
+
+      bOk = SUCCEEDED(hr);
+      if (!bOk)
+      {
+        LOGF1(&quot;L: CServer::OpenFactories. CFCar failed. hr=0x%X.&quot;, hr);
+        // If can't register factory then clean up for server exit.
+        m_pCFCar-&gt;Release();
+        DELETE_POINTER(m_pCFCar);
+      }
+    }
+    else
+      bOk = FALSE;
+
+    ...
+    ... &lt;Similar for the LocUtilityCar and LocCruiseCar class factories.&gt;
+    ...
+
+    LOG(&quot;L: CServer::OpenFactories. End.&quot;);
+
+    return bOk;
+  }
+ </FONT> </PRE>
+
+<P>
+The CFCar COM object is created, and the m_pCFCar pointer is assigned. As
+usual, AddRef must be called on this cached pointer. COM's
+CoRegisterClassObject function is then called to register the new class
+factory. It deposits a registration key in the CServer::m_dwCFCar member
+variable, which is used later to revoke the CFCar class factory
+registration with COM. The CLSCTX_LOCAL_SERVER argument informs COM that
+the execution context of this class factory is that of an out-of-process
+local server. The REGCLS_MULTIPLEUSE argument informs COM that this
+server is multiple use for any given class factory. This means that COM
+doesn't need to start a new instance of the server when another client
+requests the same class factory. This is one reason that all the class
+factories are created and registered during server initialization. If
+they aren't created and registered in the beginning, there would be no way
+to create a requested class factory that isn't already created, because
+the server would not be restarted by COM. Once the class factory is
+registered with COM, it has a pointer to the class factory object's
+IUnknown. It can then use this pointer to make requests to the class
+factory on behalf of such client requests as CoCreateInstance.
+
+<P>
+Here is the matching CloseFactories method call in SERVER.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  BOOL CServer::CloseFactories(void)
+  {
+    BOOL bOk = TRUE;
+    HRESULT hr;
+
+    LOG(&quot;L: CServer::CloseFactories. Begin.&quot;);
+
+    // Unregister the LocCar class factory with COM.
+    if (0 != m_dwCFCar)
+    {
+      LOG(&quot;L: CServer::CloseFactories. Revoke CFCar.&quot;);
+      hr = CoRevokeClassObject(m_dwCFCar);
+      if (FAILED(hr))
+        bOk = FALSE;
+    }
+
+    ...
+    ... &lt;Similar for the LocUtilityCar and LocCruiseCar class factories.
+    ...
+
+    // Release any and all of the Class Factory interface pointers.
+    LOG(&quot;L: CServer::CloseFactories. Release all factory interfaces.&quot;);
+    RELEASE_INTERFACE(m_pCFCar);
+    RELEASE_INTERFACE(m_pCFUtilityCar);
+    RELEASE_INTERFACE(m_pCFCruiseCar);
+
+    LOG(&quot;L: CServer::CloseFactories. End.&quot;);
+
+    return bOk;
+  }
+ </FONT> </PRE>
+
+<P>
+The stored registration key is used to revoke the class factory
+registration with COM. After that is successful for all factories, the
+outstanding references to the factories are released. Each release that
+decrements the reference count to 0 causes the associated class factory
+object to be deleted.
+
+<P>
+Before we leave the CServer server control object, here is the ObjectsDown
+method, also in SERVER.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  void CServer::ObjectsDown(void)
+  {
+    InterlockedDecrement((PLONG) &amp;m_cObjects);
+
+    LOGF1(&quot;L: CServer::ObjectsDown. New cObjects=%i.&quot;, m_cObjects);
+
+    // If no more living objects and no locks then shut the server down.
+    if (0L == m_cObjects &amp;&amp; 0L == m_cLocks &amp;&amp; IsWindow(m_hWndServer))
+    {
+      LOG(&quot;L: CServer::ObjectsDown. Closing down LOCSERVE server.&quot;);
+      // Post a message to this local server's message queue requesting
+      // a close of the application.
+      PostMessage(m_hWndServer, WM_CLOSE, 0, 0L);
+    }
+
+    return;
+  }
+ </FONT> </PRE>
+
+<P>
+Here the server must take an active role in its own lifetime. When the
+object and lock counts are 0, the server control object calls PostMessage
+on the server application itself to send a WM_CLOSE messsage to the
+application.
+
+<P>
+A curious twist of logic is also needed in the Unlock method in SERVER.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  void CServer::Unlock(void)
+  {
+    InterlockedDecrement((PLONG) &amp;m_cLocks);
+
+    LOGF1(&quot;L: CServer::Unlock. New cLocks=%i.&quot;, m_cLocks);
+
+    // Use ObjectsDown to force a server shutdown if this warranted.
+    InterlockedIncrement((PLONG) &amp;m_cObjects);
+    ObjectsDown();
+
+    return;
+  }
+ </FONT> </PRE>
+
+<P>
+If the first decrement caused the lock count to reach zero, this event
+might shut down the server. To trigger the shutdown, the m_cObjects count
+is artifically incremented, and then ObjectsDown is called. We saw in the
+ObjectsDown logic earlier that if the object count transitions to 0, a
+WM_CLOSE message is sent to the server.
+
+<P>
+The code for the COCar, COUtilityCar, and COCruiseCar has been carried
+over from DLLSERVE almost unchanged. One significant change was in the
+COUtilityCar nested component. When its reused subordinate COCar object is
+created using calls to COM's CoCreateInstance, the execution context is
+changed from CLSCTX_INPROC_SERVER to CLSCTX_LOCAL_SERVER. Here's an
+example from the creation of COUtilityCar from UTILCAR.CPP:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ...
+  ...
+  // We create an instance of the COCar object and do this via the
+  // Containment reuse technique. We ask for the new COM object's
+  // ICar interface directly. We pass NULL for the pUnkOuter
+  // aggregation pointer because we are not aggregating. It is here
+  // that we are reusing the COCar COM Object through the Containment
+  // technique. We cache the requested ICar interface pointer in this
+  // COUtilityCar COM object for later use. We don't need to AddRef
+  // this interface because the CoCreateInstance will do this for us.
+  hr = CoCreateInstance(
+         CLSID_LocCar,
+         NULL,
+         CLSCTX_LOCAL_SERVER,
+         IID_ICar,
+         (PPVOID)&amp;m_pICar);
+  ...
+  ...
+ </FONT> </PRE>
+
+<P>
+Recall from the DLLSERVE sample that COCruiseCar was constructed by
+reusing the COCar COM object by aggregation. In this present LOCSERVE
+local server we must retain the CLSCTX_INPROC_SERVER execution context for
+the creation of the aggregated COCar. Here is the creation of
+COCruiseCar's aggregated COCar object from CRUCAR.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ...
+  ...
+  // We create an instance of the COCar object and do this via the
+  // Aggregation reuse technique.  Note we pass pUnkOuter as the
+  // Aggregation pointer.  It is the 'this' pointer to this present
+  // CruiseCar object if we are not being aggregated; otherwise it is the
+  // pointer to the outermost object's controlling IUnknown.  Following
+  // the rules of Aggregation we must ask for an IID_IUnknown interface.
+  // We cache the requested  pointer to the IUnknown of the new COCar COM
+  // object for later use in delegating IUnknown calls. Since we know that
+  // this LocCar component is housed in this very own server, we can
+  // specify an execution context of CLSCTX_INPROC_SERVER. This allows us
+  // to aggregate the COCar COM object. Though the object is in a local
+  // server, it will be instantiated and run within the same process of
+  // this present local server. If we specify CLSCTX_LOCAL_SERVER, COM
+  // will not currently permit the creation using aggregation across
+  // process boundaries and CoCreateInstance would return an error.
+  hr = CoCreateInstance(
+         CLSID_LocCar,
+         pUnkOuter,
+         CLSCTX_INPROC_SERVER,
+         IID_IUnknown,
+         (PPVOID)&amp;m_pUnkCar);
+  ...
+  ...
+ </FONT> </PRE>
+
+<P>
+COCruiseCar is instantiating and running an aggregated COCar within the
+process of this same server. If CLSCTX_LOCAL_SERVER were specified, the
+creation call would request aggregation across process boundaries. This is
+not currently supported by COM and CoCreateInstance would return an error.
+
+<P>
+Another change in the individual COM object implementation modules was to
+include MICARS.H rather than the ICARS.H file included in earlier code
+samples. We do this to better ensure consistency with the interface
+specification in MICARS.IDL. By including MICARS.H in both out-of-process
+server and client application modules, we ensure that the interface code
+in these client/server applications corresponds exactly to the same
+interfaces specified to MIDL for marshaling. MIDL generates our MICARS.H
+include file, and we code our use of those interfaces using MICARS.H. We
+could have continued to use the ICARS.H file, but because the content of
+the two files would be decoupled, there would have been a greater chance
+for a discrepancy between what is specified in MICARS.IDL and what is
+specified in ICARS.H.
+
+<P>
+In previous servers, we used a CarSample component to log in-process
+server activity to the client's trace log display. In this out-of-process
+local server, however, we cannot, for example, pass a g_MsgLog pointer
+from the client to the server and assume the two processes' address spaces
+are the same. They are not. To enable LOCSERVE to log to LOCCLIEN, a kind
+of interprocess communication is required. Win32 offers a convenient way
+to send data from one process to another on the same machine if the
+destination window handle is known. This is the WM_COPYDATA message.
+This approach requires that LOCSERVE get the window handle of the client
+and use it in a Win32 SendMessage call with the WM_COPYDATA message. The
+data being sent is the display string to be logged.
+
+<P>
+Here is a portion of CMainWindow::InitInstance (in file LOCSERVE.CPP):
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ...
+  ...
+  // If the Client's Main window is found, then set up logging to it.
+  hWnd = FindWindow(NULL, TEXT(CLIENT_WINDOW_TITLE));
+  if (NULL != hWnd)
+  {
+    // Tell the CSendLog object that we are logging to client.
+    m_pMsgLog-&gt;LogToServer(FALSE);
+    // Assign the global MsgLog pointer.
+    g_pMsgLog = m_pMsgLog;
+    m_pMsgLog-&gt;SetClient(m_hInst, m_hWnd, hWnd);
+    LOGID(IDS_LOGTO_CLIENT);
+  }
+  ...
+  ...
+ </FONT> </PRE>
+
+<P>
+When LOCSERVE is initialized, it calls the FindWindow function to
+locate LOCCLIEN's main window. (It has special knowledge of the window
+title). If it doesn't find the client, then the code (not shown) creates a
+log display in the server itself. This kind of logging within the
+application is the same as that seen in previous code samples and will not
+be covered again here. Once LOCSERVE finds the client's main window
+handle, it can send messages to it. If successful, the logging facility
+is notified that LogToServer is FALSE, and logging is to the client. The
+global g_pMsgLog variable is then assigned. The SetClient function stores
+the destination window handle for the client. The g_pMsgLog is the global
+pointer used by all the LOGxx macros. However, CMsgLog behaves differently
+than it did in earlier lessons, so in LOCSERVE.CPP we define g_pMsgLog as:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  CSendLog* g_pMsgLog = NULL;
+ </FONT> </PRE>
+
+<P>
+We are using a different log facility (CSendLog instead of CMsgLog),
+implemented in APPUTIL, but it has same-named methods for the important
+logging calls. In past samples, the LOGxx macros were used successfully
+to call methods on a CMsgLog facility. Because the CSendLog facility
+mirrors the functionality of CMsgLog (though internally it sends the log
+messages across process boundaries to the client), the same LOGxx macros
+perform virtually the same logging funcionality, even though they are
+calling methods on a different CSendLog facility. Looking briefly in
+APPUTIL\APPUTIL.CPP, we find the following fragment at the heart of the
+CSendLog::Msg logging method. And there is the SendMessage call using
+WM_COPYDATA.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ...
+  ...
+  cds.dwData = 0;
+  cds.cbData = lstrlen(szMsg)+1;
+  cds.lpData = szMsg;
+
+  bResult = SendMessage(
+              m_hWndReceiver,
+              WM_COPYDATA,
+              (WPARAM) m_hWndSender,
+              (LPARAM) &amp;cds);
+  ...
+  ...
+ </FONT> </PRE>
+
+<p>The LOCCLIEN client executes the following when it recieves this
+WM_COPYDATA message:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ...
+  case WM_COPYDATA:
+    // We have been sent a trace log message from a server.
+    // Log it to our own Client's display.
+    {
+      LPTSTR pszMsg = (LPTSTR)((COPYDATASTRUCT*)lParam)-&gt;lpData;
+      g_pMsgLog-&gt;Msg(pszMsg);
+      #if defined(DEBUG)
+      // Bump to next line in the debugger output window.
+      ::OutputDebugString(TEXT(&quot;\r\n&quot;));
+      #endif
+    }
+    break;
+  ...
+ </FONT> </PRE>
+
+<p>The server's log message string is recieved and sent to the client's
+own MsgLog display.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

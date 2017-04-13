@@ -1,0 +1,997 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+
+<html>
+
+<head>
+<title>APTSERVE COM Tutorial Sample</title>
+<meta name="FORMATTER" content="Microsoft FrontPage 1.1">
+<meta name="GENERATOR" content="Microsoft FrontPage 1.1">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="8">
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="2">
+
+<a name="top"></a>
+
+<TABLE BORDER=0 WIDTH=100% BGCOLOR="#ffffff">
+<TR>
+
+<TD ALIGN=CENTER VALIGN=MIDDLE>
+<img src="logo.gif"
+WIDTH="68" HEIGHT="68" BORDER="0" ALT="COM Logo">
+</TD>
+
+<TD WIDTH=100% ALIGN=CENTER VALIGN=MIDDLE>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE="4">
+<B>COM Tutorial Samples</B></FONT></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="tutorial.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Tutorial Home">
+<BR><B>Tutorial Home</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="locclien.htm" TARGET="_self">
+<IMG SRC="prev.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Previous Lesson">
+<BR><B>Previous Lesson</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="lessons.htm" TARGET="_self">
+<IMG SRC="navbtn.gif" WIDTH="13" HEIGHT="15" BORDER=0 ALT="Lesson List">
+<BR><B>Lesson List</B></FONT></A></TD>
+
+<TD WIDTH=3 ALIGN=CENTER VALIGN=TOP></TD>
+
+<TD WIDTH=50 ALIGN=CENTER VALIGN=TOP>
+<FONT FACE="VERDANA,ARIAL,HELVETICA" SIZE=1 COLOR=BLACK>
+<A HREF="aptclien.htm" TARGET="_self">
+<IMG SRC="next.gif" WIDTH="20" HEIGHT="15" BORDER=0 ALT="Next Lesson">
+<BR><B>Next Lesson</B></FONT></A></TD>
+</TABLE>
+
+<h2><a name="APTSERVE">APTSERVE - Local Server with Multiple Apartments</a></h2>
+
+<p>&#160;
+<h3>SUMMARY</h3>
+
+<P>
+The apartment model is a way of COM programming that associates a single
+thread of execution with a family of COM objects in such a way that an
+object in the family will be executed only on the thread of its apartment.
+When this arrangement is constructed in a server, COM plays a role in
+enforcing the single-thread rule for objects in the apartment by ensuring
+that client calls on any thread to objects in a server apartment will only
+be executed on the thread of the apartment.
+
+<P>
+The APTSERVE sample begins with the car-related COM Objects of the
+previous LOCSERVE sample and rehouses them in an out-of-process local
+server, APTSERVE.EXE, that uses the apartment threading model. To do so
+requires little change to the COM objects themselves (COCar, COUtilityCar,
+and COCruiseCar). The COCruiseCar object required some changes. In
+LOCSERVE COCruiseCar reused the COCar object using aggregation. Since this
+sample rehouses these objects within different apartments, COCruiseCar
+must be recoded to reuse COCar using containment. But most importantly,
+the server housing must undergo significant revision. This sample
+introduces the new facilities to partition each class factory and its
+created object instances into a separate apartment.
+
+<P>
+In this sample, an out-of-process COM server is partitioned into three
+single-threaded apartments, each corresponding to the component types seen
+in previous samples: AptCar, AptUtilityCar, and AptCruiseCar. These
+components are known by their CLSIDs as: CLSID_AptCar,
+CLSID_AptUtilityCar, and CLSID_AptCruiseCar. Appropriate class factories
+for those components are also provided: CFCar, CFUtilityCar, and
+CFCruiseCar. As compared to the implementation of these class factories in
+previous lessons, no significant change to the class factories themselves
+is required in this sample.
+
+<P>
+In the series of COM tutorial code samples, APTSERVE works with the
+APTCLIEN code sample to illustrate APTSERVE's partitioning of the server
+facilities for creating and manipulating components within separate
+apartments and to show how the components are accessed by a client.
+
+<P>
+For functional descriptions and a tutorial code tour of APTSERVE, see the
+Code Tour section in APTSERVE.HTM. For details on the programmatic usage
+of APTSERVE, see the Usage section in APTSERVE.HTM. To read APTSERVE.HTM,
+run TUTORIAL.EXE in the main tutorial directory and click the APTSERVE
+lesson in the table of lessons. You can also achieve the same thing by
+clicking the APTSERVE.HTM file after locating the main tutorial directory
+in the Windows Explorer. See also APTCLIEN.HTM in the main tutorial
+directory for more details on the APTCLIEN client application and how it
+works with APTSERVE.EXE.
+
+<P>
+You must build APTSERVE.EXE before building or running APTCLIEN. The
+accompanying makefile automatically registers APTSERVE components in the
+registry. These components must be registered before APTSERVE is available
+to outside COM clients as a server for those components. This registration
+is done using the REGISTER.EXE utility built in the earlier REGISTER
+lesson. To build or run APTSERVE, you should build the REGISTER code
+sample first.
+
+<P>
+Like its predecessors, APTSERVE uses many of the utility classes and
+services provided by APPUTIL. For more details on APPUTIL, study the
+APPUTIL library's source code and APPUTIL.HTM, located in the main
+tutorial directory.
+
+<P>
+As an out-of-process local server with several single-threaded apartments,
+APTSERVE relies on standard marshaling for clients to use its interfaces
+across both thread and process boundaries. Such marshaling is provided in
+the MARSHAL.DLL server built in the previous lesson. To build or run
+APTSERVE, you should build the MARSHAL code sample first.
+
+<P>
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE
+is Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+<P>
+Like the LOCSERVE/LOCCLIEN pair, APTSERVE uses APPUTIL's CSendLog trace
+logging facility to allow display of internal APTSERVE behavior integrated
+with client behavior in the APTCLIEN log display. See APTCLIEN.HTM for
+more details setting up this logging operation. See LOCSERVE.HTM for
+details on how CSendLog works.
+
+<h4>Usage</h4>
+
+<P>
+The APTSERVE application is meant to be used as an out-of-process COM
+server. Out-of-process servers like APTSERVE are registered in the system
+registry, and APTSERVE has built-in support for registering its
+components. It accepts the following command line switches to register and
+unregister:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  -RegServer or /RegServer to register
+  -UnregServer or /UnregServer to unregister
+ </FONT> </PRE>
+
+<P>
+String matches on these switches are case-insensitive. APTSERVE also
+recognizes the standard -Embedding or /Embedding switch, which directs it
+to run as an out-of-process server. This switch normally means that the
+server will remain hidden when run by COM on behalf of a client. As an
+out-of-process server, APTSERVE is not designed to run visable as a
+stand-alone application. If you attempt to run APTSERVE as a stand-alone
+application with no command line switches, it will exit with an error.
+
+<P>
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the APTSERVE directory:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  nmake register
+ </FONT> </PRE>
+
+<P>
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the APTSERVE directory.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  ..\register\register.exe aptserve.exe
+ </FONT> </PRE>
+
+<P>
+These registration commands require a prior build of the REGISTER sample
+in this series, as well as a prior build of APTSERVE.EXE.
+
+<h4>Run the Sample</h4>
+
+<p>
+The client sample and other related samples must be compiled before
+you can run the client. For more details on building the samples, see
+<a href="using.htm#building">
+Building the Code Samples.</a>
+
+<P>
+If you have already built the appropriate samples, APTCLIEN.EXE is the
+client executable to run for this sample.
+
+<a href="APTCLIEN\APTCLIEN.exe">
+Click here to run APTCLIEN.EXE.</a>
+
+<P>
+Depending on the security level of your browser you may see a dialog
+allowing you to either open the .EXE file or save it to disk. Click the
+"Open it" choice and then click the OK button.
+
+<p>&#160;
+<h3>CODE TOUR</h3>
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+<u>Files        Description</u>
+APTSERVE.TXT Short sample description.
+MAKEFILE     The generic makefile for building the APTSERVE.EXE
+             code sample of this tutorial lesson.
+APTSERVE.H   The include file for the APTSERVE application. Contains
+             class declarations, function prototypes, and resource
+             identifiers.
+APTSERVE.CPP The main implementation file for APTSERVE.EXE. Has WinMain
+             and CMainWindow implementation, as well as the main menu
+             dispatching.
+APTSERVE.RC  The resource definition file for the executable.
+APTSERVE.ICO The icon resource for the executable.
+SERVER.H     The include file for the server control C++ object. Also
+             used for APTSERVE externs.
+SERVER.CPP   The implementation file for the server control object.
+             Manages apartment threads, object counts, server lifetime,
+             and the creation of class factories.
+FACTORY.H    The include file for the server's class factory COM objects.
+FACTORY.CPP  The implementation file for the server's class factories.
+CAR.H        The include file for the COCar COM object class.
+CAR.CPP      The implementation file for the COCar COM object class.
+UTILCAR.H    The include file for the COUtililtyCar COM object class.
+UTILCAR.CPP  The implementation file for the COUtilityCar COM object class.
+CRUCAR.H     The include file for the COCruiseCar COM object class.
+CRUCAR.CPP   The implementation file for the COCruiseCar COM object class.
+</FONT> </PRE>
+
+<P>
+With the APTSERVE code sample, we introduce several single-threaded
+apartments in a COM server. In keeping with the graduated tutorial
+sequence in these code samples, APTSERVE retains the COCar, COUtilityCar,
+and COCruiseCar components and modifies their server housing and class
+factories to house, create, and manage those components in separate
+apartments.
+
+<P>
+The LOCSERVE out-of-process local server code sample is the starting
+point.  LOCSERVE is a single-thread server: The main process thread is the
+only thread that directly manipulates the server's class factories and COM
+objects. This single thread can be viewed as the one and only single
+thread apartment (STA) of LOCSERVE.
+
+<P>
+COM supports multiple threading in both client and server applications.
+For a server application with multiple apartments, some housekeeping is
+required to partition the application's threads and to inform COM of the
+arrangement. In APTSERVE, there is a separate STA apartment thread for
+each class factory. COM objects reside on the same apartment thread as the
+class factory that creates them. Each class factory and all of its object
+instances reside in the same single-threaded apartment. There is an
+arrangement of three such single-threaded apartments in this sample but it
+is certainly not the only possible arrangement of multiple apartments and
+class factories in a server.
+
+<P>
+Under the apartment model, there can be multiple COM objects on a thread,
+but calls to an object must execute on the thread that &quot;owns&quot;
+the object. This thread is called the object's apartment thread and
+interface requests to the object from another thread must be marshaled to
+the apartment thread that owns the object, just as if the object were in
+another process.
+
+<P>
+In these code samples, interface calls across process boundaries are
+marshaled to convert the call from the context of the calling process to
+the context of the owning server process. We studied this in the LOCSERVE
+and LOCCLIEN lessons, where the necessary marshaling was provided by the
+MARSHAL.DLL standard marshaling server (created in the MARSHAL sample).
+When the change in the call context is from one apartment to another, this
+same standard marshaling is used. This marshaling is required even if the
+threads reside within the same process, as in this APTSERVE sample.
+
+<P>The following coding rules apply to apartment-threaded servers:
+
+<ol>
+<li>
+Every object is owned by only one apartment thread and calls to the object
+must execute on that thread.
+
+<li>
+Each apartment thread must call OleInitialize or CoInitialize during
+thread initialization to initialize COM for each apartment.
+
+<li>
+To ensure that all requests to an object are made on its apartment thread,
+all pointers to objects must be marshaled between apartments.
+
+<li>
+Each apartment with COM objects in it must have a message queue to handle
+calls from other apartments in the same process or from other processes.
+
+<li>
+Apartment-aware objects in in-process servers must be registered as being
+apartment-aware in the system registry.
+
+<li>
+Apartment-aware objects in in-process servers must write DLL entry points
+carefully.
+
+</ol>
+
+<P>
+APTSERVE has three single-threaded apartments, one for each class of
+component housed in the server. The CFCar class factory and all COCar COM
+objects are managed in one apartment. The CFUtilityCar class factory and
+all COUtilityCar COM objects are managed in a separate apartment, as are
+the CFCruiseCar class factory and all COCruiseCar COM objects.
+
+<P>
+Since each class factory and its instantiated objects reside in a separate
+apartment, client access through their interfaces must be marshaled. This
+is so even if both apartment threads reside in the same process. In this
+lesson, some of the composite objects that are created and managed in one
+apartment of APTSERVE are constructed by reusing objects created and
+managed in another apartment. For example, the COCruiseCar object of the
+AptCruiseCar apartment reuses a COCar object of the AptCar apartment.
+
+<P>
+Almost all the coding changes needed to partition APTSERVE into three
+apartments are found in the server housing, which is programmed in files
+SERVER.H and SERVER.CPP.
+
+<P>
+Single-threaded apartments are implemented as separate program threads,
+each of which has its own message loop for processing messages sent to the
+thread. Each also has a main thread procedure. When creating the thread
+using the _beginthreadex or CreateThread functions, we pass a pointer to
+an apartment thread procedure. We also pass a pointer to a thread's
+initialization data. As the operating system then creates the thread, it
+calls the thread procedure passing the initialization data pointer, as an
+LPARAM. We will look at these mechanisms in the source code
+
+<P>
+First there are some CServer member variables needed to identify the three
+apartments.  Here are some appropriate declarations from SERVER.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  // Apartment Thread Initialization data.
+  enum { NUM_APARTMENTS = 3 };
+  enum { APTCAR = 0, APTUTILITYCAR = 1, APTCRUISECAR = 2 };
+  struct APT_INIT_DATA
+  {
+    REFCLSID rclsid;
+    IUnknown* pcf;
+
+    // Member initializer MUST be used here because VC++ 4.0+ is strict
+    // about const and reference (&amp;) types like REFCLSID that need to
+    // be initialized in this app.  For example, VC++ 4.x will not permit
+    // a simple assignment of rclsid in the constructor.
+    APT_INIT_DATA(REFCLSID rclsidi) : rclsid(rclsidi)
+    {
+      pcf = NULL;
+    };
+
+    ~APT_INIT_DATA() {};
+  };
+
+  /*C+C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C+++C
+    Class:    CServer
+
+    Summary:  Class to encapsulate control of this COM server (eg, handle
+              Lock and Object counting, encapsulate otherwise global data).
+              Govern server and Apartment lifetimes.
+
+    Methods:  none
+  C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C---C-C*/
+  class CServer : public CThreaded
+  {
+    public:
+      CServer(void);
+      ~CServer(void);
+
+      void Lock(void);
+      void Unlock(void);
+      void ObjectsUp(void);
+      void ObjectsDown(void);
+      BOOL OpenFactories(void);
+      BOOL CloseFactories(void);
+
+      // CThreaded method overrides.
+      BOOL OwnThis(void);
+      void UnOwnThis(void);
+
+      // A place to store the server's instance handle.
+      HINSTANCE m_hInstServer;
+
+      // A place to store the server's main window.
+      HINSTANCE m_hWndServer;
+
+      // Global Server living Object count.
+      LONG      m_cObjects;
+
+      // Global Server Client Lock count.
+      LONG      m_cLocks;
+
+      // Some member variables to store pointers to Class Factories.
+      IUnknown* m_pCFCar;
+      IUnknown* m_pCFUtilityCar;
+      IUnknown* m_pCFCruiseCar;
+
+      // Pointers to Apartment init data structures.
+      APT_INIT_DATA* m_paiAptCar;
+      APT_INIT_DATA* m_paiAptUtilityCar;
+      APT_INIT_DATA* m_paiAptCruiseCar;
+
+      // Some member variables to store apartment thread ids.
+      DWORD     m_dwAptCar;
+      DWORD     m_dwAptUtilityCar;
+      DWORD     m_dwAptCruiseCar;
+
+      // An array of handles to the apartment threads.
+      HANDLE    m_hApts[NUM_APARTMENTS];
+  };
+ </FONT> </PRE>
+
+<P>
+Compared to the previous LOCSERVE sample, we see that the Server control
+object for APTSERVE has member variable storage for pointers to each
+apartment's thread init data, thread IDs used later to send messages to
+the threads, and methods to ensure mutually exclusive access to shared
+data in this multithreaded server.
+
+<P>
+It is important to ensure that all threads within the server, as well as
+those in all outside clients, have controlled access to shared server
+data. In previous samples in this series, the Win32 functions
+InterlockedIncrement and InterlockedDecrement were used to ensure mutually
+exclusive access to the server's object and lock counts among multiple
+client processes. With this sample, a more general mechanism is used to
+serialize access to server data shared by apartment threads. This
+mechanism uses the Win32 Mutex facility. CServer is derived from a base
+class declared in APPUTIL.H, CThreaded, which provides such a mechanism.
+Any C++ class can be derived from CThreaded to provide mutually exclusive
+access by asynchronous multiple threads. See APPUTIL.H for more details on
+the CThreaded class. We will cover its use here in CServer.
+
+<P>
+The mutex is created in the CThreaded constructor. Here is the CThreaded
+class declaration from APPUTIL.H.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  class CThreaded
+  {
+    protected:
+      // Variables for providing mutually exclusive access by multiple
+      // threads to objects of classes derived from this class.
+      HANDLE    m_hOwnerMutex;
+      BOOL      m_bOwned;
+
+    public:
+      // Methods.
+      CThreaded(void) :
+        m_hOwnerMutex(CreateMutex(0,FALSE,0)),
+        m_bOwned(FALSE)
+      {
+      };
+
+      ~CThreaded(void)
+      {
+        // Close down the mutex.
+        CloseHandle(m_hOwnerMutex);
+      };
+
+      // These virtual functions have overriding definitions in the
+      // derived class to provide convenient trace logging. Rely on
+      // the below default definitions for non-tutorial applications.
+
+      virtual BOOL OwnThis(void)
+      {
+        BOOL bOwned = FALSE;
+
+        if (WAIT_OBJECT_0 == WaitForSingleObject(m_hOwnerMutex, INFINITE))
+          m_bOwned = bOwned = TRUE;
+
+        return bOwned;
+      };
+
+      virtual void UnOwnThis(void)
+      {
+        if (m_bOwned)
+        {
+          m_bOwned = FALSE;
+          ReleaseMutex(m_hOwnerMutex);
+        }
+
+        return;
+      };
+  };
+ </FONT> </PRE>
+
+<P>
+CServer inherits the protected m_hOwnerMutex and m_bOwned data members
+from CThreaded. CServer also provides overriding definitions for the
+CThreaded virtual functions OwnThis and UnOwnThis. In a normal application
+we could rely on the default definitions provided in CThreaded for these
+methods. In this tutorial code sample, however, we provide definitions of
+OwnThis and UnOwnThis that offer convenient trace logging of their
+behavior.
+
+<P>
+The m_hOwnerMutex is created solely to govern access to the CServer C++
+object. A Boolean flag is initialized to FALSE and is used to indicate
+when a requesting thread has been permitted to &quot;own&quot; the CServer
+object. The owning thread has exclusive access to the object. Member
+initializers in CThreaded are used to initialize m_hOwnerMutex and
+m_bOwned. The mutex is closed during the CThreaded destructor.
+
+<P>
+Once created, the mutex m_hOwnerMutex can be used in other methods of
+CServer that may be called by multiple threads to access its shared data.
+The most important shared data in this case is the CServe member data
+variables m_cObjects and m_cLocks. Here is a representative method (in
+SERVER.CPP).
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  void CServer::ObjectsDown(void)
+  {
+    if (OwnThis())
+    {
+      if (m_cObjects &gt; 0)
+        m_cObjects -= 1;
+
+      LOGF2(&quot;L&lt;%X&gt;: CServer::ObjectsDown. New cObjects=%i.&quot;,TID,m_cObjects);
+
+      // If no more living objects and no locks then shut down the server.
+      if (0L == m_cObjects &amp;&amp; 0L == m_cLocks &amp;&amp; IsWindow(m_hWndServer))
+      {
+        LOGF1(&quot;L&lt;%X&gt;: CServer::ObjectsDown. Closing down APTSERVE server.&quot;,TID);
+
+        // Relinquish current thread ownership of CServer before signaling
+        // the main server thread to close down the entire server. During
+        // shutdown other threads may need to access CServer.
+        UnOwnThis();
+
+        // Post a message to this local server's message queue requesting
+        // a close of the entire server application. This will force a
+        // termination of all apartment threads (including the one that
+        // may be executing this ObjectsDown)
+        PostMessage(m_hWndServer, WM_CLOSE, 0, 0L);
+      }
+      else
+        UnOwnThis();
+    }
+
+    return;
+  }
+ </FONT> </PRE>
+
+<P>
+Two shared data members, m_cObjects and m_cLocks, are either changed or
+accessed by this ObjectsDown method. The mutual exclusion mechanism uses
+the bracketed pairs of calls to the OwnThis and UnOwnThis methods. Inside
+the bracketed pair, the mechanism guarantees that no other threads will
+access or change the shared data. Thus a call to the above ObjectsDown
+method will block a thread in the OwnThis call until any current owner
+thread completes its access to CServer and relinquishes its ownership by
+calling the UnOwnThis method. When there are no longer any existing
+objects or locks on the server, ownership of CServer by the executing
+thread is relinquished before a PostMessage call signals the entire server
+to shut down. This is done above because other threads may need to access
+CServer during shutdown. When honoring the posted WM_CLOSE, the main
+server thread terminates the apartment threads. Depending on thread
+scheduling, ownership of CServer could be held by a thread that was
+terminated during shutdown. This could block any other threads from ever
+accessing CServer.
+
+<P>
+The OwnThis method returns TRUE when the executing thread is permitted
+access. Here is the overriding OwnThis definition from SERVER.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  BOOL CServer::OwnThis(void)
+  {
+    BOOL bOwned = FALSE;
+
+    LOGF1(&quot;L: CServer::OwnThis. Thread &lt;%X&gt; waiting to own CServer.&quot;,TID);
+
+    if (WAIT_OBJECT_0 == WaitForSingleObject(m_hOwnerMutex, INFINITE))
+    {
+      m_bOwned = TRUE;
+      LOGF1(&quot;L: CServer::OwnThis. CServer now owned by Thread &lt;%X&gt;.&quot;,TID);
+    }
+
+    return bOwned;
+  }
+ </FONT> </PRE>
+
+<P>
+The Win32 function WaitForSingleObject waits for the mutex to signal that
+the mutex is not owned by any thread. This call requests ownership of the
+mutex for the calling thread, changing the mutex's state to nonsignaled
+when ownership is granted. Until such access is permitted, some other
+thread has ownership of CServer, and the current thread must wait. Such a
+waiting thread is said to be &quot;blocked&quote;. During this time, the
+current owning thread is executing code in its own bracketed
+OwnThis-UnOwnThis pair. When the current owning thread completes its
+access, it calls UnOwnThis to relinquish ownership. Here is UnOwnThis from
+file SERVER.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  void CServer::UnOwnThis(void)
+  {
+    if (m_bOwned)
+    {
+      LOGF1(&quot;L: CServer::UnOwnThis. Ownership relinquished by &lt;%X&gt;.&quot;,TID);
+      m_bOwned = FALSE;
+      ReleaseMutex(m_hOwnerMutex);
+    }
+
+    return;
+  }
+ </FONT> </PRE>
+
+<P>
+Because three different apartment threads run in the APTSERVE server, the
+same CServer is shared between them. As a result, the CServer methods
+which access its shared data must all honor this ownership protocol by
+properly calling the OwnThis and UnOwnThis methods as shown above for
+ObjectsDown. Thus the Lock, Unlock, ObjectsUp, ObjectsDown, OpenFactories,
+and CloseFactories methods are all coded using the OwnThis and UnOwnThis
+pairs.
+
+<P>
+When the first client requests creation of a component in APTSERVE, COM
+loads and runs this EXE local server. Like LOCSERVE, when APTSERVE runs,
+it creates and registers its class factories. When clients make any
+subsequent creation requests of APTSERVE, COM uses the already running
+server and its registered class factories. Thus, one running instance of
+the class factories is shared by all the clients. Because these shared
+class factories are registered within separate apartment threads, COM's
+support of the apartment model ensures that calls to interfaces in objects
+created by these class factories will be called on the same thread that
+originally called on the class factory to create the object. The first
+point of recognition by COM in this regard is the occasion of the object's
+first marshaled interface. This is often the IClassFactory interface
+pointer requested in the CoGetClassObject call.
+
+<P>
+In APTSERVE the server provides an OpenFactories method, as did the
+LOCSERVE server. The OpenFactories code used in LOCSERVE requires
+significant changes to work in APTSERVE. Here is OpenFactories from
+SERVER.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  BOOL CServer::OpenFactories(void)
+  {
+    BOOL bOk = FALSE;
+    HRESULT hr;
+
+    LOGF1(&quot;L&lt;%X&gt;: CServer::OpenFactories. Begin.&quot;,TID);
+
+    if (OwnThis())
+    {
+      // Create the ClassFactory C++ objects.
+      m_pCFCar = new CFCar(NULL, this);
+      m_pCFUtilityCar = new CFUtilityCar(NULL, this);
+      m_pCFCruiseCar = new CFCruiseCar(NULL, this);
+
+      // Create Structures for Apartment initialization.
+      m_paiAptCar = new APT_INIT_DATA(CLSID_AptCar);
+      m_paiAptUtilityCar = new APT_INIT_DATA(CLSID_AptUtilityCar);
+      m_paiAptCruiseCar = new APT_INIT_DATA(CLSID_AptCruiseCar);
+
+      // Create the Appartment for AptCar.
+      LOGF1(&quot;L&lt;%X&gt;: CServer::OpenFactories. AptCar.&quot;,TID);
+      if (NULL != m_pCFCar &amp;&amp; NULL != m_paiAptCar)
+      {
+        // AddRef this cached pointer to the Class Factory.
+        m_pCFCar-&gt;AddRef();
+
+        // Assign the ClassFactory in the apartment init data and AddRef.
+        m_paiAptCar-&gt;pcf = m_pCFCar;
+        m_paiAptCar-&gt;pcf-&gt;AddRef();
+
+        // Start the Apartment Thread using local utility function.
+        m_hApts[APTCAR] = StartThread(
+                            (PCRTTHREADPROC) AptThreadProc,
+                            (LPVOID) m_paiAptCar,
+                            &amp;m_dwAptCar);
+
+        bOk = (NULL != m_hApts[APTCAR]);
+        if (!bOk)
+        {
+          hr = GetLastError();
+          LOGF2(&quot;L&lt;%X&gt;: CServer::OpenFactories. AptCar failed. hr=0x%X.&quot;,TID,hr);
+          // If can't register factory then clean up for server exit.
+          m_pCFCar-&gt;Release();
+          m_paiAptCar-&gt;pcf-&gt;Release();
+          DELETE_POINTER(m_pCFCar);
+          DELETE_POINTER(m_paiAptCar);
+        }
+      }
+      else
+        bOk = FALSE;
+
+      // Create the Appartment for AptUtiliytCar.
+      ...
+      ... Code similar to above AptCar
+      ...
+
+      // Create the Appartment for AptCruiseCar.
+      ...
+      ... Code similar to above AptCar
+      ...
+
+      UnOwnThis();
+    }
+
+    LOGF1(&quot;L&lt;%X&gt;: CServer::OpenFactories. End.&quot;,TID);
+
+    return bOk;
+  }
+ </FONT> </PRE>
+
+<P>
+The class factory objects (CFCar, CFUtilityCar, and CFCruiseCar) are
+created as before in LOCSERVE. However, we now assign an apartment
+initialization structure and create a separate thread of execution for
+each class factory. We will see how this factory is registered with COM on
+this apartment thread. Notice the use of member initializers for the new
+APT_INIT_DATA structures. As seen earlier in the declaration of the
+APT_INIT_DATA structure, the REFCLSID member cannot be initialized in the
+constructor or assigned later, because the COM/OLE header files declare
+REFCLSIDs as const references. The newer C++ compilers are strict about
+this and force the use of member initializers for assigning REFCLSID
+member variables.
+
+<P>
+A StartThread function is used to simplify the use of the C Runtime
+library's _beginthreadex function. StartThread is defined locally in the
+APTSERVE module. The _beginthreadex function is used in this sample. It
+has some advantages over the Win32 CreateThread function. When it is
+anticipated that the new thread will make calls to C Runtime functions,
+then the _begintheadex call performs some necessary C Runtime setup and
+memory management which the Win32 CreateThread function does not.
+
+<P>
+When the StartThread function is called, a pointer to a thread procedure
+is passed (AptThreadProc above). The operating system will call this
+thread procedure when it creates the thread. When it does so, it passes
+the pointer to the APT_INIT_DATA structure as an LPARAM. The same
+AptThreadProc is re-intrant and can be used by all of the single threaded
+apartments. Here is the AptThreadProc from SERVER.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  unsigned WINAPI AptThreadProc(
+                     LPARAM lparam)
+  {
+    HRESULT hr;
+    MSG msg;
+    DWORD dwCFRegId;
+    APT_INIT_DATA* paid = (APT_INIT_DATA*) lparam;
+
+    LOGF1(&quot;L: AptThreadProc. Starting Apartment Thread &lt;%X&gt;.&quot;,TID);
+
+    // Initialize COM for this apartment thread. Default of apartment
+    // model is assumed.
+    CoInitialize(0);
+
+    // Now register the class factory with COM.
+    LOGF1(&quot;L: AptThreadProc. Registering class factory of apartment &lt;%X&gt;.&quot;,TID);
+    hr = CoRegisterClassObject(
+           paid-&gt;rclsid,
+           paid-&gt;pcf,
+           CLSCTX_LOCAL_SERVER,
+           REGCLS_MULTIPLEUSE,
+           &amp;dwCFRegId);
+    LOGERROR(&quot;L:CoRegisterClassObject&quot;,hr);
+    if (SUCCEEDED(hr))
+    {
+      // Provide a message pump for this thread.
+      while (GetMessage(&amp;msg, 0, 0, 0))
+        DispatchMessage(&amp;msg);
+
+      LOGF1(&quot;L: AptThreadProc. Revoking class factory of apartment &lt;%X&gt;.&quot;,TID);
+      // Unregister the class factory with COM when the thread dies.
+      CoRevokeClassObject(dwCFRegId);
+    }
+    else
+    {
+      LOGF2(&quot;L&lt;%X&gt;: AptThreadProc. RegisterClass failed. hr=0x%X.&quot;,TID,hr);
+    }
+
+    // Uninitialize COM in the context of this apartment thread.
+    CoUninitialize();
+
+    LOGF1(&quot;L: AptThreadProc. Apartment Thread &lt;%X&gt; Terminated.&quot;,TID);
+
+    return msg.wParam;
+  }
+ </FONT> </PRE>
+
+<P>
+The call to CoInitialize in the new thread initializes COM for use by that
+thread under the apartment model. The single-threaded apartment model is
+requested implicitly in this call because it is the default. The above
+CoInitialize call is equivalent to:
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+ </FONT> </PRE>
+
+<P>
+The newly created class factory is then registered with COM in the context
+of the new thread that is executing. The thread then enters a message loop
+in this common apartment procedure. The loop will not be exited until the
+thread receives a WM_QUIT message. We will see such a message sent below
+in the CloseFactories method. When the loop exits, the registered class
+factory is revoked with COM. Then a CoUninitialize call is made to
+complete the shutdown of the apartment.
+
+<P>Here is the CloseFactories method from SERVER.CPP.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  BOOL CServer::CloseFactories(void)
+  {
+    BOOL bOk = TRUE;
+    HRESULT hr;
+
+    LOGF1(&quot;L&lt;%X&gt;: CServer::CloseFactories. Begin.&quot;,TID);
+
+    if (OwnThis())
+    {
+      // Shutdown the AptCar Apartment Thread.
+      if (0 != m_dwAptCar)
+      {
+        LOGF1(&quot;L&lt;%X&gt;: CServer::CloseFactories. Terminate AptCar Apartment.&quot;,TID);
+        bOk = PostThreadMessage(m_dwAptCar, WM_QUIT, 0, 0);
+        if (!bOk)
+        {
+          hr = GetLastError();
+          LOGF2(&quot;L&lt;%X&gt;: CServer::CloseFactories. AptCar failed. hr=0x%X.&quot;,TID,hr);
+        }
+      }
+
+      // Shutdown the AptUtilityCar Apartment Thread.
+      ...
+      ... Code similar to above for AptCar
+      ...
+
+      // Shutdown the AptCruiseCar Apartment Thread.
+      ...
+      ... Code similar to above for AptCar
+      ...
+
+      if (m_pCFCar &amp;&amp; m_pCFUtilityCar &amp;&amp; m_pCFCruiseCar)
+      {
+        // Release any and all of the Class Factory interface pointers.
+        RELEASE_INTERFACE(m_pCFCar);
+        RELEASE_INTERFACE(m_paiAptCar-&gt;pcf);
+        RELEASE_INTERFACE(m_pCFUtilityCar);
+        RELEASE_INTERFACE(m_paiAptUtilityCar-&gt;pcf);
+        RELEASE_INTERFACE(m_pCFCruiseCar);
+        RELEASE_INTERFACE(m_paiAptCruiseCar-&gt;pcf);
+        DELETE_POINTER(m_paiAptCar);
+        DELETE_POINTER(m_paiAptUtilityCar);
+        DELETE_POINTER(m_paiAptCruiseCar);
+
+        // Give CServer back before waiting on threads to die.
+        UnOwnThis();
+
+        // Wait a very long time (in CPU terms) for the apartment threads
+        // to exit/terminate before closing their thread handles.
+        WaitForMultipleObjects(NUM_APARTMENTS, m_hApts, TRUE, LONG_WAIT);
+        for (UINT i = 0; i&lt;NUM_APARTMENTS; i++)
+          if (NULL != m_hApts[i])
+            CloseHandle(m_hApts[i]);
+      }
+      else
+        UnOwnThis();
+    }
+
+    LOGF1(&quot;L&lt;%X&gt;: CServer::CloseFactories. End.&quot;,TID);
+
+    return bOk;
+  }
+ </FONT> </PRE>
+
+<P>
+CloseFactories is called in the server application's CMainWindow
+destructor. The shutdown sequence is initiated by the server itself on the
+basis of the object and lock counts. For example, see the earlier listing
+of the ObjectsDown method of CServer. ObjectsDown detects when there are
+no longer any existing COM objects or lock counts. If so, it issues the
+following call causing an eventual execution of CMainWindow's destructor.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  PostMessage(m_hWndServer, WM_CLOSE, 0, 0L);
+ </FONT> </PRE>
+
+<P>
+When the application's main window is closed in response to the WM_CLOSE
+message, the main window procedure is called with the WM_DESTROY message.
+This message is sent when the window is being destroyed in response to a
+close of the window. Because CMainWindow is derived from APPUTIL's
+CVirWindow, WM_DESTROY is trapped by CVirWindow's WindowProc function
+where a delete of CMainWindow is performed. This runs the CMainWindow
+destructor which calls the CloseFactories method. CloseFactories posts
+WM_QUIT messages to the individual apartment threads. The
+WaitForMultipleObjects function is called above in CloseFactories to wait
+for the posted WM_QUIT messages to reach their intended threads and cause
+those threads to terminate. When all the apartment threads have signaled
+their termination, all the thread handles are closed in a for loop. The
+CMainWindow destructor finally issues a WM_QUIT message to the
+application's main thread and causes the exit of its message loop and a
+resultant exit of the entire server application.
+
+<P>
+In order to properly build this multithreaded application, the makefile
+used in the LOCSERVE sample needed some changes. The C++ compilation
+switches were changed to command the C++ compiler to compile a
+multithreaded program. Here is an example of the compile command line of
+the SERVER.CPP file, showing the use of the cvarsmt macro defined in
+WIN32.MAK file of the Platform SDK.  Other single threaded EXE
+applications required only the use of the cvars macro.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  $(TDIR)\server.obj: server.cpp server.h $(PGM).h
+  $(cc) $(cvarsmt) $(cflags) $(CDBG) -Fo$@ server.cpp
+ </FONT> </PRE>
+
+<p>
+The link flags were changed to support the use of the olelibsmt macro
+defined in WIN32.MAK. Here is the LINKFLAGS macro.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  # If UNICODE=1 is defined then define UNICODE during Compiles.
+  # The default is to compile with ANSI for running under both
+  # Win95 and WinNT.
+  !IFDEF UNICODE
+  LINKFLAGS = $(ldebug) /NOD:libc.lib /NOD:msvcrt.lib /NOD:libcd.lib \
+    /NOD:libcmtd.lib /NOD:msvcrtd.lib
+  CDBG=$(cdebug) -DUNICODE -D_UNICODE
+  RCFLAGS = -DWIN32 -DRC_INCLUDE -DUNICODE
+  !ELSE
+  LINKFLAGS = $(ldebug) /NOD:libc.lib /NOD:msvcrt.lib /NOD:libcd.lib \
+    /NOD:libcmtd.lib /NOD:msvcrtd.lib
+  CDBG=$(cdebug)
+  RCFLAGS = -DWIN32 -DRC_INCLUDE
+  !ENDIF
+ </FONT> </PRE>
+
+<p>
+The /NOD (no default) switches to the linker permit the use of the
+olelibsmt in the final link command. Here it is.
+
+<P> <PRE> <FONT FACE="COURIER" SIZE = "2">
+  # Link the object and resource binaries into the final target binary.
+  $(PGM).exe: $(PGMOBJS) $(TDIR)\$(PGM).res
+    $(LINK) @&lt;&lt;
+      $(LINKFLAGS)
+      -out:$@
+      -map:$(TDIR)\$*.map
+      $(PGMOBJS)
+      $(TDIR)\$*.res
+      $(olelibsmt) $(APPLIBS)
+  &lt;&lt;
+ </FONT> </PRE>
+
+<P>
+The WIN32.MAK makefile include is located in the \MSSDK\INCLUDE directory
+of the installed Win32 Platform SDK. WIN32.MAK is included at the start of
+the makefiles of all code samples in this tutorial series.
+
+<P ALIGN=CENTER><A HREF="#top" TARGET="_self">
+ <IMG SRC="pagetop.GIF"
+ WIDTH="11" HEIGHT="15" BORDER="0" ALT="Top">
+ Back to page top</A>
+
+<P><TABLE WIDTH=100%><TR>
+<TD HEIGHT=2 BGCOLOR="#00EEFF"></TD></TABLE>
+
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+&#169; 1997 Microsoft Corporation</FONT>
+
+</FONT>
+
+</body>
+
+</html>

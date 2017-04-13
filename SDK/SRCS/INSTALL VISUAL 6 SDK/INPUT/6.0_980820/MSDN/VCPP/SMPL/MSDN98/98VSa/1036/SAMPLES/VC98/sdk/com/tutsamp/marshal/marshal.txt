@@ -1,0 +1,128 @@
+
+MARSHAL - Standard Marshaling of Custom Interfaces
+
+
+SUMMARY
+=======
+
+The MARSHAL sample anticipates the interaction of a client and
+out-of-process server in the LOCCLIEN and LOCSERVE samples. For a client
+like LOCCLIEN to use the COM objects in an out-of-process server like
+LOCSERVE requires marshaling the car-related interfaces used in the
+previous COM samples of this series. The MARSHAL sample creates a
+proxy/stub DLL that provides standard marshaling for the ICar, IUtility,
+and ICruise custom interfaces.
+
+The Microsoft Interface Definition Language (MIDL) compiler is used
+to compile the interface specifications (expressed using the MIDL language
+in the MICARS.IDL file). MIDL.EXE is a utility provided as part of the
+Microsoft Platform SDK. The MIDL compilation of MICARS.IDL generates
+additional source files: MICARS.H, MICARS_I.C, MICARS_P.C, and DLLDATA.C.
+
+In the series of COM Tutorial code samples, MARSHAL works with the
+LOCSERVE and LOCCLIEN samples to illustrate a COM client using the
+interfaces on COM objects in an out-of-process local server. In this
+sample series, only standard marshaling is used for the custom ICar,
+IUtility, and ICruise interfaces. Later samples in the series which use
+these interfaces across apartment, process, or machine boundaries (for
+example, APTSERVE, APTCLIEN, and REMCLIEN) also rely on MARSHAL.DLL for
+standard marshaling of these interfaces.
+
+The MARSHAL sample demonstrates a simple and efficient way to create a
+marshaling DLL for custom interfaces. Default definitions are generated
+for the DllMain, DllGetClassObject, DllCanUnloadNow, GetProxyDllInfo,
+DllRegisterServer, and DllUnregisterServer functions. With this technique,
+all that is needed is a makefile, a .DEF file, and an input .IDL file
+specifying the interfaces. However, there may be occasions when you want
+more control over the content of the marshaling DLL. For example, you may
+want to perform some action within DllMain during DLL_PROCESS_ATTACH, you
+may want to code explicit control over the registration and unregistration
+of the marshaling server, or you may want to add standard module version
+information to the DLL resources. For coverage of these areas, see the
+subsequent MARSHAL2 sample. MARSHAL2 produces a marshaling DLL that
+marshals the same custom interfaces as MARSHAL. When registered,
+MARSHAL2.DLL is functionally equivalent to MARSHAL.DLL and replaces it.
+The makefile for the MARSHAL2.DLL does not automatically register the
+server to achieve this replacement. You must enable this in MARSHAL2's
+makefile. For the MARSHAL2 lesson, see MARSHAL2.HTM.
+
+For functional descriptions and a tutorial code tour of MARSHAL, see the
+Code Tour section in MARSHAL.HTM. For details on setting up the
+programmatic usage of MARSHAL.DLL, see the Usage section in MARSHAL.HTM.
+To read MARSHAL.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the MARSHAL lesson in the table of lessons. You can also do the same
+thing by double-clicking the MARSHAL.HTM file after locating the main
+tutorial directory in Windows Explorer. For more details on the LOCCLIEN
+client and the LOCSERVE server and how MARSHAL.DLL supports their
+operation, see LOCSERVE.HTM and LOCCLIEN.HTM in the main tutorial
+directory. Because those code samples rely on MARSHAL.DLL, you must build
+MARSHAL DLL before building or running LOCCLIEN and LOCSERVE. MARSHAL's
+makefile automatically registers MARSHAL's proxy and stub interface
+marshalers in the system registry. This registration must be done before
+these interfaces can be used by COM clients or servers in LOCSERVE,
+LOCCLIEN, and later samples of the series.
+
+MARSHAL's self-registration is done using the REGISTER.EXE utility built
+in the REGISTER sample. To build or run MARSHAL, you must build the
+REGISTER code sample first.
+
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE
+is Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+
+Usage
+-----
+
+MARSHAL.DLL is built solely as a marshaling DLL for the specified
+interfaces. Although it can be implicitly loaded by linking to its
+associated .LIB file, it is normally used on behalf of a COM client that
+is using the interfaces across apartment, process, or machine boundaries.
+In these cases COM automatically loads this DLL as needed. Before COM can
+find and load the MARSHAL DLL to support marshaling of its supported
+interfaces, the MARSHAL server must be registered in the registry as the
+marshaling server for those interfaces. MARSHAL is a self-registering
+in-process server.
+
+The makefile that builds this sample automatically registers the server in
+the registry. You can manually initiate its self-registration by issuing
+the following command at the command prompt in the MARSHAL directory:
+
+  nmake register
+
+This assumes that you have a compilation environment set up. If not, you
+can also directly invoke the REGISTER.EXE command at the command prompt
+while in the MARSHAL directory.
+
+  ..\register\register.exe marshal.dll
+
+These registration commands require a prior build of the REGISTER sample
+in this series, as well as a prior build of MARSHAL.DLL.
+
+In this series, the makefiles use the REGISTER.EXE utility from the
+REGISTER sample. Recent releases of the Microsoft Platform SDK and
+Visual C++ include a utility, REGSVR32.EXE, which can be used in a
+similar fashion to register in-process servers and marshaling DLLs.
+
+
+FILES
+=====
+
+Files        Description
+
+MARSHAL.TXT  This file.
+MAKEFILE     The generic makefile for building the MARSHAL.DLL
+             code sample.
+MICARS.IDL   The MIDL interface specifications for ICar, IUtility,
+             and ICruise.
+MARSHAL.DEF  The module definition file. Exports server housing functions.
+MICARS.H     Generated by compiling MICARS.IDL. The interface include
+             file for the specified interfaces.
+MICARS_I.C   Generated by compiling MICARS.IDL. The data definitions
+             of the GUIDs for the marshaled interfaces.
+MICARS_P.C   Generated by compiling MICARS.IDL. The actual proxy and
+             stub functions for the interface methods.
+DLLDATA.C    Generated by compiling MICARS.IDL. Contains routines for
+             the proxies and default definitions for the DllMain,
+             DllRegisterServer, and DllUnregisterServer functions.

@@ -1,0 +1,198 @@
+
+DCDSERVE - DCOM Server Using Security
+
+
+SUMMARY
+=======
+
+The DCOMDRAW, DCDSERVE, and DCDMARSH samples together form a distributed
+drawing application. Using Distributed COM (DCOM) technology, they allow
+users on different client machines in a network to interactively draw on a
+shared drawing. All DCOMDRAW clients see the same drawing and any client
+can take ownership of the pen to draw. The user of DCOMDRAW can use a
+mouse or tablet device to draw in the client window and can choose the
+color and width of the electronic ink. As clients draw, the application
+echoes the drawing activity from DCDSERVE to all connected clients using
+DCOM over the network. Although these samples do not build an optimized
+and complete application, the functionality is suggestive of the shared
+whiteboards offered by some workgroup applications.
+
+In addition to providing a standard way to construct applications from
+re-usable software components, COM technology fosters a strong
+architectural separation between client and server. This separation has
+been the repeated pattern in previous samples of this series. For example,
+the STOSERVE server houses a COPaper COM object that is used by the
+STOCLIEN client. Although they are a client/server pair, the STOCLIEN and
+STOSERVE samples use an in-process server for the COPaper COM object. With
+the DCOMDRAW and DCDSERVE client/server samples the architectural
+separation between client and server is retained but the COPaper COM
+object is housed in an out-of-process server, DCDSERVE. COPaper implements
+a custom ISharePaper interface to permit multiple clients to use the
+COPaper object simultaneously. The application also requires a DCDMARSH
+server to provide standard marshaling for the custom interfaces used
+across process and machine boundaries.
+
+Although DCOMDRAW, DCDSERVE, and DCDMARSH can work on the same machine
+across process boundaries, the main goal is to provide a distributed
+application that enables multiple DCOMDRAW clients on different machines
+to access a shared single drawing object housed in a DCDSERVE server
+running on a common server machine. A typical scenario would have numerous
+client machines hooked to an intranet consisting of a Windows NT network
+domain or peer-to-peer workgroup. DCOMDRAW can then run on any of these
+client machines. DCDSERVE is installed and runs on a common server machine
+in the domain. The user of the DCOMDRAW client can interactively choose
+the remote server machine to determine which DCDSERVE COM server to use
+for the shared drawing.
+
+Like the STOSERVE sample, which provided the CLSID_DllPaper component,
+DCDSERVE provides the CLSID_SharePaper component. Using this component,
+DCDSERVE uses the SharePaper comonent to manage a shared, single COPaper
+COM object that models a sheet of white drawing paper. Interface methods
+on COPaper objects enable free-form drawing on the paper surface using
+"ink" of specified color and width. This functionality is
+outwardly similar to the "scribble" tutorial samples in many
+versions of the Microsoft Visual C++ product. The electronic drawing
+paper features of COPaper objects are available to clients through a
+custom ISharePaper interface. COPaper implements the ISharePaper
+interface. A clear architectural distinction is kept between client and
+server. No graphical user interface (GUI) is provided by COPaper. Instead,
+the COPaper object relies on the client for all GUI behavior. COPaper
+encapsulates only the server-based capture and storage of the drawn ink
+data.
+
+The ink data that is drawn on the COPaper surface can be stored in and
+loaded from compound files. The ISharePaper::Save and ISharePaper::Load
+method implementations in COPaper use structured storage to store the
+current data of the shared drawing in a compound file kept with DCDSERVE
+on the machine acting as the common server.
+
+The primary focus of this sample is how to construct a single, shared, and
+thread-safe COM object on the server side and how to take care of DCOM
+security in the networked context of multiple clients of that shared
+object. The sample covers both process and activation DCOM security. A
+simple shared drawing sample is used to study these issues in a
+Distributed COM client/server application.
+
+COPaper is housed in an out-of-process server and is made publicly
+available as a custom COM component. Like all other servers in this
+tutorial series, DCDSERVE.EXE is a self-registering COM server. It makes
+the COPaper object type available to clients as the SharePaper component
+using a CLSID_SharePaper registration in the Registry.
+
+As was the case in the previous STOSERVE server, the COPaper object in
+DCDSERVE supports connectable-object features. COPaper exposes the
+IConnectionPointContainer interface and implements an appropriate
+connection point. In this context, an outgoing custom IPaperSink interface
+is declared for use in sending notifications to the DCOMDRAW client. The
+use of COM connection-point technology in this sample is significant
+because it is used in a DCOM setting across machine boundaries. The
+connection points are used to echo highly interactive mouse-motion events
+across the network to DCOMDRAW clients that are connected to the same
+COPaper drawing. Despite the overhead of DCOM, RPC, and marshaling, the
+DCDSERVE and DCOMDRAW samples demonstrate that COM's connectable-object
+technology can play a role in DCOM-based applications.
+
+The two ISharePaper and IPaperSink custom interfaces are declared in
+PAPINT.H, which is located in the common INC directory. PAPINT.H is
+automatically generated in the DCDMARSH sample. The GUIDs for the
+interfaces and objects are defined in PAPGUIDS.H located in that same
+directory.
+
+The CThreaded facility in APPUTIL is used by DCDSERVE to achieve thread
+safety, as it was in the FRESERVE sample. COPaper objects are derived from
+the CThreaded class and inherit its OwnThis and UnOwnThis methods. These
+methods allow only one thread at a time to have access to the DCDSERVE
+server and to the shared single COPaper object managed by the server.
+Because the Single Threaded Apartment (STA) model is in effect for both
+DCDSERVE and DCOMDRAW, this thread safety is not actually needed for
+COPaper but is still appropriate for the DCDSERVE server housing.
+
+Because client and server run in separate processes--usually on different
+machines--both DCDSERVE and DCOMDRAW rely on standard marshaling for the
+ISharePaper and IPaperSink custom interfaces. This support is provided by
+the DCDMARSH code sample, so you must also build (or otherwise register)
+DCDMARSH.DLL on both machines prior to building and running DCDSERVE and
+DCOMDRAW across machines.
+
+To set up for the proper operation of a DCOMDRAW client on one machine to
+control the common DCDSERVE server on another, both machines must have
+DCOM (Distributed COM) installed. DCOM is included in Windows NT 4.0 or
+later and in Windows 98. For Windows 95 you must install the DCOM95 add
+on. The multiple machines must be connected in a properly configured
+network. For details on setting up a network, see your Windows NT product
+documentation or the Windows NT Resource Kit. For more details on machine
+and network setup for running with DCOM, see also the "Network and
+Setup Issues" section at the end of the REMCLIEN lesson. Note that
+the less restrictive security in Windows 95 and Windows 98 prevents the
+SCM under DCOM from automatically launching DCDSERVE on behalf of a remote
+DCOMDRAW client. You must manually pre-launch DCDSERVE on these operating
+systems if you are attempting a remote load of DCDSERVE from a DCOMDRAW
+running on another machine. The DCDSERVE and DCOMDRAW lessons assume that
+you install DCDSERVE.EXE on a machine running Windows NT Server or
+Workstation.
+
+For functional descriptions and a tutorial code tour of DCDSERVE, see the
+Code Tour section in DCDSERVE.HTM. For details on setting up the
+programmatic usage of DCDSERVE, see the Usage section in DCDSERVE.HTM. To
+read DCDSERVE.HTM, run TUTORIAL.EXE in the main tutorial directory and
+click the DCDSERVE lesson in the table of lessons. You can do the same
+thing in the Windows Explorer by double-clicking the DCDSERVE.HTM file
+after locating the main tutorial directory. For more details on the
+DCOMDRAW client and how it works with DCDSERVE.DLL, see DCOMDRAW.HTM in
+the main tutorial directory. You must build DCDSERVE.DLL before building
+or running DCOMDRAW.
+
+DCDSERVE's makefile automatically registers DCDSERVE's SharePaper COM
+component in the registry. This component must be registered before
+DCDSERVE is available to outside COM clients as a server for that
+component. To register the SharePaper component, the makefile uses the
+REGISTER.EXE utility built in the REGISTER sample. Therefore you must
+build the REGISTER sample before you can build or run DCDSERVE.
+
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+
+Usage
+-----
+
+The DCDSERVE executable is meant to be used as an out-of-process COM
+server. Out-of-process servers like DCDSERVE are registered in the system
+registry, and DCDSERVE has built-in support for registering its
+components. It accepts the following command line switches to register and
+unregister:
+
+
+FILES
+=====
+
+Files        Description
+
+DCDSERVE.TXT Short description of sample.
+MAKEFILE     The generic makefile for building the DCDSERVE.EXE
+             code sample of this tutorial lesson.
+DCDSERVE.H   The include file for the DCDSERVE application. Contains
+             class declarations, function prototypes, and resource
+             identifiers.
+DCDSERVE.CPP The main implementation file for DCDSERVE.EXE. Has WinMain
+             and CMainWindow implementation, as well as the main menu
+             dispatching.
+DCDSERVE.RC  The resource definition file for the executable.
+DCDSERVE.PAP A default paper drawing file for the application.
+DCDSERVE.ICO The icon resource for the executable.
+SERVER.H     The include file for the server control C++ object. Also
+             used for DCDSERVE externs.
+SERVER.CPP   The implementation file for the server control object.
+             Manages object counts, server lifetime, and the creation
+             of class factories.
+FACTORY.H    The include file for the server's class factory COM objects.
+FACTORY.CPP  The implementation file for the server's class factories.
+CONNECT.H    The include file for the connection point enumerator,
+             connection point, and connection enumerator classes.
+CONNECT.CPP  The implementation file for the connection point enumerator,
+             connection point, and connection enumerator objects.
+PAPER.H      The include file for the COPaper COM object class.
+PAPER.CPP    The implementation file for the COPaper COM object class
+             and the connection points.

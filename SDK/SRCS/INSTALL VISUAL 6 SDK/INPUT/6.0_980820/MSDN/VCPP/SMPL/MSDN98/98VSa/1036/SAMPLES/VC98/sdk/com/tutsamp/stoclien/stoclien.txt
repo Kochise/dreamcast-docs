@@ -1,0 +1,112 @@
+
+STOCLIEN - Client of structured storage server
+
+
+SUMMARY
+=======
+
+The STOCLIEN sample introduces a simple drawing application. The user can
+use a mouse or tablet device to do free-form drawing in the client window.
+The color and width of the electronic ink can be chosen, and the drawings
+can be saved in files.
+
+The functionality is externally similar to other "scribble" C++ tutorial
+samples. The difference in the STOCLIEN/STOSERVE samples is an internal
+architecture based on COM technology. A clear architectural distinction is
+kept between COM client and COM server. A COPaper COM object encapsulates
+only the server-based storage of the drawing paper data: No graphical user
+interface (GUI) behavior is provided on the server side. All GUI behavior
+is isolated in the client. The data managment and storage features of
+COPaper objects are available only through an COM custom interface,
+IPaper.
+
+STOCLIEN can load and save its drawings in the structured storage of COM
+compound files. The principal focus of the STOCLIEN sample is how the
+client uses this structured storage and how it directs a server component
+to use this storage. The programming of structured storage services is
+shown in the sample.
+
+The STOCLIEN sample creates and uses the connectable COPaper COM object
+that is provided as the CLSID_DllPaper component in the STOSERVE server.
+The STOCLIEN client creates a COPaper object and controls it through the
+IPaper interface that the object exposes. STOCLIEN obtains drawing data
+from the user and graphically represents it in a window that it manages.
+STOCLIEN uses COPaper's IPaper interface to save the drawing data in
+COPaper and to direct file storage operations on this data.
+
+STOCLIEN cooperates with the COPaper to load and save COPaper's drawing
+data. STOCLIEN obtains an IStorage interface for the storage object in a
+compound file. In its load and save operations, STOCLIEN passes a pointer
+to this IStorage interface to COPaper in the server. COPaper uses the
+provided IStorage to create streams in the storage. COPaper can then use
+the standard IStream interface for reading and writing the drawing data it
+manages.
+
+COPaper only manages the drawing data; it performs no GUI actions.
+STOCLIEN provides the GUI for the drawing application. It encapsulates
+this in a central CGuiPaper C++ object.
+
+STOCLIEN also implements the custom IPaperSink interface in a COPaperSink
+COM object and connects this interface to an appropriate connection point
+in the server's COPaper object. COPaper uses the connected IPaperSink
+interface to send notifications back to STOCLIEN. The normal GUI
+repainting of COPaper's drawing data is done in STOCLIEN using COPaper's
+connectable object technology.
+
+For functional descriptions and a tutorial code tour of STOCLIEN, see the
+Code Tour section in STOCLIEN.HTM. For details on the external user
+operation of STOCLIEN, see both the Usage and Operation sections in
+STOCLIEN.HTM. To read STOCLIEN.HTM, run TUTORIAL.EXE in the main tutorial
+directory and click the STOCLIEN lesson in the table of lessons. You can
+also achieve the same thing by clicking the STOCLIEN.HTM file after
+locating the main tutorial directory in the Windows Explorer. See also
+STOSERVE.HTM in the main tutorial directory for more details on how
+STOSERVE works and exposes its services to STOCLIEN. You must build the
+STOSERVE DLL before building STOCLIEN. The makefile for STOSERVE
+automatically registers that server in the system registry, so you must
+build STOSERVE before attempting to run STOCLIEN.
+
+For details on setting up your system to build and test the code samples
+in this COM Tutorial series, see TUTORIAL.HTM. The supplied MAKEFILE is
+Microsoft NMAKE-compatible. To create a debug build, issue the NMAKE
+command in the Command Prompt window.
+
+Usage
+-----
+
+STOCLIEN is an application that you can execute directly from Windows in
+the normal manner or from the Command Prompt window. STOCLIEN accepts an
+optional file name parameter on the command line. For example:
+
+  STOCLIEN c:\drawings\drawing.pap
+
+Where drawing.pap is a compound file containing DllPaper-compatible
+structured storage of drawing data. If no command line file name parameter
+is specified, STOCLIEN uses the default file name STOCLIEN.PAP and
+attempts to open it in the same directory as the executing STOCLIEN.EXE.
+
+
+FILES
+=====
+
+Files          Description
+
+STOCLIEN.TXT   This file.
+MAKEFILE       The generic makefile for building the code sample
+               application of this tutorial lesson.
+STOCLIEN.H     The include file for the STOCLIEN application. Contains
+               class declarations, function prototypes, and resource
+               identifiers.
+STOCLIEN.CPP   The main implementation file for STOCLIEN.EXE. Has WinMain
+               and CMainWindow implementation, as well as the main menu
+               dispatching.
+STOCLIEN.RC    The application resource definition file.
+STOCLIEN.ICO   The application icon resource.
+STOCLIEN.PAP   A default paper drawing file for the application.
+PENCIL.CUR     A pencil image for the client window cursor.
+SINK.H         The class declaration for the COPaperSink COM object class.
+SINK.CPP       Implementation file for the COPaperSink COM object class.
+PAPFILE.H      The class declaration for the CPapFile C++ class.
+PAPFILE.CPP    Implementation file for the CPapFile C++ class.
+GUIPAPER.H     The class declaration for the CGuiPaper C++ class.
+GUIPAPER.CPP   Implementation file for the CGuiPaper C++ class.
