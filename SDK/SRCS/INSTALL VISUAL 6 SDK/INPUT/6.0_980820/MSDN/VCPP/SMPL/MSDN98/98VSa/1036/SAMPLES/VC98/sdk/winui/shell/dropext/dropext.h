@@ -1,0 +1,7 @@
+
+//
+// The class ID of this menu extension class.
+//  "{A4D78B20-6E05-1069-8758-08002B2BD64F}"
+//
+DEFINE_GUID(CLSID_SampleDropExt, 0xA4D78B20, 0x6E05, 0x1069, 0x87,0x58,0x08,0x00,0x2B,0x2B,0xD6,0x4F);
+

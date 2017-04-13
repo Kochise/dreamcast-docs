@@ -1,0 +1,158 @@
+#include <preinc.h>
+#include <windows.h>
+#include <dlgs.h>
+#include <richedit.h>
+
+IconApp ICON    "reitp.ico"
+
+#include "reitp.rh"
+
+#include "reitp.dlg"
+
+#include "frmtbar.rc"
+
+LoadedMenu MENU
+{
+	POPUP	"&File"
+	{
+		MENUITEM	"&New",					IDM_NEW
+		MENUITEM	"&Open...",				IDM_OPEN
+		MENUITEM	SEPARATOR
+		MENUITEM	"E&xit",				IDM_EXIT
+	}
+#ifdef DEBUG
+	POPUP	"&Debug"
+	{
+		MENUITEM "&Trace Points...",		IDM_TRACEDLG
+		MENUITEM "&Clear Debug Screen",		IDM_CLSDBG
+	}
+#endif
+}
+
+
+FullMenu MENU
+{
+	POPUP	"&File"
+	{
+		MENUITEM	"&New",					IDM_NEW
+		MENUITEM	"&Open...",				IDM_OPEN
+		MENUITEM	"Re&vert",				IDM_REVERT
+		MENUITEM	"&Close",				IDM_CLOSE
+		MENUITEM	SEPARATOR
+		MENUITEM	"&Save",				IDM_SAVE
+		MENUITEM	"Save &As...",			IDM_SAVEAS
+		MENUITEM	SEPARATOR
+		MENUITEM	"&Print...",			IDM_PRINT
+		MENUITEM	"P&rint Setup...",		IDM_PRINTSETUP
+		MENUITEM	"Print Previe&w...",	IDM_PRINTPREVIEW
+		MENUITEM	SEPARATOR
+		MENUITEM	"E&xit",				IDM_EXIT
+	}
+	POPUP	"&Edit"
+	{
+		MENUITEM	"&Undo",				IDM_UNDO, GRAYED
+		MENUITEM	SEPARATOR
+		MENUITEM	"Cu&t",					IDM_CUT, GRAYED
+		MENUITEM	"&Copy",				IDM_COPY, GRAYED
+		MENUITEM	"&Paste",				IDM_PASTE, GRAYED
+		MENUITEM	"Paste &Special",		IDM_PASTESPECIAL, GRAYED
+		MENUITEM	"&Delete",				IDM_DELETE, GRAYED
+		MENUITEM	"Select &All",			IDM_SELECTALL
+		MENUITEM	SEPARATOR
+		MENUITEM	"&Find...",				IDM_FIND
+		MENUITEM	"&Replace...",			IDM_REPLACE
+		MENUITEM	SEPARATOR
+		MENUITEM	"&Object",				IDM_OBJECT, GRAYED
+		MENUITEM	"&Insert Object...",	IDM_INSOBJ
+		MENUITEM	SEPARATOR
+		MENUITEM	"I&nsert From File...",	IDM_INSFILE
+		MENUITEM	"Save Se&lection As...", IDM_SAVESEL
+	}
+	POPUP	"Forma&t"
+	{
+		MENUITEM "&Character...",			IDM_CHARFORMAT
+		MENUITEM "&Apply To Word",			IDM_APPLYTOWORD, CHECKED
+		MENUITEM SEPARATOR
+		MENUITEM "Su&perscript",			IDM_SUPERSCRIPT
+		MENUITEM "Su&bscript",				IDM_SUBSCRIPT
+		MENUITEM SEPARATOR
+		MENUITEM "&Left",					IDM_ALIGNLEFT
+		MENUITEM "Ce&nter",					IDM_ALIGNCENTER
+		MENUITEM "&Right",					IDM_ALIGNRIGHT
+		MENUITEM SEPARATOR
+		MENUITEM "&Indent First",			IDM_INDENTFIRST
+		MENUITEM "&Outdent First",			IDM_OUTDENTFIRST
+		MENUITEM SEPARATOR
+		MENUITEM "&Margins...",				IDM_MARGINS, GRAYED
+		MENUITEM "&Tabs...",				IDM_TABS, GRAYED
+		MENUITEM SEPARATOR
+		MENUITEM "Protecte&d",				IDM_PROTECTED
+		MENUITEM SEPARATOR
+		POPUP	 "&Word Wrap"
+		{
+			MENUITEM "&None",				IDM_NOWRAP
+			MENUITEM "to &Window",			IDM_WRAP, CHECKED
+			MENUITEM "for &Printer",		IDM_WYSIWYG
+		}
+	}
+	POPUP	"O&ptions"
+	{
+		MENUITEM "Selection &Bar",			IDM_SELBAR
+		MENUITEM "Auto &Word Selection",	IDM_AUTOWORDSEL
+		MENUITEM "Show &Margins",			IDM_SHOWMARGINS, CHECKED
+#ifdef DEBUG
+		MENUITEM SEPARATOR
+		MENUITEM "&Read Only"				IDM_READONLY
+		MENUITEM "Auto. &Horz. Scroll"		IDM_AUTOHSCROLL
+		MENUITEM "Auto. &Vert. Scroll"		IDM_AUTOVSCROLL
+		MENUITEM "Auto. Hide &Selection"	IDM_AUTOHIDESEL
+#endif	// DEBUG
+	}
+#ifdef DEBUG
+	POPUP	"&Debug"
+	{
+		MENUITEM "&Trace Points...",		IDM_TRACEDLG
+		MENUITEM "&Dump ED",				IDM_DBGPED
+		MENUITEM "&Get Text",				IDM_GETTEXT
+		MENUITEM "&Clear Debug Screen",		IDM_CLSDBG
+		MENUITEM "&Ignore Left Clicks",		IDM_IGNORELEFTCLICK
+		MENUITEM "&Eat 'e's",				IDM_EATES
+		MENUITEM "Ignore &File Drops",		IDM_IGNOREDROPS
+		MENUITEM "&Bottomless",				IDM_BOTTOMLESS
+		MENUITEM "&Accept Only Text",		IDM_TEXTONLY
+		MENUITEM "&Paste Plain Text",		IDM_PASTEPLAINTEXT
+		MENUITEM "Paste &RTF As Text",		IDM_PASTERTFASTEXT
+		MENUITEM "Paste Text and &Objects",	IDM_PASTETXTOBJ
+		MENUITEM "Refuse &MSGraph Objects",	IDM_REFUSEGRAPH
+		MENUITEM "Big Text &Limit",			IDM_BIGLIMIT
+		MENUITEM "Fill 'er &up",			IDM_FILLERUP
+		MENUITEM "Print Previe&w via Metafile", IDM_PPMETA
+		MENUITEM "Enable pa&ste in read-only", IDM_ENABLEPASTEREADONLY
+		MENUITEM "E&nable cut in read-only", IDM_ENABLECUTREADONLY
+		MENUITEM "Enable drag in read-onl&y", IDM_ENABLEDRAGREADONLY
+		MENUITEM "Swap mo&ve/copy on drag",	IDM_SWAPDRAGEFFECT
+		MENUITEM "Hide",					IDM_HIDE
+	}
+#endif	// DEBUG
+}
+
+
+WARPKEYS	ACCELERATORS
+BEGIN
+	"G",	IDM_GOTOCURSOR,		VIRTKEY, CONTROL
+	"G",	IDM_MOVECURSOR,		VIRTKEY, CONTROL, SHIFT
+	"I",	TBI_IncreaseIndent,	VIRTKEY, ALT
+	"O",	TBI_DecreaseIndent,	VIRTKEY, ALT
+	"B",	TBI_AccelBold,		VIRTKEY, CONTROL
+	"I",	TBI_AccelItalic,	VIRTKEY, CONTROL
+	"U",	TBI_AccelUnderline,	VIRTKEY, CONTROL
+END
+
+
+#define szModule	"reitp\0"
+#define szTarget	"reitp.exe\0"
+
+#define szComment			"Microsoft Windows(TM) RichEdit ITP\0"
+#define szDescription		"Microsoft Windows(TM) RichEdit ITP\0"
+#define szIntlComment		"Microsoft Windows(TM) RichEdit ITP\0"
+#define szIntlDescription	"Microsoft Windows(TM) RichEdit ITP\0"

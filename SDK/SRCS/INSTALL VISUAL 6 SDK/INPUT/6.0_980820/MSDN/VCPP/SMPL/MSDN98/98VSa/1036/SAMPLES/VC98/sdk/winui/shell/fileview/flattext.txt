@@ -1,0 +1,47 @@
+Overview of Windows 95 File Viewing
+-----------------------------------
+
+The Explorer is the centralized shell tool in which the end user will
+browse through information on the file system and the network under
+Windows 95.  One of the features of the Explorer is the ability to
+quickly view the contents of a file without having to run the full
+application that created it and without even requiring the presence of
+that application.  In order to view file contents, the end user selects
+one or more files in the Explorer and chooses the "Quick View" menu
+item from the context menu of that selection or from the
+Explorer's File menu.
+
+In response, the Explorer will invoke file-specific viewers for each
+selected file, using the class identifier (an OLE 2 CLSID) of the file to
+determine which viewer to invoke if the file is an OLE 2 compound file.
+Otherwise Explorer uses the extension of the file to determine which
+viewer to use.  A file viewer associates itself with file classes and
+extensions in the system registry.
+
+A file viewer, referred to in this document as a FileViewer, is an OLE 2
+component object (not a compound document object) implemented inside an
+in-process server DLL which itself is associated with the FileViewer's
+CLSID.  These components are responsible for providing all the top-level
+user interface for viewing a file including menu items, toolbar, and
+status bar as described in the FileViewer User Interface Guidelines.
+
+The FileViewer objects themselves, which are separate from the class
+factory objects in their respective in-process servers, implement the
+standard OLE 2 interface IPersistFile as well as a new interface called
+IFileViewer.  The Explorer itself does not interact directly with
+FileViewer objects--instead, the Explorer launches an instance of a
+small program called QVStub (Quick View Stub, a Windows EXE but not a
+full application) for each file to view that serves to define a process,
+with its own message queue, for each FileViewer.  QVStub is responsible
+for associating a pathname with a FileViewer, instantiating that
+FileViewer object, and instructing it to load the file and display it
+for viewing.
+
+Because a FileViewer is an OLE 2 component object, additional interfaces
+and functionality can be added later in future versions of Windows to
+support new and interesting features.  For example, the FileViewer can
+act as an OLE 2 container application and in-place activate embedded
+objects inside the displayed file.  It could allow the end user to
+make a selection in the document and copy it to the clipboard or source
+it in a drag & drop operation.  But such functionality is entirely up to
+the implementor of the FileViewer component.

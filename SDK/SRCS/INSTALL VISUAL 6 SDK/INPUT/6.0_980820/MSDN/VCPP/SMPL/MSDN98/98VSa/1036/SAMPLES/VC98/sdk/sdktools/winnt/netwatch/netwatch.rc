@@ -1,0 +1,134 @@
+#include <windows.h>
+#include "netwatch.h"
+#include "rcids.h"
+
+#include "netwatch.rcv"
+
+#include "netwatch.dlg"
+
+IDD_ICONOFF     ICON off.ico
+IDD_ICONON      ICON on.ico
+IDB_LB          BITMAP "filebmps.bmp"
+
+IDD_MENUPROPS MENU
+{
+	POPUP "&Connection"
+	{
+		MENUITEM "&Properties...",                      IDM_PROPERTIES
+		MENUITEM "Clo&se Resource\tDel",                IDM_DELETERESOURCE
+	}
+}
+
+IDD_MENU MENU
+{
+	POPUP "&Connection"
+	{
+		MENUITEM "&Properties...",                      IDM_PROPERTIES
+		MENUITEM "Add &Computer...\tIns",                    IDM_SELECTCOMPUTER
+		MENUITEM "Clo&se Resource\tDel",                IDM_DELETERESOURCE
+#ifdef DOSHAREMANAGE
+		MENUITEM SEPARATOR
+		MENUITEM "&Manage Shares...\tCtrl+S",           IDM_SHAREMANAGE
+#endif
+		MENUITEM SEPARATOR
+		MENUITEM "Connect &Network Drive...",			IDM_CONNECTDRIVE
+		MENUITEM "&Disconnect Network Drive...",		IDM_DISCONNECTDRIVE
+		MENUITEM SEPARATOR
+		MENUITEM "E&xit",                               IDM_EXIT
+	}
+	POPUP "&Options"
+	{
+		MENUITEM "Show &Open Files\tCtrl+O",            IDM_SHOWFILES
+		MENUITEM "Show &Hidden Shares\tCtrl+H",         IDM_SHOWHIDDEN
+		MENUITEM "Show &In Use Shares Only\tCtrl+I",    IDM_SHOWINUSE
+		MENUITEM SEPARATOR
+		MENUITEM "&No Menu Bar and Title\tCtrl+N",      IDM_NOMENUBAR
+		MENUITEM "&Always on Top\tCtrl+A",              IDM_TOPMOST
+		MENUITEM SEPARATOR
+		MENUITEM "&Refresh\tF5",                        IDM_REFRESH
+		MENUITEM SEPARATOR
+		MENUITEM "A&bout Net Watch..." 					IDM_ABOUT
+	}
+}
+
+IDD_ACCL ACCELERATORS
+{
+	VK_F5,      IDM_REFRESH, VIRTKEY
+	"^C",       IDM_CONNECTDRIVE
+	"^D",       IDM_DISCONNECTDRIVE
+	"^O",       IDM_SHOWFILES
+	"^H",       IDM_SHOWHIDDEN
+	"^I",       IDM_SHOWINUSE
+	"^N",       IDM_NOMENUBAR
+	"^A",       IDM_TOPMOST
+#ifdef DOSHAREMANAGE
+	"^S",		IDM_SHAREMANAGE
+#endif
+	VK_RETURN,  IDM_PROPERTIES, VIRTKEY, ALT
+}
+
+STRINGTABLE
+{
+	IDS_APPNAME,            TEXT("Net Watch")
+	IDS_PLACEMENT,			TEXT("Placement")
+	IDS_KEY,				TEXT("Software\\Microsoft\\NetWatch")
+	IDS_TIMERINTERVAL,		TEXT("TimerInterval")
+	IDS_TOPMOST,			TEXT("TopMost")
+	IDS_HIDETITLE,			TEXT("HideTitle")
+	IDS_MENUFLAGS,			TEXT("MenuFlags")
+	IDS_SERVERS,			TEXT("Servers")
+
+	IDS_ERRENUMFILES,		TEXT("Error enumerating files")
+	IDS_ERRENUMUSERS,		TEXT("Error enumerating users")
+	IDS_ERRENUMSHARES,		TEXT("Error enumerating shares")
+	IDS_ERRMEMORY,			TEXT("Insufficient memory to complete the operation.")
+	IDS_ERRWFW,				TEXT("Net Watch cannot view the selected computer. This may be because the selected computer is not running Windows NT.")
+	IDS_ERRACCESS,			TEXT("You do not have permissions to view the users on %s. Do you want to just view the shares?")
+	IDS_ERRADDCOMPUTER,		TEXT("Could not add %s. ")
+	IDS_ERRACTION,			TEXT("The action could not be completed. ");
+
+	IDS_HIDDEN+0,			TEXT("No")
+	IDS_HIDDEN+1,			TEXT("Yes")
+	IDS_GUEST,				TEXT(" (Guest)")
+	IDS_NOLIMIT,			TEXT("Unlimited")
+	IDS_FMTUSER,			TEXT("%s from \\\\%s");
+
+	IDS_DELETERESOURCE+TYPE_COMPUTER, TEXT("&Remove Computer\tDel")
+	IDS_DELETERESOURCE+TYPE_SHARE, TEXT("&Stop Sharing\tDel")
+	IDS_DELETERESOURCE+TYPE_USER, TEXT("Di&sconnect\tDel")
+	IDS_DELETERESOURCE+TYPE_FILE, TEXT("Clo&se Resource\tDel")
+	IDS_AREYOUSURE+TYPE_FILE,	TEXT("Forcing %s to close %s may result in loss of data.  Do you want to continue?")
+	IDS_AREYOUSURE+TYPE_USER,	TEXT("The selected user has open resources.  Disconnecting the user may cause loss of data.  Are you sure you want to disconnect %s from all connected resources?")
+	IDS_AREYOUSURE+TYPE_SHARE,	TEXT("At least one user is connected to this shared directory.  Loss of data may result if you stop sharing this directory.  Do you want to continue?")
+	IDS_AREYOUSUREDISUSER,			TEXT("Are you sure you want to disconnect %s from all connected resources?")
+
+	IDS_SHAREPROPS+0,		TEXT("Share Name:")         // bitmap #0 (folder)
+	IDS_SHAREPROPS+1,		TEXT("Path:")
+	IDS_SHAREPROPS+2,		TEXT("Comment:")
+	IDS_SHAREPROPS+3,		TEXT("User Limit:")
+	IDS_SHAREPROPS+4,		TEXT("Connected Users:")
+	IDS_SHAREPROPS+15,		TEXT("Share")
+
+	IDS_SERVERPROPS+0,		TEXT("Server Name:")
+	IDS_SERVERPROPS+1,		TEXT("Comment:");
+	IDS_SERVERPROPS+2,		TEXT("UserPath:");
+	IDS_SERVERPROPS+3,		TEXT("Version:");
+	IDS_SERVERPROPS+4,		TEXT("Server hidden:");
+	IDS_SERVERPROPS+15,		TEXT("Server")
+
+	IDS_FILEPROPS+0,		TEXT("File:")               // bitmap #2 (file)
+	IDS_FILEPROPS+1,		TEXT("Opened By:")          // bitmap #7 (user)
+	IDS_FILEPROPS+2,		TEXT("For:")                // bitmap #3 or #4 (read/write)
+	IDS_FILEPROPS+3,		TEXT("Locks:")
+	IDS_FILEPROPS+13,		TEXT("Write")
+	IDS_FILEPROPS+14,		TEXT("Read")
+	IDS_FILEPROPS+15,		TEXT("File")
+
+	IDS_USERPROPS+0,		TEXT("User Logged On:")     // bitmap #7 (user)
+	IDS_USERPROPS+1,		TEXT("From Computer:")      // bitmap #1 (computer)
+	IDS_USERPROPS+2,		TEXT("To Share Name:")      // bitmap #0 (folder)
+	IDS_USERPROPS+3,		TEXT("Connected Since:")
+	IDS_USERPROPS+4,		TEXT("Idle Time:")
+	IDS_USERPROPS+5,		TEXT("Open Files:")
+	IDS_USERPROPS+15,		TEXT("User")
+}

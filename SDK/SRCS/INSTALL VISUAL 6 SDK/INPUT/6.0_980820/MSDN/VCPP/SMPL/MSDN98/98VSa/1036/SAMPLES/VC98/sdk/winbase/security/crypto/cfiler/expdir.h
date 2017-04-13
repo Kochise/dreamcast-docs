@@ -1,0 +1,14 @@
+// EXPDIR.H
+
+#ifndef EXPDIR_INCLUDED
+#define EXPDIR_INCLUDED
+
+BOOL ExpDir(LPCINFO);
+VOID ExpDirExit(LPCINFO, HANDLE);
+BOOL ConstructDirName(LPCINFO, LONG, LPTSTR);
+LONG GetDirDepth(LPTSTR, LPTSTR*);
+BOOL CollapseDir(LPCINFO, LONG, LONG);
+VOID ConstructLBEntry(LONG, LPTSTR, LPTSTR);
+BOOL FullExpand(LPCINFO);
+
+#endif

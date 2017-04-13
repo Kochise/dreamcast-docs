@@ -1,0 +1,360 @@
+<!doctype html public "-//IETF//DTD HTML//EN">
+<HTML>
+
+<HEAD>
+<TITLE>NTLM Authentication over HTTP</TITLE>
+</HEAD>
+
+<BODY BGCOLOR=#FFFFFF BGPROPERTIES=FIXED>
+<HR>
+
+<TABLE>
+<TR VALIGN=CENTER>
+<TD><IMG SRC="iis_t.gif" ALT=""></TD>                                                    
+<TD><FONT SIZE=7 COLOR=#802020><B>NT Authentication over HTTP</B></FONT></TD>
+</TABLE>                          
+<HR>
+
+<P>
+This document outlines how to integrate Microsoft's user authentication
+protocol into standard HTTP authentication messages. This is useful
+for supporting secure browsing on Intranets based on Windows NT
+Domain Security and of the Microsoft Network Internet online service
+which is adopting this protocol in its Web services for MSN membership.
+<P>
+
+<FONT COLOR=#000080><H2>1.0 WWW-Authenticate</H2></FONT>
+
+If authentication is required for a requested resource, then the
+HTTP server returns a 401 (unauthorized) response message. Section
+10.17 of the HTTP/1.0 RFC defines the <TT>WWW-Authenticate</TT>
+response header which must be included in the 401 response message.
+Furthermore, the specification provides that multiple WWW-Authenticate
+response headers may be returned. This indicates that multiple
+authentication means are available and the client may choose one
+of them.
+<P>
+The HTTP/1.0 specification defines two kinds of authentication:
+(1) an &quot;Access Authentication&quot; scheme which allows for
+a very simple challenge-response; and (2) the &quot;BASIC&quot;
+authentication scheme where the username/password is sent over
+in cleartext to the server. Obviously, the latter provides weak
+security unless the channel is first link encrypted with SSL or
+PCT. Even with link encryption, Basic Authentication is inappropriate
+where it is unacceptable for servers to directly see users passwords
+such as corporate Intranets and Internet online services comprised
+of third-party sites.
+<P>
+Although only inferred, HTTP/1.0 does permit other authentication
+schemes by way of &quot;WWW-Authenticate&quot;. This extensibility
+allows for the more complex MSN and NT challenge-response authentication
+mechanisms to be implemented.
+<P>
+
+<FONT COLOR=#000080><H3>1.1 WWW-Authenticate and NT Authentication</H3></FONT>
+
+The NT challenge-response sequence is a bit more complicated than
+that provided by the simple challenge-response scheme in the HTTP/1.0
+specification. This is due, in part, to the fact that the challenge
+is based on the username, thus requiring more than just a single
+challenge-response sequence.
+<P>
+If authentication is required for a requested resource and NT
+Authentication is enabled, the server will respond with a response
+header as follows:
+<P>
+
+<FONT COLOR=#202080><PRE>
+	WWW-Authenticate = "WWW-Authenticate" ":" "NTLM" SP ntlm-chaldata CRLF
+
+	ntlm-chaldata   = &lt;base64  encoding of challenge data&gt;
+</PRE></FONT>
+<P>
+
+The tag &quot;NTLM&quot; signifies NT Authentication package.
+The <TT>ntlm-chaldata</TT> is not returned in the initial response
+header. The protocol details are described later in this document
+in the section <I>NTLM Authentication Scheme</I>.
+<P>
+
+<FONT COLOR=#000080><H3>1.2 WWW-Authenticate and MSN Authentication</H3></FONT>
+
+<P>
+In an MSN authentication environment, a <TT>WWW-Authenticate</TT>
+response header may indicate that MSN authentication is available.
+It will be formatted as follows:
+<P>
+
+<FONT COLOR=#202080><PRE>
+	WWW-Authenticate = "WWW-Authenticate" ":" "MSN" SP msn-chaldata CRLF 
+
+	msn-chaldata     = &lt;base64 encoding of challenge data&gt;
+</PRE></FONT>
+<P>
+
+The MSN authentication sequence is virtually identical to the
+NTLM authentication sequence and is described later in this document.
+The <TT>msn-chaldata</TT> is not returned in the initial response
+header.
+<P>
+
+<FONT COLOR=#000080><H3>1.3 Privacy and Challenge-Response Authentication</H3></FONT>
+
+<P>
+Although challenge-response authentication affords some measure
+of security against impersonation and password compromise, many
+schemes are not necessarily foolproof. The idea behind a challenge-response
+protocol is that the password in never actually sent over the
+network. User authentication in Windows NT and MSN uses the NTLM
+challenge-response protocol.
+<P>
+As computers become increasingly faster and cheaper, brute force
+attacks on challenge &amp; response data will become easier. However,
+if the challenge/response data itself is encrypted, it helps to
+prevent snooping and insure better security. Microsoft recommends
+using SSL or PCT during the challenge/response sequence.
+<P>
+
+<FONT COLOR=#000080><H2>2.0 NT Authentication Components</H2></FONT>
+
+<P>
+In order to understand how to layer NT Authentication on HTTP,
+it is helpful to understand the run-time components that are involved
+in the process. The components (typically DLLs) and calling model
+may vary slightly depending on the platform and authentication
+server used.
+<P>
+
+<FONT COLOR=#000080><H3>2.1 Security Support Provider Interface (SSPI) Specification</H3></FONT>
+
+<P>
+SSPI is an API defined by Microsoft and provided for all versions
+of Windows since Windows NT 3.5. Designed to isolate Windows NT
+and custom applications from the underlying security implementation
+so new security packages such as Kerberos could be easily added
+in the future. Application developers can use this feature by
+calling SSPI directly or writing to Microsoft RPC which handles
+these calls as part of RPC's authentication support.
+<P>
+
+See the help file <A HREF="issp.hlp">issp.hlp</A> for information on the APIs.
+<P>
+
+<FONT COLOR=#000080><H3>2.2 NT-LAN Manager (NTLM) Security Support Provider (SSP) Specification</H3></FONT>
+
+<P>
+Currently the only security package that ships with Windows Operating
+Systems is NTLM (NT-LAN Manager), a shared secret user challenge-response
+authentication protocol that supports pass-through authentication
+to a domain controller in the servers domain or in a domain trusted
+by the current domain's domain controller. This is implemented
+in SECUR32.DLL on Windows 95 and SECURITY.DLL on Windows NT. The
+NTLM SSP exposes an SSPI interface, callable by the operating
+system and applications.
+<P>
+
+<FONT COLOR=#000080><H3>2.3 MSN Security Support Provider (SSP) Specification</H3></FONT>
+
+<P>
+To support pass-through authentication from distributed servers
+owned by MSN and partners, MSN uses the NTLM protocol. The messages
+are the same except instead of passing requests to a domain controller
+which checks NT's Security Accounts Manager (SAM) database, servers
+pass requests to agents in the MSN data center which check MSN's
+accounts database and mapped returned MSN security rights to Windows
+NT Groups so native NT ACLs can be used for enforcing privileges.
+The client SSP shipped in January, 1996 with MSN 1.2 and the server
+components will be deployed by MSN and key partners during 1996.
+<P>
+
+<FONT COLOR=#000080><H2>3.0 Browser Support</H2></FONT>
+
+<P>
+Given the wide variety of Web Browsers available and the growing
+use of Window NT Domain Security on Intranets and MSN on the Internet,
+it is important to corporations to have NT Authentication supported
+
+<P>
+To support new HTTP authentication packages, Spyglass defined
+the SPM API which has been adopted by the Microsoft Internet Explorer.
+Other Web browsers can support SPM API or call SSPI directly.
+Microsoft has shipped an SPM module as the layer between the SPM
+API and SSPI to support the NTLM and MSN authentication protocols.
+In addition this SPM module will take care of all future SSPI
+pkgs. as well. Additional SPM modules don't need to be written
+for every SSPI package in the future.
+<P>
+SPM is implemented in the file SEC_SSPI.DLL that first shipped
+with MSN 1.2 for use with Internet Explorer 2.0 on Windows 95
+and is freely available.
+<P>
+Microsoft will be including SSPI and therefore NT and MSN authentication
+support in the HTTP protocol implementation being provided in
+the WinInet APIs that are planned for the future. Future versions
+of Internet Explorer will use this API. Client software vendors
+are encouraged to use WinInet as well to leverage the authenticated
+HTTP implementation. However, one can continue to develop their
+own HTTP protocol using the guidelines in this document and sample
+code for interfacing to SSPI.
+<P>
+
+<FONT COLOR=#000080><H3>3.1 HTTP Keep Alives</H3></FONT>
+
+<P>
+&quot;Keep Alives&quot; are a useful feature initiated by browsers
+to maintain the HTTP and TCP sessions to eliminate frequent session
+creation overhead such as re-authentication.
+<P>
+to the same server. Keep Alives are actually critical to support
+NTLM in HTTP so that the complete set of challenge-response message
+can be exchanged before the session is terminated. Keep-alive
+is requted with the <TT>Connection: Keep-Alive</TT> attribute
+in the HTTP message.
+<P>
+
+<FONT COLOR=#000080><H3>3.2 Multiple Browser Support</H3></FONT>
+
+<P>
+It is desirable to enable NT Authentication from a variety of
+web browsers. Many corporations already have internal NT networks
+set up, along with administrative procedures therein. By enabling
+NT authentication, departments can properly control access to
+sensitive data shared through web pages. In the public network
+environment, corporate employees (or selected customers) may be
+granted access to certain web pages which may not be available
+to the general public. In this latter case, it is especially desirable
+to avoid using the HTTP Basic authentication scheme. MSN will
+be using this protocol and encourages browser vendors to support
+it to provide users with choice.
+<P>
+
+<FONT COLOR=#000080><H2>4.0 NTLM Authentication Scheme</H2></FONT>
+
+<P>
+The following diagram illustrates the basic NT Authentication
+protocol used by both Windows NT and MSN:
+<P>
+
+<CENTER>
+<IMG SRC="auth1.gif" ALT="(picture auth1.gif)">
+</CENTER>
+<P>
+
+Typically, the virtual circuit is closed after a 401 (unauthorized)
+response message. When negotiating an NT authentication sequence
+(which requires multiple round trips), the server keeps the virtual
+circuit open after the client has indicated that it wishes to
+use NTLM authentication. The circuit is kept open for the duration
+of the challenge-response sequence, and may be kept alive longer.
+<P>
+Note that <TT>Connection: Keep-Alive</TT> must be included in
+the initial as well as the subsequent HTTP operations. Without
+this, the server may not offer to negotiate NTLM authentication.
+Whenever a virtual circuit is closed, authentication is lost.
+At this time, every individual virtual circuit must negotiate
+the authentication sequence.
+<P>
+Note that HTTP imposes a character count limit on the challenge
+and challenge-response data. Furthermore, the data is always uuencoded.
+This also necessitates several round trips (and is something that
+should be addressed in a future version of HTTP).
+<P>
+
+<FONT COLOR=#000080><H3>4.1 Sample Code</H3></FONT>
+
+<P>
+In order to better illustrate the protocol sequence, sample source
+code is included. The sample code will be an NT Command Line application
+which illustrates a simple HTTP &quot;GET&quot; operation. If
+NTLM authentication is indicated in the 401 response message from
+the server, then the sequence is negotiated. Otherwise, the application
+fails, indicating that NTLM authentication was not available.
+&quot;Basic&quot; authentication is not negotiated by the sample
+application.
+<P>
+The sample code is in Microsoft Visual C++ 4.0 and includes the
+appropriate make and header files. The code buils into a very
+simple program which allows the user to see the negotiated HTTP
+headers. The command line syntax is:
+<P>
+
+<FONT COLOR=#202080><PRE>
+	httpauth  [-h] [-d:&lt;size&gt;] [-m:&lt;methodlist&gt;] [-v:&lt;verb&gt;] [-n:&lt;username&gt;]
+	          [-p:&lt;password&gt;] [-g:gateway] [-s:storefile] &lt;server&gt; &lt;path&gt;
+		-h           - display result headers
+		&lt;size&gt;       - amount of client data to send
+		&lt;verb&gt;       - HTTP verb to use (default is GET)
+		&lt;username&gt;   - user name for authentication
+		&lt;password&gt;   - password for authentication
+		&lt;methodlist&gt; - comma separated list of authentication methods in order
+		               of preference (Default is to use first supported method
+		               returned by the HTTP server (e.g., -m:NTLM,BASIC)
+		&lt;storefile&gt;  - file where to store result message body
+		&lt;server&gt;     - web server to connect to (without http:)
+		&lt;path&gt;       - resource to get (e.g., /default.htm)
+</PRE></FONT>
+<P>
+
+For example, the following command line retrieves the headers for
+http://www.server.com/doc/info.html:
+<P>
+
+<FONT COLOR=#202080><PRE>
+	httpget -h -m:NTLM,BASIC -v:GET -n:GUEST -p:GUEST www.server.com /doc/info.html
+</PRE></FONT>
+
+<P>
+This command will produce the following approximate header output
+(assuming that the server does not allow anonymous login):
+<P>
+
+<FONT COLOR=#202080><PRE>
+	HTTP/1.0 401 Access Denied
+	WWW-Authenticate: Basic
+	WWW-Authenticate: NTLM
+	Content-Length: 24
+
+	HTTP/1.0 401 Access Denied
+	WWW-Authenticate: NTLM TlRMTVNTUAACAAAAAAAAACgAAAABggAA0BYwmlRObo4AAAAAAAAAAA==
+	Connection: keep-alive
+	Content-Length: 24
+
+	HTTP/1.0 200 OK
+	Date: Tue, 27 Feb 1996 19:31:49 GMT
+	Server: Microsoft-Internet-Information-Server/1.0
+	Connection: keep-alive
+	Content-Type: text/html
+	Last-Modified: Tue, 27 Feb 1996 01:41:56 GMT
+	Content-Length: 5177
+</PRE></FONT>
+<P>
+
+The source code is provided for reference to illustrate how a
+web browser would negotiate NT Authentication. An executable version
+for Intel platforms is included.
+<P>
+The include files sspi.h and issperr.h are from the Win-32 SDK,
+but are included for your convenience. The sample is provided
+&quot;as-is&quot;.
+<P>
+
+<FONT COLOR=#000080><H2>5.0 Notes</H2></FONT>
+
+<OL>
+<LI>When &quot;BASIC&quot; Authentication is negotiated with the
+Microsoft Internet Informatuion Server, the authenticated user
+is treated as if he or she logged on <I>locally </I>(meaning that
+as far as NT Security is concerned, the web user has the appearance
+of being logged in locally rather than being logged in as a &quot;network&quot;
+User).
+<LI>If an invalid username is supplied in the NT Authentication sequence, the server will
+try to use the account &quot;Guest&quot; with no password to gain access to the resource. This
+occurs only with &quot;NTLM&quot; authentication and not &quot;Basic&quot; authentication. System
+administrators can do the following: 
+(a) disable the Guest account; (b) give the Guest account a non-null password;
+or (c) set ACLs on the \wwwroot directory and file resources.
+</OL>
+<P>
+
+</BODY>
+</HTML>
