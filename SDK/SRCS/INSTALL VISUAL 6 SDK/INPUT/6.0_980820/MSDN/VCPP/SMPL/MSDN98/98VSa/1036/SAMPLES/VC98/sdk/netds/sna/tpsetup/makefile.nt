@@ -1,0 +1,23 @@
+# This is the NT version of the TP Installer makefile.
+
+!include <ntwin32.mak>
+
+all: tpsetup.exe
+
+# Update the resource if necessary
+
+install.res: install.rc dialogs.h makefile.nt
+    $(rc) -DWIN32 -fo temp.res -r install.rc
+    cvtres temp.res -o install.res -$(CPU)
+    del temp.res
+
+# Update the object file if necessary
+
+install.obj: install.c install.h dialogs.h makefile.nt
+    $(cc) $(cdebug) $(cflags) $(cvars) install.c
+
+# Update the executable file if necessary, and if so, add the resource back in.
+
+tpsetup.exe: install.obj install.res
+    $(link) $(linkdebug) $(guiflags) -out:tpsetup.exe install.obj install.res $(guilibs) advapi32.lib
+

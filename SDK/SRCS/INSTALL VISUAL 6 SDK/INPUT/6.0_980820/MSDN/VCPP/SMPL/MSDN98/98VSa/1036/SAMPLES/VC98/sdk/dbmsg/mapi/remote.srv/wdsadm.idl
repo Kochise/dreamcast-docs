@@ -1,0 +1,209 @@
+[
+    uuid(2BC66860-E91E-11CE-B2F0-00AA00510E3B),
+    version(1.0),
+    pointer_default(unique)
+]
+
+#define MAX_ALIAS_SIZE      16+1
+#define MAX_STRING_SIZE     32+1
+#define MAX_PHONE_SIZE      12+1
+#define MAX_COMMENT_SIZE    79+1
+#define MAX_PASSWORD_SIZE   MAX_ALIAS_SIZE
+
+interface WINDSADM
+{
+    // ANSI data structures
+    typedef struct _ADM_MAILBOX_INFO_A
+    {
+        char            szMailboxName[MAX_ALIAS_SIZE];
+        char            szFullName[MAX_STRING_SIZE];
+        char            szJobTitle[MAX_STRING_SIZE];
+        char            szOffice[MAX_STRING_SIZE];
+        char            szPhone[MAX_PHONE_SIZE];
+        char            szAltPhone[MAX_PHONE_SIZE];
+        char            szFax[MAX_PHONE_SIZE];
+        char            szPassword[MAX_ALIAS_SIZE];
+        char            szCompany[MAX_STRING_SIZE];
+        char            szDepartment[MAX_STRING_SIZE];
+        char            szComments[MAX_COMMENT_SIZE];
+        char            szManagerName[MAX_STRING_SIZE];
+        char            szManagerAlias[MAX_STRING_SIZE];
+        unsigned long   dwManagerID;
+        unsigned long   dwObjID;
+        unsigned long   dwFlags;
+    } ADM_MAILBOX_INFO_A;
+
+    typedef struct _DLM_INFO_A
+    {
+        char            szMemberName[36];
+        char            szMemberAlias[20];
+        unsigned long   dwMemberID;
+        unsigned long   dwMemberType;
+    } DLM_INFO_A;
+
+    typedef struct _DLM_LIST_A
+    {
+        DLM_INFO_A            Info;
+        struct _DLM_LIST_A *  pNext;
+    } DLM_LIST_A;
+
+    typedef struct _DLM_ARRAY_A
+    {
+        unsigned long                   dwCount;
+        [size_is(dwCount)] DLM_INFO_A   pMembers[];
+    } DLM_ARRAY_A;
+
+    typedef [transmit_as(DLM_ARRAY_A)] DLM_LIST_A   DLM_XMIT_LIST_A;
+
+    // UNICODE data structures
+    typedef struct _ADM_MAILBOX_INFO_W
+    {
+        wchar_t         szMailboxName[MAX_ALIAS_SIZE];
+        wchar_t         szFullName[MAX_STRING_SIZE];
+        wchar_t         szJobTitle[MAX_STRING_SIZE];
+        wchar_t         szOffice[MAX_STRING_SIZE];
+        wchar_t         szPhone[MAX_PHONE_SIZE];
+        wchar_t         szAltPhone[MAX_PHONE_SIZE];
+        wchar_t         szFax[MAX_PHONE_SIZE];
+        wchar_t         szPassword[MAX_ALIAS_SIZE];
+        wchar_t         szCompany[MAX_STRING_SIZE];
+        wchar_t         szDepartment[MAX_STRING_SIZE];
+        wchar_t         szComments[MAX_COMMENT_SIZE];
+        wchar_t         szManagerName[MAX_STRING_SIZE];
+        wchar_t         szManagerAlias[MAX_STRING_SIZE];
+        unsigned long   dwManagerID;
+        unsigned long   dwObjID;
+        unsigned long   dwFlags;
+    } ADM_MAILBOX_INFO_W;
+
+    typedef struct _DLM_INFO_W
+    {
+        wchar_t         szMemberName[36];
+        wchar_t         szMemberAlias[20];
+        unsigned long   dwMemberID;
+        unsigned long   dwMemberType;
+    } DLM_INFO_W;
+
+    typedef struct _DLM_LIST_W
+    {
+        DLM_INFO_W            Info;
+        struct _DLM_LIST_W *  pNext;
+    } DLM_LIST_W;
+
+    typedef struct _DLM_ARRAY_W
+    {
+        unsigned long                   dwCount;
+        [size_is(dwCount)] DLM_INFO_W   pMembers[];
+    } DLM_ARRAY_W;
+
+    typedef [transmit_as(DLM_ARRAY_W)] DLM_LIST_W   DLM_XMIT_LIST_W;
+
+
+    
+    long RemoteAdmIsServerRunning
+            ();
+    long RemoteAdmDeleteObject
+            ([in] unsigned long                                         dwObjID);
+    long RemoteAdmGetServerMailboxes
+            ([out] long *                                               pPipeNumber);
+    long RemoteAdmGetServerDistLists
+            ([out] long *                                               pPipeNumber);
+    long RemoteAdmEmptyMailbox
+            ([in] unsigned long                                         dwMailboxID);
+    long RemoteAdmGetGALDirectory
+            ([in] unsigned long                                         dwFlags,
+             [out] long *                                               pPipeNumber);
+
+    // ANSI version of the RPC calls
+    long RemoteAdmTerminateNotifA
+            ([in, string] unsigned char *                               szComputerName,
+             [in] unsigned long                                         ulConnectionID);
+    long RemoteAdmValidateNotifA
+            ([in, string] unsigned char *                               szComputerName,
+             [in] unsigned long                                         ulNotifMask,
+             [out] unsigned long *                                      pulConnectionID);
+    long RemoteAdmCreateMailboxA
+            ([in] ADM_MAILBOX_INFO_A *                                  pMailboxInfo);
+    long RemoteAdmGetMailboxPropsA
+            ([in] unsigned long                                         dwObjID,
+             [out] unsigned long *                                      pdwObjType,
+             [out] ADM_MAILBOX_INFO_A *                                 pMailboxInfo);
+    long RemoteAdmSetMailboxPropsA
+            ([in] ADM_MAILBOX_INFO_A *                                  pMailboxInfo);
+
+    long RemoteAdmCreateDistListA
+            ([in, string] unsigned char *                               szDLAlias,
+             [in, string] unsigned char *                               szDLFullName,
+             [in] unsigned long                                         dwFlags,
+             [in, string] unsigned char *                               szOwnerAlias,
+             [in, string] unsigned char *                               szOwnerName,
+             [in] unsigned long                                         dwOwnerID,
+             [in] DLM_XMIT_LIST_A *                                     pMembers);
+    long RemoteAdmGetDLPropsA
+            ([in] unsigned long                                         dwObjID,
+             [out, string, size_is(MAX_ALIAS_SIZE)] unsigned char *     szDLAlias,
+             [out, string, size_is(MAX_STRING_SIZE)] unsigned char *    szDLFullName,
+             [out] unsigned long *                                      pdwFlags,
+             [out, string, size_is(MAX_ALIAS_SIZE)] unsigned char *     szOwnerAlias,
+             [out, string, size_is(MAX_STRING_SIZE)] unsigned char *    szOwnerName,
+             [out] unsigned long *                                      pdwOwnerID,
+             [out, string, size_is(MAX_COMMENT_SIZE)] unsigned char *   szComments,
+             [in, out] DLM_XMIT_LIST_A *                                pMembers);
+    long RemoteAdmSetDLPropsA
+            ([in] unsigned long                                         dwObjID,
+             [in, string] unsigned char *                               szDLAlias,
+             [in, string] unsigned char *                               szDLFullName,
+             [in] unsigned long                                         dwFlags,
+             [in, string] unsigned char *                               szOwnerAlias,
+             [in, string] unsigned char *                               szOwnerName,
+             [in] unsigned long                                         dwOwnerID,
+             [in, string] unsigned char *                               szComments,
+             [in, out] DLM_XMIT_LIST_A *                                pMembers);
+
+    // UNICODE version of the RPC calls
+    long RemoteAdmTerminateNotifW
+            ([in, string] wchar_t *                                     szComputerName,
+             [in] unsigned long                                         ulConnectionID);
+    long RemoteAdmValidateNotifW
+            ([in, string] wchar_t *                                     szComputerName,
+             [in] unsigned long                                         ulNotifMask,
+             [out] unsigned long *                                      pulConnectionID);
+
+    long RemoteAdmCreateMailboxW
+            ([in] ADM_MAILBOX_INFO_W *                                  pMailboxInfo);
+    long RemoteAdmGetMailboxPropsW
+            ([in] unsigned long                                         dwObjID,
+             [out] unsigned long *                                      pdwObjType,
+             [out] ADM_MAILBOX_INFO_W *                                 pMailboxInfo);
+    long RemoteAdmSetMailboxPropsW
+            ([in] ADM_MAILBOX_INFO_W *                                  pMailboxInfo);
+
+    long RemoteAdmCreateDistListW
+            ([in, string] wchar_t *                                     szDLAlias,
+             [in, string] wchar_t *                                     szDLFullName,
+             [in] unsigned long                                         dwFlags,
+             [in, string] wchar_t *                                     szOwnerAlias,
+             [in, string] wchar_t *                                     szOwnerName,
+             [in] unsigned long                                         dwOwnerID,
+             [in] DLM_XMIT_LIST_W *                                     pMembers);
+    long RemoteAdmGetDLPropsW
+            ([in] unsigned long                                         dwObjID,
+             [out, string, size_is(MAX_ALIAS_SIZE)] wchar_t *           szDLAlias,
+             [out, string, size_is(MAX_STRING_SIZE)] wchar_t *          szDLFullName,
+             [out] unsigned long *                                      pdwFlags,
+             [out, string, size_is(MAX_ALIAS_SIZE)] wchar_t *           szOwnerAlias,
+             [out, string, size_is(MAX_STRING_SIZE)] wchar_t *          szOwnerName,
+             [out] unsigned long *                                      pdwOwnerID,
+             [out, string, size_is(MAX_COMMENT_SIZE)] wchar_t *         szComments,
+             [in, out] DLM_XMIT_LIST_W *                                pMembers);
+    long RemoteAdmSetDLPropsW
+            ([in] unsigned long                                         dwObjID,
+             [in, string] wchar_t *                                     szDLAlias,
+             [in, string] wchar_t *                                     szDLFullName,
+             [in] unsigned long                                         dwFlags,
+             [in, string] wchar_t *                                     szOwnerAlias,
+             [in, string] wchar_t *                                     szOwnerName,
+             [in] unsigned long                                         dwOwnerID,
+             [in, string] wchar_t *                                     szComments,
+             [in, out] DLM_XMIT_LIST_W *                                pMembers);
+}

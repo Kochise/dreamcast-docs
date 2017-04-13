@@ -1,0 +1,45 @@
+#*************************************************************#
+#**                                                         **#
+#**                 Microsoft RPC Examples                  **#
+#**                  Callback Application                   **#
+#**         Copyright(c) Microsoft Corp. 1992-1995          **#
+#**                                                         **#
+#*************************************************************#
+
+cc= cl
+cflags= -c -AL -Gsw -Oas -Zpe -Zi -D_CRTAPI1=
+linker= link
+lflags= /CO /NOD /STACK:4096
+
+.c.obj:
+   $(cc) $(cflags) $<
+
+all : callc
+
+idl : call.h
+
+# Make the client side application callc
+callc : callc.exe
+callc.exe : callc.obj call_c.obj
+    $(linker) $(lflags) callc call_c ,,,\
+    llibce rpc rpcndr;
+
+# Update the object files if necessary
+
+callc.obj : callc.c call.h
+
+call_c.obj : call_c.c call.h
+
+call.h call_c.c : call.idl call.acf
+   midl -env dos -oldnames -ms_ext -no_cpp call.idl
+
+# Clean up everything
+cleanall : clean
+    -del callc.exe
+
+# Clean up everything but the .EXEs
+clean :
+    -del *.obj
+    -del *.map
+    -del call_c.c
+    -del call.h

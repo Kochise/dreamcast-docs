@@ -1,0 +1,2 @@
+#define DBG_API_VERSION 6
+#define DBG_API_SUBVERSION 1

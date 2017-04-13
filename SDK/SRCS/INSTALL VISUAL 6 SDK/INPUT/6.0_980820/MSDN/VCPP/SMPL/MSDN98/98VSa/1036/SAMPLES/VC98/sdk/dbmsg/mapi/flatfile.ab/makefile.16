@@ -1,0 +1,81 @@
+# Makefile to build the MAPI Sample Address Book Provider
+
+!IFDEF MAPISAMP
+HOME   = $(MAPISAMP)\flatfile.ab^\
+COMMON = $(MAPISAMP)\common^\
+!ELSE
+HOME   = 
+COMMON = ..\common^\
+!ENDIF
+
+!include <$(COMMON)win16.mak>
+
+!IFNDEF NODEBUG
+cflags = $(cflags) -DDEBUG
+!ENDIF
+
+PROJ     = SMPAB
+
+# Main target dependencies
+
+all: $(PROJ).dll
+
+# Extra libraries need, not defined in win32.mak
+
+extralibs = mapi.lib # compobj.lib ..\common\ctl3dv2.lib
+
+# Object files we need to build
+
+OBJS1 = abcont.obj abctbl1.obj abctbl2.obj abctbl3.obj abguid.obj ablogon.obj abp.obj
+OBJS2 = absearch.obj abuser.obj ootid.obj oouser.obj root.obj status.obj tid.obj wrap.obj
+COMMON_OBJS = wep.obj
+!IFNDEF NODEBUG
+COMMON_OBJS = $(COMMON_OBJS) mapidbg.obj
+!ENDIF
+
+# Build the object files
+
+{$(HOME)}.c.obj:
+  set cl=/I$(COMMON) $(cdebug) $(cflags) $(cvarsdll)
+  $(cc) $**
+
+mapidbg.obj: $(COMMON)mapidbg.c
+  set cl=/I$(COMMON) $(cdebug) $(cflags) $(cvarsdll)
+  $(cc) $**
+
+wep.obj: $(COMMON)wep.c
+  set cl=/I$(COMMON) $(cdebug) $(cflags) $(cvarsdll)
+  $(cc) $**
+
+# Build the resources
+
+$(PROJ).res: $(HOME)SAMPABP.RC $(HOME)SAMPABP.DLG
+  set INCLUDE=$(INCLUDE);$(HOME);$(COMMON)
+  $(rc) $(rcflags) $(rcvars) /fo $(PROJ).res $(HOME)SAMPABP.RC
+
+# Link it together to make the executable image
+
+$(PROJ).dll: $(OBJS1) $(OBJS2) $(PROJ).res $(COMMON_OBJS)
+  echo $(OBJS1: = +) + > link.txt
+  echo $(OBJS2: = +) + >> link.txt
+  echo $(COMMON_OBJS: = +) >> link.txt
+  echo $(PROJ).dll >> link.txt
+  echo $(PROJ).map >> link.txt
+  echo $(extralibs) $(guilibsdll) >> link.txt
+  echo $(HOME)dll16.def >> link.txt
+  $(link) $(ldebug) $(dlllflags) @link.txt
+  $(rc) -t $(PROJ).res $@
+!IFDEF MAPISAMP
+  -copy $@ $(MAPISAMP)\bin\$(PLATFORM)
+!ENDIF
+
+# Clean up the intermediate files
+
+clean:
+  -del *.obj 
+  -del *.res 
+  -del *.dll 
+  -del *.lib 
+  -del *.map 
+  -del link.txt
+

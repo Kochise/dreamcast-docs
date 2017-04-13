@@ -1,0 +1,177 @@
+[
+    uuid(DDFFFE60-36D0-11CE-9F2D-00AA00510E3B),
+    version(1.6),
+    pointer_default(unique)
+]
+
+#define MAX_ALIAS_SIZE      16+1
+#define MAX_STRING_SIZE     32+1
+#define MAX_PHONE_SIZE      12+1
+#define MAX_COMMENT_SIZE    79+1
+#define MAX_PASSWORD_SIZE   MAX_ALIAS_SIZE
+
+interface WINDSREM
+{
+    long RemoteIsServerRunning
+            ();
+    long RemoteGetAllAccounts
+            ([out] long *                                               pPipeNumber);
+    long RemoteFinishUpload                                             
+            ([in, string] unsigned char *                               szCookie);
+    long RemoteGetContainerProps                                        
+            ([in] unsigned long                                         dwContainerID,
+             [out] unsigned long *                                      pdwContentCount);
+    long RemoteGetContainerRecipients                                   
+            ([in] unsigned long                                         dwFlags,
+             [in] unsigned long                                         dwContainerID, 
+             [out] long *                                               pPipeNumber);
+    long RemoteGetPublicFoldersList                                     
+            ([in] short                                                 nFlags,
+             [out] long *                                               pPipeNumber);
+    long RemoteGetPublicFolderMessages                                  
+            ([in] short                                                 nFlags,
+             [in] unsigned long                                         dwFolderID,
+             [out] long *                                               pPipeNumber);
+                                                                        
+    // ANSI Remote server calls
+    long RemoteChangePasswordA                                          
+            ([in] unsigned char *                                       szMailbox,
+             [in, string] unsigned char *                               szOldPassword,
+             [in, string] unsigned char *                               szNewPassword);
+    long RemoteLogonMailBoxA                                            
+            ([in, string] unsigned char *                               szMailbox,
+             [in, string] unsigned char *                               szPassword,
+             [out, string, size_is(MAX_STRING_SIZE)] unsigned char *    szFullName,
+             [out] unsigned long *                                      pdwMailboxID);
+    long RemoteLogonMailBoxAndSetNotifA
+            ([in, string] unsigned char *                               szMailbox,
+             [in, string] unsigned char *                               szPassword,
+             [out, string, size_is(MAX_STRING_SIZE)] unsigned char *    szFullName,
+             [out] unsigned long *                                      pdwMailboxID,
+             [in, string] unsigned char *                               szComputerName,
+             [in] unsigned long                                         ulNotifMask,
+             [out] unsigned long *                                      pulConnectionID);
+    long RemoteTerminateNotifA
+            ([in, string] unsigned char *                               szComputerName,
+             [in] unsigned long                                         ulConnectionID);
+    long RemoteValidateNotifA
+            ([in, string] unsigned char *                               szComputerName,
+             [in, string] unsigned char *                               szMailboxName,
+             [in] unsigned long                                         ulNotifMask,
+             [out] unsigned long *                                      pulConnectionID);
+    long RemoteOpenMsgUploadPipeA
+            ([in, string] unsigned char *                               szSenderMailbox,
+             [out] long *                                               pPipeNumber,
+             [out, string, size_is(MAX_STRING_SIZE)] unsigned char *    szCookie);
+    long RemoteSendMsgToAccountA
+            ([in, string] unsigned char *                               szRecipAccount,
+             [in, string] unsigned char *                               szHeaderInfo,
+             [in, string] unsigned char *                               szCookie);
+    long RemoteOpenMsgDownloadPipeA                                     
+            ([in, string] unsigned char *                               szMailbox,
+             [out] unsigned long *                                      pPipeNumber);
+    long RemoteOpenHeaderDownloadPipeA                                  
+            ([in, string] unsigned char *                               szMailbox,
+             [out] long *                                               pPipeNumber);
+    long RemoteCheckNewMailA                                            
+            ([in, string] unsigned char *                               szMailbox,
+             [out] unsigned long *                                      pulPending);
+    long RemoteOpenOneMsgDownloadPipeA                                  
+            ([in, string] unsigned char *                               szMailbox,
+             [out] long *                                               pPipeNumber);
+    long RemoteGetRecipientPropsA 
+            ([in] unsigned long                                         dwObjID,
+             [out] unsigned long *                                      pdwUserType,
+             [out, string, size_is(MAX_ALIAS_SIZE)] unsigned char *     szMailboxName,
+             [out, string, size_is(MAX_STRING_SIZE)] unsigned char *    szFullName,
+             [out, string, size_is(MAX_STRING_SIZE)] unsigned char *    szJobTitle,
+             [out, string, size_is(MAX_STRING_SIZE)] unsigned char *    szOffice,
+             [out, string, size_is(MAX_PHONE_SIZE)] unsigned char *     szPhone,
+             [out, string, size_is(MAX_PHONE_SIZE)] unsigned char *     szAltPhone,
+             [out, string, size_is(MAX_PHONE_SIZE)] unsigned char *     szFax,
+             [out, string, size_is(MAX_COMMENT_SIZE)] unsigned char *   szComments,
+             [out, string, size_is(MAX_STRING_SIZE)] unsigned char *    szCompany,
+             [out, string, size_is(MAX_STRING_SIZE)] unsigned char *    szDepartment,
+             [out, string, size_is(MAX_STRING_SIZE)] unsigned char *    szManagerName,
+             [out, string, size_is(MAX_ALIAS_SIZE)] unsigned char *     szManagerAlias,
+             [out] unsigned long *                                      pdwManagerID);
+    long RemoteGetDistListPropsA
+            ([in] unsigned long                                         dwObjID,
+             [out, string, size_is(MAX_ALIAS_SIZE)] unsigned char *     szDLAlias,
+             [out, string, size_is(MAX_STRING_SIZE)] unsigned char *    szDLFullName,
+             [out] unsigned long *                                      pdwContentCount,
+             [out, string, size_is(MAX_ALIAS_SIZE)] unsigned char *     szOwnerAlias,
+             [out, string, size_is(MAX_STRING_SIZE)] unsigned char *    szOwnerName,
+             [out, string, size_is(MAX_COMMENT_SIZE)] unsigned char *   szComments);
+
+    // UNICODE Remote server calls
+    long RemoteChangePasswordW
+            ([in] wchar_t *                                             szMailbox,
+             [in, string] wchar_t *                                     szOldPassword,
+             [in, string] wchar_t *                                     szNewPassword);
+    long RemoteLogonMailBoxW
+            ([in, string] wchar_t *                                     szMailbox,
+             [in, string] wchar_t *                                     szPassword,
+             [out, string, size_is(MAX_STRING_SIZE)] wchar_t *          szFullName,
+             [out] unsigned long *                                      pdwMailboxID);
+    long RemoteLogonMailBoxAndSetNotifW
+            ([in, string] wchar_t *                                     szMailbox,
+             [in, string] wchar_t *                                     szPassword,
+             [out, string, size_is(MAX_STRING_SIZE)] wchar_t *          szFullName,
+             [out] unsigned long *                                      pdwMailboxID,
+             [in, string] wchar_t *                                     szComputerName,
+             [in] unsigned long                                         ulNotifMask,
+             [out] unsigned long *                                      pulConnectionID);
+    long RemoteTerminateNotifW
+            ([in, string] wchar_t *                                     szComputerName,
+             [in] unsigned long                                         ulConnectionID);
+    long RemoteValidateNotifW
+            ([in, string] wchar_t *                                     szComputerName,
+             [in, string] wchar_t *                                     szMailboxName,
+             [in] unsigned long                                         ulNotifMask,
+             [out] unsigned long *                                      pulConnectionID);
+    long RemoteOpenMsgUploadPipeW
+            ([in, string] wchar_t *                                     szSenderMailbox,
+             [out] long *                                               pPipeNumber,
+             [out, string, size_is(MAX_STRING_SIZE)] unsigned char *    szCookie);
+    long RemoteSendMsgToAccountW
+            ([in, string] wchar_t *                                     szRecipAccount,
+             [in, string] wchar_t *                                     szHeaderInfo,
+             [in, string] wchar_t *                                     szCookie);
+    long RemoteOpenMsgDownloadPipeW
+            ([in, string] wchar_t *                                     szMailbox,
+             [out] unsigned long *                                      pPipeNumber);
+    long RemoteOpenHeaderDownloadPipeW
+            ([in, string] wchar_t *                                     szMailbox,
+             [out] long *                                               pPipeNumber);
+    long RemoteCheckNewMailW
+            ([in, string] wchar_t *                                     szMailbox,
+             [out] unsigned long *                                      pulPending);
+    long RemoteOpenOneMsgDownloadPipeW
+            ([in, string] wchar_t *                                     szMailbox,
+             [out] long *                                               pPipeNumber);
+    long RemoteGetRecipientPropsW
+            ([in] unsigned long                                         dwObjID,
+             [out] unsigned long *                                      pdwUserType,
+             [out, string, size_is(MAX_ALIAS_SIZE)] wchar_t *           szMailboxName,
+             [out, string, size_is(MAX_STRING_SIZE)] wchar_t *          szFullName,
+             [out, string, size_is(MAX_STRING_SIZE)] wchar_t *          szJobTitle,
+             [out, string, size_is(MAX_STRING_SIZE)] wchar_t *          szOffice,
+             [out, string, size_is(MAX_PHONE_SIZE)] wchar_t *           szPhone,
+             [out, string, size_is(MAX_PHONE_SIZE)] wchar_t *           szAltPhone,
+             [out, string, size_is(MAX_PHONE_SIZE)] wchar_t *           szFax,
+             [out, string, size_is(MAX_COMMENT_SIZE)] wchar_t *         szComments,
+             [out, string, size_is(MAX_STRING_SIZE)] wchar_t *          szCompany,
+             [out, string, size_is(MAX_STRING_SIZE)] wchar_t *          szDepartment,
+             [out, string, size_is(MAX_STRING_SIZE)] wchar_t *          szManagerName,
+             [out, string, size_is(MAX_ALIAS_SIZE)] wchar_t *           szManagerAlias,
+             [out] unsigned long *                                      pdwManagerID);
+    long RemoteGetDistListPropsW
+            ([in] unsigned long                                         dwObjID,
+             [out, string, size_is(MAX_ALIAS_SIZE)] wchar_t *           szDLAlias,
+             [out, string, size_is(MAX_STRING_SIZE)] wchar_t *          szDLFullName,
+             [out] unsigned long *                                      pdwContentCount,
+             [out, string, size_is(MAX_ALIAS_SIZE)] wchar_t *           szOwnerAlias,
+             [out, string, size_is(MAX_STRING_SIZE)] wchar_t *          szOwnerName,
+             [out, string, size_is(MAX_COMMENT_SIZE)] wchar_t *         szComments);
+}

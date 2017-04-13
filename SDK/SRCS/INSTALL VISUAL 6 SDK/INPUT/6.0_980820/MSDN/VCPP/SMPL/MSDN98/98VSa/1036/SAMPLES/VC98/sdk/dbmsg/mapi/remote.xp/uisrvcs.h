@@ -1,0 +1,65 @@
+#define IDD_CFG_USERINFO                    25000
+#define IDD_SELECTMB                        25001
+#define IDD_PASSWORD                        25002
+#define IDD_NEW_PASSWORD                    25003
+#define IDD_ENTER_PASSWORD                  25004
+
+#define IDC_STATIC                          -1
+
+#define IDC_STATIC1                         26000
+#define IDC_STATIC2                         26001
+#define IDC_STATIC3                         26002
+#define IDC_STATIC4                         26003
+#define IDC_STATIC5                         26004
+#define IDC_STATIC6                         26005
+#define IDC_STATIC7                         26006
+#define IDC_STATIC8                         26007
+#define IDC_LIST                            26008
+#define IDC_INFO1                           26009
+#define IDC_INFO2                           26010
+#define IDC_INFO3                           26011
+#define IDC_SERVERNAME                      26012
+#define IDC_USER_NAME                       26013
+#define IDC_MAILBOXNAME                     26014
+#define IDC_UPLOAD_TIME                     26015
+#define IDC_PASSWORD                        26016
+#define IDC_PASSWORD_CONFIRM                26017
+#define IDC_OLD_PASSWORD                    26018
+#define IDC_BROWSE_MB                       26019
+#define IDC_CHANGE_PASSWORD                 26020
+#define IDC_CONNECT_ONLINE                  26021
+#define IDC_CONNECT_OFFLINE                 26022
+                                            
+#define IDS_MSG_SELECT_MB_NAME              30000
+#define IDS_MSG_SERVER_NOT_FOUND            30001
+#define IDS_MSG_NEED_SERVER_NAME            30002
+#define IDS_MSG_INVALID_SERVER_NAME         30003
+#define IDS_MSG_INVALID_MB_PASSWORD         30004
+#define IDS_MSG_NEW_PASSWORD_NO_MATCH       30005
+#define IDS_MSG_OLD_PASSWORD_NO_MATCH       30006 
+#define IDS_MSG_NEED_PASSWORD_CONFIRM       30007
+#define IDS_MSG_NEED_PASSWORD               30008
+#define IDS_MSG_NEED_OLD_PASSWORD           30009
+#define IDS_MSG_NO_SERVER_ONLINE            30010
+#define IDS_MSG_LOGON_INVALID_USER          30011
+#define IDS_MSG_LOGON_INVALID_USER_NAME     30012
+#define IDS_MSG_LOGON_NO_CONNECT            30013
+#define IDS_MSG_NO_SERVER_GO_OFFLINE        30014
+#define IDS_MSG_CONFIG_INVALID_USER         30015 
+#define IDS_MSG_CONFIG_INVALID_USER_NAME    30016
+#define IDS_MSG_CONFIG_NO_CONNECT           30017
+#define IDS_MSG_REMOTE_FOLDER_VIEW_NAME     30018
+#define IDS_MSG_SERVICE_NOT_PROPERLY_CFG    30019
+#define IDS_MSG_SYSTEM_CALL_FAILED          30020
+#define IDS_MSG_CONFIG_UI_IN_USE            30021
+
+#define IDS_DELIVERY_ERROR_NO_SUCH_USER     35000
+#define IDS_DELIVERY_ERROR_INVALID_ACCT     35001
+#define IDS_DELIVERY_ERROR_OFFLINE_SERVER   35002
+#define IDS_DELIVERY_ERROR_OUTOFMEMORY      35003
+#define IDS_DELIVERY_ERROR_INVALID_PARAM    35004
+#define IDS_DELIVERY_ERROR_ISTORAGE         35005
+#define IDS_DELIVERY_ERROR_WIN32            35006
+#define IDS_DELIVERY_ERROR_INVALID_ADDRESS  35007
+
+#define IDS_SERVICE_PROPERTY_SHEETS_TITLE   40000

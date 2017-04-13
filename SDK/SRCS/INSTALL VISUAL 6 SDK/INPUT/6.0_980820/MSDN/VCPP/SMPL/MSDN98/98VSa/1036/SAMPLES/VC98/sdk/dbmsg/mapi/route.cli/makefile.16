@@ -1,0 +1,94 @@
+# Makefile to build the Sample Routing Client
+
+# Key to CPU specific conditions, CPU == i386 || ALPHA || MIPS || PPC
+!IF "$(CPU)" == ""
+!IF "$(PROCESSOR_ARCHITECTURE)" == "MIPS" || "$(PROCESSOR_ARCHITECTURE)" == "ALPHA" || "$(PROCESSOR_ARCHITECTURE)" == "PPC"
+CPU = $(PROCESSOR_ARCHITECTURE)
+!ELSE
+CPU = i386
+!ENDIF
+!ENDIF
+
+!IFDEF MAPISAMP
+HOME   = $(MAPISAMP)\route.cli^\
+COMMON = $(MAPISAMP)\common^\
+!ELSE
+HOME   = 
+COMMON = ..\common^\
+!ENDIF
+
+!include <$(COMMON)win16.mak>
+
+!IFNDEF NODEBUG
+cflags = $(cflags) -DDEBUG
+!ENDIF
+
+PROJ = ROUTE
+
+# Main target dependencies
+
+all: $(PROJ).exe
+
+# Extra libraries needed, not defined in win32.mak
+
+extralibs = mapi.lib compobj.lib
+
+# Object files we need to build
+
+OBJS = client.obj route.obj bitmap.obj
+COMMON_OBJS = wrap3d.obj cindex.obj
+!IFNDEF NODEBUG
+COMMON_OBJS = $(COMMON_OBJS) mapidbg.obj
+!ENDIF
+
+# Build the object files
+
+{$(HOME)}.c.obj:
+  set cl=-I$(COMMON) $(cdebug) $(cflags) $(cvars)
+  $(cc) $**
+
+pvalloc.obj: $(COMMON)pvalloc.c
+  set cl=-I$(COMMON) $(cdebug) $(cflags) $(cvars)
+  $(cc) $**
+
+wrap3d.obj: $(COMMON)wrap3d.c
+  set cl=-I$(COMMON) $(cdebug) $(cflags) $(cvars)
+  $(cc) $**
+
+mapidbg.obj: $(COMMON)mapidbg.c
+  set cl=-I$(COMMON) $(cdebug) $(cflags) $(cvars)
+  $(cc) $**
+
+cindex.obj: $(COMMON)cindex.c
+  set cl=-I$(COMMON) $(cdebug) $(cflags) $(cvars)
+  $(cc) $**
+
+# Build the resources
+
+$(PROJ).res: $(HOME)client.rc $(HOME)client.ico $(HOME)client2.ico $(HOME)envelope.bmp
+  set INCLUDE=$(INCLUDE);$(HOME);$(COMMON)
+  $(rc) $(rcflags) $(rcvars) /fo $(PROJ).res $(HOME)client.RC
+
+# Link it together to make the executable image
+
+$(PROJ).exe: $(OBJS) $(COMMON_OBJS) $(PROJ).res
+  echo $(OBJS) $(COMMON_OBJS) > link.txt
+  echo $(PROJ).exe >> link.txt
+  echo $(PROJ).map >> link.txt
+  echo $(extralibs) $(guilibs) >> link.txt
+  echo $(HOME)route16.def >> link.txt
+  $(link) $(ldebug) $(lflags) @link.txt
+  $(rc) -t $(PROJ).res $@
+
+# Clean up the intermediate files
+!IFDEF MAPISAMP
+  -copy $@ $(MAPISAMP)\bin\$(PLATFORM)
+!ENDIF
+
+clean:
+  -del *.obj
+  -del *.res
+  -del *.exe
+  -del *.map
+  -del link.txt
+

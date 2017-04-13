@@ -1,0 +1,541 @@
+''***************************************************************
+''* This is the setup script for the Visual Basic Library for SQL Server
+''*
+''* Modification History
+''*
+''* Trish Millines-9/16/92- Upgraded to version 2.0 of Setup
+''* Ben Wilk -8/18/93- Upgraded to release for VB 3.0
+''***************************************************************
+
+'$DEFINE DEBUG  ''Define for script development/debugging
+
+'$INCLUDE 'setupapi.inc'
+'$INCLUDE 'msdetect.inc'
+'$INCLUDE 'mscpydis.inc'    ''System
+
+''Dialog ID's
+CONST WELCOME       = 100
+CONST ASKQUIT       = 200
+CONST DESTPATH      = 300
+CONST EXITFAILURE   = 400
+CONST EXITQUIT      = 600
+CONST EXITSUCCESS   = 700
+CONST OPTIONS       = 800
+
+CONST CUSTHELP	    = 1000
+CONST WELCOMEHELP   = 1200
+CONST PATHHELP	    = 1100
+CONST NOSELECTION   = 1300
+
+CONST CUSTINST	    = 6200
+CONST TOOBIG	    = 6300
+CONST BADPATH       = 6400
+CONST BILLBOARD     = 4545
+
+CONST WM_SYSCOMMAND = 274
+CONST SC_MAXIMIZE = 61488
+
+''Bitmap ID
+CONST LOGO = 1
+
+''File Types
+CONST LIBFILES	   = 1	  ''Library files
+CONST EXAMPLEFILES = 2	  ''Example files
+CONST HELPFILES    = 3	  ''VBSql Help files
+
+GLOBAL DEST$	    ''Default destination directory.
+GLOBAL WINDRIVE$    ''Windows drive letter.
+GLOBAL WINDOWSDIR$  ''Windows directory
+
+''CustInst list symbol names
+GLOBAL LIBNEEDS$      ''Library needs
+GLOBAL EXAMPLENEEDS$   '' Example needs
+GLOBAL HELPNEEDS$	  ''Help needs
+GLOBAL EXTRACOSTS$    ''List of extra costs to add per drive
+GLOBAL BIGLIST$       ''List of option files cost calc results (boolean)
+
+''Dialog list symbol names
+GLOBAL CHECKSTATES$
+GLOBAL STATUSTEXT$
+GLOBAL DRIVETEXT$
+
+DECLARE SUB AddOptFilesToCopyList (ftype%)
+DECLARE SUB RecalcOptFiles (ftype%)
+DECLARE SUB RecalcPath
+DECLARE SUB SetDriveStatus
+DECLARE SUB SetProcStatus
+DECLARE SUB SetWinStatus
+DECLARE FUNCTION MakePath (szDir$, szFile$) AS STRING
+DECLARE FUNCTION BitmapCntrlInit LIB "mscuistf.dll" as INTEGER
+DECLARE FUNCTION NeedProcFiles () AS INTEGER
+DECLARE FUNCTION NeedWinFiles () AS INTEGER
+DECLARE FUNCTION SendMessage LIB "user"(hwnd%, wMsg%, wParam%, lParam&)
+
+INIT:
+    hwnd% = HwndFrame()
+    istatus% = SendMessage(hwnd%, WM_SYSCOMMAND, SC_MAXIMIZE,0)  ''Maximize the window
+    CUIDLL$ = "mscuistf.dll"            ''Custom user interface dll
+    HELPPROC$ = "FHelpDlgProc"          ''Help dialog procedure
+    SQLTOOLS$ = "SQL Server Tools"
+    SetBitmap CUIDLL$, LOGO
+    SetTitle "Microsoft Visual Basic for SQL Server Tools Setup"
+
+    szInf$ = GetSymbolValue("STF_SRCINFPATH")
+    IF szInf$ = "" THEN
+	szInf$ = GetSymbolValue("STF_CWDDIR") + "VBSQL.INF"
+    END IF
+    ReadInfFile szInf$
+
+    WINDRIVE$ = MID$(GetWindowsDir, 1, 1)
+    WINSYSDIR$ = GetWindowsSysDir()
+    WINDOWSDIR$ = GetWindowsDir()
+    DEST$ = WINDRIVE$ + ":\MSSQL"
+
+    ''CustInst list symbols
+    CHECKSTATES$ = "CheckItemsState"
+    STATUSTEXT$  = "StatusItemsText"
+    DRIVETEXT$	 = "DriveStatusText"
+    FOR i% = 1 to 3 STEP 1
+       AddListItem CHECKSTATES$, "ON"
+    NEXT i%
+    FOR i% = 1 to 3 STEP 1
+        AddListItem STATUSTEXT$, ""
+    NEXT i%
+    FOR i% = 1 to 7 STEP 1
+        AddListItem DRIVETEXT$, ""
+    NEXT i%
+    ReplaceListItem DRIVETEXT$, 7, DEST$
+
+    ''Disk cost list symbols
+    LIBNEEDS$	   = "LibraryNeeds"
+    EXAMPLENEEDS$  = "ExampleNeeds"
+    HELPNEEDS$	   = "HelpNeeds"
+    EXTRACOSTS$ = "ExtraCosts"
+    BIGLIST$    = "BigList"
+    FOR i% = 1 to 3 STEP 1
+        AddListItem BIGLIST$, ""
+    NEXT i%
+    FOR i% = 1 TO 26 STEP 1
+        AddListItem EXTRACOSTS$, "0"
+    NEXT i%
+
+    RecalcPath
+    SetDriveStatus
+
+WELCOME:
+    sz$ = UIStartDlg(CUIDLL$, WELCOME, "FInfoDlgProc", WELCOMEHELP, HELPPROC$)
+    IF sz$ = "CONTINUE" THEN
+        UIPop 1
+WELCOMEL1:
+        IF InitSystem(1, "", 0) = 0 THEN
+            GOSUB ASKQUIT
+            GOTO WELCOMEL1
+        END IF
+    ELSE
+        GOSUB ASKQUIT
+        GOTO WELCOME
+    END IF
+
+GETPATH:
+    SetSymbolValue "EditTextIn", DEST$
+    SetSymbolValue "EditFocus", "END"
+GETPATHL1:
+    sz$ = UIStartDlg(CUIDLL$, DESTPATH, "FEditDlgProc", PATHHELP, HELPPROC$)
+    DEST$ = GetSymbolValue("EditTextOut")
+
+    IF sz$ = "CONTINUE" THEN
+        IF IsDirWritable(DEST$) = 0 THEN
+            GOSUB BADPATH
+            GOTO GETPATHL1
+	END IF
+        UIPop 1
+    ELSEIF sz$ = "REACTIVATE" THEN
+        GOTO GETPATHL1
+    ELSE
+        GOSUB ASKQUIT
+        GOTO GETPATH
+    END IF
+
+CUSTINST:
+    ReplaceListItem DRIVETEXT$, 7, DEST$
+    sz$ = UIStartDlg(CUIDLL$, CUSTINST, "FCustInstDlgProc", CUSTHELP, HELPPROC$)
+
+    IF sz$ = "CONTINUE" THEN
+        ''Install only if it will fit.
+	FOR i% = 1 to 3 STEP 1
+            IF GetListItem(BIGLIST$, i%) <> "" THEN
+                GOSUB TOOBIG
+                GOTO CUSTINST
+            END IF
+        NEXT i%
+        UIPop 1
+	GOTO CHECKSELECT
+    ELSEIF sz$ = "PATH" THEN
+	GOTO GETPATH
+    ELSEIF sz$ = "REACTIVATE" THEN
+        RecalcPath
+        SetDriveStatus
+        GOTO CUSTINST
+    ELSEIF sz$ = "CHK1" THEN
+	RecalcOptFiles LIBFILES
+	SetDriveStatus
+        GOTO CUSTINST
+    ELSEIF sz$ = "CHK2" THEN
+	RecalcOptFiles EXAMPLEFILES
+        SetDriveStatus
+        GOTO CUSTINST
+    ELSEIF sz$ = "CHK3" THEN
+	RecalcOptFiles HELPFILES
+        SetDriveStatus
+        GOTO CUSTINST
+    ELSE
+        GOSUB ASKQUIT
+        GOTO CUSTINST
+    END IF
+
+CHECKSELECT:
+    noselect% = 0
+    IF GetListItem(CHECKSTATES$, LIBFILES) = "OFF"  and GetListItem(CHECKSTATES$, HELPFILES) = "OFF" and GetListItem(CHECKSTATES$, EXAMPLEFILES) = "OFF" THEN
+	noselect% = 1
+    END IF
+
+    IF noselect% = 1 then     'If they didn't select anything
+       sz$ = UIStartDlg(CUIDLL$, NOSELECTION, "FInfo0DlgProc", 0, "")
+       UIPop 1
+       GOTO CUSTINST
+    END IF
+
+CREATEDEST:
+
+    SrcDir$ = GetSymbolValue("STF_SRCDIR")
+    CreateDir DEST$, cmoVital		''Create the destination directory
+    i% = SetSizeCheckMode(scmOff)
+    DESTSAVE$ = DEST$			''Save dest directory as the root path
+    SetCopyGaugePosition 100, 100
+
+ COPYLIBFILES:
+    ClearCopyList			     ''Clear the copy list
+    IF GetListItem(CHECKSTATES$, LIBFILES) = "ON" THEN
+	DEST$ = DESTSAVE$ + "\bin"
+	CreateDir DEST$, cmoVital	     ''Create the bin directory
+	AddSectionFilesToCopyList "LibFiles", SrcDir$, DEST$
+	AddSectionFilesToCopyList "LibFiles", SrcDir$, WINSYSDIR$
+	CopyFilesInCopyList		      ''Copy the files
+	ClearCopyList			      ''Clear the copy list
+
+	DEST$ = DESTSAVE$ + "\dblib"
+	CreateDir DEST$, cmoVital	    ''Create the dblib directory
+	DEST$ = DEST$ + "\include"
+	CreateDir DEST$, cmoVital	     ''Create the include directory
+	AddSectionFilesToCopyList "IncludeFile", SrcDir$, DEST$
+	CopyFilesInCopyList		      ''Copy the files
+	ClearCopyList			      ''Clear the copy list
+    END IF
+
+CHECKSAMPLES:
+    IF GetListItem(CHECKSTATES$, EXAMPLEFILES) = "ON" THEN
+	DEST$ = DESTSAVE$ + "\dblib"
+	CreateDir DEST$, cmoVital	    ''Create the dblib directory
+	DEST$ = DEST$ + "\vsamples"
+	CreateDir DEST$, cmoVital	     ''Create the vsamples directory
+	AddSectionFilesToCopyList "ReadmeSamples", SrcDir$, DEST$
+	CopyFilesInCopyList		      ''Copy the files
+	ClearCopyList			      ''Clear the copy list
+	SAMPDEST$ = DEST$
+	DEST$ = SAMPDEST$ + "\common"
+	CreateDir DEST$, cmoVital	     ''Create the destination directory
+	AddSectionFilesToCopyList "ProcedureFiles", SrcDir$, DEST$
+	CopyFilesInCopyList		      ''Copy the files
+	ClearCopyList			      ''Clear the copy list
+	DEST$ = DESTSAVE$ + "\dblib\vsamples\wincode"
+	CreateDir DEST$, cmoVital	     ''Create the destination directory
+	AddSectionFilesToCopyList "WinCodeFiles", SrcDir$, DEST$
+	CopyFilesInCopyList		      ''Copy the files
+	ClearCopyList			      ''Clear the copy list
+	DEST$ = SAMPDEST$ + "\browse"
+	CreateDir DEST$, cmoVital	     ''Create the destination directory
+	AddSectionFilesToCopyList "BrowseFiles", SrcDir$, DEST$
+	CopyFilesInCopyList		      ''Copy the files
+	ClearCopyList			      ''Clear the copy list
+	DEST$ = SAMPDEST$ + "\text"
+	CreateDir DEST$, cmoVital	     ''Create the destination directory
+	AddSectionFilesToCopyList "TextFiles", SrcDir$, DEST$
+	CopyFilesInCopyList		      ''Copy the files
+	ClearCopyList			      ''Clear the copy list
+	DEST$ = SAMPDEST$ + "\image"
+	CreateDir DEST$, cmoVital	     ''Create the destination directory
+	AddSectionFilesToCopyList "ImageFiles", SrcDir$, DEST$
+	CopyFilesInCopyList		      ''Copy the files
+	ClearCopyList			      ''Clear the copy list
+	DEST$ = SAMPDEST$ + "\cursors"
+	CreateDir DEST$, cmoVital	     ''Create the destination directory
+	AddSectionFilesToCopyList "CursorFiles", SrcDir$, DEST$
+	CopyFilesInCopyList		      ''Copy the files
+	ClearCopyList			      ''Clear the copy list
+	DEST$ = SAMPDEST$ + "\query"
+	CreateDir DEST$, cmoVital	     ''Create the destination directory
+	AddSectionFilesToCopyList "QueryFiles", SrcDir$, DEST$
+	CopyFilesInCopyList		      ''Copy the files
+	ClearCopyList			      ''Clear the copy list
+	DEST$ = SAMPDEST$ + "\rpc"
+	CreateDir DEST$, cmoVital	     ''Create the destination directory
+	AddSectionFilesToCopyList "RPCFiles", SrcDir$, DEST$
+	CopyFilesInCopyList		      ''Copy the files
+	ClearCopyList			      ''Clear the copy list
+	DEST$ = SAMPDEST$ + "\pubs"
+	CreateDir DEST$, cmoVital	     ''Create the destination directory
+	AddSectionFilesToCopyList "PubsFiles", SrcDir$, DEST$
+	CopyFilesInCopyList		      ''Copy the files
+	ClearCopyList			      ''Clear the copy list
+    END IF
+
+COPYHELPFILES:
+    IF GetListItem(CHECKSTATES$, HELPFILES) = "ON" THEN
+	DEST$ = DESTSAVE$ + "\help"
+	CreateDir DEST$, cmoVital	     ''Create the destination directory
+	AddSectionFilesToCopyList "HelpFiles", SrcDir$, DEST$
+	CopyFilesInCopyList		      ''Copy the files
+	ClearCopyList			      ''Clear the copy list
+	CreateProgmanGroup SQLTOOLS$,"",cmoNone
+	CreateProgmanItem SQLTOOLS$,"VBSQL Help",DEST$+"\vbsql.hlp","",cmoOverwrite
+    END IF
+
+
+QUIT:
+    ON ERROR GOTO ERRQUIT
+
+    IF ERR = 0 THEN
+        dlg% = EXITSUCCESS
+    ELSEIF ERR = STFQUIT THEN
+        dlg% = EXITQUIT
+    ELSE
+        dlg% = EXITFAILURE
+    END IF
+QUITL1:
+    sz$ = UIStartDlg(CUIDLL$, dlg%, "FInfo0DlgProc", 0, "")
+    IF sz$ = "REACTIVATE" THEN
+        GOTO QUITL1
+    END IF
+    UIPop 1
+
+    END
+
+ERRQUIT:
+    i% = DoMsgBox("Setup sources were corrupted, contact your primary support provider.", "Setup Message", MB_OK+MB_TASKMODAL+MB_ICONHAND)
+    END
+
+TOOBIG:
+    sz$ = UIStartDlg(CUIDLL$, TOOBIG, "FInfo0DlgProc", 0, "")
+    IF sz$ = "REACTIVATE" THEN
+        RecalcPath
+        SetDriveStatus
+        GOTO TOOBIG
+    END IF
+    UIPop 1
+    RETURN
+
+BADPATH:
+    sz$ = UIStartDlg(CUIDLL$, BADPATH, "FInfo0DlgProc", 0, "")
+    IF sz$ = "REACTIVATE" THEN
+        GOTO BADPATH
+    END IF
+    UIPop 1
+    RETURN
+
+
+
+ASKQUIT:
+    sz$ = UIStartDlg(CUIDLL$, ASKQUIT, "FQuitDlgProc", 0, "")
+
+    IF sz$ = "EXIT" THEN
+        UIPopAll
+        ERROR STFQUIT
+    ELSEIF sz$ = "REACTIVATE" THEN
+        GOTO ASKQUIT
+    ELSE
+        UIPop 1
+    END IF
+    RETURN
+
+'**
+'** Purpose:
+'**     Adds the specified option files to the copy list.
+'** Arguments:
+'**     ftype%  - type of files to add, one of the following:
+'**             ADMINFILES, OBJFILES, BASEFILES
+'** Returns:
+'**     none.
+'*************************************************************************
+SUB AddOptFilesToCopyList (ftype%) STATIC
+
+    SrcDir$ = GetSymbolValue("STF_SRCDIR")
+
+    IF	GetListItem(CHECKSTATES$, ftype%) = "ON" THEN
+	IF ftype% = LIBFILES THEN
+	    AddSectionFilesToCopyList "LibFiles", SrcDir$, DEST$
+	    AddSectionFilesToCopyList "IncludeFile", SrcDir$, DEST$
+	ELSEIF ftype% = EXAMPLEFILES THEN
+	    AddSectionFilesToCopyList "ProcedureFiles", SrcDir$, DEST$
+	    AddSectionFilesToCopyList "WinCodeFiles", SrcDir$, DEST$
+	    AddSectionFilesToCopyList "BrowseFiles", SrcDir$, DEST$
+	    AddSectionFilesToCopyList "ImageFiles", SrcDir$, DEST$
+	    AddSectionFilesToCopyList "TextFiles", SrcDir$, DEST$
+	    AddSectionFilesToCopyList "CursorFiles", SrcDir$, DEST$
+	    AddSectionFilesToCopyList "QueryFiles", SrcDir$, DEST$
+	    AddSectionFilesToCopyList "RPCFiles", SrcDir$, DEST$
+	    AddSectionFilesToCopyList "PubsFiles", SrcDir$, DEST$
+	ELSEIF ftype% = HELPFILES THEN
+	    AddSectionFilesToCopyList "HelpFiles", SrcDir$, DEST$
+	END IF
+	SrcDir$ = ""
+    END IF
+END SUB
+
+'**
+'** Purpose:
+'**     Recalculates disk space for the given option files and sets
+'**     the status info symbol "StatusItemsText".
+'** Arguments:
+'**     ftype% - type of files to add, one of the following:
+'**             LIBFILES,
+'**             EXAMPLEFILES, HELPFILES
+'** Returns:
+'**     none.
+'*************************************************************************
+SUB RecalcOptFiles (ftype%) STATIC
+    CursorSave% = ShowWaitCursor()
+    ClearCopyList
+    AddOptFilesToCopyList ftype%
+    DESTSAVE$ = DEST$
+
+    fExtra% = 0
+    IF ftype% = LIBFILES THEN
+	ListSym$ = LIBNEEDS$
+	IF GetListItem(CHECKSTATES$, LIBFILES) = "ON" THEN
+            ''Add extra cost to Windows drive for ini/progman, etc., dll's vbx's
+            ndrive% = ASC(ucase$(WINDRIVE$)) - ASC("A") + 1
+            ReplaceListItem EXTRACOSTS$, ndrive%, "270240"
+            fExtra% = 1
+	END IF
+    ELSEIF ftype% = EXAMPLEFILES THEN
+	ListSym$ = EXAMPLENEEDS$
+	DEST$ = DEST$ + "\dblib\vsamples\browse"
+	IF GetListItem(CHECKSTATES$, EXAMPLEFILES) = "ON" THEN
+	    ''Add extra cost to Windows drive for ini/progman, etc.
+            ndrive% = ASC(ucase$(WINDRIVE$)) - ASC("A") + 1
+            ReplaceListItem EXTRACOSTS$, ndrive%, "10240"
+            fExtra% = 1
+	END IF
+    ELSEIF ftype% = HELPFILES THEN
+	ListSym$ = HELPNEEDS$
+	DEST$ = DEST$ + "\help"
+	IF GetListItem(CHECKSTATES$, HELPFILES) = "ON" THEN
+	    ''Add extra cost to Windows drive for ini/progman, etc.
+            ndrive% = ASC(ucase$(WINDRIVE$)) - ASC("A") + 1
+            ReplaceListItem EXTRACOSTS$, ndrive%, "10240"
+            fExtra% = 1
+	END IF
+    END IF
+
+    StillNeed& = GetCopyListCost(EXTRACOSTS$, ListSym$, "")
+    IF StillNeed& > 0 THEN
+        ReplaceListItem BIGLIST$, ftype%, "YES"
+    ELSE
+
+        ReplaceListItem BIGLIST$, ftype%, ""
+    END IF
+
+    cost& = 0
+    FOR i% = 1 TO 26 STEP 1
+	cost&  = cost& + VAL(GetListItem(ListSym$, i%))
+    NEXT i%
+    ReplaceListItem STATUSTEXT$, ftype%, STR$(cost& / 1024) + " K"
+    IF fExtra% THEN
+        ReplaceListItem EXTRACOSTS$, ndrive%, "0"
+    END IF
+    RestoreCursor CursorSave%
+    ListSym$ = ""
+    DEST$ = DESTSAVE$
+END SUB
+
+'**
+'** Purpose:
+'**     Recalculates disk space and sets option status info according
+'**     to the current destination path.
+'** Arguments:
+'**     none.
+'** Returns:
+'**     none.
+'*************************************************************************
+SUB RecalcPath STATIC
+
+    CursorSave% = ShowWaitCursor()
+
+    RecalcOptFiles LIBFILES
+    RecalcOptFiles EXAMPLEFILES
+    RecalcOptFiles HELPFILES
+
+    RestoreCursor CursorSave%
+END SUB
+
+
+'**
+'** Purpose:
+'**     Sets drive status info according to latest disk space calcs.
+'** Arguments:
+'**     none.
+'** Returns:
+'**     none.
+'*************************************************************************
+SUB SetDriveStatus STATIC
+
+    drive$ = MID$(DEST$, 1, 1)
+    ndrive% = ASC(ucase$(drive$)) - ASC("A") + 1
+    cost& = VAL(GetListItem(LIBNEEDS$, ndrive%)) + VAL(GetListItem(EXAMPLENEEDS$, ndrive%)) + VAL(GetListItem(HELPNEEDS$, ndrive%))
+    free& = GetFreeSpaceForDrive(drive$)
+
+    ReplaceListItem DRIVETEXT$, 1, drive$ + ":"
+    ReplaceListItem DRIVETEXT$, 2, STR$(cost& / 1024) + " K"
+    ReplaceListItem DRIVETEXT$, 3, STR$(free& / 1024) + " K"
+
+    IF drive$ = WINDRIVE$ THEN
+        ReplaceListItem DRIVETEXT$, 4, ""
+        ReplaceListItem DRIVETEXT$, 5, ""
+        ReplaceListItem DRIVETEXT$, 6, ""
+    ELSE
+	ndrive% = ASC(ucase$(WINDRIVE$)) - ASC("A") + 1
+	cost& = VAL(GetListItem(LIBNEEDS$, ndrive%)) + VAL(GetListItem(EXAMPLENEEDS$, ndrive%)) + VAL(GetListItem(HELPNEEDS$, ndrive%))
+	IF cost& = 0 THEN
+            ReplaceListItem DRIVETEXT$, 4, ""
+            ReplaceListItem DRIVETEXT$, 5, ""
+            ReplaceListItem DRIVETEXT$, 6, ""
+        ELSE
+            free& = GetFreeSpaceForDrive(WINDRIVE$)
+            ReplaceListItem DRIVETEXT$, 4, WINDRIVE$ + ":"
+            ReplaceListItem DRIVETEXT$, 5, STR$(cost& / 1024) + " K"
+            ReplaceListItem DRIVETEXT$, 6, STR$(free& / 1024) + " K"
+        END IF
+    END IF
+END SUB
+
+'**
+'** Purpose:
+'**     Appends a file name to the end of a directory path,
+'**     inserting a backslash character as needed.
+'** Arguments:
+'**     szDir$  - full directory path (with optional ending "\")
+'**     szFile$ - filename to append to directory
+'** Returns:
+'**     Resulting fully qualified path name.
+'*************************************************************************
+FUNCTION MakePath (szDir$, szFile$) STATIC AS STRING
+    IF szDir$ = "" THEN
+        MakePath = szFile$
+    ELSEIF szFile$ = "" THEN
+        MakePath = szDir$
+    ELSEIF MID$(szDir$, LEN(szDir$), 1) = "\" THEN
+        MakePath = szDir$ + szFile$
+    ELSE
+        MakePath = szDir$ + "\" + szFile$
+    END IF
+END FUNCTION

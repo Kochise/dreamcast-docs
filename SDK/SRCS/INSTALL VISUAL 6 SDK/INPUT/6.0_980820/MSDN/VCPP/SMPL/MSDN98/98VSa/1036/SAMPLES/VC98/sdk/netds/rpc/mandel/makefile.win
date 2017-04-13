@@ -1,0 +1,91 @@
+#*************************************************************#
+#**                                                         **#
+#**                 Microsoft RPC Examples                  **#
+#**                   mandel Application                    **#
+#**            Copyright(c) Microsoft Corp. 1992-1995       **#
+#**                                                         **#
+#*************************************************************#
+
+# The same source code is used to build either a standalone version
+# or an RPC client of the Microsoft Windows (R) Mandelbrot sample
+# application.  The flag RPC determines which version is built.
+# To build a standalone version, use the command
+#     >nmake cleanall
+#     >set NOTRPC=1
+#     >nmake
+# To build the RPC client, use the commands:
+#     >nmake cleanall
+#     >set NOTRPC=
+#     >nmake
+
+!ifdef NOTRPC
+RPCFLAG =
+!else
+RPCFLAG = -DRPC
+!endif
+
+cc= cl
+cflags= -c -AL -Gsw -Oas -Zpe -Zi
+linker= link
+lflags= /CO /NOD
+
+.c.obj:
+   $(cc) $(cflags) -DWIN16 $(RPCFLAG) $<
+
+!ifdef NOTRPC
+all: mandel.exe
+!else
+all: client.exe
+idl: mdlrpc.h
+!endif
+
+# Update the resource if necessary
+mandel.res: mandel.rc mandel.h
+    rc -r mandel.rc
+
+# Update the executable file if necessary, and if so, add the resource back in.
+mandel: mandel.exe
+mandel.exe: mandel.obj remote.obj calc.obj mandel.def mandel.res
+    $(linker) $(lflags) mandel remote calc, mandel.exe, , \
+    libw llibcew, mandel.def
+    rc mandel.res mandel.exe
+
+client: client.exe
+client.exe: mandel.obj remote.obj mdlrpc_c.obj mandel.def mandel.res
+    $(linker) $(lflags) mandel remote mdlrpc_c, client.exe, , \
+    libw llibcew rpcw rpcndrw, mandel.def
+    rc mandel.res client.exe
+
+# Compile differently for RPC and standalone versions
+
+!ifdef NOTRPC
+mandel.obj: mandel.c mandel.h
+
+remote.obj: remote.c mandel.h
+
+calc.obj  : calc.c mandel.h
+
+!else
+mandel.obj: mandel.c mandel.h mdlrpc.h
+
+remote.obj: remote.c mandel.h mdlrpc.h
+
+mdlrpc_c.obj : mdlrpc_c.c mdlrpc.h
+    $(cc) $(cflags) mdlrpc_c.c
+
+!endif
+
+mdlrpc.h mdlrpc_c.c : mdlrpc.idl mdlrpc.acf
+   midl -oldnames -env win16 -cpp_cmd $(cc) -cpp_opt "-E" mdlrpc.idl
+
+# Clean up everything
+cleanall : clean
+    -del *.exe
+
+# Clean up everything but the .EXEs
+clean :
+    -del *.obj
+    -del *.map
+    -del mandel.res
+    -del mdlrpc_c.c
+    -del mdlrpc.h

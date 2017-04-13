@@ -1,0 +1,90 @@
+# Makefile to build the MAPI Sample Message Store Provider
+
+!IFDEF MAPISAMP
+HOME   = $(MAPISAMP)\docfile.ms^\
+COMMON = $(MAPISAMP)\common^\
+!ELSE
+HOME   = 
+COMMON = ..\common^\
+!ENDIF
+
+!include <$(COMMON)win16.mak>
+
+!IFNDEF NODEBUG
+cflags = $(cflags) -DDEBUG
+!ENDIF
+
+PROJ     = SMPMS
+
+# Main target dependencies
+
+all: $(PROJ).dll
+
+# Extra libraries needed, not defined in win32.mak
+
+extralibs = mapi.lib compobj.lib storage.lib
+
+# Object files we need to build
+
+OBJS1 = msp.obj mspatch.obj mspfld.obj mspgle.obj mspguid.obj mspinit.obj
+OBJS2 = msplogon.obj mspmisc.obj mspms.obj mspmsg.obj mspntfy.obj mspobj.obj
+OBJS3 = msprfs.obj msptbl.obj
+
+COMMON_OBJS = imem.obj wrap3d.obj wep.obj
+!IFNDEF NODEBUG
+COMMON_OBJS = $(COMMON_OBJS) mapidbg.obj
+!ENDIF
+
+# Build the general object files
+
+{$(HOME)}.c.obj:
+  $(cc) /I$(COMMON) $(cdebug) $(cflags) $(cvarsdll) $**
+
+# Build the specific common object files
+
+imem.obj: $(COMMON)imem.c
+  $(cc) /I$(COMMON) $(cdebug) $(cflags) $(cvarsdll) $**
+
+wep.obj: $(COMMON)wep.c
+  $(cc) /I$(COMMON) $(cdebug) $(cflags) $(cvarsdll) $**
+
+wrap3d.obj: $(COMMON)wrap3d.c
+  $(cc) /I$(COMMON) $(cdebug) $(cflags) $(cvarsdll) $**
+
+mapidbg.obj: $(COMMON)mapidbg.c
+  $(cc) /I$(COMMON) $(cdebug) $(cflags) $(cvarsdll) $**
+
+# Build the resources
+
+$(PROJ).res: $(HOME)MSP.RC $(HOME)MSP.DLG
+  set INCLUDE=$(INCLUDE);$(HOME);$(COMMON)
+  $(rc) $(rcflags) $(rcvars) /fo $(PROJ).res $(HOME)MSP.RC
+
+# Link it together to make the executable image
+
+$(PROJ).dll: $(OBJS1) $(OBJS2) $(OBJS3) $(COMMON_OBJS) $(PROJ).res
+  echo $(OBJS1: = +) + > link.txt
+  echo $(OBJS2: = +) + >> link.txt
+  echo $(OBJS3: = +) + >> link.txt
+  echo $(COMMON_OBJS: = +) >> link.txt
+  echo $(PROJ).dll >> link.txt
+  echo $(PROJ).map >> link.txt
+  echo $(extralibs) $(guilibsdll) >> link.txt
+  echo $(HOME)dll16.def >> link.txt
+  $(link) $(ldebug) $(dlllflags) @link.txt
+  $(rc) -t $(PROJ).res $@
+!IFDEF MAPISAMP
+  -copy $@ $(MAPISAMP)\bin\$(PLATFORM)
+!ENDIF
+
+# Clean up the intermediate files
+
+clean:
+  -del *.obj 
+  -del *.res 
+  -del *.dll 
+  -del *.exp 
+  -del *.lib 
+  -del *.map 
+  -del link.txt
+

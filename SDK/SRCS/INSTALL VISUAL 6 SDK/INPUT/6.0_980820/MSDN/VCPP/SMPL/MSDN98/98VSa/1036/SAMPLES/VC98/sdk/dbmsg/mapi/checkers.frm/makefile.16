@@ -1,0 +1,71 @@
+# Makefile to build the Checkers Sample Form
+
+!IFDEF MAPISAMP
+HOME   = $(MAPISAMP)\checkers.frm^\
+COMMON = $(MAPISAMP)\common^\
+!ELSE
+HOME   = 
+COMMON = ..\common^\
+!ENDIF
+
+!include <$(COMMON)win16.mak>
+
+!IFNDEF NODEBUG
+cflags = $(cflags) -DDEBUG
+!ENDIF
+
+PROJ = WCHECK
+
+# Main target dependencies
+
+all: $(PROJ).exe
+
+# Extra libraries needed, not defined in win32.mak
+
+extralibs = ver.lib compobj.lib
+
+# Object files we need to build
+
+OBJS = wcheck.obj engine.obj form.obj
+
+# Build the object files
+
+{$(HOME)}.cpp.obj:
+  set cl= /I$(COMMON) $(cdebug) $(cflags) $(cvars)
+  $(cc) $**
+
+engine.obj: $(HOME)engine\lut.cpp $(HOME)engine\debugio.cpp \
+			$(HOME)engine\quality.cpp $(HOME)engine\prune.cpp \
+			$(HOME)engine\check.cpp $(HOME)engine.cpp $(HOME)check.h
+  set cl=/I$(COMMON) $(cdebug) $(cflags) $(cvars)
+  $(cc) $(HOME)engine.cpp
+
+# Build the resources
+
+$(PROJ).res: $(HOME)$(PROJ).RC $(HOME)$(PROJ).DLG
+  set INCLUDE=$(INCLUDE);$(HOME);$(COMMON)
+  $(rc) $(rcflags) $(rcvars) /fo $(PROJ).res $(HOME)$(PROJ).RC
+
+# Link it together to make the executable image
+
+$(PROJ).exe: $(OBJS) $(COMMON_OBJS) $(PROJ).res
+  echo $(OBJS) $(COMMON_OBJS) > link.txt
+  echo $(PROJ).exe >> link.txt
+  echo $(PROJ).map >> link.txt
+  echo $(extralibs) $(guilibs) >> link.txt
+  echo $(HOME)wcheck16.def >> link.txt
+  $(link) $(ldebug) $(lflags) @link.txt
+  $(rc) -t $(PROJ).res $@
+!IFDEF MAPISAMP
+  -copy $@ $(MAPISAMP)\bin\$(PLATFORM)
+!ENDIF
+
+# Clean up the intermediate files
+
+clean:
+  -del *.obj
+  -del *.res
+  -del *.exe
+  -del *.map
+  -del link.txt
+
