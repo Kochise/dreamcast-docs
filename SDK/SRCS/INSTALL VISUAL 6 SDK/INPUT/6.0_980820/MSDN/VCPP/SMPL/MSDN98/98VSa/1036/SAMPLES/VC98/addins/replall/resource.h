@@ -1,0 +1,60 @@
+//{{NO_DEPENDENCIES}}
+// Microsoft Developer Studio generated include file.
+// Used by ReplAll.rc
+//
+#define IDS_REPLALL_LONGNAME            1
+#define IDS_REPLALL_DESCRIPTION         2
+#define IDS_CMD_STRING                  3
+#define IDR_TOOLBAR_MEDIUM              128
+#define IDR_TOOLBAR_LARGE               129
+#define IDD_REPL                        129
+#define IDR_REGEXPMENU                  130
+#define IDC_WHOLEWORD                   1002
+#define IDC_MATCHCASE                   1003
+#define IDC_REGEXP                      1004
+#define IDC_REGEXPFIND                  1005
+#define IDC_FINDTEXT                    1006
+#define IDC_REPLTEXT                    1007
+#define IDC_REGEXPREPLACE               1008
+#define ID_OPTIONS_ANYCHARACTER         32771
+#define ID_OPTIONS_CHARACTERINRANGE     32772
+#define ID_OPTIONS_CHARACTERNOTINRANGE  32773
+#define ID_OPTIONS_BEGINNINGOFLINE      32774
+#define ID_OPTIONS_ENDOFLINE            32775
+#define ID_OPTIONS_TAGGEDEXPRESSION     32776
+#define ID_OPTIONS_NOT                  32777
+#define ID_OPTIONS_OR                   32778
+#define ID_OPTIONS_0ORMOREMATCHES       32779
+#define ID_OPTIONS_1ORMOREMATCHES       32780
+#define ID_OPTIONS_GROUP                32781
+#define ID_OPTIONS_WHITESPACE           32782
+#define ID_OPTIONS_ALPHANUMERICCHARACTER 32783
+#define ID_OPTIONS_ALPHABETICCHARACTER  32784
+#define ID_OPTIONS_DECIMALDIGIT         32785
+#define ID_OPTIONS_HEXADECIMALNUMBER    32786
+#define ID_OPTIONS_NUMBER               32787
+#define ID_OPTIONS_INTEGER              32788
+#define ID_OPTIONS_CCIDENTIFIER         32789
+#define ID_OPTIONS_ALPHABETICSTRING     32790
+#define ID_OPTIONS_QUOTEDSTRING         32791
+#define ID_OPTIONS2_FINDWHATTEXT        32792
+#define ID_OPTIONS2_TAGGEDEXPRESSION1   32793
+#define ID_OPTIONS2_TAGGEDEXPRESSION2   32794
+#define ID_OPTIONS2_TAGGEDEXPRESSION3   32795
+#define ID_OPTIONS2_TAGGEDEXPRESSION4   32796
+#define ID_OPTIONS2_TAGGEDEXPRESSION5   32797
+#define ID_OPTIONS2_TAGGEDEXPRESSION6   32798
+#define ID_OPTIONS2_TAGGEDEXPRESSION7   32799
+#define ID_OPTIONS2_TAGGEDEXPRESSION8   32800
+#define ID_OPTIONS2_TAGGEDEXPRESSION9   32801
+
+// Next default values for new objects
+// 
+#ifdef APSTUDIO_INVOKED
+#ifndef APSTUDIO_READONLY_SYMBOLS
+#define _APS_NEXT_RESOURCE_VALUE        131
+#define _APS_NEXT_COMMAND_VALUE         32802
+#define _APS_NEXT_CONTROL_VALUE         1008
+#define _APS_NEXT_SYMED_VALUE           101
+#endif
+#endif

@@ -1,0 +1,32 @@
+
+MINIMAL
+
+This sample implements a minimalistic DLL server, to show how DLL's developed with ATL
+can be very small.
+The sever has a single COM object, with one custom interface with one method.
+
+HOW TO RUN IT:
+
+Build MINIMAL.DLL. The DLL is NOT self registering, so you will have to use regedit to
+merge the provided MNIMAL.REG file. This .reg file does not have a path specified under
+the InProcServer32 key (i.e. InProcServer32 = minimal.dll): you will have either to
+modify the entry with a full path (e.g. InProcServer32 = c:\<your path>\minimal.dll) or have
+your DLL in the system path.
+Open the MINDRIV project (a console app) in the minimal\mindriv
+subdirectory, build and run from debugger or command line.
+
+
+REMARKS:
+
+This project does not make use of any OLD/IDL file to define the interfaces. Instead, it
+shows how to define custom interface directly from C++ (see minimal.h).
+
+The DLL server's size is reduced because:
+
+* The DLL has no resources associated with it (i.e. no RC file)
+* Threre is no registration code (it uses a separate REG file), and no
+  DllRegisterServer()/DllUnregisterServer() entry points.
+* Uses #define _ATL_MIN_CRT and specifies DllMain as the entry point: CRTs are not linked in
+* Exception handling is disabled.
+* The project uses #define _ATL_NO_FORCE_LIBS and links in only the needed libraries
+  (to avoid UUID.LIB, in minimal.cpp we define the IID's ATL is using)

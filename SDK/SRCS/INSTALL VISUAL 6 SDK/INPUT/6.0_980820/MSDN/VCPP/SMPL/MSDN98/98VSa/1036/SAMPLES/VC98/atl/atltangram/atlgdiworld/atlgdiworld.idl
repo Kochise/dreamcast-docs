@@ -1,0 +1,125 @@
+// ATLGdiWorld.idl : IDL source for ATLGdiWorld.dll
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (ATLGdiWorld.tlb) and marshalling code.
+
+///////////////////////////////////////////////////////////
+//
+// Forwards
+//
+interface ITangramModel ;
+interface IAtlTangramVisual ;
+
+///////////////////////////////////////////////////////////
+//
+// Imports
+//
+
+// Graphic Definitions
+import "unknwn.idl" ; 
+import "tantype.idl" ;
+import "AtlModel.idl" ;
+import "AtlTangramCanvas.idl";
+
+	///////////////////////////////////////////////////////////
+	//
+	// Interface IAtlTangramVisual
+	//
+	[
+		object,
+		uuid(D62E8DC8-AEDD-11d0-80C9-00609714FDFE),
+		helpstring("ITangramVisual Interface"),
+		pointer_default(unique)
+	]
+	interface IAtlTangramVisual : IUnknown
+	{
+
+		HRESULT GetModel(	[in] REFIID iid, 
+							[out, iid_is(iid)] IUnknown** ppI);
+		HRESULT SetSelected([in] BOOL bSelected) ;
+	};
+
+	///////////////////////////////////////////////////////////
+	//
+	// Interface IAtlTangramWorld
+	//
+	[
+		object,
+		uuid(582787A4-AED3-11d0-80C9-00609714FDFE),
+		helpstring("ITangramWorld Interface"),
+		pointer_default(unique)
+	]
+	interface IAtlTangramWorld : IUnknown
+	{
+		import  "oaidl.idl";
+
+		HRESULT Initialize([in] HWND hwnd, [in] double logicalCX, [in] double logicalCY) ;
+		HRESULT DeviceToModel([in] POINT ptIN, [out] TangramPoint2d* pptOut) ;
+
+		HRESULT VisualFromPoint([in] POINT pt, 
+								[in] REFIID iid, 
+								[out, iid_is(iid)] IUnknown** pITangramVisual) ;
+
+		HRESULT CreateVisualForModel([in] IATLTangramModel* pModel) ;
+		HRESULT SelectVisual([in] IAtlTangramVisual* pSelectedVisual, [in] BOOL bSelect);
+		HRESULT Animate() ; 
+	};
+
+	[
+	
+		uuid(09A63AE0-AED1-11D0-80C9-00609714FDFE),
+	
+		helpstring("IAtlTangramGdiWorld Interface"),
+		pointer_default(unique)
+	]
+	interface IAtlTangramGdiWorld : IAtlTangramWorld
+	{
+		HRESULT ModelToDevice(	[in] TangramPoint2d pptIn, [out] POINT* pptOut) ;
+		HRESULT AddUpdateRect([in] RECT rectUpdate) ; 
+	};
+
+	[
+	
+		uuid(09A63AEF-AED1-11D0-80C9-00609714FDFE),
+	
+		helpstring("IAtlTangramGdiVisual Interface"),
+		pointer_default(unique)
+	]
+	interface IAtlTangramGdiVisual : IAtlTangramVisual
+	{
+
+		HRESULT Initialize([in] IATLTangramModel* pModel, [in] IAtlTangramGdiWorld* pWorld) ;
+		HRESULT IsPtIn([in] POINT pt) ;
+		HRESULT GetBoundingRect([out] RECT* pBoundingRect) ;
+		HRESULT DrawOn([in] IAtlTangramCanvas* pCanvas) ;    
+		[helpstring("method ReleaseConnectionPoint")] 
+		HRESULT ReleaseConnectionPoint();
+	};
+[
+	uuid(09A63AD3-AED1-11D0-80C9-00609714FDFE),
+	version(1.0),
+	helpstring("ATLGdiWorld 1.0 Type Library")
+]
+library ATLGDIWORLDLib
+{
+	importlib("stdole32.tlb");
+	importlib("stdole2.tlb");
+
+	[
+		uuid(09A63AE1-AED1-11D0-80C9-00609714FDFE),
+		helpstring("AtlTangramGdiWorld Class")
+	]
+	coclass AtlGdiWorld
+	{
+		[default] interface IAtlTangramGdiWorld;
+	};
+	[
+		uuid(09A63AF0-AED1-11D0-80C9-00609714FDFE),
+		helpstring("AtlTangramGdiVisual Class")
+	]
+	coclass AtlTangramGdiVisual
+	{
+		[default] interface IAtlTangramGdiVisual;
+	};
+};

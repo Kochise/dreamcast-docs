@@ -1,0 +1,293 @@
+$$// newproj.inf = template for list of template files
+$$//  format is 'sourceResName' \t 'destFileName'
+$$//    The source res name may be preceded by any combination of '=', '-',  '!', '?', ':', '#', and/or '*'
+$$//       '=' => the resource is binary
+$$//       '-' => the file should not be added to the project (all files are added to the project by default)
+$$//       '!' => the file should be marked exclude from build
+$$//       '?' => the file should be treated as a help file
+$$//       ':' => the file should be treated as a resource
+$$//       '#' => the file should be treated as a template (implies '!')
+$$//       '*' => bypass the custom AppWizard's resources when loading
+$$//	if name starts with / => create new subdir
+
+
+$$IF(PROJTYPE_DLL)
+dllroot.clw	$$root$$.clw
+$$ELIF(PROJTYPE_DLG)
+dlgroot.clw	$$root$$.clw
+$$ELSE
+root.clw	$$root$$.clw
+$$ENDIF //DLG, DLL
+$$IF(VERBOSE)
+readme.txt	ReadMe.txt
+$$ENDIF
+
+$$// App and main frame
+
+$$IF(PROJTYPE_DLG)
+dlgroot.h	$$root$$.h
+dlgroot.cpp	$$root$$.cpp
+dialog.h	$$dlg_hfile$$.h
+dialog.cpp	$$dlg_ifile$$.cpp
+$$IF(AUTOMATION)
+dlgproxy.h	$$dlgautoproxy_hfile$$.h
+dlgproxy.cpp	$$dlgautoproxy_ifile$$.cpp
+$$ENDIF //AUTOMATION
+$$ELIF(PROJTYPE_DLL)
+dllroot.cpp	$$root$$.cpp
+$$IF(!EXTDLL)
+dllroot.h	$$root$$.h
+$$ENDIF //!EXTDLL
+$$ELSE
+root.h	$$root$$.h
+root.cpp	$$root$$.cpp
+$$ENDIF //DLG
+$$IF(PROJTYPE_DLL)
+root.def	$$root$$.def
+$$ENDIF //PROJTYPE_DLL
+$$IF(AUTOMATION)
+root.odl	$$root$$.odl
+$$ENDIF
+
+$$// Canned parts, with canned names
+
+stdafx.h	StdAfx.h
+stdafx.cpp	StdAfx.cpp
+$$IF(!PROJTYPE_DLL)
+$$IF(!PROJTYPE_DLG)
+frame.h	$$frame_hfile$$.h
+frame.cpp	$$frame_ifile$$.cpp
+$$IF(MDICHILD)
+childfrm.h	$$child_frame_hfile$$.h
+childfrm.cpp	$$child_frame_ifile$$.cpp
+$$ENDIF //MDICHILD
+$$ENDIF //!PROJTYPE_DLG
+
+$$// Document specific
+
+$$IF(!PROJTYPE_DLG)
+$$IF(!NODOCVIEW)
+doc.h	$$doc_hfile$$.h
+doc.cpp	$$doc_ifile$$.cpp
+view.h	$$view_hfile$$.h
+view.cpp	$$view_ifile$$.cpp
+$$ELSE
+wndview.h	$$wndview_hfile$$.h
+wndview.cpp	$$wndview_ifile$$.cpp
+$$ENDIF //!NODOCVIEW
+$$IF(PROJTYPE_EXPLORER)
+treeview.h	$$treeview_hfile$$.h
+treeview.cpp	$$treeview_ifile$$.cpp
+$$ENDIF //PROJTYPE_EXPLORER
+$$ENDIF //!PROJTYPE_DLG
+$$IF(CONTAINER_SERVER || FULL_SERVER || MINI_SERVER || AUTOMATION || HAS_SUFFIX)
+root.reg	$$root$$.reg
+$$ENDIF //SERVERS,AUTOMATION,SUFFIX
+
+$$// Database specific
+
+$$IF(CRecordView || CDaoRecordView ||COleDBRecordView)
+recset.h	$$recset_hfile$$.h
+recset.cpp	$$recset_ifile$$.cpp
+$$ENDIF  //CRecordView || CDaoRecordSet || COleDBRecordView
+
+$$// OLE specific
+
+$$IF(FULL_SERVER || MINI_SERVER || CONTAINER_SERVER)
+srvritem.h	$$srvritem_hfile$$.h
+srvritem.cpp	$$srvritem_ifile$$.cpp
+ipframe.h	$$ipframe_hfile$$.h
+ipframe.cpp	$$ipframe_ifile$$.cpp
+$$ENDIF
+$$IF(CONTAINER || CONTAINER_SERVER)
+cntritem.h	$$cntritem_hfile$$.h
+cntritem.cpp	$$cntritem_ifile$$.cpp
+$$ENDIF
+$$ENDIF //!PROJTYPE_DLL
+
+$$// Extra class for handling "Press Me" dialog
+$$IF(PRESS_ME_DIALOG)
+pressdlg.cpp	.\pressdlg.cpp
+pressdlg.h	.\pressdlg.h
+$$ENDIF
+
+$$// Resources
+
+/res
+$$IF(MULTIPLE_LANGS)
+$$BEGINLOOP(NUM_LANGS)
+/$$RES_DIR_LOC$$
+$$ENDLOOP //NUM_LANGS
+$$ENDIF //MULTIPLE_LANGS
+
+$$IF(PROJTYPE_DLG || PROJTYPE_DLL)
+dlgres.h	Resource.h
+dlgall.rc	$$root$$.rc
+$$ELSE
+resource.h	Resource.h
+all.rc	$$root$$.rc
+$$ENDIF //DLG||DLL
+$$BEGINLOOP(NUM_LANGS)
+:root.rc2	$$RES_DIR_LOC$$\$$root$$.rc2
+$$IF(PROJTYPE_MDI || PROJTYPE_SDI)
+$$IF(!NODOCVIEW)
+=:doc.ico	$$RES_DIR_LOC$$\$$doc_ifile$$.ico
+$$ENDIF
+$$ENDIF
+$$ENDLOOP //NUM_LANGS
+$$IF(!PROJTYPE_DLL)
+=:root.ico	res\$$root$$.ico
+$$IF(!PROJTYPE_DLG)
+$$IF(TOOLBAR)
+$$IF(!NODOCVIEW)
+
+$$IF( !PROJTYPE_EXPLORER || !CListView )
+
+$$IF(DB_NO_FILE)
+$$IF(HELP)
+=:tbdh_.bmp	res\Toolbar.bmp
+$$ELSE
+=:tbd__.bmp	res\Toolbar.bmp
+$$ENDIF
+$$ELIF(CRecordView || CDaoRecordView || COleDBRecordView)
+$$IF(HELP)
+=:tbrh_.bmp	res\Toolbar.bmp
+$$ELSE
+=:tbr__.bmp	res\Toolbar.bmp
+$$ENDIF
+$$ELSE //!database view
+$$IF(HELP)
+=:tbah_.bmp	res\Toolbar.bmp
+$$ELSE
+=:tba__.bmp	res\Toolbar.bmp
+$$ENDIF
+$$ENDIF //database views
+
+$$ELSE
+
+$$IF(DB_NO_FILE)
+$$IF(HELP)
+=:tbedh.bmp	res\Toolbar.bmp
+$$ELSE
+=:tbed_.bmp	res\Toolbar.bmp
+$$ENDIF
+$$ELSE //!database view
+$$IF(HELP)
+=:tbeah.bmp	res\Toolbar.bmp
+$$ELSE
+=:tbea_.bmp	res\Toolbar.bmp
+$$ENDIF
+$$ENDIF //database views
+
+$$ENDIF //EXPLORER
+
+$$IF(FULL_SERVER || MINI_SERVER || CONTAINER_SERVER)
+$$IF(CRecordView || CDaoRecordView || COleDBRecordView)
+$$IF(HELP)
+=:tbrhi.bmp	res\IToolbar.bmp
+$$ELSE
+=:tbr_i.bmp	res\IToolbar.bmp
+$$ENDIF
+$$ELSE //!database view
+$$IF(HELP)
+=:tbahi.bmp	res\IToolbar.bmp
+$$ELSE
+=:tba_i.bmp	res\IToolbar.bmp
+$$ENDIF
+$$ENDIF //database views
+$$ENDIF //SERVERs
+
+$$ELSE  // NODOCVIEW
+=:tbnd_.bmp	res\Toolbar.bmp
+$$ENDIF
+$$ENDIF //TOOLBAR
+$$ENDIF //!PROJTYPE_DLG
+
+$$// Bitmaps needed for owner-draw buttons in "Press Me"
+$$IF(PRESS_ME_DIALOG)
+=smileu.bmp	res\smileu.bmp
+=smiled.bmp	res\smiled.bmp
+=smilef.bmp	res\smilef.bmp
+=frownu.bmp	res\frownu.bmp
+=frownd.bmp	res\frownd.bmp
+=frownf.bmp	res\frownf.bmp
+$$ENDIF
+
+$$// Help Specific
+$$IF(HELP)
+/hlp
+$$IF(MULTIPLE_LANGS)
+$$BEGINLOOP(NUM_LANGS)
+/$$HLP_DIR_LOC$$
+$$ENDLOOP //NUM_LANGS
+$$ENDIF //MULTIPLE_LANGS
+
+-makehelp.bat	MakeHelp.bat
+
+$$BEGINLOOP(NUM_LANGS)
+$$SET_DEFAULT_LANG(LANG_SUFFIX)
+$$IF(TARGET_INTEL || TARGET_MIPS || TARGET_ALPHA)
+root.hpj	$$HLP_DIR_LOC$$\$$root$$.hpj
+$$ENDIF //INTEL,MIPS,ALPHA
+
+$$IF(PROJTYPE_DLG)
+?afxdlg.rtf	$$HLP_DIR_LOC$$\AfxDlg.rtf
+dlgroot.cnt	$$HLP_DIR_LOC$$\$$root$$.cnt
+
+$$ELSE
+
+root.cnt	$$HLP_DIR_LOC$$\$$root$$.cnt
+$$IF(TARGET_INTEL || TARGET_MIPS || TARGET_ALPHA)
+=?afxcore.rtf	$$HLP_DIR_LOC$$\AfxCore.rtf
+$$ENDIF //INTEL,MIPS,ALPHA
+
+$$IF(PRINT)
+$$IF(TARGET_INTEL || TARGET_MIPS || TARGET_ALPHA)
+=?afxprint.rtf	$$HLP_DIR_LOC$$\AfxPrint.rtf
+$$ENDIF //INTEL,MIPS,ALPHA
+$$ENDIF //PRINT
+
+$$IF(CONTAINER || CONTAINER_SERVER)
+=?afxolecl.rtf	$$HLP_DIR_LOC$$\AfxOleCl.rtf
+$$ENDIF
+$$IF(FULL_SERVER || MINI_SERVER || CONTAINER_SERVER)
+=?afxolesv.rtf	$$HLP_DIR_LOC$$\AfxOleSv.rtf
+$$ENDIF
+$$IF(CRecordView || CDaoRecordView || COleDBRecordView)
+=?afxdb.rtf	$$HLP_DIR_LOC$$\AfxDb.rtf
+$$ENDIF
+
+$$// localized help specific bitmaps
+=?appexit.bmp	$$HLP_DIR_LOC$$\AppExit.bmp
+=?hlpsbar.bmp	$$HLP_DIR_LOC$$\HlpSBar.bmp
+=?scmenu.bmp	$$HLP_DIR_LOC$$\ScMenu.bmp
+
+$$ENDIF //PROJTYPE_DLG
+$$ENDLOOP //NUM_LANGS
+
+$$IF(!PROJTYPE_DLG)
+$$// non-localized help specific bitmaps
+=?filenew.bmp	hlp\FileNew.bmp
+=?fileopen.bmp	hlp\FileOpen.bmp
+=?fileprnt.bmp	hlp\FilePrnt.bmp
+=?filesave.bmp	hlp\FileSave.bmp
+=?editcopy.bmp	hlp\EditCopy.bmp
+=?editcut.bmp	hlp\EditCut.bmp
+=?editpast.bmp	hlp\EditPast.bmp
+=?editundo.bmp	hlp\EditUndo.bmp
+=?curarw4.bmp	hlp\CurArw4.bmp
+=?curarw2.bmp	hlp\CurArw2.bmp
+=?curhelp.bmp	hlp\CurHelp.bmp
+=?scmax.bmp	hlp\Scmax.bmp
+=?scmin.bmp	hlp\Scmin.bmp
+=?bullet.bmp	hlp\Bullet.bmp
+=?hlptbar.bmp	hlp\HlpTBar.bmp
+=?recfirst.bmp	hlp\RecFirst.bmp
+=?recprev.bmp	hlp\RecPrev.bmp
+=?recnext.bmp	hlp\RecNext.bmp
+=?reclast.bmp	hlp\RecLast.bmp
+$$ENDIF //!PROJTYPE_DLG
+
+$$ENDIF //HELP
+
+$$ENDIF //!PROJTYPE_DLL

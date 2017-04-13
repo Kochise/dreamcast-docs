@@ -1,0 +1,41 @@
+
+MFCATL
+
+This sample illustrates how ATL COM objects can be used in an MFC server EXE.
+The server allows the creation of two objects, "ObjectOne" (implemented in MFC and
+supporting a dispinterface) and "ObjectTwo" (implemented in ATL and supporting a
+dual interface).
+
+HOW TO RUN IT:
+Build the MfcAtl.EXE server and run it standalone to register it.
+Load the MfcAtl.VBP Visual Basic 4.0 project, run it, and press the buttons in the form.
+Note that if you are running the sample on NT 3.51 then only the release build will work.
+
+REMARKS:
+Originally, the project had both objects implemented in MFC (by deriving them from CCmdTarget).
+"ObjectTwo" has been reimplemented using ATL. In doing so, these steps were followed:
+
+* Included ATL header files (atlbase.h and atlcom.h) into premfcat.h
+* Included atlimpl.cpp into premfcat.cpp
+* Added a CComModule derived class to premfcat.h (similar to the beeper .EXE sample)
+	and implemented the Lock() an Unlock() methods to forward lock counts to MFC by calling
+	AfxOleLockApp()/AfxOleUnlockApp()
+* Added an object map macro pair (BEGIN_OBJECT_MAP()/END_OBJECT_MAP()) into the MfcAtl.cpp
+	and added a static instance of the module class called _Module
+* Called _Module.Init() and Term() from InitInstance() and ExitInstance()
+* Added the typelib as a resource
+* Called _Module.RegisterServer(TRUE) from InitInstance(), to match the MFC call to
+	COleObjectFactory::UpdateRegistryAll()
+* Called _Module.RegisterClassObjects(CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE), matching
+	the REGCLS_MULTIPLEUSE of MFC's class factories, as implicitly done by the
+	IMPLEMENT_OLECREATE() macro
+* Reimplemented "ObjectTwo" using ATL:
+	+ changed the ODL file from dispinterface to dual interface
+	+ had the ODL compilation generate a header file (interf.h), needed by ATL
+	+ rewrote .h and .cpp file (the quickest way is to run ATL Wizard and copy/paste/rename
+	  the automatically generated code in place of the original MFC one)
+	+ added an OBJECT_ENTRY(CLSID_ObjectTwo, CObjectTwo) to the ATL object map
+
+Additional conversion steps (not covered here) might include:
+* porting the ODL file to IDL format
+* adding support for -RegServer and -UnregServer command line arguments
