@@ -1,0 +1,1 @@
+int WINAPI SendAll(HWND, UINT, DWORD, LONG);

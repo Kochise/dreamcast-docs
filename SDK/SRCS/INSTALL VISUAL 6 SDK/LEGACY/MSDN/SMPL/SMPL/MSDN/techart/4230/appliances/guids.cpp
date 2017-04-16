@@ -1,0 +1,9 @@
+// guids.cpp
+#include "stdafx.h"
+#include <initguid.h>
+
+#include "..\include\appliancesid.h"
+#include "..\include\idrawing.h"
+#include "..\include\ioutlet.h"
+#include "..\include\ilight.h"
+#include "..\include\iapplianceui.h"

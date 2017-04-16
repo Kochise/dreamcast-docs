@@ -1,0 +1,2 @@
+nmake /f progress.mak
+

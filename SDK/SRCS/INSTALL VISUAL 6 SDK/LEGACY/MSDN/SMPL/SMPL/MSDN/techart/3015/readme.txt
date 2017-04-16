@@ -1,0 +1,2 @@
+ Animation Library - Nigel Thompson
+ 

@@ -1,0 +1,9 @@
+// AppliancesID.h
+
+#ifndef _CLSID_LightBulb_
+#define _CLSID_LightBulb_
+
+DEFINE_GUID(CLSID_LightBulb, 
+0x3a015b30, 0x41fc, 0x11ce, 0x9e, 0xe5, 0x0, 0xaa, 0x0, 0x42, 0x31, 0xbf);
+
+#endif // _CLSID_LightBulb_

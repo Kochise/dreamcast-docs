@@ -1,0 +1,6 @@
+PERF0.BAS
+NATIVEVB.BAS
+ProjWinSize=88,524,248,215
+ProjWinShow=2
+Title="LOAD_CTL"
+ExeName="PERF0.EXE"

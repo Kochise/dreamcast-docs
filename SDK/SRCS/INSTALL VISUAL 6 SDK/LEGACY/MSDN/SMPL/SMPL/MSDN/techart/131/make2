@@ -1,0 +1,156 @@
+
+#=========================================================
+#
+#  The following defines classify all functions in the 
+#	Zusammen application.
+#
+LOCAL=NEAR						# Intersegment calls
+GLOBAL=FAR						# Intrasegment calls
+ENTRY=FAR PASCAL 				# Entry Points
+DLL_ENT=FAR PASCAL			# DLL Entry Points
+DLL_EXP=FAR PASCAL			# DLL Exported Entry Points
+
+DEFS=-D"LOCAL=$(LOCAL)" -D"GLOBAL=$(GLOBAL)" -D"ENTRY=$(ENTRY)" -D"DLL_ENT=$(DLL_ENT)" -D"DLL_EXP=$(DLL_EXP)"
+
+#=========================================================
+#
+# Default filenames
+#
+APPDEF=zusammen.def
+DLLDEF=picker.def
+MAKE=make2
+
+#=========================================================
+#
+# Default compiler, assembler, linker Options
+#
+# CFLAGS 		= Common Compiler Options
+# CAPP   		= Options for application modules 
+# CAPP_NOENTRY = Options for appliction module
+# CDLL 			= Options for DLLs
+# CDLL_NOENTRY = Options for DLLs modules without entry points
+#
+CFLAGS		= /W3 /c /Zp /D_WINDOWS /DSTRICT /Oclgne /G2s
+CAPP	 		=$(CFLAGS) /AM /Gw 
+CAPP_NOENTRY=$(CFLAGS) /AM 
+CDLL			=$(CFLAGS) /D_WINDLL /AM
+CDLL_NOENTRY=$(CFLAGS) /D_WINDLL /AMw 
+
+LFLAGS		=/NOD /NOE /NOPACKCODE 
+
+#=========================================================
+#
+# Libraries
+#
+LIBS=libw mlibcew picker.lib
+LIBSDLL=libw mdllcew
+
+#=========================================================
+#
+# Object Modules
+#
+OBJ	=  app.obj frame.obj wframe.obj client.obj wclient.obj zusammen.obj
+OBJDLL=  picker.obj libentry.obj pick_dll.obj pick_mem.obj
+
+#=========================================================
+#
+# Build rules
+#
+.SUFFIXES: .c .rc .obj .res
+
+.c.obj:
+    cl @<<
+$(CAPP) $(DEFS) $*.c
+<<
+
+.rc.res:
+    rc /r $*.rc
+
+#=========================================================
+#
+# Pseudo targets
+#
+target: zusammen.exe picker.lib
+
+#=========================================================
+#
+# Link Picker
+#
+picker.dll: $(MAKE) $(DLLDEF) picker.res $(OBJDLL)
+    link $(LFLAGS) @<<
+$(OBJDLL)
+picker.dll
+picker.map
+$(LIBSDLL)
+$(DLLDEF);
+<<
+    rc -T -30 picker.res picker.dll    
+
+picker.lib: picker.dll $(DLLDEF)
+	 implib picker.lib $(DLLDEF)
+
+#=========================================================
+#
+# File dependencies for Picker
+#
+picker.res: 		picker.rc picker.dlg pick_dlg.h
+
+picker.obj:   		picker.c pick_dlg.h picker.h pick_dll.h
+    cl @<<
+$(CDLL) $(DEFS) $*.c
+<<
+
+pick_dll.obj: 		pick_dll.c pick_dll.h
+    cl @<<
+$(CDLL) $(DEFS) $*.c
+<<
+
+# The following modules have no entry points
+#
+pick_mem.obj : 	pick_mem.c pick_mem.h picker.h
+    cl @<<
+$(CDLL_NOENTRY) $(DEFS) $*.c
+<<
+
+#=========================================================
+#
+# File dependencies for Zusammen
+#
+zusammen.res: 		zusammen.rc resource.h
+
+app.obj:    		app.c app.h resource.h zusammen.h client.h frame.h
+
+wframe.obj:  		wframe.c frame.h client.h resource.h
+
+wclient.obj: 		wclient.c client.h resource.h
+
+# The following modules have no entry points
+#
+zusammen.obj: 		zusammen.c zusammen.h resource.h 
+    cl @<<
+$(CAPP_NOENTRY) $(DEFS) $*.c
+<<
+
+frame.obj:  		frame.c frame.h client.h resource.h
+    cl @<<
+$(CAPP_NOENTRY) $(DEFS) $*.c
+<<
+
+client.obj: 		client.c client.h resource.h
+    cl @<<
+$(CAPP_NOENTRY) $(DEFS) $*.c
+<<
+
+#=========================================================
+#
+# Link Zusammen
+#
+zusammen.exe: $(MAKE) $(APPDEF) zusammen.res $(OBJ) picker.lib
+    link $(LFLAGS) @<<
+$(OBJ)
+zusammen.exe
+zusammen.map
+$(LIBS)
+$(APPDEF);
+<<
+    rc -T -30 zusammen.res

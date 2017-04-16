@@ -1,0 +1,11 @@
+#define IDD_ABOUT       100
+#define IDI_APP         203
+#define IDD_SPRITE      300
+#define IDDS_X          301
+#define IDDS_Y          302
+#define IDDS_Z          303
+#define IDDS_VX         304
+#define IDDS_VY         305
+#define IDDS_SEL        306
+#define IDDS_W          307
+#define IDDS_H          308

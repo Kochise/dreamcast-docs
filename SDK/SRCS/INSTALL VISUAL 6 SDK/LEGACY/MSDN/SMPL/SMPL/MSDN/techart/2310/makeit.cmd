@@ -1,0 +1,2 @@
+nmake /f slider.mak
+

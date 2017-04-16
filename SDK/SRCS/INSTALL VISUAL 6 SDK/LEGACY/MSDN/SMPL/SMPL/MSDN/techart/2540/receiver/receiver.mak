@@ -1,0 +1,87 @@
+# Microsoft Visual C++ generated build script - Do not modify
+
+PROJ = RECEIVER
+DEBUG = 0
+PROGTYPE = 1
+CALLER = 
+ARGS = 
+DLLS = 
+D_RCDEFINES = -d_DEBUG
+R_RCDEFINES = -dNDEBUG
+ORIGIN = MSVC
+ORIGIN_VER = 1.00
+PROJPATH = C:\WIN95\DDK\BASE\SAMPLES\CALLBACK\RECEIVER\
+USEMFC = 0
+CC = cl
+CPP = cl
+CXX = cl
+CCREATEPCHFLAG = 
+CPPCREATEPCHFLAG = 
+CUSEPCHFLAG = 
+CPPUSEPCHFLAG = 
+FIRSTC = RECEIVER.C  
+FIRSTCPP =             
+RC = rc
+CFLAGS_D_WDLL = /nologo /W3 /FR /G2 /Zi /D_DEBUG /Od /GD /ALw /Fd"RECEIVER.PDB"
+CFLAGS_R_WDLL = /nologo /W3 /FR /O1 /DNDEBUG /GD /ALw
+LFLAGS_D_WDLL = /NOLOGO /ONERROR:NOEXE /NOD /PACKC:61440 /CO /NOE /ALIGN:16 /MAP:FULL
+LFLAGS_R_WDLL = /NOLOGO /ONERROR:NOEXE /NOD /PACKC:61440 /NOE /ALIGN:16 /MAP:FULL
+LIBS_D_WDLL = oldnames libw commdlg shell olecli olesvr ldllcew
+LIBS_R_WDLL = oldnames libw commdlg shell olecli olesvr ldllcew
+RCFLAGS = /nologo
+RESFLAGS = /nologo
+RUNFLAGS = 
+DEFFILE = RECEIVER.DEF
+OBJS_EXT = 
+LIBS_EXT = 
+!if "$(DEBUG)" == "1"
+CFLAGS = $(CFLAGS_D_WDLL)
+LFLAGS = $(LFLAGS_D_WDLL)
+LIBS = $(LIBS_D_WDLL)
+MAPFILE = nul
+RCDEFINES = $(D_RCDEFINES)
+!else
+CFLAGS = $(CFLAGS_R_WDLL)
+LFLAGS = $(LFLAGS_R_WDLL)
+LIBS = $(LIBS_R_WDLL)
+MAPFILE = nul
+RCDEFINES = $(R_RCDEFINES)
+!endif
+!if [if exist MSVC.BND del MSVC.BND]
+!endif
+SBRS = RECEIVER.SBR
+
+
+RECEIVER_DEP = c:\win95\ddk\base\samples\callback\receiver\receiver.h
+
+
+all:	$(PROJ).DLL $(PROJ).BSC
+
+RECEIVER.OBJ:	RECEIVER.C $(RECEIVER_DEP)
+	$(CC) $(CFLAGS) $(CCREATEPCHFLAG) /c RECEIVER.C
+
+
+$(PROJ).DLL::	RECEIVER.OBJ $(OBJS_EXT) $(DEFFILE)
+	echo >NUL @<<$(PROJ).CRF
+RECEIVER.OBJ +
+$(OBJS_EXT)
+$(PROJ).DLL
+$(MAPFILE)
+m:\msvc16\lib\+
+m:\msvc16\mfc\lib\+
+$(LIBS)
+$(DEFFILE);
+<<
+	link $(LFLAGS) @$(PROJ).CRF
+	$(RC) $(RESFLAGS) $@
+	implib /nowep $(PROJ).LIB $(PROJ).DLL
+
+
+run: $(PROJ).DLL
+	$(PROJ) $(RUNFLAGS)
+
+
+$(PROJ).BSC: $(SBRS)
+	bscmake @<<
+/o$@ $(SBRS)
+<<

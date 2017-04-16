@@ -1,0 +1,7 @@
+FORM1.FRM
+GLOBAL.BAS
+ProjWinSize=98,473,252,122
+ProjWinShow=2
+Title="EZPRINT TEST"
+ExeName="VBTEST.EXE"
+Path="C:\VB"

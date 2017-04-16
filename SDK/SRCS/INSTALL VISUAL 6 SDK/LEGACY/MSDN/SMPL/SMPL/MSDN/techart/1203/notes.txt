@@ -1,0 +1,104 @@
+Some notes on the use of palettes
+---------------------------------
+
+Use DIB_PAL_COLORS with SetDIBitsToDevice to avoid color matching by
+GDI.  Use an identity palette - this is detected by the device
+driver.
+
+The DIB driver expects RGBQUAD data structure for color matching. it
+does not use palette indexes.
+
+DIBINDEX macro forces the DIB driver to use color index rather than
+color mapping.
+
+Use StretchDIBits to transfer data from the DIB driver image to the
+screen.  BitBlt doesn't work because the DIB in the DIB driver is not
+owned by the same device driver as the screen.
+
+StretchDIBits performance is enhanced by using DIB_PAL_COLORS and a
+one-to-one palette.  This avoids any color matching.
+
+DIB_RGB_COLORS: The DIB's color table contains RGB values
+DIB_PAL_COLORS: The DIB's color table contains logical palette index
+                values
+
+
+PALETTERGB(r,g,b)   02, red, green, blue
+PALETTEINDEX(i)     01, index
+
+PC_RESERVED	0x01	/* palette index used for animation */
+PC_EXPLICIT	0x02	/* palette index is explicit to device */
+PC_NOCOLLAPSE	0x04	/* do not match color to system palette */
+
+
+
+Memory DCs:  using CreateCompatibleBitmap on a memory DC results in a
+bitmap the same format as the one currently selcted in the DC.
+(Default is mono). So if no bitmap has been selected into it, you
+will get a mono bitmap.  Output device DCs always return the native
+format.
+
+GDI uses SetDIBits to convert DIBs to DDBs.
+SetDIBits with DIB_RGB_COLORS will create index values by mapping the
+the DIB color table entries to colors in the current logical palette.
+I have noticed that doing this in a compatibleDC doesn't work, but
+doing it with a DIB driver DC works fine.
+
+
+
+SetDIBitsToDevice is not recomended.  Use StretchDIBits instead.
+
+If StretchDIbits is slower than SetDIBits + BitBlt then the driver
+sucks.
+
+Painting a DIB:
+
+        SelectPalette(hDC, hPal, FALSE); // select pal as foreground    
+        RealizesPalette(hDC); // map to hardware now.
+
+When drawing to a memory bitmap, you must select the correct palette
+first.
+
+BitBlt, color -> mono conversions.  If the pixel color == the
+background color then the mono output is white (1) otherwise
+it is black (0).
+
+
+BitBlt:  You cannot use BitBlt to move data from a DC owned by one
+device driver to a DC owned by a different device driver.  If one DC
+is a DIB driver DC and the other is a screen DC:
+
+   screen dc -> GetDIBits -> DIB dc -> StretchDIBits -> screen dc
+
+So to be able to use blit operations like xor and and to do
+transparency masking onto a DIB dc, the sprite image and mask must
+also be in DIB DCs.
+
+Since the DIB driver works on the packed DIB format used by the
+clipboard as CF_DIB, it is most convenient to keep DIBs around in
+this form.
+
+For best screen update performance we need to use StretchDIBits to
+move data from the DIB dc to the screen DC with the DIB_PAL_COLORS
+option.  This avoids a needless color translation.  (Why do we still
+need an identity palette then?)
+
+The app uses a single palette based on the color table found
+in the DIB used as the background.
+
+Sprite DIBs should be kept to <64k in size so that a FAR pointer
+rather than a HUGE pointer can be used to access it. That means a
+bitmap of 100x640, 200x320 or 250x250 is about as big as you can
+have.
+
+Be very careful when manipulating the off-screen DIB memory that you
+account for the 64k segments or just use a HUGE pointer in C.
+An address wrap while doing a fill operation on the DIB bits will
+cause the BITMAPINFOHEADER and color table to get trashed since these
+occupy the start of the memory area occupied by the DIB.
+
+Timing measurements are done with the MMSYSTEM function timeGetTime
+rather than the regular Windows function GetTickCount because
+timeGetTime returns a millisecond count accurate to the nearest
+millisecond and GetTickCount returns a millisecond count only
+accurate to the nearest 55ms (one DOS clock tick - hence the name).

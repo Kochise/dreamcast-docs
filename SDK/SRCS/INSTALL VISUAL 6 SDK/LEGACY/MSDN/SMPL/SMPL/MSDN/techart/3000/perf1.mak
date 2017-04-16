@@ -1,0 +1,8 @@
+PERF1.FRM
+C:\WIN\SYSTEM\INICON2.VBX
+NATIVEVB.BAS
+ProjWinSize=192,612,248,215
+ProjWinShow=2
+IconForm="Perf1"
+Title="LOAD_CTL"
+ExeName="LOAD_CTL.EXE"
