@@ -1,0 +1,12 @@
+PROJNAME = MLTINST2
+
+$(PROJNAME).exe: $(PROJNAME).obj $(PROJNAME).res
+  link /ON:N /A:16 $(PROJNAME).obj, $(PROJNAME), , \
+      LIBW.LIB LLIBCEW.LIB PROCHOOK.LIB,$(PROJNAME).def
+  RC $(PROJNAME).res $(PROJNAME).exe
+
+$(PROJNAME).obj: $(PROJNAME).cpp $(PROJNAME).h
+  CL /AL /W3 /GEea /GAs /G2 /c /Zi /YX $(PROJNAME).cpp
+
+$(PROJNAME).res: $(PROJNAME).rc 
+    RC -R -FO $(PROJNAME).res $(PROJNAME).rc

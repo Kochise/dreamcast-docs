@@ -1,0 +1,161 @@
+'start DoubleArg
+Declare Function DoubleArg Lib "advdll32" _
+    (ByVal radius As Double) As Double
+'end
+'start PointerArg
+Declare Function PointerArg Lib "advdll32" _
+    (d As Integer) As Boolean
+'end
+'start StringArgs
+Declare Function StringArgs Lib "advdll32" _
+    (inpStr As String, outStr As String, _
+    ByVal n As Integer) As Integer
+'end
+'start VariantArg
+Declare Function VariantArg Lib "advdll32" _
+    (ByVal v As Variant) As Integer
+'end
+'start StructArg
+Declare Function StructArg Lib "advdll32" _
+    (a As ARG, ByVal s As String) As Integer
+'end
+'start SumArray
+Declare Function SumArray Lib "advdll32" _
+    (a() As Integer, r As Long) As Integer
+'end
+'start NewArray
+Declare Function NewArray Lib "advdll32" _
+    (a() As Integer) As Integer
+'end
+'start SType
+Declare Function SType Lib "advdll32" _
+    (s As String) As Integer
+'end
+'start StringArray
+Declare Function StringArray Lib "advdll32" _
+    (s() As String) As Integer
+'end
+'start StructArray
+Declare Function StructArray Lib "advdll32" _
+    (x() As ARG, s() As String) As Integer
+'end
+
+Declare Function ArrayType Lib "advdll32" (x() As Any) As Integer
+        
+Type ARG
+    i As Integer
+    str As String
+End Type
+
+'start SumArray
+Sub SumArrayTest()
+    Dim n(5) As Integer
+    Dim result As Long
+    For i = 0 To 5
+        n(i) = 2
+    Next
+    x = SumArray(n, result)
+    MsgBox x & ":" & result
+End Sub
+'end
+    
+    
+'start StringArgs
+Sub StringArgsTest()
+    Dim newStr As String
+    x = StringArgs("abracadabra", newStr, 5)
+    MsgBox x & ":" & newStr
+End Sub
+'end
+
+Sub cc()
+    Dim x() As String
+    MsgBox Hex(ArrayType(x))
+End Sub
+
+'start StructArray
+Sub StructArrayTest()
+    Dim x() As ARG
+    Dim s(1 To 4) As String
+    s(1) = "yellow"
+    s(2) = "orange"
+    s(3) = "blue"
+    s(4) = "green"
+    n = StructArray(x, s)
+    If n = 0 Then
+        Worksheets(1).Activate
+        Range("a1:c25").Clear
+        For i = LBound(x) To UBound(x)
+            Cells(i + 1, 1) = i
+            Cells(i + 1, 2) = x(i).str
+            Cells(i + 1, 3) = x(i).i
+        Next
+    Else
+        MsgBox "StructArray failed, returned" & n
+    End If
+End Sub
+'end
+
+'start StringArray
+Sub StringArrayTest()
+    Dim s(5) As String
+    MsgBox StringArray(s) & ":" & s(1)
+End Sub
+
+'start NewArray
+Sub NewArrayTest()
+    Dim a(12) As Integer
+    MsgBox NewArray(a) & ":" & LBound(a) & ":" & UBound(a)
+End Sub
+'end
+
+'start SType
+Sub STypeTest()
+    Dim s As String
+    MsgBox SType(s) 'displays 2
+    s = ""
+    MsgBox SType(s) 'displays 3
+    s = "test"
+    MsgBox SType(s) 'displays 4
+End Sub
+'end
+
+'start VariantArg
+Sub VariantArgTest()
+    MsgBox VariantArg(Worksheets(1))    ' -1
+    MsgBox VariantArg("25")             ' 25
+    MsgBox VariantArg(5)                ' 5
+    MsgBox VariantArg(3.2)              ' -3
+End Sub
+'end
+
+'start PointerArg
+Sub TestPointerArg()
+    Dim n As Integer
+    n = CInt(InputBox("Number?"))
+    r = PointerArg(n)
+    MsgBox n & ":" & r
+End Sub
+'end
+    
+'start StructArg
+Sub StructArgTest()
+    Dim x As ARG
+    MsgBox StructArg(x, "abracadabra")
+    MsgBox x.str & ":" & x.i    'displays string and length
+End Sub
+'end
+    
+'start DoubleArg
+Sub CircumferenceTable()
+    Worksheets(1).Activate
+    Cells(1, 1).Value = "Radius"
+    Cells(1, 2).Value = "Circumference"
+    For i = 1 To 10
+        Cells(i + 1, 1).Value = i
+        Cells(i + 1, 2).Value = DoubleArg(i)
+    Next
+    Columns("a:b").AutoFit
+End Sub
+'end
+

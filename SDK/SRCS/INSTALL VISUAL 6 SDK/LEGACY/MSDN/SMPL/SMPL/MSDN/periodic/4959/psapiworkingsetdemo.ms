@@ -1,0 +1,26 @@
+PROJ = PSAPIWorkingSetDemo
+OBJS = $(PROJ).OBJ PSAPIWorkingSetDelta.OBJ PSAPIHELPER.OBJ
+
+CFLAGS = $(CFLAGS) /W3 /DWIN32_LEAN_AND_MEAN /Fd"$(PROJ).PDB" /Fp"$(PROJ).PCH"
+LFLAGS = /SUBSYSTEM:windows
+
+!if "$(DEBUG)" == "1"
+CFLAGS = $(CFLAGS) /Zi /YX /D_DEBUG
+LFLAGS = $(LFLAGS) /DEBUG /DEBUGTYPE:CV 
+!else
+CFLAGS = $(CFLAGS) /O1 /DNDEBUG
+!endif
+
+LIBS = KERNEL32.LIB USER32.LIB ADVAPI32.LIB PSAPI.LIB
+
+$(PROJ).EXE: $(OBJS) $(PROJ).RES
+    echo >NUL @<<$(PROJ).CRF
+$(LFLAGS) $(OBJS) $(PROJ).RES -OUT:$(PROJ).EXE $(LIBS)
+<<
+    link @$(PROJ).CRF
+
+.cpp.obj:
+    CL $(CFLAGS) /c $<
+
+$(PROJ).RES: $(PROJ).RC
+  RC -r $(PROJ).RC

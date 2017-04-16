@@ -1,0 +1,27 @@
+I'd also like to supply a brief update to a question in my September 1995 column in which Gary Tessler 
+wrote asking how to enumerate the docs in his MFC app. I showed how to write a class, CDocEnumerator 
+that does this. As soon as I wrote my code, wouldn't you know MFC 4.0 has a totally new way of tracking 
+documents. Many of you no doubt discovered this your own. Instead of storing a list of document templates, 
+CWinApp now uses something called a CDocManager.  CWinApp::m_pTemplateList no longer exists, so 
+the original CDocEnumerator in my September column doesn't even compile. (Thanks to Reinhold Gerharz 
+of Tracor Applied Sciences, Inc. for calling this to my attention.) The latest version of the ENUMDOC 
+sample on the MSJ bulletin board contains the fix, the short of which is that instead of writing
+
+CDocTemplate *pDT;
+POSITION pos;
+pos = pApp->m_templateList.GetHeadPosition();
+.
+.
+pDT = pApp->(CDocTemplate*)m_templateList.GetNext(pos);
+
+you should now write
+
+pos = pApp->m_pDocManager->GetFirstDocTemplatePosition();
+.
+.
+pDT = m_pDocManager->GetNextDocTemplate(pos);
+
+CDocManager manages a list of document templates; it's essentially what CWinApp::m_templateList used 
+to be, only now it's a special class instead of a raw CPtrList, and consolidates many doc-related operations.
+
+-Paul DiLascia

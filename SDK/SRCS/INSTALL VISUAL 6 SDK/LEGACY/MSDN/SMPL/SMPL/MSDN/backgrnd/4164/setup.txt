@@ -1,0 +1,212 @@
+SETUP.TXT  (Version 1.095.227)
+Additional setup instructions:
+---------------------------------------------------------------------------------------------------------------------------
+Please read this first!
+
+	---------------------------------------------------------------------------------------------------------------------------	
+	1.	"DBSync Contact Manger" command line (in Program Manager) MUST include the full path 
+		to msaccess.exe. The command line that Setup provides may not include this.  
+		To change it, 
+		Choose File/Properties from Program Manager
+		Then add <access program path>\msaccess.exe to the start of the command line. 
+
+		EXAMPLE:  
+			DESCRIPTION:  DBSync Contact Manager
+			COMMAND LINE:  c:\access\msaccess.exe dbxcode.mdb /ini dbsync.ini
+			WORKING DIRECTORY:  c:\dbsync
+
+		(YOU MUST INCLUDE THE .INI FILE!  The .INI file is installed into your \windows (or 
+		WINNT) directory.)
+
+
+	---------------------------------------------------------------------------------------------------------------------------
+
+	2.	Under Windows 3.11 the ODBC SDK 2.10 must have been installed. The software is distributed 
+		on this CD. The latest OLE 2.2 components are required for the TAB.OCX to operate correctly.  
+		An "Object not set ..." error indicates	that the latest version of OLE is not installed.
+ 		
+	---------------------------------------------------------------------------------------------------------------------------
+
+	3.	Users:  The database owner is "dbsync"; password is "dbsync."  You will need to add users to 		
+		the "Users" table (there is no interface) AND to the workgroup.  You should use the 						
+		DBSyncUsers group to assign permissions.  DBSyncUsers need full access to the database, 		
+		tables, and queries.  They need execute and modify design permissions on the Forms, Execute 
+		permission on Macros.  They do not need access to the Modules. Much of the database 
+		design depends on each user having a unique user number (between 1 and 2000), with each
+		user having a corresponding Microsoft Access user (logon).  This step should not be skipped 
+		for best results.
+
+       ---------------------------------------------------------------------------------------------------------------------------
+	
+	4.	If Microsoft SQL Server is installed and only a Master device has been created, you will 
+			need to create a new	device.  Use Microsoft SQL Administrator that comes with SQL 
+			Server to create a new device. Briefly:
+
+		1.  Click on the "devices" button.
+		2.  Select Manage/Devices/Create...
+		3.  Create a device of at least 4 megabytes.		
+		* NOTE:  You can refer to "Using devices" in the system administrator's guide for more 
+		   information.
+
+		You will also need to use Microsoft SQL Administrator create a new database.
+		* NOTE:  If you call the database "db_dbsync" then you will not have to change the 		   
+		   DBSYNC.INI file.
+
+		Briefly:
+		1.  Click on the "databases" (DB) button.
+		2.  Select Manage/Databases/Create Database...
+		3.  Select the device you created above.
+		4.  For Database Name:  "db_dbsync"
+			(You do not need a log device)
+					
+		Using Run the SQL script by:
+	         1. Launching ISQLW.EXE
+        	         2. From the Query menu select Change Database, then select "db_dbsync".
+	         3. Select Open from the File menu, and open "dbsync.sql" from the DBSYNC installation 
+		     location.
+	         4. Select "Execute" command.
+
+		The script creates a group (DBSyncUsers) and assigns object permissions to this group.  
+
+		The script will also copy some sample data into the new database.  If you do not want this to 
+		happen, you will need to remove all of the INSERT statements from the script BEFORE you 
+		execute it.
+
+       ---------------------------------------------------------------------------------------------------------------------------	
+	5.	ODBC:  You will need to install the Desktop driver pack 2.0 (if you haven't already).  You 
+		should install the Access 2.0 driver and SQL Server drivers.  Then you will need to create the 
+		following three datasources:
+
+		1) DBSYNC_SQL -> should point to the server/database where you have installed the SQL 
+		    server database.
+
+		1. From the control panel launch ODBC icon.
+		2. Select Add...
+		3. Select SQL Server from the list.
+		4. Data Source Name = DBSYNC_SQL
+		5. Server = <select correct server from list>
+		6. Click on Options
+		7. Database Name = db_dbsync
+		8. Click OK.
+
+		2) DBSYNC_JET -> should have a DBQ= value that points to the DBXDATA.MDB file (in 
+		    the directory where you installed the dbsync files.)
+
+		1. From the control panel launch ODBC icon.
+		2. Select Add...
+		3. Select "Microsoft Access Driver (*.mdb)" from the list.
+		4. Data Source Name = DBSYNC_JET
+		5. In the "Database" section, click on Select...
+		6. Locate the DBXDATA.MDB (in the DBSync directory) and choose OK.
+		7. Click OK.
+		
+		3) DBSYNC_EXCEL -> should point to the DBXCODE.MDB file.  There is a user defined 
+		    in the system.mda called 'excel' (no password).  You should use this user as the default 		    
+		    user for this datasource.  You MUST specifiy the system.mda that comes with DBSync
+		    as the System database.
+
+		1. From the control panel launch ODBC icon.
+		2. Select Add...
+		3. Select "Microsoft Access Driver (*.mdb)" from the list.
+		4. Data Source Name = DBSYNC_EXCEL
+		5. In the "Database" section, click on Select...
+		6. Locate the DBXCODE.MDB (in the DBSync directory) and choose OK.
+		    Also, specify the DBSYNC\SYSTEM.MDA file as the System Database.
+		7. Click "Advanced..."
+		8. Set the Login name = "excel"
+		9. Set the password = "" (nothing)
+		10. Click OK.
+		
+	--------------------------------------------------------------------------------------------------------------------------
+	6.	DBSYNC.DLL:  This file was built using Visual C++ 1.51.  There is also source for a simple 
+		calling .EXE program (called testdll.mak)  You can use this file to debug the .DLL.
+		
+		Also, there is a makefile, .DEF file, and a 32-bit calling program for a 32-bit version of this 
+		.DLL.  (See the note about Microsoft Mail on Windows NT 3.5.)  This file may be built using 
+		Microsoft Visual C++ 2.0.
+
+		The source for these files is included in a .ZIP file and copied to a \MSVC subdirectory.  You 
+		should unzip this using pkunzip msvc.zip -d to expand using subdirectories.
+
+		There is a readme.txt file that briefly explains the purpose of each file.  If you intend to 
+		customize this file, you should consider reading this file.
+		
+		The source tree looks something like this:
+		<dbsync path>\msvc
+			.h and .cpp files for DBSYNC.DLL and DBSYNC32.DLL
+		<dbsync path>\msvc\debug16
+			source for the 16 bit TESTDLL.EXE  (You can use this file for debugging)
+		<dbsync path>\msvc\debug32
+			source for the 32 bit TESTDLL.EXE  (You can use this file for debugging)
+		<dbsync path>\msvc\win16
+			.DEF and .MAK file for DBSYNC.DLL
+		<dbsync path>\msvc\win32
+			.DEF and .MAK file for DBSYNC32.DLL
+
+
+	--------------------------------------------------------------------------------------------------------------------------
+
+	7.	Microsoft Mail and MSMAIL.INI.  The setup program adds three lines to the [Custom 
+		Messages] section of the MSMAIL.INI file.
+		
+		[Custom Messages]
+		IPM.DBSync.DBSync=3.0;;;;<system>\dbsync.dll;;2122222100000000;;;;
+		IPM.DBSync.DBSyncToCorp=3.0;;;;<system>\dbsync.dll;;2122222100000000;;;;
+		IPM.DBSync.DBSyncConfirm=3.0;;;;<system>\dbsync.dll;;2122222100000000;;;;
+
+		Strictly speaking, only 2 of these settings are required, depending on what type of database 
+		you are using.  For the remote users, only the first and third are required.  For the SQL Server 
+		user/mail client (there should only be one) Only the second and third settings are required.  In 				
+		a production environment, you should avoid the second message declaration on the remote 
+		user's machines.
+
+		The series of numbers (16) indicate when the custom .DLL is to be called.  In most cases, the 
+		8th position, which represents a delivery operation (a message of this class has arrived in the 
+		in-box) is all that will be acted upon by the dbsync process.  However, in case of unexpected 
+		failure, the second position, which represents an open operation (a user double-clicks on the 		
+		message) also causes Mail to call the custom .DLL and process the message.  This can be 
+		useful if you are testing the process.
+		
+		You may want to read the Microsoft Mail Technical reference for more information.
+
+		Additionally, you will need to create a mail box for a new user (DBSYNC).  This is the
+		mailbox that will recieve all of the IPM.DBSync.DBSyncToCorp messages and then
+		apply them to SQL server.  This mailbox must be a Windows for Workgroups client.
+		
+		(Search the DBSync module's declarations section for 'DBSYNC_MAPI_SENDTO'
+		to change this user name.)
+
+	---------------------------------------------------------------------------------------------------------------------------
+	8.	Windows NT:  There is a bug in Mail version 3.5 that prevents the use of DBSYNC32.DLL 
+		(or any custom .DLL inside the Command() function that needs to login to Mail).  Microsoft is 
+		aware of this bug but as of the release of this example (2/24/95) there is no resolution other 		
+		than leaving the mail process on a Windows for Workgroups machine.
+
+		The DBSYNC32.DLL and source has been provided as an example of the differences 
+		between 16 and 32 bit windows 	.DLLs using MAPI and ODBC.
+
+		While it has not been explored in this implementation, it would be relatively simple to write an 
+		application that would poll Mail (on Windows NT) on a regular basis, peek (read) through all 
+		the messages, and using this .DLL, call the 	CDBSync::ApplyTransactionFile() function to 
+		process the message and update the SQL database. 
+
+		You would need to look through the "Command()" function (in command.cpp) for a better 
+		understanding of the  	requirements for this.
+
+		Note that you would need to export a function that your "polling" program could use.  This 
+		function would need to be declared "extern "C" int WINAPI" and placed in the EXPORTS 
+		section of the DBSYNC32.DEF file.
+		
+	--------------------------------------------------------------------------------------------------------------------------
+	9.	If you want to run the application using SQL server as a "back-end" you will need to change 
+		the DBSYNC.INI file as follows:
+		
+		DBSYNC.INI
+		
+		[AttachedData]
+		;DataDB="" (blank or commented out)
+		;SalesDB="" (blank or commented out)
+		DSN=DBSYNC_SQL				(the odbc datasource)
+		DatabaseName=db_dbsync			(the database on the above datasource)
+
+		Then, re-run the autoexec macro from the DBXCODE.MDB container.

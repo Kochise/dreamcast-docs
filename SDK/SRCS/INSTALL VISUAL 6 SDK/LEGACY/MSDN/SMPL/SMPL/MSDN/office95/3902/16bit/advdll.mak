@@ -1,0 +1,89 @@
+# Microsoft Visual C++ generated build script - Do not modify
+
+PROJ = ADVDLL
+DEBUG = 1
+PROGTYPE = 1
+CALLER = c:\excel\excel
+ARGS = 
+DLLS = 
+D_RCDEFINES = -d_DEBUG
+R_RCDEFINES = -dNDEBUG
+ORIGIN = MSVC
+ORIGIN_VER = 1.00
+PROJPATH = C:\XLDEVKIT\SAMPLE\ADVDLL\
+USEMFC = 0
+CC = cl
+CPP = cl
+CXX = cl
+CCREATEPCHFLAG = 
+CPPCREATEPCHFLAG = 
+CUSEPCHFLAG = 
+CPPUSEPCHFLAG = 
+FIRSTC =             
+FIRSTCPP =             
+RC = rc
+CFLAGS_D_WDLL = /nologo /W3 /FR /G2 /Zi /D_DEBUG /Od /GD /ALw /Fd"ADVDLL.PDB"
+CFLAGS_R_WDLL = /nologo /W3 /FR /O1 /DNDEBUG /GD /ALw
+LFLAGS_D_WDLL = /NOLOGO /ONERROR:NOEXE /NOD /PACKC:61440 /CO /NOE /ALIGN:16 /MAP:FULL
+LFLAGS_R_WDLL = /NOLOGO /ONERROR:NOEXE /NOD /PACKC:61440 /NOE /ALIGN:16 /MAP:FULL
+LIBS_D_WDLL = oldnames libw commdlg shell olecli olesvr ldllcew
+LIBS_R_WDLL = oldnames libw commdlg shell olecli olesvr ldllcew
+RCFLAGS = /nologo
+RESFLAGS = /nologo
+RUNFLAGS = 
+DEFFILE = ADVDLL.DEF
+OBJS_EXT = 
+LIBS_EXT = OLE2DISP.LIB 
+!if "$(DEBUG)" == "1"
+CFLAGS = $(CFLAGS_D_WDLL)
+LFLAGS = $(LFLAGS_D_WDLL)
+LIBS = $(LIBS_D_WDLL)
+MAPFILE = nul
+RCDEFINES = $(D_RCDEFINES)
+!else
+CFLAGS = $(CFLAGS_R_WDLL)
+LFLAGS = $(LFLAGS_R_WDLL)
+LIBS = $(LIBS_R_WDLL)
+MAPFILE = nul
+RCDEFINES = $(R_RCDEFINES)
+!endif
+!if [if exist MSVC.BND del MSVC.BND]
+!endif
+SBRS = ADVDLL.SBR
+
+
+OLE2DISP_DEP = 
+
+ADVDLL_DEP = 
+
+all:	$(PROJ).DLL $(PROJ).BSC
+
+ADVDLL.OBJ:	ADVDLL.C $(ADVDLL_DEP)
+	$(CC) $(CFLAGS) $(CUSEPCHFLAG) /c ADVDLL.C
+
+
+$(PROJ).DLL::	ADVDLL.OBJ $(OBJS_EXT) $(DEFFILE)
+	echo >NUL @<<$(PROJ).CRF
+ADVDLL.OBJ +
+$(OBJS_EXT)
+$(PROJ).DLL
+$(MAPFILE)
+c:\msvc\lib\+
+c:\xldevkit\lib\+
+OLE2DISP.LIB+
+$(LIBS)
+$(DEFFILE);
+<<
+	link $(LFLAGS) @$(PROJ).CRF
+	$(RC) $(RESFLAGS) $@
+	implib /nowep $(PROJ).LIB $(PROJ).DLL
+
+
+run: $(PROJ).DLL
+	$(PROJ) $(RUNFLAGS)
+
+
+$(PROJ).BSC: $(SBRS)
+	bscmake @<<
+/o$@ $(SBRS)
+<<

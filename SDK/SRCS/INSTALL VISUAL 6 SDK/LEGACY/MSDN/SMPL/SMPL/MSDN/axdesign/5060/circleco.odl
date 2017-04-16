@@ -1,0 +1,192 @@
+//=--------------------------------------------------------------------------=
+// CircleCo.ODL
+//=--------------------------------------------------------------------------=
+// Copyright  1995  Microsoft Corporation.  All Rights Reserved.
+//
+// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF 
+// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO 
+// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A 
+// PARTICULAR PURPOSE.
+//=--------------------------------------------------------------------------=
+//
+// ODL file for the control(s) and automation object(s) in this inproc server
+//
+#include <olectl.h>
+#include "dispids.h"
+
+// can't include oaidl.h, so this will have to do
+//
+#define DISPID_NEWENUM -4
+
+
+//=--------------------------------------------------------------------------=
+// the libid for this type libray
+//
+[
+    uuid(8A1E7C95-D9FE-11CF-9187-00AA00C14972),
+    helpstring("CircleCo Control Library"),
+    lcid(0x0000),
+    version(1.0)
+]
+library CircleCoObjects {
+
+    // standard imports
+    //
+    importlib("STDOLE2.TLB");
+
+    typedef
+    [
+        uuid(5C02DD20-DA90-11cf-9187-00AA00C14972),
+	helpstring ("Color Values")
+    ]
+	enum {
+	    COLOR_RED,
+	    COLOR_GREEN,
+	    COLOR_BLUE
+	}
+    COLOR_TYPE;
+
+
+    typedef
+    [
+        uuid(384196B0-DF42-11cf-9187-00AA00C14972),
+	helpstring ("Brush  Types")
+    ]
+	enum {
+	    HATCH_NONE,
+	    HATCH_DIAGONAL1,
+	    HATCH_DIAGONAL2,
+	    HATCH_CROSS,
+	    HATCH_DIAGCROSS,
+	    HATCH_HORIZONTAL,
+	    HATCH_VERTICAL
+	}
+    HATCH_TYPE;
+
+
+    
+    // primary dispatch interface for CCircle object
+    //
+    [
+        uuid(4FDA3B40-DA10-11cf-9187-00AA00C14972),
+	helpstring("Circle Object"),
+        hidden, dual, odl
+    ]
+    interface ICircle : IDispatch {
+	
+	[id (DISPID_NAME), bindable, requestedit, propget, helpstring ("Sets and retrieves the name.")]
+	    HRESULT Name ([out, retval] BSTR * pbstrName);
+
+	[id (DISPID_NAME), bindable, requestedit, propput, helpstring ("Sets and retrieves the name.")]
+	    HRESULT Name ([in] BSTR bstrName);
+	
+	[id (DISPID_COLOR), bindable, propget, helpstring ("Sets and retrieves the color.")]
+	    HRESULT Color ([out, retval] COLOR_TYPE * pCV);
+	
+	[id (DISPID_COLOR), bindable, propput, helpstring ("Sets and retrieves the color.")]
+	    HRESULT Color ([in] COLOR_TYPE CV);
+
+	[id (DISPID_ACT), helpstring ("Invokes the object's OnAction event.")]
+	    HRESULT Act (void);		
+	
+    };
+
+    // event interface for Circle objects ...
+    //
+    [
+        uuid(4FDA3B41-DA10-11cf-9187-00AA00C14972),
+	helpstring("Event interface for Circle object"),
+	hidden
+    ]
+    dispinterface DCircleEvents {
+        properties:
+        methods:
+	[id (DISPID_ONACTION), helpstring ("Invoked when Act is called.")]
+	    void OnAction (void);
+    };
+
+    // coclass for CCircle objects
+    //
+    [
+        uuid(4FDA3B42-DA10-11cf-9187-00AA00C14972),
+	helpstring("Circle object")
+    ]
+    coclass Circle {
+        [default]         interface ICircle;
+	[default, source] dispinterface DCircleEvents;
+    };
+
+
+    // hidden interface for CCircleCo controls
+    // In this interface would go all normal properties and methods of our 
+    // control.  Then, we would construct our default dispinterface by basing it off
+    // this one.  Note that the host never communicates directly with HCircleCo.  All
+    // that happens is that when the host asks us to invoke any of those properties
+    // or methods we defer to the typeinfo of HCircleCo.  This means that we can
+    // 1) use a dispinterface to template off and to dynamically add methods to
+    // 2) invoke static methods and properties through a normal interface by 
+    //    means of delegation
+    // To make this work, our control will inherit from HCircleCo, but we will
+    // not accept a QI for it.  
+    // The reason why a dual interface would not work is that then the host would
+    // bind to the dynamic methods through their v-table entries, and at runtime
+    // expect to have the vtable of our control reference the dynamically added
+    // methods.  That is beyond the scope of this sample.
+    [   
+     uuid(3D29B5A0-DF4E-11cf-9187-00AA00C14972),
+     hidden, odl
+     ]
+	
+    interface HCircleCo {
+	[id (DISPID_FILLTYPE), propput, helpstring ("Sets or retrieves the brush type.")]
+	    HRESULT BrushType ([in] HATCH_TYPE hv);
+	[id (DISPID_FILLTYPE), propget, helpstring ("Sets or retrieves the brush type.")] 
+	    HRESULT BrushType ([out, retval] HATCH_TYPE *hv);
+    }
+    
+    // primary dispatch interface for CCircleCo control
+    //
+    [
+        uuid(8A1E7C96-D9FE-11CF-9187-00AA00C14972),
+	helpstring("CircleCo Control"),
+        hidden,
+    ]
+    dispinterface DCircleCo {
+	interface HCircleCo;
+    };
+
+    // event interface for CCircleCo controls ...
+    //
+    [
+        uuid(8A1E7C97-D9FE-11CF-9187-00AA00C14972),
+	helpstring("Event interface for CircleCo control"),
+	hidden
+    ]
+    dispinterface DCircleCoEvents {
+
+    properties:
+
+
+    methods:
+	[id(DISPID_ONCOLORACTED), helpstring ("Fired when the user clicks on a circle.")]
+	  void OnColorActed(COLOR_TYPE CV);
+
+    };
+    // coclass for CCircleCo controls
+    //
+    [
+        uuid(8A1E7C98-D9FE-11CF-9187-00AA00C14972),
+	helpstring("CircleCo control")
+    ]
+    coclass CircleCo {
+        [default]         dispinterface DCircleCo;
+	[default, source] dispinterface DCircleCoEvents;
+
+    };
+
+
+
+};
+
+
+

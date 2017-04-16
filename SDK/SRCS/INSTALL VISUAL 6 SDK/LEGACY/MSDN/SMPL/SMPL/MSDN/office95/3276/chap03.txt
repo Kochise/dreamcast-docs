@@ -1,0 +1,776 @@
+Option Base 1
+Option Explicit
+
+'===========================================================
+'                 Application Setup Macro
+'BuildStateList builds a list of state names on the SummaryData
+'Worksheet and assigns the name "TopOfList" to the cell at the
+'top of the list and the name "StateList" to the complete list.
+
+Sub BuildStateList()
+    Dim TopOfList As Range
+    Dim DrawVar As Drawing
+    Dim Counter As Integer
+    Worksheets("SummaryData").Activate
+    Worksheets("SummaryData").Range("B11").Name = "TopOfList"
+    Set TopOfList = Worksheets("SummaryData").Range("TopOfList")
+    Counter = 11
+    For Each DrawVar In Worksheets("MapSheet").Drawings
+        Worksheets("SummaryData").Range("B" & Counter).Value = _
+            DrawVar.Name
+        Counter = Counter + 1
+    Next
+    TopOfList.CurrentRegion.Sort TopOfList
+    TopOfList.CurrentRegion.Name = "StateList"
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'MakeSheets goes through all of the names in StateList on
+'the SummaryData worksheet and adds a new worksheet for
+'each state in the list.  It also adds a new chart to
+'each new worksheet.
+
+Sub MakeSheets()
+    Dim StateList As Range
+    Dim StateName As Range
+    Set StateList = Worksheets("SummaryData").Range("StateList")
+    For Each StateName In StateList
+        ActiveWorkbook.Worksheets("Template").Copy ActiveSheet
+        With ActiveSheet
+            .Name = StateName.Value
+            .Calculate
+            .Range("Rand1").Copy
+            .Range("Rand1").PasteSpecial xlValues
+            .Range("Rand2").Copy
+            .Range("Rand2").PasteSpecial xlValues
+            .ChartObjects.Add(190.5, 155.25, 233.25, 118.5).Select
+        End With
+        ActiveChart.ChartWizard Range("E3:F3,H3," & _
+                                      "E7:F7,H7," & _
+                                      "E11:F11,H11")
+        Range("A1").Select
+    Next
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'AddButtons adds a button to each worksheet, sets the caption
+'of each button to "Control", and then assigns the GotoControl
+'macro to each button.
+
+Sub AddButtons()
+    Dim WorksheetVar As Worksheet
+    For Each WorksheetVar In ActiveWorkbook.Worksheets
+        If WorksheetVar.Name <> "Control" Then
+            WorksheetVar.Activate
+            WorksheetVar.Buttons.Add(50, 20, 80, 20).Select
+            With Selection
+                .Caption = "Control"
+                .OnAction = "GotoControl"
+            End With
+            Range("A1").Select
+        End If
+    Next
+End Sub
+
+'===========================================================
+'GotoControl activates the Control form.
+
+Sub GotoControl()
+    Worksheets("Control").Activate
+    Worksheets("Control").Range("A1").Select
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'CopyMaps copies a single map drawing to each state form
+'and then resizes each drawing to a standard size.
+
+Sub CopyMaps()
+    Dim DrawVar As Drawing
+    For Each DrawVar In Worksheets("MapSheet").Drawings
+        DrawVar.Copy
+        With Worksheets(DrawVar.Name)
+            .Activate
+            .Range("B7").Select
+            .Paste
+        End With
+        With Selection
+            If .Width <= 80 Or .Height <= 110 Then
+                Do Until .Width >= 80 Or .Height >= 110
+                    .Width = .Width * 1.1
+                    .Height = .Height * 1.1
+                Loop
+            Else
+                Do Until .Width < 80 Or .Height < 110
+                    .Width = .Width * 0.9
+                    .Height = .Height * 0.9
+                Loop
+            End If
+            .Top = 70
+            .Left = 50
+            .Interior.ColorIndex = 5
+            .Shadow = True
+        End With
+        Range("A1").Select
+    Next
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'AddRectangles puts a dark gray rectangle behind the
+'maps on the state forms.
+
+Sub AddRectangles()
+    Dim RangeVar As Range
+    Dim StateList As Range
+    Set StateList = Worksheets("SummaryData").Range("StateList")
+    For Each RangeVar In StateList
+        Worksheets(RangeVar.Value).Activate
+        ActiveSheet.Rectangles.Add(25, 50, 140, 200).Select
+        With Selection
+            .Interior.ColorIndex = 16
+            .Shadow = True
+            .SendToBack
+        End With
+        Range("A1").Select
+    Next
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'AddTextBoxes puts a textbox with the name of the state
+'below the maps on the state forms .
+
+Sub AddTextBoxes()
+    Dim RangeVar As Range
+    Dim StateList As Range
+    Set StateList = Worksheets("SummaryData").Range("StateList")
+    For Each RangeVar In StateList
+        Worksheets(RangeVar.Value).Activate
+        ActiveSheet.TextBoxes.Add(35, 205, 115, 35).Select
+        With Selection
+            With .Font
+                .Name = "Times New Roman"
+                .Size = 18
+                .Bold = True
+            End With
+            .Text = RangeVar.Value
+            .Shadow = True
+            .HorizontalAlignment = xlCenter
+            .VerticalAlignment = xlCenter
+            .Border.Weight = xlMedium
+            .Interior.ColorIndex = 19
+        End With
+        Range("A1").Select
+    Next
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'AddListBox colors the background of the Control form blue,
+'adds a listbox, and then adds a dark gray rectangle behind
+'the listbox.
+
+Sub AddListBox()
+    With Worksheets("Control")
+        .Select
+        .Range("A1:Z70").Interior.ColorIndex = 5
+        .ListBoxes.Add 100, 150, 100, 100
+        .Rectangles.Add 90, 140, 120, 120
+    End With
+    With ActiveSheet.Rectangles(1)
+        .Interior.ColorIndex = 16
+        .Border.Weight = xlMedium
+        .Shadow = True
+        .SendToBack
+    End With
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'InitializeListBox takes the state names from the StateList
+'range on the SummaryData worksheet, puts them into an array,
+'and then assigns the Array to the List property of the
+'listbox on the Control form.  The GotoSheet macro is also
+'assigned to the listbox.
+
+Sub InitializeListBox()
+    Dim StateList As Range
+    Dim ListBox1 As ListBox
+    Dim ListArray() As String
+    Dim ArraySize As Integer
+    Dim Counter As Integer
+    Dim RangeVar As Range
+    Set StateList = Worksheets("SummaryData").Range("StateList")
+    Set ListBox1 = Worksheets("Control").ListBoxes(1)
+    Counter = 1
+    ArraySize = StateList.Rows.Count
+    ReDim ListArray(ArraySize)
+    Worksheets("Control").Activate
+    For Each RangeVar In StateList
+        ListArray(Counter) = RangeVar.Value
+        Counter = Counter + 1
+    Next
+    With ListBox1
+        .RemoveAllItems
+        .List = ListArray
+        .OnAction = "GotoSheet"
+    End With
+End Sub
+
+'===========================================================
+'GotoSheet uses the Value property of the listbox to
+'index the List property of the listbox, retrieving the
+'text of the selected item.  The string is used to
+'activate the appropriate state form.  Note that a
+'call to ColorMap is made to color the state map
+'drawing according to the growth in revenue.
+
+Sub GotoSheet()
+    Dim ListBox1 As ListBox
+    Dim SheetName As String
+    Set ListBox1 = Worksheets("Control").ListBoxes(1)
+    SheetName = ListBox1.List(ListBox1.Value)
+    With Worksheets(SheetName)
+        ColorMap .Drawings(SheetName), "RevenueGrowth"
+        .Activate
+    End With
+    Range("A1").Select
+End Sub
+
+'===========================================================
+'ColorMap takes two arguments - a drawing object and a string.  The
+'drawing refers to the Drawing object for which the ColorIndex
+'property of the Interior object is to be set, while the
+'string is used to reference a range on the corresponding state
+'form the value of which determines the appropriate color for the drawing.
+
+Sub ColorMap(ByRef Map As Drawing, ByVal ValueName As String)
+        Select Case Worksheets(Map.Name).Range(ValueName).Value
+            Case Is < -0.2
+                Map.Interior.ColorIndex = 3
+            Case -0.2 To 0.2
+                Map.Interior.ColorIndex = 4
+            Case Is > 0.2
+                Map.Interior.ColorIndex = 5
+        End Select
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'AddMapOptionButtons adds two optionbuttons to the map
+'form and then assigns the ChangeMap macro to each optionbutton.
+
+Sub AddMapOptionButtons()
+    Dim CaptionArray As Variant
+    Dim NameArray As Variant
+    Dim ButtonCounter As Integer
+    Dim TopValue As Integer
+    CaptionArray = Array("Revenue", "Net Income")
+    NameArray = Array("RevenueOpt", "NetIncomeOpt")
+    With Worksheets("MapSheet")
+        .Activate
+        .Range("A1:Z70").Interior.ColorIndex = 16
+        TopValue = 100
+        For ButtonCounter = 1 To 2
+            .OptionButtons.Add 20, TopValue, 80, 20
+            With .OptionButtons(ButtonCounter)
+                .Caption = CaptionArray(ButtonCounter)
+                .Name = NameArray(ButtonCounter)
+                .Border.Weight = xlMedium
+                .Interior.ColorIndex = 15
+                .OnAction = "ChangeMap"
+            End With
+        TopValue = TopValue + 20
+        Next
+    End With
+End Sub
+
+'===========================================================
+'ChangeMap uses a Select-Case statement to determine which
+'optionbutton on the map form was clicked, and then colors
+'all of the maps on the map form appropriately by making
+'a call to ColorMap.
+
+Sub ChangeMap()
+    Dim DrawVar As Drawing
+    Dim DisplayValue As String
+    Select Case Application.Caller
+        Case "RevenueOpt"
+            DisplayValue = "RevenueGrowth"
+        Case "NetIncomeOpt"
+            DisplayValue = "NetIncomeGrowth"
+    End Select
+    For Each DrawVar In Worksheets("MapSheet").Drawings
+        ColorMap DrawVar, DisplayValue
+    Next
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'AddMapLegend adds a textbox to the map form displaying
+'a legend for the colors on the map.
+
+Sub AddMapLegend()
+    Dim LegendString As String
+    LegendString = "Red: > 20% Decrease" & Chr(10) & _
+                   "Green: -20% to 20% Growth" & Chr(10) & _
+                   "Blue: > 20% Growth"
+    With Worksheets("MapSheet")
+        .Select
+        .TextBoxes.Add 10, 180, 175, 50
+        With .TextBoxes(1)
+            .Text = LegendString
+            .Interior.ColorIndex = 19
+            .Border.Weight = xlMedium
+            .Shadow = True
+            With .Font
+                .Size = 12
+                .Bold = True
+            End With
+         End With
+    End With
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'AssignMapMacros assigns the GotoStateForm macro to each
+'drawing on the map form.
+
+Sub AssignMapMacros()
+    Dim DrawVar As Drawing
+    With Worksheets("MapSheet")
+        .Select
+        For Each DrawVar In .Drawings
+            DrawVar.OnAction = "GotoStateForm"
+        Next
+    End With
+End Sub
+
+'===========================================================
+'GotoStateForm uses the Caller property of the Application
+'object to determine which drawing on the map form was clicked
+'and then activates the appropriate state form.
+
+Sub GotoStateForm()
+    Dim Map As String
+    Map = Application.Caller
+    With Worksheets(Map)
+        ColorMap .Drawings(Map), "RevenueGrowth"
+        .Activate
+    End With
+    Range("A1").Select
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'AssignStateMapMacros assigns the GotoMap macro to each
+'map on the state forms.
+
+Sub AssignStateMapMacros()
+    Dim StateList As Range
+    Dim RangeVar As Range
+    Set StateList = Worksheets("SummaryData").Range("StateList")
+    For Each RangeVar In StateList
+        Worksheets(RangeVar.Value).Drawings(1).OnAction = "GotoMap"
+    Next
+End Sub
+
+'===========================================================
+'GotoMap activates the map form but before doing so, makes a
+'call to ColorMap to make sure the colors of the maps on the
+'map form are up-to-date, in case any data on the state forms
+'has changed.  The drawings are colored according to either
+'revenue growth or net income growth depending on which
+'optionbutton on the map form is selected.
+
+Sub GotoMap()
+    Dim DrawVar As Drawing
+    Dim DisplayVal As String
+    Dim RevenueOpt As OptionButton
+    Set RevenueOpt = _
+            Worksheets("MapSheet").OptionButtons("RevenueOpt")
+    If RevenueOpt.Value = xlOn Then
+        DisplayVal = "RevenueGrowth"
+    Else
+        DisplayVal = "NetIncomeGrowth"
+    End If
+    For Each DrawVar In Worksheets("MapSheet").Drawings
+        ColorMap DrawVar, DisplayVal
+    Next
+    Worksheets("MapSheet").Select
+    Range("A1").Select
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'AddControlButtons adds three buttons to the Control form
+'and sets their Caption and OnAction properties appropriately.
+
+Sub AddControlButtons()
+    Dim CaptionArray As Variant
+    Dim MacroArray As Variant
+    Dim ButtonCounter As Integer
+    Dim TopValue As Integer
+    CaptionArray = Array("Map Sheet", "Summary Data", "Quit")
+    MacroArray = Array("GotoMap", "GotoSummary", "QuitApp")
+    With Worksheets("Control")
+        .Activate
+        TopValue = 140
+        For ButtonCounter = 1 To 3
+            .Buttons.Add 260, TopValue, 80, 30
+            With .Buttons(ButtonCounter)
+                .Caption = CaptionArray(ButtonCounter)
+                .OnAction = MacroArray(ButtonCounter)
+            End With
+        TopValue = TopValue + 40
+        Next
+    End With
+End Sub
+    
+'===========================================================
+'GotoSummary activates the SummaryData form.
+    
+Sub GotoSummary()
+    Worksheets("SummaryData").Select
+    Range("A1").Select
+End Sub
+
+'===========================================================
+'QuitApp closes the workbook file containing the application,
+'without quiting Excel.  Note that since no value is passed
+'for the saveChanges argument, the user will automatically be
+'prompted to save the file when this macro runs.  To remove
+'the automatic prompting, pass False as the first argument
+'to the Close method.  (Be careful in doing this while you are
+'editing the file as you risk losing your work!)
+
+Sub QuitApp()
+    ActiveWorkbook.Close
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'Buildtable creates the table on the SummaryData form using
+'formulas that link the values in the table to the individual
+'state forms.  The macro also formats the table using the
+'AutoFormat method.
+
+Sub BuildTable()
+    Dim TopOfList As Range
+    Dim StateList As Range
+    Dim StateName As Range
+    Dim StCnt As Integer
+    Set TopOfList = Worksheets("SummaryData").Range("TopOfList")
+    Set StateList = Worksheets("SummaryData").Range("StateList")
+    With Worksheets("SummaryData")
+        .Activate
+        .Range("A1:Z70").Interior.ColorIndex = 16
+    End With
+
+    'Add a formula in the cells--for example, =Arizona!Revenue
+    StCnt = 0
+    For Each StateName In StateList
+        StateName.Offset(0, 1).Formula = _
+                "=" & StateName.Value & "!Revenue"
+        StateName.Offset(0, 2).Formula = _
+                "=" & StateName.Value & "!Net_Income"
+        StCnt = StCnt + 1
+    Next
+
+    'Add headings, totals formulas, and cell formatting
+    With TopOfList
+        'Column headings:
+        .Offset(-1, 0).Value = "'1994"
+        .Offset(-1, 1).Value = "Revenue"
+        .Offset(-1, 2).Value = "Net Income"
+
+        'Row heading and totals formulas on bottom row:
+        .Offset(StCnt, 0).Value = "Total"
+        .Offset(StCnt, 1).FormulaR1C1 = _
+                "=SUM(R[-" & StCnt & "]C:R[-1]C)"
+        .Offset(StCnt, 2).FormulaR1C1 = _
+                "=SUM(R[-" & StCnt & "]C:R[-1]C)"
+
+        'Cell formatting:
+        .CurrentRegion.NumberFormat = "$#,##0_);($#,##0)"
+        .CurrentRegion.AutoFormat format:=xlColor2
+        .CurrentRegion.BorderAround , xlMedium
+    End With
+    Worksheets("SummaryData").Columns(1).ColumnWidth = 2
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'CreateChart adds a chartobject to the SummaryData form, and
+'then links the chartobject to the table on the form by
+'calling the ChartWizard method.  Also note that CreateChart
+'sets two range names on the form - RevenueRange and NetIncomeRange.
+'These ranges will be used in the ChangeChart macro later on.
+
+Sub CreateChart()
+    Dim TableRange As Range
+    Dim RevenueRange As Range
+    Dim NetIncomeRange As Range
+    Dim R1 As Range
+    Dim R2 As Range
+    Dim FirstRow As Integer
+    Dim FirstColumn As Integer
+    Dim LastRow As Integer
+    Dim LastColumn As Integer
+
+    Worksheets("SummaryData").Activate
+    
+    'TableRange is the entire table
+    Set TableRange = Worksheets("SummaryData").Range("TopOfList") _
+                     .CurrentRegion
+                     
+    'Make it easy to refer to the boundaries of the table
+    FirstRow = TableRange.Row
+    FirstColumn = TableRange.Column
+    LastRow = TableRange.Rows.Count + FirstRow - 1
+    LastColumn = TableRange.Columns.Count + FirstColumn - 1
+    
+    'Point to and name the revenue portion of the table
+    '(including row headings but not including totals)
+    Set RevenueRange = Worksheets("SummaryData").Range( _
+                            Cells(FirstRow, FirstColumn), _
+                            Cells(LastRow - 1, LastColumn - 1))
+    RevenueRange.Name = "RevenueRange"
+    
+    'R1 is the range that holds row headings (but not "Total"),
+    'R2 is the range that holds NetIncome values (but not total)
+    Set R1 = Range(Cells(FirstRow, FirstColumn), _
+                   Cells(LastRow - 1, LastColumn - 2))
+    Set R2 = Range(Cells(FirstRow, FirstColumn + 2), _
+                   Cells(LastRow - 1, LastColumn))
+                   
+    'Point to and name the net income portion of the table
+    '(including row headings but not including totals)
+    Set NetIncomeRange = Union(R1, R2)
+    NetIncomeRange.Name = "NetIncomeRange"
+    
+    'Add a chart that's linked to RevenueRange
+    RevenueRange.Select
+    ActiveSheet.ChartObjects.Add(198.75, 12, 240, 243).Select
+    ActiveChart.ChartWizard source:=RevenueRange, _
+                            gallery:=xl3DPie, _
+                            format:=1, _
+                            plotBy:=xlColumns, _
+                            categoryLabels:=1, _
+                            seriesLabels:=1
+                            
+    'Format the new chart
+    Worksheets("SummaryData").ChartObjects(1).Activate
+    With ActiveChart
+        .Elevation = 55
+        .Legend.Shadow = True
+        .Legend.Interior.ColorIndex = 15
+        .ChartTitle.Font.Size = 18
+        .ChartTitle.Font.Bold = True
+        .ChartTitle.Border.LineStyle = xlMedium
+        .ChartTitle.Shadow = True
+        .ChartTitle.Interior.ColorIndex = 15
+    End With
+    
+    'Deactivate the chart by hiding the ActiveWindow
+    ActiveWindow.Visible = False
+    With Worksheets("SummaryData").ChartObjects(1)
+        .Border.LineStyle = xlNone
+        .Interior.ColorIndex = 16
+    End With
+    Worksheets("SummaryData").Range("A1").Select
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'AddChartOptionButtons adds two optionbuttons to the SummaryData
+'form that allow the user to switch between having revenue data
+'and net income data displayed in the chart.  The ChangeChart
+'macro is assigned to each optionbutton.
+
+Sub AddChartOptionButtons()
+    Dim CaptionArray As Variant
+    Dim NameArray As Variant
+    Dim ButtonCounter As Integer
+    Dim TopValue As Integer
+    CaptionArray = Array("Revenue", "Net Income")
+    NameArray = Array("RevenueChart", "NetIncomeChart")
+    With Worksheets("SummaryData")
+        .Select
+        TopValue = 60
+        For ButtonCounter = 1 To 2
+            .OptionButtons.Add 20, TopValue, 80, 20
+            With .OptionButtons(ButtonCounter)
+                .Caption = CaptionArray(ButtonCounter)
+                .Name = NameArray(ButtonCounter)
+                .Border.Weight = xlMedium
+                .Interior.ColorIndex = 15
+                .OnAction = "ChangeChart"
+            End With
+            TopValue = TopValue + 20
+        Next
+    End With
+End Sub
+
+'===========================================================
+'ChangeChart uses a Select-Case statement to determine
+'which optionbutton on the SummaryData form was clicked
+'and then changes which set of data the chart is linked to
+'by calling the ChartWizard method and passing a new range
+'address for the source argument.
+
+Sub ChangeChart()
+    Dim RevenueRange As Range
+    Dim NetIncomeRange As Range
+    Set RevenueRange = Worksheets("SummaryData").Range("RevenueRange")
+    Set NetIncomeRange = Worksheets("SummaryData").Range("NetIncomeRange")
+    Worksheets("SummaryData").ChartObjects(1).Select
+    Select Case Application.Caller
+        Case "RevenueChart"
+            ActiveChart.ChartWizard source:=RevenueRange
+        Case "NetIncomeChart"
+            ActiveChart.ChartWizard source:=NetIncomeRange
+    End Select
+    Worksheets("SummaryData").Range("A1").Select
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'AddAppTitleBox adds a title box to the top of the Control form.
+
+Sub AddAppTitleBox()
+    Dim TitleString As String
+    TitleString = "West Coast Airways"
+    Worksheets("Control").Select
+    ActiveSheet.TextBoxes.Add 90, 30, 250, 30
+    With ActiveSheet.TextBoxes(1)
+        .Text = TitleString
+        .Interior.ColorIndex = 15
+        .Border.Weight = xlMedium
+        .Shadow = True
+        .Font.Size = 22
+        .Font.Bold = True
+        .HorizontalAlignment = xlCenter
+        .VerticalAlignment = xlCenter
+    End With
+    Range("A1").Select
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'InsertPlanes inserts the Plane.bmp file, makes 3 copies of
+'it and then evenly spaces the resulting 4 pictures across
+'the Control form under the application title box.  Note the
+'use of the OperatingSystem property of the Application object
+'to determine the appropriate directory separator character
+'for the operating system under which the application is
+'running.
+
+Sub InsertPlanes()
+    Dim PlaneCounter As Integer
+    Dim LeftValue As Integer
+    Dim PathString As String
+    Dim DirectoryVar As String
+    DirectoryVar = Application.PathSeparator
+    PathString = ThisWorkbook.Path & DirectoryVar & "PLANE.BMP"
+    Worksheets("Control").Activate
+    ActiveSheet.Pictures.Insert(PathString).Select
+    With Selection
+        .Border.LineStyle = xlNone
+        .Copy
+    End With
+    For PlaneCounter = 1 To 3
+        ActiveSheet.Paste
+    Next
+    LeftValue = 50
+    For PlaneCounter = 1 To 4
+        With Worksheets("Control").Pictures(PlaneCounter)
+            .Left = LeftValue
+            .Top = 80
+            .OnAction = "FlyPlanes"
+            LeftValue = LeftValue + 110
+        End With
+    Next
+    Worksheets("Control").TextBoxes(1).OnAction = "FlyPlanes"
+    Range("A1").Select
+End Sub
+
+'===========================================================
+'FlyPlanes groups the 4 airplane pictures, moves them 60
+'points across the screen in an animated fashion, then ungroups
+'them and moves the leading picture back to the far left of the
+'screen.  Next, it groups the pictures again and moves them
+'another 50 points across the screen.  This process is repeated
+'four times.
+
+Sub FlyPlanes()
+    Dim DrawVar As Picture
+    Dim FlightCounter As Integer
+    Dim Counter As Integer
+    For Counter = 1 To 4
+        Worksheets("Control").Pictures.Group
+        With Worksheets("Control").GroupObjects(1)
+            For FlightCounter = 1 To 6
+                .Left = .Left + 10
+            Next
+            .Ungroup
+        End With
+        For Each DrawVar In Worksheets("Control").Pictures
+            If DrawVar.Left > 355 Then
+                DrawVar.Left = 0
+            End If
+        Next
+        Worksheets("Control").Pictures.Group
+        With Worksheets("Control").GroupObjects(1)
+            For FlightCounter = 1 To 5
+                .Left = .Left + 10
+            Next
+            .Ungroup
+        End With
+    Next
+    Range("A1").Select
+End Sub
+
+'===========================================================
+'                 Application Setup Macro
+'SetUpEnvironment hides most of the Excel artifacts such as
+'gridlines, row and column headings, scrollbars, and tabs.
+'It also sets two Application properties which cannot be
+'saved with the file.  An Auto_Open macro is used to reset
+'these properties each time the workbook is opened.
+
+Sub SetUpEnvironment()
+    Dim WorksheetVar As Worksheet
+    For Each WorksheetVar In ActiveWorkbook.Worksheets
+        WorksheetVar.Select
+        With ActiveWindow
+            .DisplayGridlines = False
+            .DisplayHeadings = False
+        End With
+    Next
+    With ActiveWindow
+        .DisplayHorizontalScrollBar = False
+        .DisplayVerticalScrollBar = False
+        .DisplayWorkbookTabs = False
+    End With
+    Application.DisplayFormulaBar = False
+    Application.DisplayStatusBar = False
+    Worksheets("Control").Activate
+End Sub
+
+'===========================================================
+'An Auto_Open macro is used here to turn off the display of
+'the status bar and the formula bar whenever the file is
+'opened.
+
+Sub Auto_Open()
+    Application.DisplayStatusBar = False
+    Application.DisplayFormulaBar = False
+End Sub
+
+
+
+
