@@ -1,0 +1,443 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML><HEAD><TITLE>The ABCs of ActiveX Controls using MFC</TITLE>
+</HEAD>
+<!--DocHeaderStart-->
+<BODY leftmargin=8 bgcolor="#FFFFFF" VLINK="#666666" LINK="#FF0000">
+<FONT FACE="ARIAL,HELVETICA" SIZE="2">
+<!--DocHeaderEnd-->
+<!-- This is a PANDA Generated HTML file. The source is a WinWord Document. -->
+<A NAME="TOP"></A><h2>The ABCs of MFC ActiveX Controls (cont'd)</h2>
+<P>Paul Johns<BR>
+Developer Trainer
+<P><!-- DATE -->October 22, 1996
+<P><!-- DATE -->
+<P>
+Because of its length, this article
+has been divided into two parts for ease of reading on the Web. 
+This is Part II.
+<P>
+<A NAME="TOP"></A><a href="/intdev/controls/stoplite/stoplmfc.htm">Back to Part I</a>
+<P>
+<b>Contents for Part II:</b>
+<blockquote>
+<A HREF="#SPEC">Specification of the StopLite Control</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#HOW">How I wrote StopLite</A><BR> 
+<A HREF="#PROPERTIES">Properties</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#CONTROL">Control properties</A><BR>   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="#CUSTOM">Custom properties</A><BR>  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="#IMPL">Implemented as <b>Get/Set</b> methods</A><BR>    
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="#MEMBERVAR">Implemented as a member variable</A><BR>    
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="#PERSISTENT">Making custom properties persistent</A><BR>   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="#STOCK">Stock properties</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#AMBIENT">Ambient (container) properties</A><BR> 
+<A HREF="#METHODS">Methods</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#STOCKMETHODS">Stock methods</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#CUSTOMMETHODS">Custom methods</A><BR> 
+<A HREF="#EVENTS">Events</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#STOCKEVENTS">Stock events</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#CUSTOMEVENTS">Custom events</A><BR> 
+<A HREF="#CTRLDRAW">Making the Control Draw</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#DRAWING">Drawing the StopLite control</A><BR> 
+<A HREF="#RESPONDING">Responding to Windows Messages</A><BR> 
+<A HREF="#PROPAGES">Property Pages</A><BR> 
+<A HREF="#ERRORS">Notifying Your Container of Errors</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#WITHIN">From within a method call</A><BR> 
+&nbsp;&nbsp;&nbsp;<A HREF="#OTHER">In other situations</A><BR> 
+<A HREF="#SECURITY">A Brief Note About Security Issues</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#SIGN">Code signing</A><BR>
+&nbsp;&nbsp;&nbsp;<A HREF="#SAFE">Marking your control as safe</A><BR> 
+<A HREF="#VISUALC++">Using Visual C++ and Test Container to Debug the Control</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#DEBUG">Debugging output you can safely ignore</A><BR> 
+<A HREF="#ACTIVEX">Creating a Web Page Using the ActiveX Control Pad</A><BR> 
+<A HREF="#CONCLUSION">Conclusion/Where to Learn More</A><BR>
+</blockquote>
+<P>Related article: <a href="/intdev/controls/signmark.htm" target="text">Signing and Marking ActiveX Controls</a>.
+<P>(Click for a list of  <A HREF="/INTDEV/CONTROLS/STOPLITE/FILELIST.HTM">files</A> that accompany this article.)<P>
+
+
+
+
+<P><h2><A NAME="SPEC"></A> Specification of the StopLite Control</h2><P>Next, we'll go through the modifications we made to write this control. Basically, the control will work as follows:<P><h4>Properties</H4><P>StopLite implements only one property, <b>Color</b>. Its possible values and their meanings are:<P>StopLite also uses the <b>BackColor</b> and <b>ForeColor</b> stock properties and the <b>BackColor</b> ambient (container) property (this is the <i>container's</i> background color).<P><h4>Methods</H4><P>StopLite has three methods: <b>AboutBox</b>, which displays the About box; <b>Next</b>, which changes the light to the next state (red, green, yellow, red...); and the stock <b>Refresh</b> method.<P><h4>Events</H4><P>StopLite fires a bunch of events when the light changes state: <b>Off</b>, <b>Testing</b>, <b>Stop</b>, <b>Go</b>, and <b>Caution</b>. It also fires the stock <b>Click</b> event when either mouse button is clicked.<P><h4>Drawing</H4><P>StopLite will draw itself as a vertical row of three lights. Each light will be either on or off; except in test mode, at most one light will be on at a time. The lights will be circular regardless of the width of the control, but the size of the lights will be as large as possible given the height of the control. A bezel will be drawn around the lights.<P><h4>Windows messages</H4><P>StopLite responds to left-button clicks (<b>WM_LBUTTONDOWN</b>) by calling the <b>Next</b> method. This gives you a way to call the <b>Next</b> method even when the control is embedded in a container, such as Word, that doesn't support calling methods.<P><h4>Marked as safe, signed</H4><P>StopLite is signed to allow users to install the control, even if their browser security is set to high. It also assures them that the control was actually signed by the entity described in the signing certificate and that the control has not been modified since it was signed.<P>StopLite is also marked as safe for scripting and safe for initializing, since there are no scripting commands nor data values that could cause it to damage a user's system. This allows pages that display StopLite controls to come up immediately without warning dialog boxes (if security is set to medium) or failures (if security is set to high).<P>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h3><A NAME="HOW"></A> How I wrote StopLite</h3><P>I actually wrote the control in a different order than I'm presenting below. First, I modified <b>OnDraw</b> so that the control drew <i>something</i> besides an ellipse! Next, I implemented the first property, <b>Color</b>. That necessitated modifying the drawing code to draw the lights in the correct color. Once I had that working, I implemented the <b>Next</b> method and the <b>OnLButtonDown</b> mouse handler so I could see the light change without fiddling with a property page in the test container. (Most satisfying!)<P>At that point, I created my first Web page for the control using the ActiveX Control Pad, which makes adding controls and your choice of VBScript or JavaScript to Web pages a <i>snap</i>!<P>Then I added the remainder of the properties, events, and methods.<P>Finally, I got tired of all of the annoying warning dialogs every time I went to a Web page that contained my control, so I signed StopLite and marked it as safe for scripting and safe for initializing. I learned how to do this using the ActiveX SDK documentation.<P>But that's a difficult sequence in which to explain the control's code--especially since you don't <i>really</i> want me to blather on about rewriting the <b>OnDraw</b> function fifteen times. So I've captured what I've learned and organized it in a more readable fashion.<P>Of all of the files in the project, only the  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITEDEF.HTM">StopLite.DEF</A> file didn't change.<P>You can download the finished code all at once to view it in Developer Studio&#153;, or you can shift-click to view an  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/DEFAULT2.HTM">index</A> in a new browser window.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h2><A NAME="PROPERTIES"></A> Properties</h2><P>(Shift-click to load the  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECTLH.HTM">StopLiteCtl.H</A> and  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECTLCPP.HTM">StopLiteCtl.CPP</A> files and follow along in the code.)<P>Think of properties as exposing the variables inside a control. In the StopLite control, we have three properties: the <b>BackColor</b> and <b>ForeColor</b> stock properties, and a custom property called <b>Color</b>, which represents the state of the stoplight (off, red, green, yellow, testing). In addition, StopLite uses the container's background color as an &quot;ambient property.&quot;<P>Although properties act as if you're exposing a variable, that's just the programming model. Getting and setting a property can do any operations you choose. So one important way for a container to manipulate its controls is by initializing and changing its properties.<P>When you insert a control into a container in design mode, you have a chance to set its initial properties. The control passes any changes back to the container, which is responsible for saving the properties the control asks it to. (The control reads and writes its properties in <b>DoPropExchange</b>.) In this way, the state of the control is persistent, and we say that the control &quot;implements persistence.&quot; It's the container design program's responsibility to save these properties when it saves the container's representation.<P>When the container is run and creates the control, it must provide the control with these initial property values.<P>In Visual Basic, the properties are saved as part of the form's .FRM file. In HTML pages, the properties are saved as <b>&lt;PARAM&gt;</b> tags inside the <b>&lt;OBJECT&gt;</b> tag that specifies how to create the control.<P>There are several categories and sub-categories of properties. They can either belong to (be implemented by) the control or belong to the container. <i>Control properties</i> are further broken down into <i>custom properties</i> (implemented by you) and <i>stock properties</i> (implemented by MFC). <i>Container properties</i> are called <i>ambient properties</i>; they are further categorized as <i>standard ambient properties</i>, whose meanings are defined by OLE, and <i>extended properties</i>, which are defined by a specific container. Extended properties are more properly thought of as properties of the extended control, which is a control inside the container that encapsulates and extends your control.<P>Of the four, custom control properties are most commonly used, so we'll discuss them first.<P>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h3><A NAME="CONTROL"></A> Control properties</h3><P>There are two types of control properties: Custom properties are implemented in code you write, while stock properties are implemented by MFC and accessed with <b>COleControl</b> member functions.<P><h4><A NAME="CUSTOM"></A> Custom properties</H4><P>Custom properties are implemented by the code in your control. You will typically have a variable in your control class to hold these properties, although you can implement them via <b>Get/Set</b> methods to work in any way you choose.<P>ClassWizard offers two choices when implementing a custom property: as a pair of <b>Get/Set</b> methods, or as a member variable. In general, using a pair of <b>Get/Set</b> methods is more flexible because you can validate changes to the property and because you can represent the data in any way you choose. Also, if you want your property to be either read-only or write-only, it must be implemented with <b>Get/Set</b> methods.<P>You can specify that one, and at most one, property in your control is the &quot;default&quot; property. In StopLite, <b>Color</b> is the default property. This means that in your container, you can write:<P><PRE><FONT FACE="COURIER" SIZE="2">   StopLite1 = 2;
+</FONT></PRE><P>rather than:<P><PRE><FONT FACE="COURIER" SIZE="2">    StopLite1.Color = 2;
+</FONT></PRE><P>It's a minor convenience, but a nice one--most useful when the control is strongly associated with a single value, such as an edit control. The OLE Automation tab in ClassWizard has a checkbox for this. Select the property you want to make the default and check Default Property.<P>Note that the default property shows up in the container's property list as <b>_Color</b>. You should not use this property--use <b>Color</b> instead. This extra property is an artifact of the way MFC implements default properties.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h5><A NAME="IMPL"></A> Implemented as Get/Set methods</h5><P>In general, this is the method I recommend for implementing properties, because it's more flexible. It allows you to store the property in any way you choose, and it allows you to prevent the properties from changing to values you don't allow. It also allows read-only and write-only properties.<P>Custom properties implemented using <b>Get/Set</b> methods can be both read and written. When you're using ClassWizard to create the property, it's easy to make it read-only or write-only--just delete the name of the <b>Get</b> method to make it write-only, or delete the name of the <b>Set</b> method to make it read-only. (But don't delete both, okay?)<P>The <b>Color</b> property in StopLite is implemented as a pair of <b>Get/Set</b> methods. Use the Add Property button on ClassWizard's OLE Automation tab and type &quot;Color&quot; in the External Name drop-down box. Select <b>short</b> as the type, then click on <b>Get/Set</b> methods. Check the function names, then click OK. To make <b>Color</b> the default property, select it while on the OLE Automation tab and click the Default Property checkbox. If you need more assistance with ClassWizard, consult Visual C++'s Books Online.<P>When you've done all this, ClassWizard will modify your dispatch map to include:<P><PRE><FONT FACE="COURIER" SIZE="2">   DISP_PROPERTY_EX(CStopLiteCtrl, &quot;Color&quot;, GetColor, SetColor, VT_I2)
+   DISP_DEFVALUE(CStopLiteCtrl, &quot;Color&quot;)
+</FONT></PRE><P>It will also modify your .ODL file (typelib source) to include the following:<P><PRE><FONT FACE="COURIER" SIZE="2">   [id(1)] short Color;
+   [id(0)] short _Color;
+</FONT></PRE><P>The fact that the second of the declarations has an ID of 0 is what makes <b>Color</b> the default property. (MFC takes care of the difference between <b>Color</b> and <b>_Color</b>.)<P>ClassWizard also generates skeletons for the <b>GetColor</b> and <b>SetColor</b> methods. I added a member variable <b>m_color</b> (using a right-click on <b>CStopLiteCtrl</b> in ClassView--yea!) and added code to the functions as follows:<P><PRE><FONT FACE="COURIER" SIZE="2">short CStopLiteCtrl::GetColor() 
+{
+   return m_color;
+}
+
+void CStopLiteCtrl::SetColor(short nNewValue)
+// set color, redraw; throw error if parameter bad
+{
+   if (nNewValue &gt;= SL_NONE &amp;&amp; nNewValue &lt;= SL_TEST)
+      m_color = nNewValue;
+   InvalidateControl();
+   FireRightEvent();
+   SetModifiedFlag();
+   else {
+      ThrowError(CTL_E_ILLEGALFUNCTIONCALL, 
+         &quot;Color parameter out of range&quot;);
+   }
+}
+</FONT></PRE><P><b>GetColor</b> is simple, but <b>SetColor</b> requires a little explanation. First, we check to see if the value being used is valid. If it is, we set <i>m_color</i>, then update the control. (<b>InvalidateControl</b> redraws, <b>FireRightEvent</b> fires the appropriate event, and <b>SetModifiedFlag</b> lets MFC know that a property has changed.)<P>If the value passed is not valid, we throw an error using the <b>ThrowError</b> member function. This function is only used in methods, including <b>Get/Set</b> methods. In other situations, use <b>FireError</b> to fire the stock <b>Error</b> method. (Note that <b>SetColor</b> will <i>not</i> be called when the control is initialized--only when the <b>Color</b> member is changed.)
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h5><A NAME="MEMBERVAR"></A> Implemented as a member variable</h5><P>You can also ask ClassWizard to implement a property as a member variable, without <b>Get/Set</b> functions. (Actually, there <i>are</i> <b>Get/Set</b> functions, but they're implemented by MFC so you don't have to write them.)<P>Although this is simpler, it has three disadvantages:<UL><LI> You cannot validate the value being set<LI> Your member variable must be of the exact same type as the property<LI> You cannot make the property read-only or write-only</UL>If the disadvantages above aren't a problem in your situation, you can implement a property as a member variable. For instance, if the type of a read/write property is <b>BOOL</b>, it makes sense to implement that property as a member variable.<P>By default, ClassWizard creates a change notification function, which will be called when the property changes. If we had implemented <b>Color</b> as a member variable, we would have called <b>InvalidateControl</b>, <b>FireRightEvent</b>, and <b>SetModifiedFlag</b> from this function.<P>Implementing a property as a member variable is very similar to implementing it as <b>Get/Set</b> methods, except that you click on Member variable in the last step of the procedure above. If you <i>don't</i> want a notification function, clear the name in ClassWizard before you click OK.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h5><A NAME="PERSISTENT"></A> Making custom properties persistent</h5><P>ClassWizard will automatically add the necessary code to <b>DoPropExchange</b> to save your properties at design time so they can be reloaded at run time.<P>In StopLite, ClassWizard and I added the following code:<P><PRE><FONT FACE="COURIER" SIZE="2">   PX_Short(pPX, &quot;Color&quot;, m_color, SL_TEST); 
+               // default to test state (all on)
+</FONT></PRE><P>The last parameter to PX_Short is the property's default value, which I added, specifying it as <b>SL_TEST</b>.<P>We also need to validate the initialization data to ensure that we're safe for initializing. Just after the line above, I added:<P><PRE><FONT FACE="COURIER" SIZE="2">               // check for load of bad value, fix
+   if (pPX-&gt;IsLoading()) {
+      if (m_color &lt; SL_NONE || m_color &gt; SL_TEST)  {
+         m_color = SL_TEST;
+      }
+   }
+</FONT></PRE><P>It is possible for a container to pass a bad value into the control, so it's important to check it both here and in set functions.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h4><A NAME="STOCK"></A> Stock properties</H4><P>In addition to custom control properties that you implement, a set of stock properties is implemented by MFC. To use them, just add them to your control with ClassWizard--the code is already there to implement the properties. (MFC automatically provides persistence for stock properties.) Check out the list of stock properties by looking up Stock Methods/Properties in the class member list for <b>COleControl</b>.<P>To access the stock properties from your control, use pre-defined functions defined as members of <b>COleControl</b>. Most of the functions have names of the form <b>GetXxxx</b> and <b>SetXxxx</b>, where Xxxx is the name of the stock property. There are also a set of stock property notification change functions with names of the form <b>OnXxxxChanged</b>. These have reasonable default implementations, but you can override them if necessary.<P>StopLite uses two stock properties: <b>BackColor</b> and <b>ForeColor</b>. An important thing to remember about stock color properties is that they are stored as an <b>OLE_COLOR</b>, not as a <b>COLORREF</b>. Windows usually uses <b>COLORREF</b>s, so you'll need to call <b>TranslateColor</b> to translate from an <b>OLE_COLOR</b> to a <b>COLORREF</b>. (There doesn't appear to be a function to perform the inverse translation.)<P>To add these stock properties, use the Add Property button on ClassWizard's OLE Automation tab and select <b>BackColor</b> (<b>ForeColor</b> the second time...) in the External Name drop-down box.<P>When you're done, ClassWizard will modify your dispatch map to include:<P><PRE><FONT FACE="COURIER" SIZE="2">   DISP_STOCKPROP_BACKCOLOR()
+   DISP_STOCKPROP_FORECOLOR()
+</FONT></PRE><P>It will also modify your .ODL file (typelib source) to include the following:<P><PRE><FONT FACE="COURIER" SIZE="2">   [id(DISPID_BACKCOLOR), bindable, requestedit] OLE_COLOR BackColor;
+   [id(DISPID_FORECOLOR), bindable, requestedit] OLE_COLOR ForeColor;
+</FONT></PRE><P>That's all we need to do. We can now call <b>GetBackColor</b> and <b>GetForeColor</b> to get the colors to paint our control. As mentioned above, these stock properties are automatically persistent.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h3><A NAME="AMBIENT"></A> Ambient (Container) properties</h3><P>Ambient properties are properties of the control's container, not the control. They are therefore implemented by the container, not by the control. All ambient properties are read-only. You do not need to do anything to access these properties except call the appropriate functions.<P><h4>Standard ambient properties</H4><P>There is a group of ambient properties for which dispatch IDs are predefined by OLE. You can access most of these properties by calling member functions of <b>COleControl</b>. To access the few properties for which there is no function, you can call <b>GetAmbientProperty</b>.<P>StopLite uses the ambient <b>BackColor</b> property to paint the area outside of the control's bezel so it will blend into the container's background. The code to do this is in <b>OnDraw</b>, and it's very simple:<P><PRE><FONT FACE="COURIER" SIZE="2">   CBrush brAmbientBack(TranslateColor(AmbientBackColor()));
+   pdc-&gt;FillRect(rcBounds, &amp;brAmbientBack);
+</FONT></PRE><P>The call to <b>AmbientBackColor</b> reads the ambient background color. Since this is another <b>OLE_COLOR</b>, it needs to be translated before we can create the brush for painting the background.<P>Some of the commonly used ambient properties include background and foreground colors, font, locale ID, and various properties associated with activation. Adam Denning's <i>OLE Controls Inside Out</i> (Microsoft Press, 1995) has a wonderful discussion of ambient properties.<P><h4>Extended ambient properties</H4><P>Control containers are also free to implement any ambient properties they like. If you know the property's dispatch ID and type, you can access it by calling <b>GetAmbientProperty</b>.<P><h4>Ambient property change notifications</H4><P>When ambient properties change, the control will be notified. If you want to know about changes, override <b>COleControl::OnAmbientPropertyChange</b>. I did this in StopLite so that I could repaint if the background color changed. I used ClassWizard to write the code by adding a handler for <b>OnAmbientPropertyChange</b>. (This is on the Message Map tab.) The code I wrote to handle the notification checks to see which notification I've received and forces the control to repaint if the ambient background has changed. Note that even if more than one ambient property changes at a time, only one call to <b>OnAmbientPropertyChange</b> will be made. That call will pass <b>DISPID_UNKNOWN</b> as the <b>DISPID</b>. I check for that situation and force a repaint just to be safe.<P><PRE><FONT FACE="COURIER" SIZE="2">void CStopLiteCtrl::OnAmbientPropertyChange(DISPID dispid) 
+{
+   // Repaint if ambient background changed or if several changed
+   if (dispid == DISPID_AMBIENT_BACKCOLOR ||
+      dispid == DISPID_UNKNOWN)
+   {
+      InvalidateControl();
+   }
+
+   // pass on to base class
+   COleControl::OnAmbientPropertyChange(dispid);
+}
+</FONT></PRE><P>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h2><A NAME="METHODS"></A> Methods</h2><P>(Shift-click to load the  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECTLH.HTM">StopLiteCtl.H</A> and  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECTLCPP.HTM">StopLiteCtl.CPP</A> files and follow along in the code.)<P>Methods are function calls into the control--how the container tells the control to do something. The StopLite control supports two methods: <b>Next</b> and <b>AboutBox</b>.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h3><A NAME="STOCKMETHODS"></A> Stock methods</h3><P>MFC provides implementation for a couple of <i>stock methods</i>, which you can easily add to your project using ClassWizard. You don't even have to write any code. The StopLite control implements the <b>Refresh</b> stock method, which forces the control to redraw itself.<P>To add the stock <b>Refresh</b> method to your control, use the Add Method button on ClassWizard's OLE Automation tab and select <b>Refresh</b> in the External Name drop-down box. ClassWizard will modify your dispatch map to include:<P>   DISP_STOCKFUNC_REFRESH( )<P>It will also modify your .ODL file (typelib source) to include:<P><PRE><FONT FACE="COURIER" SIZE="2">   [id(DISPID_REFRESH)] void Refresh();
+</FONT></PRE><P>If you execute this method in most containers, you won't see any change in the control; it will simply repaint itself as it was. However, this method can be handy if the container knows it's drawn on top of the control and wants the control to redraw itself.<P>In addition to <b>Refresh</b>, MFC supplies the <b>DoClick</b> stock method, which forces the control to act as if it were clicked.<P><P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P><h3><A NAME="CUSTOMMETHODS"></A> Custom methods</h3><P>Most of the methods your control uses will be custom methods. Stock methods are implemented by MFC; custom methods are implemented by you. In addition to <b>AboutBox</b>, which was written by ControlWizard, the StopLite control implements only one custom method, <b>Next</b>. <b>Next</b> causes the stoplight to change to the next state in its cycle (red, green, yellow, red...).<P>To add the <b>Next</b> method to your control, use the Add Method button on ClassWizard's OLE Automation tab and type <b>Next</b> in the External Name drop-down. ClassWizard will modify your dispatch map to include:<P><PRE><FONT FACE="COURIER" SIZE="2">   DISP_FUNCTION(CStopLiteCtrl, &quot;Next&quot;, Next, VT_EMPTY, VTS_NONE)
+</FONT></PRE><P><b>VT_EMPTY</b> means that the return type of the <b>Next</b> method is void, and <b>VTS_NONE</b> means that the <b>Next</b> method takes no parameters. If the method had a return value, its return type constant (<b>VT_xxx</b>) would replace <b>VT_EMPTY</b>. If it took parameters, the types of the parameters would be represented by a comma-separated list of parameter type constants (<b>VTS_xxx</b>) instead of <b>VTS_NONE</b>. The list of constants is in the MFC documentation for <b>DISP_FUNCTION</b>.<P>ClassWizard will also modify your .ODL file (typelib source) to include:<P><PRE><FONT FACE="COURIER" SIZE="2">   [id(2)] void Next();
+</FONT></PRE><P>Next, we'll write the code for the method. If the stoplight is currently off, testing, at the end of the cycle, or in some other state, we'll set it to the first state in the cycle, which happens to be red. If it's already in the cycle, we'll set its state to the next in the cycle. Since we've changed the internal state of the stoplight, we must also redraw it by calling <b>InvalidateControl</b>, fire the appropriate event by calling <b>FireRightEvent</b>, and let MFC know that the state has changed by calling <b>SetModifiedFlag</b>.<P>Here's the code for <b>Next</b>:<P><PRE><FONT FACE="COURIER" SIZE="2">void CStopLiteCtrl::Next() 
+// changes stoplight to next state, redraws
+{
+   if (m_color &gt;= SL_LAST || m_color &lt; SL_FIRST)  {
+      m_color = SL_FIRST;
+   }
+   else m_color++;
+   InvalidateControl();
+   FireRightEvent();
+   SetModifiedFlag();
+}
+</FONT></PRE><P>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h2><A NAME="EVENTS"></A> Events</h2><P>(Shift-click to load the  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECTLH.HTM">StopLiteCtl.H</A> and  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECTLCPP.HTM">StopLiteCtl.CPP</A> files and follow along in the code.)<P>Events are the notifications your control sends to its container when something of interest has happened. The control does this by &quot;firing&quot; an event, which the container can handle with its own code.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h3><A NAME="STOCKEVENTS"></A> Stock events</h3><P>MFC provides about a dozen stock events, mainly having to do with mouse clicks and key presses. Two events worth noting are the <b>Error</b> event, which we'll discuss in a bit, and the <b>ReadyStateChanged</b> event, which your control can fire to notify the container that its ready state has changed (for instance, from Loading to Interactive to Complete). This can be useful if your control needs to download a lot of data before it's ready to use.<P>StopLite implements one stock event, <b>Click</b>. To add this event, click the Add Event button on ClassWizard's OLE Events tab and select <b>Click</b> in the External Name drop-down box.<P>When you're done, ClassWizard will modify your event map to include:<P><PRE><FONT FACE="COURIER" SIZE="2">   EVENT_STOCK_CLICK()
+</FONT></PRE><P>It will also modify your .ODL file (typelib source) to include:<P><PRE><FONT FACE="COURIER" SIZE="2">   [id(DISPID_CLICK)] void Click();
+</FONT></PRE><P>No code is added or necessary since MFC implements the <b>FireClick</b> function.<P>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h3><A NAME="CUSTOMEVENTS"></A> Custom events</h3><P>Many of the events your control fires will be custom events. Custom events can pass parameters to provide more information about the situation that caused the event to be fired, although the StopLite control doesn't take advantage of that.<P>Rather, the StopLite control implements a separate event for each of its states: <b>Stop</b>, <b>Caution</b>, <b>Go</b>, <b>Testing</b>, and <b>Off</b>. Note that the events are <i>not</i> named for the color of the light, but rather for what I expect that the container might do with the event. For instance, the container could call the <b>Stop</b> method on all the cars on the road when it receives the <b>Stop</b> event from the StopLite control.<P>To add these events to your control, use the Add Event button on ClassWizard's OLE Events tab and type the name of each event in the External Name drop-down box. For these events, you won't need any parameters.<P>When you're done, ClassWizard will modify your event map to include:<P><PRE><FONT FACE="COURIER" SIZE="2">   EVENT_CUSTOM(&quot;Stop&quot;, FireStop, VTS_NONE)
+   EVENT_CUSTOM(&quot;Caution&quot;, FireCaution, VTS_NONE)
+   EVENT_CUSTOM(&quot;Go&quot;, FireGo, VTS_NONE)
+   EVENT_CUSTOM(&quot;Testing&quot;, FireTesting, VTS_NONE)
+   EVENT_CUSTOM(&quot;Off&quot;, FireOff, VTS_NONE)
+</FONT></PRE><P><b>VTS_NONE</b> in the macro invocations above means that the events have no parameters. If the events had parameters, constants describing their types would be listed in order starting after the function name. The list of constants is in the MFC documentation for <b>EVENT_CUSTOM</b>.<P>It will also modify your .ODL file (typelib source) to include:<P><PRE><FONT FACE="COURIER" SIZE="2">   [id(1)] void Stop();
+   [id(2)] void Caution();
+   [id(3)] void Go();
+   [id(4)] void Testing();
+   [id(5)] void Off();
+</FONT></PRE><P>Finally, ClassWizard also adds the code you need to implement these events to the class' declaration in its header file:<P><PRE><FONT FACE="COURIER" SIZE="2">   void FireStop()
+      {FireEvent(eventidStop,EVENT_PARAM(VTS_NONE));}
+   void FireCaution()
+      {FireEvent(eventidCaution,EVENT_PARAM(VTS_NONE));}
+   void FireGo()
+      {FireEvent(eventidGo,EVENT_PARAM(VTS_NONE));}
+   void FireTesting()
+      {FireEvent(eventidTesting,EVENT_PARAM(VTS_NONE));}
+   void FireOff()
+      {FireEvent(eventidOff,EVENT_PARAM(VTS_NONE));}
+</FONT></PRE><P>To make it easier to fire events, I wrote a helper function called <b>FireRightEvent</b>. Call it after the light changes. It fires the appropriate event based on the stoplight's new state. Here's the code:<P><PRE><FONT FACE="COURIER" SIZE="2">void CStopLiteCtrl::FireRightEvent()
+// called whenever the stoplight state changes to fire the
+//   appropriate event--must call AFTER m_color set to new value!
+// Use the source browser to make sure you call each time 
+//   m_color changed!
+{
+   switch (m_color) {
+      case SL_RED: FireStop();
+         break;
+      case SL_YELLOW: FireCaution();
+         break;
+      case SL_GREEN: FireGo();
+         break;
+      case SL_NONE: FireOff();
+         break;
+      case SL_TEST: FireTesting();
+         break;
+   }
+}
+</FONT></PRE><P>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h2><A NAME="CTRLDRAW"></A> Making the Control Draw</h2><P>(Shift-click to load the  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECTLH.HTM">StopLiteCtl.H</A> and  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECTLCPP.HTM">StopLiteCtl.CPP</A> files and follow along in the code.)<P>Compared with other types of Windows programs, the drawing code for ActiveX controls must meet some special requirements.<P>First, <i>your control must draw on demand</i>. Your control will be asked to draw itself whenever the container needs it to. The container will pass it a device context (DC) and two rectangles--a bounding rectangle and a rectangle that encloses all the invalid regions. (If you're new to MFC and/or Windows, read up on device contexts.)<P>You must redraw at least the pixels enclosed by the invalid rectangle but may <i>not</i> draw any pixels outside the bounding rectangle. You can optimize your drawing code by not drawing pixels outside the invalid rectangle.<P>Note that the bounding rectangle's upper left corner is <i>not</i> guaranteed to be at (0, 0)--it usually will be when drawing a control that's in the active state, but not, for instance, when drawing a control that's in the inactive state.<P>Second, <i>you must paint your background</i>. Unlike painting a window or drawing a view, you must paint your background in the control's <b>OnDraw</b> function. Background painting is not done automatically, nor is it done in some other function.<P>Third, <i>you may not assume anything about the DC you've been passed</i>, so you should select the pens, brushes, fonts, and colors you need when you draw your control. Some containers will pass your control a metafile DC in some situations, especially when printing. In order to work properly when drawing into a metafile, you must restrict your function calls to those supported in metafiles. See the MFC Encyclopedia article <i>OLE Controls: Painting and OLE Control</i> for more information. Finally, you must always select the old drawing objects back into the DC before your drawing function exits.<P>Lastly, <i>the container, not the control, determines the control's size and position</i>. Because the control doesn't determine the size and position of your control's visible area, you must either scale your output to fit in the window you're provided or supply scrolling--or both. The StopLite control scales drawing according to the height of the control and centers it across the width. A control such as a grid will always draw using the same scaling but will provide scrolling if the area to be drawn is larger than the area the container gives you.<P>The requirements are even more complicated for transparent and other windowless controls, but that's beyond the scope of this article.<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P><h3><A NAME="DRAWING"></A> Drawing the StopLite control</h3><P>The <b>OnDraw</b> function for the StopLite control does three tasks: drawing the background, drawing the stoplight's bezel, and drawing the lights.<P>Here's the code for <b>OnDraw</b>:<P><PRE><FONT FACE="COURIER" SIZE="2">void CStopLiteCtrl::OnDraw(
+         CDC* pdc, const CRect&amp; rcBounds, const CRect&amp; rcInvalid)
+{
+   // 1. erase background using container's background color
+   CBrush brAmbientBack(TranslateColor(AmbientBackColor()));
+   pdc-&gt;FillRect(rcBounds, &amp;brAmbientBack);
+   
+   // 2. draw bezel using control's stock properties 
+   //   BackColor and ForeColor
+      // calculate size based on 40% of height
+   CRect rcBezel(rcBounds);
+   int nHeight = rcBounds.Height();
+   int nWidth = rcBounds.Width();
+   int nBezelWidth = nHeight * 40 / 100;
+   if (nBezelWidth &gt; nWidth) 
+      nBezelWidth = nWidth;   // not more then width!
+   int nDeflateBezel = (nWidth - nBezelWidth) / 2;
+   rcBezel.DeflateRect(nDeflateBezel, 0);
+      // create and select brush and pen
+   CBrush brBack(TranslateColor(GetBackColor()));
+   CBrush * pbrOld = pdc-&gt;SelectObject(&amp;brBack);
+   CPen pnFore(PS_SOLID, 2, TranslateColor(GetForeColor()));
+   CPen * ppnOld = pdc-&gt;SelectObject(&amp;pnFore);
+      // draw
+   pdc-&gt;Rectangle(rcBezel);
+      // select old brush, but not old pen
+   pdc-&gt;SelectObject(pbrOld);
+
+   // 3. draw lights using stock ForeColor, already selected
+      // translate enum code to bits for red, green, yellow
+   int nLights = TranslateLights();
+      // percentages are percentage of height
+      // draw red light on top, 6% down, 27% diameter
+   DrawLight(pdc, rcBounds, 6, 27, 
+      (nLights &amp; SLBIT_RED) ? SLCOLOR_RED : SLCOLOR_OFF);
+      // yellow light in middle, 37% down, 27% diameter
+   DrawLight(pdc, rcBounds, 37, 27, 
+      (nLights &amp; SLBIT_YELLOW) ? SLCOLOR_YELLOW : SLCOLOR_OFF);
+      // green light on bottom, 68% down, 27% diameter
+   DrawLight(pdc, rcBounds, 68, 27,
+      (nLights &amp; SLBIT_GREEN) ? SLCOLOR_GREEN : SLCOLOR_OFF);
+   pdc-&gt;SelectObject(ppnOld);
+}
+</FONT></PRE><P><h4>1. Drawing the background</H4><P>This is the simplest of the three tasks: all we do is create a brush using the container's ambient background color, then use the <b>FillRect</b> function to draw a rectangle filling the entire control with that brush. <b>FillRect</b> automatically takes care of selecting and deselecting the brush.<P><h4>2. Drawing the bezel</H4><P>This is a little trickier because we have to scale the output rather than just paint the entire control. Specifically, we'd like the bezel to be a little wider than the lights, but not the full width of the control. First, we set up a rectangle that will be the size of the bezel (when we're done with it). We calculate the bezel size to be 40% of the height and then calculate how much to deflate the left and right sides of the rectangle. (Deflating it keeps it nicely centered.) Note that if the bounding width is less than the bezel width, the bezel width is set to the bounding width. This keeps us from drawing outside the bounding rectangle.<P>Once we have a rectangle for the bezel, we create a brush and select it into the DC, saving the pointer to the current brush returned by <b>SelectObject</b> so we can select it back in later. We do the same routine with the pen. In both cases, the color is selected from a stock property. Next, we draw the rectangle and select the old brush (but not the pen--we're still going to use it) back into the DC.<P><h4>3. Drawing the lights</H4><P>This is the trickiest of all. To draw the lights, I wrote a couple helper functions--<b>TranslateLights</b> and <b>DrawLight</b>--which I'll discuss below. Note that I wrote the code for clarity, not top speed. If I were more concerned with speed, I'd be sure to calculate the various intermediate values as infrequently as possible.<P>Visual C++ includes a cool feature for adding member functions and member data: Just right-click on the class name in ClassView and select Add Function or Add Variable. When you do this, Visual C++ writes the header and a blank function skeleton for you. It even remembers to include the class name in the function definition. (I never remember this!)<P>The main idea is to call <b>TranslateLights</b> to get the bits representing which lights are on into the variable <i>nLights</i>, then call <b>DrawLights</b> for each light, passing the DC, the bounding rectangle, the distance to draw the light from the top (expressed as a percentage of the height), the diameter (as a percentage of the height), and the color to draw the light. <b>SL_RED</b>, <b>SL_GREEN</b>, and <b>SL_YELLOW</b> are defined as the <b>RGB</b> values for each color; <b>SL_OFF</b> is defined as dark gray. I measure drawing distances as percentages to make figuring out where to draw things easier.<P>Finally, we select the old brush (saved while drawing the bezel) back into the DC.<P>Here are the definitions of the <b>SL_*</b> constants. Note that I've put them inside the <b>StopLiteCtrl</b> class, so they're &quot;local&quot; to the class:<P><PRE><FONT FACE="COURIER" SIZE="2">// stoplight state (values of m_color/Color property)
+enum { SL_NONE = 0,
+      SL_FIRST = 1,   // first light in cycle
+      SL_RED = 1, SL_GREEN = 2, SL_YELLOW = 3, // cycle order
+      SL_LAST = 3,   // last light in cycle
+      SL_TEST = 4 };   // test MUST be last (see SetColor)
+   
+// bits corresponding to the three lights; used for drawing
+enum { SLBIT_RED = 1, SLBIT_GREEN = 2, SLBIT_YELLOW = 4,  };
+
+// possible colors for light: off, red, green, yellow
+enum { SLCOLOR_OFF = RGB(63, 63, 63),   // dark gray
+      SLCOLOR_RED = RGB(255, 0, 0),
+      SLCOLOR_GREEN = RGB(0, 255, 0), 
+      SLCOLOR_YELLOW = RGB(255, 255, 0) };
+</FONT></PRE><P><h5>TranslateLights</h5><P><b>TranslateLights</b> takes the <b>Color</b> property and sets the appropriate bits of the return value in a switch statement.<P>Here's the code for <b>TranslateLights</b>:<P><PRE><FONT FACE="COURIER" SIZE="2">int CStopLiteCtrl::TranslateLights()
+// sets appropriate bits for stoplight state
+{
+   int nLights = SLBIT_RED;   // safe default
+   switch (m_color) {
+   case SL_NONE: nLights = 0;
+      break;
+   case SL_RED: nLights = SLBIT_RED;
+      break;
+   case SL_GREEN: nLights = SLBIT_GREEN;
+      break;
+   case SL_YELLOW: nLights = SLBIT_YELLOW;
+      break;
+   case SL_TEST: nLights = SLBIT_RED | SLBIT_YELLOW | SLBIT_GREEN;
+      break;
+   }
+   return nLights;
+}
+</FONT></PRE><P><h5>DrawLight</h5><P><b>DrawLight</b> is somewhat complicated. First, we calculate the width and height of the control's bounding rectangle, then the diameter of the light in pixels. If the diameter is larger than the width of the bounding rectangle, we set it to the width of the bounding rectangle to ensure that we don't draw outside of the bounding rectangle.<P>We then calculate the left and top edges of the circle's bounding square, and construct a <b>CRect</b> object of that size and position. (We ensure that the <b>CRect</b> is entirely inside the bounding rectangle by using the <b>IntersectRect</b> function.)<P>Next, we create a brush of the appropriate color and select it into the DC, then draw the circle using the <b>Ellipse</b> function. Finally, we select the old brush back into the DC.<P>Here's the code for <b>DrawLight</b>:<P><PRE><FONT FACE="COURIER" SIZE="2">void CStopLiteCtrl::DrawLight(
+// draws an individual light centered in the control at
+//   vertical position specified
+      CDC* pdc,            // DC in which to draw
+      const CRect&amp; rcBounds,   // control's rectangle
+      int nPercentDown,      // top position as % of height
+      int nPercentDiameter,   // diameter as % of height
+      COLORREF crColor      // color to fill light   
+   )
+{
+
+   // calculate diameter in drawing units
+   int nHeight = rcBounds.Height();
+   int nWidth = rcBounds.Width();
+   int nDiameter = nHeight * nPercentDiameter / 100;
+   if (nDiameter &gt; nWidth) 
+      nDiameter = nWidth;   // but not greater than width!
+
+   // create light's bounding rect
+   int nLeftEdge = (rcBounds.left + rcBounds.right - nDiameter) / 2;
+   int nTopEdge = rcBounds.top + nHeight * nPercentDown / 100;
+   CRect rcLight(   nLeftEdge,
+               nTopEdge,
+               nLeftEdge + nDiameter,
+               nTopEdge + nDiameter);
+   // make absolutely sure we're within bounds--
+   // distort circle if necessary!
+   rcLight.IntersectRect(rcLight, rcBounds);
+
+   // create brush, draw, select old brush
+   CBrush brColor(crColor);
+   CBrush * brOld = pdc-&gt;SelectObject(&amp;brColor);
+   pdc-&gt;Ellipse(rcLight);
+   pdc-&gt;SelectObject(brOld);
+
+}
+</FONT></PRE>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h2><A NAME="RESPONDING"></A> Responding to Windows Messages</h2><P>(Shift-click to load the  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECTLH.HTM">StopLiteCtl.H</A> and  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECTLCPP.HTM">StopLiteCtl.CPP</A> files and follow along in the code.)<P>Handling Windows messages is very much like handling messages in any MFC application--you just add message handlers to your window, which in this case is derived from <b>COleControl</b>.<P>The StopLite control doesn't need any keyboard messages, but your control might. If you need to get messages for the enter key or the escape key, or if you need to use accelerators, I highly recommend the section on keyboard issues in Denning's <i>OLE Controls Inside Out</i> or &quot;Developing OLE Custom Controls&quot; by Scott Randall, available on the MSDN Library CD.<P>The StopLite control does respond to one Windows message: It selects the next state in sequence when you left-click on it.<P>To respond to left button clicks, use ClassWizard to add a handler for the <b>WM_LBUTTONDOWN</b> message, then call the <b>Next</b> function from within that handler before you call the base class' function.<P>ClassWizard adds the appropriate declaration to the header, then adds the following entry to the message map:<P><PRE><FONT FACE="COURIER" SIZE="2">   ON_WM_LBUTTONDOWN()
+</FONT></PRE><P>I modified the function it added so that it called the <b>Next</b> method. When I was done, the code looked like this:<P><PRE><FONT FACE="COURIER" SIZE="2">void CStopLiteCtrl::OnLButtonDown(UINT nFlags, CPoint point) 
+// call Next method on left click, allow Click stock event to be fired
+{
+   Next();
+   
+   COleControl::OnLButtonDown(nFlags, point);
+}
+</FONT></PRE>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h2><A NAME="PROPAGES"></A> Property Pages</h2><P>(Shift-click to load the  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITEPPGH.HTM">StopLitePpg.H</A>,  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITEPPGCPP.HTM">StopLitePpg.CPP</A>,  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECTLH.HTM">StopLiteCtl.H</A>, and  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECTLCPP.HTM">StopLiteCtl.CPP</A> files and follow along in the code.)<P>ActiveX controls can support property pages to make modifying the control's properties at design time much easier. The default page generated by AppWizard is blank except for a static text control that contains a message reminding you to finish the property page.<P>Doing the property page is even simpler than doing a dialog box in MFC, because ClassWizard will write the code to transfer data between your property page class' members and the properties. First, edit the dialog template (in our case, it's <b>IDD_PROPPAGE_STOPLITE</b>) to create the controls you'd like for your property UI. Our case has only one important property (<b>Color</b>) and the light can have only one <b>Color</b> value at a time, so I used a set of option buttons, or radio buttons, as the UI.<P><img src="/intdev/controls/StopLite/STO2731C.GIF" WIDTH="509" HEIGHT="342" ALT="[STO2731C  10145 bytes ]"><P>When using option buttons, you must set the tab order correctly, so the buttons are read properly, and be sure that only the first option button (Off) has the Group checkbox checked on its property page. The screen shot above shows that the tab order is correct.<P>It is also important that the buttons be in the same tab order as the values they represent in the <b>Color</b> property. That means I don't have to translate the values going in and out of the control.<P>Once I had the dialog box template set up correctly, adding the code was a snap--or, more precisely, a double-click with the control key held down. All I did was Ctrl+double click on the Off button, and ClassWizard came up ready to add the code I needed to handle this property page. In the Add Member Variable box, all I needed to do was name the member variable (<i>m_color</i> in my case) and tell ClassWizard what property to attach it to (<b>Color</b>). ClassWizard generated all the right code, adding a declaration for the member variable to the header file:<P><PRE><FONT FACE="COURIER" SIZE="2">   int m_color;
+</FONT></PRE><P>initializing it in the constructor:<P><PRE><FONT FACE="COURIER" SIZE="2">   m_color = 0;
+</FONT></PRE><P>and adding lines to the <b>DoDataExchange </b>function so the value in the option buttons would be transferred back and forth correctly to the control's property:<P><PRE><FONT FACE="COURIER" SIZE="2">   DDP_Radio(pDX, IDC_OFF, m_color, _T(&quot;Color&quot;) );
+   DDX_Radio(pDX, IDC_OFF, m_color);
+</FONT></PRE><P>I didn't have to write a line of code. Even if you're not using Visual C++, getting a property page in exchange for four lines of code is a pretty good deal.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h2><A NAME="ERRORS"></A> Notifying Your Container of Errors</h2><P>(Shift-click to load the  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECTLH.HTM">StopLiteCtl.H</A> and  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECTLCPP.HTM">StopLiteCtl.CPP</A> files and follow along in the code.)<P>In some situations, you'd like to communicate the errors to the container. There are two ways of notifying the container of errors, depending on whether the code that detected the error is in a method call (including <b>Get/Set</b> methods) or not (such as the code that processes a Windows message).<P><h3><A NAME="WITHIN"></A> From within a method call</h3><P>Within a method, call <b>COleControl::ThrowError</b>. StopLite does this in <b>SetColor</b> if the color requested is invalid:<P><PRE><FONT FACE="COURIER" SIZE="2">   if (nNewValue &gt;= SL_NONE &amp;&amp; nNewValue &lt;= SL_TEST)  {
+      // ...set color and redraw, etc.
+   }
+   else {
+      ThrowError(CTL_E_ILLEGALFUNCTIONCALL, 
+         &quot;Color parameter out of range&quot;);
+   }
+</FONT></PRE>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<P><h3><A NAME="OTHER"></A> In other situations</h3>
+<P>Call <b>COleControl::FireError</b>. To do this, you must add the <b>Error</b> stock event to your control.
+<P>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h2><A NAME="SECURITY"></A> A Brief Note About Security Issues</h2>
+<P>Internet Explorer 3.0 implements two mechanisms to ensure that users can load and run controls without harming their systems. First, it checks the signature of any code it installs. If the signature is missing or invalid, it will refuse to install the code (when security is set to high, the default) or at least notify you and allow you to decide (when security is set to medium). When security is set to none, Internet Explorer 3.0 doesn't check signatures.
+<P>Second, if your Web page attempts to initialize and/or script the control, Internet Explorer 3.0 checks to see if it's marked as safe for initializing and/or safe for scripting. If the control is not marked safe for what Internet Explorer 3.0 wants to do, the browser will ignore the control (when security is set to high) or display a dialog box (when security is set to medium).
+<P>To get around all of the dialog boxes and to run at all on Internet Explorer 3.0 when security is set to high, you have to sign your control and mark it as safe.
+<P>Signing your code only takes about 3.5K, which adds up to one second at 28.8Kbps, so it won't significantly slow Web page download times.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<h3><A NAME="SIGN"></A> Code signing</h3>
+<P>Code signing is the process of adding data to the control so that Internet Explorer 3.0 can ascertain two things:<UL><LI>   The control has not been modified since it was signed<LI>   The claimed author is actually the author</UL>Signing a control requires an electronic &quot;certificate&quot; provided by a &quot;certificate authority&quot; (CA). When you apply for a certificate, the certificate authority does some checking to determine that you are who you say you are, then issues the certificate. You can use this certificate with some utilities in the ActiveX SDK to sign your control. Note that you must guard this certificate and the private key carefully.Iif someone else obtains them, they can sign their code in your name.
+<P>A simple overview of this process can be found in the article  <A HREF="/INTDEV/SECURITY/AUTHCODE/SIXSTEPS.HTM" target="text">"Six Steps to Signing Your Code"</A> on the Site Builder Workshop. You can find more information on code signing on the  <A HREF="/WORKSHOP/">Site Builder Workshop</A> and in the ActiveX SDK.
+<P>I did not sign the StopLite control myself, as Microsoft has a central signing procedure for signing code. I just followed their procedure, and they signed the code for me. If you work for a company of any size, your company will probably have a centralized signing procedure.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<P><h3><A NAME="SAFE"></A> Marking your control as safe</h3>
+<P>Now that we know from whom the control came, how do we know it's safe to use? Remember that ActiveX controls, unlike Java applets, can access the full power of your machine--for good or evil.
+<P>If it's not possible for your control to cause harm to a user's machine no matter what, you can mark it as safe. It is your responsibility to ensure that any control you mark is actually safe--Internet Explorer 3.0 has no way to ensure that a control marked as safe is actually safe.
+<P>There are two categories of safety: safe for scripting and safe for initializing. Safe for scripting means that no matter what scripts do to manipulate your control, it will not harm the user's machine. Safe for initializing means that no matter what data is passed to your control from the Web page, it will not harm the user's machine. StopLite is both safe for scripting and safe for initialization and is marked accordingly.
+<P>There are two methods for letting Internet Explorer 3.0 know that your control is safe:<UL><LI> Manipulate the registry to include component categories for safety and add an entry saying that your control is safe<LI> Implement the <b>IObjectSafety</b> COM interface.
+</UL>
+For more complete information on marking controls as safe, check out <a href="/intdev/controls/signmark.htm" target="text">Signing and Marking ActiveX Controls</a>.
+<P>Unfortunately, there is currently no method for signing Web pages. This would be handy for using potentially unsafe controls because the Web page author could assert that the page doesn't contain scripting or initialization that would cause an otherwise potentially unsafe control to damage a user's machine. Such a scheme would also require a way to ensure that the right controls are installed.<P><h4>Manipulating the registry</H4><P>(Shift-click to load the  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITEH.HTM">StopLiteCtl.H</A> and  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/STOPLITECPP.HTM">StopLiteCtl.CPP</A> files and follow along in the code.)<P>The simpler method for marking a control safe for scripting and initialization is to add the necessary entries to the registry. I chose this method for StopLite.<P>Although it is possible to do this by hand or with a .REG file, self-registering controls should do this automatically when they register themselves. This is especially true for controls that will be downloaded over the Internet.<P>When the control unregisters itself, it will automatically remove all of its registry entries. Therefore, we don't need to do anything special to unregister the control. (We <i>don't</i> remove the categories because other controls might be using them.)<P>Here is the code I wrote to mark the control as safe for scripting and initializing. First I create the component categories, then I mark this particular control as safe in that category. This code might fail if it's being run on a system that doesn't have Internet Explorer 3.0 installed; because such a failure is okay (for instance, the user might be using the control in a Visual Basic application), we <i>don't</i> halt initialization for the control if this code fails.<P><PRE><FONT FACE="COURIER" SIZE="2">   // mark as safe for scripting--failure OK
+         HRESULT hr = CreateComponentCategory(CATID_SafeForScripting,
+            L&quot;Controls that are safely scriptable&quot;);
+
+         if (SUCCEEDED(hr))
+            // only register if category exists
+            RegisterCLSIDInCategory(m_clsid, CATID_SafeForScripting);
+            // don't care if this call fails
+
+         // mark as safe for data initialization
+         hr = CreateComponentCategory(CATID_SafeForInitializing,
+            L&quot;Controls safely initializable from persistent data&quot;);
+
+         if (SUCCEEDED(hr))
+            // only register if category exists
+            RegisterCLSIDInCategory(m_clsid, CATID_SafeForInitializing);
+            // don't care if this call fails
+</FONT></PRE><P>This code requires that the helper functions <b>CreateComponentCategory</b> and <b>RegisterCLSIDInCategory</b> be defined. I copied definitions from the ActiveX SDK. The definitions are in  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/HELPERSH.HTM">Helpers.H</A> and  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/HELPERSCPP.HTM">Helpers.CPP</A>. (You can use these files as-is in your projects.) In STOPLITECTL.CPP, I also had to include a couple files:<P><PRE><FONT FACE="COURIER" SIZE="2">// for marking the StopLite safe for scripting, initializing
+#include &quot;helpers.h&quot;
+#include &lt;objsafe.h&gt;
+</FONT></PRE>
+<P>The file HELPERS.H also includes COMCAT.H which, like OBJSAFE.H, is in the ActiveX SDK.
+<P>If my control were not written using MFC, I'd do the marking in <b>DllRegisterServer</b>.
+<P><h4>Implementing IObjectSafety</H4>
+<P>The other way to &quot;mark&quot; a control as safe is to implement the <b>IObjectSafety</b> COM interface. We won't be covering it in this article, but it is covered in <a href="/intdev/controls/signmark.htm" target="text">Signing and Marking ActiveX Controls</a> and in the ActiveX SDK.
+<P>Although slightly more complicated, implementing <b>IObjectSafety</b> has some advantages in that the interface allows the container either to ask whether the control is safe using <b>GetInterfaceSafetyOptions</b> or to request that it make itself safe using <b>SetInterfaceSafetyOptions</b>. (<b>GetInterfaceSafetyOptions</b> also allows you to ask the control what safety options it supports.) This flexibility allows you to write your control so that it can operate in either safe or unsafe mode. If the container requests that you be safe for scripting and/or initialization, your control can change modes and behave accordingly. If the container doesn't care about safety, your control can run in unsafe mode and exploit the full power of the machine.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<P><h2><A NAME="VISUALC++"></A> Using Visual C++ and Test Container to Debug the Control</h2>
+<P>At various points in the development process, you might want to be able to examine variables in your control, set breakpoints, and single-step the code.
+<P>This is quite easy. First, build the control for Debug. Then, provide the name of an executable that will host the control while debugging. I usually use the test container, which is at C:\MSDEV\BIN\TSTCON32.EXE in a standard Visual C++ installation. To change the container .EXE, use the &quot;Settings&quot; command on the Build menu and select the Debug tab. (You can debug in any container, although I find the test container most convenient.)
+<P>Once you have things set up, just select Debug.Go from the Build menu. The test container will start. As you insert the control in the test container, you'll get a number of messages you can safely ignore (see below).
+<P>At this point, if you haven't already, you can set breakpoints in your code, examine variables, single-step, and so forth--just as if you were debugging an application.
+<P>If you're using another development system, check your documentation for debugging directions.
+<P><h3><A NAME="DEBUG"></A> Debugging output you can safely ignore</h3><P>When you're debugging a control, you may get a series of messages in Visual C++'s debugging window. Although it's not documented anywhere, some of these messages can be safely ignored. For instance, when I debug the StopLite control in the test container using Visual C++ version 4.2, I get the following:<P><PRE><FONT FACE="COURIER" SIZE="2">Loaded symbols for 'C:\WINNT35\system32\MFC42.DLL'
+LDR: WARNING ! MAJOR PERFORMANCE LOSS in TSTCON32.EXE
+LDR: Dll MFC42D.DLL base 5f400000 relocated due to collision with                C:\WINNT35\System32\MFC42.DLL
+Loaded symbols for 'C:\WINNT35\system32\MFC42D.DLL'
+Loaded symbols for 'C:\WINNT35\system32\MSVCRTD.DLL'
+Loaded symbols for 'C:\WINNT35\system32\MFCO42D.DLL'
+Warning: constructing COleException, scode = DISP_E_MEMBERNOTFOUND ($80020003).
+First-chance exception in TSTCON32.EXE (MFCO42D.DLL): 0xE06D7363: Microsoft C++          Exception.
+</FONT></PRE><P>The first line is just notification that the debugging symbols for the release version MFC DLL were loaded when the test container, which uses the release version of the MFC DLL, was loaded.<P>The second and third lines (which begin with &quot;LDR:&quot;) warn that the debugging version of the MFC DLL (used by the StopLite control) had to be relocated in my address space because it conflicted with the release version of the same DLL (which is being used by the test container). Although this means that it took a little longer to load the MFC DLL, it isn't a big deal because it only happens when you're debugging in the test container. You can ignore these messages. (Since Visual Basic apps don't use the MFC DLL at all, you won't get this message if you use a Visual Basic app as your test container.)<P>The next three lines are notifications that debugging symbols have been loaded.<P>The last two lines are notification that an exception has been thrown because the test container didn't provide a Color property to be read. This is okay, because we've provided a default value for the property. You won't get this error if you use a container that provides the property, such as a Visual Basic application.<P>In Visual C++ version 4.1, the only line I got was a warning about the exception for properties that couldn't be loaded from the container.<P><PRE><FONT FACE="COURIER" SIZE="2">First-chance exception in TSTCON32.EXE (MFC40.DLL): 0xE06D7363: Microsoft C++ Exception. 
+</FONT></PRE>
+<P>Depending on how your container handles threads, you may also get occasional messages about threads exiting. You don't need to worry about these, either.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<P><h2><A NAME="ACTIVEX"></A> Creating a Web Page Using the ActiveX Control Pad</h2>
+<P>Now that we have a control, let's use it in a Web page!
+<P>The ActiveX Control Pad is the easiest way to create Web pages that contain ActiveX controls and scripting. And the price is right: It's free at  <A HREF="/workshop/author/cpad/" target="_top">http://microsoft.com/workshop/author/cpad/</A>! The ActiveX Control Pad is mainly intended to create .ALX files for the HTML Layout Control, which allows precise placement and layering of controls. However, the ActiveX Control Pad also works great for authoring Web pages with controls and scripting, so that's how we'll use it.
+<P><h3>Inserting a StopLite object</h3>
+<P>When you start the ActiveX Control Pad, it brings up an empty page. The first step is to insert a control using the Insert ActiveX Control command on the Edit menu. You can set the size and initial properties using the default property sheet, or call up your custom property sheet by right-clicking on the control and selecting the bottom &quot;Properties...&quot; choice. Once you've done this, close the Edit ActiveX Control Window.
+<P>You'll see that the ActiveX Control Pad has inserted an object tag for you--and placed an icon in the margin. Any time you'd like to edit the control's size or properties, just click on that icon.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<P><h3>Inserting other controls</h3>
+<P>Next, we'd like to insert some buttons. I don't want to use an OLE control for the buttons, so I just type an HTML <b>&lt;INPUT&gt;</b> tag in place: specifically, <b>&lt;INPUT TYPE=BUTTON NAME=&quot;NEXT&quot; VALUE=&quot;Next Light&quot;&gt;</b>.
+<P>On the next line, I'd like an <b>IELabel</b> control, so I insert a paragraph tag (<b>&lt;P&gt;</b>), then use Insert ActiveX Control again to insert the label control (&quot;Label Object&quot; in my control list).
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<P><h3>Scripting with Script Wizard</h3>
+<P>Now, let's do a little scripting. One of the best features of the ActiveX Control Pad is the Script Wizard, which helps you write code in your choice of VBScript or JavaScript. Just click on the Script Wizard toolbar button to start.
+<P>This is really intuitive: just select the event you'd like to handle, select the object you'd like to do something to, and tell it what to do. We'll do two events: the click of the Next button and the Stop event fired by the StopLite control.
+<P>First the Next button. Expand <i>Next</i> in the left pane, then click on <b>OnClick</b>. What we'd like to do is call the StopLite's <b>Next</b> method, so expand <i>StopLite1</i> in the right pane, then double-click on <b>Next</b>. That's it. You can save your page and load it into Internet Explorer 3.0 now if you like--or handle the <b>Stop</b> event.
+<P>To handle the stoplight's <b>Stop</b> event, follow basically the same procedure: select <i>StopLite1</i>.
+<b>Stop</b>, double-click on <i>IELabel1</i>.
+<b>Caption</b>, then type (into the dialog box that pops up) the text you'd like to see.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<P><h3>Viewing the page</h3>
+<P>We're done for now. You can duplicate (or better!) my page on your own knowing what you now know. Save your work (I usually save it on my desktop) and test it in Internet Explorer 3.0!
+<P>Note that you'll get warning dialogs if your control isn't signed and/or marked as safe. And, if Internet Explorer's security is set to high, you won't be able to view the control at all. (For development purposes, it's often better to set the security to medium. We don't recommend setting it to none.)
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<P><h2><A NAME="CONCLUSION"></A> Conclusion</h2>
+<P>We've created a simple control in MFC and embedded it in a Web page. We've looked at drawing the control, handling Windows messages, and implementing properties, methods, and events. But there are some things we haven't done.
+<P>First, we could add more functionality to the control--the capability for blinking lights (even a blinking green light, as used in Vancouver, Canada), or turn arrows. We could even modify the sequence of lights to include allowing the yellow and red lights to be on at the same time just before the light changes to green, as they do in the United Kingdom. (Note that the drawing code design makes such a modification easy and safe.) Or we could write some of the other controls needed as components in a traffic simulation.
+<P>Then there are OCX 96 enhancements: making the control windowless for improved performance, transparent controls, and so on. Implementing dual-automation interfaces for better performance would be nice. Or we could just set up the control for licensing to users and designers.
+<P>We could also package up the control and its DLLs so that Internet Explorer 3.0 could download and run it automatically. We'll have an article about that subject soon.
+<P>The most important step is to sign the control by attaching a certificate to it so that people who download it will know who wrote it--and so Internet Explorer 3.0 will use it without a dire warning message. Check out <a href="/intdev/controls/signmark.htm" target="text">Signing and Marking ActiveX Controls</a> for more information, as well as the section on <A HREF="/intdev/security/misf8.htm" target="text">Code Signing</a> in the Site Builder Workshop.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to Part II contents</A><hr><P>
+<P><h2>Where to Learn More</h2>
+<P>How can you learn more? Good information on new control features can be found in the ActiveX SDK and on the Site Builder Workshop.
+<P>Another great source, as I've mentioned previously, is Adam Denning's <i>OLE Controls Inside Out</i>. And the Visual C++ 4.2 MFC Encyclopedia is great, as is the rest of the doc set. Finally, be sure to check out the MSDN Library CD by doing a titles-only search on &quot;OLE Controls.&quot;
+<P>Enjoy! And start writing ActiveX controls for fun and profit!
+<P>
+
+<!--DocFooterStart-->
+</FONT>
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A HREF="/Misc/cpyright.htm" target="_top">&#169; 1996 Microsoft Corporation</A>
+<P>
+</FONT>
+
+<!--DocFooterEnd-->
+</BODY></HTML>

@@ -1,0 +1,1 @@
+RAISERROR('Serious Test',17,2) WITH LOG

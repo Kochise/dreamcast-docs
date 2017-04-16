@@ -1,0 +1,76 @@
+// StopLitePpg.cpp : Implementation of the CStopLitePropPage property page class.
+
+#include "stdafx.h"
+#include "StopLite.h"
+#include "StopLitePpg.h"
+
+#ifdef _DEBUG
+#define new DEBUG_NEW
+#undef THIS_FILE
+static char THIS_FILE[] = __FILE__;
+#endif
+
+
+IMPLEMENT_DYNCREATE(CStopLitePropPage, COlePropertyPage)
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Message map
+
+BEGIN_MESSAGE_MAP(CStopLitePropPage, COlePropertyPage)
+	//{{AFX_MSG_MAP(CStopLitePropPage)
+	// NOTE - ClassWizard will add and remove message map entries
+	//    DO NOT EDIT what you see in these blocks of generated code !
+	//}}AFX_MSG_MAP
+END_MESSAGE_MAP()
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Initialize class factory and guid
+
+IMPLEMENT_OLECREATE_EX(CStopLitePropPage, "STOPLITE.StopLitePropPage.1",
+	0xab9422e3, 0xec0f, 0x11cf, 0x9c, 0xc6, 0, 0xaa, 0, 0x6c, 0xb4, 0x25)
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CStopLitePropPage::CStopLitePropPageFactory::UpdateRegistry -
+// Adds or removes system registry entries for CStopLitePropPage
+
+BOOL CStopLitePropPage::CStopLitePropPageFactory::UpdateRegistry(BOOL bRegister)
+{
+	if (bRegister)
+		return AfxOleRegisterPropertyPageClass(AfxGetInstanceHandle(),
+			m_clsid, IDS_STOPLITE_PPG);
+	else
+		return AfxOleUnregisterClass(m_clsid, NULL);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CStopLitePropPage::CStopLitePropPage - Constructor
+
+CStopLitePropPage::CStopLitePropPage() :
+	COlePropertyPage(IDD, IDS_STOPLITE_PPG_CAPTION)
+{
+	//{{AFX_DATA_INIT(CStopLitePropPage)
+	// NOTE: ClassWizard will add member initialization here
+	//    DO NOT EDIT what you see in these blocks of generated code !
+	//}}AFX_DATA_INIT
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CStopLitePropPage::DoDataExchange - Moves data between page and properties
+
+void CStopLitePropPage::DoDataExchange(CDataExchange* pDX)
+{
+	//{{AFX_DATA_MAP(CStopLitePropPage)
+	// NOTE: ClassWizard will add DDP, DDX, and DDV calls here
+	//    DO NOT EDIT what you see in these blocks of generated code !
+	//}}AFX_DATA_MAP
+	DDP_PostProcessing(pDX);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CStopLitePropPage message handlers

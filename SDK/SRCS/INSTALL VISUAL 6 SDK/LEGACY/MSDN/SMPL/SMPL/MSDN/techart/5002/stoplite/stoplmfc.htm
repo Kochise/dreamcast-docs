@@ -1,0 +1,286 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML><HEAD><TITLE>The ABCs of ActiveX Controls using MFC</TITLE>
+</HEAD>
+<!--DocHeaderStart-->
+<BODY leftmargin=8 bgcolor="#FFFFFF" VLINK="#666666" LINK="#FF0000">
+<FONT FACE="ARIAL,HELVETICA" SIZE="2">
+<!--DocHeaderEnd-->
+<!-- This is a PANDA Generated HTML file. The source is a WinWord Document. -->
+<h2>The ABCs of MFC ActiveX Controls</h2>
+<P>Paul Johns<BR>
+Developer Trainer<P>
+<P><!-- DATE -->October 22, 1996
+<P><!-- DATE -->
+<P>
+Because of its length, this article
+has been divided into two parts for ease of reading on the Web. 
+This is Part I.
+<P>
+<A NAME="TOP"></A><b>Contents for Part I:</b>
+<blockquote>
+<A HREF="#INTRODUCTION">Introduction</A><BR>
+&nbsp;&nbsp;&nbsp;<A HREF="#WAYS">Ways to write an ActiveX control</a><br>
+&nbsp;&nbsp;&nbsp;<A HREF="#USINGMFC">Using MFC for ActiveX controls</a><br>
+&nbsp;&nbsp;&nbsp;<A HREF="#ARTICLE">What's this article about?</a><br>
+&nbsp;&nbsp;&nbsp;<A HREF="#ORG">How is this article organized?</a><br>
+<A HREF="#WHAT">What Does an MFC Control Look Like?</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#CLASS">MFC classes for a control</A><BR> 
+<A HREF="#CREATING">Creating the Control with AppWizard</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#WHICH">Which version of  MFC should I use?</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#SKELETON">Creating the skeleton</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#RUNNING">Running the skeleton</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="#TOUR">A tour of the code</A>
+<P> 
+</blockquote>
+<b>Contents for Part II (continued in a separate HTML file):</b>
+<blockquote>
+<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#SPEC">Specification of the StopLite control</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#HOW">How I wrote StopLite</A><BR> 
+<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#PROPERTIES">Properties</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#CONTROL">Control Properties</A><BR>   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#CUSTOM">Custom Properties</A><BR>  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#IMPL">Implemented as <b>Get/Set</b> methods</A><BR>    
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#MEMBERVAR">Implemented as a member variable</A><BR>    
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#PERSISTENT">Making custom properties persistent</A><BR>   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#STOCK">Stock Properties</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#AMBIENT">Ambient (Container) properties</A><BR> 
+<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#METHODS">Methods</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#STOCKMETHODS">Stock Methods</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#CUSTOMMETHODS">Custom Methods</A><BR> 
+<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#EVENTS">Events</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#STOCKEVENTS">Stock Events</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#CUSTOMEVENTS">Custom Events</A><BR> 
+<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#CTRLDRAW">Making the Control Draw</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#DRAWING">Drawing the StopLite Control</A><BR> 
+<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#RESPONDING">Responding to Windows Messages</A><BR> 
+<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#PROPAGES">Property Pages</A><BR> 
+<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#ERRORS">Notifying Your Container of Errors</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#WITHIN">From within a method call</A><BR> 
+&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#OTHER">In other situations</A><BR> 
+<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#SECURITY">A Brief Note About Security Issues</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#SIGN">Code signing</A><BR>  &nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#SAFE">Marking your control as safe</A><BR> 
+<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#VISUALC++">Using Visual C++ and Test Container to Debug the Control</A><BR>  
+&nbsp;&nbsp;&nbsp;<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#DEBUG">Debugging output you can safely ignore</A><BR> 
+<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#ACTIVEX">Creating a Web Page Using the ActiveX Control Pad</A><BR> 
+<A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM#CONCLUSION">Conclusion/Where to Learn More</A><BR>
+</blockquote>
+<P>Related article: <a href="/intdev/controls/signmark.htm" target="text">Signing and Marking ActiveX Controls</a>.
+<P>(Click for a list of  <A HREF="/INTDEV/CONTROLS/STOPLITE/FILELIST.HTM">files</A> that accompany this article.)<P>
+<h2><A NAME="INTRODUCTION"></A>Introduction</h2><P>ActiveX&#153; controls (formerly known as OLE controls) are hot stuff, with more than 1,000 controls currently available. They can run in a wide variety of containers--Visual Basic&#174;, Visual C++&#174;, Microsoft&#174; Access, and, as we all know, Microsoft Internet Explorer 3.0. (They also can be used by Delphi&#174; and Netscape&#153; Navigator--and perhaps other containers.)<P>ActiveX controls are also cool because they are what I call &quot;scalable.&quot; Their functionality can be very simple, such as a timer control, or very complex, such as a data-bound grid, spreadsheet, or word processor control. Most controls fall somewhere in between.<P>This scalability is important because you can use ActiveX controls as reusable software components in bigger applications. For instance, this article shows you how to write a stoplight control. I can hear you thinking now, &quot;Well, that's interesting, I suppose, and cute--but how useful?&quot;<P>Okay, what would happen if we wrote a few other controls--say a road control, a vehicle control, and a master controller control? Remember, ActiveX controls feature two-way communication with their containers (in this case a Web page), so the controls can interact with each other via scripting on the page! With those components, how easy would it be to put together traffic simulations of any intersection or set of intersections you wanted?<P>One of the cooler Java&#153; applets out there is a traffic simulation written by Kelly Liu. It's at  <A HREF="http://seagal.lanl.gov:8090/~liuke/traffic/traffic.html" target="_top">http://seagal.lanl.gov:8090/~liuke/traffic/traffic.html</A><IMG SRC="/workshop/images/leavesite.gif" HEIGHT="8" WIDTH="19" ALT="external link">. (This link points to a server not under the control of Microsoft Corporation. Please read our <a href="/misc/nonms.htm" target="_top">disclaimer</a> before continuing.) It's multithreaded, active, and it runs great, especially with Internet Explorer 3.0's way fast just-in-time compiler.<P>But as cool as the Java applet is, it's limited because it's monolithic. One big happy applet. Even the buttons are part of the applet. And the only way to do something that the programmer didn't plan for is--you guessed it--to modify the source code and recompile.<P>Now, back to ActiveX. The stoplight control we're going to write here is only a very small piece of such a simulation. But it is a start--and the stoplight component we write here could be used <i>as-is </i>in a larger simulation. By the same token, all ActiveX controls can be used (and reused) as components in larger applications.<P>I hope you'll agree that ActiveX controls are cool. And now I'll bet you're asking, &quot;How can I get a piece of this ActiveX action?&quot;<P>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to contents</A><hr><P>
+<h3><A NAME="WAYS"></A>Ways to write an ActiveX control</h3><P>Right now, there are four ways to write an ActiveX control.<UL><LI> Microsoft Foundation Classes (MFC)<LI> ActiveX Template Library<LI> BaseCtrl framework<LI> Visual J++&#153; (COM objects only)</UL>(More ways to write ActiveX controls will be available soon. A later version of Microsoft Visual J++ will support the writing of complex ActiveX controls, as will the next version of Visual Basic. So you'll have tools and frameworks for every taste and need--except perhaps COBOL&#174;.)<P>Using the ActiveX Template Library requires intimate knowledge of how OLE controls communicate with their containers--and implementation of over a dozen OLE interfaces for controls with user interfaces. The BaseCtrl framework is much simpler, but still requires more knowledge of OLE than does MFC. Visual J++ makes it very easy to write COM objects, but it's best used for pretty simple objects. We'll be doing articles about those other methods for writing controls in the future.<P>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to contents</A><hr><P>
+<h3><A NAME="USINGMFC"></A>Using MFC for ActiveX controls</h3><P>For most folks, we recommend using MFC because MFC controls are easy to write.  You focus on your control's behavior, not the intricacies of OLE interfaces. And, with the new features of MFC 4.2, you can write controls that perform better and implement the cool new OCX 96 features. (You may want to stick with version 4.1 though; since the MFC 4.1 DLLs ship with Internet Explorer, all Internet Explorer 3.0 users will already have these DLLs properly installed on their system.)<P>But every silver lining has its cloud--and there are two big MFC clouds.<P>The first is that MFC controls, while not huge, are not tiny. If you're developing controls that don't need the full functionality of an OLE control, you might want to check out other options--perhaps after prototyping in MFC.<P>The second cloud is bigger and darker, but might not be in your sky. To run an ActiveX control written with MFC, the correct version of the MFC and C Runtime DLLs must be installed on the user's system. These DLLs are over a megabyte total--quite large to be downloading at 14.4Kbps! The good news is that Internet Explorer 3.0 ships with version 4.1 of the MFC DLLs, so most users will have them installed already. Even if you use the 4.1 DLLs, be prepared to provide and install the DLLs for users running your control in clients other than Microsoft Internet Explorer. Also, you'll have to provide the MFC 4.2 DLLs to all users if you need MFC 4.2 features in your control.<P>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to contents</A><hr><P>
+<h3><A NAME="ARTICLE"></A>What's this article about?</h3><P>In this article, we're going to show you how to write a simple yet complete ActiveX control using MFC. We're using Visual C++ version 4.1, but the code should work with any compiler that supports MFC version 4.0 or later. Your Wizard support may vary, however. We show all the code that the Wizards generate and modify so you can follow along regardless of your tools.<P>We aren't going to go into advanced topics--no discussions of how to asynchronously download video clips over the Internet, nor transparent controls--and only minimal discussion about over-the-Internet installation, code signing, and marking your control as safe for initializing and scripting. For now, just the basics.<P>As we mentioned before, this control is a little on-screen stoplight. To keep the filename under eight characters without spaces (do this--it makes your life simpler!), I called the control StopLite. It looks like this:<P><PRE><FONT FACE="COURIER" SIZE="2">
+</PRE>   <!--cancel Panda PRE tag-->
+<CENTER>
+<BLOCKQUOTE>
+    <OBJECT ID="StopLite" WIDTH=100 HEIGHT=115
+ CLASSID="CLSID:20048BB3-DB68-11CF-9CAF-00AA006CB425"
+ CODEBASE="STOPLITE.OCX">
+    <PARAM NAME="_Version" VALUE="65536">
+    <PARAM NAME="_ExtentX" VALUE="2646">
+    <PARAM NAME="_ExtentY" VALUE="3034">
+    <PARAM NAME="_StockProps" VALUE="9">
+<A HREF="/ie/"> 
+       <IMG SRC="/intdev/controls/stoplite/STOP.GIF" WIDTH=100 HEIGHT=51 BORDER=0
+	ALT="Image of StopLite Control.">
+    </A>
+    <P>
+<I>
+NOTE: Since your browser hasn't been activated with ActiveX, 
+the StopLite above is a mere static image rather than the ActiveX control 
+you're unable to use. If the control above was real, you could click 
+on it to change the StopLite. Instead, clicking the image will give you
+different--but perhaps more rewarding in the long run--behavior. Try it! :) 
+<P>
+Why not download <A HREF="/ie/" target="_top">Microsoft Internet Explorer 3.0</A> 
+and experience what you've been missing?
+<P>
+(If you ARE using Internet Explorer 3.0 or later, the fact that you're seeing this
+means that you have ActiveX controls disabled. To enable them, select
+Options from the View menu, then select the Security tab. Make sure
+that "Enable ActiveX controls and plug-ins" is checked, then click OK.
+Finally, click on the Refresh button to reload this page.)
+</I>
+</OBJECT>
+<P>
+You should be able to cycle the StopLite by left-clicking on it.
+<P>
+Note: if the StopLite does not display properly, make sure that you've
+installed and registered STOPLITE.OCX and the DLLs it requires as described
+in the <a href="/intdev/controls/stoplite/DLLREQ.HTM">DLLREQ.HTM</a> file. 
+</BLOCKQUOTE>
+</CENTER>
+<PRE>   <!--cancel Panda /PRE tag-->
+
+</FONT></PRE><P>If you're using Internet Explorer 3.0 or another ActiveX-activated browser, you can left-click on the control to change the color of the light. Click to see the  <A HREF="/INTDEV/CONTROLS/stoplite/SHOWLITE.HTM">HTML code</A> used to insert either the control in browsers that can display it or a bitmap of the control in browsers that can't display the control. (Tip: if you're using Internet Explorer, you can hold down the SHIFT key while you click the link to open the link in a new copy of Internet Explorer.)<P>When the control is embedded in a Web page, it looks like this:<P><PRE><FONT FACE="COURIER" SIZE="2">
+</PRE>   <!--cancel Panda PRE tag-->
+<HR SIZE=5 NOSHADE>
+<CENTER>
+<BLOCKQUOTE>
+    <SCRIPT LANGUAGE="JavaScript" FOR="StopLite1" EVENT="Click()">
+<!--
+window.alert("StopLite clicked. Try other button!")
+
+//-->
+    </SCRIPT>
+    <SCRIPT LANGUAGE="JavaScript" FOR="StopLite1" EVENT="Caution()">
+<!--
+IeLabel1.Caption = "Caution!"
+IeLabel1.FontSize = 20
+IeLabel1.FontBold = -1
+IeLabel1.FontItalic = 0
+IeLabel1.FontUnderline = 0
+
+//-->
+    </SCRIPT>
+    <SCRIPT LANGUAGE="JavaScript" FOR="StopLite1" EVENT="Go()">
+<!--
+IeLabel1.Caption = "Go! Go! Go!"
+IeLabel1.FontBold = 0
+IeLabel1.FontItalic = 0
+IeLabel1.FontSize = 12
+IeLabel1.FontUnderline = 0
+
+//-->
+    </SCRIPT>
+    <SCRIPT LANGUAGE="JavaScript" FOR="StopLite1" EVENT="Off()">
+<!--
+IeLabel1.Caption = "Warning! StopLite out of order!"
+IeLabel1.FontSize = 20
+IeLabel1.FontBold = -1
+IeLabel1.FontItalic = 0
+IeLabel1.FontUnderline = 0
+
+//-->
+    </SCRIPT>
+    <SCRIPT LANGUAGE="JavaScript" FOR="StopLite1" EVENT="Testing()">
+<!--
+IeLabel1.Caption = "Warning! StopLite being tested!"
+IeLabel1.FontSize = 20
+IeLabel1.FontBold = -1
+IeLabel1.FontItalic = 0
+IeLabel1.FontUnderline = 0
+
+//-->
+    </SCRIPT>
+    <SCRIPT LANGUAGE="JavaScript" FOR="StopLite1" EVENT="Stop()">
+<!--
+IeLabel1.Caption = "STOP!!!!!!"
+IeLabel1.FontSize = 40
+IeLabel1.FontBold = -1
+IeLabel1.FontItalic = -1
+IeLabel1.FontUnderline = -1
+
+//-->
+    </SCRIPT>
+    <OBJECT ID="StopLite1" WIDTH=100 HEIGHT=115
+     CLASSID="CLSID:20048BB3-DB68-11CF-9CAF-00AA006CB425"
+     CODEBASE="STOPLITE.OCX">
+        <PARAM NAME="_Version" VALUE="65536">
+        <PARAM NAME="_ExtentX" VALUE="2646">
+        <PARAM NAME="_ExtentY" VALUE="3034">
+        <PARAM NAME="_StockProps" VALUE="9">
+    <A HREF="/ie/"> 
+       <IMG SRC="/intdev/controls/stoplite/STOP.GIF" WIDTH=100 HEIGHT=51 BORDER=0
+	ALT="Image of StopLite Control.">
+    </A>
+    <P><I>
+Again, your browser hasn't been activated with ActiveX. (See above for more 
+information.) Although you can see the buttons and a bitmap of the 
+control, you'll get scripting errors if you click on the buttons. If you had 
+ActiveX, clicking on the buttons would change the StopLite.
+<P>
+Why not download <A HREF="/ie/">Microsoft Internet Explorer 3.0</A> 
+and experience what you've been missing? (If you have IE3, turn on ActiveX 
+controls!)
+</I>
+    </OBJECT>
+    <FORM>
+        <INPUT LANGUAGE="JavaScript" TYPE=BUTTON VALUE="Next Light" ONCLICK="StopLite1.Next()"
+         NAME="ButtonNext">
+        <INPUT LANGUAGE="JavaScript" TYPE=BUTTON VALUE="Red" ONCLICK="StopLite1.Color = 1"
+         NAME="ButtonRed">
+        <INPUT LANGUAGE="JavaScript" TYPE=BUTTON VALUE="Green" ONCLICK="StopLite1.Color = 2"
+         NAME="ButtonGreen">
+        <INPUT LANGUAGE="JavaScript" TYPE=BUTTON VALUE="Yellow" ONCLICK="StopLite1.Color = 3"
+         NAME="ButtonYellow">
+        <INPUT LANGUAGE="JavaScript" TYPE=BUTTON VALUE="Off" ONCLICK="StopLite1.Color = 0"
+         NAME="ButtonOff">
+        <INPUT LANGUAGE="JavaScript" TYPE=BUTTON VALUE="Test" ONCLICK="StopLite1.Color = 4"
+         NAME="ButtonTest">
+    </FORM>
+<p>
+    <OBJECT ID="IeLabel1" WIDTH=500 HEIGHT=70
+     CLASSID="CLSID:99B42120-6EC7-11CF-A6C7-00AA00A47DD2">
+        <PARAM NAME="_ExtentX" VALUE="2646">
+        <PARAM NAME="_ExtentY" VALUE="1323">
+        <PARAM NAME="Caption" VALUE="Welcome to PaulJo's JavaScript StopLite page!">
+        <PARAM NAME="Angle" VALUE="0">
+        <PARAM NAME="Alignment" VALUE="4">
+        <PARAM NAME="Mode" VALUE="1">
+        <PARAM NAME="FillStyle" VALUE="0">
+        <PARAM NAME="FillStyle" VALUE="0">
+        <PARAM NAME="ForeColor" VALUE="#000000">
+        <PARAM NAME="BackColor" VALUE="#C0C0C0">
+        <PARAM NAME="FontName" VALUE="Arial">
+        <PARAM NAME="FontSize" VALUE="12">
+        <PARAM NAME="FontItalic" VALUE="0">
+        <PARAM NAME="FontBold" VALUE="0">
+        <PARAM NAME="FontUnderline" VALUE="0">
+        <PARAM NAME="FontStrikeout" VALUE="0">
+        <PARAM NAME="TopPoints" VALUE="0">
+        <PARAM NAME="BotPoints" VALUE="0">
+<I>
+If your browser was ActiveX-enabled, you'd have an ActiveX text label control here.
+It would change as the StopLite changed.
+<P>
+Either enable ActiveX or download <A HREF="/ie/">Microsoft Internet Explorer 3.0</A> to 
+experience what you've been missing.
+</I>
+    </OBJECT>
+<p>
+<p>
+<p>
+<p>
+This page uses JavaScript to link the controls. Click the buttons and the StopLite and see what happens!
+</BLOCKQUOTE>
+</CENTER>
+<HR SIZE=5 NOSHADE>
+<PRE>   <!--cancel Panda /PRE tag-->
+
+</FONT></PRE><P>Shift-click to view the  <A HREF="/INTDEV/CONTROLS/STOPLITE/PAGELITE.HTM">source for the page above</A> in a new instance of Internet Explorer. I've used JavaScript&#153; to hook up the buttons and label control to the StopLite control; I could as easily have used Visual Basic&#174; Scripting Edition (VBScript). (Click to see the  <A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLTJS.HTM">JavaScript</A> and  <A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLTVB.HTM">VBScript</A> pages.)<P>If you're using Internet Explorer 3.0 or another ActiveX-activated browser, you can click the buttons to change the light. The Next Light button invokes the Next method, which changes the light to the next color (in the sequence red, green, yellow, red...). The color buttons change the light to the specified color, while the Off and Test buttons turn the lights all off and all on, respectively.<P>The StopLite control also fires events as it changes. These events change the label just underneath the button from &quot;Welcome to PaulJo's StopLite page!&quot; to other appropriate messages.<P>One great feature of ActiveX controls is that they can be used in containers other than Web pages. Here's a Visual Basic app that uses the StopLite control:<P><img src="/intdev/controls/StopLite/Sto2731B.GIF" WIDTH="374" HEIGHT="310" ALT="[STO2731B  6963 bytes ]"><P>Since Visual Basic doesn't (yet) support writing ActiveX controls, we can't provide a live example. However, the next version will support writing both ActiveX controls and ActiveX documents, so we'll be able to give you an example then. And you can click to load the  <A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLTVB.EXE">StopLite Visual Basic Test App</A>.<P>In both the Visual Basic and the HTML uses of this control, the buttons, control, and label are hooked together using Visual Basic code.<P>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to contents</A><hr><P>
+<h3><A NAME="ORG"></A>How is this article organized?</h3><P>We're going to show you how to write this control. But first, I want to give a you a little bit of background about the architecture of MFC controls. Then we'll look at the code that AppWizard generates. Finally, we'll modify that skeleton to create the complete StopLite control.<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to contents</A><hr><P>
+
+<h2><A NAME="WHAT"></A> What Does an MFC Control Look Like?</h2><P>
+<h3><A NAME="CLASS"></A> MFC classes for a control</h3><P>MFC controls are considerably simpler than MFC applications. The simplest MFC control has only three classes: a control module class derived from <b>COleControlModule</b> (which in turn is derived from <b>CWinApp</b>), a control window class derived from <b>COleControl</b> (which in turn is derived from <b>CWnd</b>), and a property page class derived from <b>COlePropertyPage</b> (which in turn is derived from <b>CDialog</b>). Assuming that the name of the control is StopLite, the name of the control module class is <b>CStopLiteApp</b>, the name of the control class is <b>CStopLiteCtrl</b>, and the name of the property page class is <b>CStopLitePropPage</b>.<P><b>CStopLiteApp</b> is very similar to the <b>CWinApp</b>-derived class that's at the core of your MFC applications. Only one object of this class will be in your control module, no matter how many controls might be in this module.<P><b>CStopLiteCtrl</b> is the class in which you'll do 99.44% of your work. It has functions that implement all of the properties and methods, and fire all the events. It also is responsible for drawing the control and responding to Windows messages.<P>If your control module (.OCX) contains more than one control, you'll have an additional class for each control. Each class will be named <b>CXxxxCtrl</b>, where Xxxx is the name of the control encapsulated by that class.<P><b>CStopLitePropPage</b> is very similar to a dialog box class. It's used to implement the code needed to connect the dialog box template you'll write for your property page to the properties in your control.
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to contents</A><hr><P>
+
+<h2><A NAME="CREATING"></A> Creating the Control with AppWizard</h2><P>
+<h3><A NAME="WHICH"></A> Which version of MFC should I use?</h3><P>Because ActiveX controls written using MFC require the appropriate MFC DLLs to be present and registered on the user's system, you have to ensure sure that every user has the correct DLLs properly installed.<P>In general, you need to provide a setup script that sets up your control and all the DLLs it needs. This setup script should not overwrite DLLs that are of a later version than the ones it installs. It also might need to register some or all of the DLLs it installs. We'll have articles about installation, code signing issues, and marking controls as safe for scripting and initializing soon. For now, check your development environment's documentation for installation requirements and the  <A HREF="/WORKSHOP/" target="_top">Site Builder Workshop</A> for information on installations, code signing, and marking controls as safe.<P>To reduce the amount of code that needs to be downloaded before your control can be used, you may want develop your control so that it takes advantage of DLLs already present on your users' systems. For instance, Internet Explorer 3.0 installation always installs the version 4.1 MFC DLLs, as does Windows NT 4.0.<P>If you don't need any of the new features in later versions of MFC, stick with MFC (and Visual C++) version 4.1 so that most of your users won't have to download those big DLLs. But not all users will have the DLLs, so you'll also have to come up with an optional scheme for users to get them.<P>Because the StopLite control doesn't use any version 4.2 features, I stuck with Visual C++ version 4.1 to make life simpler. I had to reinstall Visual C++ version 4.1, but that was better than requiring everyone to download the version 4.2 DLLs. (There are directions included with Visual C++ 4.2 that tell how to install both version 4.1 and version 4.2 on the same system.) If you need 4.2 features, don’t despair: you can link a compressed self-installing version of the DLLs you need by following directions at <a href="/visualc/download/mfc42cab.htm" target="_top">http://www.microsoft.com/visualc/download/mfc42cab.htm</a>. This file will take your users less than four minutes to download (at 28.8Kbps), so it may be worth using 4.2 in many situations.<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to contents</A><hr><P>
+<h3><A NAME="SKELETON"></A> Creating the skeleton</h3><P>The first step in creating any MFC project, including a control project, is to use Visual C++'s AppWizard to create the skeleton code. I've used Visual C++ 4.1 for this control, but the directions should work with any version 4.0 or later. I've tested these directions with versions 4.1 and 4.2.<P>To get started, select &quot;New&quot; on the File menu, then select &quot;Project Workspace.&quot; This will allow you to select a type of project. Select &quot;OLE ControlWizard&quot; to create an ActiveX control. Fill in the name of the project and the directory in which you want the control placed. (In case you're following along, I've called this project &quot;StopLite&quot;--note the capitalization and spelling.) Keep the filename eight characters or less.. Although Visual C++ generally deals with long filenames correctly, some other tools have trouble with them, especially if the names contain spaces.<P>Clicking &quot;Create&quot; will start the OLE ControlWizard. While it looks as though you have two pages of options, there are really three--you access the third page by clicking the &quot;Advanced&quot; button on the second page. We're going to use all the default options, so don't change anything. Just take a look at the options and click &quot;Finish&quot; when you're done. (We'll get into some of these other options, and more, in later articles.)<P>After you click &quot;OK&quot; on the summary page, the OLE ControlWizard will generate your new project. For more information on the OLE ControlWizard, look up &quot;OLE ControlWizard&quot; in Visual C++'s Books Online.<P>This project is ready to go. You can build it now by selecting &quot;Build StopLite.OCX&quot; from the Build menu or by pressing the F7 key. If you need more assistance with AppWizard, consult Visual C++'s Books Online.<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to contents</A><hr><P>
+<h3><A NAME="RUNNING"></A> Running the skeleton</h3><P>Once you've built the control, it's easy to test it in the OLE Control Test Container that comes with Visual C++. Select &quot;OLE Control Test Container&quot; from the Tools menu, pick &quot;Insert OLE Control&quot; from the Edit menu (or click the Insert button), and select your control (&quot;StopLite&quot;) in the list box. Because we haven't modified the drawing code, we get the ControlWizard-provided code, which draws an ellipse that fills the control area. You can see that the control automatically scales the ellipse by resizing the control.<P>The control container also allows us to view and change the control's properties (View.Properties--we don't yet have any, but we will...), call its methods (Edit.Invoke Methods--ControlWizard wrote an <b>AboutBox</b> method for us. Try it!), and view a log of events fired (View.Event Log--we don't fire any events yet). You can also invoke the control's (blank) property page (Edit.Properties).<P>Finally, you can view and change the container's ambient properties (Edit.Set Ambient Properties). However, we don't yet have the code in place to access those ambient properties, so changing them will have no effect on the control. <P>There are toolbar buttons for all of these functions.<P>For more advanced testing, the control container has a wide variety of options you can use to exercise the control.<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to contents</A><hr><P>
+<h3><A NAME="TOUR"></A> A tour of the code</h3><P>Now that we've played with the control a little bit, let's examine the code that the OLE ControlWizard generated for us. To get a copy of the code, you can either run Visual C++'s OLE ControlWizard yourself as described above or click to  <A HREF="/INTDEV/CONTROLS/STOPLITE/ZIPS/STOPWIZ.ZIP">download the original source</A>. Or, view the code online by shift-clicking to display the  <A HREF="/INTDEV/CONTROLS/STOPLITE/ORIGCODE/DEFAULT1.HTM">index</A> in a new browser window.<P>
+<h4>Differences between Control Wizard 4.1 and 4.2 code</h4>
+<P>There are two significant difference between code generated by Control Wizard 4.1 and 4.2. Either of these differences will keep your project from building if you're moving 4.2 code back to 4.1.
+<P>The first difference is that 4.2 adds a line<PRE><FONT FACE="Courier" size="2">
+<b>#include &lt;idispids.h&gt;</b>
+</font></pre><P>near the beginning of your .ODL file. IDISPIDS.H is only available with Visual C++ version 4.2, so comment this line out of you're moving the code back to 4.1.
+<P>The second difference is in the call to AfxOleUnregisterTypeLib. This difference is described below in the section that talks CStopLiteApp.
+
+<P><h4>Files (and classes)</H4><P>ControlWizard has generated a bunch of files for us--a .RC file, an .ODL file, a .DEF file, and four pairs of .CPP and .H files--the usual STDAFX.H/STDAFX.CPP, plus a pair for each of the classes ControlWizard creates.<P>To look at these files, shift-click the links in the text below.<P>The .RC and .DEF (<A HREF="/INTDEV/CONTROLS/STOPLITE/ORIGCODE/STOPLITEDEF.HTM">StopLite.DEF</A>) files are the standard resource and linker definition files. The .ODL (<A HREF="/INTDEV/CONTROLS/STOPLITE/ORIGCODE/STOPLITEODL.HTM">StopLite.ODL</A>) file contains type information for OLE. You can look at this file, but you needn't edit it. ClassWizard will automatically modify it as you add properties, methods, and events.<P>The  <A HREF="/INTDEV/CONTROLS/STOPLITE/ORIGCODE/STDAFXCPP.HTM">STDAFX.CPP</A> and  <A HREF="/INTDEV/CONTROLS/STOPLITE/ORIGCODE/STDAFXH.HTM">STDAFX.H</A> files are the usual files Visual C++ generates to enable creation and maintenance of the pre-compiled header (*.PCH) file. STDAFX.H includes MFC (and, indirectly, Windows) headers; STDAFX.CPP, which contains an #include of STDAFX.H, exists only so the pre-compiled type information will go to STDAFX.OBJ.<P>The control itself consists of three classes: a control module (or application) class called <b>CStopLiteApp</b>, a property page class called <b>CStopLitePropPage</b>, and the main control window class called <b>CStopLiteCtrl</b>. Before continuing, you can print out at least the three major .CPP files so you can look at the code while you read.<P><h5>CStopLiteApp (StopLite.H/StopLite.CPP)</h5><P>(Shift-click to load the  <A HREF="/INTDEV/CONTROLS/STOPLITE/ORIGCODE/STOPLITEH.HTM">StopLite.H</A> and  <A HREF="/INTDEV/CONTROLS/STOPLITE/ORIGCODE/STOPLITECPP.HTM">StopLite.CPP</A> files into new browser windows.)<P>This class is analogous to the <b>CWinApp</b>-derived class that's at the heart of regular MFC applications--it's even derived, via <b>COleControlModule</b>, from <b>CWinApp</b>. There will be only one <b>COleControlModule</b> object in your .OCX, even if your .OCX supports multiple controls. You rarely need to modify this class, and for this example, you won't need to modify it at all. (You might need to modify it if you have multiple controls in the same module that need to communicate with each other.)<P>In addition to the <b>InitInstance</b> and <b>ExitInstance</b> member functions for module initialization and cleanup, these files also contain the <b>DllRegisterServer</b> and <b>DllUnregisterServer</b> global functions you need to have in a &quot;self-registering&quot; control and some read-only global variables: two <b>WORD</b>s, which contain the control's major and minor version numbers, and the GUID for the control's type library.<P>This file contains the only significant difference between the code generated with Visual C++ version 4.1 and version 4.2. In version 4.1, the <b>DllUnregisterServer</b> function contains the call:<P><PRE><FONT FACE="COURIER" SIZE="2">   if (!AfxOleUnregisterTypeLib(_tlid))
+</FONT></PRE><P>In version 4.2, the function adds the version number to the call, as is supported by an update to the <b>AfxOleUnregisterTypeLib</b> function:<P><PRE><FONT FACE="COURIER" SIZE="2">   if (!AfxOleUnregisterTypeLib(_tlid, _wVerMajor, _wVerMinor))
+</FONT></PRE><P>If you've generated your project with version 4.2, you'll have to change the line above to the version 4.1 call in order to compile under 4.1.<P><h5>CStopLitePropPage (StopLitePpg.H/StopLitePpg.CPP)</h5><P>(Shift-click to load the  <A HREF="/INTDEV/CONTROLS/STOPLITE/ORIGCODE/STOPLITEPPGH.HTM">StopLitePropPage.H</A> and  <A HREF="/INTDEV/CONTROLS/STOPLITE/ORIGCODE/STOPLITEPPGCPP.HTM">StopLitePropPage.CPP</A> files into new browser windows.)<P>This class is the code for the property page that we'll use to view and set the control's properties. It's actually the code for an individual property page, not for the property page tabbed container, which is called a property sheet.<P><b>CStopLitePropPage</b> is derived from <b>COlePropertyPage</b>, which is derived from <b>CDialog</b>. Therefore, <b>CStopLitePropPage</b> behaves much like a standard MFC dialog box. It has the usual message map and <b>DoDataExchange</b> function that all MFC dialog boxes use. (Some new data exchange functions for exchanging data with the control's properties that begin with <b>DDP_</b> are used in addition to the <b>DDX_</b> functions in regular modal dialog boxes.)<P>The control's property page has a few additional pieces that a regular dialog box doesn't have. First, it's declared for dynamic and OLE creation via the <b>IMPLMENT_DYNCREATE</b> and <b>IMPLEMENT_OLECREATE_EX</b> macros (and their corresponding <b>DECLARE_</b> variants in the header file). Note that the <b>IMPLEMENT_OLECREATE_EX</b> macro also takes and uses a GUID for the ID of the property page.<P>Lastly, the property page has a function called <b>CStopLitePropPage::CStopLitePropPageFactory:: UpdateRegistry</b>, which registers and unregisters the property page with OLE. This function will be called by MFC when the control is being initialized and destroyed. As the syntax indicates, this function is a member of a class nested inside of <b>CStopLitePropPage</b>.<P><h5>CStopLiteCtrl (StopLiteCtl.H/StopLiteCtl.CPP)</h5><P>(Shift-click to load the  <A HREF="/INTDEV/CONTROLS/STOPLITE/ORIGCODE/STOPLITECTLH.HTM">StopLiteCtl.H</A> and  <A HREF="/INTDEV/CONTROLS/STOPLITE/ORIGCODE/STOPLITECTLCPP.HTM">StopLiteCtl.CPP</A> files into new browser windows.)<P>This class is the most important class in your control. It's where all the action takes place. Except for the property page code, all the code that ClassWizard adds and you edit will go into this class. Note that if this .OCX implemented more than one control, there would be more than one control class. Since this file is large, let's describe the parts of it as they appear in StopLiteCtl.CPP.<P>First, <b>CStopLiteCtrl</b> has a message map--after all, it's derived from <b>CWnd</b>, which is a command target. In addition, it has a couple of other maps. The dispatch map contains entries for all the properties and methods you implement, while the event map contains entries for all the events you fire. ClassWizard will maintain all of these maps for you.<P>Next, we have a data structure that contains information on our property page(s), followed by some macros to implement OLE creation and our type library. After this are GUIDs for the two dispatch interfaces used by this control: <b>IID_DStopLite</b> for its properties and methods, and <b>IID_DStopLiteEvents</b> for the events that will be fired to the container.<P>After that is a rather important variable: <i>_dwStopLiteOleMisc</i>. This variable, which is passed to <b>AfxOLERegisterControlClass</b> later on, contains flags that tell OLE how to create this control and what kind of control it is. See the documentation on the <b>OLEMISC</b> enumeration for information about what these flags mean.<P>You <i>will</i> need to change <b>CStopLiteCtrl::CStopLiteCtrlFactory:: UpdateRegistry</b>, the next function, if you want to mark your control as safe for scripting and/or initialization. (You could also modify <b>DllRegisterServer</b>, but it's a little more convenient to change <b>UpdateRegistry</b> because the control's class ID is readily available.) To mark the control as safe for scripting and initialization, call helper functions that register a component category and register the control as belonging to a category. Because all the of the control's registry entries are deleted when the control is unregistered, you don't have to do anything special to unregister the control. (You should <i>not</i> unregister the categories--other components installed later might need them!) I also added the above-mentioned helper functions (in  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/HELPERSCPP.HTM">HELPERS. CPP</A> and  <A HREF="/INTDEV/CONTROLS/STOPLITE/DONECODE/HELPERSH.HTM">HELPERS.H</A>), copied directly from the ActiveX SDK.<P>So <b>UpdateRegistry</b> just registers and unregisters the control's OLE class. Be sure to read and heed the warning about writing your code correctly so it can run as a multi-threaded apartment model object. All of the details are in MFC Technote 64; for now, just avoid any non-constant global or static member variables. (We won't be using any--they're not really necessary.) It's very important for controls used in Internet applications to be compatible with the apartment threading model--otherwise, performance will suffer greatly if your Web page has more than one control from your control module.<P>Next is a nearly-empty constructor and an empty destructor that you can add to if needed. You do not need to initialize members that correspond to persistent properties; these will be initialized from persistent data (or default values, if the persistent data is not present) when the control is started.<P><b>CStopLiteCtrl</b> is derived from <b>COleControl</b>, which in turn is derived from <b>CWnd</b>. Therefore, it can do basically anything that any window can--draw itself, respond to messages, and so on. However, rather than drawing in an <b>OnPaint</b> function, OLE controls draw in a function called <b>OnDraw</b>. We'll change <b>OnDraw</b> soon to make it draw a stoplight rather than an ellipse. <b>OnDraw</b> differs from <b>CView::OnDraw</b> and from <b>CWnd::OnPaint</b> in two ways. First, you are passed a rectangle representing the extent of the control. You must not draw outside this rectangle. Second, you must erase the control's background in <b>OnDraw</b> rather than relying on a different function to do it for you.<P>Another function that will look strange yet familiar is <b>DoPropExchange</b>, which is used when saving the control's properties to the container or loading them from the container. The best analogy to an MFC app is that <b>DoPropExchange</b> acts like the document class's <b>Serialize</b> function; however, <b>DoPropExchange</b> is structured more like a dialog box's <b>DoDataExchange</b> (although the exchange functions start with &quot;<b>PX_</b>&quot; rather than &quot;<b>DDX_</b>&quot;).<P>Next to last is <b>OnResetState</b>, which is called when the control should reset its state to the default initial state. Since the default implementation sets property values to the values specified in your <b>DoDataExchange</b> function, you often won't need to change this code.<P>Last, and perhaps least, is <b>OnAbout</b>, which displays your control's About box.<P><A HREF="/INTDEV/CONTROLS/STOPLITE/STOPLMFC1.HTM">Click here to read the rest of the article</a>
+<P><A HREF="#TOP"><IMG SRC="/WORKSHOP/IMAGES/uparrow.GIF"  WIDTH="14" HEIGHT="10" BORDER="0" ALT="Up">Back to contents</A><hr><P>
+<!--DocFooterStart-->
+</FONT>
+<FONT FACE="MS SANS SERIF" SIZE="1" COLOR="BLACK">
+<A HREF="/Misc/cpyright.htm" target="_top">&#169; 1996 Microsoft Corporation</A>
+<P>
+</FONT>
+
+<!--DocFooterEnd-->
+</BODY></HTML>

@@ -1,0 +1,95 @@
+<html>
+<title> HelpDesk Sample Application Monitor</title>
+<head>
+
+<script language = "VbScript">
+
+Const DateDiv = "/"
+
+Sub Window_OnLoad()
+Dim DispStart
+Dim dT
+' Start display at midnight
+dT = Now()
+DispStart = DatePart("m", dT) & DateDiv & DatePart("d", dT) & DateDiv & DatePart("yyyy", dT)
+' Set oTimeline properties
+oTimeline.Start = DispStart
+oTimeLine.Period = "h"
+oTimeLine.DetailLevel = 1
+SyncUI
+' Refresh timeline
+oTimeline.Refresh
+End Sub
+
+Sub Pan()
+' Set start date/time and refresh display
+oTimeline.Start = Start.Value
+oTimeline.Refresh
+End Sub
+
+Sub Zoom()
+' Set period and refresh display
+oTimeline.Period = Period.Value
+oTimeline.Refresh
+End Sub
+
+Sub Drill()
+' Set detail level and refresh display
+oTimeline.DetailLevel = DetailLevel.Value
+oTimeline.Refresh
+end Sub
+
+Sub SyncUI()
+' Sync interface controls with oTimeline
+Dim i
+' Update start date element
+start.value = oTimeline.start
+' Highlight option in period list
+For i = 0 to period.options.length - 1
+    If period.options(i).value = oTimeline.Period Then
+        period.options(i).selected = "selected"
+    End If
+Next
+' Update detail level element
+detaillevel.value = oTimeline.DetailLevel
+msgbox("oTimeline.Detaillevel = " & oTimeline.Detaillevel)
+End Sub
+
+Sub oTimeLine_onscriptletevent(eventName, eventObject )
+' handle event notification from oTimeline
+' Sync interface controls with oTimeline
+    SyncUI()
+End Sub
+
+</script>
+</head>
+
+<body style="margin:0;border:0;width:100%;background:#bbbbbb;">
+
+<button OnClick="oTimeline.Refresh">Refresh</button>
+<button OnClick="oTimeline.PageFirst">First</button>
+<button OnClick="oTimeline.PageBack">Back</button>
+<button OnClick="oTimeline.PageForward">Forward</button>
+<button OnClick="oTimeline.PageLast">Last</button>
+<button OnClick="Pan()">Pan</button>
+<input id=Start type=text>
+Period
+<select name="Period" size="1" OnChange="Zoom()">
+    <option value="h">Hour
+    <option value="d">Day
+    <option value="ww">Week
+    <option value="m">Month
+    <option value="yyyy">Year
+</select>
+Detail Level
+<input id=DetailLevel type=text>
+<button id="bDrill" OnClick="Drill()">Drill</button>
+
+<object id=oTimeline TYPE="text/x-scriptlet"
+   style="height:85%;width:100%">
+   <param name="url" value="timeline.htm"
+</object>
+
+</body>
+
+</html>

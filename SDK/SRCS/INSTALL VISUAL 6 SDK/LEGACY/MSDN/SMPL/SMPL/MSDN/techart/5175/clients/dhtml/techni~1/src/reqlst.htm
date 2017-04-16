@@ -1,0 +1,61 @@
+<html>
+<title> RequestList  </title>
+<script language="VBScript">
+sub window_OnLoad()
+    Dim d
+    Dim ds
+    SyncTableUI()
+    d = Now()
+    ds = DatePart("m", d) & "/" & DatePart("d", d) & "/" & DatePart("yyyy", d)
+    Window.parent.document.all("Date").InnerText = ds
+    Window.parent.document.all("Alias").InnerText = DSC1.Tech.Alias
+end sub
+sub tblclc()
+    DSC1.recordset.absoluteposition = window.event.srcElement.recordNumber
+end sub
+sub SyncTableUI()
+    Dim nCurrentRecord
+    nCurrentRecord = DSC1.recordset.absoluteposition
+    for i = 0 to table1.rows.length - 1
+        if Table1.rows(i).recordNumber = nCurrentRecord then
+             Table1.rows(i).style.backGroundColor="#00FFFF"           
+        Else
+            Table1.rows(i).style.backGroundColor = ""
+        end if        
+    next
+end sub
+sub HideHand()
+   window.event.srcElement.style.cursor = ""
+end Sub
+sub ShowHand()
+   window.event.srcElement.style.cursor = "hand"
+end Sub
+Sub ToggleRequest()
+    Dim ReqId
+    DSC1.recordset.absoluteposition = window.event.srcElement.recordNumber
+    ReqId = DSC1.recordset("PKid")
+    DSC1.ToggleRequest ReqId, "reqdet.htm"
+End Sub
+</script>
+
+<object id="DSC1" onrowenter="SyncTableUI()"
+classid="clsid:EF87FD41-999F-11D1-906D-00C04FD6ADF5"
+align="baseline" border="0" width="0" height="0">
+</object>
+
+<body>
+<table OnMouseOut="HideHand()" OnMouseOver="ShowHand()" OnClick="tblclc()"
+    OnDblClick="ToggleRequest()"
+    ID=table1 border=1 datasrc="#DSC1" width=100%>
+<tbody> 
+    <tr ID=trTemplate width=100%>
+        <td width=100><SPAN DATAFLD="Priority" DATAFORMATAS=HTML ></SPAN></td>
+        <td width=100><SPAN DATAFLD="Status" DATAFORMATAS=HTML ></SPAN></td>
+        <td width=100><SPAN DATAFLD="Request Date" DATAFORMATAS=TEXT ></SPAN></td>
+        <td><SPAN DATAFLD="Description" DATAFORMATAS=HTML ></SPAN></td>
+    </tr>
+</tbody>
+</table>
+</body>
+
+</html>

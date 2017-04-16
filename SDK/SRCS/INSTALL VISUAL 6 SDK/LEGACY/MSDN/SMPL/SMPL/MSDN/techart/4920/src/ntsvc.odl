@@ -1,0 +1,139 @@
+// NtSvc.odl : type library source for OLE Control project.
+
+// This file will be processed by the Make Type Library (mktyplib) tool to
+// produce the type library (NtSvc.tlb) that will become a resource in
+// NtSvc.ocx.
+
+#include <olectl.h>
+
+[ uuid(E7BC34A0-BA86-11CF-84B1-CBC2DA68BF6C), version(1.0),
+  helpstring("Microsoft NT Service Control"), control,
+  helpfile("ntsvc.hlp") ]
+library NTService
+{
+	importlib(STDOLE_TLB);
+	importlib(STDTYPE_TLB);
+
+	typedef [uuid(4B528380-9E0E-11cf-9221-18467D6C0000),
+		helpstring("Service Start Mode") ] 
+	enum { 
+		[helpstring("Automatic")] svcStartAutomatic = 2, 
+		[helpstring("Manual")] svcStartManual = 3,
+		[helpstring("Disabled")] svcStartDisabled = 4
+	} SvcStartMode; 
+
+	typedef [uuid(4B528381-9E0E-11cf-9221-18467D6C0000),
+		helpstring("Service State") ] 
+	enum { 
+		[helpstring("Stopped")] svcStopped = 1,
+		[helpstring("Start Pending")] svcStartPending = 2,
+		[helpstring("Stop Pending")] svcStopPending = 3,
+		[helpstring("Running")] svcRunning = 4,
+		[helpstring("Continue Pending")] svcContinuePending = 5,
+		[helpstring("Pause Pending")] svcPausePending = 6,
+		[helpstring("Paused")] svcPaused = 7
+	} SvcState;
+
+	typedef [uuid(4B528382-9E0E-11cf-9221-18467D6C0000),
+		helpstring("Controls Accepted") ] 
+	enum { 
+		[helpstring("StartStop")] svcCtrlStartStop = 1, 
+		[helpstring("Stop")] svcCtrlStop = 1, 
+		[helpstring("PauseContinue")] svcCtrlPauseContinue = 2,
+		[helpstring("Shutdown")] svcCtrlShutdown = 4
+	} SvcControls; 
+
+	typedef [uuid(4B528383-9E0E-11cf-9221-18467D6C0000),
+		helpstring("Event Types") ] 
+	enum {
+		[helpstring("Event Success")] svcEventSuccess = 0x0000,
+		[helpstring("Event Error")] svcEventError = 0x0001,
+		[helpstring("Event Warning")] svcEventWarning = 0x0002,
+		[helpstring("Event Information")] svcEventInformation = 0x0004,
+		[helpstring("Event AuditSuccess")] svcEventAuditSuccess = 0x0008,
+		[helpstring("Event AuditFailure")] svcEventAuditFailure = 0x0010
+	} SvcEventType;
+
+	typedef [uuid(4B528384-9E0E-11cf-9221-18467D6C0000),
+		helpstring("Service Events") ] 
+	enum {
+		[helpstring("Message Debug")] svcMessageDebug = 0x0000006C,
+		[helpstring("Message Error")] svcMessageError = 0x0000006D,
+		[helpstring("Message Info")] svcMessageInfo = 0x0000006E
+	} SvcEventId;
+	//  Primary dispatch interface for CNtSvcCtrl
+
+	[ uuid(E7BC34A1-BA86-11CF-84B1-CBC2DA68BF6C),
+	  helpstring("Dispatch interface for NTService Control"), hidden ]
+	dispinterface _DNtSvc
+	{
+		properties:
+			// NOTE - ClassWizard will maintain property information here.
+			//    Use extreme caution when editing this section.
+			//{{AFX_ODL_PROP(CNtSvcCtrl)
+			[id(1)] BSTR Account;
+			[id(2)] long ControlsAccepted;
+			[id(8)] boolean Debug;
+			[id(3)] BSTR LoadOrderGroup;
+			[id(4)] BSTR Dependencies;
+			[id(5)] BSTR DisplayName;
+			[id(6)] boolean Interactive;
+			[id(7)] BSTR Password;
+			[id(9)] BSTR ServiceName;
+			[id(10)] SvcStartMode StartMode;
+			[id(0)] BSTR _DisplayName;
+			//}}AFX_ODL_PROP
+
+		methods:
+			// NOTE - ClassWizard will maintain method information here.
+			//    Use extreme caution when editing this section.
+			//{{AFX_ODL_METHOD(CNtSvcCtrl)
+			[id(19)] void DeleteSetting(BSTR section, [optional] VARIANT key);
+			[id(17)] VARIANT GetAllSettings(BSTR section);
+			[id(20)] BSTR GetSetting(BSTR section, BSTR key, VARIANT default);
+			[id(11)] boolean Install();
+			[id(12)] boolean LogEvent(short EventType, long ID, BSTR Message);
+			[id(13)] boolean Running();
+			[id(18)] void SaveSetting(BSTR section, BSTR key, BSTR setting);
+			[id(16)] boolean StartService();
+			[id(15)] void StopService();
+			[id(14)] boolean Uninstall();
+			//}}AFX_ODL_METHOD
+
+			[id(DISPID_ABOUTBOX)] void AboutBox();
+	};
+
+	//  Event dispatch interface for CNtSvcCtrl
+
+	[ uuid(E7BC34A2-BA86-11CF-84B1-CBC2DA68BF6C),
+	  helpstring("Event interface for NTService Control") ]
+	dispinterface _DNtSvcEvents
+	{
+		properties:
+			//  Event interface has no properties
+
+		methods:
+			// NOTE - ClassWizard will maintain event information here.
+			//    Use extreme caution when editing this section.
+			//{{AFX_ODL_EVENT(CNtSvcCtrl)
+			[id(3)] void Continue(boolean* Success);
+			[id(5)] void Control(long Event);
+			[id(2)] void Pause(boolean* Success);
+			[id(4)] void Start(boolean* Success);
+			[id(1)] void Stop();
+			//}}AFX_ODL_EVENT
+	};
+
+	//  Class information for CNtSvcCtrl
+           
+	[ uuid(E7BC34A3-BA86-11CF-84B1-CBC2DA68BF6C),
+	  helpstring("Microsoft NT Service Control"), control ]
+	coclass NTService
+	{
+		[default] dispinterface _DNtSvc;
+		[default, source] dispinterface _DNtSvcEvents;
+	};
+
+
+	//{{AFX_APPEND_ODL}}
+};

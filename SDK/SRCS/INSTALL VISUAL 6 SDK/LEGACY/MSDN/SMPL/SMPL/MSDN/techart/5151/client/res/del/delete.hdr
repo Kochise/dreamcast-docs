@@ -1,0 +1,54 @@
+go
+set nocount on
+
+IF EXISTS (SELECT * FROM sysobjects WHERE uid=user_id()
+           AND      type='P'
+           AND      name='pcDel_<!TbName!>')
+    BEGIN
+        PRINT '   > DROPPING - pcDel_<!TbName!> ...'
+        DROP PROCEDURE pcDel_<!TbName!>
+    END
+
+go
+
+PRINT 'CREATING      - pcDel_<!TbName!> ...'
+go
+
+CREATE PROCEDURE pcDel_<!TbName!>
+
+-- File: 
+-- Date: <!Date!>
+
+@PKId       int
+
+AS
+
+DECLARE @RetCode      int
+DECLARE @_error       int
+DECLARE @_rowcount    int
+
+SELECT @RetCode = 0
+
+BEGIN TRAN
+
+DELETE FROM <!TbName!>
+WHERE  PKId = @PKId
+
+SELECT @_error = @@error ,@_rowcount = @@rowcount
+
+IF (@_error <> 0) OR (@_rowcount <> 1)
+  BEGIN
+    ROLLBACK TRAN
+    IF (@_error = 0) SELECT @_error = 333
+    SELECT  @RetCode = -(Abs(@_error))
+    RAISERROR('Could not delete <!TbName!> record [%d].', 16, 5, @PKId) 
+    SELECT @RetCode
+    RETURN @RetCode
+  END
+ELSE
+  BEGIN
+    COMMIT TRAN
+    SELECT @RetCode
+    RETURN @RetCode
+  END
+go

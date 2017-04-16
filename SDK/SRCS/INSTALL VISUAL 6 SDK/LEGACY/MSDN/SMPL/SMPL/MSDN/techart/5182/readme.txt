@@ -1,0 +1,1 @@
+This folder contains the FinSrvr sample application.  This app supplies a class called CFinCounters that makes use of IPerfmonObjectImpl and IPerfmonCounterImpl to supply performance data to the ExtCounters DLL.  FinSrvr also uses the RegPCtrs COM component to add performance data to the registry.

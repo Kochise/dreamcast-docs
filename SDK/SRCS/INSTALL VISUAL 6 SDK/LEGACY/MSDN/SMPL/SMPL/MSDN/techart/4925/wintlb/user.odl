@@ -1,0 +1,3532 @@
+
+[
+uuid(54674046-3A82-101B-8181-00AA003743D3),
+helpstring("Windows User Functions"),
+#ifdef WIN32
+dllname("USER32.DLL")
+#else
+dllname("USER.EXE")
+#endif
+]
+module User {
+
+    #ifndef WIN32
+    [
+    usesgetlasterror,
+    entry("GetTickCount"),
+    helpstring("Returns milliseconds since Windows was started"),
+    ]
+    DWORD   WINAPI GetTickCount(void);
+
+    [
+    usesgetlasterror,
+    entry("GetFreeSystemResources"),
+    helpstring("Gets percentage of free system resources"),
+    ]
+    UINT WINAPI GetFreeSystemResources([in] UINT fuSysResource);
+    #endif
+
+    // ****** System Metrics ********
+
+    [
+    usesgetlasterror,
+    entry("GetSystemMetrics"),
+    helpstring("Get Various system metrics and system configuration settings"),
+    ]
+    int WINAPI GetSystemMetrics([in] int nIndex);
+
+    [
+    usesgetlasterror,
+    entry("GetDoubleClickTime"),
+    helpstring("Get current double-click time for the mouse"),
+    ]
+    UINT    WINAPI GetDoubleClickTime(void);
+
+    [
+    usesgetlasterror,
+    entry("SetDoubleClickTime"),
+    helpstring("Sets double-click time for the mouse"),
+    ]
+    void    WINAPI SetDoubleClickTime([in] UINT uInterval);
+
+    // ****** System Parameters support *********
+
+    /*
+    BOOL    WINAPI SystemParametersInfo(UINT, UINT, VOID FAR*, UINT);
+    */
+
+    // ****** Rectangle support *****
+
+    /*
+    void    WINAPI SetRect(RECT FAR*, int, int, int, int);
+    void    WINAPI SetRectEmpty(RECT FAR*);
+
+    void    WINAPI CopyRect(RECT FAR*, const RECT FAR*);
+
+    BOOL    WINAPI IsRectEmpty(const RECT FAR*);
+
+    BOOL    WINAPI EqualRect(const RECT FAR*, const RECT FAR*);
+
+    BOOL    WINAPI IntersectRect(RECT FAR*, const RECT FAR*, const RECT FAR*);
+    BOOL    WINAPI UnionRect(RECT FAR*, const RECT FAR*, const RECT FAR*);
+    BOOL    WINAPI SubtractRect(RECT FAR*, const RECT FAR*, const RECT FAR*);
+
+    void    WINAPI OffsetRect(RECT FAR*, int, int);
+    void    WINAPI InflateRect(RECT FAR*, int, int);
+
+    BOOL    WINAPI PtInRect(const RECT FAR*, POINT);
+    */
+
+    // ****** Window class management *******
+
+    /*
+    typedef LRESULT (CALLBACK* WNDPROC)(HWND, UINT, WPARAM, LPARAM);
+
+    typedef struct tagWNDCLASS
+    {
+        UINT        style;
+        WNDPROC lpfnWndProc;
+        int         cbClsExtra;
+        int         cbWndExtra;
+        HINSTANCE   hInstance;
+        HICON   hIcon;
+        HCURSOR hCursor;
+        HBRUSH  hbrBackground;
+        LPCSTR  lpszMenuName;
+        LPCSTR  lpszClassName;
+    } WNDCLASS;
+    typedef WNDCLASS* PWNDCLASS;
+    typedef WNDCLASS NEAR* NPWNDCLASS;
+    typedef WNDCLASS FAR* LPWNDCLASS;
+
+    ATOM    WINAPI RegisterClass(const WNDCLASS FAR*);
+    BOOL    WINAPI UnregisterClass(LPCSTR, [in] HINSTANCE hInst);
+
+    BOOL    WINAPI GetClassInfo([in] HINSTANCE hInst, LPCSTR, WNDCLASS FAR*);
+    */
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetClassNameA"),
+    #else
+    entry("GetClassName"),
+    #endif
+    helpstring("Copies the class name of a window handle to a string buffer"),
+    ]
+    int     WINAPI GetClassName([in] HWND hwnd, [in] LPSTR lpszClassName,
+                                [in] int cchClassName);
+
+    // Class words
+
+    [
+    usesgetlasterror,
+    entry("GetClassWord"),
+    helpstring("Gets the indexed class WORD data of a window handle (see GWW_ constants)")
+    ]
+    WORD    WINAPI GetClassWord([in] HWND hwnd, [in] int nIndex);
+
+    [
+    usesgetlasterror,
+    entry("SetClassWord"),
+    helpstring("Sets the indexed class WORD data of a window handle and returns previous data (see GWW_ constants)")
+    ]
+    WORD    WINAPI SetClassWord([in] HWND hwnd, [in] int nIndex,
+                                [in] WORD nValue);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetClassLongA"),
+    #else
+    entry("GetClassLong"),
+    #endif
+    helpstring("Gets the indexed class LONG data of a window handle (see GWL_ constants)")
+    ]
+    LONG    WINAPI GetClassLong([in] HWND hwnd, [in] int nIndex);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("SetClassLongA"),
+    #else
+    entry("SetClassLong"),
+    #endif
+    helpstring("Sets the indexed class LONG data of a window handle and returns previous data (see GWL_ constants)")
+    ]
+    LONG    WINAPI SetClassLong([in] HWND hwnd, [in] int nIndex,
+                                [in] LONG nValue);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetClassLongA"),
+    #else
+    entry("GetClassWord"),
+    #endif
+    helpstring("Gets the indexed class data (WORD or LONG depending on environment) of a window handle (see GWD_ constants)")
+    ]
+    UINT    WINAPI GetClassData([in] HWND hwnd, [in] int nIndex);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("SetClassLongA"),
+    #else
+    entry("SetClassWord"),
+    #endif
+    helpstring("Sets the indexed class data (WORD or LONG depending on environment) of a window handle and returns previous data (see GWD_ constants)")
+    ]
+    UINT    WINAPI SetClassData([in] HWND hwnd, [in] int nIndex,
+                                [in] UINT nValue);
+
+    // ****** Window creation/destroy *******
+
+    [
+    usesgetlasterror,
+    entry("IsWindow"),
+    helpstring("Tells whether a window handle is valid")
+    ]
+    BOOL    WINAPI IsWindow([in] HWND hwnd);
+
+    /*
+    HWND    WINAPI CreateWindowEx(DWORD, [in] LPCSTR lpsz, [in] LPCSTR lpsz, DWORD, int, int, int, int, HWND, [in] HMENU hmenu, [in] HINSTANCE hInst, void FAR*);
+    HWND    WINAPI CreateWindow([in] LPCSTR lpsz, [in] LPCSTR lpsz, DWORD, int, int, int, int, HWND, [in] HMENU hmenu, [in] HINSTANCE hInst, void FAR*);
+
+    BOOL    WINAPI DestroyWindow([in] HWND hwnd);
+    */
+
+    // Basic window attributes
+    #ifndef WIN32
+    [
+    entry("GetWindowTask"),
+    helpstring("Returns the owning task (process) of the given window")
+    ]
+    HTASK   WINAPI GetWindowTask([in] HWND hwnd);
+    #else
+    [
+    usesgetlasterror,
+    entry("GetWindowThreadProcessId"),
+    helpstring("Returns the ids of both the process and the thread that created a window")
+    ]
+    DWORD WINAPI GetWindowThreadProcessId([in] HWND hwnd,
+                                          [in, out] DWORD * lpdwProcessId);
+    #endif
+
+    [
+    usesgetlasterror,
+    entry("IsChild"),
+    helpstring("Tells whether the given child window is the child of the given parent window")
+    ]
+    BOOL    WINAPI IsChild([in] HWND hwndParent, [in] HWND hwndChild);
+
+//@B GetParent
+    [
+    usesgetlasterror,
+    entry("GetParent"),
+    helpstring("Gets the parent window handle of the given window")
+    ]
+    HWND    WINAPI GetParent([in] HWND hWnd);
+//@E GetParent
+
+    [
+    usesgetlasterror,
+    entry("SetParent"),
+    helpstring("Changes the parent of the given window to the specified new parent")
+    ]
+    HWND    WINAPI SetParent([in] HWND hwndChild, [in] HWND hwndNewParent);
+
+    [
+    usesgetlasterror,
+    entry("IsWindowVisible"),
+    helpstring("Tells whether a window is visible")
+    ]
+    BOOL    WINAPI IsWindowVisible([in] HWND hwnd);
+
+    [
+    usesgetlasterror,
+    entry("ShowWindow"),
+    helpstring("Sets a window's visibility state (see SW_ constants)")
+    ]
+    BOOL    WINAPI ShowWindow([in] HWND hwnd, [in] int nCmdShow);
+
+    // Enabled state
+
+    [
+    usesgetlasterror,
+    entry("EnableWindow"),
+    helpstring("Enables or disables a window")
+    ]
+    BOOL    WINAPI EnableWindow([in] HWND hwnd, [in] BOOL fEnable);
+
+    [
+    usesgetlasterror,
+    entry("IsWindowEnabled"),
+    helpstring("Tells whether a window is enabled or disabled")
+    ]
+    BOOL    WINAPI IsWindowEnabled([in] HWND hwnd);
+
+    // Window text
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("SetWindowTextA"),
+    #else
+    entry("SetWindowText"),
+    #endif
+    helpstring("Sets the title of a window"),
+    ]
+    void    WINAPI SetWindowText([in] HWND hwnd, [in] LPCSTR lpsz);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetWindowTextA"),
+    #else
+    entry("GetWindowText"),
+    #endif
+    helpstring("Copies no more than cbMax characters of a window title to a string")
+    ]
+    int     WINAPI GetWindowText([in] HWND hwnd, [in] LPSTR lpsz,
+                                 [in] int cbMax);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetWindowTextLengthA"),
+    #else
+    entry("GetWindowTextLength"),
+    #endif
+    helpstring("Gets the character length of a window title)")
+    ]
+    int     WINAPI GetWindowTextLength([in] HWND hwnd);
+
+    // Window words
+
+    [
+    usesgetlasterror,
+    entry("GetWindowWord"),
+    helpstring("Gets the indexed WORD data of a window handle (see GWW_ constants)")
+    ]
+    WORD    WINAPI GetWindowWord([in] HWND hwnd, [in] int nIndex);
+
+    [
+    usesgetlasterror,
+    entry("SetWindowWord"),
+    helpstring("Sets the indexed WORD data of a window handle and returns previous data (see GWW_ constants)")
+    ]
+    WORD    WINAPI SetWindowWord([in] HWND hwnd, [in] int nIndex,
+                                 [in] WORD nValue);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetWindowLongA"),
+    #else
+    entry("GetWindowLong"),
+    #endif
+    helpstring("Gets the indexed LONG data of a window handle (see GWL_ constants)")
+    ]
+    LONG    WINAPI GetWindowLong([in] HWND hwnd, [in] int nIndex);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("SetWindowLongA"),
+    #else
+    entry("SetWindowLong"),
+    #endif
+    helpstring("Sets the indexed LONG data of a window handle and returns previous data (see GWL_ constants)")
+    ]
+    LONG    WINAPI SetWindowLong([in] HWND hwnd, [in] int nIndex,
+                                 [in] LONG nValue);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetWindowLongA"),
+    #else
+    entry("GetWindowWord"),
+    #endif
+    helpstring("Gets the indexed data (WORD or LONG depending on environment) of a window handle (see GWD_ constants)")
+    ]
+    UINT    WINAPI GetWindowData([in] HWND hwnd, [in] int nIndex);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("SetWindowLongA"),
+    #else
+    entry("SetWindowWord"),
+    #endif
+    helpstring("Sets the indexed data (WORD or LONG depending on environment) of a window handle and returns previous data (see GWD_ constants)")
+    ]
+    UINT    WINAPI SetWindowData([in] HWND hwnd, [in] int nIndex,
+                                 [in] UINT nValue);
+
+    // Window Styles
+
+    // ****** Window size, position, Z-order, and visibility *******
+
+    /* Omit
+    void    WINAPI GetClientRect([in] HWND hwnd, RECT FAR*);
+    void    WINAPI GetWindowRect([in] HWND hwnd, RECT FAR*);
+
+    typedef struct tagWINDOWPLACEMENT
+    {
+        UINT  length;
+        UINT  flags;
+        UINT  showCmd;
+        POINT ptMinPosition;
+        POINT ptMaxPosition;
+        RECT  rcNormalPosition;
+    } WINDOWPLACEMENT;
+    typedef WINDOWPLACEMENT     *PWINDOWPLACEMENT;
+    typedef WINDOWPLACEMENT FAR* LPWINDOWPLACEMENT;
+
+    BOOL    WINAPI GetWindowPlacement([in] HWND hwnd, WINDOWPLACEMENT FAR*);
+    BOOL    WINAPI SetWindowPlacement([in] HWND hwnd, const WINDOWPLACEMENT FAR*);
+    */
+
+    [
+    usesgetlasterror,
+    entry("SetWindowPos"),
+    helpstring("Changes the window size, position, and z-order of a window")
+    ]
+    BOOL    WINAPI SetWindowPos([in] HWND hwnd, [in] HWND hwndInsertAfter,
+                                [in] int x, [in] int y,
+                                [in] int cx, [in] int cy,
+                                [in] UINT fuFlags);
+
+    /*
+    DECLARE_HANDLE(HDWP);
+
+    HDWP    WINAPI BeginDeferWindowPos(int);
+    HDWP    WINAPI DeferWindowPos(HDWP, [in] HWND hwnd, [in] HWND hwnd, int, int, int, int, UINT);
+    BOOL    WINAPI EndDeferWindowPos(HDWP);
+
+    BOOL    WINAPI MoveWindow([in] HWND hwnd, int, int, int, int, BOOL);
+    BOOL    WINAPI BringWindowToTop([in] HWND hwnd);
+    */
+
+    // ****** Window proc implementation & subclassing support *****
+
+    // LRESULT WINAPI DefWindowProc([in] HWND hwnd, UINT, WPARAM, LPARAM);
+
+    [
+    usesgetlasterror,
+    #if WIN32
+    entry("CallWindowProcA"),
+    #else
+    entry("CallWindowProc"),
+    #endif
+    helpstring("Passes message information to a specified window procedure"),
+    ]
+    LRESULT WINAPI CallWindowProc([in] WNDPROC lpPrevWndFunc,
+                                  [in] HWND hwnd, [in] UINT Msg,
+                                  [in] WPARAM wParam, [in] LPARAM lParam);
+
+    // ****** Main window support ***
+
+    /*
+    void    WINAPI AdjustWindowRect(RECT FAR*, DWORD, BOOL);
+    void    WINAPI AdjustWindowRectEx(RECT FAR*, DWORD, BOOL, DWORD);
+
+    void    WINAPI ShowOwnedPopups([in] HWND hwnd, BOOL);
+
+    // Obsolete functions
+    BOOL    WINAPI OpenIcon([in] HWND hwnd);
+    void    WINAPI CloseWindow([in] HWND hwnd);
+    BOOL    WINAPI AnyPopup(void);
+    */
+
+    [
+    usesgetlasterror,
+    entry("FlashWindow"),
+    helpstring("Flashes or unflashes a given window depending on fInvert")
+    ]
+    BOOL    WINAPI FlashWindow([in] HWND hwnd, [in] BOOL fInvert);
+
+    [
+    usesgetlasterror,
+    entry("IsIconic"),
+    helpstring("Tells whether a window is minimized")
+    ]
+    BOOL    WINAPI IsIconic([in] HWND hwnd);
+
+    [
+    usesgetlasterror,
+    entry("IsZoomed"),
+    helpstring("Tells whether a window is maximized"),
+	helpcontext(357)
+    ]
+    BOOL    WINAPI IsZoomed([in] HWND hwnd);
+
+    // ****** Window coordinate mapping and hit-testing **************************
+
+    /*
+    void    WINAPI ClientToScreen([in] HWND hwnd, POINT FAR*);
+    void    WINAPI ScreenToClient([in] HWND hwnd, POINT FAR*);
+
+    void    WINAPI MapWindowPoints([in] HWND hwnd hwndFrom, [in] HWND hwnd hwndTo, POINT FAR* lppt, UINT cpt);
+
+    HWND    WINAPI WindowFromPoint(POINT);
+    HWND    WINAPI ChildWindowFromPoint([in] HWND hwnd, POINT);
+    */
+
+    // ****** Window query and enumeration ******
+
+    [
+    usesgetlasterror,
+    entry("GetDesktopWindow"),
+    helpstring("Returns handle of desktop window"),
+    ]
+    HWND    WINAPI GetDesktopWindow();
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("FindWindowA"),
+    #else
+    entry("FindWindow"),
+    #endif
+    helpstring("Finds a window by its class name and title"),
+    ]
+    HWND    WINAPI FindWindow([in] LPCSTR lpszClassName,
+                              [in] LPCSTR lpszWindow);
+
+    /* Omit
+    typedef BOOL (CALLBACK* WNDENUMPROC)(HWND, LPARAM);
+
+    BOOL    WINAPI EnumWindows(WNDENUMPROC, LPARAM);
+    BOOL    WINAPI EnumChildWindows(HWND, WNDENUMPROC, LPARAM);
+    BOOL    WINAPI EnumTaskWindows(HTASK, WNDENUMPROC, LPARAM);
+    */
+
+    [
+    usesgetlasterror,
+    entry("GetTopWindow"),
+    helpstring("Gets handle of window at the top of the Z-order of a specified child window"),
+    ]
+    HWND    WINAPI GetTopWindow([in] HWND hwnd);
+
+    [
+    usesgetlasterror,
+    entry("GetWindow"),
+    helpstring("Gets handle of window with specified relationship (GW_HWNDFIRST, GW_HWNDLAST, GW_HWNDNEXT, GW_HWNDPREV, GW_OWNER, GW_CHILD)"),
+    ]
+    HWND    WINAPI GetWindow([in] HWND hwnd, [in] UINT uCmd);
+
+    [
+    usesgetlasterror,
+    entry("GetNextWindow"),
+    helpstring("Gets handle of next (GW_HWNDNEXT) or previous (GW_HWNDPREV) window in the Z-order"),
+    ]
+    HWND    WINAPI GetNextWindow([in] HWND hwnd, [in] UINT fuDirection);
+
+    // ****** Omit Window property support *******
+
+    /*
+    BOOL    WINAPI SetProp(HWND, LPCSTR, HANDLE);
+    HANDLE  WINAPI GetProp(HWND, LPCSTR);
+    HANDLE  WINAPI RemoveProp(HWND, LPCSTR);
+
+    typedef BOOL (CALLBACK* PROPENUMPROC)(HWND, LPCSTR, HANDLE);
+
+    int     WINAPI EnumProps(HWND, PROPENUMPROC);
+    */
+
+    // ****** Window drawing support ********
+
+    [
+    usesgetlasterror,
+    entry("GetDC"),
+    helpstring("Gets client area DC of given window"),
+    ]
+    HDC     WINAPI GetDC([in] HWND hwnd);
+
+    [
+    usesgetlasterror,
+    entry("ReleaseDC"),
+    helpstring("Releases a DC obtained with GetDC or GetWindowDC"),
+    ]
+    int     WINAPI ReleaseDC([in] HWND hwnd, [in] HDC hdc);
+
+    [
+    usesgetlasterror,
+    entry("GetWindowDC"),
+    helpstring("Gets entire DC of given window"),
+    ]
+    HDC     WINAPI GetWindowDC([in] HWND hwnd);
+
+    /*
+    HDC     WINAPI GetDCEx(register HWND hwnd, HRGN hrgnClip, DWORD flags);
+    */
+
+
+    // ****** Window repainting ****
+
+
+    /* Omit
+    // BeginPaint() return structure
+    typedef struct tagPAINTSTRUCT
+    {
+        HDC     hdc;
+        BOOL    fErase;
+        RECT    rcPaint;
+        BOOL    fRestore;
+        BOOL    fIncUpdate;
+        BYTE    rgbReserved[16];
+    } PAINTSTRUCT;
+    typedef PAINTSTRUCT* PPAINTSTRUCT;
+    typedef PAINTSTRUCT NEAR* NPPAINTSTRUCT;
+    typedef PAINTSTRUCT FAR* LPPAINTSTRUCT;
+
+    HDC     WINAPI BeginPaint([in] HWND hwnd, PAINTSTRUCT FAR*);
+    void    WINAPI EndPaint([in] HWND hwnd, const PAINTSTRUCT FAR*);
+    */
+
+    /*
+    void    WINAPI UpdateWindow([in] HWND hwnd);
+
+    int     WINAPI ExcludeUpdateRgn([in] HDC hdc, [in] HWND hwnd);
+    */
+
+    [
+    usesgetlasterror,
+    entry("LockWindowUpdate"),
+    helpstring("Disables drawing in the given window, or enables drawing in the locked window if NULL is passed"),
+    ]
+    BOOL    WINAPI LockWindowUpdate([in] HWND hwndLock);
+
+    /*
+    BOOL    WINAPI GetUpdateRect([in] HWND hwnd, RECT FAR*, BOOL);
+    int     WINAPI GetUpdateRgn([in] HWND hwnd, HRGN, BOOL);
+
+    void    WINAPI InvalidateRect([in] HWND hwnd, const RECT FAR*, BOOL);
+    void    WINAPI ValidateRect([in] HWND hwnd, const RECT FAR*);
+
+    void    WINAPI InvalidateRgn([in] HWND hwnd, HRGN, BOOL);
+    void    WINAPI ValidateRgn([in] HWND hwnd, HRGN);
+
+    BOOL    WINAPI RedrawWindow([in] HWND hwnd, const RECT FAR* lprcUpdate, HRGN hrgnUpdate, UINT flags);
+    */
+
+    // ****** Window scrolling *****
+
+    /*
+    void     WINAPI ScrollWindow([in] HWND hwnd, int, int, const RECT FAR*, const RECT FAR*);
+    BOOL    WINAPI ScrollDC([in] HDC hdc, int, int, const RECT FAR*, const RECT FAR*, HRGN, RECT FAR*);
+
+    int     WINAPI ScrollWindowEx([in] HWND hwnd hwnd, int dx, int dy,
+                    const RECT FAR* prcScroll, const RECT FAR* prcClip,
+                    HRGN hrgnUpdate, RECT FAR* prcUpdate, UINT flags);
+    */
+
+    // ****** Window activation ****
+
+    [
+    usesgetlasterror,
+    entry("SetActiveWindow"),
+    #ifdef WIN32
+    helpstring("Makes the specified top level window the active window"),
+    #else
+    helpstring("Makes the specified top level window associated with the calling thread the active window"),
+    #endif
+    ]
+    HWND    WINAPI SetActiveWindow([in] HWND hwnd);
+
+    [
+    usesgetlasterror,
+    entry("GetActiveWindow"),
+    helpstring("Gets the handle of the active window"),
+    ]
+    HWND    WINAPI GetActiveWindow(void);
+
+    #ifdef WIN32
+    [
+    usesgetlasterror,
+    entry("SetForegroundWindow"),
+    helpstring("Activates the thread and the window of the specified window handle"),
+    ]
+    BOOL    WINAPI SetForegroundWindow([in] HWND hWnd);
+
+    [
+    usesgetlasterror,
+    entry("GetForegroundWindow"),
+    helpstring("Gets the handle of the foreground window"),
+    ]
+    HWND    WINAPI GetForegroundWindow(VOID);
+    #endif
+
+
+    /*
+    HWND    WINAPI GetLastActivePopup([in] HWND hwnd);
+    */
+
+    // ****** Keyboard input support ********
+
+    [
+    usesgetlasterror,
+    entry("SetFocus"),
+    helpstring("Sets keyboard input focus to given window, returning previous focus window if successful"),
+    ]
+    HWND    WINAPI SetFocus([in] HWND hwnd);
+
+    [
+    usesgetlasterror,
+    entry("GetFocus"),
+    helpstring("Returns handle of window with keyboard input focus"),
+    ]
+    HWND    WINAPI GetFocus(void);
+
+    [
+    usesgetlasterror,
+    entry("GetKeyState"),
+    helpstring("Gets state of a Windows virtual keys"),
+    ]
+    short WINAPI GetKeyState([in] int nKeyState);
+
+    [
+    usesgetlasterror,
+    entry("GetAsyncKeyState"),
+    helpstring("Gets asynchronouse state of a Windows virtual keys"),
+    ]
+    short WINAPI GetAsyncKeyState([in] int nKeyState);
+
+    [
+    usesgetlasterror,
+    entry("GetKeyboardState"),
+    helpstring("Gets an array of 256 bytes representing the state of Windows virtual keys"),
+    ]
+    void    WINAPI GetKeyboardState([in] BYTE FAR* lpbKeyState);
+
+    [
+    usesgetlasterror,
+    entry("SetKeyboardState"),
+    helpstring("Sets an array of 256 bytes representing the state of Windows virtual keys"),
+    ]
+    void    WINAPI SetKeyboardState([out] BYTE FAR* lpbKeyState);
+
+    // ****** Mouse input support **
+
+    [
+    usesgetlasterror,
+    entry("SetCapture"),
+    helpstring("Sets capture of all mouse events regardless of cursor position to the given window"),
+    ]
+    HWND    WINAPI SetCapture([in] HWND hwnd);
+
+    [
+    usesgetlasterror,
+    entry("SetCapture"),
+    helpstring("Releases mouse capture and restores normal mouse input processing"),
+    ]
+    void    WINAPI ReleaseCapture(void);
+
+    [
+    usesgetlasterror,
+    entry("GetCapture"),
+    helpstring("Gets the window handle (if any) that owns mouse capture"),
+    ]
+    HWND    WINAPI GetCapture(void);
+
+    /*
+    BOOL    WINAPI SwapMouseButton(BOOL);
+
+    typedef struct tagMOUSEHOOKSTRUCT
+    {
+        POINT   pt;
+        HWND    hwnd;
+        UINT    wHitTestCode;
+        DWORD   dwExtraInfo;
+    } MOUSEHOOKSTRUCT;
+    typedef MOUSEHOOKSTRUCT  FAR* LPMOUSEHOOKSTRUCT;
+    */
+
+    // ****** System modal window support *******
+
+    /*
+    HWND    WINAPI GetSysModalWindow(void);
+    HWND    WINAPI SetSysModalWindow([in] HWND hwnd);
+    */
+
+    // ****** Omit Timer support ********
+
+    /*
+    typedef void (CALLBACK* TIMERPROC)(HWND, UINT, UINT, DWORD);
+
+    UINT    WINAPI SetTimer(HWND, UINT, UINT, TIMERPROC);
+
+    BOOL    WINAPI KillTimer(HWND, UINT);
+    */
+
+    // ****** Omit Accelerator support ******
+
+    /*
+    DECLARE_HANDLE(HACCEL);
+
+    HACCEL  WINAPI LoadAccelerators([in] HINSTANCE hInst, LPCSTR);
+
+    int     WINAPI TranslateAccelerator(HWND, HACCEL, MSG FAR*);
+    */
+
+    // ****** Menu support *********
+
+    /*
+    // Menu template header
+    typedef struct
+    {
+        UINT    versionNumber;
+        UINT    offset;
+    } MENUITEMTEMPLATEHEADER;
+
+    // Menu template item struct
+    typedef struct
+    {
+        UINT    mtOption;
+        UINT    mtID;
+        char    mtString[1];
+    } MENUITEMTEMPLATE;
+    */
+
+    [
+    usesgetlasterror,
+    entry("IsMenu"),
+    helpstring("Tells whether a handle is a menu handle")
+    ]
+    BOOL    WINAPI IsMenu([in] HMENU hmenu);
+
+    [
+    usesgetlasterror,
+    entry("CreateMenu"),
+    helpstring("Creates an empty menu and returns its handle")
+    ]
+    HMENU   WINAPI CreateMenu(VOID);
+
+    [
+    usesgetlasterror,
+    entry("CreatePopupMenu"),
+    helpstring("Creates an empty pop-up menu and returns its handle")
+    ]
+    HMENU   WINAPI CreatePopupMenu(VOID);
+
+    [
+    #if WIN32
+    usesgetlasterror,
+    entry("LoadMenuA"),
+    #else
+    entry("LoadMenu"),
+    #endif
+    helpstring("Loads menu resource lpszMenuName into an instance"),
+    ]
+    HMENU   WINAPI LoadMenu([in] HINSTANCE hInst,
+                            [in] LPCSTR lpszMenuName);
+
+    [
+    #if WIN32
+    usesgetlasterror,
+    entry("LoadMenuA"),
+    #else
+    entry("LoadMenu"),
+    #endif
+    helpstring("Loads menu resource idMenuName into an instance"),
+    ]
+    HMENU   WINAPI LoadMenuAsId([in] HINSTANCE hInst,
+                                [in] LONG idMenuName);
+
+    /* Omitted
+    HMENU   WINAPI LoadMenuIndirect(const void FAR*);
+    */
+
+    [
+    usesgetlasterror,
+    entry("DestroyMenu"),
+    helpstring("Destroys the given menu and frees its resources"),
+    ]
+    BOOL    WINAPI DestroyMenu([in] HMENU hMenu);
+
+    [
+    usesgetlasterror,
+    entry("GetMenu"),
+    helpstring("Gets the handle of the menu of the given window"),
+    ]
+    HMENU   WINAPI GetMenu([in] HWND hwnd);
+
+    [
+    usesgetlasterror,
+    entry("SetMenu"),
+    helpstring("Sets the given window's menu to the given menu handle"),
+    ]
+    BOOL    WINAPI SetMenu([in] HWND hwnd, [in] HMENU hMenu);
+
+    [
+    usesgetlasterror,
+    entry("GetSystemMenu"),
+    helpstring("Gets handle of a copy of system menu, or restores the system menu if fRevert is true"),
+    ]
+    HMENU   WINAPI GetSystemMenu([in] HWND hwnd, [in] BOOL fRevert);
+
+    [
+    usesgetlasterror,
+    entry("DrawMenuBar"),
+    helpstring("Redraws the menu bar of the given window"),
+    ]
+    void    WINAPI DrawMenuBar([in] HWND hwnd);
+
+    [
+    usesgetlasterror,
+    entry("HiliteMenuItem"),
+    helpstring("Changes menu hilite of idHiliteItem in top level menu hMenu in hWnd window according to fuHilite flags (MF_ constant)"),
+    ]
+    BOOL    WINAPI HiliteMenuItem([in] HWND hwnd, [in] HMENU hMenu,
+                                  [in] UINT idHiliteItem,
+                                  [in] UINT fuHilite);
+
+    [
+    #if WIN32
+    usesgetlasterror,
+    entry("InsertMenuA"),
+    #else
+    entry("InsertMenu"),
+    #endif
+    helpstring("Inserts new item with ID idNewItem and content lpNewItem into menu hMenu before item idItem according to fuFlags"),
+    ]
+    BOOL    WINAPI InsertMenu([in] HMENU hMenu, [in] UINT idItem,
+                              [in] UINT fuFlags, [in] UINT idNewItem,
+                              [in] LPCSTR lpNewItem);
+
+    [
+    #if WIN32
+    usesgetlasterror,
+    entry("AppendMenuA"),
+    #else
+    entry("AppendMenu"),
+    #endif
+    helpstring("Appends new item with ID idNewItem and content lpNewItem to the end of menu hMenu according to fuFlags"),
+    ]
+    BOOL    WINAPI AppendMenu([in] HMENU hMenu, [in] UINT fuFlags,
+                              [in] UINT idNewItem, [in] LPCSTR lpNewItem);
+
+    [
+    #if WIN32
+    usesgetlasterror,
+    entry("ModifyMenuA"),
+    #else
+    entry("ModifyMenu"),
+    #endif
+    helpstring("Modifies item with ID idItem of menu hMenu to ID idNewItem and content lpNewItem according to fuFlags"),
+    ]
+    BOOL    WINAPI ModifyMenu([in] HMENU hMenu, [in] UINT idItem,
+                              [in] UINT fuFlags, [in] UINT idNewItem,
+                              [in] LPCSTR lpNewItem);
+
+    [
+    usesgetlasterror,
+    entry("RemoveMenu"),
+    helpstring("Deletes item with ID idItem (according to fuFlags) from menu hMenu"),
+    ]
+    BOOL    WINAPI RemoveMenu([in] HMENU hMenu, [in] UINT idItem,
+                              [in] UINT fuFlags);
+
+    [
+    usesgetlasterror,
+    entry("DeleteMenu"),
+    helpstring("Removes a popup menu item with ID idItem (according to fuFlags) from menu hMenu (should come from GetSubMenu) without deleting menu handle"),
+    ]
+    BOOL    WINAPI DeleteMenu([in] HMENU hMenu, [in] UINT idItem,
+                              [in] UINT fuFlags);
+
+    /* Omit (obsolete)
+    BOOL    WINAPI ChangeMenu([in] HMENU hMenu, UINT, LPCSTR, UINT, UINT);
+    */
+
+    [
+    usesgetlasterror,
+    entry("EnableMenuItem"),
+    helpstring("Enables or disables item idEnableItem in hMenu according to uEnable flags"),
+    ]
+    BOOL    WINAPI EnableMenuItem([in] HMENU hMenu,
+                                  [in] UINT idEnableItem,
+                                  [in] UINT uEnable);
+
+    [
+    usesgetlasterror,
+    entry("CheckMenuItem"),
+    helpstring("Checks or unchecks item idCheckItem in hMenu according to uCheck flags"),
+    ]
+    BOOL    WINAPI CheckMenuItem([in] HMENU hMenu, [in] UINT idCheckItem,
+                                 [in] UINT uCheck);
+    [
+    usesgetlasterror,
+    entry("GetSubMenu"),
+    helpstring("Returns handle of handle of the submenu at position nPos in menu hMenu"),
+    ]
+    HMENU   WINAPI GetSubMenu([in] HMENU hMenu, [in] int nPos);
+
+    [
+    usesgetlasterror,
+    entry("GetMenuItemCount"),
+    helpstring("Returns the number of items in a menu"),
+    ]
+    int     WINAPI GetMenuItemCount([in] HMENU hMenu);
+
+    [
+    usesgetlasterror,
+    entry("GetMenuItemID"),
+    helpstring("Returns the ID of item as given position in a menu"),
+    ]
+    UINT    WINAPI GetMenuItemID([in] HMENU hMenu, [in] int pos);
+
+    [
+    #if WIN32
+    usesgetlasterror,
+    entry("GetMenuStringA"),
+    #else
+    entry("GetMenuString"),
+    #endif
+    helpstring("Copies the text of item idItem (according to fuFlags) in menu hMenu into the buffer lpsz"),
+    ]
+    int     WINAPI GetMenuString([in] HMENU hMenu, [in] UINT idItem,
+                                 [in, out] LPSTR lpsz, [in] int cbMax,
+                                 [in] UINT fuFlags);
+
+    [
+    usesgetlasterror,
+    entry("GetMenuState"),
+    helpstring("Returns bitflag state of item idItem in menu hMenu according to fuFlags"),
+    ]
+    UINT    WINAPI GetMenuState([in] HMENU hMenu, [in] UINT idItem,
+                                [in] UINT fuFlags);
+
+    [
+    usesgetlasterror,
+    entry("SetMenuItemBitmaps"),
+    helpstring("Sets item idItem (according to fuFlags) of menu hMenu to the given bitmaps"),
+    ]
+    BOOL    WINAPI SetMenuItemBitmaps([in] HMENU hMenu, [in] UINT idItem,
+                                      [in] UINT fuFlags,
+                                      [in] HBITMAP hbmUnchecked,
+                                      [in] HBITMAP hbmChecked);
+
+    [
+    usesgetlasterror,
+    entry("GetMenuCheckMarkDimensions"),
+    helpstring("Returns dimensions of default checkmark bitmap with width in pixels in low word and height in high word"),
+    ]
+    DWORD   WINAPI GetMenuCheckMarkDimensions(VOID);
+
+    /* Omitted (can't implement)
+    BOOL    WINAPI TrackPopupMenu([in] HMENU hMenu, [in] UINT fuFlags,
+                                      [in] int x, [in] int y,
+                                      [in] int nReserved, [in] HWND hwnd,
+                                      [in, out] LONG lprc);
+    */
+
+    // ****** Scroll bar support ***
+
+    [
+    usesgetlasterror,
+    entry("SetScrollPos"),
+    helpstring("Sets the scroll box position and optionally redraws the scroll bar (see SB_ constants)"),
+    ]
+    int     WINAPI SetScrollPos([in] HWND hwnd, [in] int fnBar,
+                                [in] int nPos, [in] BOOL fRepaint);
+
+    [
+    usesgetlasterror,
+    entry("GetScrollPos"),
+    helpstring("Gets the scroll box position (see SB_ constants)"),
+    ]
+    int     WINAPI GetScrollPos([in] HWND hwnd, [in] int fnBar);
+
+    [
+    usesgetlasterror,
+    entry("SetScrollRange"),
+    helpstring("Sets the minimum and maximum positions of a scroll bar and optionally redraws it (see SB_ constants)"),
+    ]
+    void    WINAPI SetScrollRange([in] HWND hwnd, [in] int fnBar,
+                                  [in] int nMin, [in] int nMax,
+                                  [in] BOOL fRedraw);
+
+//@B GetScrollRange
+    [
+    usesgetlasterror,
+    entry("GetScrollRange"),
+    helpstring("Gets the minimum and maximum positions of a scroll bar"),
+    ]
+    void    WINAPI GetScrollRange([in] HWND hwnd, [in] int fnBar,
+                                  [out] int FAR * lpnMinPos,
+                                  [out] int FAR * lpnMaxPos);
+//@E GetScrollRange
+
+    [
+    usesgetlasterror,
+    entry("ShowScrollBar"),
+    helpstring("Shows or hides a scroll bar (see SB_ constants)"),
+    ]
+    void    WINAPI ShowScrollBar([in] HWND hwnd, [in] int fnBar,
+                                 [in] BOOL fShow);
+
+    [
+    usesgetlasterror,
+    entry("EnableScrollBar"),
+    helpstring("Enables or disables scroll bar arrows (see SB_ and ESB_ constants)"),
+    ]
+    BOOL    WINAPI EnableScrollBar([in] HWND hwnd, [in] int fnSBFlags,
+                                   [in] UINT fuArrowFlags);
+
+    // ******* Clipboard manager ******
+
+    /*
+    // Clipboard Manager Functions
+    BOOL    WINAPI OpenClipboard([in] HWND hwnd);
+    BOOL    WINAPI CloseClipboard(void);
+    BOOL    WINAPI EmptyClipboard(void);
+
+    HWND    WINAPI GetOpenClipboardWindow(void);
+
+    HWND    WINAPI GetClipboardOwner(void);
+
+    HWND    WINAPI SetClipboardViewer(HWND);
+    HWND    WINAPI GetClipboardViewer(void);
+
+    HANDLE  WINAPI SetClipboardData(UINT, HANDLE);
+    HANDLE  WINAPI GetClipboardData(UINT);
+
+    BOOL    WINAPI IsClipboardFormatAvailable(UINT);
+    int     WINAPI GetPriorityClipboardFormat(UINT FAR*, int);
+
+    UINT    WINAPI RegisterClipboardFormat(LPCSTR);
+    int     WINAPI CountClipboardFormats(void);
+    UINT    WINAPI EnumClipboardFormats(UINT);
+    int     WINAPI GetClipboardFormatName(UINT, LPSTR, int);
+
+    BOOL    WINAPI ChangeClipboardChain([in] HWND hwnd, [in] HWND hwnd);
+    */
+
+    // ****** Mouse cursor support **
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("LoadCursorA"),
+    #else
+    entry("LoadCursor"),
+    #endif
+    helpstring("Load a cursor given by ID number from resource and return the cursor handle"),
+    ]
+    HCURSOR WINAPI LoadCursorAsId([in] HINSTANCE hInst, [in] LONG idCursor);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("LoadCursorA"),
+    #else
+    entry("LoadCursor"),
+    #endif
+    helpstring("Load a cursor given by string name from resource and return the cursor handle"),
+    ]
+    HCURSOR WINAPI LoadCursor([in] HINSTANCE hInst, [in] LPSTR pszCursor);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("LoadCursorA"),
+    #else
+    entry("LoadCursor"),
+    #endif
+    helpstring("Load a cursor given by string name from resource and return the cursor handle"),
+    ]
+    HCURSOR WINAPI LoadCursorAsStr([in] HINSTANCE hInst, [in] LPSTR pszCursor);
+
+    [
+    usesgetlasterror,
+    entry("DestroyCursor"),
+    helpstring("Destroys a cursor previously created with CreateCursor or LoadCursor and frees its memory"),
+    ]
+    BOOL    WINAPI DestroyCursor([in] HCURSOR hcur);
+
+    [
+    usesgetlasterror,
+    entry("SetCursor"),
+    helpstring("Changes the current cursor to the given cursor or removes the cursor if NULL is passed (returns previous)"),
+    ]
+    HCURSOR WINAPI SetCursor([in] HCURSOR hcur);
+
+    [
+    usesgetlasterror,
+    entry("GetCursor"),
+    helpstring("Gets the handle of the current cursor"),
+    ]
+    HCURSOR WINAPI GetCursor(void);
+
+    /*
+    HCURSOR WINAPI CreateCursor([in] HINSTANCE hInst, int, int, int, int, const void FAR*, const void FAR*);
+    HCURSOR WINAPI CopyCursor([in] HINSTANCE hInst, [in] HCURSOR hcur);
+    */
+
+    [
+    usesgetlasterror,
+    entry("ShowCursor"),
+    helpstring("Show or hide the mouse cursor"),
+    ]
+    int     WINAPI ShowCursor([in] BOOL bShow);
+
+    [
+    usesgetlasterror,
+    entry("SetCursorPos"),
+    helpstring("Sets the mouse cursor position"),
+    ]
+    void    WINAPI SetCursorPos([in] int x, [in] int y);
+
+    [
+    usesgetlasterror,
+    entry("GetCursorPos"),
+    helpstring("Gets the mouse cursor position"),
+    ]
+    void    WINAPI GetCursorPos([in, out] int FAR * lpPoint);
+
+    [
+    usesgetlasterror,
+    entry("ClipCursor"),
+    helpstring("Confines the mouse cursor to a given rectangle"),
+    ]
+    void    WINAPI ClipCursor([in] int FAR * lpRect);
+
+    [
+    usesgetlasterror,
+    entry("GetClipCursor"),
+    helpstring("Gets the rectangle where the mouse cursor is confined"),
+    ]
+    void    WINAPI GetClipCursor([in, out] int FAR * lpRect);
+
+    // ****** Bitmap resource **********
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("LoadBitmapA"),
+    #else
+    entry("LoadBitmap"),
+    #endif
+    helpstring("Load a bitmap given by ID number from resource and return bitmap handle"),
+    ]
+    HBITMAP WINAPI LoadBitmapAsId([in] HINSTANCE hInst, [in] LONG idBitmap);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("LoadBitmapA"),
+    #else
+    entry("LoadBitmap"),
+    #endif
+    helpstring("Load a bitmap given by string name from resource and return bitmap handle"),
+    ]
+    HBITMAP WINAPI LoadBitmap([in] HINSTANCE hInst, [in] LPSTR pszBitmap);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("LoadBitmapA"),
+    #else
+    entry("LoadBitmap"),
+    #endif
+    helpstring("Load a bitmap given by string name from resource and return bitmap handle"),
+    ]
+    HBITMAP WINAPI LoadBitmapAsStr([in] HINSTANCE hInst, [in] LPSTR pszBitmap);
+
+    // ****** String resource **********
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("LoadStringA"),
+    #else
+    entry("LoadString"),
+    #endif
+    helpstring("Load a string given by ID number from resource into string buffer and return string length"),
+    ]
+    int     WINAPI LoadString([in] HINSTANCE hInst, [in] UINT idResource,
+                              [in] LPCSTR lpszBuffer, [in] int cbBuffer);
+
+    // ****** Icon support **********
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("LoadIconA"),
+    #else
+    entry("LoadIcon"),
+    #endif
+    helpstring("Load an icon given by ID number from resource and return bitmap handle"),
+    ]
+    HICON WINAPI LoadIconAsId([in] HINSTANCE hInst, [in] LONG idIcon);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("LoadIconA"),
+    #else
+    entry("LoadIcon"),
+    #endif
+    helpstring("Load an bitmap given by string name from resource and return icon handle"),
+    ]
+    HICON WINAPI LoadIcon([in] HINSTANCE hInst, [in] LPSTR pszIcon);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("LoadIconA"),
+    #else
+    entry("LoadIcon"),
+    #endif
+    helpstring("Load an icon given by string name from resource and return icon handle"),
+    ]
+    HICON WINAPI LoadIconAsStr([in] HINSTANCE hInst, [in] LPSTR pszIcon);
+
+    [
+    usesgetlasterror,
+    entry("DestroyIcon"),
+    helpstring("Destroys an icon previously created with CreateIcon or LoadIcon and frees its memory"),
+    ]
+    BOOL    WINAPI DestroyIcon([in] HICON hicon);
+
+    [
+    usesgetlasterror,
+    entry("DrawIcon"),
+    helpstring("Draws an icon into the given device context at the given coordinates"),
+    ]
+    BOOL    WINAPI DrawIcon([in] HDC hdc, [in] int x, [in] int y,
+                            [in] HICON hicon);
+
+    /*
+    HICON   WINAPI CreateIcon([in] HINSTANCE hInst, int, int, BYTE, BYTE, const void FAR*, const void FAR*);
+    HICON   WINAPI CopyIcon([in] HINSTANCE hInst, [in] HICON hicon);
+    */
+
+    // Image support
+
+    #ifdef WIN32
+    [
+    usesgetlasterror,
+    entry("LoadImageA"),
+    helpstring("Loads icon, bitmap, or cursor and returns handle"),
+    ]
+    HANDLE  WINAPI LoadImage([in] HINSTANCE hinst,
+                             [in] LPCSTR lpszName, [in] UINT uType,
+                             [in] int cxDesired, [in] int cyDesired,
+                             [in] UINT fuLoad);
+
+    [
+    usesgetlasterror,
+    entry("CopyImage"),
+    helpstring("Copies icon, bitmap, or cursor to new image, stretching if necessary"),
+    ]
+    HICON   WINAPI CopyImage([in] HANDLE hImage, [in] UINT uType,
+                             [in] int cxDesired, [in] int cyDesired,
+                             [in] UINT fuFlags);
+
+    [
+    usesgetlasterror,
+    entry("DrawIconEx"),
+    helpstring("Draws an icon or cursor with specified raster and stretching as required"),
+    ]
+    BOOL WINAPI DrawIconEx([in] HDC hdc, [in] int xLeft, [in] int yTop,
+                           [in] HICON hIcon,
+                           [in] int cxWidth, [in] int cyWidth,
+                           [in] UINT istepIfAniCur,
+                           [in] HBRUSH hbrFlickerFreeDraw,
+                           [in] UINT diFlags);
+    #endif // WIN32
+
+    // ****** Message Box support **
+
+    /*
+    int     WINAPI MessageBox([in] HWND hwnd, LPCSTR, LPCSTR, UINT);
+    void    WINAPI MessageBeep(UINT);
+    */
+
+    // ****** Caret support *********
+
+    /*
+    void    WINAPI CreateCaret([in] HWND hwnd, [in] HBITMAP hbm, int, int);
+    void    WINAPI DestroyCaret(void);
+
+    void    WINAPI SetCaretPos(int, int);
+    void    WINAPI GetCaretPos(POINT FAR*);
+
+    void    WINAPI HideCaret([in] HWND hwnd);
+    void    WINAPI ShowCaret([in] HWND hwnd);
+
+    UINT    WINAPI GetCaretBlinkTime(void);
+    void    WINAPI SetCaretBlinkTime(UINT);
+    */
+
+    // ****** MDI Support **********
+
+    /*
+    // CreateWindow lpParams structure for creating MDI client
+    typedef struct tagCLIENTCREATESTRUCT
+    {
+        HMENU  hWindowMenu;
+        UINT   idFirstChild;
+    } CLIENTCREATESTRUCT;
+    typedef CLIENTCREATESTRUCT FAR* LPCLIENTCREATESTRUCT;
+
+    // MDI client style bits
+
+    LRESULT WINAPI DefFrameProc([in] HWND hwnd, [in] HWND hwnd, UINT, WPARAM, LPARAM);
+    LRESULT WINAPI DefMDIChildProc([in] HWND hwnd, UINT, WPARAM, LPARAM);
+
+    BOOL    WINAPI TranslateMDISysAccel([in] HWND hwnd, MSG FAR*);
+
+    UINT    WINAPI ArrangeIconicWindows([in] HWND hwnd);
+    */
+
+    // ****** Dialog and Control Management *****
+
+    /*
+    typedef BOOL (CALLBACK* DLGPROC)(HWND, UINT, WPARAM, LPARAM);
+
+    BOOL    WINAPI IsDialogMessage([in] HWND hwnd, MSG FAR*);
+
+    LRESULT WINAPI DefDlgProc([in] HWND hwnd, UINT, WPARAM, LPARAM);
+
+    HWND    WINAPI CreateDialog([in] HINSTANCE hInst, LPCSTR, [in] HWND hwnd, DLGPROC);
+    HWND    WINAPI CreateDialogIndirect([in] HINSTANCE hInst, const void FAR*, [in] HWND hwnd, DLGPROC);
+    HWND    WINAPI CreateDialogParam([in] HINSTANCE hInst, LPCSTR, [in] HWND hwnd, DLGPROC, LPARAM);
+    HWND    WINAPI CreateDialogIndirectParam([in] HINSTANCE hInst, const void FAR*, [in] HWND hwnd, DLGPROC, LPARAM);
+
+    int     WINAPI DialogBox([in] HINSTANCE hInst, LPCSTR, [in] HWND hwnd, DLGPROC);
+    int     WINAPI DialogBoxIndirect([in] HINSTANCE hInst, HGLOBAL, [in] HWND hwnd, DLGPROC);
+    int     WINAPI DialogBoxParam([in] HINSTANCE hInst, LPCSTR, [in] HWND hwnd, DLGPROC, LPARAM);
+    int     WINAPI DialogBoxIndirectParam([in] HINSTANCE hInst, HGLOBAL, [in] HWND hwnd, DLGPROC, LPARAM);
+
+    void    WINAPI EndDialog([in] HWND hwnd, int);
+
+    int     WINAPI GetDlgCtrlID(HWND);
+    HWND    WINAPI GetDlgItem(HWND, int);
+    LRESULT WINAPI SendDlgItemMessage([in] HWND hwnd, int, UINT, WPARAM, LPARAM);
+
+    void    WINAPI SetDlgItemInt([in] HWND hwnd, int, UINT, BOOL);
+    UINT    WINAPI GetDlgItemInt([in] HWND hwnd, int, BOOL FAR* , BOOL);
+
+    void    WINAPI SetDlgItemText([in] HWND hwnd, int, LPCSTR);
+    int     WINAPI GetDlgItemText([in] HWND hwnd, int, LPSTR, int);
+
+    void    WINAPI CheckDlgButton([in] HWND hwnd, int, UINT);
+    void    WINAPI CheckRadioButton([in] HWND hwnd, int, int, int);
+    UINT    WINAPI IsDlgButtonChecked([in] HWND hwnd, int);
+
+    HWND    WINAPI GetNextDlgGroupItem(HWND, HWND, BOOL);
+    HWND    WINAPI GetNextDlgTabItem(HWND, HWND, BOOL);
+
+    void    WINAPI MapDialogRect(HWND, RECT FAR*);
+    DWORD   WINAPI GetDialogBaseUnits(void);
+
+
+    */
+
+    // ****** Dialog directory support ******
+
+    /*
+    int     WINAPI DlgDirList(HWND, LPSTR, int, int, UINT);
+    BOOL    WINAPI DlgDirSelect(HWND, LPSTR, int);
+
+    int     WINAPI DlgDirListComboBox(HWND, LPSTR, int, int, UINT);
+    BOOL    WINAPI DlgDirSelectComboBox(HWND, LPSTR, int);
+
+    BOOL    WINAPI DlgDirSelectEx(HWND, LPSTR, int, int);
+    BOOL    WINAPI DlgDirSelectComboBoxEx(HWND, LPSTR, int, int);
+    */
+
+    // ******* Omit Windows hook support ******
+
+    /*
+    DECLARE_HANDLE32(HHOOK);
+
+    typedef LRESULT (CALLBACK* HOOKPROC)(int code, WPARAM wParam, LPARAM lParam);
+
+    HHOOK   WINAPI SetWindowsHook(int, HOOKPROC);
+    LRESULT WINAPI DefHookProc(int, WPARAM, LPARAM, HHOOK FAR*);
+    BOOL    WINAPI UnhookWindowsHook(int, HOOKPROC);
+
+    HHOOK   WINAPI SetWindowsHookEx(int idHook, HOOKPROC lpfn, [in] HINSTANCE hInst hInstance, HTASK hTask);
+    BOOL    WINAPI UnhookWindowsHookEx(HHOOK hHook);
+    LRESULT WINAPI CallNextHookEx(HHOOK hHook, int code, WPARAM wParam, LPARAM lParam);
+    */
+
+    // ****** Omit Computer-based-training (CBT) support *********
+
+    /*
+    // HCBT_CREATEWND parameters pointed to by lParam
+    typedef struct tagCBT_CREATEWND
+    {
+        CREATESTRUCT FAR* lpcs;
+        HWND    hwndInsertAfter;
+    } CBT_CREATEWND;
+    typedef CBT_CREATEWND FAR* LPCBT_CREATEWND;
+
+    // HCBT_ACTIVATE structure pointed to by lParam
+    typedef struct tagCBTACTIVATESTRUCT
+    {
+        BOOL    fMouse;
+        HWND    hWndActive;
+    } CBTACTIVATESTRUCT;
+    */
+
+    // ****** Omit Hardware hook support
+
+    /*
+    typedef struct tagHARDWAREHOOKSTRUCT
+    {
+        HWND    hWnd;
+        UINT    wMessage;
+        WPARAM  wParam;
+        LPARAM  lParam;
+    } HARDWAREHOOKSTRUCT;
+    */
+
+    // ****** Omit Shell support ********
+
+    // ****** Omit Journalling support **
+
+    /*
+    // Journalling message structure
+    typedef struct tagEVENTMSG
+    {
+        UINT    message;
+        UINT    paramL;
+        UINT    paramH;
+        DWORD   time;
+    } EVENTMSG;
+    typedef EVENTMSG *PEVENTMSG;
+    typedef EVENTMSG NEAR* NPEVENTMSG;
+    typedef EVENTMSG FAR* LPEVENTMSG;
+
+    BOOL    WINAPI EnableHardwareInput(BOOL);
+    */
+
+    // ****** Omit Debugger support *****
+
+    /*
+    typedef struct tagDEBUGHOOKINFO
+    {
+        HMODULE hModuleHook;
+        LPARAM  reserved;
+        LPARAM  lParam;
+        WPARAM  wParam;
+        int         code;
+    } DEBUGHOOKINFO;
+    typedef DEBUGHOOKINFO FAR* LPDEBUGHOOKINFO;
+
+    BOOL WINAPI QuerySendMessage(HANDLE h1, HANDLE h2, HANDLE h3, LPMSG lpmsg);
+
+    BOOL WINAPI LockInput(HANDLE h1, HWND hwndInput, BOOL fLock);
+
+    LONG WINAPI GetSystemDebugState(void);
+    */
+
+    // ***** Process support ******
+    #ifdef WIN32
+    const DWORD IGNORE           = 0;
+    const DWORD INFINITE         = 0xFFFFFFFF;
+
+    const DWORD PROCESS_TERMINATE        = 0x0001;
+    const DWORD PROCESS_CREATE_THREAD    = 0x0002;
+    const DWORD PROCESS_VM_OPERATION     = 0x0008;
+    const DWORD PROCESS_VM_READ          = 0x0010;
+    const DWORD PROCESS_VM_WRITE         = 0x0020;
+    const DWORD PROCESS_DUP_HANDLE       = 0x0040;
+    const DWORD PROCESS_CREATE_PROCESS   = 0x0080;
+    const DWORD PROCESS_SET_QUOTA        = 0x0100;
+    const DWORD PROCESS_SET_INFORMATION  = 0x0200;
+    const DWORD PROCESS_QUERY_INFORMATION = 0x0400;
+    const DWORD PROCESS_ALL_ACCESS       = 0x001F0FFF;
+    #endif
+
+    // ****** Help support *********
+
+    /*
+    BOOL WINAPI WinHelp([in] HWND hwnd hwndMain, LPCSTR lpszHelp, UINT usCommand, DWORD ulData);
+
+    typedef struct tagMULTIKEYHELP
+    {
+        UINT    mkSize;
+        BYTE    mkKeylist;
+        BYTE    szKeyphrase[1];
+    } MULTIKEYHELP;
+
+
+    typedef struct
+    {
+        int  wStructSize;
+        int  x;
+        int  y;
+        int  dx;
+        int  dy;
+        int  wMax;
+        char rgchMember[2];
+    } HELPWININFO;
+    typedef HELPWININFO NEAR* PHELPWININFO;
+    typedef HELPWININFO FAR* LPHELPWININFO;
+    */
+
+    // ****** Omit Sound support (obsolete) *******
+
+    /*
+    int     WINAPI OpenSound(void);
+    void    WINAPI CloseSound(void);
+
+    int     WINAPI StartSound(void);
+    int     WINAPI StopSound(void);
+
+    int     WINAPI SetVoiceQueueSize(int, int);
+    int     WINAPI SetVoiceNote(int, int, int, int);
+    int     WINAPI SetVoiceAccent(int, int, int, int, int);
+    int     WINAPI SetVoiceEnvelope(int, int, int);
+    int     WINAPI SetVoiceSound(int, DWORD, int);
+
+    int     WINAPI SetVoiceThreshold(int, int);
+    int FAR* WINAPI GetThresholdEvent(void);
+    int     WINAPI GetThresholdStatus(void);
+
+    int     WINAPI SetSoundNoise(int, int);
+
+
+    int     WINAPI WaitSoundState(int);
+
+    // WaitSoundState() constants
+    //define S_QUEUEEMPTY       0
+    //define S_THRESHOLD        1
+    //define S_ALLTHRESHOLD     2
+
+    int     WINAPI SyncAllVoices(void);
+    int     WINAPI CountVoiceNotes(int);
+
+    // Accent Modes
+    //define S_NORMAL      0
+    //define S_LEGATO      1
+    //define S_STACCATO    2
+
+    // SetSoundNoise() Sources
+    //define S_PERIOD512   0    // Freq = N/512 high pitch, less coarse hiss
+    //define S_PERIOD1024  1    // Freq = N/1024
+    //define S_PERIOD2048  2    // Freq = N/2048 low pitch, more coarse hiss
+    //define S_PERIODVOICE 3    // Source is frequency from voice channel (3)
+    //define S_WHITE512   4     // Freq = N/512 high pitch, less coarse hiss
+    //define S_WHITE1024   5    // Freq = N/1024
+    //define S_WHITE2048   6    // Freq = N/2048 low pitch, more coarse hiss
+    //define S_WHITEVOICE  7    // Source is frequency from voice channel (3)
+
+    // Error return values
+    //define S_SERDVNA    (-1)  // Device not available
+    //define S_SEROFM     (-2)  // Out of memory
+    //define S_SERMACT    (-3)  // Music active
+    //define S_SERQFUL    (-4)  // Queue full
+    //define S_SERBDNT    (-5)  // Invalid note
+    //define S_SERDLN     (-6)  // Invalid note length
+    //define S_SERDCC     (-7)  // Invalid note count
+    //define S_SERDTP     (-8)  // Invalid tempo
+    //define S_SERDVL     (-9)  // Invalid volume
+    //define S_SERDMD     (-10) // Invalid mode
+    //define S_SERDSH     (-11) // Invalid shape
+    //define S_SERDPT     (-12) // Invalid pitch
+    //define S_SERDFQ     (-13) // Invalid frequency
+    //define S_SERDDR     (-14) // Invalid duration
+    //define S_SERDSR     (-15) // Invalid source
+    //define S_SERDST     (-16) // Invalid state
+    */
+
+    // ****** Comm support *******
+
+    /*
+    //define NOPARITY       0
+    //define ODDPARITY      1
+    //define EVENPARITY     2
+    //define MARKPARITY     3
+    //define SPACEPARITY        4
+
+    //define ONESTOPBIT     0
+    //define ONE5STOPBITS       1
+    //define TWOSTOPBITS        2
+
+    // Error Flags
+    //define CE_RXOVER          0x0001  // Receive Queue overflow
+    //define CE_OVERRUN         0x0002  // Receive Overrun Error
+    //define CE_RXPARITY        0x0004  // Receive Parity Error
+    //define CE_FRAME           0x0008  // Receive Framing error
+    //define CE_BREAK           0x0010  // Break Detected
+    //define CE_TXFULL          0x0100  // TX Queue is full
+    //define CE_PTO             0x0200  // LPTx Timeout
+    //define CE_IOE             0x0400  // LPTx I/O Error
+    //define CE_DNS             0x0800  // LPTx Device not selected
+    //define CE_OOP             0x1000  // LPTx Out-Of-Paper
+    //define CE_MODE            0x8000  // Requested mode unsupported
+
+    //define IE_BADID           (-1)    // Invalid or unsupported id
+    //define IE_OPEN            (-2)    // Device Already Open
+    //define IE_NOPEN           (-3)    // Device Not Open
+    //define IE_MEMORY          (-4)    // Unable to allocate queues
+    //define IE_DEFAULT         (-5)    // Error in default parameters
+    //define IE_HARDWARE        (-10)   // Hardware Not Present
+    //define IE_BYTESIZE        (-11)   // Illegal Byte Size
+    //define IE_BAUDRATE        (-12)   // Unsupported BaudRate
+
+    // Events
+    //define EV_RXCHAR          0x0001  // Any Character received
+    //define EV_RXFLAG          0x0002  // Received certain character
+    //define EV_TXEMPTY         0x0004  // Transmitt Queue Empty
+    //define EV_CTS             0x0008  // CTS changed state
+    //define EV_DSR             0x0010  // DSR changed state
+    //define EV_RLSD            0x0020  // RLSD changed state
+    //define EV_BREAK           0x0040  // BREAK received
+    //define EV_ERR             0x0080  // Line status error occurred
+    //define EV_RING            0x0100  // Ring signal detected
+    //define EV_PERR            0x0200  // Printer error occured
+    //define EV_RX80FULL        0x0400  // Receive buffer is 80 percent full
+    //define EV_EVENT1          0x0800  // Provider specific event 1
+    //define EV_EVENT2          0x1000  // Provider specific event 2
+
+    //define EV_CTSS             0x0400
+    //define EV_DSRS             0x0800
+    //define EV_RLSDS            0x1000
+    //define EV_RingTe           0x2000
+    //define EV_RINGTE      EV_RingTe
+
+    // Escape Functions
+    //define SETXOFF            1       // Simulate XOFF received
+    //define SETXON             2       // Simulate XON received
+    //define SETRTS             3       // Set RTS high
+    //define CLRRTS             4       // Set RTS low
+    //define SETDTR             5       // Set DTR high
+    //define CLRDTR             6       // Set DTR low
+    //define RESETDEV           7       // Reset device if possible
+    //define SETBREAK           8       // Set the device break line.
+    //define CLRBREAK           9       // Clear the device break line.
+
+    //define LPTx               0x80    // Set if ID is for LPT device
+
+
+    // new escape functions
+    //define GETMAXLPT           8
+    //define GETMAXCOM           9
+    //define GETBASEIRQ          10
+
+    // Comm Baud Rate indices
+    //define CBR_110         0xFF10
+    //define CBR_300      0xFF11
+    //define CBR_600      0xFF12
+    //define CBR_1200     0xFF13
+    //define CBR_2400     0xFF14
+    //define CBR_4800     0xFF15
+    //define CBR_9600     0xFF16
+    //define CBR_14400    0xFF17
+    //define CBR_19200    0xFF18
+    //define CBR_38400    0xFF1B
+    //define CBR_56000    0xFF1F
+    //define CBR_128000   0xFF23
+    //define CBR_256000   0xFF27
+
+    // notifications passed in low word of lParam on WM_COMMNOTIFY messages
+    //define CN_RECEIVE  0x0001
+    //define CN_TRANSMIT 0x0002
+    //define CN_EVENT    0x0004
+
+    //
+    // PURGE function flags.
+    //
+    //define PURGE_TXABORT      0x0001  // Kill the pending/current writes to the comm port.
+    //define PURGE_RXABORT      0x0002  // Kill the pending/current reads to the comm port.
+    //define PURGE_TXCLEAR      0x0004  // Kill the transmit queue if there.
+    //define PURGE_RXCLEAR      0x0008  // Kill the typeahead buffer if there.
+
+    //
+    // Modem Status Flags
+    //
+    //define MS_CTS_ON          ((DWORD)0x0010)
+    //define MS_DSR_ON          ((DWORD)0x0020)
+    //define MS_RING_ON         ((DWORD)0x0040)
+    //define MS_RLSD_ON         ((DWORD)0x0080)
+
+    //
+    // Serial provider type.
+    //
+
+    //define SP_SERIALCOMM   ((DWORD)0x00000001)
+
+    //
+    // Provider SubTypes
+    //
+
+    //define PST_UNSPECIFIED     ((DWORD)0x00000000)
+    //define PST_RS232           ((DWORD)0x00000001)
+    //define PST_PARALLELPORT    ((DWORD)0x00000002)
+    //define PST_RS422           ((DWORD)0x00000003)
+    //define PST_RS423           ((DWORD)0x00000004)
+    //define PST_RS449           ((DWORD)0x00000005)
+    //define PST_FAX             ((DWORD)0x00000021)
+    //define PST_SCANNER         ((DWORD)0x00000022)
+    //define PST_NETWORK_BRIDGE  ((DWORD)0x00000100)
+    //define PST_LAT             ((DWORD)0x00000101)
+    //define PST_TCPIP_TELNET    ((DWORD)0x00000102)
+    //define PST_X25             ((DWORD)0x00000103)
+
+
+    //
+    // Provider capabilities flags.
+    //
+
+    //define PCF_DTRDSR       ((DWORD)0x0001)
+    //define PCF_RTSCTS       ((DWORD)0x0002)
+    //define PCF_RLSD         ((DWORD)0x0004)
+    //define PCF_PARITY_CHECK  ((DWORD)0x0008)
+    //define PCF_XONXOFF      ((DWORD)0x0010)
+    //define PCF_SETXCHAR     ((DWORD)0x0020)
+    //define PCF_TOTALTIMEOUTS ((DWORD)0x0040)
+    //define PCF_INTTIMEOUTS   ((DWORD)0x0080)
+    //define PCF_SPECIALCHARS  ((DWORD)0x0100)
+    //define PCF_16BITMODE    ((DWORD)0x0200)
+
+    //
+    // Comm provider settable parameters.
+    //
+
+    //define SP_PARITY        ((DWORD)0x0001)
+    //define SP_BAUD          ((DWORD)0x0002)
+    //define SP_DATABITS      ((DWORD)0x0004)
+    //define SP_STOPBITS      ((DWORD)0x0008)
+    //define SP_HANDSHAKING   ((DWORD)0x0010)
+    //define SP_PARITY_CHECK   ((DWORD)0x0020)
+    //define SP_RLSD          ((DWORD)0x0040)
+
+    //
+    // Settable baud rates in the provider.
+    //
+
+    //define BAUD_075         ((DWORD)0x00000001)
+    //define BAUD_110         ((DWORD)0x00000002)
+    //define BAUD_134_5       ((DWORD)0x00000004)
+    //define BAUD_150         ((DWORD)0x00000008)
+    //define BAUD_300         ((DWORD)0x00000010)
+    //define BAUD_600         ((DWORD)0x00000020)
+    //define BAUD_1200        ((DWORD)0x00000040)
+    //define BAUD_1800        ((DWORD)0x00000080)
+    //define BAUD_2400        ((DWORD)0x00000100)
+    //define BAUD_4800        ((DWORD)0x00000200)
+    //define BAUD_7200        ((DWORD)0x00000400)
+    //define BAUD_9600        ((DWORD)0x00000800)
+    //define BAUD_14400       ((DWORD)0x00001000)
+    //define BAUD_19200       ((DWORD)0x00002000)
+    //define BAUD_38400       ((DWORD)0x00004000)
+    //define BAUD_56K         ((DWORD)0x00008000)
+    //define BAUD_128K        ((DWORD)0x00010000)
+    //define BAUD_115200      ((DWORD)0x00020000)
+    //define BAUD_57600       ((DWORD)0x00040000)
+    //define BAUD_USER        ((DWORD)0x10000000)
+
+    //
+    // Settable Data Bits
+    //
+
+    //define DATABITS_5       ((WORD)0x0001)
+    //define DATABITS_6       ((WORD)0x0002)
+    //define DATABITS_7       ((WORD)0x0004)
+    //define DATABITS_8       ((WORD)0x0008)
+    //define DATABITS_16      ((WORD)0x0010)
+    //define DATABITS_16X     ((WORD)0x0020)
+
+    //
+    // Settable Stop and Parity bits.
+    //
+
+    //define STOPBITS_10      ((WORD)0x0001)
+    //define STOPBITS_15      ((WORD)0x0002)
+    //define STOPBITS_20      ((WORD)0x0004)
+    //define PARITY_NONE      ((WORD)0x0100)
+    //define PARITY_ODD       ((WORD)0x0200)
+    //define PARITY_EVEN      ((WORD)0x0400)
+    //define PARITY_MARK      ((WORD)0x0800)
+    //define PARITY_SPACE     ((WORD)0x1000)
+
+    typedef struct _DCB {
+        DWORD DCBlength;      // sizeof(DCB)
+        DWORD BaudRate;       // Baudrate at which running
+        DWORD fBinary: 1;     // Binary Mode (skip EOF check)
+        DWORD fParity: 1;     // Enable parity checking
+        DWORD fOutxCtsFlow:1; // CTS handshaking on output
+        DWORD fOutxDsrFlow:1; // DSR handshaking on output
+        DWORD fDtrControl:2;  // DTR Flow control
+        DWORD fDsrSensitivity:1; // DSR Sensitivity
+        DWORD fTXContinueOnXoff: 1; // Continue TX when Xoff sent
+        DWORD fOutX: 1;       // Enable output X-ON/X-OFF
+        DWORD fInX: 1;        // Enable input X-ON/X-OFF
+        DWORD fErrorChar: 1;  // Enable Err Replacement
+        DWORD fNull: 1;       // Enable Null stripping
+        DWORD fRtsControl:2;  // Rts Flow control
+        DWORD fAbortOnError:1; // Abort all reads and writes on Error
+        DWORD fDummy2:17;     // Reserved
+        WORD wReserved;       // Not currently used
+        WORD XonLim;          // Transmit X-ON threshold
+        WORD XoffLim;         // Transmit X-OFF threshold
+        BYTE ByteSize;        // Number of bits/byte, 4-8
+        BYTE Parity;          // 0-4=None,Odd,Even,Mark,Space
+        BYTE StopBits;        // 0,1,2 = 1, 1.5, 2
+        char XonChar;         // Tx and Rx X-ON character
+        char XoffChar;        // Tx and Rx X-OFF character
+        char ErrorChar;       // Error replacement char
+        char EofChar;         // End of Input character
+        char EvtChar;         // Received Event character
+        WORD wReserved1;      // Fill for now.
+    } DCB, *LPDCB;
+
+    typedef struct tagCOMSTAT
+    {
+        BYTE status;
+        UINT cbInQue;
+        UINT cbOutQue;
+    } COMSTAT;
+
+    typedef struct _COMMTIMEOUTS {
+        DWORD ReadIntervalTimeout;          // Maximum time between read chars.
+        DWORD ReadTotalTimeoutMultiplier;   // Multiplier of characters.
+        DWORD ReadTotalTimeoutConstant;     // Constant in milliseconds.
+        DWORD WriteTotalTimeoutMultiplier;  // Multiplier of characters.
+        DWORD WriteTotalTimeoutConstant;    // Constant in milliseconds.
+    } COMMTIMEOUTS,*LPCOMMTIMEOUTS;
+
+    typedef struct _COMMCONFIG {
+        DWORD dwSize;
+        WORD wVersion;
+        WORD wReserved;
+        DCB dcb;
+        DWORD dwProviderSubType;
+        DWORD dwProviderOffset;
+        DWORD dwProviderSize;
+        WCHAR wcProviderData[1];
+    } COMMCONFIG,*LPCOMMCONFIG;
+
+    //define CSTF_CTSHOLD    0x01
+    //define CSTF_DSRHOLD    0x02
+    //define CSTF_RLSDHOLD   0x04
+    //define CSTF_XOFFHOLD   0x08
+    //define CSTF_XOFFSENT   0x10
+    //define CSTF_EOF        0x20
+    //define CSTF_TXIM       0x40
+
+    // NOTE: This structure declaration is not ANSI compatible!
+    typedef struct tagCOMSTAT
+    {
+        BYTE fCtsHold  :1;
+        BYTE fDsrHold  :1;
+        BYTE fRlsdHold :1;
+        BYTE fXoffHold :1;
+        BYTE fXoffSent :1;
+        BYTE fEof      :1;
+        BYTE fTxim     :1;
+        UINT cbInQue;
+        UINT cbOutQue;
+    } COMSTAT;
+
+    typedef struct _COMMPROP {
+        WORD wPacketLength;
+        WORD wPacketVersion;
+        DWORD dwServiceMask;
+        DWORD dwReserved1;
+        DWORD dwMaxTxQueue;
+        DWORD dwMaxRxQueue;
+        DWORD dwMaxBaud;
+        DWORD dwProvSubType;
+        DWORD dwProvCapabilities;
+        DWORD dwSettableParams;
+        DWORD dwSettableBaud;
+        WORD wSettableData;
+        WORD wSettableStopParity;
+        DWORD dwCurrentTxQueue;
+        DWORD dwCurrentRxQueue;
+        DWORD dwProvSpec1;
+        DWORD dwProvSpec2;
+        WCHAR wcProvChar[1];
+    } COMMPROP,*LPCOMMPROP;
+
+    //
+    // DTR Control Flow Values.
+    //
+    //define DTR_CONTROL_DISABLE    0x00
+    //define DTR_CONTROL_ENABLE    0x01
+    //define DTR_CONTROL_HANDSHAKE  0x02
+
+    //
+    // RTS Control Flow Values
+    //
+    //define RTS_CONTROL_DISABLE    0x00
+    //define RTS_CONTROL_ENABLE    0x01
+    //define RTS_CONTROL_HANDSHAKE  0x02
+    //define RTS_CONTROL_TOGGLE    0x03
+    */
+
+    /*
+    BOOL WINAPI ClearCommError(
+        HANDLE hFile,
+        LPDWORD lpErrors,
+        LPCOMSTAT lpStat
+        );
+
+    BOOL WINAPI SetupComm(
+        HANDLE hFile,
+        DWORD dwInQueue,
+        DWORD dwOutQueue
+        );
+
+    BOOL WINAPI GetCommConfig(
+        HANDLE hCommDev,
+        LPCOMMCONFIG lpCC,
+        LPDWORD lpdwSize
+        );
+
+    BOOL WINAPI GetCommMask(
+        HANDLE hFile,
+        LPDWORD lpEvtMask
+        );
+
+    BOOL WINAPI GetCommProperties(
+        HANDLE hFile,
+        LPCOMMPROP lpCommProp
+        );
+
+    BOOL WINAPI GetCommModemStatus(
+        HANDLE hFile,
+        LPDWORD lpModemStat
+        );
+
+    BOOL WINAPI GetCommTimeouts(
+        HANDLE hFile,
+        LPCOMMTIMEOUTS lpCommTimeouts
+        );
+
+    BOOL WINAPI PurgeComm(
+        HANDLE hFile,
+        DWORD dwFlags
+        );
+
+    BOOL WINAPI SetCommConfig(
+        HANDLE hCommDev,
+        LPCOMMCONFIG lpCC,
+        DWORD dwSize
+        );
+
+    BOOL WINAPI SetCommMask(
+        HANDLE hFile,
+        DWORD dwEvtMask
+        );
+
+    BOOL WINAPI SetCommTimeouts(
+        HANDLE hFile,
+        LPCOMMTIMEOUTS lpCommTimeouts
+        );
+
+    BOOL WINAPI WaitCommEvent(
+        HANDLE hFile,
+        LPDWORD lpEvtMask,
+        LPOVERLAPPED lpOverlapped
+        );
+
+    BOOL WINAPI BuildCommDCBA(
+        LPCSTR lpDef,
+        LPDCB lpDCB
+        );
+
+    BOOL WINAPI BuildCommDCBAndTimeoutsA(
+        LPCSTR lpDef,
+        LPDCB lpDCB,
+        LPCOMMTIMEOUTS lpCommTimeouts
+        );
+
+    BOOL WINAPI CommConfigDialogA(
+        LPCSTR lpszName,
+        HWND hWnd,
+        LPCOMMCONFIG lpCC
+        );
+
+    BOOL WINAPI GetDefaultCommConfigA(
+        LPCSTR lpszName,
+        LPCOMMCONFIG lpCC,
+        LPDWORD lpdwSize
+        );
+
+    BOOL WINAPI SetDefaultCommConfigA(
+        LPCSTR lpszName,
+        LPCOMMCONFIG lpCC,
+        DWORD dwSize
+        );
+
+    int     WINAPI OpenComm(LPCSTR, UINT, UINT);
+    int     WINAPI CloseComm(int);
+
+    int     WINAPI ReadComm(int, void FAR*, int);
+    int     WINAPI WriteComm(int, const void FAR*, int);
+    int     WINAPI UngetCommChar(int, char);
+    int     WINAPI FlushComm(int, int);
+    int     WINAPI TransmitCommChar(int, char);
+
+    int     WINAPI SetCommState(const DCB FAR*);
+    int     WINAPI GetCommState(int, DCB FAR*);
+    int     WINAPI GetCommError(int, COMSTAT FAR* );
+
+    int     WINAPI SetCommBreak(int);
+    int     WINAPI ClearCommBreak(int);
+
+    UINT FAR* WINAPI SetCommEventMask(int, UINT);
+    UINT    WINAPI GetCommEventMask(int, int);
+
+    LONG    WINAPI EscapeCommFunction(int, int);
+
+    BOOL    WINAPI EnableCommNotification(int, [in] HWND hwnd, int, int);
+    */
+
+    // ****** Omit String formatting support *********
+
+    /*
+    int     WINAPI wvsprintf(LPSTR lpszOut, LPCSTR lpszFmt, const void FAR* lpParams);
+
+    int FAR CDECL wsprintf(LPSTR lpszOut, LPCSTR lpszFmt, ...);
+    */
+
+    // ****** Driver support *******
+
+    /*
+    DECLARE_HANDLE(HDRVR);
+
+    typedef LRESULT (CALLBACK* DRIVERPROC)(DWORD, HDRVR, UINT, LPARAM, LPARAM);
+
+    // Driver messages
+    //define DRV_LOAD       0x0001
+    //define DRV_ENABLE     0x0002
+    //define DRV_OPEN       0x0003
+    //define DRV_CLOSE      0x0004
+    //define DRV_DISABLE        0x0005
+    //define DRV_FREE       0x0006
+    //define DRV_CONFIGURE      0x0007
+    //define DRV_QUERYCONFIGURE 0x0008
+    //define DRV_INSTALL        0x0009
+    //define DRV_REMOVE     0x000A
+    //define DRV_EXITSESSION         0x000B
+    //define DRV_EXITAPPLICATION     0x000C
+    //define DRV_POWER      0x000F
+
+    //define DRV_RESERVED       0x0800
+    //define DRV_USER       0x4000
+
+    // LPARAM of DRV_CONFIGURE message
+    typedef struct tagDRVCONFIGINFO
+    {
+        DWORD   dwDCISize;
+        LPCSTR  lpszDCISectionName;
+        LPCSTR  lpszDCIAliasName;
+    } DRVCONFIGINFO;
+    typedef DRVCONFIGINFO NEAR* PDRVCONFIGINFO;
+    typedef DRVCONFIGINFO FAR* LPDRVCONFIGINFO;
+
+    // Supported return values for DRV_CONFIGURE message
+    //define DRVCNF_CANCEL      0x0000
+    //define DRVCNF_OK      0x0001
+    //define DRVCNF_RESTART     0x0002
+
+    // Supported lParam1 of DRV_EXITAPPLICATION notification
+    //define DRVEA_NORMALEXIT            0x0001
+    //define DRVEA_ABNORMALEXIT          0x0002
+
+    LRESULT WINAPI DefDriverProc(DWORD dwDriverIdentifier, HDRVR driverID, UINT message, LPARAM lParam1, LPARAM lParam2);
+
+    HDRVR   WINAPI OpenDriver(LPCSTR szDriverName, LPCSTR szSectionName, LPARAM lParam2);
+    LRESULT WINAPI SendDriverMessage(HDRVR hDriver, UINT message, LPARAM lParam1, LPARAM lParam2);
+
+    HINSTANCE WINAPI GetDriverModuleHandle(HDRVR hDriver);
+
+    HDRVR   WINAPI GetNextDriver(HDRVR, DWORD);
+
+    // GetNextDriver flags
+    //define GND_FIRSTINSTANCEONLY  0x00000001
+
+    //define GND_FORWARD             0x00000000
+    //define GND_REVERSE        0x00000002
+
+    typedef struct tagDRIVERINFOSTRUCT
+    {
+        UINT    length;
+        HDRVR   hDriver;
+        HINSTANCE hModule;
+        char    szAliasName[128];
+    } DRIVERINFOSTRUCT;
+    typedef DRIVERINFOSTRUCT FAR* LPDRIVERINFOSTRUCT;
+
+    BOOL    WINAPI GetDriverInfo(HDRVR, DRIVERINFOSTRUCT FAR*);
+    */
+
+    #ifdef WIN32
+
+    [
+    usesgetlasterror,
+    entry("DrawEdge"),
+    helpstring("Draws a 3-D edge on a rectangle according to the given edge and border flags"),
+    ]
+    BOOL WINAPI DrawEdge([in] HDC hdc, [in] long * lprc,
+                         [in] UINT edge, [in] UINT grfFlags);
+
+    [
+    usesgetlasterror,
+    entry("DrawFrameControl"),
+    helpstring("Draws a control frame of a specified type and style"),
+    ]
+    BOOL WINAPI DrawFrameControl([in] HDC hdc, [in] long * lprc,
+                                 [in] UINT uType, [in] UINT uState);
+
+    [
+    usesgetlasterror,
+    entry("DrawAnimatedRects"),
+    helpstring("Draws a wire-frame rectangle and animates it to indicate opening an icon or minimizing or maximizing a window"),
+    ]
+    BOOL WINAPI DrawAnimatedRects([in] HWND hwnd, [in] int idAni,
+                                  [in] long * lprcFrom,
+                                  [in] long * lprcTo);
+
+    /*
+    [
+    usesgetlasterror,
+    entry("DrawCaption"),
+    helpstring("Draws a window caption"),
+    ]
+    BOOL WINAPI DrawCaption([in] HWND, [in] HDC, [in] CONST RECT *, [in] UINT);
+    */
+
+    #endif // WIN32
+
+    // ****** Color support *******
+
+    [
+    usesgetlasterror,
+    entry("GetSysColor"),
+    helpstring("Returns color of the specified display element"),
+    ]
+    COLORREF WINAPI GetSysColor([in] int nIndex);
+
+//@B SetSysColor
+    [
+    usesgetlasterror,
+    entry("SetSysColor"),
+    helpstring("Sets colors of the display element in the lpaElements array to the colors in the lpaRgbValues array"),
+    ]
+    void    WINAPI SetSysColors([in] int cElements,
+                                [in] int FAR * lpaElements,
+                                [in] COLORREF FAR * lpaRgbValues);
+//@E SetSysColor
+
+    // ****** Exit Windows support *******
+
+    [
+    usesgetlasterror,
+    entry("ExitWindows"),
+    helpstring("Exit from Windows, restarting or rebooting"),
+    ]
+    BOOL    WINAPI ExitWindows([in] DWORD dwReturnCode, [in] UINT reserved);
+
+
+    #ifdef WIN32
+    [
+    usesgetlasterror,
+    entry("ExitWindowsEx"),
+    helpstring("Exit from Windows, restarting or rebooting"),
+    ]
+    BOOL    WINAPI ExitWindowsEx([in] UINT uFlags, [in] DWORD dwReserved);
+    #endif
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("ExitWindowsExecA"),
+    #else
+    entry("ExitWindowsExec"),
+    #endif
+    helpstring("Exit from Windows, run a program, and restart"),
+    ]
+    BOOL    WINAPI ExitWindowsExec(
+                        [in] LPCSTR lpszExe, [in] LPCSTR lpszParams);
+
+}   // End module User
+
+
+[
+uuid(54674047-3A82-101B-8181-00AA003743D3),
+helpstring("Windows User Constants"),
+dllname("NOSUCH.DLL")
+]
+module UserConst {
+
+    // GetSystemMetrics() codes
+    const int SM_CXSCREEN     = 0;
+    const int SM_CYSCREEN     = 1;
+    const int SM_CXVSCROLL        = 2;
+    const int SM_CYHSCROLL        = 3;
+    const int SM_CYCAPTION        = 4;
+    const int SM_CXBORDER     = 5;
+    const int SM_CYBORDER     = 6;
+    const int SM_CXDLGFRAME   = 7;
+    const int SM_CYDLGFRAME   = 8;
+    const int SM_CYVTHUMB     = 9;
+    const int SM_CXHTHUMB     = 10;
+    const int SM_CXICON       = 11;
+    const int SM_CYICON       = 12;
+    const int SM_CXCURSOR     = 13;
+    const int SM_CYCURSOR     = 14;
+    const int SM_CYMENU           = 15;
+    const int SM_CXFULLSCREEN = 16;
+    const int SM_CYFULLSCREEN = 17;
+    const int SM_CYKANJIWINDOW    = 18;
+    const int SM_MOUSEPRESENT = 19;
+    const int SM_CYVSCROLL        = 20;
+    const int SM_CXHSCROLL        = 21;
+    const int SM_DEBUG            = 22;
+    const int SM_SWAPBUTTON   = 23;
+    const int SM_RESERVED1        = 24;
+    const int SM_RESERVED2        = 25;
+    const int SM_RESERVED3        = 26;
+    const int SM_RESERVED4        = 27;
+    const int SM_CXMIN            = 28;
+    const int SM_CYMIN            = 29;
+    const int SM_CXSIZE           = 30;
+    const int SM_CYSIZE           = 31;
+    const int SM_CXFRAME      = 32;
+    const int SM_CYFRAME      = 33;
+    const int SM_CXMINTRACK   = 34;
+    const int SM_CYMINTRACK   = 35;
+
+    const int SM_CXDOUBLECLK  = 36;
+    const int SM_CYDOUBLECLK  = 37;
+    const int SM_CXICONSPACING    = 38;
+    const int SM_CYICONSPACING    = 39;
+    const int SM_MENUDROPALIGNMENT = 40;
+    const int SM_PENWINDOWS       = 41;
+    const int SM_DBCSENABLED  = 42;
+
+    const int SM_CMETRICS     = 43;
+
+    // GetSysColor/SetSysColors
+    const int COLOR_SCROLLBAR             = 0;
+    const int COLOR_BACKGROUND            = 1;
+    const int COLOR_ACTIVECAPTION         = 2;
+    const int COLOR_INACTIVECAPTION       = 3;
+    const int COLOR_MENU                  = 4;
+    const int COLOR_WINDOW                = 5;
+    const int COLOR_WINDOWFRAME           = 6;
+    const int COLOR_MENUTEXT              = 7;
+    const int COLOR_WINDOWTEXT            = 8;
+    const int COLOR_CAPTIONTEXT           = 9;
+    const int COLOR_ACTIVEBORDER          = 10;
+    const int COLOR_INACTIVEBORDER        = 11;
+    const int COLOR_APPWORKSPACE          = 12;
+    const int COLOR_HIGHLIGHT             = 13;
+    const int COLOR_HIGHLIGHTTEXT         = 14;
+    const int COLOR_BTNFACE               = 15;
+    const int COLOR_BTNSHADOW             = 16;
+    const int COLOR_GRAYTEXT              = 17;
+    const int COLOR_BTNTEXT               = 18;
+    const int COLOR_INACTIVECAPTIONTEXT   = 19;
+    const int COLOR_BTNHIGHLIGHT          = 20;
+
+    const int COLOR_3DDKSHADOW            = 21;
+    const int COLOR_3DLIGHT               = 22;
+    const int COLOR_INFOTEXT              = 23;
+    const int COLOR_INFOBK                = 24;
+
+    const int COLOR_DESKTOP               = 1;  // COLOR_BACKGROUND
+    const int COLOR_3DFACE                = 15; // COLOR_BTNFACE
+    const int COLOR_3DSHADOW              = 16; // COLOR_BTNSHADOW
+    const int COLOR_3DHIGHLIGHT           = 20; // COLOR_BTNHIGHLIGHT
+    const int COLOR_3DHILIGHT             = 20; // COLOR_BTNHIGHLIGHT
+    const int COLOR_BTNHILIGHT            = 20; // COLOR_BTNHIGHLIGHT
+
+    const int SPI_GETBEEP                 = 1;
+    const int SPI_SETBEEP                 = 2;
+    const int SPI_GETMOUSE                = 3;
+    const int SPI_SETMOUSE                = 4;
+    const int SPI_GETBORDER               = 5;
+    const int SPI_SETBORDER               = 6;
+    const int SPI_GETKEYBOARDSPEED        = 10;
+    const int SPI_SETKEYBOARDSPEED        = 11;
+    const int SPI_LANGDRIVER              = 12;
+    const int SPI_ICONHORIZONTALSPACING   = 13;
+    const int SPI_GETSCREENSAVETIMEOUT    = 14;
+    const int SPI_SETSCREENSAVETIMEOUT    = 15;
+    const int SPI_GETSCREENSAVEACTIVE     = 16;
+    const int SPI_SETSCREENSAVEACTIVE     = 17;
+    const int SPI_GETGRIDGRANULARITY      = 18;
+    const int SPI_SETGRIDGRANULARITY      = 19;
+    const int SPI_SETDESKWALLPAPER        = 20;
+    const int SPI_SETDESKPATTERN          = 21;
+    const int SPI_GETKEYBOARDDELAY        = 22;
+    const int SPI_SETKEYBOARDDELAY        = 23;
+    const int SPI_ICONVERTICALSPACING     = 24;
+    const int SPI_GETICONTITLEWRAP        = 25;
+    const int SPI_SETICONTITLEWRAP        = 26;
+    const int SPI_GETMENUDROPALIGNMENT    = 27;
+    const int SPI_SETMENUDROPALIGNMENT    = 28;
+    const int SPI_SETDOUBLECLKWIDTH       = 29;
+    const int SPI_SETDOUBLECLKHEIGHT      = 30;
+    const int SPI_GETICONTITLELOGFONT     = 31;
+    const int SPI_SETDOUBLECLICKTIME      = 32;
+    const int SPI_SETMOUSEBUTTONSWAP      = 33;
+    const int SPI_SETICONTITLELOGFONT     = 34;
+    const int SPI_GETFASTTASKSWITCH       = 35;
+    const int SPI_SETFASTTASKSWITCH       = 36;
+
+    // SystemParametersInfo flags
+    const int SPIF_UPDATEINIFILE       = 0x0001;
+    const int SPIF_SENDWININICHANGE    = 0x0002;
+
+    // Scroll bar selection constants
+    const int SB_HORZ         = 0;
+    const int SB_VERT         = 1;
+    const int SB_CTL          = 2;
+    const int SB_BOTH         = 3;
+
+    // EnableScrollBar() flags
+    const int ESB_ENABLE_BOTH      = 0x0000;
+    const int ESB_DISABLE_BOTH     = 0x0003;
+
+    const int ESB_DISABLE_LEFT     = 0x0001;
+    const int ESB_DISABLE_RIGHT    = 0x0002;
+
+    const int ESB_DISABLE_UP       = 0x0001;
+    const int ESB_DISABLE_DOWN     = 0x0002;
+
+    const int ESB_DISABLE_LTUP     = 0x0001;
+    const int ESB_DISABLE_RTDN     = 0x0002;
+
+    // Window field offsets for GetWindowLong() and GetWindowWord()
+    [ helpstring("Window long: Window proc") ]
+    const int GWL_WNDPROC       = -4;
+    [ helpstring("Window long: Style") ]
+    const int GWL_STYLE         = -16;
+    [ helpstring("Window long: Extended style") ]
+    const int GWL_EXSTYLE       = -20;
+    [ helpstring("Window data: Instance handle") ]
+    const int GWD_HINSTANCE     = -6;
+    [ helpstring("Window data: Window parent") ]
+    const int GWD_HWNDPARENT    = -8;
+    [ helpstring("Window data: ID") ]
+    const int GWD_ID            = -12;
+    #ifdef WIN32
+    [ helpstring("Window long: Instance handle") ]
+    const int GWL_HINSTANCE     = -6;
+    [ helpstring("Window long: Window parent") ]
+    const int GWL_HWNDPARENT    = -8;
+    [ helpstring("Window long: ID") ]
+    const int GWL_ID            = -12;
+    [ helpstring("Window long: User data") ]
+    const int GWL_USERDATA      = -21;
+    #else
+    [ helpstring("Window word: Instance handle") ]
+    const int GWW_HINSTANCE     = -6;
+    [ helpstring("Window word: Window parent") ]
+    const int GWW_HWNDPARENT    = -8;
+    [ helpstring("Window word: ID") ]
+    const int GWW_ID            = -12;
+    #endif
+
+    // Class field offsets for GetClassLong() and GetClassWord()
+    [ helpstring("Class long: Menu name") ]
+    const int GCL_MENUNAME      = -8;
+    [ helpstring("Class long: Window proc") ]
+    const int GCL_WNDPROC       = -24;
+    [ helpstring("Class word: Atom") ]
+    const int GCW_ATOM          = -32;
+    [ helpstring("Class data: Background brush handle") ]
+    const int GCD_HBRBACKGROUND = -10;
+    [ helpstring("Class data: Cursor handle") ]
+    const int GCD_HCURSOR       = -12;
+    [ helpstring("Class data: Icon handle") ]
+    const int GCD_HICON         = -14;
+    [ helpstring("Class data: Module handle") ]
+    const int GCD_HMODULE       = -16;
+    [ helpstring("Class data: Window extra byte count") ]
+    const int GCD_CBWNDEXTRA    = -18;
+    [ helpstring("Class data: Class extra byte count") ]
+    const int GCD_CBCLSEXTRA    = -20;
+    [ helpstring("Class data: Style") ]
+    const int GCD_STYLE         = -26;
+    #ifdef WIN32
+    [ helpstring("Class long: Background brush handle") ]
+    const int GCL_HBRBACKGROUND = -10;
+    [ helpstring("Class long: Cursor handle") ]
+    const int GCL_HCURSOR       = -12;
+    [ helpstring("Class long: Module handle") ]
+    const int GCL_HICON         = -14;
+    [ helpstring("Class long: Module handle") ]
+    const int GCL_HMODULE       = -16;
+    [ helpstring("Class long: Window extra byte count") ]
+    const int GCL_CBWNDEXTRA    = -18;
+    [ helpstring("Class long: Class extra byte count") ]
+    const int GCL_CBCLSEXTRA    = -20;
+    [ helpstring("Class data: Style") ]
+    const int GCL_STYLE         = -26;
+    #else
+    [ helpstring("Class word: Background brush handle") ]
+    const int GCW_HBRBACKGROUND = -10;
+    [ helpstring("Class word: Cursor handle") ]
+    const int GCW_HCURSOR       = -12;
+    [ helpstring("Class word: Icon handle") ]
+    const int GCW_HICON         = -14;
+    [ helpstring("Class word: Module handle") ]
+    const int GCW_HMODULE       = -16;
+    [ helpstring("Class word: Window extra byte count") ]
+    const int GCW_CBWNDEXTRA    = -18;
+    [ helpstring("Class word: Class extra byte count") ]
+    const int GCW_CBCLSEXTRA    = -20;
+    [ helpstring("Class data: Style") ]
+    const int GCW_STYLE         = -26;
+    #endif
+
+    // Class styles
+    [ helpstring("Class style: Redraw for vertical change") ]
+    const int CS_VREDRAW      = 0x0001;
+    [ helpstring("Class style: Redraw for horizontal change") ]
+    const int CS_HREDRAW      = 0x0002;
+
+    [ helpstring("Class style: DC for each window instance") ]
+    const int CS_OWNDC        = 0x0020;
+    [ helpstring("Class style: DC shared by class") ]
+    const int CS_CLASSDC      = 0x0040;
+    [ helpstring("Class style: Use DC of parent") ]
+    const int CS_PARENTDC     = 0x0080;
+
+    [ helpstring("Class style: Save screen image behind window") ]
+    const int CS_SAVEBITS     = 0x0800;
+
+    [ helpstring("Class style: Send double click message to window") ]
+    const int CS_DBLCLKS      = 0x0008;
+
+    [ helpstring("Class style: Align client area on x byte boundary") ]
+    const int CS_BYTEALIGNCLIENT  = 0x1000;
+    [ helpstring("Class style: Align window on x byte boundary") ]
+    const int CS_BYTEALIGNWINDOW  = 0x2000;
+
+    [ helpstring("Class style: Inhibit close on system menu") ]
+    const int CS_NOCLOSE      = 0x0200;
+
+    // ???
+    // const int CS_KEYCVTWINDOW    = 0x0004;
+    // const int CS_NOKEYCVT      = 0x0100;
+
+    [ helpstring("Class style: Application global") ]
+    const int CS_GLOBALCLASS      = 0x4000;
+
+    // ShowWindow/WinExec constants
+
+    [ helpstring("WinExec/ShowWindow: Hide window and activate next window") ]
+    const int SW_HIDE               = 0;
+    [ helpstring("WinExec/ShowWindow: Activate window in its current state") ]
+    const int SW_SHOWNORMAL         = 1;
+    [ helpstring("WinExec/ShowWindow: Activate window in its current state") ]
+    const int SW_NORMAL             = 1;
+    [ helpstring("WinExec/ShowWindow: Activate and minimize window") ]
+    const int SW_SHOWMINIMIZED      = 2;
+    [ helpstring("WinExec/ShowWindow: Activate and maximize window") ]
+    const int SW_SHOWMAXIMIZED      = 3;
+    [ helpstring("WinExec/ShowWindow: Activate and maximize window") ]
+    const int SW_MAXIMIZE           = 3;
+    [ helpstring("WinExec/ShowWindow: Show window in current state, but don't change active window") ]
+    const int SW_SHOWNOACTIVATE     = 4;
+    [ helpstring("WinExec/ShowWindow: Show window in current or startup state") ]
+    const int SW_SHOW               = 5;
+    [ helpstring("WinExec/ShowWindow: Minimize window and make next window active") ]
+    const int SW_MINIMIZE           = 6;
+    [ helpstring("WinExec/ShowWindow: Minimize window, but don't change active window") ]
+    const int SW_SHOWMINNOACTIVE    = 7;
+    [ helpstring("WinExec/ShowWindow: Show window in current state, but don't change active window") ]
+    const int SW_SHOWNA             = 8;
+    [ helpstring("WinExec/ShowWindow: Make window active, and restore from miminized or maximized state") ]
+    const int SW_RESTORE            = 9;
+    [ helpstring("ShowWindow: Show window in startup state") ]
+    const int SW_DEFAULT            = 10;
+
+    /* Obsolete ShowWindow() command names
+    const int HIDE_WINDOW           = 0;
+    const int SHOW_OPENWINDOW       = 1;
+    const int SHOW_ICONWINDOW       = 2;
+    const int SHOW_FULLSCREEN       = 3;
+    const int SHOW_OPENNOACTIVATE   = 4;
+    */
+
+    // Window Styles
+
+    // Basic window types
+    [ helpstring("Window style: overlapped") ]
+    const long WS_OVERLAPPED    = 0x00000000;
+    [ helpstring("Window style: popup") ]
+    const long WS_POPUP         = 0x80000000;
+    [ helpstring("Window style: child") ]
+    const long WS_CHILD         = 0x40000000;
+
+    // Clipping styles
+    [ helpstring("Window style: clip sibblings") ]
+    const long WS_CLIPSIBLINGS  = 0x04000000;
+    [ helpstring("Window style: clip children") ]
+    const long WS_CLIPCHILDREN  = 0x02000000;
+
+    // Generic window states
+    [ helpstring("Window style: visible") ]
+    const long WS_VISIBLE       = 0x10000000;
+    [ helpstring("Window style: disabled") ]
+    const long WS_DISABLED      = 0x08000000;
+
+    // Main window states
+    [ helpstring("Window style: minimized") ]
+    const long WS_MINIMIZE      = 0x20000000;
+    [ helpstring("Window style: maximized") ]
+    const long WS_MAXIMIZE      = 0x01000000;
+
+    // Main window styles
+    [ helpstring("Window style: has caption") ]
+    const long WS_CAPTION       = 0x00C00000;   // WS_BORDER | WS_DLGFRAME
+    [ helpstring("Window style: has border") ]
+    const long WS_BORDER        = 0x00800000;
+    [ helpstring("Window style: has dialog frame") ]
+    const long WS_DLGFRAME      = 0x00400000;
+    [ helpstring("Window style: has vertical scroll bar") ]
+    const long WS_VSCROLL       = 0x00200000;
+    [ helpstring("Window style: has horizontal scroll bar") ]
+    const long WS_HSCROLL       = 0x00100000;
+    [ helpstring("Window style: has system menu") ]
+    const long WS_SYSMENU       = 0x00080000;
+    [ helpstring("Window style: has thick frame") ]
+    const long WS_THICKFRAME    = 0x00040000;
+    [ helpstring("Window style: has minimize box") ]
+    const long WS_MINIMIZEBOX   = 0x00020000;
+    [ helpstring("Window style: has maximize box") ]
+    const long WS_MAXIMIZEBOX   = 0x00010000;
+
+    // Control window styles
+    [ helpstring("Window style: part of group") ]
+    const long WS_GROUP         = 0x00020000;
+    [ helpstring("Window style: has tabstop") ]
+    const long WS_TABSTOP       = 0x00010000;
+
+    // Common Window Styles
+    [ helpstring("Window style: overlapped window (WS_OVERLAPPED, WS_CAPTION, WS_SYSMENU, WS_THICKFRAME, WS_MINIMIZEBOX, and WS_MAXIMIZEBOX)") ]
+    const long WS_OVERLAPPEDWINDOW = 0x00CF0000;
+
+    [ helpstring("Window style: popup window (WS_POPUP, WS_BORDER, and WS_SYSMENU)") ]
+    const long WS_POPUPWINDOW   = 0x80880000;
+
+    [ helpstring("Window style: child window (WS_CHILD)") ]
+    const long WS_CHILDWINDOW   = 0x40000000;
+
+    // Extended Window Styles
+    [ helpstring("Extended window style: dialog modal frame") ]
+    const long WS_EX_DLGMODALFRAME  = 0x00000001;
+    [ helpstring("Extended window style: don't notify parent") ]
+    const long WS_EX_NOPARENTNOTIFY = 0x00000004;
+
+    [ helpstring("Extended window style: keep topmost") ]
+    const long WS_EX_TOPMOST        = 0x00000008;
+    [ helpstring("Extended window style: accept dragged files") ]
+    const long WS_EX_ACCEPTFILES    = 0x00000010;
+    [ helpstring("Extended window style: transparent") ]
+    const long WS_EX_TRANSPARENT    = 0x00000020;
+
+    /* Obsolete style names
+    const long WS_TILED         = 0x00000000;
+    const long WS_ICONIC        = 0x20000000;
+    const long WS_SIZEBOX       = 0x00040000;
+    const long WS_TILEDWINDOW   = 0x00CF0000;
+    */
+
+    // Special value for CreateWindow, et al.
+    const int HWND_DESKTOP             = 0;
+
+    const UINT CW_USEDEFAULT           = H8000; // Hack to get 0x8000
+
+    const UINT WPF_SETMINPOSITION      = 0x0001;
+    const UINT WPF_RESTORETOMAXIMIZED  = 0x0002;
+
+    // GetWindow() constants
+    [ helpstring("GetWindow: Get first sibling") ]
+    const int GW_HWNDFIRST  = 0;
+    [ helpstring("GetWindow: Get last sibling") ]
+    const int GW_HWNDLAST   = 1;
+    [ helpstring("GetWindow: Get next sibling") ]
+    const int GW_HWNDNEXT   = 2;
+    [ helpstring("GetWindow: Get previous sibling") ]
+    const int GW_HWNDPREV   = 3;
+    [ helpstring("GetWindow: Get owner") ]
+    const int GW_OWNER      = 4;
+    [ helpstring("GetWindow: Get first child window") ]
+    const int GW_CHILD      = 5;
+
+    // SetWindowPos() and WINDOWPOS flags
+    [ helpstring("SetWindowPos: Retain size (ignore cx and cy)") ]
+    const int SWP_NOSIZE      = 0x0001;
+    [ helpstring("SetWindowPos: Retain size (ignore x and y)") ]
+    const int SWP_NOMOVE      = 0x0002;
+    [ helpstring("SetWindowPos: Retain z-order (ignore hwndInsertAfter)") ]
+    const int SWP_NOZORDER        = 0x0004;
+    [ helpstring("SetWindowPos: Don't redraw window") ]
+    const int SWP_NOREDRAW        = 0x0008;
+    [ helpstring("SetWindowPos: Don't activate window") ]
+    const int SWP_NOACTIVATE      = 0x0010;
+    [ helpstring("SetWindowPos: Send WM_NCCALCSIZE") ]
+    const int SWP_FRAMECHANGED    = 0x0020; // The frame changed: send WM_NCCALCSIZE
+    [ helpstring("SetWindowPos: Display window") ]
+    const int SWP_SHOWWINDOW      = 0x0040;
+    [ helpstring("SetWindowPos: Hide window") ]
+    const int SWP_HIDEWINDOW      = 0x0080;
+    [ helpstring("SetWindowPos: Don't copy bits of client area") ]
+    const int SWP_NOCOPYBITS      = 0x0100;
+    [ helpstring("SetWindowPos: Don't do owner z-ordering") ]
+    const int SWP_NOOWNERZORDER   = 0x0200; // Don't do owner Z ordering
+
+    [ helpstring("SetWindowPos: Draw frame around window") ]
+    const int SWP_DRAWFRAME       = 0x0020;
+    [ helpstring("SetWindowPos: Don't do owner z-ordering") ]
+    const int SWP_NOREPOSITION    = 0x0200;
+
+    const int SWP_NOSENDCHANGING  = 0x0400;
+    const int SWP_DEFERERASE      = 0x2000;
+
+    // SetWindowPos() hwndInsertAfter field values
+    [ helpstring("SetWindowPos: Put at top of z-order") ]
+    const int HWND_TOP            = 0;
+    [ helpstring("SetWindowPos: Put at bottom of z-order") ]
+    const int HWND_BOTTOM         = 1;
+    [ helpstring("SetWindowPos: Put above all non-topmost windows in z-order") ]
+    const int HWND_TOPMOST        = -1;
+    [ helpstring("SetWindowPos: Put at top non-topmost windows in z-order") ]
+    const int HWND_NOTOPMOST      = -2;
+
+    /*
+    const long DCX_WINDOW         = 0x00000001;
+    const long DCX_CACHE          = 0x00000002;
+    const long DCX_CLIPCHILDREN   = 0x00000008;
+    const long DCX_CLIPSIBLINGS   = 0x00000010;
+    const long DCX_PARENTCLIP     = 0x00000020;
+
+    const long DCX_EXCLUDERGN     = 0x00000040;
+    const long DCX_INTERSECTRGN   = 0x00000080;
+
+    const long DCX_LOCKWINDOWUPDATE = 0x00000400;
+
+    const long DCX_USESTYLE       = 0x00010000;
+
+    const int RDW_INVALIDATE      = 0001;
+    const int RDW_INTERNALPAINT   = 0002;
+    const int RDW_ERASE           = 0004;
+
+    const int RDW_VALIDATE        = 0008;
+    const int RDW_NOINTERNALPAINT = 0010;
+    const int RDW_NOERASE         = 0020;
+
+    const int RDW_NOCHILDREN      = 0040;
+    const int RDW_ALLCHILDREN     = 0080;
+
+    const int RDW_UPDATENOW       = 0100;
+    const int RDW_ERASENOW        = 0200;
+
+    const int RDW_FRAME           = 0400;
+    const int RDW_NOFRAME         = 0800;
+
+    const int SW_SCROLLCHILDREN   = 0001;
+    const int SW_INVALIDATE       = 0002;
+    const int SW_ERASE            = 0004;
+
+    // Predefined Clipboard Formats
+    const int CF_TEXT          = 1;
+    const int CF_BITMAP        = 2;
+    const int CF_METAFILEPICT  = 3;
+    const int CF_SYLK          = 4;
+    const int CF_DIF           = 5;
+    const int CF_TIFF          = 6;
+    const int CF_OEMTEXT       = 7;
+    const int CF_DIB           = 8;
+    const int CF_PALETTE       = 9;
+    const int CF_PENDATA       = 10;
+    const int CF_RIFF          = 11;
+    const int CF_WAVE          = 12;
+
+    const int CF_OWNERDISPLAY  = 0x0080;
+    const int CF_DSPTEXT      = 0x0081;
+    const int CF_DSPBITMAP        = 0x0082;
+    const int CF_DSPMETAFILEPICT  = 0x0083;
+
+    // Private formats don't get GlobalFree()'d
+    const int CF_PRIVATEFIRST  = 0x0200;
+    const int CF_PRIVATELAST      = 0x02FF;
+
+    // GDIOBJ formats do get DeleteObject()'d
+    const int CF_GDIOBJFIRST      = 0x0300;
+    const int CF_GDIOBJLAST       = 0x03FF;
+    */
+
+    // Standard cursor resource IDs
+    [ helpstring("Standard cursor: Arrow") ]
+    const long IDC_ARROW          = 32512;
+    [ helpstring("Standard cursor: I-Beam") ]
+    const long IDC_IBEAM          = 32513;
+    [ helpstring("Standard cursor: Hourglass") ]
+    const long IDC_WAIT           = 32514;
+    [ helpstring("Standard cursor: Cross") ]
+    const long IDC_CROSS          = 32515;
+    [ helpstring("Standard cursor: Up arrow") ]
+    const long IDC_UPARROW        = 32516;
+    [ helpstring("Standard cursor: Resize") ]
+    const long IDC_SIZE           = 32640;
+    [ helpstring("Standard cursor: Icon") ]
+    const long IDC_ICON           = 32641;
+    [ helpstring("Standard cursor: Northwest-southeast size") ]
+    const long IDC_SIZENWSE       = 32642;
+    [ helpstring("Standard cursor: Northeast-southwest size") ]
+    const long IDC_SIZENESW       = 32643;
+    [ helpstring("Standard cursor: West-east size") ]
+    const long IDC_SIZEWE         = 32644;
+    [ helpstring("Standard cursor: North-south size") ]
+    const long IDC_SIZENS         = 32645;
+
+    // Standard icon resource IDs
+    [ helpstring("Standard icon: Application") ]
+    const long IDI_APPLICATION  = 32512;
+    [ helpstring("Standard icon: Hand") ]
+    const long IDI_HAND         = 32513;
+    [ helpstring("Standard icon: Question mark") ]
+    const long IDI_QUESTION     = 32514;
+    [ helpstring("Standard icon: Exclamation mark") ]
+    const long IDI_EXCLAMATION  = 32515;
+    [ helpstring("Standard icon: Asterisk") ]
+    const long IDI_ASTERISK     = 32516;
+
+    #if WIN32
+    [ helpstring("LoadImage: Bitmap") ]
+    const long IMAGE_BITMAP         = 0;
+    [ helpstring("LoadImage: Icon") ]
+    const long IMAGE_ICON           = 1;
+    [ helpstring("LoadImage: Cursor") ]
+    const long IMAGE_CURSOR         = 2;
+    [ helpstring("LoadImage: Metafile") ]
+    const long IMAGE_ENHMETAFILE    = 3;
+
+    [ helpstring("LoadImage: Use the color format of the display") ]
+    const long LR_DEFAULTCOLOR      = 0x0000;
+    [ helpstring("LoadImage or CopyImage: Convert to black and white") ]
+    const long LR_MONOCHROME        = 0x0001;
+    const long LR_COLOR             = 0x0002;
+    [ helpstring("CopyImage: Copy exactly, ignoring desired size") ]
+    const long LR_COPYRETURNORG     = 0x0004;
+    [ helpstring("CopyImage: Delete original image after making copy") ]
+    const long LR_COPYDELETEORG     = 0x0008;
+    [ helpstring("LoadImage: Load from file rather than resource") ]
+    const long LR_LOADFROMFILE      = 0x0010;
+    [ helpstring("LoadImage: Use window color for all pixels matching color of first image pixel") ]
+    const long LR_LOADTRANSPARENT   = 0x0020;
+    [ helpstring("LoadImage: Use system default size or resource default size") ]
+    const long LR_DEFAULTSIZE       = 0x0040;
+    const long LR_LOADREALSIZE      = 0x0080;
+    [ helpstring("LoadImage: Replace shades of gray with 3D system colors") ]
+    const long LR_LOADMAP3DCOLORS   = 0x1000;
+    const long LR_CREATEDIBSECTION  = 0x2000;
+
+    [ helpstring("DrawIconEx: Blits the mask") ]
+    const long DI_MASK              = 0x0001;
+    [ helpstring("DrawIconEx: Blits the image") ]
+    const long DI_IMAGE             = 0x0002;
+    [ helpstring("DrawIconEx: Blits the image and mask") ]
+    const long DI_NORMAL            = 0x0003;
+    [ helpstring("DrawIconEx: Uses the system default images rather than given image") ]
+    const long DI_COMPAT            = 0x0004;
+    [ helpstring("DrawIconEx: Draws default size, ignoring width and height arguments") ]
+    const long DI_DEFAULTSIZE       = 0x0008;
+    #endif
+
+    /*
+    const int MB_OK           = 0x0000;
+    const int MB_OKCANCEL     = 0x0001;
+    const int MB_ABORTRETRYIGNORE = 0x0002;
+    const int MB_YESNOCANCEL      = 0x0003;
+    const int MB_YESNO        = 0x0004;
+    const int MB_RETRYCANCEL      = 0x0005;
+    const int MB_TYPEMASK     = 0x000F;
+
+    const int MB_ICONHAND     = 0x0010;
+    const int MB_ICONQUESTION     = 0x0020;
+    const int MB_ICONEXCLAMATION  = 0x0030;
+    const int MB_ICONASTERISK  = 0x0040;
+    const int MB_ICONMASK     = 0x00F0;
+
+    const int MB_ICONINFORMATION  = 0x0040;
+    const int MB_ICONSTOP      = 0x0010;
+
+    const int MB_DEFBUTTON1       = 0x0000;
+    const int MB_DEFBUTTON2       = 0x0100;
+    const int MB_DEFBUTTON3       = 0x0200;
+    const int MB_DEFMASK      = 0x0F00;
+
+    const int MB_APPLMODAL        = 0x0000;
+    const int MB_SYSTEMMODAL      = 0x1000;
+    const int MB_TASKMODAL        = 0x2000;
+
+    const int MB_NOFOCUS      = 0x8000;
+
+    const int MDIS_ALLCHILDSTYLES = 0x0001;
+    */
+
+    /*
+    // Dialog window class
+    const int MAXINTATOM = 0xC000;
+    //define MAKEINTATOM(i) (LPTSTR)((DWORD)((WORD)(i)))
+    const int INVALID_ATOM  = 0;
+
+    const int WC_DIALOG   (MAKEINTATOM(0x8002))
+
+    // cbWndExtra bytes needed by dialog manager for dialog classes
+    const int DLGWINDOWEXTRA  = 30;
+
+    // Dialog styles
+    const long DS_ABSALIGN        = 0x01;
+    const long DS_SYSMODAL        = 0x02;
+    const long DS_LOCALEDIT        = 0x20;
+    const long DS_SETFONT          = 0x40;
+    const long DS_MODALFRAME       = 0x80;
+    const long DS_NOIDLEMSG        = 0x100;
+
+    // Get/SetWindowWord/Long offsets for use with WC_DIALOG windows
+    const int DWL_MSGRESULT   = 0;
+    const int DWL_DLGPROC = 4;
+    const int DWL_USER    = 8;
+
+    // Standard dialog button IDs
+    const int IDOK            = 1;
+    const int IDCANCEL        = 2;
+    const int IDABORT     = 3;
+    const int IDRETRY     = 4;
+    const int IDIGNORE        = 5;
+    const int IDYES           = 6;
+    const int IDNO            = 7;
+    */
+
+    // ****** Owner draw control support ********
+    /*
+    // Owner draw control types
+    const int ODT_MENU    = 1;
+    const int ODT_LISTBOX = 2;
+    const int ODT_COMBOBOX    = 3;
+    const int ODT_BUTTON  = 4;
+
+    // Owner draw actions
+    const int ODA_DRAWENTIRE  = 0x0001;
+    const int ODA_SELECT  = 0x0002;
+    const int ODA_FOCUS   = 0x0004;
+
+    // Owner draw state
+    const int ODS_SELECTED    = 0x0001;
+    const int ODS_GRAYED  = 0x0002;
+    const int ODS_DISABLED    = 0x0004;
+    const int ODS_CHECKED = 0x0008;
+    const int ODS_FOCUS   = 0x0010;
+    */
+
+    // ****** Static control *******
+    /*
+    // Static Control Styles
+    const DWORD SS_LEFT        = 0x00000000;
+    const DWORD SS_CENTER      = 0x00000001;
+    const DWORD SS_RIGHT       = 0x00000002;
+    const DWORD SS_ICON        = 0x00000003;
+    const DWORD SS_BLACKRECT       = 0x00000004;
+    const DWORD SS_GRAYRECT        = 0x00000005;
+    const DWORD SS_WHITERECT       = 0x00000006;
+    const DWORD SS_BLACKFRAME      = 0x00000007;
+    const DWORD SS_GRAYFRAME       = 0x00000008;
+    const DWORD SS_WHITEFRAME      = 0x00000009;
+    const DWORD SS_SIMPLE      = 0x0000000B;
+    const DWORD SS_LEFTNOWORDWRAP   = 0x0000000C;
+    const DWORD SS_NOPREFIX         = 0x00000080;
+
+    // ****** Button control ******
+
+    // Button Control Styles
+    const DWORD BS_PUSHBUTTON      = 0x00000000;
+    const DWORD BS_DEFPUSHBUTTON    = 0x00000001;
+    const DWORD BS_CHECKBOX        = 0x00000002;
+    const DWORD BS_AUTOCHECKBOX     = 0x00000003;
+    const DWORD BS_RADIOBUTTON     = 0x00000004;
+    const DWORD BS_3STATE      = 0x00000005;
+    const DWORD BS_AUTO3STATE      = 0x00000006;
+    const DWORD BS_GROUPBOX        = 0x00000007;
+    const DWORD BS_USERBUTTON      = 0x00000008;
+    const DWORD BS_AUTORADIOBUTTON  = 0x00000009;
+    const DWORD BS_OWNERDRAW       = 0x0000000B;
+    const DWORD BS_LEFTTEXT        = 0x00000020;
+    */
+
+    // ****** Edit control ********
+
+    // Edit control styles
+    const DWORD ES_LEFT        = 0x00000000;
+    const DWORD ES_CENTER      = 0x00000001;
+    const DWORD ES_RIGHT       = 0x00000002;
+    const DWORD ES_MULTILINE   = 0x00000004;
+    const DWORD ES_UPPERCASE   = 0x00000008;
+    const DWORD ES_LOWERCASE   = 0x00000010;
+    const DWORD ES_PASSWORD    = 0x00000020;
+    const DWORD ES_AUTOVSCROLL = 0x00000040;
+    const DWORD ES_AUTOHSCROLL = 0x00000080;
+    const DWORD ES_NOHIDESEL   = 0x00000100;
+    const DWORD ES_OEMCONVERT  = 0x00000400;
+    const DWORD ES_READONLY    = 0x00000800;
+    const DWORD ES_WANTRETURN  = 0x00001000;
+
+    // ****** Scroll bar control ******
+
+    /*
+    // Also see scrolling support
+
+    // Scroll bar styles
+    const DWORD SBS_HORZ           = 0x0000;
+    const DWORD SBS_VERT           = 0x0001;
+    const DWORD SBS_TOPALIGN           = 0x0002;
+    const DWORD SBS_LEFTALIGN          = 0x0002;
+    const DWORD SBS_BOTTOMALIGN            = 0x0004;
+    const DWORD SBS_RIGHTALIGN         = 0x0004;
+    const DWORD SBS_SIZEBOXTOPLEFTALIGN        = 0x0002;
+    const DWORD SBS_SIZEBOXBOTTOMRIGHTALIGN = 0x0004;
+    const DWORD SBS_SIZEBOX            = 0x0008;
+    */
+
+    // ****** Listbox control *****
+
+    // Listbox styles
+    const DWORD LBS_NOTIFY            = 0x0001;
+    const DWORD LBS_SORT              = 0x0002;
+    const DWORD LBS_NOREDRAW          = 0x0004;
+    const DWORD LBS_MULTIPLESEL       = 0x0008;
+    const DWORD LBS_OWNERDRAWFIXED    = 0x0010;
+    const DWORD LBS_OWNERDRAWVARIABLE = 0x0020;
+    const DWORD LBS_HASSTRINGS        = 0x0040;
+    const DWORD LBS_USETABSTOPS       = 0x0080;
+    const DWORD LBS_NOINTEGRALHEIGHT  = 0x0100;
+    const DWORD LBS_MULTICOLUMN       = 0x0200;
+    const DWORD LBS_WANTKEYBOARDINPUT = 0x0400;
+    const DWORD LBS_EXTENDEDSEL       = 0x0800;
+    const DWORD LBS_DISABLENOSCROLL   = 0x1000;
+    const DWORD LBS_STANDARD          = 0x00A00003;
+
+    // DlgDirList, DlgDirListComboBox flags values
+    const UINT DDL_READWRITE          = 0x0000;
+    const UINT DDL_READONLY           = 0x0001;
+    const UINT DDL_HIDDEN             = 0x0002;
+    const UINT DDL_SYSTEM             = 0x0004;
+    const UINT DDL_DIRECTORY          = 0x0010;
+    const UINT DDL_ARCHIVE            = 0x0020;
+
+    const UINT DDL_POSTMSGS           = 0x2000;
+    const UINT DDL_DRIVES             = 0x4000;
+    const UINT DDL_EXCLUSIVE          = H8000; // Hack to get 0x8000
+
+    // ****** Combo box control ***
+
+    // Combo box styles
+    const DWORD CBS_SIMPLE       = 0x0001;
+    const DWORD CBS_DROPDOWN         = 0x0002;
+    const DWORD CBS_DROPDOWNLIST      = 0x0003;
+    const DWORD CBS_OWNERDRAWFIXED    = 0x0010;
+    const DWORD CBS_OWNERDRAWVARIABLE = 0x0020;
+    const DWORD CBS_AUTOHSCROLL       = 0x0040;
+    const DWORD CBS_OEMCONVERT        = 0x0080;
+    const DWORD CBS_SORT              = 0x0100;
+    const DWORD CBS_HASSTRINGS        = 0x0200;
+    const DWORD CBS_NOINTEGRALHEIGHT  = 0x0400;
+    const DWORD CBS_DISABLENOSCROLL   = 0x0800;
+
+    /*
+    // Standard hook code
+    const int HC_ACTION       = 0;
+
+    // Obsolete hook codes (NO LONGER SUPPORTED)
+    const int HC_GETLPLPFN        = -3;
+    const int HC_LPLPFNNEXT       = -2;
+    const int HC_LPFNNEXT         = -1;
+
+    // CallMsgFilter() and WH_SYS/MSGFILTER context codes
+    const int MSGF_DIALOGBOX       = 0;
+    const int MSGF_MENU        = 2;
+    const int MSGF_MOVE        = 3;
+    const int MSGF_SIZE        = 4;
+    const int MSGF_SCROLLBAR       = 5;
+    const int MSGF_NEXTWINDOW  = 6;
+    const int MSGF_MAINLOOP             = 8;
+    const int MSGF_USER                 = 4096;
+
+    const int WH_GETMESSAGE       = 3;
+
+    const int WH_CALLWNDPROC      = 4;
+
+    const int WH_MSGFILTER        = -1;
+    const int WH_SYSMSGFILTER     = 6;
+
+    // SetWindowsHook() keyboard hook
+    const int WH_KEYBOARD     = 2;
+
+    // SetWindowsHook() mouse hook
+    const int WH_MOUSE        = 7;
+
+    const int WH_HARDWARE     = 8;
+
+    // SetWindowsHook() code
+    const int WH_CBT          = 5;
+
+    // SetWindowsHook() Shell hook code
+    const int WH_SHELL            = 10;
+
+    // Journalling hook codes
+    const int HC_GETNEXT      = 1;
+    const int HC_SKIP     = 2;
+    const int HC_NOREMOVE     = 3;
+    const int HC_NOREM        = 3;
+    const int HC_SYSMODALON        = 4;
+    const int HC_SYSMODALOFF      = 5;
+
+    // SetWindowsHook debug hook support
+    const int WH_DEBUG        = 9;
+
+    const int HCBT_MOVESIZE       = 0;
+    const int HCBT_MINMAX     = 1;
+    const int HCBT_QS     = 2;
+    const int HCBT_CREATEWND      = 3;
+    const int HCBT_DESTROYWND     = 4;
+    const int HCBT_ACTIVATE       = 5;
+    const int HCBT_CLICKSKIPPED    = 6;
+    const int HCBT_KEYSKIPPED  = 7;
+    const int HCBT_SYSCOMMAND     = 8;
+    const int HCBT_SETFOCUS       = 9;
+
+    const int HSHELL_WINDOWCREATED        = 1;
+    const int HSHELL_WINDOWDESTROYED  = 2;
+    const int HSHELL_ACTIVATESHELLWINDOW = 3;
+
+    const int WH_JOURNALRECORD     = 0;
+    const int WH_JOURNALPLAYBACK  = 1;
+
+    // Flags returned by GetSystemDebugState.
+
+    const UINT SDS_MENU         = 0x0001;
+    const UINT SDS_SYSMODAL     = 0x0002;
+    const UINT SDS_NOTASKQUEUE = 0x0004;
+    const UINT SDS_DIALOG   = 0x0008;
+    const UINT SDS_TASKLOCKED  = 0x0010;
+
+    // WinHelp() commands
+    const UINT HELP_CONTEXT       = 0x0001;
+    const UINT HELP_QUIT          = 0x0002;
+    const UINT HELP_INDEX     = 0x0003;
+    const UINT HELP_CONTENTS      = 0x0003;
+    const UINT HELP_HELPONHELP   = 0x0004;
+    const UINT HELP_SETINDEX      = 0x0005;
+    const UINT HELP_SETCONTENTS  = 0x0005;
+    const UINT HELP_CONTEXTPOPUP = 0x0008;
+    const UINT HELP_FORCEFILE    = 0x0009;
+    const UINT HELP_KEY           = 0x0101;
+    const UINT HELP_COMMAND       = 0x0102;
+    const UINT HELP_PARTIALKEY   = 0x0105;
+    const UINT HELP_MULTIKEY      = 0x0201;
+    const UINT HELP_SETWINPOS    = 0x0203;
+    */
+
+    [ helpstring("Virtual key: Left mouse button") ]
+    const int VK_LBUTTON    = 0x1;
+    [ helpstring("Virtual key: Right mouse button") ]
+    const int VK_RBUTTON    = 0x2;
+    [ helpstring("Virtual key: Used for control+break processing") ]
+    const int VK_CANCEL     = 0x3;
+    [ helpstring("Virtual key: Middle mouse button") ]
+    const int VK_MBUTTON    = 0x4;
+    [ helpstring("Virtual key: Backspace") ]
+    const int VK_BACK       = 0x8;
+    [ helpstring("Virtual key: Tab") ]
+    const int VK_TAB        = 0x9;
+    [ helpstring("Virtual key: Clear") ]
+    const int VK_CLEAR      = 0xC;
+    [ helpstring("Virtual key: Enter") ]
+    const int VK_RETURN     = 0xD;
+    [ helpstring("Virtual key: Shift") ]
+    const int VK_SHIFT      = 0x10;
+    [ helpstring("Virtual key: Ctrl") ]
+    const int VK_CONTROL    = 0x11;
+    [ helpstring("Virtual key: Alt") ]
+    const int VK_MENU       = 0x12;
+    [ helpstring("Virtual key: Pause") ]
+    const int VK_PAUSE      = 0x13;
+    [ helpstring("Virtual key: Caps Lock") ]
+    const int VK_CAPITAL    = 0x14;
+    [ helpstring("Virtual key: Esc") ]
+    const int VK_ESCAPE     = 0x1B;
+    [ helpstring("Virtual key: Spacebar") ]
+    const int VK_SPACE      = 0x20;
+    [ helpstring("Virtual key: Page Up") ]
+    const int VK_PRIOR      = 0x21;
+    [ helpstring("Virtual key: Page Down") ]
+    const int VK_NEXT       = 0x22;
+    [ helpstring("Virtual key: End") ]
+    const int VK_END        = 0x23;
+    [ helpstring("Virtual key: Home") ]
+    const int VK_HOME       = 0x24;
+    [ helpstring("Virtual key: Left Arrow") ]
+    const int VK_LEFT       = 0x25;
+    [ helpstring("Virtual key: Right Arrow") ]
+    const int VK_UP         = 0x26;
+    [ helpstring("Virtual key: Up Arrow") ]
+    const int VK_RIGHT      = 0x27;
+    [ helpstring("Virtual key: Down Arrow") ]
+    const int VK_DOWN       = 0x28;
+    [ helpstring("Virtual key: Select") ]
+    const int VK_SELECT     = 0x29;
+    [ helpstring("Virtual key: OEM Specific") ]
+    const int VK_PRINT      = 0x2A;
+    [ helpstring("Virtual key: Execute") ]
+    const int VK_EXECUTE    = 0x2B;
+    [ helpstring("Virtual key: PrtScr") ]
+    const int VK_SNAPSHOT   = 0x2C;
+    [ helpstring("Virtual key: Ins") ]
+    const int VK_INSERT     = 0x2D;
+    [ helpstring("Virtual key: Del") ]
+    const int VK_DELETE     = 0x2E;
+    [ helpstring("Virtual key: Help") ]
+    const int VK_HELP       = 0x2F;
+    [ helpstring("Virtual key: 0") ]
+    const int VK_0          = 0x30;
+    [ helpstring("Virtual key: 1") ]
+    const int VK_1          = 0x31;
+    [ helpstring("Virtual key: 2") ]
+    const int VK_2          = 0x32;
+    [ helpstring("Virtual key: 3") ]
+    const int VK_3          = 0x33;
+    [ helpstring("Virtual key: 4") ]
+    const int VK_4          = 0x34;
+    [ helpstring("Virtual key: 5") ]
+    const int VK_5          = 0x35;
+    [ helpstring("Virtual key: 6") ]
+    const int VK_6          = 0x36;
+    [ helpstring("Virtual key: 7") ]
+    const int VK_7          = 0x37;
+    [ helpstring("Virtual key: 8") ]
+    const int VK_8          = 0x38;
+    [ helpstring("Virtual key: 9") ]
+    const int VK_9          = 0x39;
+    [ helpstring("Virtual key: A") ]
+    const int VK_A          = 0x41;
+    [ helpstring("Virtual key: B") ]
+    const int VK_B          = 0x42;
+    [ helpstring("Virtual key: C") ]
+    const int VK_C          = 0x43;
+    [ helpstring("Virtual key: D") ]
+    const int VK_D          = 0x44;
+    [ helpstring("Virtual key: E") ]
+    const int VK_E          = 0x45;
+    [ helpstring("Virtual key: F") ]
+    const int VK_F          = 0x46;
+    [ helpstring("Virtual key: G") ]
+    const int VK_G          = 0x47;
+    [ helpstring("Virtual key: H") ]
+    const int VK_H          = 0x48;
+    [ helpstring("Virtual key: I") ]
+    const int VK_I          = 0x49;
+    [ helpstring("Virtual key: J") ]
+    const int VK_J          = 0x4A;
+    [ helpstring("Virtual key: K") ]
+    const int VK_K          = 0x4B;
+    [ helpstring("Virtual key: L") ]
+    const int VK_L          = 0x4C;
+    [ helpstring("Virtual key: M") ]
+    const int VK_M          = 0x4D;
+    [ helpstring("Virtual key: N") ]
+    const int VK_N          = 0x4E;
+    [ helpstring("Virtual key: O") ]
+    const int VK_O          = 0x4F;
+    [ helpstring("Virtual key: P") ]
+    const int VK_P          = 0x50;
+    [ helpstring("Virtual key: Q") ]
+    const int VK_Q          = 0x51;
+    [ helpstring("Virtual key: R") ]
+    const int VK_R          = 0x52;
+    [ helpstring("Virtual key: S") ]
+    const int VK_S          = 0x53;
+    [ helpstring("Virtual key: T") ]
+    const int VK_T          = 0x54;
+    [ helpstring("Virtual key: U") ]
+    const int VK_U          = 0x55;
+    [ helpstring("Virtual key: V") ]
+    const int VK_V          = 0x56;
+    [ helpstring("Virtual key: W") ]
+    const int VK_W          = 0x57;
+    [ helpstring("Virtual key: X") ]
+    const int VK_X          = 0x58;
+    [ helpstring("Virtual key: Y") ]
+    const int VK_Y          = 0x59;
+    [ helpstring("Virtual key: Z") ]
+    const int VK_Z          = 0x5A;
+    [ helpstring("Virtual key: 0 on number pad") ]
+    const int VK_NUMPAD0    = 0x60;
+    [ helpstring("Virtual key: 1 on number pad") ]
+    const int VK_NUMPAD1    = 0x61;
+    [ helpstring("Virtual key: 2 on number pad") ]
+    const int VK_NUMPAD2    = 0x62;
+    [ helpstring("Virtual key: 3 on number pad") ]
+    const int VK_NUMPAD3    = 0x63;
+    [ helpstring("Virtual key: 4 on number pad") ]
+    const int VK_NUMPAD4    = 0x64;
+    [ helpstring("Virtual key: 5 on number pad") ]
+    const int VK_NUMPAD5    = 0x65;
+    [ helpstring("Virtual key: 6 on number pad") ]
+    const int VK_NUMPAD6    = 0x66;
+    [ helpstring("Virtual key: 7 on number pad") ]
+    const int VK_NUMPAD7    = 0x67;
+    [ helpstring("Virtual key: 8 on number pad") ]
+    const int VK_NUMPAD8    = 0x68;
+    [ helpstring("Virtual key: 9 on number pad") ]
+    const int VK_NUMPAD9    = 0x69;
+    [ helpstring("Virtual key: Multiply") ]
+    const int VK_MULTIPLY   = 0x6A;
+    [ helpstring("Virtual key: Add") ]
+    const int VK_ADD        = 0x6B;
+    [ helpstring("Virtual key: Separator") ]
+    const int VK_SEPARATOR  = 0x6C;
+    [ helpstring("Virtual key: Subtract") ]
+    const int VK_SUBTRACT   = 0x6D;
+    [ helpstring("Virtual key: Decimal") ]
+    const int VK_DECIMAL    = 0x6E;
+    [ helpstring("Virtual key: Divide") ]
+    const int VK_DIVIDE     = 0x6F;
+    [ helpstring("Virtual key: F1") ]
+    const int VK_F1         = 0x70;
+    [ helpstring("Virtual key: F2") ]
+    const int VK_F2         = 0x71;
+    [ helpstring("Virtual key: F3") ]
+    const int VK_F3         = 0x72;
+    [ helpstring("Virtual key: F4") ]
+    const int VK_F4         = 0x73;
+    [ helpstring("Virtual key: F5") ]
+    const int VK_F5         = 0x74;
+    [ helpstring("Virtual key: F6") ]
+    const int VK_F6         = 0x75;
+    [ helpstring("Virtual key: F7") ]
+    const int VK_F7         = 0x76;
+    [ helpstring("Virtual key: F8") ]
+    const int VK_F8         = 0x77;
+    [ helpstring("Virtual key: F9") ]
+    const int VK_F9         = 0x78;
+    [ helpstring("Virtual key: F10") ]
+    const int VK_F10        = 0x79;
+    [ helpstring("Virtual key: F11") ]
+    const int VK_F11        = 0x7A;
+    [ helpstring("Virtual key: F12") ]
+    const int VK_F12        = 0x7B;
+    [ helpstring("Virtual key: F13") ]
+    const int VK_F13        = 0x7C;
+    [ helpstring("Virtual key: F14") ]
+    const int VK_F14        = 0x7D;
+    [ helpstring("Virtual key: F15") ]
+    const int VK_F15        = 0x7E;
+    [ helpstring("Virtual key: F16") ]
+    const int VK_F16        = 0x7F;
+    [ helpstring("Virtual key: F17") ]
+    const int VK_F17        = 0x80;
+    [ helpstring("Virtual key: F18") ]
+    const int VK_F18        = 0x81;
+    [ helpstring("Virtual key: F19") ]
+    const int VK_F19        = 0x82;
+    [ helpstring("Virtual key: F20") ]
+    const int VK_F20        = 0x83;
+    [ helpstring("Virtual key: F21") ]
+    const int VK_F21        = 0x84;
+    [ helpstring("Virtual key: F22") ]
+    const int VK_F22        = 0x85;
+    [ helpstring("Virtual key: F23") ]
+    const int VK_F23        = 0x86;
+    [ helpstring("Virtual key: F24") ]
+    const int VK_F24        = 0x87;
+    [ helpstring("Virtual key: NumLock") ]
+    const int VK_NUMLOCK    = 0x90;
+    [ helpstring("Virtual key: ScrollLock") ]
+    const int VK_SCROLL     = 0x91;
+
+    const UINT MF_INSERT      = 0x0000;
+    const UINT MF_CHANGE      = 0x0080;
+    const UINT MF_APPEND      = 0x0100;
+    const UINT MF_DELETE      = 0x0200;
+    const UINT MF_REMOVE      = 0x1000;
+
+    // Menu flags for Add/Check/EnableMenuItem()
+    const UINT MF_BYCOMMAND   = 0x0000;
+    const UINT MF_BYPOSITION   = 0x0400;
+
+    const UINT MF_SEPARATOR   = 0x0800;
+
+    const UINT MF_ENABLED     = 0x0000;
+    const UINT MF_GRAYED      = 0x0001;
+    const UINT MF_DISABLED    = 0x0002;
+
+    const UINT MF_UNCHECKED   = 0x0000;
+    const UINT MF_CHECKED     = 0x0008;
+    const UINT MF_USECHECKBITMAPS  = 0x0200;
+
+    const UINT MF_STRING      = 0x0000;
+    const UINT MF_BITMAP      = 0x0004;
+    const UINT MF_OWNERDRAW   = 0x0100;
+
+    const UINT MF_POPUP       = 0x0010;
+    const UINT MF_MENUBARBREAK = 0x0020;
+    const UINT MF_MENUBREAK   = 0x0040;
+
+    const UINT MF_UNHILITE    = 0x0000;
+    const UINT MF_HILITE      = 0x0080;
+
+    const UINT MF_SYSMENU     = 0x2000;
+    const UINT MF_HELP        = 0x4000;
+    const UINT MF_MOUSESELECT = H8000; // Hack to get 0x8000
+
+    const UINT MF_END         = 0x0080; // Only valid in menu resource templates
+
+    // Flags for TrackPopupMenu
+    const UINT TPM_LEFTBUTTON   = 0x0000;
+    const UINT TPM_RIGHTBUTTON  = 0x0002;
+    const UINT TPM_LEFTALIGN    = 0x0000;
+    const UINT TPM_CENTERALIGN  = 0x0004;
+    const UINT TPM_RIGHTALIGN   = 0x0008;
+
+    #ifdef WIN32
+
+    /*
+    // WM_PRINT flags
+    const ULONG PRF_CHECKVISIBLE    = 0x00000001;
+    const ULONG PRF_NONCLIENT       = 0x00000002;
+    const ULONG PRF_CLIENT          = 0x00000004;
+    const ULONG PRF_ERASEBKGND      = 0x00000008;
+    const ULONG PRF_CHILDREN        = 0x00000010;
+    const ULONG PRF_OWNED           = 0x00000020;
+    */
+
+    // 3D border styles
+    const UINT BDR_RAISEDOUTER  = 0x0001;
+    const UINT BDR_SUNKENOUTER  = 0x0002;
+    const UINT BDR_RAISEDINNER  = 0x0004;
+    const UINT BDR_SUNKENINNER  = 0x0008;
+
+    const UINT BDR_OUTER        = 0x0003;
+    const UINT BDR_INNER        = 0x000c;
+    const UINT BDR_RAISED       = 0x0005;
+    const UINT BDR_SUNKEN       = 0x000a;
+
+    const UINT EDGE_RAISED      = 0x0005; // BDR_RAISEDOUTER | BDR_RAISEDINNER
+    const UINT EDGE_SUNKEN      = 0x000a; // BDR_SUNKENOUTER | BDR_SUNKENINNER
+    const UINT EDGE_ETCHED      = 0x0006; // BDR_SUNKENOUTER | BDR_RAISEDINNER
+    const UINT EDGE_BUMP        = 0x0009; // BDR_RAISEDOUTER | BDR_SUNKENINNER
+
+    // Border flags
+    const UINT BF_LEFT          = 0x0001;
+    const UINT BF_TOP           = 0x0002;
+    const UINT BF_RIGHT         = 0x0004;
+    const UINT BF_BOTTOM        = 0x0008;
+
+    const UINT BF_TOPLEFT       = 0x0003; // BF_TOP | BF_LEFT
+    const UINT BF_TOPRIGHT      = 0x0006; // BF_TOP | BF_RIGHT
+    const UINT BF_BOTTOMLEFT    = 0x0009; // BF_BOTTOM | BF_LEFT
+    const UINT BF_BOTTOMRIGHT   = 0x000c; // BF_BOTTOM | BF_RIGHT
+    const UINT BF_RECT          = 0x000f; // BF_LEFT | BF_TOP | BF_RIGHT | BF_BOTTOM
+
+    const UINT BF_DIAGONAL      = 0x0010;
+
+    // For diagonal lines, the BF_RECT flags specify the end point of the
+    // vector bounded by the rectangle parameter.
+    const UINT BF_DIAGONAL_ENDTOPRIGHT      = 0x0016; // BF_DIAGONAL | BF_TOP | BF_RIGHT
+    const UINT BF_DIAGONAL_ENDTOPLEFT       = 0x0013; // BF_DIAGONAL | BF_TOP | BF_LEFT
+    const UINT BF_DIAGONAL_ENDBOTTOMLEFT    = 0x0019; // BF_DIAGONAL | BF_BOTTOM | BF_LEFT
+    const UINT BF_DIAGONAL_ENDBOTTOMRIGHT   = 0x001c; // BF_DIAGONAL | BF_BOTTOM | BF_RIGHT
+
+    const UINT BF_MIDDLE    = 0x0800;   // Fill in the middle
+    const UINT BF_SOFT      = 0x1000;   // For softer buttons
+    const UINT BF_ADJUST    = 0x2000;   // Calculate the space left over
+    const UINT BF_FLAT      = 0x4000;   // For flat rather than 3D borders
+    const UINT BF_MONO      = 0x8000;   // For monochrome borders
+
+    // Flags for DrawFrameControl
+
+    const UINT DFC_CAPTION          = 1;
+    const UINT DFC_MENU             = 2;
+    const UINT DFC_SCROLL           = 3;
+    const UINT DFC_BUTTON           = 4;
+
+    const UINT DFCS_CAPTIONCLOSE    = 0x0000;
+    const UINT DFCS_CAPTIONMIN      = 0x0001;
+    const UINT DFCS_CAPTIONMAX      = 0x0002;
+    const UINT DFCS_CAPTIONRESTORE  = 0x0003;
+    const UINT DFCS_CAPTIONHELP     = 0x0004;
+
+    const UINT DFCS_MENUARROW       = 0x0000;
+    const UINT DFCS_MENUCHECK       = 0x0001;
+    const UINT DFCS_MENUBULLET      = 0x0002;
+    const UINT DFCS_MENUARROWRIGHT  = 0x0004;
+
+    const UINT DFCS_SCROLLUP        = 0x0000;
+    const UINT DFCS_SCROLLDOWN      = 0x0001;
+    const UINT DFCS_SCROLLLEFT      = 0x0002;
+    const UINT DFCS_SCROLLRIGHT     = 0x0003;
+    const UINT DFCS_SCROLLCOMBOBOX  = 0x0005;
+    const UINT DFCS_SCROLLSIZEGRIP  = 0x0008;
+    const UINT DFCS_SCROLLSIZEGRIPRIGHT = 0x0010;
+
+    const UINT DFCS_BUTTONCHECK     = 0x0000;
+    const UINT DFCS_BUTTONRADIOIMAGE =  0x0001;
+    const UINT DFCS_BUTTONRADIOMASK = 0x0002;
+    const UINT DFCS_BUTTONRADIO     = 0x0004;
+    const UINT DFCS_BUTTON3STATE    = 0x0008;
+    const UINT DFCS_BUTTONPUSH      = 0x0010;
+
+    const UINT DFCS_INACTIVE        = 0x0100;
+    const UINT DFCS_PUSHED          = 0x0200;
+    const UINT DFCS_CHECKED         = 0x0400;
+    const UINT DFCS_ADJUSTRECT      = 0x2000;
+    const UINT DFCS_FLAT            = 0x4000;
+    const UINT DFCS_MONO            = 0x8000;
+
+    // Flags for DrawCaption
+    const UINT DC_ACTIVE        = 0x0001;
+    const UINT DC_SMALLCAP      = 0x0002;
+    const UINT DC_ICON          = 0x0004;
+    const UINT DC_TEXT          = 0x0008;
+    const UINT DC_INBUTTON      = 0x0010;
+    // const UINT DC_CAPTION    = 0x001C;   // (DC_ICON | DC_TEXT | DC_BUTTONS)
+    // const UINT DC_NC         = 0x001C;   // (DC_CAPTION | DC_FRAME)
+
+    const UINT IDANI_OPEN       = 1;
+    const UINT IDANI_CLOSE      = 2;
+    const UINT IDANI_CAPTION    = 3;
+
+    #endif
+
+    [ helpstring("ExitWindows: Restart flag") ]
+    const UINT EW_RESTARTWINDOWS = 0x42;
+    [ helpstring("ExitWindows: Reboot flag") ]
+    const UINT EW_REBOOTSYSTEM   = 0x43;
+    const UINT EW_EXITANDEXECAPP = 0x0044;
+
+    [ helpstring("ExitWindowsEx: Log off flag") ]
+    const UINT EWX_LOGOFF   = 0x0;
+    [ helpstring("ExitWindowsEx: Shut down flag") ]
+    const UINT EWX_SHUTDOWN = 0x1;
+    [ helpstring("ExitWindowsEx: Shut down and reboot flag") ]
+    const UINT EWX_REBOOT   = 0x2;
+    [ helpstring("ExitWindowsEx: Force termination of applications without prompting flag") ]
+    const UINT EWX_FORCE    = 0x4;
+    [ helpstring("ExitWindowsEx: Shut down and power off flag") ]
+    const UINT EWX_POWEROFF = 0x8;
+
+
+}   // End module UserConst

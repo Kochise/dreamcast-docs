@@ -1,0 +1,1886 @@
+
+
+[
+uuid(54674044-3A82-101B-8181-00AA003743D3),
+helpstring("Windows GDI Functions"),
+#ifdef WIN32
+dllname("GDI32.DLL")
+#else
+dllname("GDI.EXE")
+#endif
+]
+module GDI {
+
+    // ****** DC Management *******
+
+    /*
+    HDC     WINAPI CreateDC(LPCSTR, LPCSTR, LPCSTR, const void FAR *);
+    HDC     WINAPI CreateIC(LPCSTR, LPCSTR, LPCSTR, const void FAR *);
+    */
+
+    [
+    usesgetlasterror,
+    entry("CreateCompatibleDC"),
+    helpstring("Creates a memory DC compatible with a given DC"),
+    ]
+    HDC     WINAPI CreateCompatibleDC([in] HDC hdc);
+
+    [
+    usesgetlasterror,
+    entry("DeleteDC"),
+    helpstring("Deletes a given DC"),
+    ]
+    BOOL    WINAPI DeleteDC([in] HDC hdc);
+
+    /*
+    DWORD   WINAPI GetDCOrg([in] HDC hdc);
+
+    int     WINAPI SaveDC([in] HDC hdc);
+    BOOL    WINAPI RestoreDC([in] HDC hdc, int);
+
+    */
+
+    /* Omitted
+    int     WINAPI MulDiv(int, int, int);
+    */
+
+    /* Omitted
+    // Drawing bounds accumulation APIs
+    UINT    WINAPI SetBoundsRect(HDC hDC, const RECT FAR * lprcBounds, UINT flags);
+    UINT    WINAPI GetBoundsRect(HDC hDC, RECT FAR * lprcBounds, UINT flags);
+    */
+
+    // ****** Device Capabilities *******
+
+
+    [
+    usesgetlasterror,
+    entry("GetDeviceCaps"),
+    helpstring("Gets the capabilitis of given DC"),
+    ]
+    int WINAPI GetDeviceCaps([in] HDC hdc, [in] int iCapability);
+
+    // ****** Coordinate transformation support *********
+
+    /*
+    int     WINAPI SetMapMode([in] HDC hdc, int);
+    int     WINAPI GetMapMode([in] HDC hdc);
+
+    DWORD   WINAPI SetWindowOrg([in] HDC hdc, int, int);
+    DWORD   WINAPI GetWindowOrg([in] HDC hdc);
+
+    DWORD   WINAPI SetWindowExt([in] HDC hdc, int, int);
+    DWORD   WINAPI GetWindowExt([in] HDC hdc);
+
+    DWORD   WINAPI OffsetWindowOrg([in] HDC hdc, int, int);
+    DWORD   WINAPI ScaleWindowExt([in] HDC hdc, int, int, int, int);
+
+    DWORD   WINAPI SetViewportOrg([in] HDC hdc, int, int);
+    DWORD   WINAPI GetViewportOrg([in] HDC hdc);
+
+    DWORD   WINAPI SetViewportExt([in] HDC hdc, int, int);
+    DWORD   WINAPI GetViewportExt([in] HDC hdc);
+
+    DWORD   WINAPI OffsetViewportOrg([in] HDC hdc, int, int);
+    DWORD   WINAPI ScaleViewportExt([in] HDC hdc, int, int, int, int);
+
+    BOOL    WINAPI SetWindowOrgEx([in] HDC hdc, int, int, POINT FAR *);
+    BOOL    WINAPI GetWindowOrgEx([in] HDC hdc, POINT FAR *);
+
+    BOOL    WINAPI SetWindowExtEx([in] HDC hdc, int, int, SIZE FAR *);
+    BOOL    WINAPI GetWindowExtEx([in] HDC hdc, SIZE FAR *);
+
+    BOOL    WINAPI OffsetWindowOrgEx([in] HDC hdc, int, int, POINT FAR *);
+    BOOL    WINAPI ScaleWindowExtEx([in] HDC hdc, int, int, int, int, SIZE FAR *);
+
+    BOOL    WINAPI SetViewportExtEx([in] HDC hdc, int, int, SIZE FAR *);
+    BOOL    WINAPI GetViewportExtEx([in] HDC hdc, SIZE FAR *);
+
+    BOOL    WINAPI SetViewportOrgEx([in] HDC hdc, int, int, POINT FAR *);
+    BOOL    WINAPI GetViewportOrgEx([in] HDC hdc, POINT FAR *);
+
+    BOOL    WINAPI OffsetViewportOrgEx([in] HDC hdc, int, int, POINT FAR *);
+    BOOL    WINAPI ScaleViewportExtEx([in] HDC hdc, int, int, int, int, SIZE FAR *);
+
+    BOOL    WINAPI DPtoLP([in] HDC hdc, POINT FAR *, int);
+    BOOL    WINAPI LPtoDP([in] HDC hdc, POINT FAR *, int);
+    */
+
+    // ****** Color support *******
+
+    [
+    usesgetlasterror,
+    entry("GetNearestColor"),
+    helpstring("Returns color from system palette that will be displayed when the given color value is used"),
+    ]
+    COLORREF WINAPI GetNearestColor([in] HDC hdc, [in] COLORREF clrref);
+
+    // ****** GDI Object Support ********
+
+    [
+    usesgetlasterror,
+    entry("IsGDIObject"),
+    helpstring("Returns TRUE if argument is handle to GDI object"),
+    ]
+    BOOL    WINAPI IsGDIObject([in] HGDIOBJ hgidobj);
+
+    [
+    usesgetlasterror,
+    entry("GetStockObject"),
+    helpstring("Returns the handle of stock pen, brush or font specified by fnObject constant"),
+    ]
+    HGDIOBJ WINAPI GetStockObject([in] int fnObject);
+
+    [
+    usesgetlasterror,
+    entry("DeleteObject"),
+    helpstring("Deletes a given GDI object"),
+    ]
+    BOOL    WINAPI DeleteObject([in] HGDIOBJ hgdiobj);
+
+    [
+    usesgetlasterror,
+    entry("SelectObject"),
+    helpstring("Selects a given GDI object into a DC, returning the previous object"),
+    ]
+    HGDIOBJ WINAPI SelectObject([in] HDC hdc, [in] HGDIOBJ hgdiobj);
+
+    /*
+    int     WINAPI GetObject(HGDIOBJ, int, void FAR *);
+    BOOL    WINAPI UnrealizeObject(HGDIOBJ);
+    */
+
+    /* Omitted
+    typedef (CALLBACK* GOBJENUMPROC)(void FAR *, LPARAM);
+
+    int     WINAPI EnumObjects([in] HDC hdc, int, GOBJENUMPROC, LPARAM);
+    */
+
+    // ****** Pen support **********
+
+    /*
+    // Logical Pen
+    typedef struct tagLOGPEN
+    {
+        UINT    lopnStyle;
+        POINT   lopnWidth;
+        COLORREF lopnColor;
+    } LOGPEN;
+    typedef LOGPEN*       PLOGPEN;
+    typedef LOGPEN NEAR * NPLOGPEN;
+    typedef LOGPEN FAR *  LPLOGPEN;
+
+    HPEN    WINAPI CreatePen(int, int, [in] COLORREF clrref);
+    HPEN    WINAPI CreatePenIndirect(LOGPEN FAR *);
+    */
+
+    // ****** Brush support *********
+
+    /*
+    // Logical Brush (or Pattern)
+    typedef struct tagLOGBRUSH
+    {
+        UINT     lbStyle;
+        COLORREF lbColor;
+        int      lbHatch;
+    } LOGBRUSH;
+    typedef LOGBRUSH*       PLOGBRUSH;
+    typedef LOGBRUSH NEAR * NPLOGBRUSH;
+    typedef LOGBRUSH FAR *  LPLOGBRUSH;
+
+    typedef LOGBRUSH        PATTERN;
+    typedef PATTERN*       PPATTERN;
+    typedef PATTERN NEAR * NPPATTERN;
+    typedef PATTERN FAR *  LPPATTERN;
+
+    HBRUSH  WINAPI CreateSolidBrush([in] COLORREF clrref);
+    HBRUSH  WINAPI CreateHatchBrush(int, [in] COLORREF clrref);
+    HBRUSH  WINAPI CreatePatternBrush([in] HBITMAP hbm);
+    HBRUSH  WINAPI CreateDIBPatternBrush(HGLOBAL, UINT);
+    HBRUSH  WINAPI CreateBrushIndirect(LOGBRUSH FAR *);
+
+    DWORD   WINAPI SetBrushOrg([in] HDC hdc, int, int);
+    DWORD   WINAPI GetBrushOrg([in] HDC hdc);
+
+    BOOL    WINAPI GetBrushOrgEx([in] HDC hdc, POINT FAR *);
+    */
+
+    // ****** Region support *******
+
+    /*
+    HRGN    WINAPI CreateRectRgn(int, int, int, int);
+    HRGN    WINAPI CreateRectRgnIndirect(const RECT FAR *);
+    HRGN    WINAPI CreateEllipticRgnIndirect(const RECT FAR *);
+    HRGN    WINAPI CreateEllipticRgn(int, int, int, int);
+    HRGN    WINAPI CreatePolygonRgn(const POINT FAR *, int, int);
+    HRGN    WINAPI CreatePolyPolygonRgn(const POINT FAR *, const int FAR *, int, int);
+    HRGN    WINAPI CreateRoundRectRgn(int, int, int, int, int, int);
+
+    void    WINAPI SetRectRgn(HRGN, int, int, int, int);
+
+    int     WINAPI CombineRgn(HRGN, HRGN, HRGN, int);
+
+    BOOL    WINAPI EqualRgn(HRGN, HRGN);
+    int     WINAPI OffsetRgn(HRGN, int, int);
+
+    int     WINAPI GetRgnBox(HRGN, RECT FAR *);
+
+    BOOL    WINAPI RectInRegion(HRGN, const RECT FAR *);
+    BOOL    WINAPI PtInRegion(HRGN, int, int);
+    */
+
+    // ****** Color Palette Support *********
+
+    /*
+    //define PALETTERGB(r,g,b)   (0x02000000L | RGB(r,g,b))
+    //define PALETTEINDEX(i)     ((COLORREF)(0x01000000L | (DWORD)(WORD)(i)))
+
+    typedef struct tagPALETTEENTRY
+    {
+        BYTE    peRed;
+        BYTE    peGreen;
+        BYTE    peBlue;
+        BYTE    peFlags;
+    } PALETTEENTRY;
+    typedef PALETTEENTRY FAR * LPPALETTEENTRY;
+
+    // Logical Palette
+    typedef struct tagLOGPALETTE
+    {
+        WORD    palVersion;
+        WORD    palNumEntries;
+        PALETTEENTRY palPalEntry[1];
+    } LOGPALETTE;
+    typedef LOGPALETTE*       PLOGPALETTE;
+    typedef LOGPALETTE NEAR * NPLOGPALETTE;
+    typedef LOGPALETTE FAR *  LPLOGPALETTE;
+
+    HPALETTE WINAPI CreatePalette(const LOGPALETTE FAR *);
+
+    HPALETTE WINAPI SelectPalette([in] HDC hdc, HPALETTE, BOOL);
+
+    UINT    WINAPI RealizePalette([in] HDC hdc);
+
+    int     WINAPI UpdateColors([in] HDC hdc);
+    void    WINAPI AnimatePalette(HPALETTE, UINT, UINT, const PALETTEENTRY FAR *);
+
+    UINT    WINAPI SetPaletteEntries(HPALETTE, UINT, UINT, const PALETTEENTRY FAR *);
+    UINT    WINAPI GetPaletteEntries(HPALETTE, UINT, UINT, PALETTEENTRY FAR *);
+
+    UINT    WINAPI GetNearestPaletteIndex(HPALETTE, [in] COLORREF clrref);
+
+    BOOL    WINAPI ResizePalette(HPALETTE, UINT);
+
+    UINT    WINAPI GetSystemPaletteEntries([in] HDC hdc, UINT, UINT, PALETTEENTRY FAR *);
+
+    UINT    WINAPI GetSystemPaletteUse([in] HDC hdc);
+    UINT    WINAPI SetSystemPaletteUse([in] HDC hdc, UINT);
+
+    */
+
+    // ****** Clipping support ******
+
+    /*
+    int     WINAPI SelectClipRgn([in] HDC hdc, HRGN);
+    int     WINAPI GetClipBox([in] HDC hdc, RECT FAR *);
+
+    int     WINAPI IntersectClipRect([in] HDC hdc, int, int, int, int);
+    int     WINAPI OffsetClipRgn([in] HDC hdc, int, int);
+    int     WINAPI ExcludeClipRect([in] HDC hdc, int, int, int, int);
+
+    BOOL    WINAPI PtVisible([in] HDC hdc, int, int);
+    BOOL    WINAPI RectVisible([in] HDC hdc, const RECT FAR *);
+    */
+
+    // ****** General drawing support *******
+
+    [
+    usesgetlasterror,
+    entry("MoveToEx"),
+    helpstring("Moves current position to (x,y) without displaying; return last position in lpPoint"),
+    ]
+    BOOL    WINAPI MoveToEx([in] HDC hdc, [in] int X, [in] int Y,
+                            [in, out] int * lpPoint);
+
+    [
+    usesgetlasterror,
+    entry("MoveToEx"),
+    helpstring("Moves current position to (x,y) without displaying (ignore compatibility null parameter)"),
+    ]
+    BOOL    WINAPI MoveToNull([in] HDC hdc, [in] int X, [in] int Y,
+                              [in] long lpNull);
+
+    #ifndef WIN32
+    [
+    usesgetlasterror,
+    entry("MoveTo"),
+    helpstring("Moves current position to (x,y)"),
+    ]
+    DWORD   WINAPI MoveTo([in] HDC hdc, [in] int X, [in] int Y);
+    #endif
+
+    [
+    usesgetlasterror,
+    entry("LineTo"),
+    helpstring("Draws from current position to (x,y) with current pen"),
+    ]
+    BOOL    WINAPI LineTo([in] HDC hdc, [in] int X, [in] int Y);
+
+    #ifndef WIN32
+    [
+    usesgetlasterror,
+    entry("GetCurrentPosition"),
+    helpstring("Gets current position packed in a DWORD"),
+    ]
+    DWORD   WINAPI GetCurrentPosition([in] HDC hdc);
+    #endif
+
+//@B GetCurrentPositionEx
+    [
+    usesgetlasterror,
+    entry("GetCurrentPositionEx"),
+    helpstring("Get current position in a POINT structure"),
+    ]
+    BOOL    WINAPI GetCurrentPositionEx([in] HDC hdc,
+                                        [in, out] int FAR * lpPoint);
+//@E GetCurrentPositionEx
+
+    // BOOL WINAPI Polyline([in] HDC hdc, const POINT FAR *, int);
+    #ifdef WIN32
+    // BOOL WINAPI PolylineTo([in] HDC hdc, CONST POINT *, DWORD);
+
+    [
+    usesgetlasterror,
+    entry("PolyBezier"),
+    helpstring("Draws Bezier curve controlled by array of points (cPoint specified size of array)"),
+    ]
+    BOOL    WINAPI PolyBezier([in] HDC hdc, [in] int * lppt,
+                              [in] DWORD cPoints);
+
+    [
+    usesgetlasterror,
+    entry("PolyBezierTo"),
+    helpstring("Draws Bezier curve controlled by array of points (cPoint specified size of array) and moves to last point"),
+    ]
+    BOOL    WINAPI PolyBezierTo([in] HDC hdc, [in] int * lppt,
+                                [in] DWORD cPoints);
+    #endif
+
+    [
+    usesgetlasterror,
+    entry("Rectangle"),
+    helpstring("Draws rectangle around given points with current pen filled with current brush"),
+    ]
+    BOOL    WINAPI Rectangle([in] HDC hdc,
+                             [in] int nLeft, [in] int nTop,
+                             [in] int nRight, [in] int nBottom);
+
+    [
+    usesgetlasterror,
+    entry("RoundRect"),
+    helpstring("Draws rounded rectangle around given points with current pen and filled with current brush, using ellipse of (nWidth, nHeight) on corners"),
+    ]
+    BOOL    WINAPI RoundRect([in] HDC hdc,
+                             [in] int nLeft, [in] int nTop,
+                             [in] int nRight, [in] int nBottom,
+                             [in] int nWidth, [in] int nHeight);
+
+    [
+    usesgetlasterror,
+    entry("Ellipse"),
+    helpstring("Draws ellipse bounded by given points with current pen and filled with current brush"),
+    ]
+    BOOL    WINAPI Ellipse([in] HDC hdc,
+                           [in] int nLeft, [in] int nTop,
+                           [in] int nRight, [in] int nBottom);
+
+    [
+    usesgetlasterror,
+    entry("Arc"),
+    helpstring("Draws an elliptical arc"),
+    ]
+    BOOL WINAPI Arc([in] HDC hDC,
+                    [in] int nLeftRect, [in] int nTopRect,
+                    [in] int nRightRect, [in] int nBottomRect,
+                    [in] int nXRadial1, [in] int nYRadial1,
+                    [in] int nXRadial2, [in] int nYRadial2);
+
+    [
+    usesgetlasterror,
+    entry("Chord"),
+    helpstring("Draws a chord (a region bounded by the intersection of an ellipse and a line segment, called a secant)"),
+    ]
+    BOOL WINAPI Chord([in] HDC hDC,
+                      [in] int nLeftRect, [in] int nTopRect,
+                      [in] int nRightRect, [in] int nBottomRect,
+                      [in] int nXRadial1, [in] int nYRadial1,
+                      [in] int nXRadial2, [in] int nYRadial2);
+
+    [
+    usesgetlasterror,
+    entry("Pie"),
+    helpstring("Draws a pie-shaped wedge bounded by the intersection of an ellipse and two radials"),
+    ]
+    BOOL WINAPI Pie([in] HDC hDC,
+                    [in] int nLeftRect, [in] int nTopRect,
+                    [in] int nRightRect, [in] int nBottomRect,
+                    [in] int nXRadial1, [in] int nYRadial1,
+                    [in] int nXRadial2, [in] int nYRadial2);
+
+    [
+    usesgetlasterror,
+    entry("Polygon"),
+    helpstring("Draws a polygon"),
+    ]
+    BOOL WINAPI Polygon([in] HDC hdc, [in] int FAR * lppt,
+                        [in] int cPoints);
+
+    // BOOL WINAPI PolyPolygon([in] HDC hdc, const POINT FAR *, int FAR *, int);
+
+
+    // int  WINAPI SetPolyFillMode([in] HDC hdc, int);
+
+    // int  WINAPI GetPolyFillMode([in] HDC hdc);
+
+    /* Omitted
+    typedef void (CALLBACK* LINEDDAPROC)(int, int, LPARAM);
+    void    WINAPI LineDDA(int, int, int, int, LINEDDAPROC, LPARAM);
+    */
+
+    [
+    usesgetlasterror,
+    entry("FloodFill"),
+    helpstring("Fill to the nearest clrref border with current brush starting at x,y"),
+    ]
+    BOOL    WINAPI FloodFill([in] HDC hdc,
+                             [in] int nXStart, [in] int nYStart,
+                             [in] COLORREF clrref);
+
+    [
+    usesgetlasterror,
+    entry("ExtFloodFill"),
+    helpstring("Fill to nearest clrref border with current brush starting at x,y with given fill type"),
+    ]
+    BOOL    WINAPI ExtFloodFill([in] HDC hdc,
+                                [in] int nXStart, [in] int nYStart,
+                                [in] COLORREF clrref,
+                                [in] UINT fuFillType);
+
+    /*
+    BOOL    WINAPI FillRgn([in] HDC hdc, HRGN, HBRUSH);
+    BOOL    WINAPI FrameRgn([in] HDC hdc, HRGN, HBRUSH, int, int);
+    BOOL    WINAPI InvertRgn([in] HDC hdc, HRGN);
+    BOOL    WINAPI PaintRgn([in] HDC hdc, HRGN);
+
+    // Rectangle output routines
+    int     WINAPI FillRect([in] HDC hdc, const RECT FAR *, HBRUSH);
+    int     WINAPI FrameRect([in] HDC hdc, const RECT FAR *, HBRUSH);
+    void    WINAPI InvertRect([in] HDC hdc, const RECT FAR *);
+
+    void    WINAPI DrawFocusRect([in] HDC hdc, const RECT FAR *);
+    */
+
+    // ****** Text support *********
+
+    /*
+    BOOL    WINAPI TextOut([in] HDC hdc, int, int, LPCSTR, int);
+    LONG    WINAPI TabbedTextOut([in] HDC hdc, int, int, LPCSTR, int, int, int FAR *, int);
+    BOOL    WINAPI ExtTextOut([in] HDC hdc, int, int, UINT, const RECT FAR *, LPCSTR, UINT, int FAR *);
+
+    DWORD   WINAPI GetTextExtent([in] HDC hdc, LPCSTR, int);
+    DWORD   WINAPI GetTabbedTextExtent([in] HDC hdc, LPCSTR, int, int, int FAR *);
+
+    BOOL    WINAPI GetTextExtentPoint([in] HDC hdc, LPCSTR, int, SIZE FAR *);
+
+    int     WINAPI DrawText([in] HDC hdc, LPCSTR, int, RECT FAR *, UINT);
+
+    typedef BOOL (CALLBACK* GRAYSTRINGPROC)([in] HDC hdc, LPARAM, int);
+    BOOL    WINAPI GrayString([in] HDC hdc, HBRUSH, GRAYSTRINGPROC, LPARAM, int, int, int, int, int);
+
+    BOOL    WINAPI GetCharWidth([in] HDC hdc, UINT, UINT, int FAR *);
+    */
+
+    [
+    usesgetlasterror,
+    entry("SetTextColor"),
+    helpstring("Sets the text (foreground) color of a DC"),
+    ]
+    COLORREF WINAPI SetTextColor([in] HDC hdc, [in] COLORREF clrref);
+
+    [
+    usesgetlasterror,
+    entry("GetTextColor"),
+    helpstring("Gets the text (foreground) color of a DC"),
+    ]
+    COLORREF WINAPI GetTextColor([in] HDC hdc);
+
+    [
+    usesgetlasterror,
+    entry("SetBkColor"),
+    helpstring("Set the background color of a DC"),
+    ]
+    COLORREF WINAPI SetBkColor([in] HDC hdc, [in] COLORREF clrref);
+
+    [
+    usesgetlasterror,
+    entry("GetBkColor"),
+    helpstring("Get the background color of a DC"),
+    ]
+    COLORREF WINAPI GetBkColor([in] HDC hdc);
+
+    [
+    usesgetlasterror,
+    entry("SetBkMode"),
+    helpstring("Set the background mode of a DC"),
+    ]
+    int     WINAPI SetBkMode([in] HDC hdc, [in] int fnBkMode);
+
+    [
+    usesgetlasterror,
+    entry("GetBkMode"),
+    helpstring("Get the background mode of a DC"),
+    ]
+    int     WINAPI GetBkMode([in] HDC hdc);
+
+    /*
+    UINT    WINAPI SetTextAlign([in] HDC hdc, UINT);
+    UINT    WINAPI GetTextAlign([in] HDC hdc);
+
+    int     WINAPI SetTextCharacterExtra([in] HDC hdc, int);
+    int     WINAPI GetTextCharacterExtra([in] HDC hdc);
+
+    int     WINAPI SetTextJustification([in] HDC hdc, int, int);
+    */
+
+    // ****** Omit Font support ******
+
+    // ****** Bitmap support ************
+
+    /*
+    typedef struct tagBITMAP
+    {
+        int     bmType;
+        int     bmWidth;
+        int     bmHeight;
+        int     bmWidthBytes;
+        BYTE    bmPlanes;
+        BYTE    bmBitsPixel;
+        void FAR * bmBits;
+    } BITMAP;
+    typedef BITMAP*       PBITMAP;
+    typedef BITMAP NEAR * NPBITMAP;
+    typedef BITMAP FAR *  LPBITMAP;
+
+    // Bitmap Header structures
+    typedef struct tagRGBTRIPLE
+    {
+        BYTE    rgbtBlue;
+        BYTE    rgbtGreen;
+        BYTE    rgbtRed;
+    } RGBTRIPLE;
+    typedef RGBTRIPLE FAR * LPRGBTRIPLE;
+
+    typedef struct tagRGBQUAD
+    {
+        BYTE    rgbBlue;
+        BYTE    rgbGreen;
+        BYTE    rgbRed;
+        BYTE    rgbReserved;
+    } RGBQUAD;
+    typedef RGBQUAD FAR * LPRGBQUAD;
+
+    // structures for defining DIBs
+    typedef struct tagBITMAPCOREHEADER
+    {
+        DWORD   bcSize;
+        short   bcWidth;
+        short   bcHeight;
+        WORD    bcPlanes;
+        WORD    bcBitCount;
+    } BITMAPCOREHEADER;
+    typedef BITMAPCOREHEADER*      PBITMAPCOREHEADER;
+    typedef BITMAPCOREHEADER FAR * LPBITMAPCOREHEADER;
+
+    typedef struct tagBITMAPINFOHEADER
+    {
+        DWORD   biSize;
+        LONG    biWidth;
+        LONG    biHeight;
+        WORD    biPlanes;
+        WORD    biBitCount;
+        DWORD   biCompression;
+        DWORD   biSizeImage;
+        LONG    biXPelsPerMeter;
+        LONG    biYPelsPerMeter;
+        DWORD   biClrUsed;
+        DWORD   biClrImportant;
+    } BITMAPINFOHEADER;
+    typedef BITMAPINFOHEADER*      PBITMAPINFOHEADER;
+    typedef BITMAPINFOHEADER FAR * LPBITMAPINFOHEADER;
+
+    typedef struct tagBITMAPINFO
+    {
+        BITMAPINFOHEADER bmiHeader;
+        RGBQUAD      bmiColors[1];
+    } BITMAPINFO;
+    typedef BITMAPINFO*     PBITMAPINFO;
+    typedef BITMAPINFO FAR * LPBITMAPINFO;
+
+    typedef struct tagBITMAPCOREINFO
+    {
+        BITMAPCOREHEADER bmciHeader;
+        RGBTRIPLE        bmciColors[1];
+    } BITMAPCOREINFO;
+    typedef BITMAPCOREINFO*      PBITMAPCOREINFO;
+    typedef BITMAPCOREINFO FAR * LPBITMAPCOREINFO;
+
+    typedef struct tagBITMAPFILEHEADER
+    {
+        UINT    bfType;
+        DWORD   bfSize;
+        UINT    bfReserved1;
+        UINT    bfReserved2;
+        DWORD   bfOffBits;
+    } BITMAPFILEHEADER;
+    typedef BITMAPFILEHEADER*      PBITMAPFILEHEADER;
+    typedef BITMAPFILEHEADER FAR * LPBITMAPFILEHEADER;
+
+
+    HBITMAP WINAPI CreateBitmapIndirect(BITMAP FAR * );
+
+    HBITMAP WINAPI CreateDiscardableBitmap([in] HDC hdc, int, int);
+    HBITMAP WINAPI CreateDIBitmap([in] HDC hdc, BITMAPINFOHEADER FAR *, DWORD, const void FAR *, BITMAPINFO FAR *, UINT);
+
+    HBITMAP WINAPI LoadBitmap([in] HINSTANCE hInst, LPCSTR);
+
+    */
+
+    [
+    usesgetlasterror,
+    entry("CreateCompatibleBitmap"),
+    helpstring("Creates a bitmap of the given size compatible with the given DC"),
+    ]
+    HBITMAP WINAPI CreateCompatibleBitmap([in] HDC hdc,
+                                          [in] int nWidth,
+                                          [in] int nHeight);
+
+    [
+    usesgetlasterror,
+    entry("CreateBitmap"),
+    helpstring("Creates a device independent memory bitmap with the given width, height, and bit data"),
+    ]
+    HBITMAP WINAPI CreateBitmap([in] int nWidth, [in] int nHeight,
+                                [in] UINT cbPlanes, [in] UINT cbBits,
+                                [in] DWORD lpvBits);
+
+    [
+    usesgetlasterror,
+    entry("BitBlt"),
+    helpstring("Combines source, destination, and pattern of two DCs according to ROP mode"),
+    ]
+    BOOL    WINAPI BitBlt([in] HDC hdcDest,
+                          [in] int nXDest, [in] int nYDest,
+                          [in] int nWidth, [in] int nHeight,
+                          [in] HDC hdcSrc,
+                          [in] int nXSrc, [in] int nYSrc,
+                          [in] DWORD dwRop);
+
+    [
+    usesgetlasterror,
+    entry("PatBlt"),
+    helpstring("Combines select brush and destination pattern on DC according to ROP mode"),
+    ]
+    BOOL    WINAPI PatBlt([in] HDC hdc,
+                          [in] int nLeftRect, [in] int nTopRect,
+                          [in] int nWidth, [in] int nHeight,
+                          [in] DWORD fdwRop);
+
+    [
+    usesgetlasterror,
+    entry("StretchBlt"),
+    helpstring("Combines select brush and destination pattern on DC according to ROP mode while changing size"),
+    ]
+    BOOL    WINAPI StretchBlt([in] HDC hdcDest,
+                              [in] int nXOriginDest, [in] int nYOriginDest,
+                              [in] int bWidthDest, [in] int nHeightDest,
+                              [in] HDC hdcSrc,
+                              [in] int nXOriginSrc, [in] int nYOriginSrc,
+                              [in] int nWidthSrc, [in] int nHeightSrc,
+                              [in] DWORD dwRop);
+
+    #ifdef WIN32
+
+    [
+    usesgetlasterror,
+    entry("PlgBlt"),
+    helpstring("Combines source, destination, and pattern of two DCs according to ROP mode"),
+    ]
+    BOOL    WINAPI PlgBlt([in] HDC hdcDest,
+                          [in, out] WORD FAR * lpPoint,
+                          [in] HDC hdcSrc,
+                          [in] int nXSrc, [in] int nYSrc,
+                          [in] int nWidth, [in] int nHeight,
+                          [in] HBITMAP hbmMask,
+                          [in] int sMask, [in] int yMask);
+
+    [
+    usesgetlasterror,
+    entry("MaskBlt"),
+    helpstring("Combines source and destination of two DCs with a monochrome bitmap mask according to combined foreground and background ROP modes"),
+    ]
+    BOOL    WINAPI MaskBlt([in] HDC hdcDest,
+                           [in] int nXDest, [in] int nYDest,
+                           [in] int nWidth, [in] int nHeight,
+                           [in] HDC hdcSrc,
+                           [in] int nXSrc, [in] int nYSrc,
+                           [in] HBITMAP hbmMask,
+                           [in] int xMask, [in] int yMask,
+                           [in] DWORD dwRop);
+
+    #endif
+
+    /*
+    int     WINAPI StretchDIBits([in] HDC hdc, int, int, int, int, int,
+                            int, int, int, const void FAR *, LPBITMAPINFO, UINT, DWORD);
+
+    */
+
+    [
+    usesgetlasterror,
+    entry("SetPixel"),
+    helpstring("Sets pixel at (x,y) to given color"),
+    ]
+    COLORREF WINAPI SetPixel([in] HDC hdc,
+                             [in] int nXPos, [in] int nYPos,
+                             [in] COLORREF clrref);
+
+    [
+    usesgetlasterror,
+    entry("GetPixel"),
+    helpstring("Returns color of pixel at (x,y)"),
+    ]
+    COLORREF WINAPI GetPixel([in] HDC hdc,
+                             [in] int nXPos, [in] int nYPos);
+
+    [
+    usesgetlasterror,
+    entry("SetStretchBltMode"),
+    helpstring("Sets the mode for compressing blits (see STRETCH_ANDSCANS)"),
+    ]
+    int     WINAPI SetStretchBltMode([in] HDC hdc, [in] int fnStretchMode);
+
+    [
+    usesgetlasterror,
+    entry("GetStretchBltMode"),
+    helpstring("Gets the mode for compressing blits (see STRETCH_ANDSCANS)"),
+    ]
+    int     WINAPI GetStretchBltMode([in] HDC hdc);
+
+    /*
+    DWORD   WINAPI SetBitmapDimension([in] HBITMAP hbm, int, int);
+    DWORD   WINAPI GetBitmapDimension([in] HBITMAP hbm);
+    BOOL    WINAPI SetBitmapDimensionEx([in] HBITMAP hbm, int, int, SIZE FAR *);
+    BOOL    WINAPI GetBitmapDimensionEx([in] HBITMAP hbm, SIZE FAR *);
+    int     WINAPI SetROP2([in] HDC hdc, int);
+    int     WINAPI GetROP2([in] HDC hdc);
+    */
+
+    [
+    usesgetlasterror,
+    entry("SetBitmapBits"),
+    helpstring("Gets version numbers of Windows and MS-DOS"),
+    ]
+    LONG    WINAPI SetBitmapBits([in] HBITMAP hbm, [in] LONG cbBuffer, [out] BYTE FAR * lpvBits);
+
+    [
+    usesgetlasterror,
+    entry("GetBitmapBits"),
+    helpstring("Fills buffer with bits from the specified bitmap"),
+    ]
+    LONG    WINAPI GetBitmapBits([in] HBITMAP hbm, [in] LONG cbBuffer, [in] BYTE FAR * lpvBits);
+
+    /*
+    int     WINAPI SetDIBits([in] HDC hdc, [in] HBITMAP hbm, UINT, UINT, const void FAR *, BITMAPINFO FAR *, UINT);
+    int     WINAPI GetDIBits([in] HDC hdc, [in] HBITMAP hbm, UINT, UINT, void FAR *, BITMAPINFO FAR *, UINT);
+
+    int     WINAPI SetDIBitsToDevice([in] HDC hdc, int, int, int, int, int, int, UINT, UINT,
+                        void FAR *, BITMAPINFO FAR *, UINT);
+    */
+
+    // ****** Metafile support *****
+
+    [
+    #if WIN32
+    usesgetlasterror,
+    entry("CreateMetaFileA"),
+    #else
+    entry("CreateMetaFile"),
+    #endif
+    helpstring("Returns a metafile HDC for lpszFile (or for a memory metafile if NULL)"),
+    ]
+    HDC     WINAPI CreateMetaFile([in] LPCSTR lpszFile);
+
+    [
+    usesgetlasterror,
+    entry("CloseMetaFile"),
+    helpstring("Closes metafile HDC and returns a metafile handle"),
+    ]
+    HMETAFILE WINAPI CloseMetaFile([in] HDC hdc);
+
+    [
+    usesgetlasterror,
+    entry("DeleteMetaFile"),
+    helpstring("Invalidates the metafile handle"),
+    ]
+    BOOL      WINAPI DeleteMetaFile([in] HMETAFILE hmf);
+
+    [
+    usesgetlasterror,
+    entry("PlayMetaFile"),
+    helpstring("Plays hmf metafile on hdc device"),
+    ]
+    BOOL    WINAPI PlayMetaFile([in] HDC hdc, [in] HMETAFILE hmf);
+
+    [
+    #if WIN32
+    usesgetlasterror,
+    entry("GetMetaFileA"),
+    #else
+    entry("GetMetaFile"),
+    #endif
+    helpstring("Creates handle for lpszFile metafile"),
+    ]
+    HMETAFILE WINAPI GetMetaFile([in] LPCSTR lpszFile);
+
+    [
+    #if WIN32
+    usesgetlasterror,
+    entry("CopyMetaFileA"),
+    #else
+    entry("CopyMetaFile"),
+    #endif
+    helpstring("Copies source metafile to a file and returns handle of new metafile"),
+    ]
+    HMETAFILE WINAPI CopyMetaFile([in] HMETAFILE hmfSrc,
+                                  [in] LPCSTR lpszFile);
+
+#if WIN32
+    [
+    usesgetlasterror,
+    entry("GetMetaFileBitsEx"),
+    helpstring("Returns global memory containing metafile as bits"),
+    ]
+	UINT  WINAPI GetMetaFileBitsEx([in] HMETAFILE hmf, [in] UINT nSize, 
+								   [in] LPVOID lpvData);
+
+    [
+    usesgetlasterror,
+    entry("SetMetaFileBitsEx"),
+    helpstring("Creates a metafile from global memory"),
+    ]
+	HMETAFILE   WINAPI SetMetaFileBitsEx([in] UINT nSize, [in] LPVOID lpData);
+#else
+    [
+    usesgetlasterror,
+    entry("GetMetaFileBits"),
+    helpstring("Returns global memory handle of metafile as bits"),
+    ]
+    HGLOBAL WINAPI GetMetaFileBits([in] HMETAFILE hmf);
+
+    [
+    usesgetlasterror,
+    entry("SetMetaFileBitsEx"),
+    helpstring("Creates a metafile from data of global memory handle"),
+    ]
+    HMETAFILE WINAPI SetMetaFileBits([in] HGLOBAL hgb);
+
+    [
+    usesgetlasterror,
+    entry("SetMetaFileBitsBetter"),
+    helpstring("Creates a metafile from data of global memory handle owned by GDI (use for OLE)"),
+    ]
+    HMETAFILE WINAPI SetMetaFileBitsBetter([in] HGLOBAL hgb);
+#endif
+
+    /*
+    DECLARE_HANDLE(HMETAFILE);
+
+    // Clipboard Metafile Picture Structure
+    typedef struct tagMETAFILEPICT
+    {
+        int     mm;
+        int     xExt;
+        int     yExt;
+        HMETAFILE hMF;
+    } METAFILEPICT;
+    typedef METAFILEPICT FAR * LPMETAFILEPICT;
+
+    typedef struct tagMETAHEADER
+    {
+        UINT    mtType;
+        UINT    mtHeaderSize;
+        UINT    mtVersion;
+        DWORD   mtSize;
+        UINT    mtNoObjects;
+        DWORD   mtMaxRecord;
+        UINT    mtNoParameters;
+    } METAHEADER;
+
+    typedef struct tagHANDLETABLE
+    {
+        HGDIOBJ objectHandle[1];
+    } HANDLETABLE;
+    typedef HANDLETABLE*      PHANDLETABLE;
+    typedef HANDLETABLE FAR * LPHANDLETABLE;
+
+    typedef struct tagMETARECORD
+    {
+        DWORD   rdSize;
+        UINT    rdFunction;
+        UINT    rdParm[1];
+    } METARECORD;
+    typedef METARECORD*      PMETARECORD;
+    typedef METARECORD FAR * LPMETARECORD;
+
+    void    WINAPI PlayMetaFileRecord([in] HDC hdc, HANDLETABLE FAR *, METARECORD FAR *, UINT);
+    */
+
+    /* Omitted
+    typedef int (CALLBACK* MFENUMPROC)([in] HDC hdc, HANDLETABLE FAR *, METARECORD FAR *, int, LPARAM);
+    BOOL    WINAPI EnumMetaFile([in] HDC hdc, [in] HMETAFILE hmf, MFENUMPROC, LPARAM);
+    */
+
+    // ****** Enhanced Metafile support *****
+
+	#if WIN32
+    [
+    usesgetlasterror,
+    entry("CloseEnhMetaFile"),
+    helpstring("Closes an enhanced-metafile device context and returns a handle to the metafile."),
+    ]
+	HENHMETAFILE WINAPI CloseEnhMetaFile([in] HDC hdc);
+	
+    [
+    usesgetlasterror,
+    entry("CopyEnhMetaFileA"),
+    helpstring("Copies contents of enhanced-format metafile to specified file."),
+    ]
+	HENHMETAFILE WINAPI CopyEnhMetaFile([in] HENHMETAFILE hemf, 
+										[in] LPCSTR lpszFile);
+	
+    [
+    usesgetlasterror,
+    entry("CreateEnhMetaFileA"),
+    helpstring("Creates device context for enhanced-format metafile."),
+    ]
+	HDC   WINAPI CreateEnhMetaFile([in] HDC hdc, [in] LPCSTR lpFileName, 
+								   [in] int * lpRect, 
+								   [in] LPCSTR lpDescription);
+	
+    [
+    usesgetlasterror,
+    entry("DeleteEnhMetaFile"),
+    helpstring("Deletes an enhanced-format metafile or metafile handle."),
+    ]
+	BOOL  WINAPI DeleteEnhMetaFile([in] HENHMETAFILE hemf);
+	
+	/*
+	BOOL  WINAPI EnumEnhMetaFile([in] HDC hdc, [in] HENHMETAFILE hemf, ENHMFENUMPROC,
+			LPVOID, CONST RECT *);
+	*/
+	
+    [
+    usesgetlasterror,
+    entry("GetEnhMetaFileA"),
+    helpstring("Creates handle for given file-based enhanced-format metafile"),
+    ]
+	HENHMETAFILE WINAPI GetEnhMetaFile([in] LPCSTR lpszMetaFile);
+
+    [
+    usesgetlasterror,
+    entry("GetEnhMetaFileBits"),
+    helpstring("Copies contents of specified enhanced-format metafile into buffer"),
+    ]
+	UINT  WINAPI GetEnhMetaFileBits([in] HENHMETAFILE hemf, 
+									[in] UINT cbBuffer, 
+									[out] BYTE * lpbBuffer);
+
+    [
+    usesgetlasterror,
+    entry("GetEnhMetaFileDescriptionA"),
+    helpstring("Copies optional text description from an enhanced-format metafile to a specified buffer.")
+    ]
+	UINT  WINAPI GetEnhMetaFileDescription([in] HENHMETAFILE hemf, 
+										   [in] UINT cchBuffer, 
+										   [out] LPSTR lpszDescription);
+
+	/*
+    [
+    usesgetlasterror,
+    entry("GetEnhMetaFileHeader"),
+    helpstring(""),
+    ]
+	UINT  WINAPI GetEnhMetaFileHeader([in] HENHMETAFILE hemf, 
+									  [in] UINT cbBuffer, 
+									  [in] LPENHMETAHEADER lpemnh);
+
+    [
+    usesgetlasterror,
+    entry("GetEnhMetaFilePaletteEntries"),
+    helpstring(""),
+    ]
+	UINT  WINAPI GetEnhMetaFilePaletteEntries([in] HENHMETAFILE hemf, 
+											  UINT, 
+											  LPPALETTEENTRY );
+	*/
+
+    [
+    usesgetlasterror,
+    entry("GetWinMetaFileBits"),
+    helpstring("Converts enhanced-format records from metafile into Windows-format records and copies converted records to specified buffer."),
+    ]
+	UINT  WINAPI GetWinMetaFileBits([in] HENHMETAFILE hemf, 
+									[in] UINT cbBuffer, 
+									[out] BYTE * lpbBuffer, 
+									[in] INT fnMapMode, 
+									[in] HDC hdc);
+
+    [
+    usesgetlasterror,
+    entry("PlayEnhMetaFile"),
+    helpstring("Displays the picture in specified enhanced-format metafile."),
+    ]
+	BOOL  WINAPI PlayEnhMetaFile([in] HDC hdc, [in] HENHMETAFILE hemf, 
+								 [in] int * lpRect);
+
+	/*
+    [
+    usesgetlasterror,
+    entry("PlayEnhMetaFileRecord"),
+    helpstring(""),
+    ]
+	BOOL  WINAPI PlayEnhMetaFileRecord([in] HDC hdc, LPHANDLETABLE, CONST ENHMETARECORD *, UINT);
+	*/
+
+    [
+    usesgetlasterror,
+    entry("SetEnhMetaFileBits"),
+    helpstring("Creates memory-based enhanced-format metafile from supplied data."),
+    ]
+	HENHMETAFILE WINAPI SetEnhMetaFileBits([in] UINT cbBuffer, 
+										   [out] BYTE * lpData);
+
+	/*
+    [
+    usesgetlasterror,
+    entry("SetWinMetaFileBits"),
+    helpstring(""),
+    ]
+	HENHMETAFILE  WINAPI SetWinMetaFileBits([in] UINT cbBuffer, 
+											[in] BYTE * lpbBuffer, 
+											[in] HDC hdc, 
+											[in] long * lpmfp);
+	*/
+
+    [
+    usesgetlasterror,
+    entry("GdiComment"),
+    helpstring("Copies a comment from a buffer into specified enhanced-format metafile."),
+    ]
+	BOOL  WINAPI GdiComment([in] HDC hdc, [in] UINT cbSize, 
+							[in] BYTE * lpData);
+
+	#endif
+
+    // ****** Printing support ******
+
+    /*
+    typedef struct
+    {
+        int     cbSize;
+        LPCSTR  lpszDocName;
+        LPCSTR  lpszOutput;
+    }   DOCINFO;
+    typedef DOCINFO FAR * LPDOCINFO;
+
+    int     WINAPI StartDoc([in] HDC hdc, DOCINFO FAR *);
+    int     WINAPI StartPage([in] HDC hdc);
+    int     WINAPI EndPage([in] HDC hdc);
+    int     WINAPI EndDoc([in] HDC hdc);
+    int     WINAPI AbortDoc([in] HDC hdc);
+    */
+
+    /* Omitted
+    typedef BOOL (CALLBACK* ABORTPROC)([in] HDC hdc, int);
+    int     WINAPI SetAbortProc([in] HDC hdc, ABORTPROC);
+    */
+
+    /*
+    HANDLE  WINAPI SpoolFile(LPSTR, LPSTR, LPSTR, LPSTR);
+
+    BOOL    WINAPI QueryAbort([in] HDC hdc, int);
+
+    */
+
+    // ******* GDI Escape support *******
+
+    /*
+    int     WINAPI Escape([in] HDC hdc, int, int, LPCSTR, void FAR *);
+
+    */
+
+    // ******* Path support *******
+
+    #if WIN32
+    [
+    usesgetlasterror,
+    entry("AbortPath"),
+    helpstring("Closes and discards any paths in the specified device context"),
+    ]
+    BOOL WINAPI AbortPath([in] HDC hDC);
+
+    [
+    usesgetlasterror,
+    entry("ArcTo"),
+    helpstring("Draws an elliptical arc"),
+    ]
+    BOOL WINAPI ArcTo([in] HDC hDC,
+                      [in] int nLeftRect, [in] int nTopRect,
+                      [in] int nRightRect, [in] int nBottomRect,
+                      [in] int nXRadial1, [in] int nYRadial1,
+                      [in] int nXRadial2, [in] int nYRadial2);
+
+    [
+    usesgetlasterror,
+    entry("BeginPath"),
+    helpstring("Opens a path bracket in the specified device context"),
+    ]
+    BOOL WINAPI BeginPath([in] HDC hDC);
+
+    [
+    usesgetlasterror,
+    entry("CloseFigure"),
+    helpstring("Closes an open figure in a path"),
+    ]
+    BOOL WINAPI CloseFigure([in] HDC hDC);
+
+    [
+    usesgetlasterror,
+    entry("EndPath"),
+    helpstring("Closes a path bracket and selects the path into the specified device context"),
+    ]
+    BOOL WINAPI EndPath([in] HDC hDC);
+
+    [
+    usesgetlasterror,
+    entry("FillPath"),
+    helpstring("Closes any open figures in the current path and fills the path's interior using the current brush and polygon-filling modes"),
+    ]
+    BOOL WINAPI FillPath([in] HDC hDC);
+
+    [
+    usesgetlasterror,
+    entry("FlattenPath"),
+    helpstring("Transforms curves in the current path, turning each into a sequence of lines"),
+    ]
+    BOOL WINAPI FlattenPath([in] HDC hDC);
+
+    [
+    usesgetlasterror,
+    entry("GetPath"),
+    helpstring("Retrieves the coordinates defining the endpoints of lines and the control points of curves found in the current path"),
+    ]
+    int WINAPI GetPath([in] HDC hDC, [in, out] int * lpPoints,
+                       [in, out] BYTE * lpTypes, [in] int nSize);
+
+    [
+    usesgetlasterror,
+    entry("PathToRegion"),
+    helpstring("Creates a region from the current path"),
+    ]
+    HRGN WINAPI PathToRegion([in] HDC hDC);
+
+    [
+    usesgetlasterror,
+    entry("PolyDraw"),
+    helpstring("Draws a set of line segments and Bezier curves"),
+    ]
+    BOOL WINAPI PolyDraw([in] HDC hDC, [in] int * lppt,
+                         [in] BYTE * lpbTypes, [in] int cCount);
+
+    [
+    usesgetlasterror,
+    entry("SelectClipPath"),
+    helpstring("Selects the current path as a clipping region, combining the new region with any existing clipping region by using the specified mode"),
+    ]
+    BOOL WINAPI SelectClipPath([in] HDC hDC, [in] int iMode);
+
+    [
+    usesgetlasterror,
+    entry("SetArcDirection"),
+    helpstring("Sets the drawing direction to be used for arc and rectangle functions to AD_COUNTERCLOCKWISE or AD_CLOCKWISE"),
+    ]
+    int WINAPI SetArcDirection([in] HDC hDC, [in] int ArcDirection);
+
+    [
+    usesgetlasterror,
+    entry("SetMiterLimit"),
+    helpstring("Sets the limit for the length of miter joins for the specified device context"),
+    ]
+    BOOL WINAPI SetMiterLimit([in] HDC hDC, [in] FLOAT eNewLimit,
+                              [out] FLOAT * peOldLimit);
+
+    [
+    usesgetlasterror,
+    entry("StrokeAndFillPath"),
+    helpstring("Strokes the outline of the path with the current pen and fills with the current brush"),
+    ]
+    BOOL WINAPI StrokeAndFillPath([in] HDC hDC);
+
+    [
+    usesgetlasterror,
+    entry("StrokePath"),
+    helpstring("Strokes the outline of the path with the current pen"),
+    ]
+    BOOL WINAPI StrokePath([in] HDC hDC);
+
+    [
+    usesgetlasterror,
+    entry("WidenPath"),
+    helpstring("Redefines the current path as the area that would be painted if the path were stroked using the current pen"),
+    ]
+    BOOL WINAPI WidenPath([in] HDC hDC);
+
+    [
+    usesgetlasterror,
+    entry("GetMiterLimit"),
+    helpstring("Gets the limit for the length of miter joins for the specified device context"),
+    ]
+    BOOL WINAPI GetMiterLimit([in] HDC hDC, [out] FLOAT * peOldLimit);
+
+
+    [
+    usesgetlasterror,
+    entry("GetArcDirection"),
+    helpstring("Gets the drawing direction used for arc and rectangle functions (AD_COUNTERCLOCKWISE or AD_CLOCKWISE)"),
+    ]
+    int WINAPI GetArcDirection([in] HDC hDC);
+
+    // HPEN WINAPI ExtCreatePen(DWORD, DWORD, CONST LOGBRUSH *, DWORD, CONST DWORD *);
+
+    #endif // WIN32
+
+}
+
+[
+uuid(54674045-3A82-101B-8181-00AA003743D3),
+helpstring("Windows GDI Constants"),
+,
+dllname("NOSUCH.DLL")
+]
+module GDIConst {
+
+    // new StretchBlt() Modes (simpler names)
+    [ helpstring("SetStretchBltMode: AND compressed bits (preserve black) for SetStretchBltMode)") ]
+    const int STRETCH_ANDSCANS   = 1;
+    [ helpstring("SetStretchBltMode: OR compressed bits (preserve colored or white) for SetStretchBltMode") ]
+    const int STRETCH_ORSCANS        = 2;
+    [ helpstring("SetStretchBltMode: Delete compressed lines of bits for SetStretchBltMode") ]
+    const int STRETCH_DELETESCANS    = 3;
+
+    // Ternary raster operations
+    [ helpstring("BitBlt: Copy source bits over destination bits") ]
+    const DWORD SRCCOPY = 0x00CC0020;
+    [ helpstring("BitBlt: OR source bits onto destination") ]
+    const DWORD SRCPAINT    = 0x00EE0086;
+    [ helpstring("BitBlt: AND source bits onto destination") ]
+    const DWORD SRCAND      = 0x008800C6;
+    [ helpstring("BitBlt: XOR source bits onto destination") ]
+    const DWORD SRCINVERT   = 0x00660046;
+    [ helpstring("BitBlt: Invert destination bits, AND the result with source bits") ]
+    const DWORD SRCERASE    = 0x00440328;
+    [ helpstring("BitBlt: Invert source bits, copy to destination") ]
+    const DWORD NOTSRCCOPY  = 0x00330008;
+    [ helpstring("BitBlt: OR source bits onto destination bits, invert result") ]
+    const DWORD NOTSRCERASE = 0x001100A6;
+    [ helpstring("BitBlt: AND source bits onto pattern bits, copy to destination") ]
+    const DWORD MERGECOPY   = 0x00C000CA;
+    [ helpstring("BitBlt: Invert source bits, AND result onto destination") ]
+    const DWORD MERGEPAINT  = 0x00BB0226;
+    [ helpstring("BitBlt: Copy pattern bits over destination bits") ]
+    const DWORD PATCOPY = 0x00F00021;
+    [ helpstring("BitBlt: Invert source bits, OR result with pattern, OR result with destination") ]
+    const DWORD PATPAINT    = 0x00FB0A09;
+    [ helpstring("BitBlt: XOR pattern bits onto destination") ]
+    const DWORD PATINVERT   = 0x005A0049;
+    [ helpstring("BitBlt: Invert destination bits") ]
+    const DWORD DSTINVERT   = 0x00550009;
+    [ helpstring("BitBlt: Turn destination bits black (0)") ]
+    const DWORD BLACKNESS   = 0x00000042;
+    [ helpstring("BitBlt: Turn destination bits white (1)") ]
+    const DWORD WHITENESS   = 0x00FF0062;
+
+    // ExtFloodFill style flags
+    [ helpstring("ExtFloodFill: Fill to border specified by color") ]
+    const int FLOODFILLBORDER   = 0;
+    [ helpstring("ExtFloodFill: Fill with color, end of color is border") ]
+    const int FLOODFILLSURFACE  = 1;
+
+    // Device Parameters for GetDeviceCaps()
+    [ helpstring("GetDeviceCaps: Version number") ]
+    const int DRIVERVERSION = 0;
+    [ helpstring("GetDeviceCaps: Device type returns DT_PLOTTER, DT_RASDISPLAY, DT_RASPRINTER, DT_RASCAMERA, DT_CHARSTREAM, DT_METAFILE, or DT_DISPFILE ") ]
+    const int TECHNOLOGY    = 2;
+    [ helpstring("GetDeviceCaps: Width of display in millimeters") ]
+    const int HORZSIZE      = 4;
+    [ helpstring("GetDeviceCaps: Height of display in millimeters") ]
+    const int VERTSIZE      = 6;
+    [ helpstring("GetDeviceCaps: Width of display in pixels") ]
+    const int HORZRES       = 8;
+    [ helpstring("GetDeviceCaps: Height of display in raster lines") ]
+    const int VERTRES       = 10;
+    [ helpstring("GetDeviceCaps: Color bits per pixel") ]
+    const int BITSPIXEL     = 12;
+    [ helpstring("GetDeviceCaps: Color planes") ]
+    const int PLANES        = 14;
+    [ helpstring("GetDeviceCaps: Number of device-specific brushes") ]
+    const int NUMBRUSHES    = 16;
+    [ helpstring("GetDeviceCaps: Number of device-specific pens") ]
+    const int NUMPENS       = 18;
+    [ helpstring("GetDeviceCaps: Number of device-specific markers") ]
+    const int NUMMARKERS    = 20;
+    [ helpstring("GetDeviceCaps: Number of device-specific fonts") ]
+    const int NUMFONTS      = 22;
+    [ helpstring("GetDeviceCaps: Entries in device color table") ]
+    const int NUMCOLORS     = 24;
+    [ helpstring("GetDeviceCaps: Size of PDEVICE structure in bytes") ]
+    const int PDEVICESIZE   = 26;
+    [ helpstring("GetDeviceCaps: Curve capability flags - CC_NONE, CC_CIRCLES, CC_PIE, CC_CHORD, CC_ELLIPSES, CC_WIDE, CC_STYLED, CC_WIDESTYLED, CC_INTERIORS, CC_ROUNDRECT") ]
+    const int CURVECAPS     = 28;
+    [ helpstring("GetDeviceCaps: Line capability flags - LC_NONE, LC_POLYLINE, LC_MARKER, LC_POLYMARKER, LC_WIDE, LC_STYLED, LC_WIDESTYLED, LC_INTERIORS") ]
+    const int LINECAPS      = 30;
+    [ helpstring("GetDeviceCaps: Polygon capability flags - PC_NONE, PC_POLYGON, PC_RECTANGLE, PC_WINDPOLYGON, PC_SCANLINE, PC_WIDE, PC_STYLED, PC_WIDESTYLED, PC_INTERIORS") ]
+    const int POLYGONALCAPS = 32;
+    [ helpstring(
+    "GetDeviceCaps: Text capability flags - TC_OP_STROKE, TC_CR_90, TC_CR_ANY, TC_IA_ABLE, TC_UA_ABLE, TC_SO_ABLE, TC_RA_ABLE, TC_VA_ABLE, Etc.") ]
+    const int TEXTCAPS    = 34;
+    [ helpstring("GetDeviceCaps: Clipping capability flags - CP_NONE, CP_RECTANGLE, CP_REGION") ]
+    const int CLIPCAPS      = 36;
+    [ helpstring(
+    "GetDeviceCaps: Raster capability flags - RC_BITBLT, RC_SCALING, RC_SAVEBITMAP, RC_DI_BITMAP, RC_PALETTE, RC_STRETCHBLT, RC_FLOODFILL, RC_STRETCHDIB, Etc."
+    ) ]
+    const int RASTERCAPS    = 38;
+    [ helpstring("GetDeviceCaps: X Aspect") ]
+    const int ASPECTX       = 40;
+    [ helpstring("GetDeviceCaps: Y Aspect") ]
+    const int ASPECTY       = 42;
+    [ helpstring("GetDeviceCaps: X/Y Aspect") ]
+    const int ASPECTXY      = 44;
+    [ helpstring("GetDeviceCaps: X pixels per logical inch") ]
+    const int LOGPIXELSX    = 88;
+    [ helpstring("GetDeviceCaps: Y pixels per logical inch") ]
+    const int LOGPIXELSY    = 90;
+    [ helpstring("GetDeviceCaps: Entries in system palette") ]
+    const int SIZEPALETTE   = 104;
+    [ helpstring("GetDeviceCaps: Reserved entries in system palette") ]
+    const int NUMRESERVED   = 106;
+    [ helpstring("GetDeviceCaps: Color resolution in bits per pixel") ]
+    const int COLORRES      = 108;
+
+    // GetDeviceCaps() return value masks
+
+    // TECHNOLOGY
+    [ helpstring("GetDeviceCaps: TECHNOLOGY flag") ]
+    const int DT_PLOTTER        = 0;
+    [ helpstring("GetDeviceCaps: TECHNOLOGY flag") ]
+    const int DT_RASDISPLAY     = 1;
+    [ helpstring("GetDeviceCaps: TECHNOLOGY flag") ]
+    const int DT_RASPRINTER     = 2;
+    [ helpstring("GetDeviceCaps: TECHNOLOGY flag") ]
+    const int DT_RASCAMERA      = 3;
+    [ helpstring("GetDeviceCaps: TECHNOLOGY flag") ]
+    const int DT_CHARSTREAM     = 4;
+    [ helpstring("GetDeviceCaps: TECHNOLOGY flag") ]
+    const int DT_METAFILE       = 5;
+    [ helpstring("GetDeviceCaps: TECHNOLOGY flag") ]
+    const int DT_DISPFILE       = 6;
+
+    // CURVECAPS
+    [ helpstring("GetDeviceCaps: CURVECAPS flag") ]
+    const UINT CC_NONE          = 0x0000;
+    [ helpstring("GetDeviceCaps: CURVECAPS flag") ]
+    const UINT CC_CIRCLES       = 0x0001;
+    [ helpstring("GetDeviceCaps: CURVECAPS flag") ]
+    const UINT CC_PIE           = 0x0002;
+    [ helpstring("GetDeviceCaps: CURVECAPS flag") ]
+    const UINT CC_CHORD         = 0x0004;
+    [ helpstring("GetDeviceCaps: CURVECAPS flag") ]
+    const UINT CC_ELLIPSES      = 0x0008;
+    [ helpstring("GetDeviceCaps: CURVECAPS flag") ]
+    const UINT CC_WIDE          = 0x0010;
+    [ helpstring("GetDeviceCaps: CURVECAPS flag") ]
+    const UINT CC_STYLED            = 0x0020;
+    [ helpstring("GetDeviceCaps: CURVECAPS flag") ]
+    const UINT CC_WIDESTYLED        = 0x0040;
+    [ helpstring("GetDeviceCaps: CURVECAPS flag") ]
+    const UINT CC_INTERIORS     = 0x0080;
+    [ helpstring("GetDeviceCaps: CURVECAPS flag") ]
+    const UINT CC_ROUNDRECT     = 0x0100;
+
+    // LINECAPS
+    [ helpstring("GetDeviceCaps: LINECAPS flag") ]
+    const UINT LC_NONE          = 0x0000;
+    [ helpstring("GetDeviceCaps: LINECAPS flag") ]
+    const UINT LC_POLYLINE      = 0x0002;
+    [ helpstring("GetDeviceCaps: LINECAPS flag") ]
+    const UINT LC_MARKER            = 0x0004;
+    [ helpstring("GetDeviceCaps: LINECAPS flag") ]
+    const UINT LC_POLYMARKER        = 0x0008;
+    [ helpstring("GetDeviceCaps: LINECAPS flag") ]
+    const UINT LC_WIDE          = 0x0010;
+    [ helpstring("GetDeviceCaps: LINECAPS flag") ]
+    const UINT LC_STYLED            = 0x0020;
+    [ helpstring("GetDeviceCaps: LINECAPS flag") ]
+    const UINT LC_WIDESTYLED        = 0x0040;
+    [ helpstring("GetDeviceCaps: LINECAPS flag") ]
+    const UINT LC_INTERIORS     = 0x0080;
+
+    // POLYGONALCAPS
+    [ helpstring("GetDeviceCaps: POLYCONALCAPS flag") ]
+    const UINT PC_NONE          = 0x0000;
+    [ helpstring("GetDeviceCaps: POLYCONALCAPS flag") ]
+    const UINT PC_POLYGON       = 0x0001;
+    [ helpstring("GetDeviceCaps: POLYCONALCAPS flag") ]
+    const UINT PC_RECTANGLE     = 0x0002;
+    [ helpstring("GetDeviceCaps: POLYCONALCAPS flag") ]
+    const UINT PC_WINDPOLYGON   = 0x0004;
+    [ helpstring("GetDeviceCaps: POLYCONALCAPS flag") ]
+    const UINT PC_SCANLINE      = 0x0008;
+    [ helpstring("GetDeviceCaps: POLYCONALCAPS flag") ]
+    const UINT PC_WIDE          = 0x0010;
+    [ helpstring("GetDeviceCaps: POLYCONALCAPS flag") ]
+    const UINT PC_STYLED        = 0x0020;
+    [ helpstring("GetDeviceCaps: POLYCONALCAPS flag") ]
+    const UINT PC_WIDESTYLED    = 0x0040;
+    [ helpstring("GetDeviceCaps: POLYCONALCAPS flag") ]
+    const UINT PC_INTERIORS     = 0x0080;
+
+    // TEXTCAPS
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_OP_CHARACTER  = 0x0001;
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_OP_STROKE     = 0x0002;
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_CP_STROKE     = 0x0004;
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_CR_90         = 0x0008;
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_CR_ANY        = 0x0010;
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_SF_X_YINDEP   = 0x0020;
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_SA_DOUBLE     = 0x0040;
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_SA_INTEGER    = 0x0080;
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_SA_CONTIN     = 0x0100;
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_EA_DOUBLE     = 0x0200;
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_IA_ABLE       = 0x0400;
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_UA_ABLE       = 0x0800;
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_SO_ABLE       = 0x1000;
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_RA_ABLE       = 0x2000;
+    [ helpstring("GetDeviceCaps: TEXTCAPS flag") ]
+    const UINT TC_VA_ABLE       = 0x4000;
+
+    // CLIPCAPS
+    [ helpstring("GetDeviceCaps: CLIPCAPS flag") ]
+    const UINT CP_NONE          = 0x0000;
+    [ helpstring("GetDeviceCaps: CLIPCAPS flag") ]
+    const UINT CP_RECTANGLE     = 0x0001;
+    [ helpstring("GetDeviceCaps: CLIPCAPS flag") ]
+    const UINT CP_REGION        = 0x0002;
+
+    // RASTERCAPS
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_BITBLT        = 0x0001;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_BANDING       = 0x0002;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_SCALING       = 0x0004;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_BITMAP64      = 0x0008;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_GDI20_OUTPUT  = 0x0010;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_GDI20_STATE   = 0x0020;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_SAVEBITMAP    = 0x0040;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_DI_BITMAP     = 0x0080;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_PALETTE       = 0x0100;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_DIBTODEV      = 0x0200;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_BIGFONT       = 0x0400;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_STRETCHBLT    = 0x0800;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_FLOODFILL     = 0x1000;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_STRETCHDIB    = 0x2000;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_OP_DX_OUTPUT  = 0x4000;
+    [ helpstring("GetDeviceCaps: RASTERCAPS flag") ]
+    const UINT RC_DEVBITS       = H8000; // Hack to get 0x8000
+
+    [ helpstring("GetDeviceCaps: Other capability flags - C1_TRANSPARENT") ]
+    const int CAPS1         = 94;
+    [ helpstring("GetDeviceCaps: CAPS1 transparency flag") ]
+    const UINT C1_TRANSPARENT   = 0x0001;   // new raster cap
+
+    // const int QUERYROPSUPPORT    = 40    // use to determine ROP support
+
+    // Background Modes
+    [ helpstring("Get/SetBkMode: Transparent background") ]
+    const int TRANSPARENT    = 1;
+    [ helpstring("Get/SetBkMode: Opaque background") ]
+    const int OPAQUE         = 2;
+    [ helpstring("Get/SetBkMode: Transparent background for blits (requires C1_TRANSPARENT device capability)") ]
+    const int NEWTRANSPARENT = 3;
+
+    [ helpstring("SetArcDirection: Draw arc or rectangle counterclockwise") ]
+    const UINT AD_COUNTERCLOCKWISE = 1;
+    [ helpstring("SetArcDirection: Draw arc or rectangle clockwise") ]
+    const UINT AD_CLOCKWISE        = 2;
+
+    //const UINT DCB_RESET      = 0x0001;
+    //const UINT DCB_ACCUMULATE = 0x0002;
+    //const UINT DCB_DIRTY      = 0x0002;
+    //const UINT DCB_SET        = 0x0003;
+    //const UINT DCB_ENABLE = 0x0004;
+    //const UINT DCB_DISABLE    = 0x0008;
+
+    // Map modes
+    //const int MM_TEXT         = 1;
+    //const int MM_LOMETRIC     = 2;
+    //const int MM_HIMETRIC     = 3;
+    //const int MM_LOENGLISH        = 4;
+    //const int MM_HIENGLISH        = 5;
+    //const int MM_TWIPS            = 6;
+    //const int MM_ISOTROPIC        = 7;
+    //const int MM_ANISOTROPIC  = 8;
+
+    // Coordinate Modes
+    const int ABSOLUTE                    = 1;
+    const int RELATIVE                    = 2;
+
+    // Pen Styles
+    const int PS_SOLID          = 0;
+    const int PS_DASH           = 1;
+    const int PS_DOT            = 2;
+    const int PS_DASHDOT        = 3;
+    const int PS_DASHDOTDOT     = 4;
+    const int PS_NULL           = 5;
+    const int PS_INSIDEFRAME    = 6;
+
+    // Palette entry flags
+    //const int PC_RESERVED = 0x01; // palette index used for animation
+    //const int PC_EXPLICIT = 0x02; // palette index is explicit to device
+    //const int PC_NOCOLLAPSE   = 0x04; // do not match color to system palette
+
+    // Get/SetSystemPaletteUse() values
+    //const int SYSPAL_STATIC   = 1;
+    //const int SYSPAL_NOSTATIC = 2;
+
+    // Brush Styles
+    const int BS_SOLID          = 0;
+    const int BS_NULL           = 1;
+    const int BS_HOLLOW         = 1;
+    const int BS_HATCHED        = 2;
+    const int BS_PATTERN        = 3;
+    const int BS_INDEXED        = 4;
+    const int BS_DIBPATTERN     = 5;
+
+    // Hatch Styles
+    const int HS_HORIZONTAL     = 0;
+    const int HS_VERTICAL       = 1;
+    const int HS_FDIAGONAL      = 2;
+    const int HS_BDIAGONAL      = 3;
+    const int HS_CROSS          = 4;
+    const int HS_DIAGCROSS      = 5;
+
+    // Stock brushes for use with GetStockObject()
+    const int WHITE_BRUSH       = 0;
+    const int LTGRAY_BRUSH      = 1;
+    const int GRAY_BRUSH        = 2;
+    const int DKGRAY_BRUSH      = 3;
+    const int BLACK_BRUSH       = 4;
+    const int NULL_BRUSH        = 5;
+    const int HOLLOW_BRUSH      = 5;
+
+    // Stock pens for use with GetStockObject();
+    const int WHITE_PEN         = 6;
+    const int BLACK_PEN         = 7;
+    const int NULL_PEN          = 8;
+
+    // Region type flags
+    //const int ERROR               = 0;
+    //const int NULLREGION      = 1;
+    //const int SIMPLEREGION        = 2;
+    //const int COMPLEXREGION       = 3;
+
+    // CombineRgn() command values
+    //const int RGN_AND         = 1;
+    //const int RGN_OR          = 2;
+    //const int RGN_XOR         = 3;
+    //const int RGN_DIFF            = 4;
+    //const int RGN_COPY            = 5;
+
+    // Object types for EnumObjects()
+    const int OBJ_PEN       = 1;
+    const int OBJ_BRUSH     = 2;
+
+    // DrawText() Format Flags
+    const UINT DT_TOP       = 0x0000;
+    const UINT DT_LEFT      = 0x0000;
+    const UINT DT_CENTER        = 0x0001;
+    const UINT DT_RIGHT     = 0x0002;
+    const UINT DT_VCENTER   = 0x0004;
+    const UINT DT_BOTTOM        = 0x0008;
+    const UINT DT_WORDBREAK = 0x0010;
+    const UINT DT_SINGLELINE    = 0x0020;
+    const UINT DT_EXPANDTABS    = 0x0040;
+    const UINT DT_TABSTOP   = 0x0080;
+    const UINT DT_NOCLIP        = 0x0100;
+    const UINT DT_EXTERNALLEADING  = 0x0200;
+    const UINT DT_CALCRECT  = 0x0400;
+    const UINT DT_NOPREFIX  = 0x0800;
+    const UINT DT_INTERNAL  = 0x1000;
+
+    // Text Alignment Options
+    const UINT TA_NOUPDATECP = 0x0000;
+    const UINT TA_UPDATECP  = 0x0001;
+    const UINT TA_LEFT      = 0x0000;
+    const UINT TA_RIGHT     = 0x0002;
+    const UINT TA_CENTER    = 0x0006;
+    const UINT TA_TOP       = 0x0000;
+    const UINT TA_BOTTOM    = 0x0008;
+    const UINT TA_BASELINE  = 0x0018;
+
+    // constants for the biCompression field
+    const long BI_RGB   = 0;
+    const long BI_RLE8  = 1;
+    const long BI_RLE4  = 2;
+
+    // DIB color table identifiers
+    const int DIB_RGB_COLORS  = 0;
+    const int DIB_PAL_COLORS  = 1;
+
+    // constants for CreateDIBitmap
+    //const DWORD CBM_INIT       = 0x00000004;
+
+    // Binary raster ops
+    const int R2_BLACK           = 1;
+    const int R2_NOTMERGEPEN     = 2;
+    const int R2_MASKNOTPEN      = 3;
+    const int R2_NOTCOPYPEN      = 4;
+    const int R2_MASKPENNOT      = 5;
+    const int R2_NOT             = 6;
+    const int R2_XORPEN          = 7;
+    const int R2_NOTMASKPEN      = 8;
+    const int R2_MASKPEN         = 9;
+    const int R2_NOTXORPEN       = 10;
+    const int R2_NOP             = 11;
+    const int R2_MERGENOTPEN     = 12;
+    const int R2_COPYPEN         = 13;
+    const int R2_MERGEPENNOT     = 14;
+    const int R2_MERGEPEN        = 15;
+    const int R2_WHITE           = 16;
+
+    // PolyFill Modes
+    const int ALTERNATE  = 1;
+    const int WINDING    = 2;
+
+    const UINT ETO_GRAYED   = 0x0001;
+    const UINT ETO_OPAQUE   = 0x0002;
+    const UINT ETO_CLIPPED  = 0x0004;
+
+    /*
+    // Metafile Functions
+    const UINT META_SETBKCOLOR            = 0x0201;
+    const UINT META_SETBKMODE             = 0x0102;
+    const UINT META_SETMAPMODE            = 0x0103;
+    const UINT META_SETROP2               = 0x0104;
+    const UINT META_SETRELABS             = 0x0105;
+    const UINT META_SETPOLYFILLMODE       = 0x0106;
+    const UINT META_SETSTRETCHBLTMODE     = 0x0107;
+    const UINT META_SETTEXTCHAREXTRA      = 0x0108;
+    const UINT META_SETTEXTCOLOR          = 0x0209;
+    const UINT META_SETTEXTJUSTIFICATION  = 0x020A;
+    const UINT META_SETWINDOWORG          = 0x020B;
+    const UINT META_SETWINDOWEXT          = 0x020C;
+    const UINT META_SETVIEWPORTORG        = 0x020D;
+    const UINT META_SETVIEWPORTEXT        = 0x020E;
+    const UINT META_OFFSETWINDOWORG       = 0x020F;
+    const UINT META_SCALEWINDOWEXT        = 0x0410;
+    const UINT META_OFFSETVIEWPORTORG     = 0x0211;
+    const UINT META_SCALEVIEWPORTEXT      = 0x0412;
+    const UINT META_LINETO                = 0x0213;
+    const UINT META_MOVETO                = 0x0214;
+    const UINT META_EXCLUDECLIPRECT       = 0x0415;
+    const UINT META_INTERSECTCLIPRECT     = 0x0416;
+    const UINT META_ARC                   = 0x0817;
+    const UINT META_ELLIPSE               = 0x0418;
+    const UINT META_FLOODFILL             = 0x0419;
+    const UINT META_PIE                   = 0x081A;
+    const UINT META_RECTANGLE             = 0x041B;
+    const UINT META_ROUNDRECT             = 0x061C;
+    const UINT META_PATBLT                = 0x061D;
+    const UINT META_SAVEDC                = 0x001E;
+    const UINT META_SETPIXEL              = 0x041F;
+    const UINT META_OFFSETCLIPRGN         = 0x0220;
+    const UINT META_TEXTOUT               = 0x0521;
+    const UINT META_BITBLT                = 0x0922;
+    const UINT META_STRETCHBLT            = 0x0B23;
+    const UINT META_POLYGON               = 0x0324;
+    const UINT META_POLYLINE              = 0x0325;
+    const UINT META_ESCAPE                = 0x0626;
+    const UINT META_RESTOREDC             = 0x0127;
+    const UINT META_FILLREGION            = 0x0228;
+    const UINT META_FRAMEREGION           = 0x0429;
+    const UINT META_INVERTREGION          = 0x012A;
+    const UINT META_PAINTREGION           = 0x012B;
+    const UINT META_SELECTCLIPREGION      = 0x012C;
+    const UINT META_SELECTOBJECT          = 0x012D;
+    const UINT META_SETTEXTALIGN          = 0x012E;
+    const UINT META_DRAWTEXT              = 0x062F;
+
+    const UINT    META_CHORD              = 0x0830;
+    const UINT    META_SETMAPPERFLAGS     = 0x0231;
+    const UINT    META_EXTTEXTOUT         = 0x0a32;
+    const UINT    META_SETDIBTODEV        = 0x0d33;
+    const UINT    META_SELECTPALETTE      = 0x0234;
+    const UINT    META_REALIZEPALETTE     = 0x0035;
+    const UINT    META_ANIMATEPALETTE     = 0x0436;
+    const UINT    META_SETPALENTRIES      = 0x0037;
+    const UINT    META_POLYPOLYGON        = 0x0538;
+    const UINT    META_RESIZEPALETTE      = 0x0139;
+
+    const UINT    META_DIBBITBLT          = 0x0940;
+    const UINT    META_DIBSTRETCHBLT      = 0x0b41;
+    const UINT    META_DIBCREATEPATTERNBRUSH   = 0x0142;
+    const UINT    META_STRETCHDIB         = 0x0f43;
+
+    const UINT META_EXTFLOODFILL          = 0x0548;
+
+    const UINT META_RESETDC               = 0x014C;
+    const UINT META_STARTDOC              = 0x014D;
+    const UINT META_STARTPAGE             = 0x004F;
+    const UINT META_ENDPAGE               = 0x0050;
+    const UINT META_ABORTDOC              = 0x0052;
+    const UINT META_ENDDOC                = 0x005E;
+
+    const UINT    META_DELETEOBJECT       = 0x01f0;
+
+    const UINT    META_CREATEPALETTE      = 0x00f7;
+    const UINT META_CREATEBRUSH           = 0x00F8;
+    const UINT META_CREATEPATTERNBRUSH    = 0x01F9;
+    const UINT META_CREATEPENINDIRECT     = 0x02FA;
+    const UINT META_CREATEFONTINDIRECT    = 0x02FB;
+    const UINT META_CREATEBRUSHINDIRECT   = 0x02FC;
+    const UINT META_CREATEBITMAPINDIRECT  = 0x02FD;
+    const UINT META_CREATEBITMAP          = 0x06FE;
+    const UINT META_CREATEREGION          = 0x06FF;
+    */
+
+    /*
+    // Spooler Error Codes
+    const UINT SP_NOTREPORTED       = 0x4000;
+    const int SP_ERROR              = -1;
+    const int SP_APPABORT           = -2;
+    const int SP_USERABORT          = -3;
+    const int SP_OUTOFDISK          = -4;
+    const int SP_OUTOFMEMORY        = -5;
+
+    const int PR_JOBSTATUS          = 0x0000;
+
+    // GDI Escapes
+    const int NEWFRAME              = 1;
+    const int ABORTDOC              = 2;
+    const int NEXTBAND              = 3;
+    const int SETCOLORTABLE         = 4;
+    const int GETCOLORTABLE         = 5;
+    const int FLUSHOUTPUT           = 6;
+    const int DRAFTMODE             = 7;
+    const int QUERYESCSUPPORT       = 8;
+    const int SETABORTPROC          = 9;
+    const int STARTDOC              = 10;
+    const int ENDDOC                = 11;
+    const int GETPHYSPAGESIZE       = 12;
+    const int GETPRINTINGOFFSET     = 13;
+    const int GETSCALINGFACTOR      = 14;
+    const int MFCOMMENT             = 15;
+    const int GETPENWIDTH           = 16;
+    const int SETCOPYCOUNT          = 17;
+    const int SELECTPAPERSOURCE     = 18;
+    const int DEVICEDATA            = 19;
+    const int PASSTHROUGH           = 19;
+    const int GETTECHNOLGY          = 20;
+    const int GETTECHNOLOGY         = 20;
+    const int SETLINECAP            = 21;
+    const int SETLINEJOIN           = 22;
+    const int SETMITERLIMIT         = 23;
+    const int BANDINFO              = 24;
+    const int DRAWPATTERNRECT       = 25;
+    const int GETVECTORPENSIZE      = 26;
+    const int GETVECTORBRUSHSIZE    = 27;
+    const int ENABLEDUPLEX          = 28;
+    const int GETSETPAPERBINS       = 29;
+    const int GETSETPRINTORIENT     = 30;
+    const int ENUMPAPERBINS         = 31;
+    const int SETDIBSCALING         = 32;
+    const int EPSPRINTING           = 33;
+    const int ENUMPAPERMETRICS      = 34;
+    const int GETSETPAPERMETRICS    = 35;
+    const int POSTSCRIPT_DATA       = 37;
+    const int POSTSCRIPT_IGNORE     = 38;
+    const int MOUSETRAILS           = 39;
+
+    const int GETEXTENDEDTEXTMETRICS = 256;
+    const int GETEXTENTTABLE        = 257;
+    const int GETPAIRKERNTABLE      = 258;
+    const int GETTRACKKERNTABLE     = 259;
+    const int EXTTEXTOUT            = 512;
+    const int GETFACENAME           = 513;
+    const int ENABLERELATIVEWIDTHS  = 768;
+    const int ENABLEPAIRKERNING     = 769;
+    const int SETKERNTRACK          = 770;
+    const int SETALLJUSTVALUES      = 771;
+    const int SETCHARSET            = 772;
+
+    const int STRETCHBLT            = 2048;
+
+    const int GETSETSCREENPARAMS    = 3072;
+
+    const int BEGIN_PATH            = 4096;
+    const int CLIP_TO_PATH          = 4097;
+    const int END_PATH              = 4098;
+    const int EXT_DEVICE_CAPS       = 4099;
+    const int RESTORE_CTM           = 4100;
+    const int SAVE_CTM              = 4101;
+    const int SET_ARC_DIRECTION     = 4102;
+    const int SET_BACKGROUND_COLOR  = 4103;
+    const int SET_POLY_MODE         = 4104;
+    const int SET_SCREEN_ANGLE      = 4105;
+    const int SET_SPREAD            = 4106;
+    const int TRANSFORM_CTM         = 4107;
+    const int SET_CLIP_BOX          = 4108;
+    const int SET_BOUNDS            = 4109;
+    */
+}

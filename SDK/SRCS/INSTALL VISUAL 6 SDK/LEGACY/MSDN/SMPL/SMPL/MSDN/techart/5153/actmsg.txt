@@ -1,0 +1,78 @@
+Const SETTINGS = "MS Exchange Settings"
+Const SEMICOLON = ";"
+Private Sub cmdSend_Click()
+
+Dim oSess
+Dim oMsg
+Dim oRecipTo
+Dim oRecipCC
+
+'Create an object of Session
+Set oSess = CreateObject("Mapi.Session")
+
+'Logon to the Session
+oSess.Logon SETTINGS
+
+'create a message and fill in its properties
+Set oMsg = oSess.Outbox.Messages.Add
+oMsg.Subject = txtSub
+oMsg.Text = txtText
+
+SetRecipients oMsg, oRecipTo, ActMsgTo
+SetRecipients oMsg, oRecipTo, ActMsgCc
+
+' send the message and log off
+oMsg.Update
+oMsg.Send
+
+'logoff the session
+oSess.Logoff
+
+'Clear all the objects before exiting the procedure
+Set oRecipTo = Nothing
+Set oRecipCC = Nothing
+Set oMsg = Nothing
+Set oSess = Nothing
+End Sub
+'This procedure sets all the recipients and
+'adds them to the Recipients collection of
+'Message object
+Public Sub SetRecipients(oMsg As Mapi.Message, oRec As Mapi.Recipient, iRecipType As Integer)
+
+    Dim sRecipients
+    Dim sTemp
+    Dim iPos
+    Dim iStart
+    
+    Select Case UCase(iRecipType)
+        Case ActMsgTo
+            sRecipients = txtTo
+        Case ActMsgCc
+            sRecipients = txtCC
+    End Select
+        
+    If (Right(sRecipients, 1) <> SEMICOLON) And Trim(sRecipients) <> "" Then
+        sRecipients = sRecipients & SEMICOLON
+    End If
+    
+    '=========================================================
+    'Initialise the Position and Start counters
+    iPos = 1
+    iStart = 1
+    '=========================================================
+    
+    '=========================================================
+    Do While iPos <> 0
+        iPos = InStr(iStart, sRecipients, ";")
+        If iPos > 0 Then
+            sTemp = Mid(sRecipients, iStart, iPos - iStart)
+            Set oRec = oMsg.Recipients.Add
+            oRec.Name = sTemp
+            oRec.Type = iRecipType
+            oRec.Resolve
+        End If
+        iStart = iPos + 1
+    Loop
+    '=========================================================
+
+End Sub

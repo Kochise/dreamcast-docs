@@ -1,0 +1,83 @@
+<html>
+<title>HelpDesk-Send Response</title>
+
+<script language = "vbscript">
+Dim DlgArgs
+Dim DlgType
+Dim DETUI
+
+DlgArgs = window.dialogArguments
+DlgType = DlgArgs(0)
+Set DETUI = DlgArgs(2)
+
+Sub Window_OnLoad()
+
+    ' Display dialog title
+    DTitle.InnerText = DlgArgs(1)
+   
+    Select case DlgType
+        Case "TextResp"
+            SelResp.Style.Visibility = "hidden"
+        Case "StdText"
+            SelResp.Style.Visibility = "visible"
+            FillStdResponses
+            RspText.ReadOnly=True   
+        Case "VoiceResp"
+            SelResp.Style.Visibility = "hidden"
+        Case "StdVoice"
+            SelResp.Style.Visibility = "visible"
+            FillStdResponses
+            RspText.ReadOnly=True  
+    End Select
+
+End Sub
+
+Sub FillStdResponses()
+'    Dim el
+'    Dim n
+'    For n = 1 to 5
+'        set el = document.createElement("OPTION")
+'        el.text = "Apples " & n
+'        el.value = Cstr(n)
+'        document.all("SelResp").options.add(el)
+'    Next
+End Sub
+
+Sub doOK()
+    DlgType = DlgArgs(0)
+    Select case DlgType
+        Case "TextResp"
+            DETUI.SendTextResponse RspText.value
+        Case "StdText"
+            'DETUI.SendStdTextResponse SelResp.SelectedIndex
+            msgbox(SelResp.SelectedIndex)   
+        Case "VoiceResp"
+            DETUI.SendVoiceResponse RspText.value
+        Case "StdVoice"
+            'DETUI.SendStdVoiceResponse SelResp.SelectedIndex
+            msgbox(SelResp.value)   
+    End Select
+    window.returnValue = RspText.Value 
+    window.close   
+End Sub
+Sub doCancel()
+    window.close   
+End Sub
+</script>
+
+<body>
+
+<font face="arial" size=2>
+<FONT SIZE=5><B> <span id="DTitle"></span></B></FONT>
+<center>
+<b>
+<select id=SelResp>
+</select> &nbsp
+<textarea Id=RspText rows=5 cols=80>
+</textarea>
+<button onclick="doOK()">OK</button> &nbsp
+<button onclick="doCancel()">Cancel</button>
+</center>
+</body>
+
+</html>

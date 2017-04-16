@@ -1,0 +1,1490 @@
+
+//@B Kernel
+[
+uuid(54674042-3A82-101B-8181-00AA003743D3),
+helpstring("Windows Kernel Functions"),
+#ifdef WIN32
+dllname("KERNEL32.DLL")
+#else
+dllname("KRNL386.EXE")
+#endif
+]
+module Kernel {
+//@E Kernel
+
+    // ****** System Information ********
+
+    [
+    usesgetlasterror,
+    entry("GetVersion"),
+    helpstring("Gets version numbers of Windows and MS-DOS"),
+    ]
+    DWORD WINAPI GetVersion();
+
+    /* Not implemented
+    BOOL WINAPI GetVersionExA(
+        LPOSVERSIONINFOA lpVersionInformation
+        );
+
+    const int VER_PLATFORM_WIN32s        = 0;
+    const int VER_PLATFORM_WIN32_WINDOWS = 1;
+    const int VER_PLATFORM_WIN32_NT      = 2;
+
+    typedef struct _OSVERSIONINFOA {
+        DWORD dwOSVersionInfoSize;
+        DWORD dwMajorVersion;
+        DWORD dwMinorVersion;
+        DWORD dwBuildNumber;
+        DWORD dwPlatformId;
+        CHAR   szCSDVersion[ 128 ];       // Maintenance string for PSS usage
+    } OSVERSIONINFOA, *POSVERSIONINFOA, *LPOSVERSIONINFOA;
+
+    typedef OSVERSIONINFOA OSVERSIONINFO;
+    typedef POSVERSIONINFOA POSVERSIONINFO;
+    typedef LPOSVERSIONINFOA LPOSVERSIONINFO;
+    */
+
+    #ifndef WIN32
+    [
+    usesgetlasterror,
+    entry("GetFreeSpace"),
+    helpstring("Gets bytes of global heap memory available"),
+    ]
+    DWORD WINAPI GetFreeSpace([in] UINT fuFlags);
+    #endif
+
+    // Win32 macro
+    //define GetFreeSpace(w)                (0x100000L)
+
+    /* Omitted
+    GetCurrentPDB
+    */
+
+//@B GetWindowsDirectory
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetWindowsDirectoryA"),
+    #else
+    entry("GetWindowsDirectory"),
+    #endif
+    helpstring("Gets Windows directory"),
+    ]
+    UINT WINAPI GetWindowsDirectory([in, out] LPSTR lpszSysPath,
+                                    [in] UINT cbSysPath);
+//@E GetWindowsDirectory
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetSystemDirectoryA"),
+    #else
+    entry("GetSystemDirectory"),
+    #endif
+    helpstring("Gets Windows System directory"),
+    ]
+    UINT WINAPI GetSystemDirectory([in, out] LPSTR lpszSysPath,
+                                   [in] UINT cbSysPath);
+
+    #ifndef WIN32
+    [
+    usesgetlasterror,
+    entry("GetWinFlags"),
+    helpstring("Gets system and memory configuration flags"),
+    ]
+    DWORD   WINAPI GetWinFlags(VOID);
+    #endif
+
+    /* Omitted
+    LPSTR   WINAPI GetDOSEnvironment(void);
+    DWORD   WINAPI GetCurrentTime(void);
+    DWORD   WINAPI GetTimerResolution(void);
+    void    WINAPI LogError(UINT err, void FAR* lpInfo);
+    void    WINAPI LogParamError(UINT err, FARPROC lpfn, void FAR* param);
+    BOOL    WINAPI GetWinDebugInfo(WINDEBUGINFO FAR* lpwdi, UINT flags);
+    BOOL    WINAPI SetWinDebugInfo(WINDEBUGINFO FAR* lpwdi);
+    void    FAR _cdecl DebugOutput(UINT flags, LPCSTR lpsz, ...);
+    void    WINAPI FatalExit(int);
+    void    WINAPI FatalAppExit(UINT, LPCSTR);
+    */
+
+    #ifdef WIN32
+    [
+    usesgetlasterror,
+    entry("GetTickCount"),
+    helpstring("Returns milliseconds since Windows was started"),
+    ]
+    DWORD   WINAPI GetTickCount(void);
+    #endif
+
+    [
+    usesgetlasterror,
+    entry("DebugBreak"),
+    helpstring("Break into a debugger"),
+    ]
+    void    WINAPI DebugBreak();
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("OutputDebugStringA"),
+    #else
+    entry("OutputDebugString"),
+    #endif
+    helpstring("Send string to the debugging terminal"),
+    ]
+    void    WINAPI OutputDebugString([in] LPCSTR lpszOutputString);
+
+    /* Omitted
+    // SetErrorMode() constants
+    const UINT SEM_FAILCRITICALERRORS     = 0x0001;
+    const UINT SEM_NOGPFAULTERRORBOX      = 0x0002;
+    const UINT SEM_NOALIGNMENTFAULTEXCEPT = 0x0004;  // Win32 only
+    const UINT SEM_NOOPENFILEERRORBOX     = 0x8000;
+
+    UINT WINAPI SetErrorMode(
+        UINT uMode
+        );
+
+    */
+
+    // ****** Module Management *******
+
+    /* Omitted
+    HINSTANCE   WINAPI LoadModule(LPCSTR, LPVOID);
+    */
+
+    #ifndef WIN32
+    [
+    usesgetlasterror,
+    entry("FreeModule"),
+    helpstring("Free a running module"),
+    ]
+    BOOL        WINAPI FreeModule([in] HINSTANCE hInst);
+    #endif
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("LoadLibraryA"),
+    #else
+    entry("LoadLibrary"),
+    #endif
+    helpstring("Load a DLL"),
+    ]
+    HINSTANCE   WINAPI LoadLibrary([in] LPCSTR lpszLibFileName);
+
+    [
+    usesgetlasterror,
+    entry("FreeLibrary"),
+    helpstring("Free a DLL"),
+    ]
+    void        WINAPI FreeLibrary([in] HINSTANCE hInst);
+
+    /* Not implemented
+    HINSTANCE WINAPI LoadLibraryExA(
+        LPCSTR lpLibFileName,
+        HANDLE hFile,
+        DWORD dwFlags
+        );
+
+    const DWORD DONT_RESOLVE_DLL_REFERENCES = 0x00000001;
+    const DWORD LOAD_LIBRARY_AS_DATAFILE    = 0x00000002;
+
+    VOID WINAPI FreeLibraryAndExitThread(
+        HMODULE hLibModule,
+        DWORD dwExitCode
+        );
+
+    BOOL WINAPI DisableThreadLibraryCalls(
+        HMODULE hLibModule
+        );
+    */
+
+    [
+    usesgetlasterror,
+    entry("WinExec"),
+    helpstring("Run an application"),
+    ]
+    UINT    WINAPI WinExec([in] LPCSTR lpszCmdLine, [in] UINT fuCmdShow);
+
+    #ifdef WIN32
+
+    [
+    usesgetlasterror,
+    entry("GetBinaryTypeA"),
+    helpstring("Determine whether an application is executable, and if so, on what platform"),
+    ]
+    BOOL WINAPI GetBinaryType([in] LPCSTR lpApplicationName,
+                              [in,out] DWORD * lpBinaryType);
+
+    [
+    usesgetlasterror,
+    entry("GetShortPathNameA"),
+    helpstring("Gets the short path form of a specified input path"),
+    ]
+    DWORD WINAPI GetShortPathName([in] LPCSTR lpszLongPath,
+                                  [in, out] LPSTR lpszShortPath,
+                                  [in] DWORD cchBuffer);
+
+
+    /* Most of process functions not implemented
+    BOOL WINAPI GetProcessAffinityMask(HANDLE hProcess,
+                                       LPDWORD lpProcessAffinityMask,
+                                       LPDWORD lpSystemAffinityMask);
+    BOOL WINAPI GetProcessTimes(HANDLE hProcess,
+                                LPFILETIME lpCreationTime,
+                                LPFILETIME lpExitTime,
+                                LPFILETIME lpKernelTime,
+                                LPFILETIME lpUserTime);
+    BOOL WINAPI GetProcessWorkingSetSize(HANDLE hProcess,
+                                         LPDWORD lpMinimumWorkingSetSize,
+                                         LPDWORD lpMaximumWorkingSetSize);
+    BOOL WINAPI SetProcessWorkingSetSize(HANDLE hProcess,
+                                         DWORD  dwMinimumWorkingSetSize,
+                                         DWORD  dwMaximumWorkingSetSize);
+    BOOL WINAPI SetProcessShutdownParameters(DWORD dwLevel, DWORD dwFlags);
+    BOOL WINAPI GetProcessShutdownParameters(LPDWORD lpdwLevel, LPDWORD lpdwFlags);
+    VOID WINAPI GetStartupInfoA(LPSTARTUPINFOA lpStartupInfo);
+    LPSTR WINAPI GetCommandLineA(VOID);
+
+    [
+    usesgetlasterror,
+    entry("CreateProcessA"),
+    helpstring("Creates a new process and executes a specified executable file"),
+    ]
+    BOOL WINAPI CreateProcessA([in] LPCSTR lpApplicationName,
+                               [in] LPSTR lpCommandLine,
+                               [in] LPSECURITY_ATTRIBUTES lpProcessAttributes,
+                               [in] LPSECURITY_ATTRIBUTES lpThreadAttributes,
+                               [in] BOOL bInheritHandles,
+                               [in] DWORD dwCreationFlags,
+                               [in] LPVOID lpEnvironment,
+                               [in] LPCSTR lpCurrentDirectory,
+                               [in] LPSTARTUPINFOA lpStartupInfo,
+                               [in] LPPROCESS_INFORMATION lpProcessInformation);
+    */
+
+    [
+    usesgetlasterror,
+    entry("OpenProcess"),
+    helpstring("Given a process ID number, returns handle of existing process"),
+    ]
+    HANDLE WINAPI OpenProcess([in] DWORD dwDesiredAccess,
+                              [in] BOOL bInheritHandle,
+                              [in] DWORD dwProcessId);
+
+    [
+    usesgetlasterror,
+    entry("GetCurrentProcess"),
+    helpstring("Gets the process handle of the current process"),
+    ]
+    HANDLE WINAPI GetCurrentProcess(VOID);
+
+    [
+    usesgetlasterror,
+    entry("GetCurrentProcessId"),
+    helpstring("Gets the process ID number of the current process"),
+    ]
+    DWORD WINAPI GetCurrentProcessId(VOID);
+
+    [
+    usesgetlasterror,
+    entry("GetExitCodeProcess"),
+    helpstring("Gets the termination status of a given process"),
+    ]
+    BOOL WINAPI GetExitCodeProcess([in] HANDLE hProcess,
+                                   [out] DWORD FAR * lpExitCode);
+
+    /*
+    VOID WINAPI ExitProcess(UINT uExitCode);
+    BOOL WINAPI TerminateProcess(HANDLE hProcess, UINT uExitCode);
+    VOID WINAPI FatalExit(int ExitCode);
+
+    const DWORD STARTF_USESHOWWINDOW        = 0x00000001;
+    const DWORD STARTF_USESIZE              = 0x00000002;
+    const DWORD STARTF_USEPOSITION          = 0x00000004;
+    const DWORD STARTF_USECOUNTCHARS        = 0x00000008;
+    const DWORD STARTF_USEFILLATTRIBUTE     = 0x00000010;
+    const DWORD STARTF_RUNFULLSCREEN        = 0x00000020;  // ignored for non-x86 platforms
+    const DWORD STARTF_FORCEONFEEDBACK      = 0x00000040;
+    const DWORD STARTF_FORCEOFFFEEDBACK     = 0x00000080;
+    const DWORD STARTF_USESTDHANDLES        = 0x00000100;
+
+    typedef struct _STARTUPINFOA {
+        DWORD   cb;
+        LPSTR   lpReserved;
+        LPSTR   lpDesktop;
+        LPSTR   lpTitle;
+        DWORD   dwX;
+        DWORD   dwY;
+        DWORD   dwXSize;
+        DWORD   dwYSize;
+        DWORD   dwXCountChars;
+        DWORD   dwYCountChars;
+        DWORD   dwFillAttribute;
+        DWORD   dwFlags;
+        WORD    wShowWindow;
+        WORD    cbReserved2;
+        LPBYTE  lpReserved2;
+        HANDLE  hStdInput;
+        HANDLE  hStdOutput;
+        HANDLE  hStdError;
+    } STARTUPINFOA, *LPSTARTUPINFOA;
+    */
+
+
+    /* Exceptions not implemented
+    VOID WINAPI RaiseException(
+        DWORD dwExceptionCode,
+        DWORD dwExceptionFlags,
+        DWORD nNumberOfArguments,
+        CONST DWORD *lpArguments
+        );
+
+    LONG WINAPI UnhandledExceptionFilter(
+        struct _EXCEPTION_POINTERS *ExceptionInfo
+        );
+
+    LPTOP_LEVEL_EXCEPTION_FILTER WINAPI SetUnhandledExceptionFilter(
+        LPTOP_LEVEL_EXCEPTION_FILTER lpTopLevelExceptionFilter
+        );
+    */
+    #endif  // WIN32
+
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetModuleHandleA"),
+    #else
+    entry("GetModuleHandle"),
+    #endif
+    helpstring("Get the handle of a module from its name"),
+    ]
+    HMODULE WINAPI GetModuleHandle([in] LPCSTR lpszModuleName);
+
+    #ifndef WIN32
+    [
+    usesgetlasterror,
+    entry("GetModuleUsage"),
+    helpstring("Get the reference count of a module from its handle"),
+    ]
+    int     WINAPI GetModuleUsage([in] HINSTANCE hInst);
+    #endif
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetModuleFileNameA"),
+    #else
+    entry("GetModuleFileName"),
+    #endif
+    helpstring("Get full path name of a module from its handle"),
+    ]
+    int     WINAPI GetModuleFileName(
+                    [in] HINSTANCE hInst, [out] LPSTR lpszFileName,
+                    [in] int cbFileName);
+
+    /* Omitted
+    FARPROC WINAPI GetProcAddress(HINSTANCE, LPCSTR);
+    int     WINAPI GetInstanceData(HINSTANCE, BYTE*, int);
+    HGLOBAL WINAPI GetCodeHandle(FARPROC);
+    void    WINAPI GetCodeInfo(FARPROC lpProc, SEGINFO FAR* lpSegInfo);
+    FARPROC WINAPI MakeProcInstance(FARPROC, HINSTANCE);
+    void    WINAPI FreeProcInstance(FARPROC);
+    LONG    WINAPI SetSwapAreaSize(UINT);
+    void    WINAPI SwapRecording(UINT);
+    void    WINAPI ValidateCodeSegments(void);
+
+    UINT    WINAPI GetNumTasks(void);
+    BOOL    WINAPI IsTask(HTASK);
+    */
+
+    [
+    usesgetlasterror,
+    entry("GetCurrentTask"),
+    helpstring("Get the current process (task)"),
+    ]
+    HTASK   WINAPI GetCurrentTask(void);
+
+    /* Omitted
+    void    WINAPI Yield(void);
+    void    WINAPI DirectedYield(HTASK);
+    */
+
+    // ****** Global memory management ******
+
+    [
+    usesgetlasterror,
+    entry("GlobalAlloc"),
+    helpstring("Allocate global memory"),
+    ]
+    HGLOBAL WINAPI GlobalAlloc([in] UINT fuAlloc, [in] DWORD cbAlloc);
+
+    [
+    usesgetlasterror,
+    entry("GlobalReAlloc"),
+    helpstring("Resize global memory block"),
+    ]
+    HGLOBAL WINAPI GlobalReAlloc(
+            [in] HGLOBAL hglb, [in] DWORD cbNewSize, [in] UINT fuAlloc);
+
+    [
+    usesgetlasterror,
+    entry("GlobalFree"),
+    helpstring("Free global memory block"),
+    ]
+    HGLOBAL WINAPI GlobalFree([in] HGLOBAL hglb);
+
+    [
+    usesgetlasterror,
+    entry("GlobalLock"),
+    helpstring("Locks global memory block and returns pointer to it"),
+    ]
+    LPVOID WINAPI GlobalLock([in] HGLOBAL hglb);
+
+    [
+    usesgetlasterror,
+    entry("GlobalUnlock"),
+    helpstring("Unlocks global memory block"),
+    ]
+    BOOL    WINAPI GlobalUnlock([in] HGLOBAL hglb);
+
+    [
+    usesgetlasterror,
+    entry("GlobalSize"),
+    helpstring("Gets the size of global memory block"),
+    ]
+    DWORD   WINAPI GlobalSize([in] HGLOBAL hglb);
+
+    [
+    usesgetlasterror,
+    entry("GlobalFlags"),
+    helpstring("Gets attribute flags of global memory block"),
+    ]
+    UINT    WINAPI GlobalFlags([in] HGLOBAL hglb);
+
+    [
+    usesgetlasterror,
+    entry("GlobalCompact"),
+    helpstring("Rearranges memory to free requested memory, and returns largest available block size (pass 0 to get size without compacting)"),
+    ]
+    DWORD   WINAPI GlobalCompact([in] DWORD dwMinFree);
+
+    /* Omitted
+    DWORD   WINAPI GlobalDosAlloc(DWORD);
+    UINT    WINAPI GlobalDosFree(UINT);
+    DWORD   WINAPI GlobalHandle(UINT);
+
+    void FAR* WINAPI GlobalWire(HGLOBAL);
+    BOOL    WINAPI GlobalUnWire(HGLOBAL);
+    UINT    WINAPI GlobalPageLock(HGLOBAL);
+    UINT    WINAPI GlobalPageUnlock(HGLOBAL);
+    void    WINAPI GlobalFix(HGLOBAL);
+    void    WINAPI GlobalUnfix(HGLOBAL);
+    HGLOBAL WINAPI GlobalLRUNewest(HGLOBAL);
+    HGLOBAL WINAPI GlobalLRUOldest(HGLOBAL);
+    void    WINAPI GlobalNotify(GNOTIFYPROC);
+    HGLOBAL WINAPI LockSegment(UINT);
+    void    WINAPI UnlockSegment(UINT);
+    UINT    WINAPI AllocSelector(UINT);
+    UINT    WINAPI FreeSelector(UINT);
+    UINT    WINAPI AllocDStoCSAlias(UINT);
+    UINT    WINAPI PrestoChangoSelector(UINT sourceSel, UINT destSel);
+    DWORD   WINAPI GetSelectorBase(UINT);
+    UINT    WINAPI SetSelectorBase(UINT, DWORD);
+    DWORD   WINAPI GetSelectorLimit(UINT);
+    UINT    WINAPI SetSelectorLimit(UINT, DWORD);
+    void    WINAPI LimitEmsPages(DWORD);
+    void    WINAPI ValidateFreeSpaces(void);
+
+    // Win32 compatibility macros
+    //define DefineHandleTable(w)           ((w),TRUE)
+    //define LimitEmsPages(dw)
+    //define SetSwapAreaSize(w)             (w)
+    //define LockSegment(w)                 GlobalFix((HANDLE)(w))
+    //define UnlockSegment(w)               GlobalUnfix((HANDLE)(w))
+    //define GetCurrentTime()               GetTickCount()
+    //define GlobalLRUNewest( h )   (HANDLE)(h)
+    //define GlobalLRUOldest( h )   (HANDLE)(h)
+    //define GlobalDiscard( h )     GlobalReAlloc( (h), 0, GMEM_MOVEABLE )
+    //define FreeModule(hLibModule) FreeLibrary((hLibModule))
+    //define MakeProcInstance(lpProc,hInstance) (lpProc)
+    //define FreeProcInstance(lpProc) (lpProc)
+    //define Yield()
+
+    */
+
+    /* All of local memory omitted
+    */
+
+    /* Virtual memory not implemented
+    LPVOID WINAPI VirtualAlloc(LPVOID lpAddress, DWORD dwSize,
+                               DWORD flAllocationType, DWORD flProtect);
+    BOOL WINAPI VirtualFree(LPVOID lpAddress, DWORD dwSize,
+                            DWORD dwFreeType);
+    BOOL WINAPI VirtualLock(LPVOID lpAddress, DWORD dwSize);
+    BOOL WINAPI VirtualUnlock(LPVOID lpAddress, DWORD dwSize);
+    BOOL WINAPI VirtualProtect(LPVOID lpAddress, DWORD dwSize,
+                               DWORD flNewProtect, PDWORD lpflOldProtect);
+    DWORD WINAPI VirtualQuery(LPCVOID lpAddress,
+                              PMEMORY_BASIC_INFORMATION lpBuffer,
+                              DWORD dwLength);
+    BOOL WINAPI VirtualProtectEx(HANDLE hProcess, LPVOID lpAddress,
+                                 DWORD dwSize, DWORD flNewProtect,
+                                 PDWORD lpflOldProtect);
+    DWORD WINAPI VirtualQueryEx(HANDLE hProcess, LPCVOID lpAddress,
+                                PMEMORY_BASIC_INFORMATION lpBuffer,
+                                DWORD dwLength);
+    */
+
+    /* Heap memory not implemented
+    HANDLE WINAPI HeapCreate(DWORD flOptions, DWORD dwInitialSize,
+                             DWORD dwMaximumSize);
+    BOOL WINAPI HeapDestroy(HANDLE hHeap);
+    LPVOID WINAPI HeapAlloc(HANDLE hHeap, DWORD dwFlags, DWORD dwBytes);
+    LPVOID WINAPI HeapReAlloc(HANDLE hHeap, DWORD dwFlags,
+                              LPVOID lpMem, DWORD dwBytes);
+    BOOL WINAPI HeapFree(HANDLE hHeap, DWORD dwFlags, LPVOID lpMem);
+    DWORD WINAPI HeapSize(HANDLE hHeap, DWORD dwFlags, LPCVOID lpMem);
+    BOOL WINAPI HeapValidate(HANDLE hHeap, DWORD dwFlags, LPCVOID lpMem);
+    HANDLE WINAPI GetProcessHeap( VOID );
+    */
+
+    // ****** File I/O **********
+
+    /* Omit OpenFile
+    typedef struct tagOFSTRUCT
+    {
+        BYTE cBytes;
+        BYTE fFixedDisk;
+        UINT nErrCode;
+        BYTE reserved[4];
+        char szPathName[128];
+    } OFSTRUCT;
+    typedef OFSTRUCT*       POFSTRUCT;
+    typedef OFSTRUCT NEAR* NPOFSTRUCT;
+    typedef OFSTRUCT FAR*  LPOFSTRUCT;
+
+    HFILE   WINAPI OpenFile(LPCSTR, OFSTRUCT FAR*, UINT);
+    */
+
+    // OpenFile() Flags
+    const DWORD OF_READ              = 0x0000;
+    const DWORD OF_WRITE             = 0x0001;
+    const DWORD OF_READWRITE         = 0x0002;
+    const DWORD OF_SHARE_COMPAT      = 0x0000;
+    const DWORD OF_SHARE_EXCLUSIVE   = 0x0010;
+    const DWORD OF_SHARE_DENY_WRITE  = 0x0020;
+    const DWORD OF_SHARE_DENY_READ   = 0x0030;
+    const DWORD OF_SHARE_DENY_NONE   = 0x0040;
+    const DWORD OF_PARSE             = 0x0100;
+    const DWORD OF_DELETE            = 0x0200;
+    const DWORD OF_VERIFY            = 0x0400;
+    const DWORD OF_SEARCH            = 0x0400;
+    const DWORD OF_CANCEL            = 0x0800;
+    const DWORD OF_CREATE            = 0x1000;
+    const DWORD OF_PROMPT            = 0x2000;
+    const DWORD OF_EXIST             = 0x4000;
+    const DWORD OF_REOPEN            = 0x8000;
+
+    [
+    usesgetlasterror,
+    entry("_lopen"),
+    helpstring("Opens a file"),
+    ]
+    HFILE   WINAPI lopen([in] LPCSTR lpszFileName, [in] int fnOpenMode);
+
+    [
+    usesgetlasterror,
+    entry("_lcreat"),
+    helpstring("Creates a file"),
+    ]
+    HFILE   WINAPI lcreat([in] LPCSTR lpszFileName, [in] int fnOpenMode);
+
+    [
+    usesgetlasterror,
+    entry("_lclose"),
+    helpstring("Closes a file handle"),
+    ]
+    HFILE   WINAPI lclose([in] HFILE hf);
+
+    [
+    usesgetlasterror,
+    entry("_lclose"),
+    helpstring("Sets the seek position (see SEEK_SET)"),
+    ]
+    LONG    WINAPI llseek([in] HFILE hf, [in] LONG lOffset, [in] int nOrigin);
+
+    [
+    usesgetlasterror,
+    entry("_lread"),
+    helpstring("Reads a buffer from a file"),
+    ]
+    UINT    WINAPI lread([in] HFILE hf, [out] LPSTR lpBuffer, [in] UINT cbBuffer);
+
+    [
+    usesgetlasterror,
+    entry("_lwrite"),
+    helpstring("Writes a buffer to a file"),
+    ]
+    UINT    WINAPI lwrite([in] HFILE hf, [out] LPSTR lpBuffer, [in] UINT cbBuffer);
+
+    /* Omitted
+    long    WINAPI _hread([in] HFILE, void _huge*, long);
+    long    WINAPI _hwrite(HFILE, const void _huge*, long);
+    */
+
+    /* Omitted (see Win32)
+    // GetTempFileName() Flags
+    //define TF_FORCEDRIVE      (BYTE)0x80
+
+    int     WINAPI GetTempFileName(BYTE, LPCSTR, UINT, LPSTR);
+    BYTE    WINAPI GetTempDrive(char);
+
+    UINT    WINAPI GetDriveType(int);
+    UINT    WINAPI SetHandleCount(UINT);
+    */
+
+
+    [
+    usesgetlasterror,
+    entry("CreateFileA"),
+    helpstring("Creates or opens a file, pipe, communications resource, disk device, console, or directory"),
+    ]
+    HANDLE WINAPI CreateFile([in] LPCSTR lpFileName,
+                             [in] DWORD dwDesiredAccess,
+                             [in] DWORD dwShareMode,
+                             [in] LONG lpSecurityAttributes,
+                             [in] DWORD dwCreationDisposition,
+                             [in] DWORD dwFlagsAndAttributes,
+                             [in] HANDLE hTemplateFile);
+
+    [
+    usesgetlasterror,
+    entry("SetFileAttributesA"),
+    helpstring("Sets file attribute bitflags"),
+    ]
+    BOOL WINAPI SetFileAttributes([in] LPCSTR lpFileName,
+                                  [in] DWORD dwFileAttributes);
+
+    [
+    usesgetlasterror,
+    entry("GetFileAttributesA"),
+    helpstring("Gets file attribute bitflags"),
+    ]
+    DWORD WINAPI GetFileAttributes([in] LPCSTR lpFileName);
+
+    /* Most File and handle functions not implemented
+    DWORD WINAPI GetCompressedFileSizeA(LPCSTR lpFileName,
+                                        LPDWORD lpFileSizeHigh);
+
+    BOOL WINAPI DeleteFileA(LPCSTR lpFileName);
+
+    UINT WINAPI SetHandleCount(UINT uNumber);
+
+    BOOL WINAPI LockFile(HANDLE hFile, DWORD dwFileOffsetLow,
+                         DWORD dwFileOffsetHigh,
+                         DWORD nNumberOfBytesToLockLow,
+                         DWORD nNumberOfBytesToLockHigh);
+
+    BOOL WINAPI UnlockFile(HANDLE hFile,
+                           DWORD dwFileOffsetLow,
+                           DWORD dwFileOffsetHigh,
+                           DWORD nNumberOfBytesToUnlockLow,
+                           DWORD nNumberOfBytesToUnlockHigh);
+
+    BOOL WINAPI LockFileEx(HANDLE hFile, DWORD dwFlags, DWORD dwReserved,
+                           DWORD nNumberOfBytesToLockLow,
+                           DWORD nNumberOfBytesToLockHigh,
+                           LPOVERLAPPED lpOverlapped);
+
+    const DWORD LOCKFILE_FAIL_IMMEDIATELY  = 0x00000001;
+    const DWORD LOCKFILE_EXCLUSIVE_LOCK    = 0x00000002;
+
+    BOOL WINAPI UnlockFileEx(HANDLE hFile, DWORD dwReserved,
+                             DWORD nNumberOfBytesToUnlockLow,
+                             DWORD nNumberOfBytesToUnlockHigh,
+                             LPOVERLAPPED lpOverlapped);
+
+    typedef struct _BY_HANDLE_FILE_INFORMATION {
+        DWORD dwFileAttributes;
+        FILETIME ftCreationTime;
+        FILETIME ftLastAccessTime;
+        FILETIME ftLastWriteTime;
+        DWORD dwVolumeSerialNumber;
+        DWORD nFileSizeHigh;
+        DWORD nFileSizeLow;
+        DWORD nNumberOfLinks;
+        DWORD nFileIndexHigh;
+        DWORD nFileIndexLow;
+    } BY_HANDLE_FILE_INFORMATION, *PBY_HANDLE_FILE_INFORMATION, *LPBY_HANDLE_FILE_INFORMATION;
+
+    BOOL WINAPI GetFileInformationByHandle(HANDLE hFile,
+                        LPBY_HANDLE_FILE_INFORMATION lpFileInformation);
+
+    DWORD WINAPI GetFileType(HANDLE hFile);
+
+    DWORD WINAPI GetFileSize(HANDLE hFile, LPDWORD lpFileSizeHigh);
+
+    BOOL WINAPI CopyFileA(LPCSTR lpExistingFileName,
+                          LPCSTR lpNewFileName, BOOL bFailIfExists);
+
+    BOOL WINAPI MoveFileA(LPCSTR lpExistingFileName, LPCSTR lpNewFileName);
+
+    BOOL WINAPI MoveFileExA(LPCSTR lpExistingFileName,
+                            LPCSTR lpNewFileName, DWORD dwFlags);
+
+    const DWORD MOVEFILE_REPLACE_EXISTING       = 0x00000001;
+    const DWORD MOVEFILE_COPY_ALLOWED           = 0x00000002;
+    const DWORD MOVEFILE_DELAY_UNTIL_REBOOT     = 0x00000004;
+
+    HANDLE WINAPI GetStdHandle(DWORD nStdHandle);
+
+    BOOL WINAPI SetStdHandle(DWORD nStdHandle, HANDLE hHandle);
+
+    HFILE WINAPI OpenFile(LPCSTR lpFileName, LPOFSTRUCT lpReOpenBuff,
+                          UINT uStyle);
+
+    BOOL WINAPI WriteFile(HANDLE hFile, LPCVOID lpBuffer,
+                          DWORD nNumberOfBytesToWrite,
+                          LPDWORD lpNumberOfBytesWritten,
+                          LPOVERLAPPED lpOverlapped);
+
+    BOOL WINAPI ReadFile(HANDLE hFile, LPVOID lpBuffer,
+                         DWORD nNumberOfBytesToRead,
+                         LPDWORD lpNumberOfBytesRead,
+                         LPOVERLAPPED lpOverlapped);
+
+    BOOL WINAPI ReadFileEx(HANDLE hFile, LPVOID lpBuffer,
+                           DWORD nNumberOfBytesToRead,
+                           LPOVERLAPPED lpOverlapped,
+                           LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine);
+
+    BOOL WINAPI WriteFileEx(HANDLE hFile, LPCVOID lpBuffer,
+                            DWORD nNumberOfBytesToWrite,
+                            LPOVERLAPPED lpOverlapped,
+                            LPOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine);
+
+    BOOL WINAPI DeviceIoControl(HANDLE hDevice, DWORD dwIoControlCode,
+                                LPVOID lpInBuffer, DWORD nInBufferSize,
+                                LPVOID lpOutBuffer, DWORD nOutBufferSize,
+                                LPDWORD lpBytesReturned,
+                                LPOVERLAPPED lpOverlapped);
+
+    BOOL WINAPI SetEndOfFile(HANDLE hFile);
+
+    DWORD WINAPI SetFilePointer(HANDLE hFile, LONG lDistanceToMove,
+                                PLONG lpDistanceToMoveHigh,
+                                DWORD dwMoveMethod);
+
+    BOOL WINAPI GetFileTime(HANDLE hFile,
+                            LPFILETIME lpCreationTime,
+                            LPFILETIME lpLastAccessTime,
+                            LPFILETIME lpLastWriteTime);
+
+    BOOL WINAPI SetFileTime(HANDLE hFile,
+                            CONST FILETIME *lpCreationTime,
+                            CONST FILETIME *lpLastAccessTime,
+                            CONST FILETIME *lpLastWriteTime);
+    */
+
+    [
+    usesgetlasterror,
+    entry("CloseHandle"),
+    helpstring("Closes an object handle"),
+    ]
+    BOOL WINAPI CloseHandle([in] HANDLE hObject);
+
+    /*
+    BOOL WINAPI DuplicateHandle(HANDLE hSourceProcessHandle,
+                                HANDLE hSourceHandle,
+                                HANDLE hTargetProcessHandle,
+                                LPHANDLE lpTargetHandle,
+                                DWORD dwDesiredAccess,
+                                BOOL bInheritHandle, DWORD dwOptions);
+
+    BOOL WINAPI GetHandleInformation(HANDLE hObject, LPDWORD lpdwFlags);
+
+    BOOL WINAPI SetHandleInformation(HANDLE hObject, DWORD dwMask,
+                                     DWORD dwFlags);
+
+    const DWORD HANDLE_FLAG_INHERIT        = 0x00000001;
+    const DWORD HANDLE_FLAG_AUDIT_ON_CLOSE = 0x00000002;
+
+    const int HINSTANCE_ERROR = 32;
+
+    typedef struct _OFSTRUCT {
+        BYTE cBytes;
+        BYTE fFixedDisk;
+        WORD nErrCode;
+        WORD Reserved1;
+        WORD Reserved2;
+        CHAR szPathName[OFS_MAXPATHNAME];
+    } OFSTRUCT, *LPOFSTRUCT, *POFSTRUCT;
+
+    */
+
+    // ****** Resource Management *******
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("FindResourceA"),
+    #else
+    entry("FindResource"),
+    #endif
+    helpstring("Finds a resource by its name, type, and module; returns a resource handle"),
+    ]
+    HRSRC   WINAPI FindResourceStrStr([in] HINSTANCE hInst,
+                                      [in] LPCSTR lpszName,
+                                      [in] LPCSTR lpszType);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("FindResourceA"),
+    #else
+    entry("FindResource"),
+    #endif
+    helpstring("Finds a resource by its name, type, and module; returns a resource handle"),
+    ]
+    HRSRC   WINAPI FindResourceIdStr([in] HINSTANCE hInst,
+                                     [in] DWORD dwName,
+                                     [in] LPCSTR lpszType);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("FindResourceA"),
+    #else
+    entry("FindResource"),
+    #endif
+    helpstring("Finds a resource by its name, type, and module; returns a resource handle"),
+    ]
+    HRSRC   WINAPI FindResourceStrId([in] HINSTANCE hInst,
+                                     [in] LPCSTR lpszName,
+                                     [in] DWORD dwType);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("FindResourceA"),
+    #else
+    entry("FindResource"),
+    #endif
+    helpstring("Finds a resource by its name, type, and module; returns a resource handle"),
+    ]
+    HRSRC   WINAPI FindResourceIdId([in] HINSTANCE hInst,
+                                    [in] DWORD dwName,
+                                    [in] DWORD dwType);
+
+
+    [
+    usesgetlasterror,
+    entry("LoadResource"),
+    helpstring("Loads a resource handle, returning a global memory handle with the resource"),
+    ]
+    HGLOBAL WINAPI LoadResource([in] HINSTANCE hInst, [in] HRSRC hrsrc);
+
+    [
+    usesgetlasterror,
+    entry("FreeResource"),
+    helpstring("Frees a loaded resource passed by the handle received from LoadResource"),
+    ]
+    BOOL    WINAPI FreeResource([in] HGLOBAL hglbResource);
+
+    [
+    usesgetlasterror,
+    entry("LockResource"),
+    helpstring("Locks resource memory block and returns global pointer to it"),
+    ]
+    LONG WINAPI LockResource([in] HGLOBAL hglbResource);
+    // void FAR* WINAPI LockResource([in] HGLOBAL hglbResource);
+
+    /* Note: In Win16 UnlockResource is a macro to GlobalUnlock. We have
+       to make it an alias. In Win32 UnlockResource is a macro returning
+       zero. We can't do that, so we make an alias to GlobalUnlock and
+       hope for the best.
+    */
+
+    [
+    usesgetlasterror,
+    entry("GlobalUnlock"),
+    helpstring("Unlocks resource memory block"),
+    ]
+    BOOL    WINAPI UnlockResource([in] HGLOBAL hglb);
+
+
+    [
+    usesgetlasterror,
+    entry("SizeofResource"),
+    helpstring("Gets the size in bytes of a resource"),
+    ]
+    DWORD   WINAPI SizeofResource([in] HINSTANCE hInst, [in] HRSRC hrsrc);
+
+    /* These two deleted from Win32, so not implemented for Win16
+    int     WINAPI AccessResource([in] HINSTANCE hInst, [in] HRSRC hrsrc);
+
+    HGLOBAL WINAPI AllocResource([in] HINSTANCE hInst, [in] HRSRC hrsrc, DWORD);
+    */
+
+    /* Not implemented
+    HRSRC WINAPI FindResourceExA(
+        HINSTANCE hModule,
+        LPCSTR lpType,
+        LPCSTR lpName,
+        WORD    wLanguage
+        );
+
+    typedef FARPROC ENUMRESTYPEPROC;
+    typedef FARPROC ENUMRESNAMEPROC;
+    typedef FARPROC ENUMRESLANGPROC;
+
+    BOOL WINAPI EnumResourceTypesA(
+        HINSTANCE hModule,
+        ENUMRESTYPEPROC lpEnumFunc,
+        LONG lParam
+        );
+
+    BOOL WINAPI EnumResourceNamesA(
+        HINSTANCE hModule,
+        LPCSTR lpType,
+        ENUMRESNAMEPROC lpEnumFunc,
+        LONG lParam
+        );
+
+    BOOL WINAPI EnumResourceLanguagesA(
+        HINSTANCE hModule,
+        LPCSTR lpType,
+        LPCSTR lpName,
+        ENUMRESLANGPROC lpEnumFunc,
+        LONG lParam
+        );
+
+    HANDLE WINAPI BeginUpdateResourceA(
+        LPCSTR pFileName,
+        BOOL bDeleteExistingResources
+        );
+
+    BOOL WINAPI UpdateResourceA(
+        HANDLE      hUpdate,
+        LPCSTR     lpType,
+        LPCSTR     lpName,
+        WORD        wLanguage,
+        LPVOID      lpData,
+        DWORD       cbData
+        );
+
+    BOOL WINAPI EndUpdateResourceA(
+        HANDLE      hUpdate,
+        BOOL        fDiscard
+        );
+    */
+
+    /*
+    // OEM Resource Ordinal Numbers
+    const long OBM_CLOSE           = 32754;
+    const long OBM_UPARROW         = 32753;
+    const long OBM_DNARROW         = 32752;
+    const long OBM_RGARROW         = 32751;
+    const long OBM_LFARROW         = 32750;
+    const long OBM_REDUCE          = 32749;
+    const long OBM_ZOOM            = 32748;
+    const long OBM_RESTORE         = 32747;
+    const long OBM_REDUCED         = 32746;
+    const long OBM_ZOOMD           = 32745;
+    const long OBM_RESTORED        = 32744;
+    const long OBM_UPARROWD        = 32743;
+    const long OBM_DNARROWD        = 32742;
+    const long OBM_RGARROWD        = 32741;
+    const long OBM_LFARROWD        = 32740;
+    const long OBM_MNARROW         = 32739;
+    const long OBM_COMBO           = 32738;
+    const long OBM_UPARROWI        = 32737;
+    const long OBM_DNARROWI        = 32736;
+    const long OBM_RGARROWI        = 32735;
+    const long OBM_LFARROWI        = 32734;
+
+    const long OBM_OLD_CLOSE       = 32767;
+    const long OBM_SIZE            = 32766;
+    const long OBM_OLD_UPARROW     = 32765;
+    const long OBM_OLD_DNARROW     = 32764;
+    const long OBM_OLD_RGARROW     = 32763;
+    const long OBM_OLD_LFARROW     = 32762;
+    const long OBM_BTSIZE          = 32761;
+    const long OBM_CHECK           = 32760;
+    const long OBM_CHECKBOXES      = 32759;
+    const long OBM_BTNCORNERS      = 32758;
+    const long OBM_OLD_REDUCE      = 32757;
+    const long OBM_OLD_ZOOM        = 32756;
+    const long OBM_OLD_RESTORE     = 32755;
+
+    const long OCR_NORMAL          = 32512;
+    const long OCR_IBEAM           = 32513;
+    const long OCR_WAIT            = 32514;
+    const long OCR_CROSS           = 32515;
+    const long OCR_UP              = 32516;
+    const long OCR_SIZE            = 32640;
+    const long OCR_ICON            = 32641;
+    const long OCR_SIZENWSE        = 32642;
+    const long OCR_SIZENESW        = 32643;
+    const long OCR_SIZEWE          = 32644;
+    const long OCR_SIZENS          = 32645;
+    const long OCR_SIZEALL         = 32646;
+    const long OCR_ICOCUR          = 32647;
+
+    const long OIC_SAMPLE          = 32512;
+    const long OIC_HAND            = 32513;
+    const long OIC_QUES            = 32514;
+    const long OIC_BANG            = 32515;
+    const long OIC_NOTE            = 32516;
+    */
+
+    // ****** Atom Management *******
+
+    /*
+    BOOL    WINAPI InitAtomTable(int);
+    ATOM    WINAPI AddAtom(LPCSTR);
+    ATOM    WINAPI DeleteAtom(ATOM);
+    ATOM    WINAPI FindAtom(LPCSTR);
+    UINT    WINAPI GetAtomName(ATOM, LPSTR, int);
+    ATOM    WINAPI GlobalAddAtom(LPCSTR);
+    ATOM    WINAPI GlobalDeleteAtom(ATOM);
+    ATOM    WINAPI GlobalFindAtom(LPCSTR);
+    UINT    WINAPI GlobalGetAtomName(ATOM, LPSTR, int);
+    HLOCAL  WINAPI GetAtomHandle(ATOM);
+    */
+
+    // ****** WIN.INI Support ******
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetProfileIntA"),
+    #else
+    entry("GetProfileIntA"),
+    #endif
+    helpstring("Gets an integer value from given entry within given section of WIN.INI (or default if not found)"),
+    ]
+    UINT    WINAPI GetProfileInt([in] LPCSTR lpszSection,
+                                 [in] LPCSTR lpszEntry,
+                                 [in] int iDef);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetProfileStringA"),
+    #else
+    entry("GetProfileString"),
+    #endif
+    helpstring("Gets a string value from given entry within given section of WIN.INI (or default if not found)"),
+    ]
+    int     WINAPI GetProfileString([in] LPCSTR lpszSection,
+                                    [in] LPCSTR lpszEntry,
+                                    [in] LPCSTR lpszDefault,
+                                    [in, out] LPSTR lpszReturnBuffer,
+                                    [in] int cbReturnBuffer);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("WriteProfileStringA"),
+    #else
+    entry("WriteProfileString"),
+    #endif
+    helpstring("Writes given string value to given entry within given section of WIN.INI"),
+    ]
+    BOOL    WINAPI WriteProfileString([in] LPCSTR lpszSection,
+                                      [in] LPCSTR lpszEntry,
+                                      [in] LPCSTR lpszString);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetPrivateProfileIntA"),
+    #else
+    entry("GetPrivateProfileIntA"),
+    #endif
+    helpstring("Gets an integer value from given entry within given section of INI file (or default if not found)"),
+    ]
+    UINT    WINAPI GetPrivateProfileInt([in] LPCSTR lpszSection,
+                                        [in] LPCSTR lpszEntry,
+                                        [in] int iDef,
+                                        [in] LPCSTR lpszFilename);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("GetPrivateProfileStringA"),
+    #else
+    entry("GetPrivateProfileString"),
+    #endif
+    helpstring("Gets a string value from given entry within given section of INI file (or default if not found)"),
+    ]
+    int     WINAPI GetPrivateProfileString([in] LPCSTR lpszSection,
+                                           [in] LPCSTR lpszEntry,
+                                           [in] LPCSTR lpszDefault,
+                                           [in, out] LPSTR lpszReturnBuffer,
+                                           [in] int cbReturnBuffer,
+                                           [in] LPCSTR lpszFilename);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("WritePrivateProfileStringA"),
+    #else
+    entry("WritePrivateProfileString"),
+    #endif
+    helpstring("Writes given string value to given entry within given section of INI file"),
+    ]
+    BOOL    WINAPI WritePrivateProfileString([in] LPCSTR lpszSection,
+                                             [in] LPCSTR lpszEntry,
+                                             [in] LPCSTR lpszString,
+                                             [in] LPCSTR lpszFilename);
+
+    // ******* International & Char Translation Support *******
+
+    /* Omitted
+    void    WINAPI AnsiToOem(const char _huge*, char _huge*);
+    void    WINAPI OemToAnsi(const char _huge*, char _huge*);
+    void    WINAPI AnsiToOemBuff(LPCSTR, LPSTR, UINT);
+    void    WINAPI OemToAnsiBuff(LPCSTR, LPSTR, UINT);
+    LPSTR   WINAPI AnsiNext(LPCSTR);
+    LPSTR   WINAPI AnsiPrev(LPCSTR, LPCSTR);
+    LPSTR   WINAPI AnsiUpper(LPSTR);
+    LPSTR   WINAPI AnsiLower(LPSTR);
+    UINT    WINAPI AnsiUpperBuff(LPSTR, UINT);
+    UINT    WINAPI AnsiLowerBuff(LPSTR, UINT);
+    BOOL    WINAPI IsCharAlpha(char);
+    BOOL    WINAPI IsCharAlphaNumeric(char);
+    BOOL    WINAPI IsCharUpper(char);
+    BOOL    WINAPI IsCharLower(char);
+    BOOL    WINAPI IsDBCSLeadByte(BYTE);
+    */
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("lstrcmpA"),
+    #else
+    entry("lstrcmp"),
+    #endif
+    helpstring("Compares two strings (case sensitive) and returns less than zero if first string is less, zero if strings are equal, or greater than zero if first string is greater"),
+    ]
+    int     WINAPI lstrcmp([in] LPSTR lpszString1,
+                           [in] LPSTR lpszString2);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("lstrcmpiA"),
+    #else
+    entry("lstrcmpi"),
+    #endif
+    helpstring("Compares two strings (case insensitive) and returns less than zero if first string is less, zero if strings are equal, or greater than zero if first string is greater"),
+    ]
+    int     WINAPI lstrcmpi([in] LPSTR lpszString1,
+                            [in] LPSTR lpszString2);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("lstrcpyA"),
+    #else
+    entry("lstrcpy"),
+    #endif
+    helpstring("Copies source string to destination and returns pointer to result"),
+    ]
+    LONG    WINAPI lstrcpy([in] LPSTR lpszDst, [in] LPSTR lpszSrc);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("lstrcpyA"),
+    #else
+    entry("lstrcpy"),
+    #endif
+    helpstring("Copies source string to destination and returns pointer to result"),
+    ]
+    LONG    WINAPI lstrcpyFromLp([in] LPSTR lpszDst, [in] LONG lpszSrc);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("lstrcpyA"),
+    #else
+    entry("lstrcpy"),
+    #endif
+    helpstring("Copies source string to destination and returns pointer to result"),
+    ]
+    LONG    WINAPI lstrcpyToLp([in] LONG lpszDst, [in] LPSTR lpszSrc);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("lstrcatA"),
+    #else
+    entry("lstrcat"),
+    #endif
+    helpstring("Concatenates source string onto destination and returns pointer to result"),
+    ]
+    LONG    WINAPI lstrcat([in] LPSTR lpszDst, [in] LPSTR lpszSrc);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("lstrlenA"),
+    #else
+    entry("lstrlen"),
+    #endif
+    helpstring("Returns length of string"),
+    ]
+    int     WINAPI lstrlen([in] LPSTR lpsz);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("lstrcpynA"),
+    #else
+    entry("lstrcpyn"),
+    #endif
+    helpstring("Copies given count of characters from source string to destination and returns pointer to result"),
+    ]
+    LONG    WINAPI lstrcpyn([in] LPSTR lpszDst, [in] LPSTR lpszSrc,
+                            [in] int cChars);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("RtlMoveMemory"),
+    #else
+    entry("hmemcpy"),
+    #endif
+    helpstring("Copies memory from pointer to byte array"),
+    ]
+    void WINAPI CopyMemoryLpToByte([in, out] BYTE FAR * pvDest,
+                                   [in] DWORD pvSrc, [in] DWORD cbCopy);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("RtlMoveMemory"),
+    #else
+    entry("hmemcpy"),
+    #endif
+    helpstring("Copies memory from pointer to byte array"),
+    ]
+    void WINAPI CopyMemoryLpForByte([in] DWORD pvDest,
+                                    [in, out] BYTE FAR * pvSrc,
+                                    [in] DWORD cbCopy);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("RtlMoveMemory"),
+    #else
+    entry("hmemcpy"),
+    #endif
+    helpstring("Copies memory from pointer to string"),
+    ]
+    void WINAPI CopyMemoryLpToStr([in] LPSTR lpszDest,
+                                  [in] DWORD pvSrc, [in] DWORD cbCopy);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("RtlMoveMemory"),
+    #else
+    entry("hmemcpy"),
+    #endif
+    helpstring("Copies memory from pointer to pointer"),
+    ]
+    void WINAPI CopyMemoryLpToLp([in] DWORD pvDest,
+                                 [in] DWORD pvSrc, [in] DWORD cbCopy);
+
+    /* Keyboard Driver Functions omitted
+    */
+
+}
+
+
+[
+uuid(54674043-3A82-101B-8181-00AA003743D3),
+helpstring("Windows Kernel Constants"),
+#ifdef WIN32
+dllname("KERNEL32.DLL")
+#else
+dllname("KRNL386.EXE")
+#endif
+]
+module KernelConst {
+
+    [ helpstring("GetFreeSystemResources: Total Resources") ]
+    const int GFSR_SYSTEMRESOURCES = 0;
+    [ helpstring("GetFreeSystemResources: GDI Resources") ]
+    const int GFSR_GDIRESOURCES = 1;
+    [ helpstring("GetFreeSystemResources: USER Resources") ]
+    const int GFSR_USERRESOURCES = 2;
+
+    [ helpstring("GetWinFlags: Protected mode") ]
+    const UINT WF_PMODE     = 0x0001;
+    [ helpstring("GetWinFlags: 80286 CPU") ]
+    const UINT WF_CPU286        = 0x0002;
+    [ helpstring("GetWinFlags: 80386 CPU") ]
+    const UINT WF_CPU386        = 0x0004;
+    [ helpstring("GetWinFlags: 80486 CPU or higher") ]
+    const UINT WF_CPU486        = 0x0008;
+    [ helpstring("GetWinFlags: Standard mode") ]
+    const UINT WF_STANDARD  = 0x0010;
+    [ helpstring("GetWinFlags: Enhanced mode") ]
+    const UINT WF_ENHANCED  = 0x0020;
+    [ helpstring("GetWinFlags: Coprocessor") ]
+    const UINT WF_80x87     = 0x0400;
+    [ helpstring("GetWinFlags: Paging") ]
+    const UINT WF_PAGING        = 0x0800;
+    [ helpstring("GetWinFlags: Windows NT") ]
+    const long WF_WINNT     = 0x4000;
+    [ helpstring("GetWinFlags: OS/2 emulation") ]
+    const long WF_WLO       = 0x8000;
+
+    // Global Memory Flags
+
+    [ helpstring("Fixed memory flag for GlobalAlloc") ]
+    const UINT GMEM_FIXED       = 0x0000;
+    [ helpstring("Moveable memory flag for GlobalAlloc") ]
+    const UINT GMEM_MOVEABLE        = 0x0002;
+    [ helpstring("No compact memory flag for GlobalAlloc") ]
+    const UINT GMEM_NOCOMPACT   = 0x0010;
+    [ helpstring("No discard memory flag for GlobalAlloc") ]
+    const UINT GMEM_NODISCARD   = 0x0020;
+    [ helpstring("Zero init memory flag for GlobalAlloc") ]
+    const UINT GMEM_ZEROINIT        = 0x0040;
+    [ helpstring("Modify memory flag for GlobalAlloc") ]
+    const UINT GMEM_MODIFY      = 0x0080;
+    [ helpstring("Discardable memory flag for GlobalAlloc and GlobalFlags") ]
+    const UINT GMEM_DISCARDABLE = 0x0100;
+    [ helpstring("Shared memory flag for GlobalAlloc") ]
+    const UINT GMEM_SHARE       = 0x2000;
+    [ helpstring("Fixed memory flag for GlobalAlloc") ]
+    const UINT GMEM_NOTIFY      = 0x4000;
+    [ helpstring("Notification memory flag for GlobalAlloc") ]
+    const UINT GMEM_LOWER       = 0x1000;
+    [ helpstring("Fixed and zero init memory flag for GlobalAlloc") ]
+    const UINT GPTR             = 0x0040;
+    [ helpstring("Discarded flag from GlobalFlags") ]
+    const UINT GMEM_DISCARDED   = 0x4000;
+    [ helpstring("Lock count flag from GlobalFlags") ]
+    const UINT GMEM_LOCKCOUNT   = 0x00FF;
+
+    /*
+    const UINT GMEM_NOT_BANKED    = 0x1000;
+    const UINT GMEM_DDESHARE      = 0x2000;
+    const UINT GMEM_VALID_FLAGS   = 0x7F72;
+    const UINT GMEM_INVALID_HANDLE = 0x8000;
+    */
+
+    // _lopen() flags
+    [ helpstring("Read flag for lopen") ]
+    const int READ          = 0;
+    [ helpstring("Write flag for lopen") ]
+    const int WRITE         = 1;
+    [ helpstring("Read/write flag for lopen") ]
+    const int READ_WRITE    = 2;
+
+    // _llseek origin values
+    [ helpstring("Move seek position from start of file (llseek)") ]
+    const int SEEK_SET  = 0;
+    [ helpstring("Move seek position from current position (llseek)") ]
+    const int SEEK_CUR  = 1;
+    [ helpstring("Move seek position from end of file (llseek)") ]
+    const int SEEK_END  = 2;
+
+    // Predefined Resource Types
+    [ helpstring("FindResource: Resource type") ]
+    const long RT_CURSOR        = 1;
+    [ helpstring("FindResource: Resource type") ]
+    const long RT_BITMAP        = 2;
+    [ helpstring("FindResource: Resource type") ]
+    const long RT_ICON          = 3;
+    [ helpstring("FindResource: Resource type") ]
+    const long RT_MENU          = 4;
+    [ helpstring("FindResource: Resource type") ]
+    const long RT_DIALOG        = 5;
+    [ helpstring("FindResource: Resource type") ]
+    const long RT_STRING        = 6;
+    [ helpstring("FindResource: Resource type") ]
+    const long RT_FONTDIR       = 7;
+    [ helpstring("FindResource: Resource type") ]
+    const long RT_FONT          = 8;
+    [ helpstring("FindResource: Resource type") ]
+    const long RT_ACCELERATOR   = 9;
+    [ helpstring("FindResource: Resource type") ]
+    const long RT_RCDATA        = 10;
+
+    [ helpstring("FindResource: Resource type") ]
+    const long RT_GROUP_CURSOR  = 12;
+    [ helpstring("FindResource: Resource type") ]
+    const long RT_GROUP_ICON    = 14;
+
+    // Errors
+    [ helpstring("WNet: Function succeeded") ]
+    const UINT WN_SUCCESS           = 0x0000;
+    [ helpstring("WNet: Function not supported") ]
+    const UINT WN_NOT_SUPPORTED     = 0x0001;
+    [ helpstring("WNet: Network error") ]
+    const UINT WN_NET_ERROR         = 0x0002;
+    [ helpstring("WNet: Buffer too small") ]
+    const UINT WN_MORE_DATA         = 0x0003;
+    [ helpstring("WNet: A pointer value was invalid") ]
+    const UINT WN_BAD_POINTER       = 0x0004;
+    [ helpstring("WNet: Local name invalid") ]
+    const UINT WN_BAD_VALUE         = 0x0005;
+    [ helpstring("WNet: Invalid password") ]
+    const UINT WN_BAD_PASSWORD      = 0x0006;
+    [ helpstring("WNet: A security violation occurred") ]
+    const UINT WN_ACCESS_DENIED     = 0x0007;
+    [ helpstring("WNet: The requested resource is in use") ]
+    const UINT WN_FUNCTION_BUSY     = 0x0008;
+    [ helpstring("WNet: Unexpected error") ]
+    const UINT WN_WINDOWS_ERROR     = 0x0009;
+    [ helpstring("WNet: Invalid user") ]
+    const UINT WN_BAD_USER          = 0x000A;
+    [ helpstring("WNet: System out of memory") ]
+    const UINT WN_OUT_OF_MEMORY     = 0x000B;
+    [ helpstring("WNet: Canceled by user") ]
+    const UINT WN_CANCEL                = 0x000C;
+    [ helpstring("WNet: Continued by user") ]
+    const UINT WN_CONTINUE          = 0x000D;
+
+    // Connection errors
+    [ helpstring("WNet: Network connection does not exist") ]
+    const UINT WN_NOT_CONNECTED     = 0x0030;
+    [ helpstring("WNet: Files are open, but force not specified") ]
+    const UINT WN_OPEN_FILES            = 0x0031;
+    [ helpstring("WNet: Remote name invalid or already connected") ]
+    const UINT WN_BAD_NETNAME       = 0x0032;
+    [ helpstring("WNet: Local name invalid") ]
+    const UINT WN_BAD_LOCALNAME     = 0x0033;
+    [ helpstring("WNet: Local device already in use") ]
+    const UINT WN_ALREADY_CONNECTED = 0x0034;
+    [ helpstring("WNet: Device not functioning") ]
+    const UINT WN_DEVICE_ERROR      = 0x0035;
+    [ helpstring("WNet: Device not currently connected, but is a remembered connection") ]
+    const UINT WN_CONNECTION_CLOSED = 0x0036;
+
+    [ helpstring("GetBinaryType: Win32 application") ]
+    const UINT SCS_32BIT_BINARY  = 0;
+    [ helpstring("GetBinaryType: MS-DOS application") ]
+    const UINT SCS_DOS_BINARY    = 1;
+    [ helpstring("GetBinaryType: 16-bit Windows application") ]
+    const UINT SCS_WOW_BINARY    = 2;
+    [ helpstring("GetBinaryType: PIF file") ]
+    const UINT SCS_PIF_BINARY    = 3;
+    [ helpstring("GetBinaryType: Posix application") ]
+    const UINT SCS_POSIX_BINARY  = 4;
+    [ helpstring("GetBinaryType: 16-bit OS/2 application") ]
+    const UINT SCS_OS216_BINARY  = 5;
+
+}

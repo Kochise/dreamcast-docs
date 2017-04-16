@@ -1,0 +1,71 @@
+<script language="VBScript">
+Sub CommitAccount()
+    Dim iAccount
+    Dim iBank
+    Dim sBuff
+    Dim sNewNumber
+    Dim lNewType
+    Dim bResult
+
+    'get current bank and account index from banks frame
+    iBank = top.banks.m_iCurrBank 
+    iAccount = top.banks.m_iCurrAccount
+
+    'get account number from interface
+    sNewNumber = AcctNumber.Value
+    top.banks.m_oAdmin.Banks(iBank).Accounts(iAccount).Number = sNewNumber
+
+    'get and validate account typeid from interface
+    Err = False
+    lNewType = CLng(Trim(AcctTypeId.Value))
+    If Err = False Then
+       top.banks.m_oAdmin.Banks(iBank).Accounts(iAccount).TypeId = lNewType
+    Else
+        MsgBox("Invalid account TypeID.")
+    End if
+    
+    'update account via data services
+    bResult = top.banks.m_oAdmin.Update(, top.banks.m_oAdmin.Banks(iBank).Accounts(iAccount))     
+    
+    'refresh interface
+    If bResult Then
+        top.bankdet.location.href = "bankdet.htm"
+        top.acctdet.location.href = "detact.htm"
+    Else
+        document.writeln("Update failed.")
+    End If
+
+End Sub
+</script>
+
+<html>
+<head>
+<title>Edit Account Details</title>
+</head>
+<body>
+Account Number<br>
+<input type=text Name="AcctNumber"><br>
+Account Type<br>
+<input type=text Name="AcctTypeId"><br>
+<br>
+<input type=button value="Commit" OnClick="CommitAccount">
+
+<script language="VBScript">
+<!--
+Dim iAccount
+Dim iBank
+On Error Resume Next
+iAccount = -1
+iBank = -1
+iBank = top.banks.m_iCurrBank
+iAccount = top.banks.m_iCurrAccount
+If ((iBank >= 0) And (iAccount >= 0)) Then
+    AcctNumber.Value = top.Banks.m_oAdmin.Banks(iBank).Accounts(iAccount).Number
+    AcctTypeId.Value = top.Banks.m_oAdmin.Banks(iBank).Accounts(iAccount).TypeId
+Else
+    document.writeln("No Current Account")
+End If
+-->
+</script>
+</body>
+</html>

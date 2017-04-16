@@ -1,0 +1,1 @@
+This folder contains the RegPCtrs DLL.  This DLL is used during application registration to add performance data for the application to the registry.

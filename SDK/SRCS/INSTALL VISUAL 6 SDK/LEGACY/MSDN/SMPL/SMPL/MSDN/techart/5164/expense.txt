@@ -1,0 +1,263 @@
+<SCRIPT RunAt=Server Language=VBScript>
+
+'------------------------------------------------------------------------------
+'FILE DESCRIPTION: Expense Report Sample Script
+' 
+' Copyright (c) Microsoft Corporation 1993-1997. All rights reserved.
+'------------------------------------------------------------------------------
+
+'------------------------------------------------------------------------------
+' Localized strings
+'------------------------------------------------------------------------------
+' Put all localizable strings and constants here
+
+'------------------------------------------------------------------------------
+' Global Variables
+'------------------------------------------------------------------------------
+Dim fs
+Dim a
+Dim AMSession
+Dim fldrOutbox
+Dim msgTarget
+Dim fldrTarget
+Dim ExpRentalCar
+Dim ExpAirfare
+Dim ExpHotel
+Dim ExpMeals
+Dim ExpTotal
+Dim fsnew
+Dim anew
+'------------------------------------------------------------------------------
+' Event Handlers
+'------------------------------------------------------------------------------
+
+' DESCRIPTION: This event is fired when a new message is added to the folder
+Public Sub Folder_OnMessageCreated
+On Error Resume Next
+GetEventDetails
+If Err.Number = 0 Then
+    CheckTotal
+Else
+    Script.Response = "GetEventDetails Failed"
+End If
+End Sub
+
+' DESCRIPTION: This event is fired when a message in the folder is changed
+Public Sub Message_OnChange
+End Sub
+
+' DESCRIPTION: This event is fired when a message is deleted from the folder
+Public Sub Folder_OnMessageDeleted
+End Sub
+
+' DESCRIPTION: This event is fired when the timer on the folder expires
+Public Sub Folder_OnTimer
+
+Dim oMessages
+Dim oMessage
+Dim Status
+Dim currentdate
+Dim elapsed
+Dim timesent
+Dim CurrentApprover
+Dim NextApprover
+Dim msgResponse
+Dim objonerecip
+Dim myaddentry
+Dim currentuser
+Dim msgNewApprover
+Dim DestFolder
+Dim idTargetFolder
+Dim oStores
+Dim Temp
+Dim i
+Dim StatusInt
+
+On Error Resume Next
+
+idTargetFolder = EventDetails.FolderID
+' some of the above may not exist
+Err.Clear
+Set AMSession = EventDetails.Session
+fldrOutbox = AMSession.Outbox
+If Err.Number = 0 Then
+    Set oStores = AMSession.InfoStores
+    If Err.Number = 0 Then
+        Set Temp = oStores.Item(1).RootFolder
+        Set Temp = oStores.Item(2).RootFolder
+        Set fldrTarget = AMSession.GetFolder( idTargetFolder, Null )
+    end if
+end if		
+
+' Need to check all the messages in the folder to see if they
+'     are over the 1 hour limit and are awaiting approval
+set oMessages = fldrTarget.Messages
+for i = 1 to oMessages.Count
+    set oMessage = oMessages.Item(i)
+' check the time and status
+    StatusInt = oMessage.Fields("StatusInt")
+    if StatusInt = 2 then 'Weve got a live one
+' Figure out how long it has been sitting
+        timesent = oMessage.TimeSent
+        currentdate = now()
+        elapsed = datediff("s", timesent, currentdate)
+        if elapsed > 400 then 'has been sitting
+            Set msgTarget = oMessage
+            set ExpTotal = oMessage.Fields("Total")
+' lets reroute him
+            set CurrentApprover = oMessage.Fields("Approver")
+            set msgResponse = AMSession.Outbox.Messages.Add
+' create the recipient
+            Set objonerecip = msgResponse.Recipients.Add
+            objonerecip.Name = CurrentApprover
+' Resolve the name against the Exchange directory
+            objonerecip.Resolve
+' Get the address entry so we can pull out template info
+            Set myaddentry = objonerecip.AddressEntry
+' Get the manager from the addentry
+            set NextApprover = myaddentry.Manager
+            if NextApprover = Empty then 'We dont have a manager!
+                set currentuser = oMessage.Sender
+                msgResponse.Subject = "No more manager to route to"
+                msgResponse.Text = currentuser.name & " has submitted an expense report for " & ExpTotal & ".  There are no other managers to route to!"
+                msgResponse.Recipients.Add "", "", 1, oMessage.Sender.ID
+                msgResponse.Send
+            else
+                NextApproverName = NextApprover.Name
+' Got the next approver send a message to previous approver and user and reroute
+                set currentuser = oMessage.Sender
+                msgResponse.Subject = "An Expense Report has been rerouted"
+                msgResponse.Text = currentuser.name & " has submitted an expense report for " & ExpTotal & ".  It was rerouted because the 15 minute approval time limit has expired.  It is now routed to " & NextApproverName
+                msgResponse.Recipients.Add "", "", 1, oMessage.Sender.ID
+                msgResponse.Send
+' Now change the status and reroute to new person
+                oMessage.Fields("Status") = "Rerouted and awaiting Approval from " & NextApproverName
+                oMessage.Fields("Approver") = NextApproverName
+                oMessage.Update
+' Now send a message
+                Set msgNewApprover = AMSession.Outbox.Messages.Add				
+' create the recipient
+' Get the spaces out
+                NextApproverName = Replace(NextApproverName," ","+")
+                msgNewApprover.Subject = "Approval Required for Rerouted Expense Report!"
+                msgNewApprover.Text = currentuser.name & " has submitted an expense report for " & ExpTotal & ".  Please review it at http://rgb/expense/approve.asp?entryid=" & msgTarget.ID & "&Approver=" & NextApproverName
+                msgNewApprover.Recipients.Add "","",1,NextApprover.ID
+                msgNewApprover.Recipients.Resolve(False)
+                msgNewApprover.Send
+            end if 'Manager!
+        end if 'Elapsed
+    end if 'Status
+next
+
+End Sub
+
+'------------------------------------------------------------------------------
+' Support Functions
+'------------------------------------------------------------------------------
+
+' DESCRIPTION: Get the details of the event that fired
+Private Sub GetEventDetails
+Dim oStores
+Dim Temp
+Dim idTargetFolder
+Dim idTargetMessage
+
+On Error Resume Next
+	
+idTargetFolder = EventDetails.FolderID
+idTargetMessage = EventDetails.MessageID
+' some of the above may not exist
+Err.Clear
+Set AMSession = EventDetails.Session
+If Err.Number = 0 Then
+' We're going to send a msg, so lets get the outbox here
+    Set fldrOutbox = AMSession.Outbox
+    If Err.Number = 0 Then
+        Set oStores = AMSession.InfoStores
+        If Err.Number = 0 Then
+            Set Temp = oStores.Item(1).RootFolder
+            Set Temp = oStores.Item(2).RootFolder
+            Set fldrTarget = AMSession.GetFolder( idTargetFolder, Null )
+            If Err.Number = 0 Then
+                Set msgTarget = AMSession.GetMessage( idTargetMessage, Null )
+                If Not Err.Number = 0 Then
+                    Script.Response = "Session.GetMessage Failed: " & Err.Description
+                End If
+            Else
+                Script.Response = "Session.GetFolder Failed: " & Err.Description
+            End If
+        Else
+            Script.Response = "Session.InfoStores Failed: " & Err.Description
+        End If
+    Else
+        Script.Response = "Outbox.Messages Failed: " & Err.Description
+    End If
+Else
+    Script.Response = "EventDetails.Session Failed: " & Err.Description
+End If
+End Sub
+
+' DESCRIPTION: Make a response message
+Private Sub CheckTotal
+On Error Resume Next
+
+Dim msgResponse
+Dim iMsgCount
+dim msgManager
+dim UsersManager
+Dim currentuser	
+dim currentapprover
+
+iMsgCount = fldrTarget.Messages.Count
+If Err.Number = 0 Then
+    set ExpTotal = msgTarget.Fields("Total")
+    Set msgResponse = fldrOutbox.Messages.Add
+    If ExpTotal > 5000 then
+        msgResponse.Subject = "The Total was " & ExpTotal			
+        msgResponse.Text = "This Expense Report has been routed to your Manager"
+	set msgManager = fldrOutbox.Messages.Add 'Message to Manager
+	set currentuser = msgTarget.Sender
+	set UsersManager = currentuser.Manager
+	currentapprover = UsersManager.Name
+' Get the spaces out
+        currentapprover = Replace(currentapprover," ","+")
+        msgManager.Subject = "Approval Required for Expense Report!"
+        msgManager.Text = currentuser.name & " has submitted an expense report for " & ExpTotal & ".  Please review it at http://rgb/expense/approve.asp?entryid=" & msgTarget.ID & "&Approver=" & CurrentApprover
+        msgManager.Recipients.Add "","",1,UsersManager.ID
+        msgManager.Recipients.Resolve(False)
+        msgManager.Send
+        msgTarget.Fields("Status") = "Awaiting Approval from " & UsersManager.Name
+        msgTarget.Fields("StatusInt") = 2
+        msgTarget.Fields.Add "Approver",8,UsersManager.Name
+        msgTarget.Update
+    Else 'Expense Report < 5000
+        msgResponse.Subject = "This Expense Report has been Approved"
+        msgResponse.Text = "Your expense report for " & ExpTotal & " has been automatically approved. Funds are being transferred!"
+        msgTarget.Fields("Status") = "Approved automatically and routed for payment"
+        msgTarget.Fields("StatusInt") = 3
+        msgTarget.Update
+    End If
+    If Err.Number = 0 Then
+        msgResponse.Recipients.Add "", "", 1, msgTarget.Sender.ID
+        If Err.Number = 0 Then
+            msgResponse.Recipients.Resolve(False)
+            If msgResponse.Recipients.Resolved = True Then
+                msgResponse.Send
+                If Not Err.Number = 0 Then
+                    Script.Response = "Message.Send Failed: " & Err.Description
+                End If
+            Else
+                Script.Response = "Recipients.Resolve Failed: " & Err.Description
+            End If
+        Else
+            Script.Response = "Recipients.Add Failed: " & Err.Description
+        End If
+    Else
+        Script.Response = "Messages.Add Failed: " & Err.Description
+    End If
+Else
+    Script.Response = "Messages.Count Failed: " & Err.Description
+End If
+End Sub
+
+</SCRIPT>

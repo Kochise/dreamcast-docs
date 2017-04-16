@@ -1,0 +1,82 @@
+<SCRIPT LANGUAGE=VBScript RUNAT=Server> 
+ 
+    
+
+Sub Application_OnStart
+
+	On Error Resume Next
+
+    Set objRenderApp = Server.CreateObject("AMHTML.Application")
+    If Err = 0 Then
+		Set Application("RenderApplication") = objRenderApp
+	Else
+		Application("startupFatal") = Err.Number
+		Application("startupFatalDescription") = "Failed to create application object<br>" & Err.Description
+    End If
+
+	Application("hImp") = 0
+	
+	Err.Clear
+    
+End Sub 
+
+
+Sub Application_OnEnd
+
+    Set Application("RenderApplication") = Nothing
+
+End Sub
+
+
+Sub Session_OnStart
+
+	On Error Resume Next
+
+	' this is a handle to the security context.  It will be set to the correct
+	' value when an Active Messaging session is created.
+	Session("hImp") = 0
+	Set Session("AMSession") = Nothing
+
+End Sub 
+
+
+' While calling the Session_onEnd event, Denali doesn't call us in the right
+' security context. Workaround: current security context in stored in Session
+' (look at logon.asp) and then gets restored in Session_onEnd event handler.
+'
+' All ActiveMessaging and ActiveMessagingRenderingLibrary objects stored in the session object
+' need to be explicitly set to Nothing between the two objRenderApp.Impersonate calls below
+Sub Session_OnEnd
+
+	On Error Resume Next
+
+	set objRenderApp = Application("RenderApplication")
+	fRevert = FALSE
+
+	hImp = Session("hImp")
+
+	If Not IsEmpty(hImp) Then
+		fRevert = objRenderApp.Impersonate(hImp)
+	End If
+
+	' Do our cleanup- set all AM and AMHTML objects inside the session to Nothing
+
+	' The AM session is a little special because we need to do the Logoff on it.
+	Set objOMSession = Session("AMSession")
+	If Not objOMSession Is Nothing Then
+		Set Session("AMSession") = Nothing
+		objOMSession.Logoff
+		Set objOMSession = Nothing
+	End If
+
+
+	If (fRevert) Then
+		objRenderApp.Impersonate(0)
+	End if
+
+
+
+End Sub 
+</SCRIPT> 
+
+

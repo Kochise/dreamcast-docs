@@ -1,0 +1,713 @@
+
+[
+uuid(54674054-3A82-101B-8181-00AA003743D3),
+helpstring("Registry"),
+#ifdef WIN32
+dllname("ADVAPI32.DLL")
+#else
+dllname("SHELL.DLL")
+#endif
+]
+module Registry {
+
+    // Kind of weird place for this, but it must go in ADVAPI32
+    [
+    usesgetlasterror,
+    entry("GetUserNameA"),
+    helpstring("Gets the user name"),
+    ]
+    BOOL WINAPI GetUserName([in, out] LPSTR lpBuffer,
+                            [in, out] DWORD FAR * nSize);
+
+    //
+    // Requested Key access mask type.
+    //
+
+    // typedef ACCESS_MASK REGSAM;
+
+    //
+    // Type definitions.
+    //
+
+    //
+    // Reserved Key Handles.
+    //
+
+    const long HKEY_CLASSES_ROOT            = 0x80000000;
+    const long HKEY_CURRENT_USER            = 0x80000001;
+    const long HKEY_LOCAL_MACHINE           = 0x80000002;
+    const long HKEY_USERS                   = 0x80000003;
+    const long HKEY_PERFORMANCE_DATA        = 0x80000004;
+    const long HKEY_CURRENT_CONFIG          = 0x80000005;
+    const long HKEY_DYN_DATA                = 0x80000006;
+
+    const long PROVIDER_KEEPS_VALUE_LENGTH = 0x1;
+
+    //
+    // Predefined Value Types.
+    //
+
+    [ helpstring("Registry types: No value type") ]
+    const long REG_NONE                     = 0;
+    [ helpstring("Registry types: Null-terminated string (Unicode in 32-bit)") ]
+    const long REG_SZ                       = 1;
+    #if WIN32
+    [ helpstring("Registry types: Null-terminated string with environment variable references") ]
+    const long REG_EXPAND_SZ                = 2;
+    [ helpstring("Registry types: Free form binary") ]
+    const long REG_BINARY                   = 3;
+    [ helpstring("Registry types: 32-bit number") ]
+    const long REG_DWORD                    = 4;
+    [ helpstring("Registry types: 32-bit number") ]
+    const long REG_DWORD_LITTLE_ENDIAN      = 4;
+    [ helpstring("Registry types: 32-bit number") ]
+    const long REG_DWORD_BIG_ENDIAN         = 5;
+    [ helpstring("Registry types: Symbolic Link (Unicode)") ]
+    const long REG_LINK                     = 6;
+    [ helpstring("Registry types: Multiple Unicode strings") ]
+    const long REG_MULTI_SZ                 = 7;
+    [ helpstring("Registry types: Resource list in the resource map") ]
+    const long REG_RESOURCE_LIST            = 8;
+    [ helpstring("Registry types: Resource list in the hardware description") ]
+    const long REG_FULL_RESOURCE_DESCRIPTOR = 9;
+    const long REG_RESOURCE_REQUIREMENTS_LIST   = 10;
+
+    // Registry Specific Access Rights.
+    //
+
+    [ helpstring("Registry access: Allow value query") ]
+    const long KEY_QUERY_VALUE         = 0x0001;
+    [ helpstring("Registry access: Allow set subkey data") ]
+    const long KEY_SET_VALUE           = 0x0002;
+    [ helpstring("Registry access: Allow create subkey") ]
+    const long KEY_CREATE_SUB_KEY      = 0x0004;
+    [ helpstring("Registry access: Allow subkey enumeration") ]
+    const long KEY_ENUMERATE_SUB_KEYS  = 0x0008;
+    [ helpstring("Registry access: Allow change notification") ]
+    const long KEY_NOTIFY              = 0x0010;
+    [ helpstring("Registry access: Allow symbolic link creation") ]
+    const long KEY_CREATE_LINK         = 0x0020;
+    [ helpstring("Registry access: Allow query, enumerate, and notify") ]
+    const long KEY_READ                = 0x00020009;
+    [ helpstring("Registry access: Allow subkey create and set value") ]
+    const long KEY_WRITE               = 0x00020006;
+    [ helpstring("Registry access: Allow read") ]
+    const long KEY_EXECUTE             = 0x00020009;
+    [ helpstring("Registry access: Allow anything") ]
+    const long KEY_ALL_ACCESS          = 0x000F003F;
+
+    //
+    // Open/Create Options
+    //
+
+    // Parameter is reserved
+    const long REG_OPTION_RESERVED         = 0x00000000;
+    // Key is preserved when system is rebooted
+    const long REG_OPTION_NON_VOLATILE     = 0x00000000;
+    // Key is not preserved when system is rebooted
+    const long REG_OPTION_VOLATILE         = 0x00000001;
+    // Created key is a symbolic link
+    const long REG_OPTION_CREATE_LINK      = 0x00000002;
+    // open for backup or restore special access rules privilege required
+    const long REG_OPTION_BACKUP_RESTORE   = 0x00000004;
+
+    const long REG_LEGAL_OPTION            = 0x00000007;
+
+    //
+    // Key creation/open disposition
+    //
+
+    // New Registry Key created
+    const long REG_CREATED_NEW_KEY         = 0x00000001;
+    // Existing Key opened
+    const long REG_OPENED_EXISTING_KEY     = 0x00000002;
+
+    //
+    // Key restore flags
+    //
+
+    // Restore whole hive volatile
+    const long REG_WHOLE_HIVE_VOLATILE     = 0x00000001;
+    // Unwind changes to last flush
+    const long REG_REFRESH_HIVE            = 0x00000002;
+
+    //
+    // Notify filter values
+    //
+    // Create or delete (child)
+    const long REG_NOTIFY_CHANGE_NAME          = 0x00000001;
+    const long REG_NOTIFY_CHANGE_ATTRIBUTES    = 0x00000002;
+    // time stamp
+    const long REG_NOTIFY_CHANGE_LAST_SET      = 0x00000004;
+    const long REG_NOTIFY_CHANGE_SECURITY      = 0x00000008;
+
+    const long REG_LEGAL_CHANGE_FILTER         = 0x0000000F;
+
+    #endif // WIN32
+
+    /*
+    struct val_context {
+        int valuelen;       // the total length of this value
+        LPVOID value_context;   // provider's context
+        LPVOID val_buff_ptr;    // where in the ouput buffer the value is.
+    };
+
+    typedef struct val_context FAR *PVALCONTEXT;
+
+    typedef struct pvalueA {           // Provider supplied value/context.
+        LPSTR   pv_valuename;          // The value name pointer
+        int pv_valuelen;
+        LPVOID pv_value_context;
+        DWORD pv_type;
+    }PVALUEA, FAR *PPVALUEA;
+
+    typedef
+    DWORD _cdecl
+    QUERYHANDLER (LPVOID keycontext, PVALCONTEXT val_list, DWORD num_vals,
+              LPVOID outputbuffer, DWORD FAR *total_outlen, DWORD input_blen);
+
+    typedef QUERYHANDLER FAR *PQUERYHANDLER;
+
+    typedef struct provider_info {
+        PQUERYHANDLER pi_R0_1val;
+        PQUERYHANDLER pi_R0_allvals;
+        PQUERYHANDLER pi_R3_1val;
+        PQUERYHANDLER pi_R3_allvals;
+        DWORD pi_flags;    // capability flags (none defined yet).
+        LPVOID pi_key_context;
+    }REG_PROVIDER;
+
+    typedef struct provider_info FAR *PPROVIDER;
+
+    typedef struct value_entA {
+        LPSTR   ve_valuename;
+        DWORD ve_valuelen;
+        DWORD ve_valueptr;
+        DWORD ve_type;
+    }VALENTA, FAR *PVALENTA;
+    */
+
+    //
+    // Default values for parameters that do not exist in the Win 3.1
+    // compatible APIs.
+    //
+
+    //         #define WIN31_CLASS              NULL
+
+    //
+    // API Prototypes.
+    //
+
+    [
+    usesgetlasterror,
+    entry("RegCloseKey"),
+    helpstring("Releases the handle of specified registry key"),
+    ]
+    LONG WINAPI RegCloseKey([in] HKEY hKey);
+
+    #if WIN32
+    [
+    usesgetlasterror,
+    entry("RegConnectRegistryA"),
+    helpstring("Establishes a connection to predefined registry handle on another computer"),
+    ]
+    LONG WINAPI RegConnectRegistry(
+        [in, out] LPSTR lpMachineName,
+        [in] HKEY hKey,
+        [in, out] HKEY FAR * phkResult
+        );
+	#endif
+
+    [
+    usesgetlasterror,
+    #if WIN32
+    entry("RegCreateKeyA"),
+    #else
+    entry("RegCreateKey"),
+    #endif
+    helpstring("Opens specified registry key if it already exists, or creates it if it doesn't exist"),
+    ]
+    LONG WINAPI RegCreateKey(
+        [in] HKEY hKey,
+        [in] LPCSTR lpSubKey,
+        [in, out] HKEY FAR * phkResult
+        );
+
+    #if WIN32
+    [
+    usesgetlasterror,
+    entry("RegCreateKeyExA"),
+    helpstring("Opens specified registry key if it already exists, or creates it if it doesn't exist"),
+    ]
+    LONG WINAPI RegCreateKeyEx(
+        [in] HKEY hKey,
+        [in] LPCSTR lpSubKey,
+        [in] DWORD Reserved,
+        [in, out] LPSTR lpClass,
+        [in] DWORD dwOptions,
+        [in] REGSAM samDesired,
+        [in] LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+        [in, out] HKEY FAR * phkResult,
+        [in, out] DWORD FAR * lpdwDisposition
+        );
+    #endif
+
+    [
+    usesgetlasterror,
+    #if WIN32
+    entry("RegDeleteKeyA"),
+    #else
+    entry("RegDeleteKey"),
+    #endif
+    helpstring("Deletes specified registry key and all its descendents (except under Windows NT where the key can't have descendants)"),
+    ]
+    LONG WINAPI RegDeleteKey(
+        [in] HKEY hKey,
+        [in] LPCSTR lpSubKey
+        );
+
+    #if WIN32
+    [
+    usesgetlasterror,
+    entry("RegDeleteValueA"),
+    helpstring("Removes a named value from the specified registry key"),
+    ]
+    LONG WINAPI RegDeleteValue(
+        [in] HKEY hKey,
+        [in] LPCSTR lpValueName
+        );
+    #endif
+
+    [
+    usesgetlasterror,
+    #if WIN32
+    entry("RegEnumKeyA"),
+    #else
+    entry("RegEnumKey"),
+    #endif
+    helpstring("Enumerates subkeys of an open registry key one at a time, retrieving subkey names"),
+    ]
+    LONG WINAPI RegEnumKey(
+        [in] HKEY hKey,
+        [in] DWORD dwIndex,
+        [in, out] LPSTR lpName,
+        [in] DWORD cbName
+        );
+
+	#if WIN32 
+    [
+    usesgetlasterror,
+    entry("RegEnumKeyExA"),
+    helpstring("Enumerates subkeys of an open registry key one at a time, retrieving subkey information"),
+    ]
+    LONG WINAPI RegEnumKeyEx(
+        [in] HKEY hKey,
+        [in] DWORD dwIndex,
+        [in, out] LPSTR lpName,
+        [in, out] DWORD FAR * lpcbName,
+        [in] DWORD lpReserved,
+        [in, out] LPSTR lpClass,
+        [in, out] DWORD FAR * lpcbClass,
+        [in, out] DWORD FAR * /* PFILETIME */ lpftLastWriteTime
+        );
+
+    [
+    usesgetlasterror,
+    entry("RegEnumValueA"),
+    helpstring("Enumerates the values for an open registry key one at a time, retrieving the size of the name and data block for each")
+	]
+    LONG WINAPI RegEnumValue(
+        [in] HKEY hKey,
+        [in] DWORD dwIndex,
+        [in, out] LPSTR lpValueName,
+        [in, out] DWORD FAR * lpcbValueName,
+        [in] DWORD lpReserved,
+        [in, out] DWORD FAR * lpType,
+        [in] DWORD lpData,
+        [in, out] DWORD FAR * lpcbData
+        );
+
+    [
+    usesgetlasterror,
+    entry("RegEnumValueA"),
+    helpstring("Enumerates the values for an open registry key one at a time, retrieving the name and byte data for each")
+	]
+    LONG WINAPI RegEnumValueByte(
+        [in] HKEY hKey,
+        [in] DWORD dwIndex,
+        [in, out] LPSTR lpValueName,
+        [in, out] DWORD FAR * lpcbValueName,
+        [in] DWORD lpReserved,
+        [in, out] DWORD FAR * lpType,
+        [in, out] BYTE FAR * lpData,
+        [in, out] DWORD FAR * lpcbData
+        );
+    [
+    usesgetlasterror,
+    entry("RegEnumValueA"),
+    helpstring("Enumerates the values for an open registry key one at a time, retrieving the name and string data for each")
+	]
+    LONG WINAPI RegEnumValueStr(
+        [in] HKEY hKey,
+        [in] DWORD dwIndex,
+        [in, out] LPSTR lpValueName,
+        [in, out] DWORD FAR * lpcbValueName,
+        [in] DWORD lpReserved,
+        [in, out] DWORD FAR * lpType,
+        [in, out] LPSTR lpData,
+        [in, out] DWORD FAR * lpcbData
+        );
+    [
+    usesgetlasterror,
+    entry("RegEnumValueA"),
+    helpstring("Enumerates the values for an open registry key one at a time, retrieving the name and integer data for each")
+	]
+    LONG WINAPI RegEnumValueInt(
+        [in] HKEY hKey,
+        [in] DWORD dwIndex,
+        [in, out] LPSTR lpValueName,
+        [in, out] DWORD FAR * lpcbValueName,
+        [in] DWORD lpReserved,
+        [in, out] DWORD FAR * lpType,
+        [in, out] DWORD FAR * lpData,
+        [in, out] DWORD FAR * lpcbData
+        );
+
+    [
+    usesgetlasterror,
+    entry("RegFlushKey"),
+    helpstring("Writes attributes of an open key into the registry"),
+    ]
+    LONG WINAPI RegFlushKey([in] HKEY hKey);
+
+	/*
+    [
+    usesgetlasterror,
+    entry(""),
+    helpstring(""),
+    ]
+    LONG WINAPI RegGetKeySecurity (
+        [in] HKEY hKey,
+        [in] SECURITY_INFORMATION SecurityInformation,
+        [in] PSECURITY_DESCRIPTOR pSecurityDescriptor,
+        [in, out] DWORD FAR * lpcbSecurityDescriptor
+        );
+	*/
+
+    [
+    usesgetlasterror,
+    entry("RegLoadKeyA"),
+    helpstring("Creates a subkey and stores registration information from a specified file into that subkey"),
+    ]
+    LONG WINAPI RegLoadKey(
+        [in] HKEY   hKey,
+        [in] LPCSTR lpSubKey,
+        [in] LPCSTR lpFile
+        );
+
+    [
+    usesgetlasterror,
+    entry("RegNotifyChangeKeyValue"),
+    helpstring("Indicates when a registry key or any of its subkeys has changed"),
+    ]
+    LONG WINAPI RegNotifyChangeKeyValue(
+        [in] HKEY hKey,
+        [in] BOOL bWatchSubtree,
+        [in] DWORD dwNotifyFilter,
+        [in] HANDLE hEvent,
+        [in] BOOL fAsynchronus
+        );
+	#endif // WIN32
+
+    [
+    usesgetlasterror,
+    #if WIN32
+    entry("RegOpenKeyA"),
+    #else
+    entry("RegOpenKey"),
+    #endif
+    helpstring("Opens the specified key"),
+    ]
+    LONG WINAPI RegOpenKey(
+        [in] HKEY hKey,
+        [in] LPCSTR lpSubKey,
+        [in, out] HKEY FAR * phkResult
+        );
+
+    #if WIN32
+    [
+    usesgetlasterror,
+    entry("RegOpenKeyExA"),
+    helpstring("Opens the specified key"),
+    ]
+    LONG WINAPI RegOpenKeyEx(
+        [in] HKEY hKey,
+        [in] LPCSTR lpSubKey,
+        [in] DWORD ulOptions,
+        [in] REGSAM samDesired,
+        [in, out] HKEY FAR * phkResult
+        );
+    #endif
+
+    [
+    usesgetlasterror,
+    entry("RegQueryInfoKeyA"),
+    helpstring("Retrieves information about a registry key"),
+    ]
+    LONG WINAPI RegQueryInfoKey(
+        [in] HKEY hKey,
+        [in, out] LPSTR lpClass,
+        [in, out] DWORD FAR * lpcbClass,
+        [in] DWORD lpReserved,
+        [in, out] DWORD FAR * lpcSubKeys,
+        [in, out] DWORD FAR * lpcbMaxSubKeyLen,
+        [in, out] DWORD FAR * lpcbMaxClassLen,
+        [in, out] DWORD FAR * lpcValues,
+        [in, out] DWORD FAR * lpcbMaxValueNameLen,
+        [in, out] DWORD FAR * lpcbMaxValueLen,
+        [in, out] DWORD FAR * lpcbSecurityDescriptor,
+        [in, out] DWORD FAR * /* PFILETIME */ lpftLastWriteTime
+        );
+
+    [
+    usesgetlasterror,
+    #if WIN32
+    entry("RegQueryValueA"),
+    #else
+    entry("RegQueryValue"),
+    #endif
+    helpstring("Retrieves value associated with u13150named value of a specified registry key"),
+    ]
+    LONG WINAPI RegQueryValue(
+        [in] HKEY hKey,
+        [in] LPCSTR lpSubKey,
+        [in, out] LPSTR lpValue,
+        [in, out] LONG FAR * lpcbValue
+        );
+
+    #if WIN32
+    [
+    usesgetlasterror,
+    entry("RegQueryValueExA"),
+    helpstring("Retrieves byte array value associated with a named or unnamed value of a specified registry key"),
+    ]
+    LONG WINAPI RegQueryValueEx([in] HKEY hKey,
+                                [in] LPCSTR lpValueName,
+                                [in] DWORD lpReserved,
+                                [in] DWORD FAR * lpType,
+                                [in] DWORD lpData,
+                                [in, out] DWORD FAR * lpcbData);
+
+    [
+    usesgetlasterror,
+    entry("RegQueryValueExA"),
+    helpstring("Retrieves byte array value associated with a named or unnamed value of a specified registry key"),
+    ]
+    LONG WINAPI RegQueryValueExByte([in] HKEY hKey,
+                                    [in] LPCSTR lpValueName,
+                                    [in] DWORD lpReserved,
+                                    [in] DWORD FAR * lpType,
+                                    [in, out] BYTE FAR * lpData,
+                                    [in, out] DWORD FAR * lpcbData);
+
+    [
+    usesgetlasterror,
+    entry("RegQueryValueExA"),
+    helpstring("Retrieves byte array value associated with a named or unnamed value of a specified registry key"),
+    ]
+    LONG WINAPI RegQueryValueExStr([in] HKEY hKey,
+                                   [in] LPCSTR lpValueName,
+                                   [in] DWORD lpReserved,
+                                   [in] DWORD FAR * lpType,
+                                   [in, out] LPSTR lpData,
+                                   [in, out] DWORD FAR * lpcbData);
+
+    [
+    usesgetlasterror,
+    entry("RegQueryValueExA"),
+    helpstring("Retrieves Long value associated with a named or unnamed value of a specified registry key"),
+    ]
+    LONG WINAPI RegQueryValueExInt([in] HKEY hKey,
+                                   [in] LPCSTR lpValueName,
+                                   [in] DWORD lpReserved,
+                                   [in] DWORD FAR * lpType,
+                                   [in, out] DWORD FAR * lpData,
+                                   [in, out] DWORD FAR * lpcbData);
+
+    // Win95 only
+	/*
+    [
+    usesgetlasterror,
+    entry("RegQueryMultipleValuesA"),
+    helpstring(""),
+    ]
+    LONG WINAPI RegQueryMultipleValues(
+        [in] HKEY hKey,
+        [in, out] PVALENTA val_list,
+        [in] DWORD num_vals,
+        [in, out] LPSTR lpValueBuf,
+        [in, out] DWORD FAR * ldwTotsize
+        );
+	*/
+
+    [
+    usesgetlasterror,
+    entry("RegReplaceKeyA"),
+    helpstring("Replaces the file backing a key and all its subkeys with another file, so that when the system is next started, the key and subkeys will have the values stored in the new file"),
+    ]
+    LONG WINAPI RegReplaceKey(
+        [in] HKEY    hKey,
+        [in] LPCSTR lpSubKey,
+        [in] LPCSTR lpNewFile,
+        [in] LPCSTR lpOldFile
+        );
+
+    [
+    usesgetlasterror,
+    entry("RegSaveKeyA"),
+    helpstring("Reads registry information in a file and copies it over a key in the form of a key and multiple levels of subkeys"),
+    ]
+    LONG WINAPI RegRestoreKey(
+        [in] HKEY hKey,
+        [in] LPCSTR lpFile,
+        [in] DWORD  dwFlags
+        );
+
+    [
+    usesgetlasterror,
+    entry("RegSaveKeyA"),
+    helpstring("Saves a key and all of its subkeys and values to a file"),
+    ]
+    LONG WINAPI RegSaveKey(
+        [in] HKEY hKey,
+        [in] LPCSTR lpFile,
+        [in] LPSECURITY_ATTRIBUTES lpSecurityAttributes
+        );
+
+    [
+    usesgetlasterror,
+    entry("RegSetKeySecurity"),
+    helpstring("Sets the security of an open registry key"),
+    ]
+    LONG WINAPI RegSetKeySecurity(
+        [in] HKEY hKey,
+        [in] DWORD /* SECURITY_INFORMATION */ SecurityInformation,
+        [in] DWORD /* PSECURITY_DESCRIPTOR */ pSecurityDescriptor
+        );
+    #endif // WIN32
+
+    [
+    usesgetlasterror,
+    #if WIN32
+    entry("RegSetValueA"),
+    #else
+    entry("RegSetValue"),
+    #endif
+    helpstring("Associates a text value with specified key"),
+    ]
+    LONG WINAPI RegSetValue(
+        [in] HKEY hKey,
+        [in] LPCSTR lpSubKey,
+        [in] DWORD dwType,
+        [in] LPCSTR lpData,
+        [in] DWORD cbData
+        );
+
+    #if WIN32
+    [
+    usesgetlasterror,
+    entry("RegSetValueExA"),
+    helpstring("Associates a value (optionally named) with specified key"),
+    ]
+    LONG WINAPI RegSetValueEx(
+        [in] HKEY hKey,
+        [in] LPCSTR lpValueName,
+        [in] DWORD Reserved,
+        [in] DWORD dwType,
+        [in] BYTE FAR * lpData,
+        [in] DWORD cbData
+        );
+
+    [
+    usesgetlasterror,
+    entry("RegSetValueExA"),
+    helpstring("Associates a value (optionally named) with specified key"),
+    ]
+    LONG
+    WINAPI
+    RegSetValueExByte(
+        [in] HKEY hKey,
+        [in] LPCSTR lpValueName,
+        [in] DWORD Reserved,
+        [in] DWORD dwType,
+        [in] BYTE FAR * lpData,
+        [in] DWORD cbData
+        );
+
+    [
+    usesgetlasterror,
+    entry("RegSetValueExA"),
+    helpstring("Associates a value (optionally named) with specified key"),
+    ]
+    LONG
+    WINAPI
+    RegSetValueExStr(
+        [in] HKEY hKey,
+        [in] LPCSTR lpValueName,
+        [in] DWORD Reserved,
+        [in] DWORD dwType,
+        [in] LPSTR lpData,
+        [in] DWORD cbData
+        );
+
+    [
+    usesgetlasterror,
+    entry("RegSetValueExA"),
+    helpstring("Associates a value (optionally named) with specified key"),
+    ]
+    LONG WINAPI RegSetValueExInt(
+        [in] HKEY hKey,
+        [in] LPCSTR lpValueName,
+        [in] DWORD Reserved,
+        [in] DWORD dwType,
+        [in] DWORD FAR * lpData,
+        [in] DWORD cbData
+        );
+
+    [
+    usesgetlasterror,
+    entry("RegUnLoadKeyA"),
+    helpstring("Unloads the specified key and subkeys from the registry"),
+    ]
+    LONG WINAPI RegUnLoadKey(
+        [in] HKEY   hKey,
+        [in] LPCSTR lpSubKey
+        );
+
+    /*
+    // Remoteable System Shutdown APIs
+    [
+    usesgetlasterror,
+    entry("InitiateSystemShutdownA"),
+    helpstring(""),
+    ]
+    BOOL WINAPI InitiateSystemShutdown(
+        [in, out] LPSTR lpMachineName,
+        [in, out] LPSTR lpMessage,
+        [in] DWORD dwTimeout,
+        [in] BOOL bForceAppsClosed,
+        [in] BOOL bRebootAfterShutdown
+        );
+
+    [
+    usesgetlasterror,
+    entry("AbortSystemShutdownA"),
+    helpstring(""),
+    ]
+    BOOL WINAPI AbortSystemShutdown(
+        [in, out] LPSTR lpMachineName
+        );
+    */
+    #endif // WIN32
+
+}

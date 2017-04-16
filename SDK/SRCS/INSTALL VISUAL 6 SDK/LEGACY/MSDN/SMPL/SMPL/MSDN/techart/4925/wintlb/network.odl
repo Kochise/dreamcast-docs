@@ -1,0 +1,451 @@
+
+[
+uuid(54674050-3A82-101B-8181-00AA003743D3),
+helpstring("Networks"),
+#if WIN32
+dllname("MPR.DLL")
+#else
+dllname("USER.EXE")
+#endif
+]
+module Network {
+
+    // ****** Network support *******
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("WNetAddConnectionA"),
+    #else
+    entry("WNetAddConnection"),
+    #endif
+    helpstring("Redirects a local device to a shared devices or remote server"),
+    ]
+    UINT WINAPI WNetAddConnection([in] LPSTR lpszNetPath,
+                                  [in] LPSTR lpszPassword,
+                                  [in] LPSTR lpszLocalName);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("WNetGetUserA"),
+    #else
+    entry("WNetGetUser"),
+    #endif
+    helpstring("Gets the user name"),
+    ]
+    UINT WINAPI WNetGetUser([in, out] LPSTR lpszBuffer,
+                            [in] UINT FAR * cbBuffer);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("WNetGetConnectionA"),
+    #else
+    entry("WNetGetConnection"),
+    #endif
+    helpstring("Gets the name of the shared devices associated with the given local device"),
+    ]
+    UINT WINAPI WNetGetConnection([in] LPSTR lpszLocalName,
+                                  [in, out] LPSTR lpszRemoteName,
+                                  [in, out] UINT FAR * cbRemoteName);
+
+    [
+    #ifdef WIN32
+    usesgetlasterror,
+    entry("WNetCancelConnectionA"),
+    #else
+    entry("WNetCancelConnection"),
+    #endif
+    helpstring("Cancels a network connection device, forcing open connections to close if fForce is true"),
+    ]
+    UINT WINAPI WNetCancelConnection([in] LPSTR lpszName,
+                                     [in] BOOL fForce);
+
+    [
+    usesgetlasterror,
+    entry("WNetConnectionDialog"),
+    helpstring("Starts a browsing dialog for connecting to network resources"),
+    ]
+    UINT WINAPI WNetConnectionDialog([in] UINT hWnd,
+                                     [in] UINT fdwResourceType);
+
+
+    [
+    usesgetlasterror,
+    entry("WNetDisconnectDialog"),
+    helpstring("Starts a browsing dialog for disconnecting a network resource"),
+    ]
+    DWORD WINAPI
+    WNetDisconnectDialog([in] HWND  hwnd, [in] DWORD dwType);
+
+    const long RESOURCETYPE_ANY         = 0x00000000;
+    const long RESOURCETYPE_DISK        = 0x00000001;
+    const long RESOURCETYPE_PRINT       = 0x00000002;
+    const long RESOURCETYPE_UNKNOWN     = 0xFFFFFFFF;
+    // Win95 only
+    const long RESOURCETYPE_RESERVED    = 0x00000008;
+
+    /*
+    const DWORD RESOURCE_CONNECTED     = 0x00000001;
+    const DWORD RESOURCE_GLOBALNET     = 0x00000002;
+    const DWORD RESOURCE_REMEMBERED    = 0x00000003;
+    //         #if(WINVER >= 0x0400)
+    const DWORD RESOURCE_RECENT        = 0x00000004;
+    const DWORD RESOURCE_CONTEXT       = 0x00000005;
+    //         #endif // WINVER >= 0x0400
+
+    const DWORD RESOURCEUSAGE_CONNECTABLE  = 0x00000001;
+    const DWORD RESOURCEUSAGE_CONTAINER    = 0x00000002;
+    //         #if(WINVER >= 0x0400)
+    const DWORD RESOURCEUSAGE_NOLOCALDEVICE = 0x00000004;
+    const DWORD RESOURCEUSAGE_SIBLING      = 0x00000008;
+    const DWORD RESOURCEUSAGE_ALL          = 0x00000003; // RESOURCEUSAGE_CONNECTABLE | RESOURCEUSAGE_CONTAINER
+    //         #endif // WINVER >= 0x0400
+    const DWORD RESOURCEUSAGE_RESERVED     = 0x80000000;
+
+    const DWORD RESOURCEDISPLAYTYPE_GENERIC       = 0x00000000;
+    const DWORD RESOURCEDISPLAYTYPE_DOMAIN        = 0x00000001;
+    const DWORD RESOURCEDISPLAYTYPE_SERVER        = 0x00000002;
+    const DWORD RESOURCEDISPLAYTYPE_SHARE         = 0x00000003;
+    const DWORD RESOURCEDISPLAYTYPE_FILE          = 0x00000004;
+    const DWORD RESOURCEDISPLAYTYPE_GROUP         = 0x00000005;
+    //         #if(WINVER >= 0x0400)
+    const DWORD RESOURCEDISPLAYTYPE_NETWORK       = 0x00000006;
+    const DWORD RESOURCEDISPLAYTYPE_ROOT          = 0x00000007;
+    const DWORD RESOURCEDISPLAYTYPE_SHAREADMIN    = 0x00000008;
+    const DWORD RESOURCEDISPLAYTYPE_DIRECTORY     = 0x00000009;
+    //         #endif // WINVER >= 0x0400
+    const DWORD RESOURCEDISPLAYTYPE_TREE          = 0x0000000A;
+    */
+
+    /*
+    typedef struct  _NETRESOURCEA {
+        DWORD    dwScope;
+        DWORD    dwType;
+        DWORD    dwDisplayType;
+        DWORD    dwUsage;
+        LPSTR    lpLocalName;
+        LPSTR    lpRemoteName;
+        LPSTR    lpComment ;
+        LPSTR    lpProvider;
+    }NETRESOURCEA, *LPNETRESOURCEA;
+    typedef NETRESOURCEA NETRESOURCE;
+    typedef LPNETRESOURCEA LPNETRESOURCE;
+    */
+
+    //
+    //  Network Connections
+    //
+
+    /*
+    const int NETPROPERTY_PERSISTENT      = 1;
+
+    const DWORD CONNECT_UPDATE_PROFILE     = 0x00000001;
+    const DWORD CONNECT_UPDATE_RECENT      = 0x00000002;
+    const DWORD CONNECT_TEMPORARY          = 0x00000004;
+    const DWORD CONNECT_INTERACTIVE        = 0x00000008;
+    const DWORD CONNECT_PROMPT             = 0x00000010;
+    const DWORD CONNECT_NEED_DRIVE         = 0x00000020;
+    //         #if(WINVER >= 0x0400)
+    const DWORD CONNECT_REFCOUNT           = 0x00000040;
+    const DWORD CONNECT_REDIRECT           = 0x00000080;
+    const DWORD CONNECT_LOCALDRIVE         = 0x00000100;
+    const DWORD CONNECT_CURRENT_MEDIA      = 0x00000200;
+    //         #endif // WINVER >= 0x0400
+    */
+
+    /*
+    DWORD WINAPI
+    WNetAddConnection2A(
+         LPNETRESOURCEA lpNetResource,
+         LPCSTR       lpPassword,
+         LPCSTR       lpUserName,
+         DWORD          dwFlags
+        );
+
+    DWORD WINAPI
+    WNetAddConnection3A(
+         HWND           hwndOwner,
+         LPNETRESOURCEA lpNetResource,
+         LPCSTR       lpPassword,
+         LPCSTR       lpUserName,
+         DWORD          dwFlags
+        );
+
+    DWORD WINAPI
+    WNetCancelConnection2A(
+         LPCSTR lpName,
+         DWORD    dwFlags,
+         BOOL     fForce
+        );
+
+    //         #if(WINVER >= 0x0400)
+    DWORD WINAPI
+    WNetUseConnectionA(
+        HWND            hwndOwner,
+        LPNETRESOURCEA  lpNetResource,
+        LPCSTR        lpUserID,
+        LPCSTR        lpPassword,
+        DWORD           dwFlags,
+        LPSTR         lpAccessName,
+        LPDWORD         lpBufferSize,
+        LPDWORD         lpResult
+        );
+
+    DWORD WINAPI
+    WNetSetConnectionA(
+        LPCSTR    lpName,
+        DWORD       dwProperties,
+        LPVOID      pvValues
+        );
+    */
+    //         #endif /* WINVER >= 0x0400 */
+
+    //
+    //  Network Connection Dialogs.
+    //
+
+    //         #if(WINVER >= 0x0400)
+    /*
+    typedef struct _CONNECTDLGSTRUCTA{
+        DWORD cbStructure;       // size of this structure in bytes
+        HWND hwndOwner;          // owner window for the dialog
+        LPNETRESOURCEA lpConnRes;// Requested Resource info
+        DWORD dwFlags;           // flags (see below)
+        DWORD dwDevNum;          // number of devices connected to
+    } CONNECTDLGSTRUCTA, FAR *LPCONNECTDLGSTRUCTA;
+
+    const DWORD CONNDLG_RO_PATH    = 0x00000001; // Resource path should be read-only
+    const DWORD CONNDLG_CONN_POINT = 0x00000002; // Netware -style movable connection point enabled
+    const DWORD CONNDLG_USE_MRU    = 0x00000004; // Use MRU combobox
+    const DWORD CONNDLG_HIDE_BOX   = 0x00000008; // Hide persistent connect checkbox
+    */
+
+    /*
+     * NOTE:  Set at most ONE of the below flags. If neither flag is set,
+     *        then the persistence is set to whatever the user chose during
+     *        a previous connection
+    const DWORD CONNDLG_PERSIST    = 0x00000010;  // Force persistent connection
+    const DWORD CONNDLG_NOT_PERSIST = 0x00000020; // Force connection NOT persistent
+     */
+
+    /*
+    DWORD WINAPI
+    WNetConnectionDialog1A(
+        LPCONNECTDLGSTRUCTA lpConnDlgStruct
+        );
+    */
+
+    /*
+    typedef struct _DISCDLGSTRUCTA{
+        DWORD           cbStructure;      // size of this structure in bytes
+        HWND            hwndOwner;        // owner window for the dialog
+        LPSTR           lpLocalName;      // local device name
+        LPSTR           lpRemoteName;     // network resource name
+        DWORD           dwFlags;          // flags
+    } DISCDLGSTRUCTA, FAR *LPDISCDLGSTRUCTA;
+
+    const DWORD DISC_UPDATE_PROFILE        = 0x00000001;
+    const DWORD DISC_NO_FORCE              = 0x00000040;
+    */
+
+    /*
+    DWORD WINAPI
+    WNetDisconnectDialog1A(
+        LPDISCDLGSTRUCTA lpConnDlgStruct
+        );
+    */
+    //         #endif // WINVER >= 0x0400
+
+    //
+    //  Network Browsing.
+    //
+
+    /*
+    DWORD WINAPI
+    WNetOpenEnumA(
+         DWORD          dwScope,
+         DWORD          dwType,
+         DWORD          dwUsage,
+         LPNETRESOURCEA lpNetResource,
+         LPHANDLE       lphEnum
+        );
+
+    DWORD WINAPI
+    WNetEnumResourceA(
+         HANDLE  hEnum,
+         LPDWORD lpcCount,
+         LPVOID  lpBuffer,
+         LPDWORD lpBufferSize
+        );
+
+    DWORD WINAPI
+    WNetCloseEnum(
+        HANDLE   hEnum
+        );
+    */
+
+    //
+    //  Universal Naming.
+    //
+
+    /*
+    const DWORD UNIVERSAL_NAME_INFO_LEVEL  = 0x00000001;
+    const DWORD REMOTE_NAME_INFO_LEVEL     = 0x00000002;
+
+    typedef struct  _UNIVERSAL_NAME_INFOA {
+        LPSTR    lpUniversalName;
+    }UNIVERSAL_NAME_INFOA, *LPUNIVERSAL_NAME_INFOA;
+
+    typedef struct  _REMOTE_NAME_INFOA {
+        LPSTR    lpUniversalName;
+        LPSTR    lpConnectionName;
+        LPSTR    lpRemainingPath;
+    }REMOTE_NAME_INFOA, *LPREMOTE_NAME_INFOA;
+    */
+
+    /*
+    DWORD WINAPI
+    WNetGetUniversalNameA(
+         LPCSTR lpLocalPath,
+         DWORD    dwInfoLevel,
+         LPVOID   lpBuffer,
+         LPDWORD  lpBufferSize
+         );
+    */
+
+    //
+    // Other.
+    //
+
+    /*
+    //         #if(WINVER >= 0x0400)
+    const WORD WNFMT_MULTILINE        = 0x01;
+    const WORD WNFMT_ABBREVIATED      = 0x02;
+    const WORD WNFMT_INENUM           = 0x10;
+    const WORD WNFMT_CONNECTION       = 0x20;
+    //         #endif // WINVER >= 0x0400
+    */
+
+    //         #if(WINVER >= 0x0400)
+    /*
+    DWORD WINAPI
+    WNetGetProviderNameA(
+        DWORD   dwNetType,
+        LPSTR lpProviderName,
+        LPDWORD lpBufferSize
+        );
+    */
+
+    /*
+    typedef struct _NETINFOSTRUCT{
+        DWORD cbStructure;
+        DWORD dwProviderVersion;
+        DWORD dwStatus;
+        DWORD dwCharacteristics;
+        DWORD dwHandle;
+        WORD  wNetType;
+        DWORD dwPrinters;
+        DWORD dwDrives;
+    } NETINFOSTRUCT, FAR *LPNETINFOSTRUCT;
+
+    const DWORD NETINFO_DLL16      = 0x00000001;  // Provider running as 16 bit Winnet Driver
+    const DWORD NETINFO_DISKRED    = 0x00000004;  // Provider requires disk redirections to connect
+    const DWORD NETINFO_PRINTERRED = 0x00000008;  // Provider requires printer redirections to connect
+    */
+
+    /*
+    DWORD WINAPI
+    WNetGetNetworkInformationA(
+        LPCSTR          lpProvider,
+        LPNETINFOSTRUCT   lpNetInfoStruct
+        );
+    */
+
+    //
+    //  User Profiles.
+    //
+
+    /*
+    typedef UINT (FAR PASCAL *PFNGETPROFILEPATHA) (
+        LPCSTR    pszUsername,
+        LPSTR     pszBuffer,
+        UINT        cbBuffer
+        );
+
+    typedef UINT (FAR PASCAL *PFNRECONCILEPROFILEA) (
+        LPCSTR    pszCentralFile,
+        LPCSTR    pszLocalFile,
+        DWORD       dwFlags
+        );
+
+    const WORD RP_LOGON   = 0x01;  // if set, do for logon, else for logoff
+    const WORD RP_INIFILE = 0x02;  // if set, reconcile .INI file, else reg. hive
+    */
+
+
+    //
+    //  Policies.
+    //
+
+    /*
+    typedef BOOL (FAR PASCAL *PFNPROCESSPOLICIESA) (
+        HWND        hwnd,
+        LPCSTR    pszPath,
+        LPCSTR    pszUsername,
+        LPCSTR    pszComputerName,
+        DWORD       dwFlags
+        );
+
+    const WORD PP_DISPLAYERRORS   = 0x01;    // if set, display error messages, else fail silently if error
+    //         #endif // WINVER >= 0x0400
+    */
+
+
+    //
+    //  Error handling.
+    //
+
+    /*
+    DWORD WINAPI
+    WNetGetLastErrorA(
+         LPDWORD    lpError,
+         LPSTR    lpErrorBuf,
+         DWORD      nErrorBufSize,
+         LPSTR    lpNameBuf,
+         DWORD      nNameBufSize
+        );
+    */
+
+    //
+    //  For Shell
+    //
+
+    //         #if(WINVER >= 0x0400)
+    /*
+    typedef struct _NETCONNECTINFOSTRUCT{
+        DWORD cbStructure;
+        DWORD dwFlags;
+        DWORD dwSpeed;
+        DWORD dwDelay;
+        DWORD dwOptDataSize;
+    } NETCONNECTINFOSTRUCT,  *LPNETCONNECTINFOSTRUCT;
+
+    const DWORD WNCON_FORNETCARD       = 0x00000001;
+    const DWORD WNCON_NOTROUTED        = 0x00000002;
+    const DWORD WNCON_SLOWLINK         = 0x00000004;
+    const DWORD WNCON_DYNAMIC          = 0x00000008;
+    */
+
+    /*
+    DWORD WINAPI
+    MultinetGetConnectionPerformanceA(
+            LPNETRESOURCEA lpNetResource,
+            LPNETCONNECTINFOSTRUCT lpNetConnectInfoStruct
+            );
+    */
+
+    //         #endif // WINVER >= 0x0400
+
+}

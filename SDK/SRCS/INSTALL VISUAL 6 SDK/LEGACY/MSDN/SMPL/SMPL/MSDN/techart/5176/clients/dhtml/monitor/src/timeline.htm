@@ -1,0 +1,785 @@
+<html>
+<head>
+
+<script language=VbScript>
+' Scriptlet private variables
+
+Dim m_Start                    'display start date
+Dim m_Period                   'display period
+Dim m_MinValue                 'quantity represented at bottom of graph
+Dim m_MaxValue                 'quantity represented at top of graph
+Dim m_DetailLevel              'detail expansion state
+Dim m_TimeDiv                  'number of grid lines along period axix
+Dim m_ValueDiv                 'number of grid lines along quantity axis
+Dim m_xPix                     'number of pixels in x dimension
+Dim m_yPix                     'number of pixels in y dimension      
+Dim m_TotalColor               'color of request total trace
+Dim m_PriorityColor            'base color for priority traces 
+Dim m_SkillColor               'base color for skill traces
+Dim m_StatusColor              'base color for status traces
+
+Private Const icDetTotal      = 1
+Private Const icDetPriority   = 2
+Private Const icDetSkill      = 4
+Private Const icDetStatus     = 8
+
+Private Const icHourDiv       = 4
+Private Const icDayDiv        = 24
+Private Const icWeekDiv       = 7
+Private Const icMonthDiv      = 30
+Private Const icYearDiv       = 12
+
+Private Const RightButton     = 2
+
+Private Const icDoubleWidth   = 2
+Private Const icSingleWidth   = 1
+Private Const icRGBIncrement  = 32
+
+Private Const icHighlight     = 1
+private Const icNormlight     = 2
+
+Private Const MouseOver       = "MouseOver"
+Private Const MouseOut        = "MouseOut"
+Private Const MouseDown_Right = "MouseDownRight"
+
+Private Const scHour          = "h"
+Private Const scDay           = "d"
+Private Const scWeek          = "ww"
+Private Const scMonth         = "m"
+Private Const scYear          = "yyyy"
+
+</script>
+
+<script language = VbScript>
+' Scriptlet property procedures
+
+Function Public_Get_Period()
+' return Period property
+    Public_Get_Period = m_Period
+End Function
+
+Sub Public_Put_Period(NewVal)
+' assign Period property
+Select Case NewVal
+    Case scHour
+        m_period = scHour
+        m_TimeDiv = icHourDiv
+    Case scDay
+        m_period = scDay
+        m_TimeDiv = icDayDiv
+    Case scWeek
+        m_period = scWeek
+        m_TimeDiv = icWeekDiv
+    Case scMonth
+        m_period = scMonth
+        m_TimeDiv = icMonthDiv
+    Case scYear
+        m_period = scYear
+        m_TimeDiv = icYearDiv
+    Case Else
+        Err.Raise vbObjectError, "timeline", "Invalid period value"
+End Select
+End Sub
+
+Function Public_Get_Start()
+' return Start property
+    Public_Get_Start = m_Start
+End Function
+
+Sub Public_Put_Start(NewVal)
+' assign Start property
+If IsDate(NewVal) then
+    m_Start = CDate(NewVal) 
+Else
+    Err.Raise vbObjectError, "timeline", "Invalid start date"   
+End If
+End Sub
+
+Function Public_Get_TimeDiv()
+' return Start property
+    Public_Get_TimeDiv = m_TimeDiv
+End Function
+
+Sub Public_Put_TimeDiv(NewVal)
+' assign Start property
+    m_TimeDiv = NewVal
+End Sub
+
+Function Public_Get_DetailLevel()
+' return DetailLevel property
+Public_Get_DetailLevel = m_DetailLevel
+End Function
+
+Sub Public_Put_DetailLevel(NewVal)
+' Assign DetailLevel property
+m_DetailLevel = NewVal
+' Rebuild traces collection
+PrepareSGObjects()
+PrepareMenu()
+End Sub
+
+</script>
+
+<script language=VbScript>
+'Public methods
+
+Sub Public_PageFirst()
+m_Start = m_oHDMonCli.GetFirstDate
+' Notify container
+window.external.raiseEvent "PropertyUpdate", Nothing
+Public_Refresh()
+End Sub
+
+Sub Public_PageBack()
+m_Start = DateAdd(m_period, -1, m_Start)
+' Notify container
+window.external.raiseEvent "PropertyUpdate", Nothing
+Public_Refresh()
+End Sub
+
+Sub Public_PageForward()
+m_Start = DateAdd(m_period, 1, m_Start)
+' Notify container
+window.external.raiseEvent "PropertyUpdate", Nothing
+Public_Refresh()
+End Sub
+
+Sub Public_PageLast()
+m_Start = m_oHDMonCli.GetLastDate
+m_Start = DateAdd(m_period, -1, m_Start)
+' Notify container
+window.external.raiseEvent "PropertyUpdate", Nothing
+' Refresh graphics
+Public_Refresh()
+End Sub
+
+Sub Public_Refresh()
+' Refresh timeline 
+
+If m_oHDMonCli.CompletePeriodData(m_Start, m_Period) Then
+    msgbox("refresh-CompletePeriodData returned True")
+    DrawBackground()
+    DrawTraces()
+Else
+    msgbox("refresh-CompletePeriodData returned False")
+    ClearTraceDisplay()
+    DrawBackground()
+End If
+End Sub
+</script>
+
+<script language=VbScript>
+' private procedures
+
+Sub Window_OnLoad()
+' initialize module level variables
+m_MinValue = 0
+m_MaxValue = 50
+m_ValueDiv = 10
+End Sub
+
+Sub DrawBackground()
+Dim ds
+Dim lib
+Dim XSpace
+Dim YSpace
+Dim CurX
+Dim iRule
+
+' update module level graphics variables
+m_yPix = sgoRules.Style.PixelHeight
+m_xPix = sgoRules.Style.PixelWidth
+
+' determine space between grid lines
+XSpace = Clng(m_xPix / m_TimeDiv)
+YSpace = CLng(m_yPix / m_ValueDiv)
+
+' get drawing surface interface from structured graphics object
+set ds = sgoRules.DrawSurface
+Set lib = sgoRules.Library
+
+' clear previous graphics and set attributes
+ds.clear
+
+' set drawing surface attributes and draw time rules
+ds.Opacity 3
+ds.LineColor lib.ColorRgb255(200,200,200)
+ds.LineWidth 1
+CurX = 1
+For iRule = 0 To m_TimeDiv
+    ds.polyline(Array(CurX,0, CurX, m_yPix))
+    CurX = CurX + XSpace
+Next    
+
+' set drawing surface attributes and draw time labels
+ds.Opacity 3
+ds.FillColor lib.ColorRgb255(200,200,200)
+ds.LineWidth 1
+' face,size,bold,italic,underline,strikethrough
+ds.Font "arial", 8, False, False, False, False
+Dim tx
+Dim ty
+Dim tt
+CurX = 1
+For iRule = 0 To m_TimeDiv
+    tx = CurX + 2
+    ty = 12
+    tt = GenTimeLabel(m_Start, m_Period, m_TimeDiv, iRule)
+' Plot label
+If Len(tt) then ds.text tt, tx, ty
+    
+CurX = CurX + XSpace
+Next    
+
+' set drawing surface attributes and draw quantity grid
+ds.Opacity 3
+ds.LineColor lib.ColorRgb255(200,200,200)
+ds.LineWidth 1
+CurY = m_yPix
+For iRule = 0 To m_ValueDiv
+    CurY = CurY - YSpace
+    ds.polyline(Array(0,CurY,m_xPix,CurY))
+Next    
+
+' set drawing surface attributes and draw quantity lables
+ds.Opacity 3
+ds.FillColor lib.ColorRgb255(200,200,200)
+ds.LineWidth 1
+' face,size,bold,italic,underline,strikethrough
+ds.Font "arial", 8, False, False, False, False
+CurY = m_yPix
+For iRule = 0 To m_ValueDiv
+    tx = 2
+    ty = CurY - 2
+    tt = GenValueLabel(m_MinValue, m_MaxValue, m_ValueDiv, iRule)
+' string,xPos,yPos
+    If Len(tt) then ds.text tt, tx, ty
+    CurY = CurY - YSpace
+Next    
+
+' replace drawing surface of structured graphics object
+document.all("sgoRules").DrawSurface = ds
+
+End Sub
+
+Function GenTimeLabel (ByVal Start, ByVal Period, ByVal TimeDiv, ByVal iOffset)
+' Generate a time label
+Dim sLabel
+'Private Const icHourDiv       = 4
+'Private Const icDayDiv        = 24
+'Private Const icWeekDiv       = 7
+'Private Const icMonthDiv      = 30
+'Private Const icYearDiv       = 12
+' Initialize return value
+
+Select Case Period
+    Case scHour
+        Select Case iOffset
+            Case 0
+                sLabel = ":00"
+            Case 1
+                sLabel = ":15"
+            Case 2
+                sLabel = ":30"
+            Case 3
+                sLabel = ":45"
+        End Select
+    Case scDay
+        Select Case iOffset
+            Case 0
+                sLabel = "12 am"
+            Case 1,2,3,4,5,6,7,8,9,10,11
+                sLabel = Cstr(iOffset)
+            Case 12
+                sLabel = "12 pm"
+            Case 13,14,15,16,17,18,19,20,21,22,23
+                sLabel = Cstr(iOffset - 12)
+        End Select
+    Case scWeek
+        Select Case iOffset
+            Case 0
+                sLabel = "-"
+            Case Else
+                sLabel = "+" & iOffset
+        End Select
+    Case scMonth
+        Select Case iOffset
+            Case 0
+                sLabel = "-"
+            Case Else
+                sLabel = "+" & iOffset
+        End Select
+    Case scYear
+        Select Case iOffset
+            Case 0
+                sLabel = "-"
+            Case Else
+                sLabel = "+" & iOffset
+        End Select
+End Select
+' Assign return value
+GenTimeLabel = sLabel
+End Function
+
+Function GenValueLabel (ByVal MinValue, ByVal MaxValue, ByVal ValueDiv, ByVal iOffset)
+' Generate a quantity label
+Dim lValue
+Dim sLabel
+Select Case iOffset
+    Case 0
+        sLabel = "Requests"
+    Case Else
+        lValue = MinValue + CLng((iOffset / ValueDiv) * (MaxValue - MinValue))
+        sLabel = Cstr(lValue)
+End Select
+' Assign return value
+GenValueLabel = sLabel
+End Function
+
+Sub DrawTraces()
+' Plot each member of the traces collection 
+Dim otr
+' Process each trace object
+For each otr in m_oHDMonCli.Traces 
+    If Not otr.SGObject is Nothing Then
+' Plot the trace
+        PlotPline otr
+        otr.SGObject.MouseEventsEnabled = True
+    End If
+Next
+End Sub
+
+Sub PlotPline(otr)
+' Plot points on structured graphics objects using drawing surface interface
+Dim sgo
+Dim ds
+DIm plst
+Dim lib
+Dim clr
+Dim red
+Dim green
+Dim blue
+
+' Get Drawing Surface and Library objects from Structured Graphics Object
+set sgo = otr.SGObject
+If sgo Is Nothing Then
+Else
+    set ds = sgo.DrawSurface
+    Set lib = sgo.Library
+' Clear the drawing surface and set drawing attributes
+    ds.clear
+' Plot points as polyline
+    plst = m_oHDMonCli.Setpoints(otr, m_MinValue, m_MaxValue, m_xPix, m_yPix)
+    If Ubound(plst) > 1 Then
+        red = otr.red
+        green = otr.green
+        blue = otr.blue
+        set clr = lib.ModifiableBehavior(lib.ColorRgb255(red,green,blue))
+        set otr.Colorbehavior = clr
+        ds.LineColor clr
+        ds.LineWidth otr.LineWidth
+        ds.polyline(plst)
+    End If
+' Display the Drawing Surface on the Structured Graphics Object
+    sgo.DrawSurface = ds
+' Release object references
+    Set clr = Nothing
+    set lib = Nothing
+    set ds = Nothing
+End If
+set sgo = Nothing
+End Sub
+
+Sub PrepareSGObjects()
+' Prepare structured graphics objects and traces collection of m_oHDMonCli
+Dim oTrace
+Dim otr
+Dim prefix
+Dim i
+Dim oname
+' Clear previous trace display
+ClearTraceDisplay()
+' Initialize graphics attributes for automated assignment
+ InitGraphicsAttributes()
+' Init traces collection of m_oHDMonCli for currrent DetailLevel
+If m_oHDMonCli.InitTraces(m_DetailLevel) Then
+    prefix = "Trace"
+    i = 0
+    On Error Resume Next
+    For each otr in m_oHDMonCli.Traces
+' Assign graphical attributes for trace
+        GenGraphicsAttributes otr
+' Get the next of the pre-allocated Structured Graphics Objects (See readme for discussion)
+        i = i + 1
+        oname = prefix & i
+        set oTrace = document.all(oname)
+        If oTrace Is nothing Then
+        Else
+' Assign title for Structured Graphics Object
+            oTrace.Title = otr.Description
+' Enable mouse events for Structured Graphics Object
+            oTrace.MouseEventsEnabled = True
+            set otr.SGObject = oTrace            
+        End If
+    Next
+End If
+End Sub
+
+Sub ClearTraceDisplay()
+' Clear all previous trace display
+Dim otr
+Dim oTrace
+Dim Dat(0)
+For each otr in m_oHDMonCli.Traces 
+    set oTrace = otr.SGObject
+    If oTrace is Nothing Then
+    Else
+' Blank title for Structured Graphics Object
+        oTrace.Title = ""
+        ClearTrace oTrace
+    End If
+Next
+set oTrace = Nothing
+End Sub
+
+Sub ClearTrace(sgo)
+' Clear structured graphics object using drawing surface interface
+Dim ds
+If sgo Is Nothing Then
+    Exit Sub
+End If
+set ds = sgo.DrawSurface
+ds.clear
+sgo.DrawSurface = ds
+set ds = Nothing
+End Sub
+
+Sub InitGraphicsAttributes()
+' Initialize graphics attributes for automated assignment
+
+m_TotalColor = Array(200, 200, 200)
+GenNextColor m_TotalColor, Array(icRGBIncrement, icRGbIncrement * 2, icRGBIncrement * 3)
+m_PriorityColor = Array(200, 200, 200)
+GenNextColor m_PriorityColor, Array(icRGBIncrement, 0, 0)
+m_SkillColor = Array(200, 200, 200)
+GenNextColor m_SkillColor, Array(0, icRGBIncrement, 0)
+m_StatusColor = Array(200, 200, 200)
+GenNextColor m_StatusColor, Array(0, 0, icRGBIncrement)
+End Sub
+
+Sub GenNextColor(ByRef RGBArray, ByVal IncArray)
+' Generate an RGB color by incrementing RGB values in RGBArray according to values in INCArray
+On Error Resume Next
+RGBArray(0) = RGBArray(0) + INCArray(0)
+' Handle case where value exceeds RGB limit
+If RGBArray(0) > 255 Then
+    If INCArray(0) <= 255 Then
+        RGBArray(0) = INCArray(0)
+    Else
+        RGBArray(0) = 0
+    End If
+End If
+RGBArray(1) = RGBArray(1) + INCArray(1)
+' Handle case where value exceeds RGB limit
+If RGBArray(1) > 255 Then
+    If INCArray(1) <= 255 Then
+        RGBArray(1) = INCArray(1)
+    Else
+        RGBArray(1) = 0
+    End If
+End If
+RGBArray(2) = RGBArray(2) + INCArray(2)
+' Handle case where value exceeds RGB limit
+If RGBArray(2) > 255 Then
+    If INCArray(2) <= 255 Then
+        RGBArray(2) = INCArray(2)
+    Else
+        RGBArray(2) = 0
+    End If
+End If
+End Sub
+
+Sub GenGraphicsAttributes (ByRef otr)
+' Assign gtaphics attributes to trace object
+Dim otrLevel
+If otr is Nothing Then
+    Exit Sub
+Else
+    otrLevel = otr.Level
+End If
+Select Case Mid(otrLevel, 1, 1)
+    Case "T"
+        otr.LineWidth = 2
+        otr.Red = m_TotalColor(0)
+        otr.Green = m_TotalColor(1)
+        otr.Blue = m_TotalColor(2)
+    Case "S"
+        otr.LineWidth = 1
+        Select Case Mid(otrlevel, 2, 1)
+            Case "p"
+                GenNextColor m_PriorityColor, Array(icRGBIncrement, icRGBIncrement, 0)
+                otr.Red = m_PriorityColor(0)
+                otr.Green = m_PriorityColor(1)
+                otr.Blue = m_PriorityColor(2)
+            Case "i"
+                GenNextColor m_SkillColor, Array(0, icRGBIncrement, icRGBIncrement)
+                otr.Red = m_SkillColor(0)
+                otr.Green = m_SkillColor(1)
+                otr.Blue = m_SkillColor(2)
+            Case "u"
+                GenNextColor m_StatusColor, Array(icRGBIncrement, 0, icRGBIncrement)
+                otr.Red = m_StatusColor(0)
+                otr.Green = m_StatusColor(1)
+                otr.Blue = m_StatusColor(2)
+        End Select
+    Case Else
+        otr.LineWidth = 1
+End Select
+End Sub
+
+Sub HighlightTraces (ByVal SGId)
+' Highlight spedified structured graphics object
+Dim otr
+For each otr in m_oHDMonCli.Traces 
+    If not otr.SGObject Is Nothing Then
+        If otr.SGObject.Id = SGId Then
+' Highlight 
+            setdsval otr, icHighlight
+        Else
+' Apply color from trace object
+            setdsval otr, icNormlight
+        End If
+    End If 
+Next
+End Sub
+
+Sub setdsval (otr, sval)
+' Change color behavior of trace object to highlight behavior
+Dim sgo
+Dim clr
+Dim lib
+Dim red
+Dim green
+Dim blue
+
+Set sgo = otr.SGObject
+Set lib = sgo.Library
+Set clr = otr.ColorBehavior
+
+If Not clr Is Nothing Then
+    If sVal = icHighlight Then
+' apply highlight color to color behavior
+        clr.SwitchTo(lib.Green)
+    Else
+' apply color from trace object to color behavior
+        red = otr.red
+        green = otr.green
+        blue = otr.blue
+        clr.SwitchTo(lib.ColorRgb255(red,green,blue))
+    End If
+End If
+End Sub
+
+Sub TranslateSGEvent(SGId, EventId, x, y)
+' Route structured graphics control events from dedicated handlers to common event handlers
+Select Case EventId
+    Case MouseOver
+        HighlightTraces SGId
+    Case MouseOut
+        HighlightTraces vbNullChar
+End Select
+End Sub
+</script>
+
+<script language=VbScript>
+' Popup menu handlers
+Sub PrepareMenu()
+Dim Items(5)
+' Priority
+If (m_DetailLevel and icDetPriority) = icDetPriority Then
+    Items(0) = "Hide &Priority Detail"
+    Items(1) = "HidePriority"
+Else
+    Items(0) = "Display &Priority Detail"
+    Items(1) = "DisplayPriority"
+End If
+' Skill
+If (m_DetailLevel and icDetSkill) = icDetSkill Then
+    Items(2) = "Hide &Skill Detail"
+    Items(3) = "HideSkill"
+Else
+    Items(2) = "Display &Skill Detail"
+    Items(3) = "DisplaySkill"
+End If
+' Status
+If (m_DetailLevel and icDetPriority) = icDetPriority Then
+    Items(4) = "Hide &Status Detail"
+    Items(5) = "HideStatus"
+Else
+    Items(4) = "Display &Status Detail"
+    Items(5) = "DisplayStatus"
+End If
+window.external.setContextMenu(Items)
+End Sub
+
+Sub DisplayPriority()
+    m_DetailLevel = m_DetailLevel + icDetPriority
+    PrepareSGObjects()
+    PrepareMenu
+    Public_Refresh()
+' Notify container
+    window.external.raiseEvent "PropertyUpdate", Nothing
+End Sub
+Sub HidePriority()
+    m_DetailLevel = m_DetailLevel - icDetPriority
+    PrepareSGObjects()
+    PrepareMenu
+    Public_Refresh()
+' Notify container
+    window.external.raiseEvent "PropertyUpdate", Nothing
+End Sub
+Sub DisplaySkill()
+    m_DetailLevel = m_DetailLevel + icDetSkill
+    PrepareSGObjects()
+    PrepareMenu
+    Public_Refresh()
+' Notify container
+    window.external.raiseEvent "PropertyUpdate", Nothing
+End Sub
+Sub HideSkill()
+    m_DetailLevel = m_DetailLevel - icDetSkill
+    PrepareSGObjects()
+    PrepareMenu
+    Public_Refresh()
+' Notify container
+    window.external.raiseEvent "PropertyUpdate", Nothing
+End Sub
+Sub DisplayStatus()
+    m_DetailLevel = m_DetailLevel + icDetStatus
+    PrepareSGObjects()
+    PrepareMenu
+    Public_Refresh()
+' Notify container
+    window.external.raiseEvent "PropertyUpdate", Nothing
+End Sub
+Sub HideStatus()
+    m_DetailLevel = m_DetailLevel - icDetStatus
+    PrepareSGObjects()
+    PrepareMenu
+    Public_Refresh()
+' Notify container
+    window.external.raiseEvent "PropertyUpdate", Nothing
+End Sub
+</script>
+
+<script language=VbScript>
+' Structured graphics objects and dedicated event handling procedures
+' see readme notes for discussion of pre-allocation of sgo objects vs on demand instantiation
+
+Sub trace1_OnMouseDown(button, shift, x, y)    
+    If button = RightButton Then
+        TranslateSGEvent Trace1.Id,MouseDown_Right,x,y
+    End If
+End Sub
+Sub trace2_OnMouseDown(button, shift, x, y)    
+    If button = RightButton Then
+        TranslateSGEvent Trace2.Id,MouseDown_Right,x,y
+    End If
+End Sub
+Sub trace3_OnMouseDown(button, shift, x, y)    
+    If button = RightButton Then
+        TranslateSGEvent Trace3.Id,MouseDown_Right,x,y
+    End If
+End Sub
+Sub trace4_OnMouseDown(button, shift, x, y)    
+    If button = RightButton Then
+        TranslateSGEvent Trace4.Id,MouseDown_Right,x,y
+    End If
+End Sub
+Sub trace5_OnMouseDown(button, shift, x, y)    
+    If button = RightButton Then
+        TranslateSGEvent Trace5.Id,MouseDown_Right,x,y
+    End If
+End Sub
+
+Sub trace1_OnMouseOver()    
+    TranslateSGEvent Trace1.Id,MouseOver,null,null
+End Sub
+Sub trace2_OnMouseOver()    
+    TranslateSGEvent Trace2.Id,MouseOver,null,null
+End Sub
+Sub trace3_OnMouseOver()    
+    TranslateSGEvent Trace3.Id,MouseOver,null,null
+End Sub
+Sub trace4_OnMouseOver()    
+    TranslateSGEvent Trace4.Id,MouseOver,null,null
+End Sub
+Sub trace5_OnMouseOver()    
+    TranslateSGEvent Trace5.Id,MouseOver,null,null
+End Sub
+
+Sub trace1_OnMouseOut()    
+    TranslateSGEvent Trace1.Id,MouseOut,null,null
+End Sub
+Sub trace2_OnMouseOut()    
+    TranslateSGEvent Trace2.Id,MouseOut,null,null
+End Sub
+Sub trace3_OnMouseOut()    
+    TranslateSGEvent Trace3.Id,MouseOut,null,null
+End Sub
+Sub trace4_OnMouseOut()    
+    TranslateSGEvent Trace4.Id,MouseOut,null,null
+End Sub
+Sub trace5_OnMouseOut()    
+    TranslateSGEvent Trace5.Id,MouseOut,null,null
+End Sub
+
+</script>
+
+<object id="m_oHDMonCli"
+classid="CLSID:50FE5641-9BEC-11D1-9073-00C04FD6ADF5"
+align="baseline" border="0" width="0" height="0">
+</object>
+
+</head>
+
+<body style="margin:0;border:0">
+<object id="sgoRules"
+    style="position:absolute;top:0;left:0;height:100%;width:100%"
+    classid="CLSID:369303C2-D7AC-11d0-89D5-00A0C90833E6">
+    <param name="Extentleft" value="0">
+    <param name="ExtentTop"  value="0">
+</object>
+<object id="Trace1"
+    style="position:absolute;top:0;left:0;height:100%;width:100%"
+    classid="CLSID:369303C2-D7AC-11d0-89D5-00A0C90833E6" Title="Data Trace 1">
+    <param name="Extentleft" value="0">
+    <param name="ExtentTop"  value="0">
+</object>
+<object id="Trace2"
+    style="position:absolute;top:0;left:0;height:100%;width:100%"
+    classid="CLSID:369303C2-D7AC-11d0-89D5-00A0C90833E6" Title="Data Trace 2">
+    <param name="Extentleft" value="0">
+    <param name="ExtentTop"  value="0">
+</object>
+<object id="Trace3"
+    style="position:absolute;top:0;left:0;height:100%;width:100%"
+    classid="CLSID:369303C2-D7AC-11d0-89D5-00A0C90833E6" Title="Data Trace 3">
+    <param name="Extentleft" value="0">
+    <param name="ExtentTop"  value="0">
+</object>
+<object id="Trace4"
+    style="position:absolute;top:0;left:0;height:100%;width:100%"
+    classid="CLSID:369303C2-D7AC-11d0-89D5-00A0C90833E6" Title="Data Trace 4">
+    <param name="Extentleft" value="0">
+    <param name="ExtentTop"  value="0">
+</object>
+<object id="Trace5"
+    style="position:absolute;top:0;left:0;height:100%;width:100%"
+    classid="CLSID:369303C2-D7AC-11d0-89D5-00A0C90833E6" Title="Data Trace 5">
+    <param name="Extentleft" value="0">
+    <param name="ExtentTop"  value="0">
+</object>
+</body>
+
+</html>

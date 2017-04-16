@@ -1,0 +1,116 @@
+VERSION 5.00
+Begin VB.PropertyPage PropPageActiveXSQL 
+   Caption         =   "ActiveXSQL"
+   ClientHeight    =   1965
+   ClientLeft      =   0
+   ClientTop       =   0
+   ClientWidth     =   3570
+   PaletteMode     =   0  'Halftone
+   ScaleHeight     =   1965
+   ScaleWidth      =   3570
+   Begin VB.ComboBox cmbSQLServers 
+      Height          =   315
+      Left            =   1080
+      TabIndex        =   4
+      Top             =   1320
+      Width           =   1935
+   End
+   Begin VB.TextBox txtPassword 
+      Height          =   315
+      Left            =   1080
+      TabIndex        =   3
+      Top             =   720
+      Width           =   1935
+   End
+   Begin VB.TextBox txtLoginID 
+      Height          =   315
+      Left            =   1080
+      TabIndex        =   1
+      Top             =   120
+      Width           =   1935
+   End
+   Begin VB.Label Label3 
+      Caption         =   "SQL Server:"
+      Height          =   375
+      Left            =   120
+      TabIndex        =   5
+      Top             =   1350
+      Width           =   975
+   End
+   Begin VB.Label Label2 
+      Caption         =   "Password:"
+      Height          =   375
+      Left            =   240
+      TabIndex        =   2
+      Top             =   795
+      Width           =   975
+   End
+   Begin VB.Label Label1 
+      Caption         =   "Login ID:"
+      Height          =   315
+      Left            =   360
+      TabIndex        =   0
+      Top             =   195
+      Width           =   855
+   End
+End
+Attribute VB_Name = "PropPageActiveXSQL"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = True
+Option Explicit
+
+Private Sub cmbSQLServers_Change()
+    Changed = True
+End Sub
+
+Private Sub PropertyPage_ApplyChanges()
+    SelectedControls(0).LoginID = txtLoginID.Text
+    SelectedControls(0).Password = txtPassword.Text
+    SelectedControls(0).SQLServer = cmbSQLServers.Text
+End Sub
+
+Private Sub PropertyPage_SelectionChanged()
+    On Error GoTo ErrorHandler
+
+    txtLoginID.Text = SelectedControls(0).LoginID
+    txtPassword.Text = SelectedControls(0).Password
+    cmbSQLServers.Text = SelectedControls(0).SQLServer
+        
+    Dim SQLOLEAPP As sqlole.Application
+    Set SQLOLEAPP = CreateObject("SQLOLE.APPLICATION")
+    
+    Dim myitem As Object
+        
+    Set myitem = SQLOLEAPP.ListAnnouncedNetworkSQLServers
+    cmbSQLServers.AddItem myitem(0).Name
+    
+ExitSub:
+    Exit Sub
+
+ErrorHandler:
+    Select Case Err
+        Case -2147221499
+            'Windows 95 User
+            'ListAnnouncedNetworkServers doesn't
+            'work in 95
+        Case Else
+            MsgBox Error
+    End Select
+    
+    Resume ExitSub
+    
+End Sub
+
+
+Private Sub txtLoginID_Change()
+    Changed = True
+End Sub
+
+
+Private Sub txtPassword_Change()
+    Changed = True
+End Sub
+
+

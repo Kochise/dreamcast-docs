@@ -1,0 +1,68 @@
+The XLAUTO sample demonstrates using OLE automation to create an Excel 
+worksheet in a COleClientItem, add some data and create a chart using 
+the Excel ChartWizard object. The application demonstrates creating 
+chart, worksheet, chartobject, chartobjects and range objects provided 
+by Excel. 
+
+The steps to create this application from a default single AppWizard 
+app with OLE container and automation support follow:
+
+- Modify the CXlAutoView::OnInsertObject function and the corresponding 
+  menu item to only insert an Excel worksheet object.
+
+- Add standard handling of the inserted object as suggested in the 
+  Contain tutorial from the OLE 2 Classes manual.
+	- add m_rect member to CXlAutoCntrItem class
+	- set m_rect in CXlAutoCntrItem constructor
+	- modify OnChangeItemPosition() handler:
+		- GetDocument()->UpdateAllViews(NULL);
+		- m_rect = rectPos;
+		- GetDocument()->SetModifiedFlag();
+	- modify OnGetItemPosition()
+		- rPosition - m_rect;
+	- modify Serialize() to serialize m_rect
+	- modify OnDraw(): m_pSelection->Draw(pDC, m_pSelection->m_rect)
+	- OnLButtonDown handler
+
+- Use ClassWizard to read Excel type library for the following objects:
+	- Range in xlrange.cpp
+	- Worksheet in xlsheet.cpp
+	- Chart in xlchart.cpp
+	- ChartObject in xlchtobj.cpp
+	- ChartObjects in xlchtobs.cpp
+
+- Comment out: VARIANT DialogBox() in xlrange.h and the function definition
+  in xlrange.cpp, this causes compile errors because of a previous definition
+  of the function name.
+
+- Modify xlsheet.cpp and xlsheet.h to change the ChartObjects method of the
+  worksheet object. The VBA for Excel reference suggests a version of the 
+  ChartObjects method for the Worksheet object which takes no parameters. 
+  However, this doesn't show up in the type library provided by Excel. 
+  A new member function is created in xlsheet.cpp, Worksheet::ChartObjects().
+  This method is needed to return a dispatch to a ChartObjects object, with 
+  which we add a ChartObject object, then an actual Chart object.  This is 
+  all done inside the CXlAutoView::OnAddstuffAddchart handler. 
+
+- Add the header files for the Excel objects created by ClassWizard
+	- in cntritem.h add: xlchart.h, xlchtobj.h, xlchtobs.h
+	- in XlAutvw.cpp add: xlchtobs.h, xlchtobj.h, xlchart.h
+
+- Add the following member functions to CXlAutoCntrItem class: (see the source
+  code for more information on each function)
+	- LPDISPATCH GetIDispatch()
+	- void GetRange(Worksheet* pSheet, Range* pRange, const char *szCell1, const char *szCell2)
+	- void SetRowHeadings(Range* pRange, char** szRows, int nRows)
+	- void SetColHeadings(Range* pRange, char** szCols, int nCols)
+	- void SetData(Range* pRange, long lDataArray[], int nRow, int nCol)
+	- void SetYTDTotals(Worksheet* pSheet)
+
+- Create CChartDlg class, derived from CDialog, with ClassWizard. This is used
+  to select a chart type from a combobox control. A member variable, m_cbIndex,
+  is added the CChartDlg definition, this will contain the index of the selected
+  chart type in the combobox.
+
+- Add "Add Stuff" menu to .rc file and corresponding functions with ClassWizard into
+  the view class.
+	
+	

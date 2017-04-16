@@ -1,0 +1,184 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR"
+content="Microsoft FrontPage (Visual InterDev Edition) 2.0">
+<title></title>
+<!--new version-->
+</head>
+
+<body>
+
+<p><object id="lblTo" name="lblTo"
+classid="clsid:978C9E23-D4B0-11CE-BF2D-00AA003F40D0" border="0"
+width="31" height="19"><param name="Caption" value="To :"><param
+name="Size" value="811;494"><param name="FontEffects"
+value="1073741825"><param name="FontCharSet" value="0"><param
+name="FontPitchAndFamily" value="2"><param name="ParagraphAlign"
+value="2"><param name="FontWeight" value="700"></object><object
+id="txtTo" name="txtTo"
+classid="clsid:8BD21D10-EC42-11CE-9E0D-00AA006002F3"
+align="baseline" border="0" width="379" height="19"><param
+name="VariousPropertyBits" value="683690011"><param name="Size"
+value="10019;494"><param name="FontCharSet" value="0"><param
+name="FontPitchAndFamily" value="2"></object></p>
+
+<p><object id="lblCc" name="lblCc"
+classid="clsid:978C9E23-D4B0-11CE-BF2D-00AA003F40D0"
+align="baseline" border="0" width="31" height="20"><param
+name="Caption" value="CC :"><param name="Size" value="811;529"><param
+name="FontEffects" value="1073741825"><param name="FontCharSet"
+value="0"><param name="FontPitchAndFamily" value="2"><param
+name="ParagraphAlign" value="2"><param name="FontWeight"
+value="700"></object><object id="txtCC" name="txtCC"
+classid="clsid:8BD21D10-EC42-11CE-9E0D-00AA006002F3"
+align="baseline" border="0" width="379" height="20"><param
+name="VariousPropertyBits" value="683690011"><param name="Size"
+value="10019;529"><param name="FontCharSet" value="0"><param
+name="FontPitchAndFamily" value="2"></object></p>
+
+<p><object id="lblSub" name="lblSub"
+classid="clsid:978C9E23-D4B0-11CE-BF2D-00AA003F40D0"
+align="baseline" border="0" width="31" height="19"><param
+name="Caption" value="Sub :"><param name="Size" value="811;494"><param
+name="FontEffects" value="1073741825"><param name="FontCharSet"
+value="0"><param name="FontPitchAndFamily" value="2"><param
+name="ParagraphAlign" value="2"><param name="FontWeight"
+value="700"></object><object id="txtSub" name="txtSub"
+classid="clsid:8BD21D10-EC42-11CE-9E0D-00AA006002F3"
+align="baseline" border="0" width="379" height="19"><param
+name="VariousPropertyBits" value="683690011"><param name="Size"
+value="10019;494"><param name="FontCharSet" value="0"><param
+name="FontPitchAndFamily" value="2"></object></p>
+
+<p><object id="lblText" name="lblText"
+classid="clsid:978C9E23-D4B0-11CE-BF2D-00AA003F40D0" align="top"
+border="0" width="36" height="15"><param name="Caption"
+value="Text :"><param name="Size" value="953;388"><param
+name="FontEffects" value="1073741825"><param name="FontCharSet"
+value="0"><param name="FontPitchAndFamily" value="2"><param
+name="ParagraphAlign" value="2"><param name="FontWeight"
+value="700"></object><object id="txtText" name="txtText"
+classid="clsid:8BD21D10-EC42-11CE-9E0D-00AA006002F3"
+align="baseline" border="1" vspace="1" width="379" height="225"><param
+name="VariousPropertyBits" value="3972024347"><param
+name="ScrollBars" value="2"><param name="Size" value="10019;5962"><param
+name="FontCharSet" value="0"><param name="FontPitchAndFamily"
+value="2"></object><object id="cmdSend" name="cmdSend"
+classid="clsid:D7053240-CE69-11CD-A777-00DD01143C57"
+align="baseline" border="0" width="96" height="32"><param
+name="Caption" value="Send Mail"><param name="Size"
+value="2540;847"><param name="FontCharSet" value="0"><param
+name="FontPitchAndFamily" value="2"><param name="ParagraphAlign"
+value="3"></object></p>
+
+<p>&nbsp;</p>
+
+<p><script language="VBScript">
+<!--
+Option Explicit
+Const SETTINGS = "MS Exchange Settings"
+Const ActMsgTo =	1
+Const ActMsgCC =	2
+Const SEMICOLON = 	";"
+Private Sub cmdSend_Click()
+
+'On Error GoTo ErrSend
+
+Dim oSess
+Dim oMsg
+Dim oRecipTo
+Dim oRecipCC
+Dim iPos
+Dim iStart
+Dim sTemp
+
+'Create an object of Session
+Set oSess = CreateObject("Mapi.Session")
+
+'Logon to the Session
+oSess.Logon SETTINGS
+
+'create a message and fill in its properties
+Set oMsg = oSess.Outbox.Messages.Add
+oMsg.Subject = txtSub
+oMsg.Text = txtText
+
+'Call the procedure that sets up the Recipients
+SetRecipients oMsg, oRecipTo, ActMsgTo
+SetRecipients oMsg, oRecipTo, ActMsgTo
+
+'send the message and log off
+oMsg.Update
+oMsg.Send
+
+'logoff the session
+oSess.Logoff
+
+'Clear all the objects before exiting the procedure
+Set oRecipTo = Nothing
+Set oRecipCC = Nothing
+Set oMsg = Nothing
+Set oSess = Nothing
+
+Exit Sub
+    
+ErrSend:
+    MsgBox Err.Number & " : " & Err.Description
+    'Clear all the objects before exiting the procedure
+    Set oRecipTo = Nothing
+    Set oRecipCC = Nothing
+    Set oMsg = Nothing
+    Set oSess = Nothing
+
+End Sub
+'This procedure sets all the recipients and
+'adds them to the Recipients collection of
+'Message object
+Public Sub SetRecipients(ByRef oMsg , ByRef oRec , iRecipType)
+
+    Dim sRecipients
+    Dim sTemp      
+    Dim iPos       
+    Dim iStart     
+    
+    Select Case iRecipType
+        Case ActMsgTo
+            sRecipients = txtTo
+        Case ActMsgCc
+            sRecipients = txtCC
+        Case Else
+            sRecipients = ""
+    End Select
+
+    If (Right(sRecipients, 1) <> SEMICOLON) And Trim(sRecipients) <> "" Then
+        sRecipients = sRecipients & SEMICOLON
+    End If
+    
+    '=========================================================
+    'Initialise the Position and Start counters
+    iPos = 1
+    iStart = 1
+    '=========================================================
+    
+    '=========================================================
+    Do While iPos <> 0
+        iPos = InStr(iStart, sRecipients, ";")
+        If iPos > 0 Then
+            sTemp = Mid(sRecipients, iStart, iPos - iStart)
+            Set oRec = oMsg.Recipients.Add
+            oRec.Name = sTemp
+            oRec.Type = iRecipType
+            oRec.Resolve
+        End If
+        iStart = iPos + 1
+    Loop
+    '=========================================================
+
+End Sub
+</script></p>
+</body>
+</html>

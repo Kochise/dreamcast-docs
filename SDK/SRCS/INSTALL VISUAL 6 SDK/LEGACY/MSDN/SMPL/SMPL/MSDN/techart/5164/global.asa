@@ -1,0 +1,69 @@
+' Copyright (c) Microsoft Corporation 1993-1997. All rights reserved.
+<SCRIPT LANGUAGE="VBScript" RUNAT="Server">
+
+Sub Application_OnStart
+On Error Resume Next
+Set objRenderApp = Server.CreateObject("AMHTML.Application")
+If Err = 0 Then
+    Set Application("RenderApplication") = objRenderApp
+Else
+    Application("startupFatal") = Err.Number
+    Application("startupFatalDescription") = "Failed to create application object<br>" & Err.Description
+End If
+Application("hImp") = Empty
+Err.Clear
+End Sub 
+
+Sub Application_OnEnd
+Set Application("RenderApplication") = Nothing
+End Sub
+
+
+Sub Session_OnStart
+'==Visual InterDev Generated - DataConnection startspan==
+'--Project Data Connection
+Session("DataConn_ConnectionString") = "DSN=Previous Expenses;DBQ=C:\WINNT\Profiles\Administrator\Personal\previous.mdb;DriverId=25;FIL=MS Access;MaxBufferSize=512;PageTimeout=5;"
+Session("DataConn_ConnectionTimeout") = 15
+Session("DataConn_CommandTimeout") = 30
+Session("DataConn_RuntimeUserName") = ""
+Session("DataConn_RuntimePassword") = ""
+'==Visual InterDev Generated - DataConnection endspan==
+On Error Resume Next
+' this is a handle to the security context.  It will be set to the correct
+' value when an Active Messaging session is created.
+Session("hImp") = Empty
+Set Session("AMSession") = Nothing
+End Sub 
+
+
+' While calling the Session_onEnd event, Denali doesn't call us in the right
+' security context. Workaround: current security context in stored in Session
+' (look at logon.asp) and then gets restored in Session_onEnd event handler.
+'
+' All ActiveMessaging and ActiveMessagingRenderingLibrary objects stored in the session object
+' need to be explicitly set to Nothing between the two objRenderApp.Impersonate calls below
+Sub Session_OnEnd
+
+	On Error Resume Next
+
+	set objRenderApp = Application("RenderApplication")
+
+	hImp = Session("hImp")
+
+	If Not IsEmpty(hImp) Then
+		objRenderApp.Impersonate(hImp)
+	End If
+
+	' Do our cleanup- set all AM and AMHTML objects inside the session to Nothing
+
+	' The AM session is a little special because we need to do the Logoff on it.
+	Set objOMSession = Session("AMSession")
+	If Not objOMSession Is Nothing Then
+		Set Session("AMSession") = Nothing
+		objOMSession.Logoff
+		Set objOMSession = Nothing
+	End If
+
+End Sub
+
+</SCRIPT>
