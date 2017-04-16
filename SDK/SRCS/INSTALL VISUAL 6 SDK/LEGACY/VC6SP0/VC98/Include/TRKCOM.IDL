@@ -1,0 +1,154 @@
+
+//-------------------------------------------------------
+//
+//  ITrackFile
+//
+//  This interface can be used to create a reliable link
+//  to a file.  This interface is not remotable.
+//
+//-------------------------------------------------------
+
+cpp_quote( "EXTERN_C const CLSID CLSID_TrackFile; // {8790c947-a30b-11d0-8cab-00c04fd90f85}" )
+
+[
+    local,
+    uuid(8790c948-a30b-11d0-8cab-00c04fd90f85),
+    object,
+    pointer_default(unique),
+    version(1.0)
+]
+interface ITrackFile : IUnknown
+{
+    import "unknwn.idl";
+
+    // Get necessary link state from a path
+
+    HRESULT CreateFromPath( [in, string] const OLECHAR * poszPath );
+
+    // Use state from CreateFromPath to determine
+    // the current path
+
+    HRESULT Resolve( [in, out] DWORD * pcbPath,
+                     [out, size_is(*pcbPath), string] OLECHAR * poszPath,
+                     [in] DWORD dwMillisecondTimeout );
+
+    // Open the file.  Use the path as a hint, but ensure that the
+    // correct object ID is opened.  This method will Resolve if
+    // necessary.
+
+    HRESULT Open( [in, out] DWORD * pcbPathHint,
+ 		  [in, out, size_is(*pcbPathHint), string] OLECHAR * poszPathHint,
+ 		  [in] DWORD dwMillisecondTimeout,
+		  [in] DWORD dwDesiredAccess,	// access (read-write) mode 
+    		  [in] DWORD dwShareMode,	// share mode 
+		  [in] DWORD dwFlags,
+                  [out] HANDLE * phFile );
+}
+
+
+//-------------------------------------------------------
+//
+//  ITrackStorage
+//
+//  This interface can be used to create a reliable link
+//  to a structured storage.  This interface is remotable.
+//
+//-------------------------------------------------------
+
+[
+    uuid(8790c94a-a30b-11d0-8cab-00c04fd90f85),
+    object,
+    pointer_default(unique),
+    version(1.0)
+]
+interface ITrackStorage : IUnknown
+{
+    import "unknwn.idl";
+
+    // Get necessary link state from a path
+
+    HRESULT CreateFromPath( [in, string] const OLECHAR * poszPath );
+
+    // Use state from CreateFromPath to determine
+    // the current path
+
+    HRESULT Resolve( [in, out] DWORD * pcbPath,
+                     [out, size_is(*pcbPath), string] OLECHAR * poszPath,
+                     [in] DWORD dwMillisecondTimeout );
+
+    // Open the storage.  Use the path as a hint, but ensure that the
+    // correct object ID is opened.  This method will Resolve if
+    // necessary.  The parameters are the same as in StgOpenStorageEx.
+
+    HRESULT OpenStorageEx( [in, out] DWORD * pcbPathHint,
+ 		           [in, out, size_is(*pcbPathHint), string] OLECHAR * poszPathHint,
+                           [in] DWORD dwMillisecondTimeout,
+ 		           [in] DWORD grfMode,
+                           [in] DWORD stgfmt,              // enum
+                           [in] DWORD grfAttrs,            // reserved
+                           [in] REFIID riid,
+                           [out, iid_is(riid)] void ** ppObjectOpen );
+
+}
+
+
+//-------------------------------------------------------
+//
+//  ITrackFileRestricted
+//
+//  This interface is used for testing purposed only.
+//  It is equivalent to ITrackFile, except the Resolve
+//  method allows for special restrictions.
+//
+//-------------------------------------------------------
+
+[
+    local,
+    uuid(8790c949-a30b-11d0-8cab-00c04fd90f85),
+    object,
+    pointer_default(unique),
+    version(1.0)
+]
+interface ITrackFileRestricted : IUnknown
+{
+    import "unknwn.idl";
+
+    cpp_quote("")
+    cpp_quote("// 'Restrictions' flags")
+    typedef enum _TrkMendRestrictions
+    {
+        TRK_MEND_DEFAULT                    = 0,
+        TRK_MEND_LAST_ONLY                  = 1,
+        TRK_MEND_DONT_USE_LOG               = 2,
+        TRK_MEND_DONT_USE_DC                = 4,
+        TRK_MEND_SLEEP_DURING_SEARCH        = 8,
+        TRK_MEND_DONT_SEARCH_ALL_VOLUMES    = 16,
+        TRK_MEND_DONT_USE_VOLIDS            = 32
+    } TrkMendRestrictions;
+    
+
+    // Get necessary link state from a path
+
+    HRESULT CreateFromPath( [in, string] const OLECHAR * poszPath );
+
+    // Use state from CreateFromPath to determine
+    // the current path
+
+    HRESULT Resolve( [in, out] DWORD * pcbPath,
+                     [out, size_is(*pcbPath), string] OLECHAR * poszPath,
+                     [in] DWORD dwMillisecondTimeout,
+                     [in] DWORD Restrictions );
+
+    // Open the file.  Use the path as a hint, but ensure that the
+    // correct object ID is opened.  This method will Resolve if
+    // necessary.
+
+    HRESULT Open ([in, out] DWORD * pcbPathHint,
+ 		  [in, out, size_is(*pcbPathHint), string] OLECHAR * poszPathHint,
+ 		  [in] DWORD dwMillisecondTimeout,
+		  [in] DWORD dwDesiredAccess,	// access (read-write) mode 
+    		  [in] DWORD dwShareMode,	// share mode 
+		  [in] DWORD dwFlags,
+                  [out] HANDLE * phFile );
+}
+

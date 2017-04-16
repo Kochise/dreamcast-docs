@@ -1,0 +1,15 @@
+// cfloat standard header
+
+#if     _MSC_VER > 1000
+#pragma once
+#endif
+
+#ifndef _CFLOAT_
+#define _CFLOAT_
+#include <float.h>
+#endif /* _CFLOAT_ */
+
+/*
+ * Copyright (c) 1994 by P.J. Plauger.  ALL RIGHTS RESERVED. 
+ * Consult your license regarding permissions and restrictions.
+ */

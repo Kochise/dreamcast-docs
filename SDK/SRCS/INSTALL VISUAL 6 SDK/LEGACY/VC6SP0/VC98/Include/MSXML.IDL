@@ -1,0 +1,166 @@
+//+-------------------------------------------------------------------------
+//
+//  Microsoft Windows
+//  Copyright 1992 - 1998 Microsoft Corporation.
+//
+//  File: xml.idl
+//
+//--------------------------------------------------------------------------
+
+
+
+cpp_quote("//+-------------------------------------------------------------------------")
+cpp_quote("//")
+cpp_quote("//  Microsoft Windows")
+cpp_quote("//  Copyright 1997 - 1998 Microsoft Corporation.")
+cpp_quote("//")
+cpp_quote("//--------------------------------------------------------------------------")
+
+
+#include "msxmldid.h"
+
+#ifndef DO_NO_IMPORTS
+import "unknwn.idl";
+import "wtypes.idl";
+import "objidl.idl";
+import "oaidl.idl";
+#endif
+
+
+
+
+
+
+interface IXMLElementCollection;
+interface IXMLDocument;
+interface IXMLElement;
+
+
+[
+    uuid(d63e0ce2-a0a2-11d0-9c02-00c04fc99c8e),     // LIBID_MSXML
+    helpstring("Microsoft XML 1.0"),
+    lcid(0x0000),
+    version(1.0)
+]
+
+library MSXML
+{
+
+typedef enum xmlelemTYPE {  
+    XMLELEMTYPE_ELEMENT,
+    XMLELEMTYPE_TEXT,
+    XMLELEMTYPE_COMMENT,
+    XMLELEMTYPE_DOCUMENT,
+    XMLELEMTYPE_DTD,
+    XMLELEMTYPE_PI,
+    XMLELEMTYPE_OTHER
+} XMLELEM_TYPE; 
+
+
+[
+    object,
+    local,
+    uuid(65725580-9B5D-11d0-9BFE-00C04FC99C8E) // IID_IXMLElementCollection
+]
+interface IXMLElementCollection : IDispatch
+{
+    [propput, id(DISPID_XMLELEMENTCOLLECTION_LENGTH)] HRESULT length([in] long v);
+    [propget, id(DISPID_XMLELEMENTCOLLECTION_LENGTH)] HRESULT length([retval, out] long * p);
+    [propget, restricted, hidden, id(DISPID_XMLELEMENTCOLLECTION_NEWENUM)] HRESULT _newEnum([retval, out] IUnknown ** ppUnk);
+    [id(DISPID_XMLELEMENTCOLLECTION_ITEM)] HRESULT item([optional, in] VARIANT var1,[optional, in] VARIANT var2,[retval, out] IDispatch ** ppDisp);
+};
+
+
+[
+    object,
+    local,
+    uuid(F52E2B61-18A1-11d1-B105-00805F49916B) // IID_IXMLDocument
+]
+interface IXMLDocument : IDispatch
+{
+    [propget, id(DISPID_XMLDOCUMENT_ROOT)] HRESULT root ([retval, out] IXMLElement * * p);
+    [propget, id(DISPID_XMLDOCUMENT_FILESIZE)] HRESULT fileSize([retval, out] BSTR * p);
+    [propget, id(DISPID_XMLDOCUMENT_FILEMODIFIEDDATE)] HRESULT fileModifiedDate([retval, out] BSTR * p);
+    [propget, id(DISPID_XMLDOCUMENT_FILEUPDATEDDATE)] HRESULT fileUpdatedDate([retval, out] BSTR * p);
+    [propget, id(DISPID_XMLDOCUMENT_URL)] HRESULT URL([retval, out] BSTR * p);
+    [propput, id(DISPID_XMLDOCUMENT_URL)] HRESULT URL([in] BSTR p);
+    [propget, id(DISPID_XMLDOCUMENT_MIMETYPE)] HRESULT mimeType([retval, out] BSTR * p);
+    [propget, id(DISPID_XMLDOCUMENT_READYSTATE)] HRESULT readyState([retval, out]long *pl);
+    [propget, id(DISPID_XMLDOCUMENT_CHARSET)]  HRESULT charset([retval, out]BSTR *p);
+    [propput, id(DISPID_XMLDOCUMENT_CHARSET)]  HRESULT charset([in]BSTR p);
+    [propget, id(DISPID_XMLDOCUMENT_VERSION)]  HRESULT version([retval, out]BSTR *p);
+    [propget, id(DISPID_XMLDOCUMENT_DOCTYPE)]  HRESULT doctype([retval, out]BSTR *p);
+    [propget, id(DISPID_XMLDOCUMENT_DTDURL)]   HRESULT dtdURL([retval, out]BSTR *p);
+    [id(DISPID_XMLDOCUMENT_CREATEELEMENT)] HRESULT createElement([in] VARIANT vType, [optional, in] VARIANT var1, [retval, out] IXMLElement * * ppElem);
+};
+
+
+[
+    object,
+    local,
+    uuid(3F7F31AC-E15F-11d0-9C25-00C04FC99C8E) // IID_IXMLElement
+]
+interface IXMLElement : IDispatch
+{
+    [propget, id(DISPID_XMLELEMENT_TAGNAME)] HRESULT tagName([retval, out] BSTR * p);
+    [propput, id(DISPID_XMLELEMENT_TAGNAME)] HRESULT tagName([in] BSTR p);
+    [propget, id(DISPID_XMLELEMENT_PARENT)] HRESULT parent([retval, out]IXMLElement **ppParent);
+    [id(DISPID_XMLELEMENT_SETATTRIBUTE)] HRESULT setAttribute([in] BSTR strPropertyName,[in] VARIANT PropertyValue);
+    [id(DISPID_XMLELEMENT_GETATTRIBUTE)] HRESULT getAttribute([in] BSTR strPropertyName,[retval, out] VARIANT* PropertyValue);
+    [id(DISPID_XMLELEMENT_REMOVEATTRIBUTE)] HRESULT removeAttribute([in] BSTR strPropertyName);
+    [propget, id(DISPID_XMLELEMENT_CHILDREN)] HRESULT children([retval, out] IXMLElementCollection * * pp); 
+    [propget, id(DISPID_XMLELEMENT_TYPE)] HRESULT type([retval, out] long *plType);
+    [propget, id(DISPID_XMLELEMENT_TEXT)] HRESULT text([retval, out] BSTR *p);
+    [propput, id(DISPID_XMLELEMENT_TEXT)] HRESULT text([in] BSTR p);
+    [id(DISPID_XMLELEMENT_ADDCHILD)] HRESULT addChild([in] IXMLElement *pChildElem, long lIndex, long lReserved); // lReserved must be -1
+    [id(DISPID_XMLELEMENT_REMOVECHILD)] HRESULT removeChild([in]IXMLElement *pChildElem);
+}
+
+typedef struct _xml_error {
+    unsigned        _nLine;         // line number
+    BSTR            _pchBuf;        // current input buffer
+    unsigned        _cchBuf;        // number of chars in buffer
+    unsigned        _ich;           // index of the char when error occurred
+    BSTR            _pszFound;      // token found
+    BSTR            _pszExpected;   // token expected
+    DWORD           _reserved1;     // reserved    
+    DWORD           _reserved2;     // reserved
+} XML_ERROR;
+
+[
+    object,
+    local,
+    uuid(948C5AD3-C58D-11d0-9C0B-00C04FC99C8E) // IID_IXMLError
+]
+
+interface IXMLError : IUnknown
+{
+    HRESULT GetErrorInfo(XML_ERROR *pErrorReturn);
+}
+
+
+[
+    object,
+    local,
+    uuid(D9F1E15A-CCDB-11d0-9C0C-00C04FC99C8E) // IID_IXMLElementNotificationSink
+]
+
+interface IXMLElementNotificationSink : IDispatch
+{
+    [id(DISPID_XMLNOTIFSINK_CHILDADDED)] HRESULT ChildAdded([in]IDispatch *pChildElem); // If input param is NULL then parse of this elem is done
+}
+
+
+
+ // XML Document Class
+[
+    uuid(CFC399AF-D876-11d0-9C10-00C04FC99C8E), // CLSID_XMLDocument
+    helpstring("XML Document Class class")
+]
+coclass XMLDocument
+{
+    [default] interface IXMLDocument;
+}
+
+
+}

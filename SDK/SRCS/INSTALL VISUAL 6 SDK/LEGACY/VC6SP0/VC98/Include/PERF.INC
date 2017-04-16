@@ -1,0 +1,97 @@
+MAXNAMELEN	EQU	50
+MAXCOMPLEXSUBSTAT	EQU	8
+
+perf_server_0	STRUC
+psrv0_Level	DD	?
+psrv0_Flags	DD	?
+psrv0_pszServerName	DD	?
+psrv0_pszServerNodeName	DD	?
+psrv0_pControlFunc	DD	?
+perf_server_0	ENDS
+
+perf_stat_0	STRUC
+pst0_Level	DD	?
+pst0_Flags	DD	?
+pst0_pszStatName	DD	?
+pst0_pszStatNodeName	DD	?
+pst0_pszStatUnitName	DD	?
+pst0_pszStatDescription	DD	?
+pst0_pStatFunc	DD	?
+perf_stat_0	ENDS
+PSTF_FUNCPTR	EQU	00000001H
+PSTF_RATE	EQU	00000002H
+PSTF_FREQ_HIGH	EQU	00000000H
+PSTF_FREQ_LOW	EQU	00000004H
+PSTF_FREQ_STATIC	EQU	00000008H
+PSTF_FREQ_MASK	EQU	(PSTF_FREQ_STATIC OR PSTF_FREQ_LOW OR PSTF_FREQ_HIGH)
+PSTF_SCALE_LINEAR	EQU	00000000H
+PSTF_SCALE_LOG10	EQU	00000010H
+PSTF_SCALE_LOG2	EQU	00000020H
+PSTF_SCALE_MASK	EQU	(PSTF_SCALE_LINEAR OR PSTF_SCALE_LOG10 OR PSTF_SCALE_LOG2)
+
+IOCTL_PERF_GET_STATS 	EQU	10H
+IOCTL_PERF_START_STAT   EQU	11H
+IOCTL_PERF_STOP_STAT    EQU	12H
+
+PMSG_START_STAT		EQU     11H
+PMSG_STOP_STAT		EQU     12H
+
+Reg_Perf_Srv MACRO level:REQ, flags:REQ, servername:REQ, nodename:REQ, controlfunc:REQ
+	local	nothere
+	VxDcall	PERF_Get_Version
+	or	eax, eax
+	jz	nothere
+	push	OFFSET32 controlfunc
+	push	OFFSET32 nodename
+	push	OFFSET32 servername
+	push	flags
+        push	level
+	push	esp
+	VxDcall	PERF_Server_Register
+	add	esp, 6*4
+nothere:
+	ENDM
+
+Reg_Perf_Stat MACRO srvhandle:REQ, level:REQ, flags:REQ, name:REQ, nodename:REQ, unitname:REQ, desc:REQ, func:REQ
+	push	OFFSET32 func
+	push	OFFSET32 desc
+	push	OFFSET32 unitname
+	push	OFFSET32 nodename
+	push	OFFSET32 name
+	push	flags
+	push	level
+	push	esp
+	push	srvhandle
+	VxDcall	PERF_Server_Add_Stat
+	add	esp, 9*4
+	ENDM
+
+Begin_Service_Table PERF
+PERF_Service PERF_Get_Version, LOCAL
+PERF_Service PERF_Server_Register, LOCAL
+PERF_Service PERF_Server_Deregister, LOCAL
+PERF_Service PERF_Server_Add_Stat, LOCAL
+PERF_Service PERF_Server_Remove_Stat, LOCAL
+End_Service_Table PERF
+
+
+HKEY_PERF_ROOT	EQU	<HKEY_LOCAL_MACHINE>
+PERF_REG_KEY	EQU	<"STATS">
+PERF_REG_NAME_SRV_NAME	EQU	<"NAME">
+PERF_REG_NAME_STAT_NAME	EQU	<"NAME">
+PERF_REG_NAME_STAT_FREQ	EQU	<"FREQUENCY">
+PERF_REG_NAME_STAT_HANDLE	EQU	<"HANDLE">
+PERF_REG_NAME_STAT_DESC	EQU	<"DESCRIPTION">
+PERF_REG_NAME_STAT_VALUE	EQU	<"VALUE">
+PERF_REG_NAME_STAT_DIFF	EQU	<"DIFFERENTIATE">
+PERF_REG_NAME_STAT_SCALETYPE	EQU	<"SCALETYPE">
+PERF_REG_NAME_STAT_STARTSCALE	EQU	<"STARTSCALE">
+PERF_REG_VAL_STAT_TRUE	EQU	<"TRUE">
+PERF_REG_VAL_STAT_FALSE	EQU	<"FALSE">
+PERF_REG_VAL_STAT_HIGH	EQU	<"HIGH">
+PERF_REG_VAL_STAT_LOW	EQU	<"LOW">
+PERF_REG_VAL_STAT_LINEAR	EQU	<"LINEAR">
+PERF_REG_VAL_STAT_LOG10	EQU	<"LOG10">
+PERF_STAT_PREFIX	EQU	<"STAT">
+PSTF_INT_COMPLEX	EQU	00000010H
+PSTF_EXT_COMPLEX	EQU	00000020H

@@ -1,0 +1,1 @@
+Microsoft Developer Studio VBScript macro files that are copied to this location will automatically be available for the user to load from the Customize dialog, Add-ins and Macro files tab, on the Tools menu.

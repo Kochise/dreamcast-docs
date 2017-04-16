@@ -1,0 +1,100 @@
+// tvx.odl : type library source for tvx.exe
+
+// This file will be processed by the Make Type Library (mktyplib) tool to
+// produce the type library (tvx.tlb).
+
+[ uuid(FA249500-B4C3-11CF-8683-00805F2C11CE), version(1.0) ]
+library TVDisp
+{
+	importlib("stdole32.tlb");
+	
+#include "tvdispid.h"
+
+	//  Primary dispatch interface for TV Viewer
+	
+	[ uuid(3F8A2EA1-C171-11cf-868C-00805F2C11CE),
+	  oleautomation, dual ]
+	interface ITVViewer : IDispatch
+	{
+		// properties:
+			
+		// methods:
+		[id(dispidSetTVMode)] HRESULT SetTVMode([in] boolean fTVMode);
+		[id(dispidIsTVMode)] HRESULT IsTVMode([out, retval] boolean *pfTVMode);
+		[id(dispidIsChannelBarUp)] HRESULT IsChannelBarUp([out, retval] boolean *pf);
+		[id(dispidIsModalDialogUp)] HRESULT IsModalDialogUp([out, retval] boolean *pf);
+ 		[id(dispidIsLoaderActive)] HRESULT IsLoaderActive([out, retval] boolean *pf);
+		[id(dispidGlobalStartTime)] HRESULT GlobalStartTime([out, retval] DATE *pdate);
+		[id(dispidGlobalEndTime)] HRESULT GlobalEndTime([out, retval] DATE *pdate);
+		[id(dispidViewerID)] HRESULT ViewerID([out, retval] int *pidViewer);
+		[id(dispidWantKeys)] HRESULT WantKeys([in] int nWantKeys);
+		[id(dispidTVXTune)] HRESULT Tune(
+			[in] long lTuningSpace,
+			[in] long lChannelNumber,
+			[in] long lVideoStream,
+			[in] long lAudioStream,
+			[in] BSTR bsIPStream);
+		[id(dispidGetCurrentTuningInfo)] HRESULT GetCurrentTuningInfo(
+			[out] long *lTuningSpace, 
+			[out] long *lChannelNumber, 
+			[out] long *lVideoStream, 
+			[out] long *lAudioStream, 
+			[out] BSTR *pbsIPAddress);
+		[id(dispidGetPreviousTuningInfo)] HRESULT GetPreviousTuningInfo(
+			[out] long *lTuningSpace, 
+			[out] long *lChannelNumber, 
+			[out] long *lVideoStream, 
+			[out] long *lAudioStream, 
+			[out] BSTR *pbsIPAddress);
+		[id(dispidSetReminder)] HRESULT SetReminder([in] IUnknown* pEpisode, [in] boolean bRecord);
+		[id(dispidHasReminder)] HRESULT HasReminder([in] IUnknown* pEpisode, [in] boolean bRecord, [out, retval] boolean *pf);
+		[id(dispidDeleteReminder)] HRESULT DeleteReminder([in] IUnknown* pEpisode, [in] boolean bRecord);
+		[id(dispidHasEnhancement)] HRESULT HasEnhancement([in] IUnknown* pEpisode, [out, retval] boolean *pf);
+		[id(dispidIsCC)] HRESULT IsCC([out, retval] boolean *pf);
+
+	};
+
+	//  Notification dispatch interface for TV Viewer
+
+	[ uuid(3F8A2EA3-C171-11cf-868C-00805F2C11CE),
+	  oleautomation, dual,
+	  helpstring("Notification interface for TV Viewer") ]
+	interface ITVControl : IDispatch
+	{
+		// properties:
+
+		// methods:
+		[id(dispidOnIdle)] HRESULT OnIdle([out, retval] boolean *pf);
+		[id(dispidTuneControl)] HRESULT Tune(
+			[in] long ltsNew, 
+			[in] long lcnNew, 
+			[in] long lvsNew, 
+			[in] long lasNew, 
+			[in] BSTR bsIPNew,
+			[in] long ltsPrev, 
+			[in] long lcnPrev, 
+			[in] long lvsPrev, 
+			[in] long lasPrev, 
+			[in] BSTR bsIPPrev);
+		[id(dispidTearDown)] HRESULT TearDown();
+		[id(dispidSyncEvent)] HRESULT SyncEvent([in] int iEvent, [in] BSTR pParm1, [in] BSTR pParm2);
+		[id(dispidEpisodeStatusChanged)] HRESULT EpisodeStatusChanged([in] int iChange, [in] IUnknown* pEpi);
+		[id(dispidPowerChange)] HRESULT PowerChange([in] boolean bPowerOn, [in] boolean bUIAllowed );
+		[id(dispidOnTVFocus)] HRESULT OnTVFocus();
+		[id(dispidTVSetOutput)] HRESULT SetOutput([in] BSTR bsDeviceName);
+		[id(dispidGetCC)] HRESULT GetCC([out, retval] boolean *pf);
+		[id(dispidSetCC)] HRESULT SetCC([in] boolean bCC);
+		[id(dispidEnableVideo)] HRESULT EnableVideo([in] boolean bEnable, [in] int iReason);
+	};
+
+	//  Class information for TV Viewer
+	
+	[ uuid(5543DD10-B41D-11CF-8682-00805F2C11CE) ]
+	coclass TVViewer
+	{
+		[default] interface ITVViewer;
+		[default, source] interface ITVControl;
+	};
+
+	//{{AFX_APPEND_ODL}}
+};

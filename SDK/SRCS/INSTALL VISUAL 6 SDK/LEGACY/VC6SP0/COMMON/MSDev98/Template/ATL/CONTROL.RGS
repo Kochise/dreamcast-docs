@@ -1,0 +1,49 @@
+HKCR
+{
+	[!ProgID] = s '[!TypeName]'
+	{
+		CLSID = s '{[!ObjectGUID]}'
+[!if=(InsertableEnabled, "TRUE")]
+		'Insertable'
+[!endif]
+	}
+	[!VersionIndependentProgID] = s '[!TypeName]'
+	{
+		CLSID = s '{[!ObjectGUID]}'
+		CurVer = s '[!ProgID]'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {[!ObjectGUID]} = s '[!TypeName]'
+		{
+			ProgID = s '[!ProgID]'
+			VersionIndependentProgID = s '[!VersionIndependentProgID]'
+[!if=(Dual, "TRUE")]
+			ForceRemove 'Programmable'
+[!endif]
+[!if=(ProjectType, "DLL")]
+			InprocServer32 = s '%MODULE%'
+			{
+[!if=(ThreadingModel, "Single")]
+[!else]
+				val ThreadingModel = s '[!ThreadingModel]'
+[!endif]
+			}
+[!else]
+			LocalServer32 = s '%MODULE%'
+			val AppID = s '{[!ProjectAppID]}'
+[!endif]
+			ForceRemove 'Control'
+[!if!(IEControl)]
+			ForceRemove 'Insertable'
+[!endif]
+			ForceRemove 'ToolboxBitmap32' = s '%MODULE%, [!IDR_BMPID_VALUE]'
+			'MiscStatus' = s '0'
+			{
+			    '1' = s '[!MiscStatus]'
+			}
+			'TypeLib' = s '{[!LibGUID]}'
+			'Version' = s '1.0'
+		}
+	}
+}
