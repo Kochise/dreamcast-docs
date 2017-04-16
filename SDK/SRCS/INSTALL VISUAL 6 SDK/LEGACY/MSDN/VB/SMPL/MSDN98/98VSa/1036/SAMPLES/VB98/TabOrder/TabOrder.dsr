@@ -1,0 +1,221 @@
+VERSION 5.00
+Begin {AC0714F6-3D04-11D1-AE7D-00A0C90F26F4} Connect 
+   ClientHeight    =   7020
+   ClientLeft      =   1740
+   ClientTop       =   1545
+   ClientWidth     =   7710
+   _ExtentX        =   13600
+   _ExtentY        =   12383
+   _Version        =   393216
+   Description     =   "Complément Ordre de tabulations VB 6"
+   DisplayName     =   "Exemple de complément Ordre de tabulations"
+   AppName         =   "Visual Basic"
+   AppVer          =   "Visual Basic 98 (ver 6.0)"
+   LoadName        =   "None"
+   LoadBehavior    =   2
+   RegLocation     =   "HKEY_CURRENT_USER\Software\Microsoft\Visual Basic\6.0"
+   CmdLineSupport  =   -1  'True
+End
+Attribute VB_Name = "Connect"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = True
+Option Explicit
+
+Const guidMYTOOL$ = "_T_A_B__O_R_D_E_R_"
+
+Public WithEvents PrjHandler  As VBProjectsEvents          'Gestionnaire d'événement des projets
+Attribute PrjHandler.VB_VarHelpID = -1
+Public WithEvents CmpHandler  As VBComponentsEvents        ' Gestionnaire d'événement des composants
+Attribute CmpHandler.VB_VarHelpID = -1
+Public WithEvents CtlHandler  As VBControlsEvents          ' Gestionnaire d'événement de contrôles
+Attribute CtlHandler.VB_VarHelpID = -1
+Public WithEvents MenuHandler As CommandBarEvents          ' Gestionnaire d'événement de la barre de commande
+Attribute MenuHandler.VB_VarHelpID = -1
+Dim mcbMenuCommandBar         As Office.CommandBarControl  ' Objet de la barre de commande
+
+
+Sub Show()
+  On Error GoTo ShowErr
+  
+  gwinWindow.Visible = True
+  gdocTabOrder.RefreshList 3
+  
+  Exit Sub
+ShowErr:
+  MsgBox Err.Description
+End Sub
+
+Public Property Get NonModalApp() As Boolean
+  NonModalApp = True  'Utilisée par la barre d'outils de complément
+End Property
+
+' ------------------------------------------------------
+' Cette méthode ajoute le Gestionnaire de Compléments au menu Outils VB
+' elle est appelée par le Gestionnaire de Compléments VB
+' ------------------------------------------------------
+Private Sub AddinInstance_OnConnection(ByVal Application As Object, ByVal ConnectMode As AddInDesignerObjects.ext_ConnectMode, ByVal AddInInst As Object, custom() As Variant)
+  On Error GoTo AddinInstance_OnConnectionErr
+  
+  Dim aiTmp As AddIn
+   
+  ' Enregistre l'intance vb
+  Set gVBInstance = Application
+
+  If Not gwinWindow Is Nothing Then
+    ' En cours d'exécution, affiche seulement
+    Show
+    If ConnectMode = ext_cm_AfterStartup Then
+      ' Démarre à partir du Gestionaire de Compléments
+      AddToCommandBar
+    End If
+    Exit Sub
+  End If
+  
+  ' Crée la fenêtre Outil
+  If ConnectMode = ext_cm_External Then
+    ' Doit vérifier que l'exécution est en cours
+    On Error Resume Next
+    Set aiTmp = gVBInstance.Addins("TabOrder.Connect")
+    On Error GoTo AddinInstance_OnConnectionErr
+    If aiTmp Is Nothing Then
+      ' L'application n'est pas dans le fichier VBADDIN.INI et n'est donc pas dans la collection.
+      ' Vous devez utiliser le premier complément de la collection pour lancer l'application.
+' S'il n'y en a pas, une erreur surviendra et
+' l'application ne sera pas lancée.
+       Set gwinWindow = gVBInstance.Windows.CreateToolWindow(gVBInstance.Addins(1), "TabOrder.docTabOrder", LoadResString(10), guidMYTOOL$, gdocTabOrder)
+    Else
+      If aiTmp.Connect = False Then
+        Set gwinWindow = gVBInstance.Windows.CreateToolWindow(aiTmp, "TabOrder.docTabOrder", LoadResString(10), guidMYTOOL$, gdocTabOrder)
+      End If
+    End If
+  Else
+    ' Doit avoir été appelé à partir du Gestionnaire de compléments
+    Set gwinWindow = gVBInstance.Windows.CreateToolWindow(AddInInst, "TabOrder.docTabOrder", LoadResString(10), guidMYTOOL$, gdocTabOrder)
+  End If
+
+  ' Collecte le gestionnaire d'événement de projet, de composants et de contrôles
+  Set Me.PrjHandler = gVBInstance.Events.VBProjectsEvents
+  Set Me.CmpHandler = gVBInstance.Events.VBComponentsEvents(Nothing)
+  Set Me.CtlHandler = gVBInstance.Events.VBControlsEvents(Nothing, Nothing)
+  
+  If ConnectMode = vbext_cm_External Then
+    ' Démarre à partir de la barre d'outils de complément
+    Show
+  ElseIf ConnectMode = vbext_cm_AfterStartup Then
+    ' Démarre à partir du Gestionnaire de Compléments
+    AddToCommandBar
+  End If
+
+  Exit Sub
+  
+AddinInstance_OnConnectionErr:
+  MsgBox Err.Description
+End Sub
+
+' ------------------------------------------------------
+' Cet événement supprime le menu de la barre de commande
+' Il est appelé par le Gestionnaire de Compléments VB
+' ------------------------------------------------------
+Private Sub AddinInstance_OnDisconnection(ByVal RemoveMode As AddInDesignerObjects.ext_DisconnectMode, custom() As Variant)
+  On Error GoTo IDTExtensibility_OnDisconnectionErr
+  ' Supprime l'entrée de la barre de commande
+  mcbMenuCommandBar.Delete
+  
+  ' Enregistre l'état de la feuille laa prochaine foi que VB est chargé
+  If gwinWindow.Visible Then
+    SaveSetting APP_CATEGORY, App.Title, "DisplayOnConnect", "1"
+  Else
+    SaveSetting APP_CATEGORY, App.Title, "DisplayOnConnect", "0"
+  End If
+  
+  Set gwinWindow = Nothing
+  
+IDTExtensibility_OnDisconnectionErr:
+  
+End Sub
+
+' Cet événement se déclenche lorsque l'IDE est complètement chargé
+Private Sub AddinInstance_OnStartupComplete(custom() As Variant)
+  AddToCommandBar
+End Sub
+
+' Cet événement se déclenche lorsque l'on clique sur le contrôle de la barre de commande dans l'IDE
+Private Sub MenuHandler_Click(ByVal CommandBarControl As Object, handled As Boolean, CancelDefault As Boolean)
+  Show
+End Sub
+
+' Cet événement se déclenche lorsque l'on ajoute un contrôle à la feuille actuelle dans l'IDE
+Private Sub CtlHandler_ItemAdded(ByVal VBControl As VBIDE.VBControl)
+  If gwinWindow.Visible Then
+    gdocTabOrder.ControlAdded VBControl
+  End If
+End Sub
+
+' Cet événement se déclenche lorsque l'on renomme un contrôle sur la feuille actuelle dans l'IDE
+Private Sub CtlHandler_ItemRenamed(ByVal VBControl As VBIDE.VBControl, ByVal OldName As String, ByVal OldIndex As Long)
+  If gwinWindow.Visible Then
+    gdocTabOrder.ControlRenamed VBControl, OldName, OldIndex
+  End If
+End Sub
+
+' Cet événement se déclenche lorsque l'on supprime un contrôle de la feuille actuelle dan l'IDE
+Private Sub CtlHandler_ItemRemoved(ByVal VBControl As VBIDE.VBControl)
+  If gwinWindow.Visible Then
+    gdocTabOrder.ControlRemoved VBControl
+  End If
+End Sub
+
+' Cet événement se déclenche lorsque l'on active une feuille dans l'IDE
+Private Sub CmpHandler_ItemActivated(ByVal VBComponent As VBIDE.VBComponent)
+  On Error GoTo CmpHandler_ItemActivatedErr
+  If gwinWindow.Visible Then
+    gdocTabOrder.RefreshList 0
+  End If
+CmpHandler_ItemActivatedErr:
+End Sub
+
+' Cet événement se déclenche lorsque l'on sélectionne une feuille dans la fenêtre Projet
+Private Sub CmpHandler_ItemSelected(ByVal VBComponent As VBIDE.VBComponent)
+  CmpHandler_ItemActivated VBComponent
+End Sub
+
+Sub AddToCommandBar()
+  On Error GoTo AddToCommandBarErr
+  
+  ' Permet de s'assurer que la barre d'outils standard est visible
+  gVBInstance.CommandBars(2).Visible = True
+  
+  ' L'ajoute à la barre de commande
+  ' La ligne suivante ajoutera le gestionnaire TabOrder à la barre d'outils standard à droite du bouton ToolBox
+  Set mcbMenuCommandBar = gVBInstance.CommandBars(2).Controls.Add(1, , , gVBInstance.CommandBars(2).Controls.Count)
+  ' Définit la propriété Caption
+  mcbMenuCommandBar.Caption = LoadResString(200)
+  ' Copie l'icône dans le Presse-papiers
+  Clipboard.SetData LoadResPicture(1000, 0)
+  ' Définit l'icône pour le bouton
+  mcbMenuCommandBar.PasteFace
+  
+  ' Déclenche l'événement
+  Set Me.MenuHandler = gVBInstance.Events.CommandBarEvents(mcbMenuCommandBar)
+  
+  ' Restaure le dernier état
+  If GetSetting(APP_CATEGORY, App.Title, "DisplayOnConnect", "0") = "1" Then
+    ' Définit pour afficher la feuille pendant la connexion
+    Me.Show
+  End If
+  
+  Exit Sub
+    
+AddToCommandBarErr:
+  MsgBox Err.Description
+End Sub
+
+Private Sub PrjHandler_ItemRemoved(ByVal VBProject As VBIDE.VBProject)
+  ' Cela permet de s'assurer que l'utilisateur supprime l'unique projet
+  If gwinWindow.Visible Then
+    gdocTabOrder.RefreshList 0
+  End If
+End Sub
+

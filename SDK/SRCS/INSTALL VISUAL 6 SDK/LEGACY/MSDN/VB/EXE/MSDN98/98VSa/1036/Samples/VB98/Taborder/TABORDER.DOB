@@ -1,0 +1,501 @@
+VERSION 5.00
+Begin VB.UserDocument docTabOrder 
+   ClientHeight    =   2820
+   ClientLeft      =   4110
+   ClientTop       =   3195
+   ClientWidth     =   2085
+   HScrollSmallChange=   225
+   KeyPreview      =   -1  'True
+   LockControls    =   -1  'True
+   ScaleHeight     =   2820
+   ScaleWidth      =   2085
+   ScrollBars      =   0  'None
+   Tag             =   "10"
+   VScrollSmallChange=   225
+   Begin VB.CommandButton cmdRefresh 
+      Height          =   330
+      Left            =   1365
+      Picture         =   "TabOrder.dox":0000
+      Style           =   1  'Graphical
+      TabIndex        =   5
+      Top             =   15
+      UseMaskColor    =   -1  'True
+      Width           =   330
+   End
+   Begin VB.CommandButton cmdLeftToRight 
+      Height          =   330
+      Left            =   1035
+      Picture         =   "TabOrder.dox":0102
+      Style           =   1  'Graphical
+      TabIndex        =   4
+      ToolTipText     =   "102"
+      Top             =   15
+      UseMaskColor    =   -1  'True
+      Width           =   330
+   End
+   Begin VB.CommandButton cmdTopToBottom 
+      Height          =   330
+      Left            =   705
+      Picture         =   "TabOrder.dox":0204
+      Style           =   1  'Graphical
+      TabIndex        =   3
+      ToolTipText     =   "102"
+      Top             =   15
+      UseMaskColor    =   -1  'True
+      Width           =   330
+   End
+   Begin VB.CommandButton cmdDown 
+      Height          =   330
+      Left            =   375
+      Picture         =   "TabOrder.dox":0306
+      Style           =   1  'Graphical
+      TabIndex        =   2
+      ToolTipText     =   "104"
+      Top             =   15
+      UseMaskColor    =   -1  'True
+      Width           =   330
+   End
+   Begin VB.CommandButton cmdUp 
+      Height          =   330
+      Left            =   45
+      Picture         =   "TabOrder.dox":0408
+      Style           =   1  'Graphical
+      TabIndex        =   1
+      ToolTipText     =   "102"
+      Top             =   15
+      UseMaskColor    =   -1  'True
+      Width           =   330
+   End
+   Begin VB.CommandButton cmdApply 
+      Height          =   330
+      Left            =   1695
+      Picture         =   "TabOrder.dox":050A
+      Style           =   1  'Graphical
+      TabIndex        =   6
+      Top             =   15
+      UseMaskColor    =   -1  'True
+      Width           =   330
+   End
+   Begin VB.ListBox lstTabIndex 
+      DragIcon        =   "TabOrder.dox":060C
+      Height          =   2415
+      IntegralHeight  =   0   'False
+      Left            =   30
+      TabIndex        =   0
+      Top             =   360
+      Width           =   2025
+   End
+End
+Attribute VB_Name = "docTabOrder"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = True
+Option Explicit
+
+Dim mcmpCurrentForm As VBComponent      ' Feuille courante.
+Dim mcolCtls        As VBControls       ' Contrôles de la feuille.
+
+' Rafraîchissement des types.
+Const NEWFORM = 0
+Const TOPTOBOTTOM = 1
+Const LEFTTORIGHT = 2
+Const REFRESHCTLS = 3
+
+'================================================
+' Cette procédure définit le nouvel ordre des
+' onglets de tous les contrôles sur la feuille
+' en cours, basé sur l'ordre de la zone de liste.
+'================================================
+Private Sub cmdApply_Click()
+  On Error GoTo cmdApply_ClickErr
+  
+  Dim i As Integer
+  Dim sTmp As String
+  Dim nCtlArrIndex As Integer
+  
+  If InRunMode(gVBInstance) Then Exit Sub
+  
+  Screen.MousePointer = vbHourglass
+  For i = 0 To lstTabIndex.ListCount - 1
+    GetNameAndIndex lstTabIndex.List(i), sTmp, nCtlArrIndex
+    If nCtlArrIndex >= 0 Then
+      ' Définit l'index du nouvel onglet.
+      mcmpCurrentForm.Designer.VBControls.Item(sTmp, nCtlArrIndex).Properties!TabIndex = i
+    Else
+      ' Définit l'index du nouvel onglet.
+      mcmpCurrentForm.Designer.VBControls.Item(sTmp).Properties!TabIndex = i
+    End If
+  Next
+  Screen.MousePointer = vbDefault
+  Exit Sub
+  
+cmdApply_ClickErr:
+  If MsgBox(Err.Description & vbCrLf & "Reprendre?", vbYesNo) = vbYes Then
+    Resume Next
+  End If
+  Screen.MousePointer = vbDefault
+End Sub
+
+Private Sub cmdLeftToRight_Click()
+  RefreshList LEFTTORIGHT
+End Sub
+
+Private Sub cmdTopToBottom_Click()
+  RefreshList TOPTOBOTTOM
+End Sub
+
+Private Sub cmdRefresh_Click()
+  RefreshList REFRESHCTLS
+End Sub
+
+Private Sub UserDocument_Show()
+  ' Charge les chaînes depuis le fichier de ressources.
+  cmdUp.ToolTipText = LoadResString(100)
+  cmdDown.ToolTipText = LoadResString(101)
+  cmdTopToBottom.ToolTipText = LoadResString(102)
+  cmdLeftToRight.ToolTipText = LoadResString(103)
+  cmdRefresh.ToolTipText = LoadResString(104)
+  cmdApply.ToolTipText = LoadResString(105)
+End Sub
+
+Private Sub UserDocument_Resize()
+  lstTabIndex.Width = ScaleWidth - (lstTabIndex.Left * 2)
+  lstTabIndex.Height = ScaleHeight - (cmdApply.Height + 100)
+End Sub
+
+' Cette procédure déplace l'élément sélectionné vers un nouvel
+' emplacement basé sur la coordonnée Y, où il a été collé.
+Private Sub lstTabIndex_DragDrop(Source As Control, x As Single, Y As Single)
+  Dim sTmp As String
+  Dim nListIndex As Integer
+  Dim nPos As Integer
+  Dim i As Integer
+
+  With lstTabIndex
+    nListIndex = .ListIndex
+    If Source = lstTabIndex Then
+      If nListIndex >= 0 Then
+        sTmp = .Text
+        nPos = (Y \ TextHeight(sTmp)) + .TopIndex
+        ' Vérifie le dernier élément.
+        If nPos > .ListCount Then
+          nPos = .ListCount
+        End If
+        .AddItem sTmp, nPos
+        If nListIndex > nPos Then
+          .RemoveItem nListIndex + 1
+        Else
+          .RemoveItem nListIndex
+        End If
+      End If
+    End If
+  End With
+
+End Sub
+
+Sub lstTabIndex_MouseMove(Button As Integer, Shift As Integer, x As Single, Y As Single)
+  If Button = vbLeftButton Then lstTabIndex.Drag
+End Sub
+
+Private Sub cmdUp_Click()
+  On Error Resume Next
+  Dim nItem As Integer
+  
+  With lstTabIndex
+    If .ListIndex < 0 Then Exit Sub
+    nItem = .ListIndex
+    If nItem = 0 Then Exit Sub  ' Impossible de déplacer le premier élément vers le haut.
+    ' Déplace l'élément vers le haut.
+    .AddItem .Text, nItem - 1
+    ' Supprime l'ancien élément.
+    .RemoveItem nItem + 1
+    ' Sélectionne l'élément qui vient d'être déplacé.
+    .Selected(nItem - 1) = True
+  End With
+End Sub
+
+Private Sub cmdDown_Click()
+  On Error Resume Next
+  Dim nItem As Integer
+  
+  With lstTabIndex
+    If .ListIndex < 0 Then Exit Sub
+    nItem = .ListIndex
+    If nItem = .ListCount - 1 Then Exit Sub ' Impossible de déplacer le premier élément vers le bas.
+    ' Déplace l'élément vers le bas.
+    .AddItem .Text, nItem + 2
+    ' Supprime l'ancien élément.
+    .RemoveItem nItem
+    ' Sélectionne l'élément qui vient d'être déplacé.
+    .Selected(nItem + 1) = True
+  End With
+End Sub
+
+'======================================================
+' Cette fonction renvoie une valeur à mettre dans la zone de
+' liste pour un contrôle. Il ajoute la propriété Caption
+' si elle existe, et n'est pas nulle. Il ajoute également
+' l'index du tableau du contrôle si le contrôle est un
+' membre du tableau du contrôle.
+'======================================================
+Function ControlName(ctl As VBIDE.VBControl) As String
+  On Error Resume Next
+
+  Dim sTmp As String
+  Dim sCaption As String
+  Dim i As Integer
+  
+  sTmp = ctl.Properties!Name
+  sCaption = ctl.Properties!Caption
+  ' Sera nul s'il n'en existe aucun.
+  
+  i = ctl.Properties!Index
+  If i >= 0 Then
+    sTmp = sTmp & "(" & i & ")"
+  End If
+  
+  If Len(sCaption) > 0 Then
+    ControlName = sTmp & " - '" & sCaption & "'"
+  Else
+    ControlName = sTmp
+  End If
+  
+  Err.Clear
+  
+End Function
+
+'======================================================
+' Cette procédure reconstruit la liste à partir des 
+' contrôles de la feuille.
+'======================================================
+Public Sub RefreshList(nType As Integer)
+  On Error GoTo RefreshListErr
+
+  Dim i As Integer
+  Dim ctl As VBControl
+  Dim sTmp As String
+  Dim ti As Integer
+  Dim sCtlName As String
+  Dim nCtlArrIndex As Integer
+   
+  If InRunMode(gVBInstance) Then Exit Sub
+ 
+  ' Efface le contrôle de la liste.
+  lstTabIndex.Clear
+  
+  If gVBInstance.ActiveVBProject Is Nothing Then Exit Sub
+  If nType = NEWFORM Then
+    If mcmpCurrentForm Is gVBInstance.SelectedVBComponent Then
+      ' Le même que nous avons déjà.
+      Exit Sub
+    End If
+  End If
+  
+  ' Charge le composant.
+  Set mcmpCurrentForm = gVBInstance.SelectedVBComponent
+  
+  ' Vérifie si nous avons un composant valide.
+  If mcmpCurrentForm Is Nothing Then
+    Exit Sub
+  End If
+  
+  ' Vérifie que le composant actif est une feuille, un contrôle 
+  ' utilisateur ou une page de propriétés.
+  If (mcmpCurrentForm.Type <> vbext_ct_VBForm) And _
+     (mcmpCurrentForm.Type <> vbext_ct_UserControl) And _
+     (mcmpCurrentForm.Type <> vbext_ct_DocObject) And _
+     (mcmpCurrentForm.Type <> vbext_ct_PropPage) Then
+    Exit Sub
+  End If
+  
+  Set mcolCtls = mcmpCurrentForm.Designer.VBControls
+  
+'  hWindow.Caption = mcmpCurrentForm.Name & " - " & LoadResString(10)
+  
+  For Each ctl In mcmpCurrentForm.Designer.VBControls
+    ' Essaye d'obtenir la valeur de la propriété Tabindex.
+    On Error Resume Next
+    ti = ctl.Properties!TabIndex
+    If Err Then
+      ' Ne dispose pas de la propriété Tabindex.
+      Err.Clear
+      GoTo SkipIt
+    End If
+    On Error GoTo RefreshListErr
+    
+    sTmp = ControlName(ctl)
+    
+    ' Recherche la destination dans la liste.
+    Select Case nType
+      Case NEWFORM, REFRESHCTLS
+        For i = 0 To lstTabIndex.ListCount - 1
+          If ti < lstTabIndex.ItemData(i) Then
+            Exit For
+          End If
+        Next
+        
+      Case TOPTOBOTTOM
+        ' Réarrange du haut vers le bas.
+        For i = lstTabIndex.ListCount To 1 Step -1
+          GetNameAndIndex lstTabIndex.List(i - 1), sCtlName, nCtlArrIndex
+          If nCtlArrIndex >= 0 Then
+            ' Membre du tableau de contrôle.
+            If ctl.Properties!Top > mcolCtls(sCtlName, nCtlArrIndex).Properties!Top Then
+              ' Est situé sur l'élément de la liste courante.
+              Exit For
+            ElseIf ctl.Properties!Top = mcolCtls(sCtlName, nCtlArrIndex).Properties!Top Then
+              ' Il se trouve dans la même position supérieure, 
+              ' vérifiez s'il ne se trouve pas plus à gauche.
+              If ctl.Properties!Left > mcolCtls(sCtlName, nCtlArrIndex).Properties!Left Then
+                Exit For
+              End If
+            End If
+          Else
+            If ctl.Properties!Top > mcolCtls(sCtlName).Properties!Top Then
+              Exit For
+            ElseIf ctl.Properties!Top = mcolCtls(sCtlName).Properties!Top Then
+              If ctl.Properties!Left > mcolCtls(sCtlName).Properties!Left Then
+                Exit For
+              End If
+            End If
+          End If
+        Next
+      
+      Case LEFTTORIGHT
+        ' Réarrange de la gauche vers la droite.
+        For i = lstTabIndex.ListCount To 1 Step -1
+          GetNameAndIndex lstTabIndex.List(i - 1), sCtlName, nCtlArrIndex
+          If nCtlArrIndex >= 0 Then
+            ' Membre du tableau de contrôle.
+            If ctl.Properties!Left > mcolCtls(sCtlName, nCtlArrIndex).Properties!Left Then
+              Exit For
+            ElseIf ctl.Properties!Left = mcolCtls(sCtlName, nCtlArrIndex).Properties!Left Then
+              If ctl.Properties!Top > mcolCtls(sCtlName, nCtlArrIndex).Properties!Top Then
+                Exit For
+              End If
+            End If
+          Else
+            If ctl.Properties!Left > mcolCtls(sCtlName).Properties!Left Then
+              Exit For
+            ElseIf ctl.Properties!Left = mcolCtls(sCtlName).Properties!Left Then
+              If ctl.Properties!Top > mcolCtls(sCtlName).Properties!Top Then
+                Exit For
+              End If
+            End If
+          End If
+        Next
+      
+    End Select
+    
+    ' L'ajoute à la liste.
+    lstTabIndex.AddItem sTmp, i
+    lstTabIndex.ItemData(lstTabIndex.NewIndex) = ti
+    lstTabIndex.Refresh
+
+SkipIt:
+  Next
+
+  Exit Sub
+RefreshListErr:
+  MsgBox Err.Description
+End Sub
+
+'==================================================================
+' Cette procédure est appelée lors de la suppression d'un contrôle.
+'==================================================================
+Public Sub ControlRemoved(ctl As VBControl)
+  Dim sTmp As String
+  Dim i As Integer
+  
+  sTmp = ControlName(ctl)
+  For i = 0 To lstTabIndex.ListCount - 1
+    If lstTabIndex.List(i) = sTmp Then
+      ' Le supprime de la liste.
+      lstTabIndex.RemoveItem i
+      Exit Sub
+    End If
+  Next
+  
+End Sub
+
+'===========================================================
+' Cette procédure est appelée lors de l'ajout d'un contrôle.
+'===========================================================
+Public Sub ControlAdded(ctl As VBControl)
+  Dim i As Integer
+  
+  ' Essaye d'obtenir la valeur de la propriété Tabindex.
+  On Error Resume Next
+  i = ctl.Properties!TabIndex
+  If Err Then
+    Err.Clear
+    ' Ne dispose pas de la propriété Tabindex.
+    Exit Sub
+  End If
+  lstTabIndex.AddItem ControlName(ctl)
+  
+End Sub
+
+
+'============================================================
+' Cette procédure est appelée lorsqu'un contrôle est renommé.
+'============================================================
+Public Sub ControlRenamed(ctl As VBControl, sOldName As String, lOldIndex As Long)
+  On Error Resume Next
+  Dim sTmp As String
+  Dim i As Integer
+  
+  If lOldIndex >= 0 Then
+    sOldName = sOldName & "(" & lOldIndex & ")"
+  End If
+  
+  sTmp = ControlName(ctl)
+  For i = 0 To lstTabIndex.ListCount - 1
+    If Left$(lstTabIndex.List(i), Len(sOldName)) = sOldName Then
+      ' Le supprime de la liste.
+      lstTabIndex.RemoveItem i
+      ' Le rajoute avec un nouveau nom.
+      lstTabIndex.AddItem sTmp, i
+      Exit Sub
+    End If
+  Next
+  Err.Clear
+End Sub
+
+Private Sub UserDocument_KeyDown(KeyCode As Integer, Shift As Integer)
+  ' Passe les touches dans l'IDE.
+  HandleKeyDown Me, KeyCode, Shift
+End Sub
+
+'======================================================
+' Cette procédure extrait le nom et l'index du contrôle
+' depuis l'élément de liste formaté.
+'======================================================
+Sub GetNameAndIndex(sListItem As String, sName As String, nIndex As Integer)
+  Dim nPos As Integer
+  Dim nPos2 As Integer
+  Dim sTmp As String
+  
+  ' Retire la légende si elle existe.
+  nPos = InStr(sListItem, " ")
+  If nPos > 0 Then
+    sTmp = Left$(sListItem, nPos - 1)
+  Else
+    sTmp = sListItem
+  End If
+  
+  ' Vérifie maintenant l'index.
+  nPos = InStr(sTmp, "(")
+  If nPos > 0 Then
+    ' Le contrôle a un index; il convient de
+    ' le retirer et de l'enregistrer.
+    nPos2 = InStr(sTmp, ")")
+    nIndex = Val(Mid$(sTmp, nPos + 1, nPos2 - nPos))
+    sName = Left$(sTmp, nPos - 1)
+  Else
+    nIndex = -1
+    sName = sTmp
+  End If
+
+End Sub

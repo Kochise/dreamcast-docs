@@ -1,0 +1,100 @@
+<HTML>
+<BODY bgColor=#ffffff leftMargin=40 link=#500000 vLink=#505050>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2>
+<FONT SIZE=4 COLOR=#500000>L'envers du d&#233;cor</FONT>
+<P>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2>
+Cet exemple utilise les dix fichiers suivants :</FONT></P>
+<UL>
+    <LI>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2>
+ShopCart.htm d&#233;finit le jeu de cadres HTML.</FONT>
+    <LI>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2>
+SCMain.htm est la page par d&#233;faut du cadre «&nbsp;principal&nbsp;».</FONT></LI>
+    <LI>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2>
+SCMenu.htm affiche les options de recherche du produit.</FONT>
+    <LI>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2>
+Products.asp affiche les r&#233;sultats de la recherche et permet de s&#233;lectionner un &#233;l&#233;ment.</FONT></LI>
+    <LI>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2>
+AddCart.asp affiche des informations sur l'&#233;l&#233;ment s&#233;lectionn&#233; dans 
+    Products.asp et permet de d&#233;finir une quantit&#233;.</FONT>
+    <LI>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2>
+SCUpdate.asp enregistre l'&#233;l&#233;ment s&#233;lectionn&#233; et la quantit&#233; dans la table ShopCart.</FONT></LI>
+    <LI>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2>
+ViewCart.asp affiche le contenu du panier.</FONT>
+    <LI>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2>
+SCDelete.asp supprime un seul &#233;l&#233;ment dans le panier.</FONT>
+    <LI>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2>
+SCClear.asp efface enti&#232;rement le contenu du panier.</FONT></LI>
+    <LI>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2>
+SavOrder.asp transfert le contenu de la table ShopCart vers la table Orders 
+    comme commande termin&#233;e.</FONT></LI></UL>
+<FONT FACE="Verdana, Arial, Helvetica" SIZE=2>
+
+<P>SCMenu.htm affiche une zone de liste d&#233;roulante contenant les diff&#233;rentes cat&#233;gories 
+de produits &#224; rechercher. Apr&#232;s avoir s&#233;lectionn&#233; une cat&#233;gorie et appuy&#233; sur 
+le bouton Rechercher, le fichier Products.asp affiche la cat&#233;gorie de produits s&#233;lectionn&#233;e dans le cadre «&nbsp;principal&nbsp;».
+<P>Products.asp utilise le contr&#244;le DTC Recordset 
+controlvictlRecordsetControl pour interroger la table Products sur les &#233;l&#233;ments correspondant 
+&#224; la cat&#233;gorie s&#233;lectionn&#233;e. Le contenu est affich&#233; dans une table HTML &#224; l'aide du contr&#244;le DTC Grid 
+controlvictlGridControl. Le nom du produit renvoie au fichier AddCart.asp pour donner des informations suppl&#233;mentaires sur le produit s&#233;lectionn&#233;.
+<P>AddCart.asp affiche le nom du produit, la quantit&#233; par unit&#233; et 
+le prix unitaire. Un contr&#244;le Recordset permet de d&#233;terminer si l'objet 
+s&#233;lectionn&#233; se trouve d&#233;j&#224; dans le panier. La variable intQuantity est d&#233;finie avec 
+la valeur appropri&#233;e si l'objet est d&#233;j&#224; dans le panier :</P>
+<P>
+
+<FONT face=Courier>
+function 
+DTCRecordset1_ondatasetcomplete() {<BR>&nbsp;&nbsp; if 
+(DTCRecordset1.getCount() == 1) {<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; intQuantity = 
+DTCRecordset1.fields.getValue(&quot;Qty&quot;);<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; InCart = true;<BR>&nbsp;&nbsp; }<BR>
+</FONT></P>
+<P>Une zone de texte appara&#238;t pour permettre &#224; l'utilisateur de pr&#233;ciser le 
+nombre d'unit&#233;s &#224; ajouter au panier. Si cet objet se trouve d&#233;j&#224; dans le panier, 
+l'utilisateur est invit&#233; &#224; modifier la quantit&#233; d'objets d&#233;j&#224; dans le panier : 
+ </P>
+<P>
+<FONT face=Courier>&lt;%If InCart 
+then%&gt; <BR>&nbsp;&nbsp; Vous en avez actuellement 
+&lt;b&gt;&lt;%=intQuantity%&gt;&lt;/b&gt; dans votre chariot.&lt;BR&gt; <BR>&nbsp;&nbsp; Veuillez entrer la nouvelle quantit&#233; : &lt;input 
+NAME=&quot;intQTY&quot; TYPE=&quot;Text&quot; 
+VALUE=&quot;&lt;%=intQuantity%&gt;&quot; SIZE=&quot;5&quot;&gt;&lt;br&gt; <BR>&nbsp;&nbsp; &lt;input TYPE=&quot;Hidden&quot; 
+NAME=&quot;InCart&quot; VALUE=&quot;1&quot;&gt;<BR>&lt;%Else%&gt;<BR>&nbsp;&nbsp; Unit&#233;s &#224; commander :  
+&lt;input NAME=&quot;intQTY&quot; TYPE=&quot;Text&quot; 
+VALUE=&quot;&lt;%=intQuantity%&gt;&quot; SIZE=&quot;5&quot;&gt;&lt;br&gt; <BR>&nbsp;&nbsp; &lt;input TYPE=&quot;Hidden&quot; 
+NAME=&quot;InCart&quot; VALUE=&quot;0&quot;&gt; <BR>&lt;%End If%&gt; 
+</FONT></P>
+
+<P>Une fois la quantit&#233; d&#233;finie, les informations sont envoy&#233;es &#224; 
+SCUpdate.asp pour enregistrer les informations dans la table ShopCart. Apr&#232;s avoir enregistr&#233; les 
+informations, SCUpdate.asp redirige l'utilisateur vers ViewCart.asp pour qu'il visualise 
+le contenu du panier.
+<P>ViewCart.asp utilise les contr&#244;les Recordset et Grid afin de sortir le contenu du panier pour cet utilisateur. Le nom du produit, la quantit&#233; command&#233;e, le prix unitaire et le co&#251;t total de chaque objet sont 
+affich&#233;s dans une table HTML g&#233;n&#233;r&#233;e par le contr&#244;le Grid. 
+<P>En regard de chaque &#233;l&#233;ment se trouvent deux liens qui permettent &#224; l'utilisateur 
+d'&#233;diter l'&#233;l&#233;ment (modifier sa quantit&#233;) ou supprimer l'&#233;l&#233;ment du panier. 
+Si l'&#233;l&#233;ment doit &#234;tre modifi&#233;, l'utilisateur est redirig&#233; vers AddCart.asp pour 
+changer la quantit&#233;. Si l'&#233;l&#233;ment doit &#234;tre supprim&#233;, le lien envoie les  
+informations &#224; SCDelete.asp.
+<P>SCDelete.asp utilise le contr&#244;le Recordset pour s&#233;lectionner l'enregistrement 
+appropri&#233; dans la table ShopCart et le supprimer. Une fois l'enregistrement supprim&#233;, 
+ce fichier ASP redirige l'utilisateur vers ViewCart.asp pour afficher l'&#233;tat 
+du panier.
+<P>Vous disposez de deux autres liens au bas de la page 
+lorsque vous affichez le contenu du panier avec ViewCart.asp. Le premier 
+bouton efface compl&#232;tement le contenu du panier en appelant SCClear.asp. 
+SCClear.asp supprime alors tous les enregistrements de cet utilisateur et le redirige vers 
+la page principale pour recommencer depuis le d&#233;but. Le deuxi&#232;me bouton au bas de la page 
+appelle SavOrder.asp pour valider la commande.</P></FONT></FONT>
+</BODY>
+</HTML>

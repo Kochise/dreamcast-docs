@@ -1,0 +1,328 @@
+*       *********************************************************
+*       *                                                         
+*       * 07/10/98              MAIN.MPR                18:48:14  
+*       *                                                         
+*       *********************************************************
+*       *                                                         
+*       * Nom de l'auteur                                         
+*       *                                                         
+*       * Copyright (C) 1998 Nom de la société                    
+*       * Adresse                                                 
+*       * Ville,     Code posta                                   
+*       * Pays                                              
+*       *                                                         
+*       * Description:                                            
+*       * Ce programme a été généré automatiquement par GENMENU.     
+*       *                                                         
+*       *********************************************************
+
+
+*       *********************************************************
+*       *                                                         
+*       *                    Code d'installation                  
+*       *                                                         
+*       *********************************************************
+*
+
+#INCLUDE "INCLUDE\TASTRADE.H"
+
+*       *********************************************************
+*       *                                                         
+*       *                    Définition du menu                   
+*       *                                                         
+*       *********************************************************
+*
+
+SET SYSMENU TO
+SET SYSMENU AUTOMATIC
+
+DEFINE PAD Pad OF _MSYSMENU PROMPT "\<Fichier" COLOR SCHEME 3 ;
+	KEY ALT+F, "ALT+F" ;
+	MESSAGE "Crée, enregistre, supprime et restaure les enregistrements, ferme les formulaires, imprime les états ou quitte Tastrade"
+DEFINE PAD Edit OF _MSYSMENU PROMPT "\<Edition" COLOR SCHEME 3 ;
+	KEY ALT+E, "ALT+E" ;
+	MESSAGE "Modifie le texte ou la sélection courante"
+DEFINE PAD Orders OF _MSYSMENU PROMPT "\<Commandes" COLOR SCHEME 3 ;
+	KEY ALT+C, "ALT+C" ;
+	MESSAGE "Accès aux formulaires Saisie et Historique des commandes"
+DEFINE PAD _msm_file OF _MSYSMENU PROMPT "Administ\<ration" COLOR SCHEME 3 ;
+	KEY ALT+R, "ALT+R" ;
+	MESSAGE "Ouvre une session, change le mot de passe et accède à tous les formulaires de gestion"
+DEFINE PAD Utilities OF _MSYSMENU PROMPT "\<Utilitaires" COLOR SCHEME 3 ;
+	KEY ALT+U, "ALT+U" ;
+	MESSAGE "Analyse, débogue et affiche les fenêtres, suspend, reprend et annule les programmes"
+DEFINE PAD _msm_systm OF _MSYSMENU PROMPT "\<?" COLOR SCHEME 3 ;
+	KEY ALT+D, "ALT+D" ;
+	MESSAGE "Affichage de l'aide sur Les Négociants Tasmaniens"
+ON PAD Pad OF _MSYSMENU ACTIVATE POPUP fichier
+ON PAD Edit OF _MSYSMENU ACTIVATE POPUP edition
+ON PAD Orders OF _MSYSMENU ACTIVATE POPUP commandes
+ON PAD _msm_file OF _MSYSMENU ACTIVATE POPUP _qx713dsus
+ON PAD Utilities OF _MSYSMENU ACTIVATE POPUP utilitaire
+ON PAD _msm_systm OF _MSYSMENU ACTIVATE POPUP _rwd12m3go
+
+DEFINE POPUP fichier MARGIN RELATIVE SHADOW COLOR SCHEME 4
+DEFINE BAR 1 OF fichier PROMPT "\<Nouveau" ;
+	KEY CTRL+N, "CTRL+N" ;
+	SKIP FOR !FormIsObject() OR !ToolBarEnabled("cmdNew") ;
+	MESSAGE "Crée un nouvel enregistrement dans le formulaire actif"
+DEFINE BAR 2 OF fichier PROMPT "\<Fermer" ;
+	SKIP FOR !FormIsObject() OR !ToolBarEnabled("cmdClose") ;
+	MESSAGE "Ferme le formulaire actif"
+DEFINE BAR 3 OF fichier PROMPT "\-"
+DEFINE BAR 4 OF fichier PROMPT "\<Enregistrer" ;
+	KEY CTRL+S, "CTRL+S" ;
+	SKIP FOR !FormIsObject()  OR !ToolBarEnabled("cmdSave") ;
+	MESSAGE "Enregistre l'enregistrement courant dans le formulaire actif"
+DEFINE BAR 5 OF fichier PROMPT "\<Restaurer" ;
+	KEY CTRL+E, "CTRL+E" ;
+	SKIP FOR !FormIsObject()  OR !ToolBarEnabled("cmdRestore") ;
+	MESSAGE "Réinitialise les valeurs de l'enregistrement courant dans le formulaire actif"
+DEFINE BAR 6 OF fichier PROMPT "\<Supprimer" ;
+	SKIP FOR !FormIsObject()  OR TYPE("oApp.oToolBar") # "O" OR !_screen.activeform.lAllowDelete ;
+	MESSAGE "Supprime l'enregistrement courant dans le formulaire actif"
+DEFINE BAR 7 OF fichier PROMPT "\-"
+DEFINE BAR 8 OF fichier PROMPT "\<Imprimer les états ..." ;
+	KEY CTRL+P, "CTRL+P" ;
+	MESSAGE "Exécute l'état et le formulaire de sélection de liste"
+DEFINE BAR 9 OF fichier PROMPT "\<Configuration de l'impression" ;
+	MESSAGE "Change la mise en page et la configuration de l'imprimante"
+DEFINE BAR 10 OF fichier PROMPT "\-"
+DEFINE BAR 11 OF fichier PROMPT "Revenir à Fo\<xPro"
+ON SELECTION BAR 1 OF fichier oApp.oToolbar.cmdNew.Click()
+ON SELECTION BAR 2 OF fichier oApp.oToolbar.cmdClose.Click()
+ON SELECTION BAR 4 OF fichier oApp.oToolbar.cmdSave.Click()
+ON SELECTION BAR 5 OF fichier oApp.oToolbar.cmdRestore.Click()
+ON SELECTION BAR 6 OF fichier _screen.activeform.delete()
+ON SELECTION BAR 8 OF fichier DO FORM Reports
+ON SELECTION BAR 9 OF fichier ;
+	DO _rwd14axa0 ;
+	IN LOCFILE("..\..\SAMPLES\TASTRADE\TARGET\MENUS\MAIN" ,"MPX;MPR|FXP;PRG" ,"Où est MAIN?")
+ON SELECTION BAR 11 OF fichier ;
+	DO _rwd14axag ;
+	IN LOCFILE("..\..\SAMPLES\TASTRADE\TARGET\MENUS\MAIN" ,"MPX;MPR|FXP;PRG" ,"Où est MAIN?")
+
+DEFINE POPUP edition MARGIN RELATIVE SHADOW COLOR SCHEME 4
+DEFINE BAR _med_undo OF edition PROMPT "\<Annuler" ;
+	KEY CTRL+Z, "CTRL+Z" ;
+	MESSAGE "Annule la dernière modification faite au contrôle courant du formulaire actif"
+DEFINE BAR _med_redo OF edition PROMPT "\<Rétablir" ;
+	KEY CTRL+R, "CTRL+R" ;
+	MESSAGE "Répète la dernière modification du contrôle courant du formulaire actif"
+DEFINE BAR 3 OF edition PROMPT "\-"
+DEFINE BAR _med_cut OF edition PROMPT "\<Couper" ;
+	KEY CTRL+X, "CTRL+X" ;
+	MESSAGE "Enlève la sélection et la place dans le Presse-papiers"
+DEFINE BAR _med_copy OF edition PROMPT "Co\<pier" ;
+	KEY CTRL+C, "CTRL+C" ;
+	MESSAGE "Copie la sélection dans le Presse-papiers"
+DEFINE BAR _med_paste OF edition PROMPT "C\<oller" ;
+	KEY CTRL+V, "CTRL+V" ;
+	MESSAGE "Colle le contenu du Presse-papiers"
+DEFINE BAR 7 OF edition PROMPT "\-"
+DEFINE BAR _med_slcta OF edition PROMPT "\<Sélectionner tout" ;
+	KEY CTRL+A, "CTRL+A" ;
+	MESSAGE "Sélectionne tout le texte du contrôle courant du formulaire actif"
+
+DEFINE POPUP commandes MARGIN RELATIVE SHADOW COLOR SCHEME 4
+DEFINE BAR 1 OF commandes PROMPT "\<Saisie des commandes" ;
+	SKIP FOR WEXIST("frmOrderEntry") ;
+	MESSAGE "Exécute le formulaire de saisie des commandes"
+DEFINE BAR 2 OF commandes PROMPT "\<Historique de la commande" ;
+	MESSAGE "Exécute le formulaire d'historique des commandes"
+ON SELECTION BAR 1 OF commandes oApp.DoForm("ordentry")
+ON SELECTION BAR 2 OF commandes oApp.DoForm("ordhist")
+
+DEFINE POPUP _qx713dsus MARGIN RELATIVE SHADOW COLOR SCHEME 4
+DEFINE BAR 1 OF _qx713dsus PROMPT "\<Ouvrir une session" ;
+	SKIP FOR !EMPTY(WONTOP()) ;
+	MESSAGE "Ouvrir une session sous un autre nom"
+DEFINE BAR 2 OF _qx713dsus PROMPT "C\<hanger le mot de passe" ;
+	SKIP FOR !EMPTY(WONTOP()) ;
+	MESSAGE "Change le mot de passe de l'utilisateur courant"
+DEFINE BAR 3 OF _qx713dsus PROMPT "\-"
+DEFINE BAR 4 OF _qx713dsus PROMPT "\<Clients" ;
+	SKIP FOR WEXIST("frmCustomers") ;
+	MESSAGE "Ajoute, modifie ou supprime des clients"
+DEFINE BAR 5 OF _qx713dsus PROMPT "C\<atégories" ;
+	SKIP FOR WEXIST("frmCategory") ;
+	MESSAGE "Ajoute, modifie ou supprime des catégories"
+DEFINE BAR 6 OF _qx713dsus PROMPT "\<Employés" ;
+	SKIP FOR WEXIST("frmEmployee") ;
+	MESSAGE "Ajoute, modifie ou supprime des employés"
+DEFINE BAR 7 OF _qx713dsus PROMPT "\<Transporteurs" ;
+	SKIP FOR WEXIST("frmShippers") ;
+	MESSAGE "Ajoute, modifie ou supprime des transporteurs"
+DEFINE BAR 8 OF _qx713dsus PROMPT "\<Fournisseurs" ;
+	SKIP FOR WEXIST("frmSuppliers") ;
+	MESSAGE "Ajoute, modifie ou supprime des fournisseurs"
+DEFINE BAR 9 OF _qx713dsus PROMPT "\<Produits" ;
+	SKIP FOR WEXIST("frmProducts") ;
+	MESSAGE "Ajoute, modifie ou supprime des produits"
+DEFINE BAR 10 OF _qx713dsus PROMPT "\-"
+DEFINE BAR 11 OF _qx713dsus PROMPT "\<L'envers du décor" ;
+	SKIP FOR WEXIST("frmBehindSC") ;
+	MESSAGE "Examine comment cette application a été créée"
+ON SELECTION BAR 1 OF _qx713dsus ;
+	DO _rwd14axav ;
+	IN LOCFILE("..\..\SAMPLES\TASTRADE\TARGET\MENUS\MAIN" ,"MPX;MPR|FXP;PRG" ,"Où est MAIN?")
+ON SELECTION BAR 2 OF _qx713dsus DO FORM chngpswd
+ON SELECTION BAR 4 OF _qx713dsus oApp.DoForm("customer")
+ON SELECTION BAR 5 OF _qx713dsus oApp.DoForm("category")
+ON SELECTION BAR 6 OF _qx713dsus oApp.DoForm("employee")
+ON SELECTION BAR 7 OF _qx713dsus oApp.DoForm("shipper")
+ON SELECTION BAR 8 OF _qx713dsus oApp.DoForm("supplier")
+ON SELECTION BAR 9 OF _qx713dsus oApp.DoForm("product")
+ON SELECTION BAR 11 OF _qx713dsus oApp.DoForm("behindsc")
+
+DEFINE POPUP utilitaire MARGIN RELATIVE SHADOW COLOR SCHEME 4
+DEFINE BAR _MWI_TRACE OF utilitaire PROMPT "A\<nalyse" ;
+	MESSAGE "Affiche la fenêtre Analyse"
+DEFINE BAR _MWI_DEBUG OF utilitaire PROMPT "Dé\<bogage" ;
+	MESSAGE "Affiche la fenêtre Débogage"
+DEFINE BAR _MWI_VIEW OF utilitaire PROMPT "\<Vue" ;
+	MESSAGE "Affiche la fenêtre Vue"
+DEFINE BAR _MWI_CMD OF utilitaire PROMPT "\<Commande" ;
+	KEY CTRL+F2, "Ctrl+F2" ;
+	MESSAGE "Affiche la fenêtre Commande"
+DEFINE BAR 5 OF utilitaire PROMPT "\-"
+DEFINE BAR 6 OF utilitaire PROMPT "\<Suspendre" ;
+	MESSAGE "Interrompt le programme en cours"
+DEFINE BAR _MPR_RESUM OF utilitaire PROMPT "\<Reprendre" ;
+	MESSAGE "Reprend le programme interrompu"
+DEFINE BAR _MPR_CANCL OF utilitaire PROMPT "\<Annuler" ;
+	MESSAGE "Arrête l'exécution du programme en cours"
+DEFINE BAR 9 OF utilitaire PROMPT "\-"
+DEFINE BAR 10 OF utilitaire PROMPT "Reconstruire \<DBC/réindexer" ;
+	SKIP FOR !EMPTY(WONTOP()) ;
+	MESSAGE "Reconstruit la base de données et réindexe toutes les tables"
+ON SELECTION BAR 6 OF utilitaire suspend
+ON SELECTION BAR 10 OF utilitaire DO FORM rebuild
+
+DEFINE POPUP _rwd12m3go MARGIN RELATIVE SHADOW COLOR SCHEME 4
+DEFINE BAR _mst_help OF _rwd12m3go PROMPT "\<Sommaire" ;
+	MESSAGE "Affiche le sommaire de l'aide"
+DEFINE BAR _mst_hpsch OF _rwd12m3go PROMPT "A\<ide sur..." ;
+	MESSAGE "Recherche des rubriques d'aide par mot clé"
+DEFINE BAR 3 OF _rwd12m3go PROMPT "\-"
+DEFINE BAR 4 OF _rwd12m3go PROMPT "\<A propos des Négociants Tasmaniens..." ;
+	MESSAGE "Affiche les informations sur cette application et la configuration du système"
+ON SELECTION BAR 4 OF _rwd12m3go ;
+	DO _rwd14axaw ;
+	IN LOCFILE("..\..\SAMPLES\TASTRADE\TARGET\MENUS\MAIN" ,"MPX;MPR|FXP;PRG" ,"Où est MAIN?")
+
+ON SELECTION MENU _MSYSMENU *-- (c) Microsoft Corporation 1995
+ON SELECTION POPUP fichier 
+
+*       *********************************************************
+*       *                                                         
+*       *                 Code final et procédures                
+*       *                                                         
+*       *********************************************************
+*
+
+*-RELEASE BAR 1 OF Window
+
+IF UPPER(oApp.GetUserLevel()) <> USER_APPDEV_LOC
+  RELEASE PAD Utilities OF _MSYSMENU
+ENDIF
+
+IF !INLIST(UPPER(oApp.GetUserLevel()) , USER_APPDEV_LOC, USER_OPSMGR_LOC)
+  RELEASE BAR 1 OF ADMINBAR_LOC  && Login
+  RELEASE BAR 2 OF ADMINBAR_LOC  && Change Password
+  RELEASE BAR 3 OF ADMINBAR_LOC  && Separator
+ENDIF
+
+
+*       *********************************************************
+*       *                                                         
+*       * _RWD14AXA0  ON SELECTION BAR 9 OF POPUP fichier         
+*       *                                                         
+*       * Procedure Origin:                                       
+*       *                                                         
+*       * From Menu:  MAIN.MPR,            Record:   15           
+*       * Called By:  ON SELECTION BAR 9 OF POPUP fichier         
+*       * Prompt:     Configuration de l'impression               
+*       * Snippet:    1                                           
+*       *                                                         
+*       *********************************************************
+*
+PROCEDURE _rwd14axa0
+LOCAL lcOldError
+lcOldError = ON('ERROR')
+ON ERROR *
+=SYS(1037)
+ON ERROR &lcOldError
+
+
+
+*       *********************************************************
+*       *                                                         
+*       * _RWD14AXAG  ON SELECTION BAR 11 OF POPUP fichier        
+*       *                                                         
+*       * Procedure Origin:                                       
+*       *                                                         
+*       * From Menu:  MAIN.MPR,            Record:   18           
+*       * Called By:  ON SELECTION BAR 11 OF POPUP fichier        
+*       * Prompt:     Revenir à FoxPro                            
+*       * Snippet:    2                                           
+*       *                                                         
+*       *********************************************************
+*
+PROCEDURE _rwd14axag
+*- cleanup will be done in the oApp object's Do method
+CLEAR EVENTS
+
+
+*       *********************************************************
+*       *                                                         
+*       * _RWD14AXAV  ON SELECTION BAR 1 OF POPUP _qx713dsus      
+*       *                                                         
+*       * Procedure Origin:                                       
+*       *                                                         
+*       * From Menu:  MAIN.MPR,            Record:   35           
+*       * Called By:  ON SELECTION BAR 1 OF POPUP _qx713dsus      
+*       * Prompt:     Ouvrir une session                          
+*       * Snippet:    3                                           
+*       *                                                         
+*       *********************************************************
+*
+PROCEDURE _rwd14axav
+LOCAL lcUserLevel
+
+lcUserLevel = oApp.GetUserLevel()
+=oApp.Login()
+
+IF oApp.GetUserLevel() <> lcUserLevel
+  oApp.DoMenu()
+ENDIF
+
+
+
+*       *********************************************************
+*       *                                                         
+*       * _RWD14AXAW  ON SELECTION BAR 4 OF POPUP _rwd12m3go      
+*       *                                                         
+*       * Procedure Origin:                                       
+*       *                                                         
+*       * From Menu:  MAIN.MPR,            Record:   65           
+*       * Called By:  ON SELECTION BAR 4 OF POPUP _rwd12m3go      
+*       * Prompt:     A propos des Négociants Tasmaniens...       
+*       * Snippet:    4                                           
+*       *                                                         
+*       *********************************************************
+*
+PROCEDURE _rwd14axaw
+LOCAL loAboutBox
+
+
+SET CLASSLIB TO about ADDITIVE
+loAboutBox = CREATEOBJECT("AboutBox", ;
+              TASTRADE_LOC, ;
+              VERSION_LOC, ;
+              COPYRIGHT_LOC, ;
+              RIGHTSRSRVD_LOC, ;
+              "BITMAPS\TTRADESM.BMP")
+
+loAboutBox.Show()
+RELEASE CLASSLIB about.vcx

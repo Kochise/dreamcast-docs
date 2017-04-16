@@ -1,0 +1,168 @@
+VERSION 5.00
+Begin VB.UserDocument FirstDoc 
+   ClientHeight    =   2130
+   ClientLeft      =   0
+   ClientTop       =   900
+   ClientWidth     =   4770
+   HScrollSmallChange=   225
+   ScaleHeight     =   2130
+   ScaleWidth      =   4770
+   VScrollSmallChange=   225
+   Begin VB.TextBox txtFirstDoc 
+      Height          =   285
+      Left            =   1800
+      TabIndex        =   4
+      Top             =   1080
+      Width           =   2655
+   End
+   Begin VB.TextBox txtURL 
+      Height          =   285
+      Left            =   1800
+      TabIndex        =   3
+      Text            =   "http://www.microsoft.com/france"
+      Top             =   465
+      Width           =   2775
+   End
+   Begin VB.CommandButton cmdNavigateTo 
+      Caption         =   "Aller à"
+      Height          =   255
+      Left            =   240
+      TabIndex        =   2
+      Top             =   480
+      Width           =   1455
+   End
+   Begin VB.CommandButton cmdShowForm 
+      Caption         =   "Affichage feuille"
+      Height          =   255
+      Left            =   240
+      TabIndex        =   1
+      Top             =   1680
+      Width           =   1455
+   End
+   Begin VB.CommandButton cmdGoNext 
+      Caption         =   "Suivant"
+      Height          =   255
+      Left            =   240
+      TabIndex        =   0
+      Top             =   1095
+      Width           =   1455
+   End
+   Begin VB.Menu mnuHelp 
+      Caption         =   "&?"
+      NegotiatePosition=   3  'Right
+      Begin VB.Menu mnuAbout 
+         Caption         =   "À propos de FirstDoc"
+      End
+   End
+End
+Attribute VB_Name = "FirstDoc"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = True
+Option Explicit
+
+Private Sub cmdGoNext_Click()
+    Dim strPath As String    ' Chaîne à analyser.
+    Dim strAbsPath As String ' Résultat de l'analyse.
+    Dim intI As Integer      ' Compteur de position du caractère.
+    
+    Dim curdir As String
+    curdir = "C:\Program Files\Microsoft Visual Studio\VB98"
+    
+    ' Renvoie le chemin du document ActiveX courant.
+     strPath = Trim$(curdir & "\" & UserDocument.Parent.LocationName)
+    
+    ' Cherche la position du dernier caractère de séparation.
+    For intI = Len(strPath) To 1 Step -1
+        If Mid$(strPath, intI, 1) = "/" Or _
+            Mid$(strPath, intI, 1) = "\" Then Exit For
+    Next intI
+
+    ' Retire le nom du fichier .vbd en cours.
+    strAbsPath = Left$(strPath, intI)
+    
+    ' Affecte la valeur Me à la variable globale, de sorte que
+    ' le document SecndDoc puisse obtenir toutes propriétés de
+    ' type public, ou appeler toutes fonctions de type public.
+    
+    Set gFirstDoc = Me
+
+    ' Va jusqu'au deuxième document ActiveX.
+    UserDocument.Hyperlink.NavigateTo _
+        strAbsPath & "SecndDoc.vbd"
+End Sub
+
+ Private Sub cmdNavigateTo_Click()
+   ' Utilise la méthode NavigateTo de l'objet Hyperlink
+   ' pour aller à l'adresse URL dans txtURL.
+   
+   Hyperlink.NavigateTo txtURL.Text
+ End Sub
+
+Private Sub cmdShowForm_Click()
+   ' Affiche la feuille auxiliaire, et affecte l'adresse URL
+   ' de FirstDoc à la propriété Text.
+   frmAux.txtAux.Text = txtURL.Text
+   frmAux.Show vbModal
+
+End Sub
+
+Private Sub mnuAbout_Click()
+   frmAbout.Show vbModal
+End Sub
+
+Private Sub txtFirstDoc_Change()
+   PropertyChanged
+End Sub
+
+
+
+Public Property Get strDocProp() As String
+   strDocProp = txtFirstDoc.Text
+End Property
+
+Public Property Let strDocProp(ByVal NewStrDocProp As String)
+   txtFirstDoc.Text = NewStrDocProp
+End Property
+Public Property Get txtURLprop() As String
+   txtURLprop = txtURL.Text
+End Property
+
+Public Property Let txtURLprop(ByVal NewTxtURL As String)
+   txtURL.Text = NewTxtURL
+End Property
+
+
+
+
+Private Sub txtURL_Change()
+    PropertyChanged
+End Sub
+
+Private Sub UserDocument_Initialize()
+   Debug.Print "Initialisation de FirstDoc"
+End Sub
+
+Private Sub UserDocument_InitProperties()
+   Debug.Print "Initialisation des propriétés de FirstDoc"
+End Sub
+
+Private Sub UserDocument_ReadProperties(PropBag As PropertyBag)
+   txtFirstDoc.Text = _
+   PropBag.ReadProperty("StrDocProp", _
+        "Bonjour")
+   txtURL.Text = PropBag.ReadProperty("txtURL", "http://www.microsoft.com/france")
+   Debug.Print "Lecture des propriétés"
+End Sub
+
+Private Sub UserDocument_Terminate()
+   Debug.Print "Fin de FirstDoc"
+End Sub
+
+Private Sub UserDocument_WriteProperties(PropBag As PropertyBag)
+   PropBag.WriteProperty "StrDocProp", _
+        txtFirstDoc.Text, "Bonjour"
+   PropBag.WriteProperty "txtURL", txtURL.Text, "http://www.microsoft.com/france"
+   Debug.Print "Ecriture des propriétés"
+End Sub

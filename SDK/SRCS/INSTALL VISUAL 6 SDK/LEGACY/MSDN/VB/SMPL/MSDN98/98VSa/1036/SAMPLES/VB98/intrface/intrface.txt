@@ -1,0 +1,10 @@
+Cet exemple présente un composant ActiveX et une application client simples. Le composant dispose d'une classe publique et de deux classes privées. Le client utilise la classe publique du composant pour demander des pointeurs aux classes privées. Cette démarche indirecte s'avère être très pratique dans les scénarios d'Automation à distance multi-utilisateur pour empêcher les demandes de chaque client de bloquer celles de ses homologues dans l'ordonnancement cloisonné des threads du composant ActiveX. Par exemple :
+
+Le composant "Bar" a deux classes publiques : A et B.
+Le client 1 demande une instance de A. Le composant ActiveX crée une instance de Bar (qui est également un ordonnancement cloisonné à une seule thread) et donne au client 1 un pointeur vers A. Le client 1 demande à A d'exécuter une très longue tâche. La seule thread de cette instance de Bar est maintenant dédiée à cette tâche.
+
+Le client 2 demande maintenant une instance de B. Le composant ActiveX s'aperçoit que B n'a pas été alloué dans la première instance de Bar..., et passe au client 2 un descripteur vers B dans la première instance de Bar. Le client 2 appelle une méthode de B..., et se retrouve bloqué en attendant que la thread termine la tâche que le client 1 lui a demandée d'effectuer dans la classe A.
+
+Cet exemple d'application "Interface" empêche ce type de problème en exposant uniquement une classe "Interface" publique *single* aux classes des exécutants frontaux du composant. Ainsi, chaque demande de client pour la classe Interface force le composant ActiveX à créer une nouvelle instance (ordonnancement/thread) du composant. Cela signifie que chaque client aura sa propre thread..., et ne pourra donc pas bloquer ses homologues et vice versa. Cet exemple montre également la manière dont les pointeurs peuvent être passés et utilisés dans les objets.
+ 
+ 

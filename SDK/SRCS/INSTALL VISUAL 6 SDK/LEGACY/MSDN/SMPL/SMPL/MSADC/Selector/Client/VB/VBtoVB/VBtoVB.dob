@@ -1,0 +1,193 @@
+VERSION 5.00
+Begin VB.UserDocument VbtoVBdoc 
+   ClientHeight    =   4050
+   ClientLeft      =   165
+   ClientTop       =   735
+   ClientWidth     =   9165
+   HScrollSmallChange=   15
+   ScaleHeight     =   4050
+   ScaleWidth      =   9165
+   VScrollSmallChange=   15
+   Begin VB.Frame Frame2 
+      Caption         =   "Database functions"
+      Height          =   2655
+      Left            =   240
+      TabIndex        =   1
+      Top             =   1200
+      Width           =   8775
+      Begin VB.TextBox txtServer 
+         Height          =   375
+         Left            =   3840
+         TabIndex        =   8
+         Top             =   600
+         Width           =   4455
+      End
+      Begin VB.ListBox List1 
+         Height          =   1620
+         Left            =   360
+         TabIndex        =   7
+         ToolTipText     =   "This list contains the results of the GetRecordset method in our Visual Basic business object"
+         Top             =   360
+         Width           =   1932
+      End
+      Begin VB.TextBox txtGetRecordset 
+         Height          =   372
+         Left            =   3840
+         TabIndex        =   4
+         Top             =   1320
+         Width           =   4452
+      End
+      Begin VB.TextBox txtConnect 
+         Height          =   372
+         Left            =   3840
+         TabIndex        =   3
+         Top             =   960
+         Width           =   4452
+      End
+      Begin VB.CommandButton cmdGetRecordset 
+         Caption         =   "Run"
+         Height          =   372
+         Left            =   3840
+         TabIndex        =   2
+         ToolTipText     =   "Click here to get a recordset using the SQL to the right of this button"
+         Top             =   1920
+         Width           =   1572
+      End
+      Begin VB.Label Label2 
+         Caption         =   "Enter valid Server, Connect, and Query properties and click Run"
+         Height          =   255
+         Left            =   3840
+         TabIndex        =   12
+         Top             =   360
+         Width           =   4695
+      End
+      Begin VB.Label Label5 
+         Caption         =   "Query:"
+         Height          =   255
+         Left            =   2640
+         TabIndex        =   10
+         ToolTipText     =   "Change this Connect string to the DSN, UID, and PWD of your database"
+         Top             =   1320
+         Width           =   855
+      End
+      Begin VB.Label Label4 
+         Caption         =   "Server:"
+         Height          =   255
+         Left            =   2640
+         TabIndex        =   9
+         ToolTipText     =   "Change this Connect string to the DSN, UID, and PWD of your database"
+         Top             =   600
+         Width           =   855
+      End
+      Begin VB.Label Label1 
+         Caption         =   "Connect:"
+         Height          =   255
+         Left            =   2640
+         TabIndex        =   5
+         ToolTipText     =   "Change this Connect string to the DSN, UID, and PWD of your database"
+         Top             =   960
+         Width           =   1095
+      End
+   End
+   Begin VB.Frame Frame1 
+      Caption         =   "Functionality Test"
+      Height          =   975
+      Left            =   240
+      TabIndex        =   0
+      Top             =   120
+      Width           =   8772
+      Begin VB.CommandButton cmdTest 
+         Caption         =   "Test"
+         Height          =   372
+         Left            =   240
+         TabIndex        =   6
+         ToolTipText     =   "Click here to test the functionality of the VB business object"
+         Top             =   360
+         Width           =   1572
+      End
+      Begin VB.Label Label7 
+         Caption         =   "Tests Minimum Functionality of Custom Business Object"
+         Height          =   375
+         Left            =   2400
+         TabIndex        =   11
+         Top             =   480
+         Width           =   4335
+      End
+   End
+   Begin VB.Menu mnuOptions 
+      Caption         =   "Options"
+      NegotiatePosition=   1  'Left
+      Begin VB.Menu mnuOptionsClear 
+         Caption         =   "Clear List box"
+      End
+      Begin VB.Menu mnuHelpAbout 
+         Caption         =   "About this VB Document object"
+      End
+   End
+End
+Attribute VB_Name = "VbtoVBdoc"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = True
+Option Explicit
+Dim ds As New RDS.DataSpace
+Dim bo As Object  'custom business object
+
+Private Sub UserDocument_Initialize()
+  On Error GoTo ehUserDocument_Initialize
+  txtServer.Text = "http://"
+  txtConnect.Text = "Dsn=AdvWorks;Uid=;Pwd=;"
+  txtGetRecordset.Text = "Select ProductName from Products"
+  Exit Sub
+ehUserDocument_Initialize:
+  MousePointer = vbNormal
+  MsgBox Err.Description
+End Sub
+
+Private Sub cmdTest_Click()
+  On Error GoTo ehcmdTest_Click
+  MousePointer = vbHourglass
+  Set bo = ds.CreateObject("VbBusObj.VbBusObjCls", CStr(txtServer.Text))
+  MsgBox bo.Test
+  MousePointer = vbNormal
+  Exit Sub
+ehcmdTest_Click:
+  MousePointer = vbNormal
+  MsgBox Err.Description
+End Sub
+
+Private Sub cmdGetRecordset_Click()
+  'Populates ListBox with data from Recordset
+  On Error GoTo ehcmdGetRecordset_Click
+  MousePointer = vbHourglass
+  Set bo = ds.CreateObject("VbBusObj.VbBusObjCls", CStr(txtServer.Text))
+  Dim objADORs As Object
+  Set objADORs = bo.GetRecordset(CStr(txtConnect.Text), CStr(txtGetRecordset.Text))
+  List1.Clear
+  While Not objADORs.EOF
+    List1.AddItem objADORs(0).Value
+    objADORs.MoveNext
+  Wend
+  MousePointer = vbNormal
+  Exit Sub
+ehcmdGetRecordset_Click:
+  MousePointer = vbNormal
+  MsgBox Err.Description
+End Sub
+
+Private Sub mnuHelpAbout_Click()
+  Dim strApp As String, strOtherStuff As String
+  Dim sDataTime As String, sVersion As String
+  
+  sVersion = CStr(App.Major) & "." & CStr(App.Minor) & "." & CStr(App.Revision)
+  strApp = App.Title & "  v" & sVersion
+  strOtherStuff = "Powered By Microsoft Remote Data Service" & vbCrLf
+  
+  MsgBox strOtherStuff, vbOKOnly, strApp
+End Sub
+
+Private Sub mnuOptionsClear_Click()
+  'this will be available under the options menu in ie4
+  List1.Clear
+End Sub

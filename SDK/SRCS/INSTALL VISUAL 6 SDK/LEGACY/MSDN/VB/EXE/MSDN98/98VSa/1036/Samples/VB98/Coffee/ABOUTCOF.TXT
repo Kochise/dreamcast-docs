@@ -1,0 +1,100 @@
+
+========>
+========> Exemple d'application Coffee
+========>
+
+(Coffee2.vbp, CoffWat2.vbp, MTCoffee.vbp, XTimers.vbp)
+
+NOTE: Pour un meilleur affichage dans le Bloc-notes, cochez l'option Retour à la ligne automatique, accessible à partir du menu Edition.
+ 
+L'exemple Coffee comprend un client, CoffWat2, et deux composants ActiveX (serveurs OLE): Coffee2 et MTCoffee. Ces trois projets illustrent les procédures suivantes:
+
+· Notifications asynchrones à l'aide d'événements (Coffee2).
+· Notifications asynchrones à l'aide de méthodes de rappel (Coffee2).
+· Traitement multithread (MTCoffee).
+
+XTimers.vbp est un projet d'aide fournissant une minuterie en code seul qui sera utilisée par Coffee2 et MTCoffee.
+
+Ceci est une version complète du projet développé dans les procédures pas à pas du chapitre 3, "Création d'un composant EXE ActiveX", de la partie "Création de composants ActiveX". Pour plus d'informations sur les notifications asynchrones et le traitement multithread, reportez-vous au chapitre 8, "Construction de composants de code".
+
+Fichier		Description
+
+CoffWat2.vbp	Projet de client CoffeeWatch.
+CWMod1.bas	Code de démarrage pour le projet.
+CWForm1.frm	Feuille principale du client.
+ICoffNot.cls	Interface ICoffeeNotify utilisée
+		pour les méthodes de rappel.
+CWNotMe.cls	Objet NotifyMe implémentant
+		l'interface ICoffeeNotify pour
+		recevoir les rappels.
+CWThread.frm	Feuille du client illustrant le
+		traitement multithread.
+CWCofTrk.cls	Objet CoffeeTracker utilisé pour
+		attendre la fin des événements
+		de l'objet Coffee soumis à un
+		traitement multithread.
+Coffee2.vbp	Projet du composant Coffee2.
+Co2Cmon.cls	Classe CoffeeMonitor utilisée
+		pour illustrer les notifications
+		asynchrones à l'aide d'événements.
+Co2Conn.cls	Classe Connector permettant à
+		plusieurs clients de partager un
+		objet CoffeeMonitor.
+Co2CMon2.cls	Classe CoffeeMonitor2 utilisée
+		pour illustrer les notifications
+		asynchrones à l'aide de méthodes
+		de rappel.
+Co2Conn2.cls	Classe Connector2 permettant à
+		plusieurs clients de partager un
+		objet CoffeeMonitor2.
+Co2Mod1.bas	Maintient une référence aux objets
+		partagés CoffeeMonitor et
+		CoffeeMonitor2.
+MTCoffee.vbp	Projet du composant MTCoffee.
+MTCoffee.cls	Objet Coffee soumis à un traitement
+		multithread.
+MTCMod1.bas	Module standard illustrant
+		l'instanciation de données globales.
+XTimers.vbp	Projet de la minuterie de rappel.
+XTimer.cls	Objet XTimer.
+XTimerS.bas	Module de gestion pour l'objet XTimer.
+AboutCof.txt	Ce document.
+
+Exécution
+
+Cet exemple d'application ne contient pas beaucoup de code mais il est assez complexe à mettre en oeuvre car il illustre les composants out-of-process. Pour le débogage, un composant out-of-process doit être exécuté dans une copie différente de Visual Basic.
+
+L'exemple illustre également les fonctionnalités (traitement multithread et minuteries en code seul) ne pouvant être abordées par ailleurs, ou dont l'exécution peut être dangereuse dans l'environnement de développement.
+
+1. Chargez XTimers.vbp dans Visual Basic. À partir du menu Fichier, cliquez sur Créer XTimers.dll pour compiler le projet en un fichier .dll.
+
+IMPORTANT: NE PAS exécuter XTimers dans l'environnement de développement à ce moment. Le projet XTimers doit être compilé car il utilise des API de Windows pour un objet de minuterie en code seul.
+
+2. Chargez le projet MTCoffee dans Visual Basic. À partir du menu Projet, cliquez sur Références pour ouvrir la boîte de dialogue Références. Cliquez ensuite sur XTimers, puis sur OK, pour définir une référence à la DLL compilée.
+
+3. Dans le menu Fichier, cliquez sur Créer MTCoffee.exe pour compiler le projet en un fichier .exe.
+
+IMPORTANT: NE PAS exécuter le projet MTCoffee dans l'environnement de développement à ce moment. Vous devez créer le projet car l'environnement de développement ne peut gérer des threads d'exécution multiples; si vous exécutez le projet MTCoffee dans Visual Basic, il n'affichera pas le comportement du traitement multithread.
+
+4. Chargez le projet Coffee2 dans Visual Basic. À partir du menu Projet, cliquez sur Références pour ouvrir la boîte de dialogue Références. Cliquez ensuite sur XTimers, puis sur OK, pour définir une référence à la DLL compilée.
+
+5. Appuyez sur CRTL+F5 pour exécuter le projet Coffee2.
+
+Lorsque vous exécutez un projet de composant out-of-process, utilisez CRTL+F5 au lieu de F5 pour vous assurer que toutes les erreurs de compilation sont connues avant que le composant ne fournisse des objets au client. Pour plus d'informations, reportez-vous à la section "Création d'un composant Exe ActiveX" des Manuels en ligne.
+
+6. Démarrez une autre instance de Visual Basic, et chargez le projet CoffWat2.vbp. À partir du menu Projet, cliquez sur Références pour ouvrir la boîte de dialogue Références. Cliquez sur Coffee2 et MTCoffee, puis sur OK, pour définir les références au projet Coffee2 et au fichier MTCoffee.EXE compilé.
+
+7. Appuyez sur F5 pour exécuter le projet.
+ 
+Après avoir exécuté l'exemple d'application et observé le comportement de MTCoffee lorsqu'il alloue une thread séparée pour chaque objet Coffee, il peut être intéressant pour vous de recompiler MTCoffee après avoir modifié le traitement multithread en threads semblables à des bobines (l'option permettant cette opération se trouve dans la zone Mode d'exécution autonome de l'onglet Général de la boîte de dialogue Propriétés du projet. Lorsque vous utilisez les threads à la manière d'une bobine, vous pouvez observer le blocage et le partage des données globales entre les objets sur la même thread.
+
+Vous pouvez également compiler Coffee2.exe et CoffWat2.exe, puis exécuter des clients multiples pour observer le partage des objets de notification asynchrone, CoffeeMonitor et CoffeeMonitor2.
+
+Avec des clients multiples, les threads à la manière d'une bobine signifient le blocage et le partage des données entre les objets Coffee utilisés par différents clients.
+
+Pour comprendre ce qui se passe dans cet exemple, reportez-vous à la section "Construction de composants de code", de la partie "Création des composants ActiveX" des Manuels en ligne.
+
+Pour ajouter des documents comme celui-ci à des projets Visual Basic, cochez l'option Ajouter comme document associé dans la boîte de dialogue Ajouter un fichier du menu Projet.
+
+
+

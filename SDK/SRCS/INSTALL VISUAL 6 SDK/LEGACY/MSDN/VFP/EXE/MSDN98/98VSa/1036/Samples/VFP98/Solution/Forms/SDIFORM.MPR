@@ -1,0 +1,170 @@
+*       *********************************************************
+*       *                                                         
+*       * 07/15/98             SDIFORM.MPR              01:15:46  
+*       *                                                         
+*       *********************************************************
+*       *                                                         
+*       * Nom de l'auteur                                         
+*       *                                                         
+*       * Copyright (C) 1998 Nom de la société                    
+*       * Adresse                                                 
+*       * Ville,     Code posta                                   
+*       * Pays                                              
+*       *                                                         
+*       * Description:                                            
+*       * Ce programme a été généré automatiquement par GENMENU.     
+*       *                                                         
+*       *********************************************************
+
+* To attach this menu to your Top-Level form, 
+* call it from the Init event of the form:
+
+* Syntax: DO <mprname> WITH <oFormRef> [,<cMenuname>|<lRename>][<lUniquePopups>]
+
+*	oFormRef - form object reference (THIS)
+*	cMenuname - name for menu (this is required for Append menus - see below)
+*	lRename - renames Name property of your form
+*	lUniquePopups - determines whether to generate unique ids for popup names
+			
+* 	example:
+
+*	PROCEDURE Init
+*		DO mymenu.mpr WITH THIS,.T.
+*	ENDPROC
+
+* Use the optional 2nd parameter if you plan on running multiple instances
+* of your Top-Level form. The preferred method is to create an empty string
+* variable and pass it by reference so you can receive the form name after
+* the MPR file is run. You can later use this reference to destroy the menu.
+
+*	PROCEDURE Init
+*		LOCAL cGetMenuName
+*		cGetMenuName = ""
+*		DO mymenu.mpr WITH THIS, m.cGetMenuName
+*	ENDPROC
+
+* The logical lRename parameter will change the name property of your 
+* form to the same name given the menu and may cause conflicts in your 
+* code if you directly reference the form by name.
+
+* You will also need to remove the menu when the form is destroyed so that it does 
+* not remain in memory unless you wish to reactivate it later in a new form.
+
+* If you passed the optional lRename parameter as .T. as in the above example, 
+* you can easily remove the menu in the form's Destroy event as shown below.
+* This strategy is ideal when using multiple instances of Top-Level forms.
+
+*	example:
+
+*	PROCEDURE Destroy
+*		RELEASE MENU (THIS.Name) EXTENDED
+*	ENDPROC
+
+* Using Append/Before/After location options:
+
+*   You might want to append a menu to an existing Top-Level form by setting 
+*   the Location option in the General Options dialog. In order to do this, you 
+*   must pass the name of the menu in which to attach the new one. The second
+*   parameter is required here. If you originally created the menu with the lRename 
+*   parameter = .T., then you can update the menu with code similar to the following:
+
+*	example:
+
+*	DO mymenu2.mpr WITH THISFORM,THISFORM.name
+*
+* Using lUniquePopups:
+
+*   If you are running this menu multiple times in your application, such as in multiple 
+*   instances of the same top-level form, you should pass .T. to the lUniquePopups 
+*   parameter so that unique popup names are generated to avoid possible conflicts.
+
+*	example:
+
+*	PROCEDURE Init
+*		DO mymenu.mpr WITH THIS,.T.,.T.
+*	ENDPROC
+*
+* Note: Parm4-Parm9 are not reserved and freely available for use with your menu code.
+*
+
+LPARAMETERS oFormRef, getMenuName, lUniquePopups, parm4, parm5, parm6, parm7, parm8, parm9
+LOCAL cMenuName, nTotPops, a_menupops, cTypeParm2, cSaveFormName
+IF TYPE("m.oFormRef") # "O" OR ;
+  LOWER(m.oFormRef.BaseClass) # 'form' OR ;
+  m.oFormRef.ShowWindow # 2
+	MESSAGEBOX([Ce menu ne peut être appelé que depuis un formulaire de premier niveau. Vérifiez que la propriété ShowWindow de votre formulaire a la valeur 2. Lisez la section d'en-tête du fichier MPR du menu pour plus d'informations.])
+	RETURN
+ENDIF
+m.cTypeParm2 = TYPE("m.getMenuName")
+m.cMenuName = SYS(2015)
+m.cSaveFormName = m.oFormRef.Name
+IF m.cTypeParm2 = "C" OR (m.cTypeParm2 = "L" AND m.getMenuName)
+	m.oFormRef.Name = m.cMenuName
+ENDIF
+IF m.cTypeParm2 = "C" AND !EMPTY(m.getMenuName)
+	m.cMenuName = m.getMenuName
+ENDIF
+DIMENSION a_menupops[4]
+IF TYPE("m.lUniquePopups")="L" AND m.lUniquePopups
+	FOR nTotPops = 1 TO ALEN(a_menupops)
+		a_menupops[m.nTotPops]= SYS(2015)
+	ENDFOR
+ELSE
+	a_menupops[1]="aliments"
+	a_menupops[2]="buffalowin"
+	a_menupops[3]="animaux"
+	a_menupops[4]="sports"
+ENDIF
+
+
+*       *********************************************************
+*       *                                                         
+*       *                    Définition du menu                   
+*       *                                                         
+*       *********************************************************
+*
+
+DEFINE MENU (m.cMenuName) IN (m.oFormRef.Name) BAR
+
+DEFINE PAD _rwi02pg9q OF (m.cMenuName) PROMPT "\<Aliments" COLOR SCHEME 3 ;
+	KEY ALT+A, ""
+DEFINE PAD _rwi02pg9r OF (m.cMenuName) PROMPT "A\<nimaux" COLOR SCHEME 3 ;
+	KEY ALT+N, ""
+DEFINE PAD _rwi02pg9s OF (m.cMenuName) PROMPT "\<Sports" COLOR SCHEME 3 ;
+	KEY ALT+S, ""
+ON PAD _rwi02pg9q OF (m.cMenuName) ACTIVATE POPUP (a_menupops[1])
+ON PAD _rwi02pg9r OF (m.cMenuName) ACTIVATE POPUP (a_menupops[3])
+ON PAD _rwi02pg9s OF (m.cMenuName) ACTIVATE POPUP (a_menupops[4])
+
+DEFINE POPUP (a_menupops[1]) MARGIN RELATIVE SHADOW COLOR SCHEME 4
+DEFINE BAR 1 OF (a_menupops[1]) PROMPT "Bananes"
+DEFINE BAR 2 OF (a_menupops[1]) PROMPT "Sauce"
+DEFINE BAR 3 OF (a_menupops[1]) PROMPT "Ailes de poulet"
+DEFINE BAR 4 OF (a_menupops[1]) PROMPT "\-"
+DEFINE BAR 5 OF (a_menupops[1]) PROMPT "Pizza"
+DEFINE BAR 6 OF (a_menupops[1]) PROMPT "Expresso"
+ON BAR 3 OF (a_menupops[1]) ACTIVATE POPUP (a_menupops[2])
+
+DEFINE POPUP (a_menupops[2]) MARGIN RELATIVE SHADOW COLOR SCHEME 4
+DEFINE BAR 1 OF (a_menupops[2]) PROMPT "Épicé"
+DEFINE BAR 2 OF (a_menupops[2]) PROMPT "Moyen"
+DEFINE BAR 3 OF (a_menupops[2]) PROMPT "Doux"
+DEFINE BAR 4 OF (a_menupops[2]) PROMPT "Ail"
+
+DEFINE POPUP (a_menupops[3]) MARGIN RELATIVE SHADOW COLOR SCHEME 4
+DEFINE BAR 1 OF (a_menupops[3]) PROMPT "Chiens"
+DEFINE BAR 2 OF (a_menupops[3]) PROMPT "Chats"
+DEFINE BAR 3 OF (a_menupops[3]) PROMPT "Éléphants"
+DEFINE BAR 4 OF (a_menupops[3]) PROMPT "Cochons"
+
+DEFINE POPUP (a_menupops[4]) MARGIN RELATIVE SHADOW COLOR SCHEME 4
+DEFINE BAR 1 OF (a_menupops[4]) PROMPT "Tennis"
+DEFINE BAR 2 OF (a_menupops[4]) PROMPT "Équitation"
+DEFINE BAR 3 OF (a_menupops[4]) PROMPT "Cyclisme"
+
+ACTIVATE MENU (m.cMenuName) NOWAIT
+
+IF m.cTypeParm2 = "C"
+	m.getMenuName = m.cMenuName
+	m.oFormRef.Name = m.cSaveFormName 
+ENDIF
