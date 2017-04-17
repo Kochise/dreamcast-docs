@@ -1,0 +1,129 @@
+----------------------------------------------------------------------
+dls2tb Revision 1.78 05/27/98
+
+This is a command line DOS utility that will transfer data from
+a MMA/DLS Level 1 instrument collection file to a Sega ToneBank
+file. 
+
+All instruments in the collection will be transferred to a tone bank 
+composed of single layer instruments. The instruments are transferred
+in the order loaded to the slots in the tone bank. If the midiFile or 
+midiAll options are used only those patches from the indicated MIDI
+file(s) will be transferred.
+
+When the tone bank is written messages are displayed that indicate
+which MIDI patch has been placed into each slot of the tone bank.
+
+These messages may be output to a text file with the use of the "log"
+command line argument.
+
+Currently the program numbers in the MIDI file will have to be changed 
+to reflect this re-mapping in order for the file to play back correctly.
+
+A single anti-log velocity translation table is written into the tone bank to 
+provide proper scaling of velocity values at play time.
+
+Compression control of the bank is available through the commands
+adpcmAll, adpcmNone and adpcmByFlag. If the by flag option is selected
+only those regions with the allow compression box checked in the DM Producer
+wave properties dialog will be compressed. 
+
+All looping samples that are to be ADPCM compressed must have the loop
+points placed on zero crossings.
+----------------------------------------------------------------------
+Usage:
+
+
+dls2tb inFileName outFileName	[adpcmAll|adpcmNone|adpcmByFlag][mmaTuning][log]
+								[silent][midiFile midifile.mid | midiAll] [mttFile]
+
+
+All command line args to this utility are not case sensitive.
+------------------------------------------------------------------------------
+Explanation of the arguments.
+------------------------------------------------------------------------------
+Argument:       adpcmNone
+Argument:       adpcmAll
+Argument:       adpcmByFlag
+
+Default:        No compression (adpcmNone)
+
+Note:			A looping sample that is to be compressed with the ADPCM
+				algorithm must have the loop points placed on waveform
+				zero crossings to prevent severe audio artifacts from
+				being produced in the playback process.           
+
+Explanations:
+
+AdpcmAll:		This will cause all 16 bit samples in the DLS file to be 
+				compressed using the Yamaha ADPCM compression codec.
+
+AdpcmByFlag:	This will cause all samples (regions) with the allow ADPCM 
+				compression of all samples that have the "Allow Sample 
+				Compression" box checked (see DM Producer - Wave - Properties).
+
+AdpcmNone:		This will prevent compression of sample data.
+------------------------------------------------------------------------------
+Argument:       log
+Default:        No log file
+Explanation:
+
+Causes the utility to produce a log file with the same name as the output
+file but with a .log extension.
+
+This file contains program change re-mapping information as well as any 
+error messages that are produced.
+
+If errors are detected in a MIDI file they will also be placed into the
+log.
+------------------------------------------------------------------------------
+Argument:       silent
+Default:        verbose (prints message on the screen)
+Explanation:
+
+This will cause the program not to write a banner or messages on the 
+screen to allow use in make or build scripts.
+------------------------------------------------------------------------------
+Argument:       mmaTuning
+Default:        Yamaha tuning standard
+Explanation:
+
+The Yamaha tuning standard specifies middle C to be MIDI note C3
+where as the MMA standard specifies middle C to be C4.
+
+This argument allows the selection of the appropriate standard
+which will cause the root pitches of the samples to be altered.
+------------------------------------------------------------------------------
+Argument:       midiFile midifile.mid
+				midiAll
+Default:        off
+Explanation:
+
+This requires a SMF (standard MIDI file) with the SAME NAME as the outFile
+(except with a .mid extension).  This file must be a Type 0 file.
+
+The midiFile arg allows the user to select the patches form the named MIDI file.
+The midiAll arg selects the patches from *.mid in the current working directory.
+
+The file(s) will be parsed and the bank controller lsb (cc32) and program change
+information extracted.
+
+In order for this to work there MUST be a cc32/pg pair for every channel
+containing note events. The cc32 must preceed the program change and
+the pair of events should preceed the first note event on the channel.
+
+If this is not the case the errors will be output and conversion will
+proceed, in the case of errors in the MIDI file all DLS patches will be
+transferred to the Tonebank.
+
+This allows the musical content producer to have a single DLS bank that contains
+all of the tone data for the whole games soundtrack and to extract only that data
+that is needed for a given sequence file to play properly.
+------------------------------------------------------------------------------
+Argument:       mttFile
+Default:        file is not written
+Explanation:
+
+Causes the tool to write a MIDI translation table file for use by the driver, 
+this feature is not implemented on the wrapper or driver level.
+------------------------------------------------------------------------------

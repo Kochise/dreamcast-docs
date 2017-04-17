@@ -1,0 +1,137 @@
+<HTML STYLE="color: #E7CE4A; font-family: Arial; font-size: 18; width:400px; height:215px">
+
+<!--
+ ********************************************************************
+ * Copyright (c) 1999 Microsoft Corporation
+ *
+ * msgbox.dlg
+ *
+ * Description
+ *   HTML page for ieui replaceable UI - standard message box. 
+ *
+ * Dialog parameters
+ *   string with embedded nulls of the form
+ *     icon_gif_file\0message_text\0btn1_caption\0btn2_caption\0btn3_caption
+ *   icon_gif_file      gif file in the DLL to use for icon
+ *   message_text       text to display in body of message box
+ *   btn1_caption       text of first button
+ *   btn2_caption       text of second button (optional if only 1 btn)
+ *   btn3_caption       text of third button (optional if only 1 or 2 btns)
+ *
+ * Dialog returns
+ *   on user canceling dialog
+ *     0
+ *   on user selecting a button
+ *     string of the text of the button selected
+ ********************************************************************
+-->
+
+<HEAD>
+
+<META http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+
+<SCRIPT LANGUAGE="JavaScript">
+
+  // Trap any possible scripting errors and ignore them...
+  window.onerror = HandleError
+
+  function HandleError(message, url, line)
+  {
+    /* To debug, uncomment this
+    var L_Dialog_ErrorMessage = "An error has occured in this dialog.";
+    var L_ErrorNumber_Text = "Error: ";
+
+    var str = L_Dialog_ErrorMessage + "\n\n" 
+        + L_ErrorNumber_Text + line + "\n"
+        + message;
+
+    alert (str);
+    */
+
+    return true;
+  }
+
+  function OnDialogLoad()
+  {
+    // get the arguments
+    var arrArgs = window.dialogArguments.split("\0");
+
+    Message.innerText = arrArgs[1];
+    
+    // set the default return value
+    window.returnValue = 0;
+
+    Icon.src = arrArgs[0];
+
+    for (j=2,k=1;j<arrArgs.length;j++,k++) 
+    {
+      var text = arrArgs[j];
+      if (text.length > 0)
+      {
+        eval("btn"+k+".value='"+text+"'");
+        eval("btn"+k+".style.visibility='visible'");
+      }
+    }
+
+    btn1.focus();
+  }
+
+  function BtnHandler()
+  {
+    var who=event.srcElement;
+    window.returnValue=who.value;
+    window.close();
+  }
+
+</SCRIPT>
+
+</HEAD>
+
+<BODY SCROLL=No STYLE="background-color:#424242; margin-left:0px; margin-top:0px; margin-right:0px; margin-bottom:0px;" onLoad="OnDialogLoad()">
+
+  <STYLE>
+    H1 { color: #424242; font-size: 1; }
+    .btn {font: bold; font-family:Arial, san serif; font-size:12pt; color:black; text-align:center }
+  </STYLE>
+
+  <DIV STYLE="position:absolute; top:0; left:0; width=100%; height=100%;">
+    <TABLE Width=100% Height=100% Border=0 cellSpacing=0 cellPadding=0>
+      <TR>
+        <TD Width=16px Height=16px background="PanelNE.gif"></TD>
+        <TD Height=16px background="PanelN.gif"></TD>
+        <TD Width=16px Height=16px background="PanelNW.gif"></TD>
+      </TR>
+      <TR>
+        <TD Width=16px background="PanelE.gif"></TD>
+        <TD><H1>SP</H1></TD>
+        <TD Width=16px background="PanelW.gif"></TD>
+      </TR>
+      <TR>
+        <TD Width=16px Height=16px background="PanelSE.gif"></TD>
+        <TD Height=16px background="PanelS.gif"></TD>
+        <TD Width=16px Height=16px background="PanelSW.gif"></TD>
+      </TR>
+    </TABLE>
+  </DIV>
+
+  <img id=Icon STYLE="position:absolute; left: 20; top:20;" src="" width="65" height="58">
+
+  <TEXTAREA id=Message tabindex=-1 readonly=1 STYLE="border:0; overflow:hidden; position:absolute; left:95; top:20; width:285px; height:130px; font-family:Arial; font-size:18; background-color:#424242; color: #E7CE4A;">
+  </TEXTAREA>
+
+  <HR ID=DividerTop NOSHADE STYLE="position:absolute; left:20; top:151; width:360; height:2; color:#323232;">
+  <HR ID=DividerBtm NOSHADE STYLE="position:absolute; left:20; top:153; width:360; height:2; color:#808080;">
+
+  <DIV STYLE="position:absolute; left: 20; top:158;">
+    <TABLE width=100% cellpadding=5>
+      <TD id=buttons align=left>
+        <INPUT TYPE=Button id=btn1 VALUE="blank" CLASS=btn STYLE="visibility:hidden;" onClick="BtnHandler()" tabindex=1>&nbsp;
+        <INPUT TYPE=Button id=btn2 VALUE="blank" CLASS=btn STYLE="visibility:hidden;" onClick="BtnHandler()" tabindex=2>&nbsp;
+        <INPUT TYPE=Button id=btn3 VALUE="blank" CLASS=btn STYLE="visibility:hidden;" onClick="BtnHandler()" tabindex=3>
+      </TD>
+    </TABLE>
+  </DIV>
+
+</BODY>
+
+</HTML>

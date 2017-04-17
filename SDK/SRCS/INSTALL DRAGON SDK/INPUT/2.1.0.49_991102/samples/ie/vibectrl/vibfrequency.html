@@ -1,0 +1,114 @@
+<html>
+
+<head>
+
+<title>Vibration Pack Frequency</title>
+
+<script language=jscript>
+var VibeCtrl;
+
+function OnTimer(nPort, nDevice, fFreq, fMaxFreq)
+{
+    if (fFreq > fMaxFreq)
+    {
+        VibeCtrl.Vibrate(nPort, nDevice, 1, true, "constant", 0, "forward", fMaxFreq, 0);
+        divFreq.innerText = "";
+        return;
+    }
+
+    divFreq.innerText = "Current frequency is " + fFreq + " hz";
+    if (!VibeCtrl.Vibrate(nPort, nDevice, 1, true, "constant", 7, "forward", fFreq, 0))
+    {
+        alert("Could not vibrate on specified vibration pack");
+        divFreq.innerText = "";
+        return;
+    }
+
+    fFreq += 0.5;
+    setTimeout("OnTimer(" + nPort + "," + nDevice + "," + fFreq + "," + fMaxFreq + ");", 1000);
+}
+
+</script>
+
+<script language=jscript for=window event="onerror(strText, strUrl, nLine)">
+    alert("Script Error\n" + strText + "\nLine: " + nLine);
+    return true;
+</script>
+
+<script language=jscript for=window event="onload()">
+   VibeCtrl = new ActiveXObject("VibeCtrl.VibeCtrl");
+</script>
+
+<script language=jscript for=btnTest event="onclick()">
+    divFreq.innerText = "";
+
+    VibeCtrl.Scan();
+
+    var nPort;
+    var nDevice;
+
+    for (nPort = 1; nPort <= 4; nPort++)
+    {
+        nDevice = 1;
+        if (rbDevice[(nPort - 1) * 2].checked)  
+        {
+            break;
+        }
+        nDevice = 2;
+        if (rbDevice[(nPort - 1) * 2 + 1].checked)  
+        {
+            break;
+        }
+    }
+
+    if (!VibeCtrl.IsPluggedIn(nPort, nDevice))
+    {
+        alert("Vibration pack not plugged into specified port/device");
+        return;
+    }
+
+    if (!VibeCtrl.HasContinuousVibrationCapability(nPort, nDevice, 1))
+    {
+        alert("Vibration pack does not have continuous vibration capability");
+        return;
+    }
+
+    if (!VibeCtrl.SetAutoStopTime(nPort, nDevice, 1, 2.0))
+    {
+        alert("Auto stop time could not be set");
+        return;
+    }
+
+    var fMinFreq = VibeCtrl.GetMinimumFrequency(nPort, nDevice, 1);
+    var fMaxFreq = VibeCtrl.GetMaximumFrequency(nPort, nDevice, 1);
+
+    setTimeout("OnTimer(" + nPort + "," + nDevice + "," + fMinFreq + "," + fMaxFreq + ");", 1);
+</script>
+
+</head>
+
+<body>
+
+Choose a vibration pack:
+<br>
+<input type=radio name=rbDevice checked>Port 1 Device 1
+<input type=radio name=rbDevice>Port 1 Device 2
+<br>
+<input type=radio name=rbDevice>Port 2 Device 1
+<input type=radio name=rbDevice>Port 2 Device 2
+<br>
+<input type=radio name=rbDevice>Port 3 Device 1
+<input type=radio name=rbDevice>Port 3 Device 2
+<br>
+<input type=radio name=rbDevice>Port 4 Device 1
+<input type=radio name=rbDevice>Port 4 Device 2
+<br>
+<br>
+<input type=button id=btnTest value="Test">
+<br>
+<br>
+<div id=divFreq></div>
+
+</body>
+
+</html>

@@ -1,0 +1,119 @@
+<html>
+
+<head>
+
+<title>Vibration Pack Variable Intensity</title>
+
+<script language=jscript>
+var VibeCtrl;
+
+function OnTimer(nPort, nDevice, fFreq, nIntensity)
+{
+    if (nIntensity > 7)
+    {
+        VibeCtrl.Vibrate(nPort, nDevice, 1, true, "constant", 0, "forward", fFreq, 0);
+        divIntens.innerText = "";
+        return;
+    }
+
+    divIntens.innerText = "Current intensity is " + nIntensity;
+    if (!VibeCtrl.Vibrate(nPort, nDevice, 1, true, "constant", nIntensity, "forward", fFreq, 0))
+    {
+        alert("Could not vibrate on specified vibration pack");
+        divIntens.innerText = "";
+        return;
+    }
+
+    nIntensity += 1;
+    setTimeout("OnTimer(" + nPort + "," + nDevice + "," + fFreq + "," + nIntensity + ");", 2000);
+}
+
+</script>
+
+<script language=jscript for=window event="onerror(strText, strUrl, nLine)">
+    alert("Script Error\n" + strText + "\nLine: " + nLine);
+    return true;
+</script>
+
+<script language=jscript for=window event="onload()">
+   VibeCtrl = new ActiveXObject("VibeCtrl.VibeCtrl");
+</script>
+
+<script language=jscript for=btnTest event="onclick()">
+    divIntens.innerText = "";
+
+    VibeCtrl.Scan();
+
+    var nPort;
+    var nDevice;
+
+    for (nPort = 1; nPort <= 4; nPort++)
+    {
+        nDevice = 1;
+        if (rbDevice[(nPort - 1) * 2].checked)  
+        {
+            break;
+        }
+        nDevice = 2;
+        if (rbDevice[(nPort - 1) * 2 + 1].checked)  
+        {
+            break;
+        }
+    }
+
+    if (!VibeCtrl.IsPluggedIn(nPort, nDevice))
+    {
+        alert("Vibration pack not plugged into specified port/device");
+        return;
+    }
+
+    if (!VibeCtrl.HasContinuousVibrationCapability(nPort, nDevice, 1))
+    {
+        alert("Vibration pack does not have continuous vibration capability");
+        return;
+    }
+
+    if (!VibeCtrl.HasVariableIntensityCapability(nPort, nDevice, 1))
+    {
+        alert("Vibration pack does not have variable intensity capability");
+        return;
+    }
+
+    if (!VibeCtrl.SetAutoStopTime(nPort, nDevice, 1, 3.0))
+    {
+        alert("Auto stop time could not be set");
+        return;
+    }
+
+    var fMaxFreq = VibeCtrl.GetMaximumFrequency(nPort, nDevice, 1);
+
+    setTimeout("OnTimer(" + nPort + "," + nDevice + "," + fMaxFreq + ",1);", 1);
+</script>
+
+</head>
+
+<body>
+
+Choose a vibration pack:
+<br>
+<input type=radio name=rbDevice checked>Port 1 Device 1
+<input type=radio name=rbDevice>Port 1 Device 2
+<br>
+<input type=radio name=rbDevice>Port 2 Device 1
+<input type=radio name=rbDevice>Port 2 Device 2
+<br>
+<input type=radio name=rbDevice>Port 3 Device 1
+<input type=radio name=rbDevice>Port 3 Device 2
+<br>
+<input type=radio name=rbDevice>Port 4 Device 1
+<input type=radio name=rbDevice>Port 4 Device 2
+<br>
+<br>
+<input type=button id=btnTest value="Test">
+<br>
+<br>
+<div id=divIntens></div>
+
+</body>
+
+</html>

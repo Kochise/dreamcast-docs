@@ -1,0 +1,494 @@
+;///////////////////////////////////////////////////////
+     .macro    LEAF_ENTRY     Name,Section=.text
+     .section \Section,code
+     .align    4
+     .global \Name
+\Name:    .entry
+     .prolog
+     .endm
+
+;///////////////////////////////////////////////////////
+;	_ConcatenateMatrices
+;	(
+;		float **ppmIn,		// pointer to list of matrix pointers,
+;		float *pmOut		// pointer to output matrix
+;	);
+;
+;	extern "C" void ConcatenateMatrices(  float *pmOut, float **ppmIn );
+;
+;	Concatenates matrices and stores result at pmOut.
+;
+;	Given pointers to input matrices m0, m1, m2... m(n-1), this
+;	will store m(n-1)*(...(m3*(m2*(m1*m0)))...) at  pmOut
+;
+;	NOTES:
+;		ALL matrices must be at least 8 byte aligned
+;		NULL terminator is used to indicate end of matrix list
+;		Assumes that there are at least two input matrices
+;
+;///////////////////////////////////////////////////////
+
+; Integer registers:
+
+r_pStackAlign		.reg	r1
+r_pSwapCount		.reg	r2
+r_pCurrentMatrix	.reg	r3
+r_pOutputMatrix		.reg	r4
+r_pMatrixList		.reg	r5
+
+	LEAF_ENTRY		_ConcatenateMatrices
+
+	mov		#4, r_pStackAlign		; fix quad-word alignment of sp
+	and		r15,r_pStackAlign
+	sub		r_pStackAlign,r15
+
+	fschg							; switch to double-sized FPU moves
+
+	fmov.d	dr14,@-r15				; save upper fpu registers
+	fmov.d	dr12,@-r15
+
+	mov.l	@r_pMatrixList+,r_pCurrentMatrix	; get pointer to first matrix
+	
+	; load first matrix
+	fmov.d	@r_pCurrentMatrix+,dr0
+	fmov.d	@r_pCurrentMatrix+,dr2
+	fmov.d	@r_pCurrentMatrix+,dr4
+	fmov.d	@r_pCurrentMatrix+,dr6
+	fmov.d	@r_pCurrentMatrix+,dr8
+	fmov.d	@r_pCurrentMatrix+,dr10
+	fmov.d	@r_pCurrentMatrix+,dr12
+	fmov.d	@r_pCurrentMatrix,dr14
+
+	mov.l	@r_pMatrixList+,r_pCurrentMatrix	; get next matrix ptr
+
+	frchg							; swap fpu banks
+	xor		r_pSwapCount,r_pSwapCount ; initialize fpu register swap count
+
+	fmov.d	@r_pCurrentMatrix+,dr0	; start load of next matrix
+	fmov.d	@r_pCurrentMatrix+,dr2
+
+MainLoop:
+
+	; pipeline matrix multiply & other stuff?!?!?
+	fmov.d	@r_pCurrentMatrix+,dr4
+	fmov.d	@r_pCurrentMatrix+,dr6
+	ftrv xmtrx, fv0
+	fmov.d	@r_pCurrentMatrix+,dr8
+	fmov.d	@r_pCurrentMatrix+,dr10
+	ftrv xmtrx, fv4
+	fmov.d	@r_pCurrentMatrix+,dr12
+	fmov.d	@r_pCurrentMatrix+,dr14
+	ftrv xmtrx, fv8
+	mov.l	@r_pMatrixList+,r_pCurrentMatrix	; get next matrix ptr
+	ftrv xmtrx, fv12
+	tst		r_pCurrentMatrix,r_pCurrentMatrix	; tst for another matrix
+	bt/s	Done
+	add		#1,r_pSwapCount			; increment fpu register swap count
+	
+	frchg							; swap fpu banks
+
+	fmov.d	@r_pCurrentMatrix+,dr0	; start load of next matrix
+	bra		MainLoop
+	fmov.d	@r_pCurrentMatrix+,dr2
+	   
+Done:
+	add 	#56, r_pOutputMatrix
+
+	fmov.d	dr14,@r_pOutputMatrix
+	fmov.d	dr12,@-r_pOutputMatrix
+	fmov.d	dr10,@-r_pOutputMatrix
+	fmov.d	dr8,@-r_pOutputMatrix
+	fmov.d	dr6,@-r_pOutputMatrix
+	fmov.d	dr4,@-r_pOutputMatrix
+	fmov.d	dr2,@-r_pOutputMatrix
+	fmov.d	dr0,@-r_pOutputMatrix
+
+	mov		r_pSwapCount,r0			; Odd or even no. of fschg?
+	tst		#1,r0
+	bt		SkipSwap
+	nop
+
+	frchg							; swap fpu banks
+
+SkipSwap:
+
+	fmov.d	@r15+,dr12				; restore upper fpu registers
+	fmov.d	@r15+,dr14
+
+	fschg							; switch to single-size float moves
+
+	rts
+	add		r_pStackAlign,r15		; restore stack alignment
+
+	.endf
+
+
+;///////////////////////////////////////////////////////
+;	_TransposeMatrix
+;	(
+;		float *pmOut		// pointer to output matrix
+;		float *pmIn,		// pointer to input matrix
+;	);
+;
+;	extern "C" void TransposeMatrix( float *pmOut, float *pmIn );
+;
+;	Transpose of the input is stored at pmOut.
+;
+;///////////////////////////////////////////////////////
+
+; Integer registers:
+
+r_pMatrixOut		.reg	r4
+r_pMatrixIn			.reg	r5
+
+	LEAF_ENTRY		_TransposeMatrix
+
+	fmov	fr15,@-r15				; save upper fpu registers
+	fmov	fr14,@-r15
+	fmov	fr13,@-r15
+	fmov	fr12,@-r15
+
+	add 	#60, r_pMatrixOut
+
+
+	; load input
+	fmov	@r_pMatrixIn+,fr0
+	fmov	@r_pMatrixIn+,fr1
+	fmov	@r_pMatrixIn+,fr2
+	fmov	@r_pMatrixIn+,fr3
+	fmov	@r_pMatrixIn+,fr4
+	fmov	@r_pMatrixIn+,fr5
+	fmov	@r_pMatrixIn+,fr6
+	fmov	@r_pMatrixIn+,fr7
+	fmov	@r_pMatrixIn+,fr8
+	fmov	@r_pMatrixIn+,fr9
+	fmov	@r_pMatrixIn+,fr10
+	fmov	@r_pMatrixIn+,fr11
+	fmov	@r_pMatrixIn+,fr12
+	fmov	@r_pMatrixIn+,fr13
+	fmov	@r_pMatrixIn+,fr14
+	fmov	@r_pMatrixIn,fr15
+
+	;transpose
+	fmov	fr15,@r_pMatrixOut
+	fmov	fr11,@-r_pMatrixOut
+	fmov	fr7,@-r_pMatrixOut
+	fmov	fr3,@-r_pMatrixOut
+	fmov	fr14,@-r_pMatrixOut
+	fmov	fr10,@-r_pMatrixOut
+	fmov	fr6,@-r_pMatrixOut
+	fmov	fr2,@-r_pMatrixOut
+	fmov	fr13,@-r_pMatrixOut
+	fmov	fr9,@-r_pMatrixOut
+	fmov	fr5,@-r_pMatrixOut
+	fmov	fr1,@-r_pMatrixOut
+	fmov	fr12,@-r_pMatrixOut
+	fmov	fr8,@-r_pMatrixOut
+	fmov	fr4,@-r_pMatrixOut
+	fmov	fr0,@-r_pMatrixOut
+
+	fmov	@r15+,fr12				; restore upper fpu registers
+	fmov	@r15+,fr13
+	fmov	@r15+,fr14
+
+	rts
+	fmov	@r15+,fr15
+
+	.endf
+
+
+;///////////////////////////////////////////////////////
+;	_VectorMatrixMultiply
+;	(
+;		float *pvOut		// pointer to output vector
+;		float *pmIn,		// pointer to input matrix
+;		float *pvIn,		// pointer to input vector
+;	);
+;
+;	extern "C" void MatrixVectorMultiply( float *pvOut, float *pmIn, float *pvIn );
+;
+;	Transforms vector by matrix and stores result at pvOut.
+;
+;///////////////////////////////////////////////////////
+
+	LEAF_ENTRY		_VectorMatrixMultiply
+
+	fmov	fr15,@-r15				; save upper fpu registers
+	fmov	fr14,@-r15
+	fmov	fr13,@-r15
+	fmov	fr12,@-r15
+
+	; load matrix
+    fmov.s @r5+, fr0
+    fmov.s @r5+, fr1
+    fmov.s @r5+, fr2
+    fmov.s @r5+, fr3
+    fmov.s @r5+, fr4
+    fmov.s @r5+, fr5
+    fmov.s @r5+, fr6
+    fmov.s @r5+, fr7
+    fmov.s @r5+, fr8
+    fmov.s @r5+, fr9
+    fmov.s @r5+, fr10
+    fmov.s @r5+, fr11
+    fmov.s @r5+, fr12
+    fmov.s @r5+, fr13
+    fmov.s @r5+, fr14
+    fmov.s @r5,  fr15
+
+    frchg							; swap fpu banks
+
+	; load vector (load 1.0 into w)
+	fmov.s @r6+, fr0
+	fmov.s @r6+, fr1
+	fmov.s @r6,	 fr2
+	fldi1		 fr3
+
+	; Do the multiplication
+	ftrv xmtrx, fv0
+
+	; store results
+	add #12, r4
+	fmov.s fr3, @r4
+	fmov.s fr2, @-r4
+	fmov.s fr1, @-r4
+	fmov.s fr0, @-r4
+
+    frchg							; swap fpu banks
+
+	fmov	@r15+,fr12				; restore upper fpu registers
+	fmov	@r15+,fr13
+	fmov	@r15+,fr14
+
+	rts
+	fmov	@r15+,fr15
+
+	.endf
+
+
+
+
+;///////////////////////////////////////////////////////
+;	_ScaleMatrix
+;	(
+;		float *pmOut		// pointer to output matrix
+;		float *pmIn,		// pointer to input matrix
+;		float *pScale,		// pointer to scale
+;	);
+;
+;	extern "C" void ScaleMatrix( float *pmOut, float *pmIn, float *pScale );
+;
+;	Builds scale matrix, scales input matrix
+;	and stores result at pmOut.
+;
+;///////////////////////////////////////////////////////
+
+	LEAF_ENTRY		_ScaleMatrix
+
+	fmov	fr15,@-r15				; save upper fpu registers
+	fmov	fr14,@-r15
+	fmov	fr13,@-r15
+	fmov	fr12,@-r15
+
+	mov.l	@r6,r6					; load scale into integer register
+	mov		#7,r0					; test for output matrix alignment
+	tst		r4,r0
+	bf/s	NoDoubles
+	mov		#7,r0					; test for input matrix alignment
+	tst		r5,r0
+	bf		NoDoubles
+
+	fschg							; switch to double moves
+
+	; load  matrix
+	fmov.d	@r5+, dr0
+	fmov.d	@r5+, dr2
+	fmov.d	@r5+, dr4
+	fmov.d	@r5+, dr6
+	fmov.d	@r5+, dr8
+	fmov.d	@r5+, dr10
+	fmov.d	@r5+, dr12
+	fmov.d	@r5,  dr14
+
+	; scale/store matrix
+	
+	lds.l	r6,fpul					; load scale to fpul	
+	add 	#56, r4
+
+	fmov.d	dr14, @r4				; don't scale _44, _43
+	fsts	fpul,fr15				; store scale in fr15
+	fmov.d	dr12, @-r4				; don't scale _42, _41
+	fmul	fr15,fr11
+	fmul	fr15,fr10
+	fmul	fr15,fr9
+	fmov.d	dr10, @-r4
+	fmul	fr15,fr8
+	fmul	fr15,fr7
+	fmul	fr15,fr6
+	fmov.d	dr8,  @-r4
+	fmul	fr15,fr5
+	fmul	fr15,fr4
+	fmov.d	dr6,  @-r4
+	fmul	fr15,fr3
+	fmul	fr15,fr2
+	fmov.d	dr4,  @-r4
+	fmul	fr15,fr1
+	fmul	fr15,fr0
+	fmov.d	dr2,  @-r4
+	fmov.d	dr0,  @-r4
+
+	bra ScaleDone
+	fschg							; switch to single moves
+
+NoDoubles:
+
+	; load  matrix
+	fmov	@r5+,fr0
+	fmov	@r5+,fr1
+	fmov	@r5+,fr2
+	fmov	@r5+,fr3
+	fmov	@r5+,fr4
+	fmov	@r5+,fr5
+	fmov	@r5+,fr6
+	fmov	@r5+,fr7
+	fmov	@r5+,fr8
+	fmov	@r5+,fr9
+	fmov	@r5+,fr10
+	fmov	@r5+,fr11
+	fmov	@r5+,fr12
+	fmov	@r5+,fr13
+	fmov	@r5+,fr14
+	fmov	@r5, fr15
+
+	; scale/store matrix
+	
+	lds.l	r6,fpul					; load scale to fpul	
+	add 	#60, r4
+
+	fmov	fr15, @r4				; don't scale _44
+	fmov	fr14,@-r4				; don't scale _43
+	fsts	fpul,fr15				; store scale in fr15
+	fmov	fr13,@-r4				; don't scale _42
+	fmov	fr12,@-r4				; don't scale _41
+
+	fmul	fr15, fr11
+	fmul	fr15, fr10
+	fmov	fr11, @-r4
+	fmul	fr15, fr9
+	fmov	fr10, @-r4
+	fmul	fr15, fr8
+	fmov	fr9,  @-r4
+	fmul	fr15, fr7
+	fmov	fr8,  @-r4
+	fmul	fr15, fr6
+	fmov	fr7,  @-r4
+	fmul	fr15, fr5
+	fmov	fr6,  @-r4
+	fmul	fr15, fr4
+	fmov	fr5,  @-r4
+	fmul	fr15, fr3
+	fmov	fr4,  @-r4
+	fmul	fr15, fr2
+	fmov	fr3,  @-r4
+	fmul	fr15, fr1
+	fmov	fr2,  @-r4
+	fmul	fr15, fr0
+	fmov	fr1,  @-r4
+	fmov	fr0,  @-r4
+
+
+ScaleDone:
+
+	fmov	@r15+,fr12				; restore upper fpu registers
+	fmov	@r15+,fr13
+	fmov	@r15+,fr14
+
+	rts
+	fmov	@r15+,fr15
+
+	.endf
+
+
+
+;///////////////////////////////////////////////////////
+;	_AddMatrices
+;	(
+;		float *pmOut		// pointer to output matrix
+;		float *pmIn1,		// pointer to input matrix1
+;		float *pmIn2,		// pointer to input matirx2
+;	);
+;
+;	extern "C" void AddMatrices( float *pmOut, float *pmIn1, float *pmIn2 );
+;
+;	Adds input matrices and stores result at pmOut.
+;
+;	NOTES:
+;		ALL matrices must be at least 8 byte aligned
+;
+;///////////////////////////////////////////////////////
+
+	LEAF_ENTRY		_AddMatrices
+
+	fschg							; switch to double moves
+
+	fmov.d	@r5+, dr0				; load 1_11, 1_12
+	fmov.d	@r6+, dr2				; load 2_11, 2_12
+	fmov.d	@r5+, dr4				; load 1_13, 1_14
+	fmov.d	@r6+, dr6				; load 2_13, 2_14
+
+ 	fadd	fr0, fr2				; add _11
+	fmov.d	@r5+, dr8				; load 1_21, 1_22
+	fadd	fr1, fr3				; add _12
+	fmov.d	@r6+, dr10				; load 2_21, 2_22
+	fmov.d	dr2, @r4				; store _11, _12
+
+ 	fadd	fr4, fr6				; add _13
+	add		#8, r4
+	fmov.d	@r5+, dr0				; load 1_23, 1_24
+	fadd	fr5, fr7				; add _14
+	fmov.d	@r6+, dr2				; load 2_23, 2_24
+	fmov.d	dr6, @r4				; store _13, _14
+
+ 	fadd	fr8, fr10				; add _21
+	add		#8, r4
+	fmov.d	@r5+, dr4				; load 1_31, 1_32
+	fadd	fr9, fr11				; add _22
+	fmov.d	@r6+, dr6				; load 2_31, 2_32
+	fmov.d	dr10, @r4				; store _21, _22
+
+ 	fadd	fr0, fr2				; add _23
+	add		#8, r4
+	fmov.d	@r5+, dr8				; load 1_33, 1_34
+	fadd	fr1, fr3				; add _24
+	fmov.d	@r6+, dr10				; load 2_33, 2_34
+	fmov.d	dr2, @r4				; store _23, _24
+
+ 	fadd	fr4, fr6				; add _31
+	add		#8, r4
+	fmov.d	@r5+, dr0				; load 1_41, 1_42
+	fadd	fr5, fr7				; add _32
+	fmov.d	@r6+, dr2				; load 2_41, 2_42
+	fmov.d	dr6, @r4				; store _31, _32
+
+ 	fadd	fr8, fr10				; add _33
+	add		#8, r4
+	fmov.d	@r5+, dr4				; load 1_43, 1_44
+	fadd	fr9, fr11				; add _34
+	fmov.d	@r6+, dr6				; load 2_43, 2_44
+	fmov.d	dr10, @r4				; store _33, _34
+
+	fadd	fr0, fr2				; add _41
+	add		#8, r4
+	fadd	fr1, fr3				; add _42
+	fadd	fr4, fr6				; add _43
+	fmov.d	dr2, @r4				; store _41, _42
+	fadd	fr5, fr7				; add _44
+	add		#8, r4
+	fmov.d	dr6, @r4				; store _43, _44
+	
+	rts
+	fschg							; switch to single moves
+
+
+	.endf
+	.end

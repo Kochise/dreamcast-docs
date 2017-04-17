@@ -1,0 +1,94 @@
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1252">
+<META NAME="Generator" CONTENT="Microsoft Word 97">
+<TITLE>Bump Mapping Tricks for Series 2</TITLE>
+<META NAME="subject" CONTENT="Practical ideas for getting the best results">
+<META NAME="Template" CONTENT="\\gb5\Source\projdocs\DevRel\SDK2 Docs\SDK Guidelines\SDK.dot">
+</HEAD>
+<BODY>
+
+<FONT SIZE=2></FONT>
+<TABLE CELLSPACING=0 BORDER=0 CELLPADDING=7 WIDTH=619>
+<TR><TD WIDTH="82%" VALIGN="TOP">
+<B><FONT FACE="Arial" SIZE=5><P><A NAME="_Toc459560981">Bump Mapping Tricks for Series 2</A></P>
+</B></FONT><FONT SIZE=2><P>Subject: &#9;Practical ideas for getting the best results<BR>
+Author:&#9;Imagination Technologies Ltd (PowerVR)<BR>
+File Name:&#9;Bump Mapping Tricks for Series 2.doc<BR>
+Issue Number:&#9;1.1.<BR>
+Issue Date:&#9;10 December 99<BR>
+Copyright:&#9;</FONT><A HREF="http://www.powervr.com/legal.html"><FONT SIZE=2>&copy;</FONT></A><FONT SIZE=2> Imagination Technologies Ltd 1999. All rights reserved.<BR>
+&#9;This material may not be republished in any format without <BR>
+&#9;the express consent of its authors. Information contained <BR>
+&#9;herein is provided &quot;as-is&quot;, without representations or <BR>
+&#9;warranties, and is subject to change without notice.</FONT></TD>
+<TD WIDTH="18%" VALIGN="TOP">
+<FONT SIZE=2><P ALIGN="RIGHT"><IMG SRC="Image1.gif" WIDTH=96 HEIGHT=128></FONT></TD>
+</TR>
+</TABLE>
+
+<B><I><FONT FACE="Arial" SIZE=4><P>Tangent Space and Bump Shading Shortcuts</P>
+</B></I></FONT><FONT SIZE=2><P>The Tangent Space is a local co-ordinate system derived from the normal vector and UV direction of a given vertex. The set of values for all the vertices in an object are needed for performing correct bump map lighting. This set is always the same and only needs to be calculated once. (Refer to Bump Mapping for Series 2.doc for more information).</P>
+<P>The dot product between the light direction and the three axes of the Tangent Space gives us the Cartesian co-ordinates of the light direction in the vertex local co-ordinate system. These Cartesian co-ordinates have to be translated to Polar co-ordinates as part of the calculation of K1, K2, K3 and Q.</P>
+<P>Px, Py and Pz are the Cartesian co-ordinates of the light direction and S is the light intensity:</P>
+</FONT><FONT FACE="Courier" SIZE=2><P>Q&nbsp;=&nbsp;arctan&nbsp;(Pz/Px)</FONT><FONT SIZE=2><BR>
+</FONT><FONT FACE="Courier" SIZE=2>K1&nbsp;=&nbsp;(1&nbsp;-&nbsp;S)<BR>
+K2&nbsp;=&nbsp;sin&nbsp;(T)&nbsp;*&nbsp;S&nbsp;=&nbsp;Py&nbsp;*&nbsp;S</FONT><FONT SIZE=2><BR>
+</FONT><FONT FACE="Courier" SIZE=2>K3&nbsp;=&nbsp;cos&nbsp;(T)&nbsp;*&nbsp;S&nbsp;=&nbsp;sqrt&nbsp;(1&nbsp;-&nbsp;Py<SUP>2</SUP>)&nbsp;*&nbsp;S</P>
+</FONT><B><I><FONT FACE="Arial"><P>Fast calculation of K1, K2, K3 and Q</P>
+</B></I></FONT><FONT SIZE=2><P>The best way to calculate the arctan and square root is to create a couple of small tables.</P>
+<P>For more details look at the FXYZLightDirToSKK( ) function in KMBump.c. (This is the source code used in the PowerVR SDK Tools and demos).</P>
+</FONT><B><I><FONT FACE="Arial"><P>Parallel light vs. Point light</P>
+</B></I></FONT><FONT SIZE=2><P>There are two ways of lighting a model: ‘parallel light’ where the light direction is the same for all the vertices and ‘point light’ where a different light direction is calculated per vertex.</P>
+<P>The first one is the fastest and easiest. The transformed light direction is calculated by multiplying the light direction by the inverse of the object transformation matrix. This operation has to be done only once per scene. The result looks like the light source is at infinite distance (like the sun). We have adopted this method for our demos because it looks good and it is faster than the point light method.</P>
+<P>Note: The demos for Dreamcast Knot, Materials and Wheel use this method. Look the source code for more information.</P>
+<P>The point light method has to calculate the light direction as the vector that goes from the light source to the current vertex. This process has to be done for every vertex. The calculation of K1, K2, K3 and Q are the same for both methods.</P>
+</FONT><B><I><FONT FACE="Arial" SIZE=4><P>Cheap Bump Map Method</P>
+</B></I></FONT><FONT SIZE=2><P>There is a very cheap method of calculating the bump-map on the fly. This method doesn’t use the local co-ordinate system per vertex and is very simple and fast. It doesn’t look as good as the Tangent Space methods but for many applications it works fine.</P>
+<P>One of the problems of this method is that the bump map effect jumps very quickly when the light projection is very close to (0, 0). Another limitation is that this method only works with a uniform mapping that looks upright and without flipped surfaces. A standard planar (non-flipped), spherical or cylindrical mapping works fine.</P>
+<P>This method calculates only one bump map angle for all the vertices in an object, so the bump map effect will be the same over the whole mesh.</P>
+<P>K1, K2 and K3 are fixed and Q is calculated as the angle between the XY projection of the light vector and the XY projection of an upright axis that has been transformed with the object transformation matrix.</P>
+<P>The PowerVR demo ‘CheapBump’ uses this method.</P>
+</FONT><B><I><FONT FACE="Arial" SIZE=4><P>Bump Map Blend and Shading Modes</P>
+</B></I></FONT><FONT SIZE=2><P>The standard method for blending bumpmap surfaces is to make the bumpmap surface opaque and to blend the base texture on top using as blend factors DESTCOLOR for the source and ZERO for the detination.</P>
+<P>Another combination that works really well is when the base texture is opaque and the bump map texture is translucent  (SRCALPHA/INVSRCALPHA) with all the vertex colours set to 0. With this method you can change the strength of the bump map just changing the value in the alpha channel. Values around 0xA0 are best for the majority of applications.  K1 and K2 have been fixed to 0 and 128 (medium intesity).</P>
+<P>For translucent bump maps use MODULATE_ALPHA.</P>
+<P>For opaque bump maps use DECAL_ALPHA.</P>
+<P>Don’t forget to set the SPECULAR render state to TRUE.</P>
+<P>Set the ‘Polygons Shading Mode’ flag to GOURAUD. The bump map effect is flat shaded, but the colour of the polygons aren’t.</P>
+</FONT><B><I><FONT FACE="Arial" SIZE=4><P>Higlights and bumpmapping</P>
+</B></I></FONT><FONT SIZE=2><P>To get highlights on a bumpmap surface invert the K3 value (K3 = 255 –K3) and set K1 and K2 to 0. Blend the base texture on top of the opaque bumpmap layer using additive blending (ONE/ONE). This trick gives a very nice shiny effect.</P>
+<P>There is a problem: the few polygons that are right on the perpendicular to the light direction changes their shading very quickly. To avoid this problem the best solution is to ‘burn’ that conflictive zone with strong highlights in the base color of the bumpmap vertices. </P>
+<P>The ‘Materials’ demo shows one of the ways of doing it.</P>
+</FONT><B><I><FONT FACE="Arial" SIZE=4><P>Flat Shading</P>
+</B></I></FONT><FONT SIZE=2><P>If the Tangent Space for each vertex has been calculated correctly (and K1 and K2 have been made constant) it is very difficult to notice the flat shading of the bump-mapping layer. The flat shading can appear when the change in bump map angles is very high in a very small region or when a mesh has been built with very few polygons. This can happen at points where the light intensity is very high. Usually the flat shading is covered by the base texture and is barely perceptible.</P>
+<P>When the translucency method is used, this ‘flat shaded’ look can be smothed changin the intensity of the bumpmap effect. By using the smooth shading value calculated from the dot product between the normal and the light direction it is possible to calculate a variable alpha value for the vertex colours of the bump mapping layer. By making this lower when the light intensity is higher the result is the bump map intensity is low where the flat shading might be more noticeable.</P>
+</FONT><B><I><FONT FACE="Arial" SIZE=4><P>MIP Map and Trilinear</P>
+</B></I></FONT><FONT SIZE=2><P>Bump Map textures that have very high frequencies can become noisy and unpleasant to the eye.</P>
+<P>For standard textures, MIP mapping is an excellent solution that solves the problem with ‘noisy’ textures and improves the general performance of an application.</P>
+<P>For bump mapping things are a little bit different. A bump map texture stores a ‘normal direction’ per texel instead a colour. The difference between MIP map levels can be sometimes very high, making the border between levels to look noticeable. A solution to this problem is to use trilinear filtering. The procedure for trilinear bump mapping is exactly the same one that for a standard texture. This method smoothes the dramatic jump between levels giving a better result. This solution is satisfactory, but it is very expensive from the processing point of view because the bump map surface has to be drawn in several passes.</P>
+<P>Our recommendation is to avoid high frequency textures when possible and use trilinear only when absolutely necessary.</P>
+</FONT><B><I><FONT FACE="Arial" SIZE=4><P>Using 4444 and 1555 and Bump Mapped Textures</P>
+</B></I></FONT><FONT SIZE=2><P>Bump map textures don’t have any alpha component to them. To get them applied to a texture that does have an alpha component like 4444 or 1555, the original bump map texture can be mixed in the accumulation buffer (multitexture) with these textures that already have an alpha channel in it. This method must be used only when absolutely necessary because it will impact performance.</P>
+<P>Layer one: BUMP-MAP TEXTURE Blend source: ONE, Blend dest.: ZERO</P>
+<P>Layer two: 4444 TEXTURE Blend source: ZERO, Blend dest.: SOURCEALPHA</P>
+<P>For multitexture, use MODULATE as the Colour Operation and Alpha Operation between the two layers. </P>
+</FONT><B><I><FONT FACE="Arial" SIZE=4><P>Flipped UV</P>
+</B></I></FONT><FONT SIZE=2><P>Don’t use FLIP_UV or  MIRROR UVs for bump mapping. If you flip a bump map surface you are flipping the angle of the light for all the texels in the map, so the final light will come from the other way around. If you have to tile a bump map, try to do it perfectly ‘tileable’ making the borders correspond exactly.</P>
+<P>If the flipped UVs come already in the vertex information (for example when a planar mapping has been used) the flip can be detected and corrected by the local co-ordinates system. The method that has been used in the demos is very simple. They check if the UVs in a polygon are clockwise or counter-clockwise. If it is the later, one of the axes of the local co-ordinate system is mirrored.</P>
+</FONT><B><I><FONT FACE="Arial" SIZE=4><P>Base Textures</P>
+</B></I></FONT><FONT SIZE=2><P>The ‘standard’ method looks better when the bump map texture is not highly contrasted. Avoid sharp jumps from black to white and use two levels of grey if you want a sharp edge. </P>
+<P>If you use the translucency method where the base texture is opaque and the bump map texture translucent, enhance the brightness of the base texture because the translucent layer on top will make it to look darker.</P>
+<P>If you use the ‘highlight’ method, best results are achieved when the base textures are done a bit darker.</P>
+<P>Try to delete the ‘natural’ shadows from the base texture, they will interfere with the bump map shadow.</P>
+<P>Sometimes the colours in the base texture look like moving in the opposite direction of the light. That is a usual effect of the Blinn bump mapping and is due to the brightness changing its position. It is just an optical effect, and only happens when the light moves but not when the object is moved. The Egyptian texture in the Materials demo is an example of this effect.</P>
+</FONT><B><I><FONT FACE="Arial" SIZE=4><P>Blending Two Bump Maps</P>
+</B></I></FONT><FONT SIZE=2><P>It is possible to apply bump mapping several times on the same location with different textures and different light angles. This fact can be used for special effects, but it must be used carefully because every new layer will slow down the performance.</P>
+</FONT><B><I><FONT FACE="Arial" SIZE=4><P>The Back of a Bump Map Object</P>
+</B></I></FONT><FONT SIZE=2><P>The ‘back’ of a bump mapped object has to be shadowed. In the opposite region where the light is, bump map is performed in the other way around. To create a realistic effect, the colour of the base texture in this zone has to be pure black.</P>
+<P>If you need to light this zone because you are using several lights, use the bump map colour or the translucency to remove completely the bump map effect as explained before.</P>
+</FONT><B><I><FONT FACE="Arial" SIZE=4><P>Bump Map Performance</P>
+</B></I></FONT><FONT SIZE=2><P>For several layers of bump map and translucency, very high-resolution bump maps or areas where the texture can page break often (pole of a sphere) the performance can decrease.</P>
+<P>Always use twiddle textures to minimise the page breaks in the texture memory.</P>
+</FONT><B><I><FONT FACE="Arial" SIZE=4><P>End of Document</P></B></I></FONT></BODY>
+</HTML>

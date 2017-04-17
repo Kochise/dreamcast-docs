@@ -1,0 +1,204 @@
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1252">
+<META NAME="Generator" CONTENT="Microsoft Word 97">
+<TITLE>Bump Mapping for Series 2</TITLE>
+<META NAME="subject" CONTENT="The Maths for a Practical Approach">
+<META NAME="Template" CONTENT="\\gb5\Source\projdocs\DevRel\SDK2 Docs\SDK Guidelines\SDK.dot">
+</HEAD>
+<BODY>
+
+<FONT SIZE=2></FONT>
+<TABLE CELLSPACING=0 BORDER=0 CELLPADDING=7 WIDTH=619>
+<TR><TD WIDTH="82%" VALIGN="TOP">
+<B><FONT FACE="Arial" SIZE=5><P><A NAME="_Toc459560981">Bump Mapping for Series 2</A></P>
+</B></FONT><FONT SIZE=2><P>Subject: &#9;The Maths for a Practical Approach<BR>
+Author:&#9;Imagination Technologies Ltd (PowerVR)<BR>
+File Name:&#9;Bump Mapping for Series 2.doc<BR>
+Issue Number:&#9;1.1.<BR>
+Issue Date:&#9;10 December 99<BR>
+Copyright:&#9;</FONT><A HREF="http://www.powervr.com/legal.html"><FONT SIZE=2>&copy;</FONT></A><FONT SIZE=2> Imagination Technologies Ltd 1999. All rights reserved.<BR>
+&#9;This material may not be republished in any format without <BR>
+&#9;the express consent of its authors. Information contained <BR>
+&#9;herein is provided &quot;as-is&quot;, without representations or <BR>
+&#9;warranties, and is subject to change without notice.</FONT></TD>
+<TD WIDTH="18%" VALIGN="TOP">
+<FONT SIZE=2><P ALIGN="RIGHT"><IMG SRC="Image1.gif" WIDTH=96 HEIGHT=128></FONT></TD>
+</TR>
+</TABLE>
+
+<B><I><FONT FACE="Arial" SIZE=4><P>Bump Mapping Overview</P>
+</B></I></FONT><FONT SIZE=2><P>Bump mapping is a high definition surface lighting technique that has been around for two decades. James Blinn, in 1978 wrote an article for Computer Graphics called ‘Simulation of wrinkled textures’ where the bump mapping procedure was described for the first time. This article is now a classic, and there is no paper about bump mapping without reference to James Blinn.</P>
+<P>The bump mapping technique is based in a 2D map that stores information about the roughness of a surface. The render engine scans this map pixel by pixel and calculates the corresponding intensity value that will be applied on the texture underneath, creating high-definition shading over a flat surface.</P>
+<P>A bump map is a 2D map that stores 3D data as black and white pixels corresponding to low and high surface elevation, respectively. This texture is mapped onto an object together with a ‘solid’ base texture. Once the light direction is given, the render engine can calculate the corresponding normal for each single point on the surface creating a light map that is blended with the base texture.</P>
+<P>When the light source is moved or the surface orientation changed, the light map is recalculated. This method allows for great 3D detail whilst requiring a low polygon count. </P></FONT>
+<TABLE BORDER CELLSPACING=1 CELLPADDING=7 WIDTH=619>
+<TR><TD VALIGN="TOP">
+<FONT SIZE=2><P ALIGN="CENTER"><IMG SRC="Image104.jpg" WIDTH=355 HEIGHT=305></FONT></TD>
+</TR>
+<TR><TD VALIGN="TOP">
+<B><FONT FACE="Arial" SIZE=1><P ALIGN="CENTER">Figure 1 - Bump Mapping</B></FONT></TD>
+</TR>
+</TABLE>
+
+<B><I><FONT FACE="Arial" SIZE=4><P>Light Direction and Tangent Space</P>
+</B></I></FONT><FONT SIZE=2><P>In addition to the bump map texture it is necessary to supply the correct light direction for every vertex in the mesh. It is not as straight forward as it looks because this direction must be calculated using the surface orientation.</P>
+<P>For every single vertex, a different local co-ordinate system is necessary. These co-ordinate systems are called tangent spaces. </P>
+<P>A tangent space is defined for 3 perpendicular axes where one of them (N) must be the surface normal at that point, and where the two other axes (T and B) must be on the tangent plane.</P>
+<P>The T axis (called tangent vector) has to be parallel to the texture U direction, and the B axis (called binormal) is perpendicular to both T and N.</P>
+<P>Once we have calculated the tangent space for all the vertices, the light direction must be transformed into that tangent space to get the final value needed for bump mapping calculations. Assuming a parallel source of light (very far away) this transformation is just the dot product between the light vector and the three axes of the tangent space.</P>
+<P>The steps to calculate the light source for the vertices are:</P>
+<OL>
+
+<LI>Calculation of the tangent spaces for all the vertices. This operation must be done only once.</LI>
+<LI>Transformation of the tangent spaces following the object transformations.</LI>
+<LI>Transformation of the light direction into the tangent space. This must be done for every vertex every time light or surface direction change.</LI></OL>
+
+</FONT><FONT FACE="Courier" SIZE=2><P>Px(v)&nbsp;=&nbsp;L&nbsp;.&nbsp;T(v)<BR>
+Py(v)&nbsp;=&nbsp;L&nbsp;.&nbsp;N(v)<BR>
+Pz(v)&nbsp;=&nbsp;L&nbsp;.&nbsp;B(v)</P>
+</FONT><FONT SIZE=2><P>PowerVR additionally requires the conversion of the light position, already transformed from Cartesian co-ordinates, to polar co-ordinates.</P></FONT>
+<TABLE BORDER CELLSPACING=1 CELLPADDING=7 WIDTH=619>
+<TR><TD VALIGN="TOP">
+<FONT SIZE=2><P ALIGN="CENTER"><IMG SRC="Image105.jpg" WIDTH=219 HEIGHT=165></FONT></TD>
+</TR>
+<TR><TD VALIGN="TOP">
+<B><FONT FACE="Arial" SIZE=1><P ALIGN="CENTER">Figure 2 - Tangent Space</B></FONT></TD>
+</TR>
+</TABLE>
+
+<B><I><FONT FACE="Arial" SIZE=4><P>PowerVR Bump Mapping Format</P>
+</B></I></FONT><FONT SIZE=2><P>PowerVR Series2 technology uses a special bump map format that is optimised for its hardware.</P>
+<P>Instead of storing coloured pixels, a couple of polar co-ordinates are stored in each pixel. These co-ordinates (S and R) are the elevation and azimuth of the normal vector in each point of the bump surface. These values are packed together in a 16-bit format where 8 bits express r and 8 bits express s: </P>
+</FONT><FONT FACE="Courier" SIZE=2><P>S&nbsp;=&nbsp;(PI/2&nbsp;*&nbsp;elevation/256)<BR>
+R&nbsp;=&nbsp;(2*PI&nbsp;*&nbsp;azimuth/256)</P>
+</FONT><FONT SIZE=2><P>This map is automatically generated from an intensity-map (where the gradation of grey means the height of the bump surface) for any of the PowerVR Series2 texture tools.</P>
+<P>Once you have mapped the texture onto your object, the light source vector (L) has to be calculated for each vertex, and must be expressed in polar co-ordinates as well.</P>
+</FONT><FONT FACE="Courier" SIZE=2><P>Lx&nbsp;=&nbsp;cos(T)*cos(Q)<BR>
+Ly&nbsp;=&nbsp;sin(T)<BR>
+Lz&nbsp;=&nbsp;cos(T)*sin(Q)</P>
+</FONT><FONT SIZE=2><P>Where T is the elevation and Q is the azimuth of the light source.</P>
+</FONT><FONT FACE="Courier" SIZE=2><P>T&nbsp;=&nbsp;(PI/2&nbsp;*&nbsp;Light_elevation/256)<BR>
+Q&nbsp;=&nbsp;(2*PI&nbsp;*&nbsp;Light_azimuth/256)</P></FONT>
+<TABLE BORDER CELLSPACING=1 CELLPADDING=7 WIDTH=619>
+<TR><TD VALIGN="TOP">
+<FONT SIZE=2><P ALIGN="CENTER"><IMG SRC="Image106.gif" WIDTH=266 HEIGHT=199></FONT></TD>
+</TR>
+<TR><TD VALIGN="TOP">
+<B><FONT FACE="Arial" SIZE=1><P ALIGN="CENTER">Figure 3 - Tangent Space</B></FONT></TD>
+</TR>
+</TABLE>
+
+<FONT SIZE=2><P>Applying a scale factor or strength (S) to these values, K1, K2 and K3 are defined as follow:</P>
+</FONT><FONT FACE="Courier" SIZE=2><P>K1&nbsp;=&nbsp;(1&nbsp;-&nbsp;S)<BR>
+K2&nbsp;=&nbsp;sin&nbsp;(T)&nbsp;*&nbsp;S<BR>
+K3&nbsp;=&nbsp;cos&nbsp;(T)&nbsp;*&nbsp;S</P>
+</FONT><FONT SIZE=2><P>These values and the angle Q must be given as the offset (specular) colour of the vertex.</P>
+</FONT><FONT FACE="Courier" SIZE=2><P>Alpha&nbsp;&nbsp;=&nbsp;K1&nbsp;=&nbsp;(1&nbsp;-&nbsp;S)<BR>
+Red&nbsp;=&nbsp;K2&nbsp;=&nbsp;sin&nbsp;(T)&nbsp;*&nbsp;S<BR>
+Green&nbsp;=&nbsp;K3&nbsp;=&nbsp;cos&nbsp;(T)&nbsp;*&nbsp;S<BR>
+Blue&nbsp;=&nbsp;Q</P>
+<P>&nbsp;</P>
+</FONT><FONT SIZE=2><P>Note: K1, K2, K3 and Q have to be expresed in a range from 0 to 255.</P>
+</FONT><B><I><FONT FACE="Arial" SIZE=4><P>How to Calculate the Tangent Space</P>
+</B></I></FONT><FONT SIZE=2><P>Every single vertex in our object has a different tangent space. These tangent spaces must be calculated only once and stored in memory.</P>
+<P>One of the axes of this local co-ordinate system is the surface normal (N) at that point. The other two axes reside in the tangent plane and we only have to determine the direction they are pointing to.</P>
+<P>This direction is the same as the texture co-ordinates at that specific place. Texture co-ordinates are 2D data that give us the position of our vertex in the 2D-texture plane, allowing us to wrap a texture over the model. Following the usual convention, I will call these co-ordinates UVs, where U means the ordinate axis and the V the abscise axis in the texture plane.</P>
+<P>It is very important to realise that we have to convert this 2D data in a 3D direction, projecting the UVs into the tangent plane. This direction will be our tangent vector (T). The binormal axis (B) will be the cross product between T and N.</P>
+<P>Here is a step-by-step description of the procedure:</P>
+<OL>
+
+<LI>Select a polygon (A, B, C) that contains a vertex.</LI>
+<LI>Find where U=0 in the side AB (P1).</LI>
+<LI>Find where U=0 in the side AC (P2).</LI>
+<LI>Calculate the vector between the two points calculated in the previous steps (P2-P1).</LI>
+<LI>Calculate Binormal vector</LI>
+<LI>Calculate Tangent vector</LI>
+<LI>Store all the results (6 floats per vertex)</LI></OL>
+
+</FONT><B><I><FONT FACE="Arial"><P>Select the polygon</P>
+</B></I></FONT><FONT SIZE=2><P>Firstly, given a specific vertex (A), you have to find a polygon to which it belongs. If the vertex is shared by several polygons, any one can be used. The remaining vertices of the chosen polygon are then named (B) and (C).</P>
+</FONT><B><I><FONT FACE="Arial"><P>Find where U=0 in the side AB (P1).</P>
+</B></I></FONT><FONT SIZE=2><P> (Au, Av) and (Bu, Bv) are the UV co-ordinates of A and B. These values form a vector in the 2D space. If we multiply this vector by ModUV1  = -Au / (Bu-Au) we get a new vector with one of the extremes (B) exactly where U=0.</P>
+<P>We multiply this value ModUV1 by the 3D vector (B-A) to get the point P1.</P>
+<P>If (Bu-Au) is 0, the vector (B-A) is already aligned with the V direction, so we jump the next two steps and use (B-A) as the vector in the Tangent direction.</P>
+<P>ModUV1  = -Au / (Bu-Au)<BR>
+<BR>
+P1x&nbsp;=&nbsp;ModUV1<B>&nbsp;</B>*<B>&nbsp;</B>(Bx-Ax)<BR>
+P1y&nbsp;=&nbsp;ModUV1&nbsp;*&nbsp;(By-Ay)<BR>
+P1z&nbsp;=&nbsp;ModUV1&nbsp;*&nbsp;(Bz-Az)</P>
+</FONT><B><I><FONT FACE="Arial"><P>Find where U=0 in the side AC (P2).</P>
+</B></I></FONT><FONT SIZE=2><P>Same process, but now using the vector (C-A)</P>
+<P>ModUV2  = -Au / (Cu-Au)<BR>
+P2x&nbsp;=&nbsp;ModUV2&nbsp;*&nbsp;(Cx-Ax)<BR>
+P2y&nbsp;=&nbsp;ModUV2&nbsp;*&nbsp;(Cy-Ay)<BR>
+P2z&nbsp;=&nbsp;ModUV2&nbsp;*&nbsp;(Cz-Az)</P>
+</FONT><B><I><FONT FACE="Arial"><P>Find the binormal vector</P>
+</B></I></FONT><FONT SIZE=2><P>The vector (P2-P1) follows the tangent direction (but it is not the tangent vector).</P>
+<P>The binormal vector (B) is the cross product between the normal and the vector (P2-P1) already normalised.</P>
+<P>The cross product between the binormal (B) and the normal (N) gives us the tangent vector (T).</P>
+</FONT><FONT FACE="Courier" SIZE=2><P>B&nbsp;=&nbsp;N&nbsp;x&nbsp;normalised(P2-P1)<BR>
+T&nbsp;=&nbsp;N&nbsp;x&nbsp;B</P>
+</FONT><B><I><FONT FACE="Arial"><P>Store all the results</P>
+</B></I></FONT><FONT SIZE=2><P>We store the tangent space (<B>N</B>, <B>T</B> and <B>B</B>) and repeat the same process with the next vertex.</P>
+<P>Note: <B>N</B> (normal) is already stored with the vertex data so we only need to store <B>T</B> and <B>B</B> (6 floats in total)</P></FONT>
+<TABLE BORDER CELLSPACING=1 CELLPADDING=7 WIDTH=619>
+<TR><TD VALIGN="TOP">
+<FONT SIZE=2><P ALIGN="CENTER"><IMG SRC="Image107.jpg" WIDTH=306 HEIGHT=266></FONT></TD>
+</TR>
+<TR><TD VALIGN="TOP">
+<B><FONT FACE="Arial" SIZE=1><P ALIGN="CENTER">Figure 4 - Tangent Space</B></FONT></TD>
+</TR>
+</TABLE>
+
+<B><FONT FACE="Arial" SIZE=1><P ALIGN="CENTER">&nbsp;</P>
+</FONT><I><FONT FACE="Arial" SIZE=4><P>How to Calculate the Tangent Space (Easy Method)</P>
+</B></I></FONT><FONT SIZE=2><P>There is a very easy method of calculating the local co-ordinate system for each vertex.</P>
+<P>This method supposes that the UV mapping has been applied in the same direction (looking upwards), and it works fine when planar, spherical or cylindrical mapping has been used.</P>
+<P>If the mapping direction is different, the bumpmap surface will look like it is receiving the light from a wrong direction.</P>
+<P>This method is explained here just because it is very easy for simple objects, but we don’t recommend using it for the general case.</P>
+<P>Step-by-step description of the procedure per vertex:</P>
+<OL>
+
+<LI>Cross product between the Normal and the Y-axis  (0,1,0) to calculate the Binormal vector.</LI>
+<LI>Cross product between the Normal and the Binormal to calculate the Tangent vector.</LI>
+<LI>Store all the results (6 floats per vertex)</LI></OL>
+
+</FONT><B><I><FONT FACE="Arial" SIZE=4><P>How to calculate K1, K2, K3 and Q</P>
+</B></I></FONT><FONT SIZE=2><P>Every frame we have to calculate K1, K2, K3 and Q for all the vertices in our object.</P>
+<P>This process is very similar to the calculation of smooth shading and has four steps: </P>
+<OL>
+
+<LI>Transform the light direction using the inverse world matrix.</LI>
+<LI>Transform again the light direction into the tangent space.</LI>
+<LI>Convert the light direction from Cartesian co-ordinates to polar co-ordinates.</LI>
+<LI>Calculation of K1, K2, K3 and Q.</LI>
+<LI>Set the variable</LI>
+<LI>Repeat procedure from point 2 until all the vertices have been calculated.</LI></OL>
+
+</FONT><B><I><FONT FACE="Arial"><P>Transform using Inverse World Matrix</P>
+</B></I></FONT><FONT SIZE=2><P>When you transform an object, its normals have to be transformed to calculate the correct lighting. If you are using a parallel light source it is not necessary because you can get the same effect applying the inverse world matrix to the light direction only.</P>
+<P>It is the same for tangent spaces; we only have to transform the light direction (L) using the inverse matrix (M<SUP>-1</SUP>) of the world transformation.</P>
+</FONT><FONT FACE="Courier" SIZE=2><P>L’(x,y,z)&nbsp;&nbsp;=&nbsp;L&nbsp;.&nbsp;M<SUP>-1</P>
+</SUP></FONT><B><I><FONT FACE="Arial"><P>Transform into Tangent Space</P>
+</B></I></FONT><FONT SIZE=2><P>Once we have calculated L’, we transform it into the local co-ordinate system defined in each vertex by the tangent space (<B>B</B>, <B>N</B>, <B>T</B>). A dot product between L and the three axes of the tangent space give us the three co-ordinates of the light direction expressed in this local system (Px, Py, Pz).</P>
+</FONT><FONT FACE="Courier" SIZE=2><P>Px&nbsp;=&nbsp;L’.<B>&nbsp;B<BR>
+</B>Py&nbsp;=&nbsp;L’.<B>&nbsp;N<BR>
+</B>Pz&nbsp;=&nbsp;L’.<B>&nbsp;T</P>
+</FONT><I><FONT FACE="Arial"><P>Convert the Light Direction</P>
+</B></I></FONT><FONT SIZE=2><P>We use Py (L’ x <B>N</B>) to calculate the smooth shading value of the base object. Light colour = (r, g, b)</P>
+</FONT><FONT FACE="Courier" SIZE=2><P>Red&nbsp;=&nbsp;Py&nbsp;*&nbsp;r<BR>
+Green&nbsp;=&nbsp;Py&nbsp;*&nbsp;g<BR>
+Blue&nbsp;=&nbsp;Py&nbsp;*&nbsp;b</P>
+</FONT><B><I><FONT FACE="Arial"><P>Calculate K1, K2, K3, Q</P>
+</B></I></FONT><FONT SIZE=2><P>PowerVR Series2 uses polar co-ordinates only, so we have to transform P from a Cartesian co-ordinates system into polar co-ordinates. We need to know Q, K2 = Sin(T)  and  K3 = Cos(T) where Q and T stand for the elevation and azimuth of the vector P.</P>
+</FONT><FONT FACE="Courier" SIZE=2><P>Normalised&nbsp;(P)<BR>
+Q&nbsp;=&nbsp;arctan&nbsp;(Pz/Px&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[0&nbsp;to&nbsp;2*PI&nbsp;(four&nbsp;quadrants)]<BR>
+Q&nbsp;=&nbsp;(2*PI&nbsp;*&nbsp;Q/256&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[0&nbsp;to&nbsp;256]<BR>
+K2&nbsp;=&nbsp;sin(T)&nbsp;=&nbsp;Py&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[-1&nbsp;to&nbsp;1]<BR>
+K2&nbsp;=&nbsp;(1&nbsp;+&nbsp;K2)&nbsp;*&nbsp;128&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[0&nbsp;to&nbsp;256]<BR>
+K3&nbsp;=&nbsp;cos(T)&nbsp;=&nbsp;sqrt&nbsp;(&nbsp;1&nbsp;-&nbsp;Py<SUP>2</SUP>)&nbsp;&nbsp;&nbsp;[-1&nbsp;to&nbsp;1]<BR>
+K3&nbsp;=&nbsp;(1&nbsp;+&nbsp;K3)&nbsp;*&nbsp;128&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[0&nbsp;to&nbsp;256]</P>
+</FONT><FONT SIZE=2><P>This task could use a fast routine that uses a defined table for approximate arctan computation.</P>
+</FONT><B><I><FONT FACE="Arial"><P>End of Document</P></B></I></FONT></BODY>
+</HTML>

@@ -1,0 +1,25 @@
+#include <windows.h>
+#include <ddraw.h>
+#include <dinput.h>
+#include <tchar.h>
+#include <stdlib.h>
+#include <keybd.h>
+
+#include "cmndefs.h"
+#include "ddutil.h"
+#include "kanji.h"
+#include "phonetic.h"
+#include "romanji.h"
+#include "symbols.h"
+#include "input.h"
+#include "inputskb.h"
+#include "inputcwd.h"
+#include "display.h"
+#include "dspskb.h"
+#include "dspcwd.h"
+#include "softkbd.h"
+#include "candwnd.h"
+#include "readwnd.h"
+#include "editbox.h"
+#include "indicate.h"
+#include "winmain.h"

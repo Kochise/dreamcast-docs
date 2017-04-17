@@ -1,0 +1,100 @@
+<html>
+
+<head>
+
+<title>Vibration Pack Status</title>
+
+<script language=jscript>
+var VibeCtrl;
+
+function TestVibrate(p, d, f)
+{
+   if (!VibeCtrl.Vibrate(p, d, 1, true, "constant", 7, "forward", f, 0))
+   {
+       alert("Cannot vibrate on this device");
+   }
+}
+
+</script>
+
+<script language=jscript for=window event="onerror(strText, strUrl, nLine)">
+    alert("Script Error\n" + strText + "\nLine: " + nLine);
+    return true;
+</script>
+
+<script language=jscript for=window event="onload()">
+</script>
+
+<script language=jscript>
+   VibeCtrl = new ActiveXObject("VibeCtrl.VibeCtrl");
+   VibeCtrl.Scan();
+
+   var p;
+   var d;
+
+   document.write("<table id=tblVib border><tr><td>Port</td><td>Device</td><td>Sources</td>" +
+                  "<td>Sim Srcs</td><td>Plugged</td><td>&nbsp;</td></tr>");
+  
+   for (p = 1; p <= 4; p++)
+   {
+       for (d = 1; d <= 2; d++)
+       {
+           var bPlugged = VibeCtrl.IsPluggedIn(p, d);
+           var nSources = VibeCtrl.GetNumberOfSources(p, d);
+           var nSimSrcs = VibeCtrl.GetNumberOfSimultaneousSources(p, d);
+           var fFreq    = VibeCtrl.GetMaximumFrequency(p, d, 1);
+
+           document.write("<tr>");
+           document.write("<td>" + p + "</td>");
+           document.write("<td>" + d + "</td>");
+           document.write("<td>" + nSources + "</td>");
+           document.write("<td>" + nSimSrcs + "</td>");
+           document.write("<td>" + bPlugged + "</td>");
+           document.write("<td> <input type=button value=Test onclick=\"TestVibrate(" + p + "," + d + "," + fFreq + ");\"></td>");
+           document.write("</tr>");
+       }
+   }
+   document.write("</table>");
+
+   for (p = 1; p <= 4; p++)
+   {
+       for (d = 1; d <= 2; d++)
+       {
+           var nSources = VibeCtrl.GetNumberOfSources(p, d);
+           if (nSources == 0)
+           {
+               continue;
+           }
+
+           document.write("<br>");
+           document.write("Port " + p + "  Device " + d);
+           document.write("<table border><tr><td>Src</td><td>MinFreq</td><td>MaxFreq</td><td>Axis</td>" +
+                          "<td>Pos</td><td>HasVar</td><td>HasCont</td><td>HasDir</td><td>HasArbW</td>" +
+                          "<td>Stop</td></tr>");
+           var s;
+           for (s = 1; s <= nSources; s++)
+           {
+               var nMinFreq = VibeCtrl.GetMinimumFrequency(p, d, s);
+               var nMaxFreq = VibeCtrl.GetMaximumFrequency(p, d, s);
+               var strAxis  = VibeCtrl.GetAxisOfVibration(p, d, s);
+               var strPos   = VibeCtrl.GetPosition(p, d, s);
+               var bVarCap  = VibeCtrl.HasVariableIntensityCapability(p, d, s);
+               var bContCap = VibeCtrl.HasContinuousVibrationCapability(p, d, s);
+               var bDirCap  = VibeCtrl.HasDirectionalCapability(p, d, s);
+               var bArbCap  = VibeCtrl.HasArbitraryWaveformCapability(p, d, s);
+               var fAuto    = VibeCtrl.GetAutoStopTime(p, d, s);
+               document.write("<tr><td>" + s + "</td><td>" + nMinFreq + "</td><td>" + nMaxFreq +
+                              "</td><td>" + strAxis + "</td><td>" + strPos + "</td><td>" + bVarCap + 
+                              "</td><td>" + bContCap + "</td><td>" + bDirCap + "</td><td>" + bArbCap + 
+                              "</td><td>" + fAuto + "</td></tr>");
+           }
+           document.write("</table></div>");
+       }
+   }
+
+</script>
+
+</head>
+
+
+</html>

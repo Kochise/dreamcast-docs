@@ -1,0 +1,1625 @@
+<html>
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+
+<!-- standby, codetype, and codebase are for running this page on PC -->
+<title>Chat - unconnected</title>
+
+<object ID=MsChatPr CLASSID="CLSID:039397C0-46DF-11D0-99CB-00C04FD64497" STANDBY="Dowloading the Microsoft Chat Protocol Control" CODETYPE="application/x-oleobject" CODEBASE="http://activex.microsoft.com/controls/mschat/mschatpr.cab"></object>
+
+<script language=jscript>
+
+var objArrayCreator  = null;
+var nChanSrchResults = null;
+var nUserSrchResults = null;
+var bFirstMemberList = false;
+var bAway            = false;
+
+function CheckConnectionControlsStatus()
+{
+    var stateDisconnected = MsChatPr.ConnectionState == 0;
+    var stateConnected    = MsChatPr.ConnectionState == 4;
+
+    EnableElement(txtNickName, stateDisconnected);
+    EnableElement(txtRealName, stateDisconnected);
+    EnableElement(txtServer, stateDisconnected);
+
+    EnableElement(btnChangeNick, stateConnected);
+    EnableElement(txtChangeNick, stateConnected);
+
+    EnableElement(btnAway, stateConnected);
+    EnableElement(txtAway, stateConnected && !bAway);
+
+    EnableElement(txtPrivMsg, stateConnected);
+    EnableElement(txtPrivMsgTo, stateConnected);
+    EnableElement(btnPrivMsg, stateConnected);
+
+    EnableElement(btnChanSrch, stateConnected);
+    EnableElement(rbChanSrch[0], stateConnected);
+    EnableElement(rbChanSrch[1], stateConnected);
+    EnableElement(rbChanSrch[2], stateConnected);
+    EnableElement(txtChanSrchResults, stateConnected);
+    EnableElement(txtChanSrch, stateConnected);
+
+    if (rbChanSrch[0].checked)
+    {
+        btnChanSrch.value = "Fetch";
+    }
+    else
+    {
+        btnChanSrch.value = "Search";
+    }
+
+    EnableElement(btnUserSrch, stateConnected);
+    EnableElement(rbUserSrch[0], stateConnected);
+    EnableElement(rbUserSrch[1], stateConnected);
+    EnableElement(txtUserSrchResults, stateConnected);
+    EnableElement(txtUserSrch, stateConnected);
+
+    if (rbUserSrch[0].checked)
+    {
+        btnUserSrch.value = "Fetch";
+    }
+    else
+    {
+        btnUserSrch.value = "Search";
+    }
+}
+
+function CheckChannelControlsStatus()
+{
+    var stateConnected = MsChatPr.ConnectionState == 4;
+    var stateOpened = MsChatPr.Channels(1).ChannelState == 2;
+    var stateClosed = MsChatPr.Channels(1).ChannelState == 0;
+
+    EnableElement(btnChannel, stateConnected);
+    EnableElement(txtChannelName, stateConnected && 
+                                  stateClosed);
+
+    EnableElement(btnChannelTopic, stateOpened);
+    EnableElement(txtChannelTopic, stateOpened);
+
+    EnableElement(btnInvite, stateOpened);
+    EnableElement(txtInvite, stateOpened);
+
+    EnableElement(btnBan, stateOpened);
+    EnableElement(btnUnban, stateOpened);
+    EnableElement(txtBan, stateOpened);
+}
+
+function CheckMessageControlsStatus()
+{
+    var stateButton = (MsChatPr.Channels(1).ChannelState == 2);
+
+    var stateItems = MsChatPr.Channels(1).ChannelState == 2;
+    var stateLB = lbMembers.selectedIndex != -1;
+    var stateText = MsChatPr.ConnectionState == 4;
+
+    EnableElement(btnSend, stateButton);
+    EnableElement(btnAct, stateButton);
+    EnableElement(btnWhisper, stateButton && stateLB);
+    EnableElement(btnKick, stateLB);
+
+    EnableElement(txtMessage, stateItems);
+    EnableElement(txtChat, stateText);
+    EnableElement(lbMembers, stateItems);
+}
+
+function SetFocusToElement(element)
+{
+    if (element.disabled)
+    {
+        LogEvent("Logic Error: setting focus to a disabled control");
+    }
+    else
+    {
+        element.focus();
+    }
+}
+
+function EnableElement(element, bEnable)
+{
+    if (!bEnable && (document.activeElement == element))
+    {
+        LogEvent("Logic Error: disabling a focused element");
+        element.blur();
+    }
+    
+    element.disabled = !bEnable;
+}
+
+function LogEvent(strText)
+{
+    txtEvents.insertAdjacentText("beforeEnd", strText + "\n");
+
+    txtEvents.scrollTop = txtEvents.scrollHeight - txtEvents.clientHeight;
+}
+
+function HandleEvent(strText)
+{
+    LogEvent(strText);
+
+    alert(strText);
+}
+
+function AddChatText(str)
+{
+    txtChat.insertAdjacentText("beforeEnd", str);
+    if (txtChat.innerText.length > 2000)
+    {
+        txtChat.innerText = txtChat.innerText.substr(1000);
+    }
+    txtChat.insertAdjacentText("beforeEnd", "\n");
+
+    txtChat.scrollTop = txtChat.scrollHeight - txtChat.clientHeight;
+}
+
+function AddChannelText(items)
+{
+    if (nChanSrchResults == 50)
+    {
+        txtChanSrchResults.insertAdjacentText("afterBegin", "Only displaying first 50 results\n\n");
+    }
+
+    nChanSrchResults++;
+
+    if (nChanSrchResults > 50)
+    {
+        return;
+    }
+
+    var strTemp;
+    strTemp = items.Item("Name");
+    if (strTemp == null)
+    {
+        return;
+    }
+
+    var str = strTemp + "\n";
+
+    strTemp = items.Item("Topic");
+    if ((strTemp == null) || (strTemp == ""))
+    {
+        strTemp = "None";
+    }
+    str += "    Topic: " + strTemp + "\n";
+
+    strTemp = items.Item("MemberCount");
+    if (strTemp != null)
+    {
+        str += "    Member Count: " + strTemp + "\n";
+    }
+    txtChanSrchResults.insertAdjacentText("beforeEnd", str);
+}
+
+function AddUserText(items)
+{
+    if (nUserSrchResults == 50)
+    {
+        txtUserSrchResults.insertAdjacentText("afterBegin", "Only displaying first 50 results\n\n");
+    }
+
+    nUserSrchResults++;
+
+    if (nUserSrchResults > 50)
+    {
+        return;
+    }
+
+    var strTemp;
+    strTemp = items.Item("Nickname");
+    if (strTemp == null)
+    {
+        return;
+    }
+
+    var str = strTemp + "\n";
+
+    strTemp = items.Item("RealName");
+    if ((strTemp != null) && (strTemp != ""))
+    {
+        str += "    Real Name: " + strTemp + "\n";
+    }
+
+    strTemp = items.Item("IPAddress");
+    if ((strTemp != null) && (strTemp != ""))
+    {
+        str += "    IPAddress: " + strTemp + "\n";
+    }
+
+    strTemp = items.Item("Channels");
+    if ((strTemp != null) && (strTemp != ""))
+    {
+        str += "    Channels: " + ExtractList(strTemp) + "\n";
+    }
+
+    txtUserSrchResults.insertAdjacentText("beforeEnd", str);
+}
+
+function ExtractList(List)
+{
+    var strList = "?";
+    if (List != null)
+    {
+        if (typeof(List) == "string")
+        {
+            strList = List;
+        }
+        else if (objArrayCreator == null)
+        {
+            strList = VBExtractList(List);
+        }
+        else
+        {
+            strList = JSExtractList(List);
+        }
+    }
+
+    return strList;
+}
+
+function VBExtractList(List)
+{
+     var VBList = new VBArray(List);
+     var l = VBList.lbound();
+     var u = VBList.ubound();
+     strList = VBList.getItem(l);
+
+     var i;
+     for (i = l; i < (u-1); i++)
+     {
+         strList = strList + ", " + VBList.getItem(i+1);
+     }
+
+     if (u > l)
+     {
+         if (u > (l+1))
+         {
+             strList = strList + ",";
+         }
+         strList += " and " + VBList.getItem(i+1);
+     }
+
+     return strList;
+}
+
+function JSExtractList(List)
+{
+    if (objArrayCreator == null)
+    {
+        return "?";
+    }
+
+    var str = objArrayCreator.CreateStringFromArray(List);
+    str = str.substr(0, str.length - 1);
+
+    var arList = str.split("\0");
+
+    if (arList.length == 0)
+    {
+        return "?";
+    }
+
+    var strList = arList[0];
+
+    var i;
+    for (i = 1; i < (arList.length - 1); i++)
+    {
+        strList += ", ";
+        strList += arList[i];
+    }
+
+    if (arList.length > 1)
+    {
+        if (arList.length > 2)
+        {
+            strList += ",";
+        }
+        strList += " and " + arList[i];
+    }
+
+    return strList;
+}
+
+function BuildRecipients()
+{
+    var arRecipients = null;
+
+    if (objArrayCreator == null)
+    {
+        arRecipients = VBBuildRecipients();
+    }
+    else
+    {
+        arRecipients = JSBuildRecipients();
+    }
+
+    return arRecipients;
+}
+
+function JSBuildRecipients()
+{
+    if (objArrayCreator == null)
+    {
+        return null;
+    }
+
+    var strRecipients = "";
+ 
+    var i;
+    for (i = 0; i < lbMembers.options.length; i++)
+    {
+        if (lbMembers.options[i].selected)
+        {
+            strRecipients += lbMembers.options(i).text + '\0';
+        }
+    }
+
+    arRecipients = objArrayCreator.CreateArrayFromString(strRecipients);
+
+    return arRecipients;
+}
+
+function BuildRecipientsString()
+{
+    var strRecipients = "";
+    var nCount = 0;
+ 
+    var i;
+    for (i = 0; i < lbMembers.options.length; i++)
+    {
+        if (lbMembers.options[i].selected)
+        {
+            nCount ++;
+        }
+    }
+
+    var j = 0;
+    for (i = 0; i < lbMembers.options.length; i++)
+    {
+        if (lbMembers.options[i].selected)
+        {
+            j++;
+            if (i > 0)
+            {
+                if (nCount > 2)
+                {
+                    if (j < nCount)
+                    {
+                        strRecipients += ", ";
+                    }
+                    else if (j == nCount)
+                    {
+                        strRecipients += ",";
+                    }
+                }
+
+                if (nCount > 1)
+                {
+                    if (j == nCount)
+                    {
+                        strRecipients += " and ";
+                    }
+                }
+            }
+
+            strRecipients += lbMembers.options(i).text;
+        }
+    }
+
+    return strRecipients;
+}
+
+</script>
+
+<script for=window event="onerror(strText, strUrl, nLine)">
+    HandleEvent("Script Error: " + strText + " (line = " + nLine + ")");    
+    return true;
+</script>
+
+<script for=window event="onload()">
+    bFirstMemberList = false;
+    bAway = false;
+
+    MsChatPr.PropertyAccessTimeOut = 5000;
+
+    if (MsChatPr.Channels.Count == 0)
+    {
+        MsChatPr.Channels.Add();
+    }
+
+    if ((objArrayCreator == null) && (clientInformation.userAgent.indexOf("Dreamcast") > 0))
+    {
+        objArrayCreator = new ActiveXObject("MsChatPr.VBArray");
+    }
+
+    txtNickName.value = "";
+    txtRealName.value = "";
+    txtServer.value = "";
+    txtChangeNick.value = "";
+    txtInvite.value = "";
+    txtBan.value = "";
+    txtAway.value = "";
+    txtPrivMsg.value = "";
+    txtPrivMsgTo.value = "";
+    txtChannelName.value = "";
+    txtChannelTopic.value = "";
+    txtMessage.value = "";
+    txtChat.innerText = "";
+    txtEvents.innerText = "";
+    txtChanSrch.value = "";
+    txtChanSrchResults.innerText = "";
+    rbChanSrch[0].checked = true;
+    txtUserSrch.value = "";
+    txtUserSrchResults.innerText = "";
+    rbUserSrch[0].checked = true;
+    while (lbMembers.options.length > 0)
+    {
+        lbMembers.options.remove(0);
+    }
+
+    nChanSrchResults = null;
+    nUserSrchResults = null;
+    bFirstMemberList = false;
+
+    CheckConnectionControlsStatus();
+    CheckChannelControlsStatus();
+    CheckMessageControlsStatus();
+
+    hrConnection.scrollIntoView();
+    SetFocusToElement(txtNickName);
+</script>
+
+<script for=window event="onunload()">
+    var nState = MsChatPr.ConnectionState;
+ 
+    switch (nState)
+    {
+        case 1:
+        case 3:
+           MsChatPr.CancelConnectLogin();
+           break;
+
+        case 2:
+        case 4:
+            MsChatPr.Disconnect();
+            break;            
+
+        case 0:
+        case 5:
+            break;
+    }
+</script>
+
+<script for=btnConnection event="onclick()">
+    if (txtNickName.value == "")
+    {
+        alert("You must enter a nick name");
+        SetFocusToElement(txtNickName);
+        return;
+    }
+
+    if (txtServer.value == "")
+    {
+        alert("You must enter a server name");
+        SetFocusToElement(txtServer);
+        return;
+    }
+
+    if (txtRealName.value == "")
+    {
+        alert("You must enter a real name");
+        SetFocusToElement(txtRealName);
+        return;
+    }
+
+    hrConnection.scrollIntoView();
+    SetFocusToElement(btnConnection);
+
+    var nState = MsChatPr.ConnectionState;
+ 
+    switch (nState)
+    {
+        case 0:
+            MsChatPr.Login(txtServer.value, txtNickName.value, txtRealName.value);
+            break;
+
+        case 1:
+        case 3:
+           MsChatPr.CancelConnectLogin();
+           break;
+
+        case 2:
+        case 4:
+            MsChatPr.Disconnect();
+            break;            
+
+        case 5:
+            break;
+    }
+</script>
+
+<script for=btnChangeNick event="onclick()">
+    if (txtChangeNick.value == "")
+    {
+        alert("You must enter a new nick name");
+        SetFocusToElement(txtChangeNick);
+        return;
+    }
+
+    if (MsChatPr.ConnectionState == 4)
+    {
+        var strOldNick = MsChatPr.NickName;
+        var strNewNick = txtChangeNick.value;
+        if (strNewNick != "")
+        {
+            MsChatPr.ChangeNickname(strNewNick);
+        }
+    }
+    else
+    {
+        LogEvent("Logic Error: not connected");
+    }
+</script>
+
+<script for=btnAway event="onclick()">
+    SetFocusToElement(btnAway);
+
+    if (MsChatPr.ConnectionState == 4)
+    {
+        var str = "";
+
+        if (!bAway)
+        {
+            str = "You have been marked as away";
+
+            if (txtAway.value != "")
+            {
+                str += " with reason: " + txtAway.value;
+            }
+
+            MsChatPr.SetAway(true, txtAway.value);
+
+            btnAway.value = "Set Back";
+        }
+        else
+        {
+            MsChatPr.SetAway(false);
+
+            btnAway.value = "Set Away";
+
+            str = "You have been marked as back";
+        }
+
+        bAway = !bAway;
+        CheckConnectionControlsStatus();
+
+        HandleEvent(str);
+    }
+    else
+    {
+        LogEvent("Logic Error: not connected");
+    }
+</script>
+
+<script for=btnPrivMsg event="onclick()">
+    if (txtPrivMsgTo.value == "")
+    {
+        alert("You must enter a recipient");
+        SetFocusToElement(txtPrivMsgTo);
+        return;
+    }
+
+    if (txtPrivMsg.value == "")
+    {
+        alert("You must enter a message");
+        SetFocusToElement(txtPrivMsg);
+        return;
+    }
+
+    if (MsChatPr.ConnectionState == 4)
+    {
+        AddChatText(MsChatPr.NickName + " said privately to " + txtPrivMsgTo.value + ": " + txtPrivMsg.value);
+        MsChatPr.SendPrivateMessage(0, txtPrivMsg.value, txtPrivMsgTo.value);
+        txtPrivMsg.value = "";
+        SetFocusToElement(txtPrivMsg);
+        CheckConnectionControlsStatus();
+    }
+    else
+    {
+        LogEvent("Logic Error: not connected");
+    }
+</script>
+
+<script for=btnChannel event="onclick()">
+    if (txtChannelName.value == "")
+    {
+        alert("You must enter a channel name");
+        SetFocusToElement(txtChannelName);
+        return;
+    }
+
+    if (MsChatPr.ConnectionState == 4)
+    {
+        SetFocusToElement(btnChannel);
+
+        var nState = MsChatPr.Channels(1).ChannelState;
+
+        switch (nState)
+        {
+            case 0:        
+                bFirstMemberList = true;
+                MsChatPr.Channels(1).JoinChannel(txtChannelName.value);
+                break;
+            case 1:
+            case 2:
+                MsChatPr.Channels(1).LeaveChannel();
+                break;
+        }
+    }
+    else
+    {
+        LogEvent("Logic Error: not connected");
+    }
+</script>
+
+<script for=btnSend event="onclick()">
+    if (txtMessage.value == "")
+    {
+        alert("You must enter a message");
+        SetFocusToElement(txtMessage);
+        return;
+    }
+
+    if (MsChatPr.Channels(1).ChannelState == 2)
+    {
+        AddChatText(MsChatPr.NickName + " said: " + txtMessage.value);
+        MsChatPr.Channels(1).SendMessage(0, txtMessage.value);
+        hrChat.scrollIntoView();
+        SetFocusToElement(txtMessage);
+        txtMessage.value = "";
+    }
+    else
+    {
+        LogEvent("Logic Error: not in a room");
+    }
+
+    CheckMessageControlsStatus();
+</script>
+
+<script for=btnAct event="onclick()">
+    if (txtMessage.value == "")
+    {
+        alert("You must enter a message");
+        SetFocusToElement(txtMessage);
+        return;
+    }
+    if (MsChatPr.Channels(1).ChannelState == 2)
+    {
+        AddChatText(MsChatPr.NickName + " " + txtMessage.value);
+        MsChatPr.Channels(1).SendMessage(128, txtMessage.value);
+        hrChat.scrollIntoView();
+        txtMessage.value = "";
+        SetFocusToElement(txtMessage);
+    }
+    else
+    {
+        LogEvent("Logic Error: not in a room");
+    }
+
+    CheckMessageControlsStatus();
+</script>
+
+<script for=btnWhisper event="onclick()">
+    if (txtMessage.value == "")
+    {
+        alert("You must enter a message");
+        SetFocusToElement(txtMessage);
+        return;
+    }
+
+    if (MsChatPr.Channels(1).ChannelState == 2)
+    {
+        var Recipients = BuildRecipients();
+
+        if (Recipients == null)
+        {
+            LogEvent("Logic Error: no recipients selected");
+        }
+        else
+        {
+            AddChatText(MsChatPr.NickName + " whispered to " + BuildRecipientsString() + ": " + txtMessage.value);
+
+            MsChatPr.Channels(1).SendMessage(32, txtMessage.value, Recipients);
+
+            hrChat.scrollIntoView();
+            txtMessage.value = "";
+            SetFocusToElement(txtMessage);
+        }
+    }
+    else
+    {
+        LogEvent("Logic Error: not in a room");
+    }
+
+    CheckMessageControlsStatus();
+</script>
+
+<script for=btnKick event="onclick()">
+    if (MsChatPr.Channels(1).ChannelState == 2)
+    {
+        var strReason = txtMessage.value;
+ 
+        if (strReason == "")
+        {
+            strReason = null;
+        }
+
+        var arKicks = new Array();
+        var j = 0;
+
+        var i;
+        for (i = 0; i < lbMembers.options.length; i++)
+        {
+            if (lbMembers.options[i].selected)
+            {
+                lbMembers.options[i].selected = false;
+                arKicks[j] = lbMembers.options[i].text, strReason;
+                j++;
+            }
+        }
+
+        hrChat.scrollIntoView();
+        txtMessage.value = "";
+        SetFocusToElement(txtMessage);
+        EnableElement(btnKick, false);
+
+        for (i = 0; i < j; i++)
+        {
+            MsChatPr.Channels(1).KickMember(arKicks[i], strReason);
+        }
+    }
+    else
+    {
+        LogEvent("Logic Error: not in a room");
+    }
+</script>
+
+<script for=btnChannelTopic event="onclick()">
+    if (txtChannelTopic.value == "")
+    {
+        alert("You must enter a new channel topic");
+        SetFocusToElement(txtChannelTopic);
+        return;
+    }
+
+    if (MsChatPr.Channels(1).ChannelState == 2)
+    {
+        MsChatPr.Channels(1).ChangeChannelProperty("Topic", txtChannelTopic.value);
+    }
+    else
+    {
+        LogEvent("Logic Error: not in a room");
+    }
+</script>
+
+<script for=btnChanSrch event="onclick()">
+    if (!rbChanSrch[0].checked && (txtChanSrch.value == ""))
+    {
+        alert("You must enter a search string");
+        SetFocusToElement(txtChanSrch);
+        return;
+    }
+
+    if (MsChatPr.ConnectionState == 4)
+    {
+        var items = MsChatPr.NewChatItems;
+        items.AssociatedType = "Query";
+        if (rbChanSrch[1].checked)
+        {
+            items.Item("Name") = txtChanSrch.value;
+            items.Item("NameOp") = "Contains";
+        }
+        else if (rbChanSrch[2].checked)
+        {
+            if (MsChatPr.ConnectionType == 0)
+            {
+               alert("This server is not IRCX and does not support searching by topic");
+               return;
+            }
+            items.Item("Topic") = txtChanSrch.value;
+            items.Item("TopicOp") = "Contains";
+        }
+
+        txtChanSrchResults.innerText = "";
+        nChanSrchResults = 0;
+        MsChatPr.ListChannels(items);
+    }
+    else
+    {
+        LogEvent("Logic Error: not connected");
+    }
+</script>
+
+<script for=btnUserSrch event="onclick()">
+    if (!rbUserSrch[0].checked && (txtUserSrch.value == ""))
+    {
+        alert("You must enter a search string");
+        SetFocusToElement(txtUserSrch);
+        return;
+    }
+
+    if (MsChatPr.ConnectionState == 4)
+    {
+        var items = MsChatPr.NewChatItems;
+        items.AssociatedType = "Query";
+        if (rbUserSrch[1].checked)
+        {
+            items.Item("Nickname") = txtUserSrch.value;
+            items.Item("NicknameOp") = "Contains";
+        }
+
+        txtUserSrchResults.innerText = "";
+        nUserSrchResults = 0;
+        MsChatPr.ListUsers(items);
+    }
+    else
+    {
+        LogEvent("Logic Error: not connected");
+    }
+</script>
+
+<script for=btnInvite event="onclick()">
+    if (txtInvite.value == "")
+    {
+        alert("You must enter an invitation recipient");
+        SetFocusToElement(txtInvite);
+        return;
+    }
+
+    if (MsChatPr.Channels(1).ChannelState == 2)
+    {
+        var strNick = txtInvite.value;
+        HandleEvent("Inviting " + strNick + " to " + MsChatPr.Channels(1).ChannelName);
+        MsChatPr.Channels(1).SendInvitation(strNick);
+    }
+    else
+    {
+        LogEvent("Logic Error: not in a room");
+    }
+</script>
+
+<script for=btnBan event="onclick()">
+    if (txtBan.value == "")
+    {
+        alert("You must enter a user to ban");
+        SetFocusToElement(txtBan);
+        return;
+    }
+
+    if (MsChatPr.Channels(1).ChannelState == 2)
+    {
+        var strNick = txtBan.value;
+        if ((strNick != null) && (strNick != ""))
+        {
+            var items = MsChatPr.NewChatItems;
+            items.AssociatedType = "Query";
+            items.Item("Nickname") = strNick;
+            HandleEvent("Banning " + strNick + " from " + MsChatPr.Channels(1).ChannelName);
+            MsChatPr.Channels(1).BanMembers(items, true);
+        }
+    }
+    else
+    {
+        LogEvent("Logic Error: not in a room");
+    }
+</script>
+
+<script for=btnUnban event="onclick()">
+    if (txtBan.value == "")
+    {
+        alert("You must enter a user to unban");
+        SetFocusToElement(txtBan);
+        return;
+    }
+
+    if (MsChatPr.Channels(1).ChannelState == 2)
+    {
+        var strNick = txtBan.value;
+        if ((strNick != null) && (strNick != ""))
+        {
+            var items = MsChatPr.NewChatItems;
+            items.AssociatedType = "Query";
+            items.Item("Nickname") = strNick;
+            HandleEvent("Unbanning " + strNick + " from " + MsChatPr.Channels(1).ChannelName);
+            MsChatPr.Channels(1).BanMembers(items, false);
+        }
+    }
+    else
+    {
+        LogEvent("Logic Error: not in a room");
+    }
+</script>
+
+<script for=MsChatPr event="OnConnectionState(nNewState)">
+    CheckConnectionControlsStatus();
+    CheckChannelControlsStatus();
+    CheckMessageControlsStatus();
+
+    var strState = "unknown";
+    var strTitle = "unknown"; 
+
+
+    txtChannelTopic.value = "";
+    txtChangeNick.value = "";
+    txtAway.value = "";
+    txtPrivMsg.value = "";
+    txtPrivMsgTo.value = "";
+    txtInvite.value = "";
+    txtBan.value = "";
+    txtChanSrchResults.innerText = "";
+    txtUserSrchResults.innerText = "";
+
+    switch (nNewState)
+    {
+        case 0:
+            btnConnection.value = "Connect";
+            strTitle = "not connected";
+            strState = "disconnected";
+            hrConnection.scrollIntoView();
+            SetFocusToElement(txtNickName);
+            break;
+
+        case 1:
+            btnConnection.value = "Cancel";
+            strTitle = "connecting";
+            strState = "connecting";
+            break;
+
+        case 2:
+            btnConnection.value = "Cancel";
+            strTitle = MsChatPr.ServerName;
+            strState = "connected";
+            break;
+
+        case 3:
+            btnConnection.value = "Cancel";
+            strTitle = MsChatPr.ServerName;
+            strState = "logging in";
+            break;
+
+        case 4:
+            btnConnection.value = "Disconnect";
+            strTitle = MsChatPr.ServerName;
+            strState = "logged in";
+            hrChannel.scrollIntoView();
+            SetFocusToElement(txtChannelName);
+            var nType = MsChatPr.ConnectionType;
+            var strType = "IRC";
+            if (nType == 1)
+            {
+                strType += "X";
+            } 
+            LogEvent("Server Name: " + MsChatPr.ServerName);
+            LogEvent("Connection Type: " + strType + " (" + nType + ")");
+            LogEvent("Nickname: " + MsChatPr.NickName);
+            break;
+
+        case 5:
+            strTitle = "disconnecting";
+            strState = "disconnecting";
+            break;
+    }
+
+    document.title = "Chat - " + strTitle;
+    LogEvent("Connection State: " + strState + " (" + nNewState + ")");
+    spanConnectionState.innerText = "(" + strState + ")"
+</script>
+
+<script for=MsChatPr event="OnConnectionError(nErrorCode, strDescription, ChannelName)">
+    if (ChannelName == null)
+    {
+        if (nErrorCode == 3133)
+        {
+            LogEvent("Connection Error: " + strDescription + " (code = " + nErrorCode + ")");
+        }
+        else
+        {
+            HandleEvent("Connection Error: " + strDescription + " (code = " + nErrorCode + ")");
+        }
+    }
+    else
+    {
+        HandleEvent("Connection Error: " + strDescription + " (code = " + nErrorCode + ") for channel " + ChannelName);
+    }
+</script>
+
+<script for=MsChatPr event="OnChannelState(Channel, nNewState)">
+    CheckChannelControlsStatus();
+    CheckMessageControlsStatus();
+
+    var strTitle = "unknown";
+    var strState = "unknown";
+
+    txtChat.innerText = "";
+    txtChannelTopic.value = "";
+
+    switch (nNewState)
+    {
+        case 0:
+            btnChannel.value = "Join";
+            strTitle = "";
+            strState = "closed";
+            while (lbMembers.options.length)
+            {
+                lbMembers.options.remove(0);
+            }
+
+            hrChannel.scrollIntoView();
+            SetFocusToElement(txtChannelName);
+            break;
+
+        case 1:
+            btnChannel.value = "Leave";
+            strTitle = "joining";
+            strState = "opening";
+            break;
+
+        case 2:
+            btnChannel.value = "Leave";
+            strTitle = Channel.ChannelName;
+            strState = "opened";
+            hrChat.scrollIntoView();
+            SetFocusToElement(txtMessage);
+            txtChannelTopic.value = Channel.ChannelTopic;
+            LogEvent("Channel Name: " + Channel.ChannelName);
+            LogEvent("Channel Topic: " + Channel.ChannelTopic);
+            break;
+    }
+
+    CheckChannelControlsStatus();
+
+    if (strTitle == "")
+    {
+        document.title = "Chat - " + MsChatPr.ServerName;
+    }
+    else
+    {
+        document.title = "Chat - " + MsChatPr.ServerName + " : " + strTitle;
+    }
+
+    LogEvent("Channel State: " + strState + " (" + nNewState + ")");
+    spanChannelState.innerText = "(" + strState + ")"
+</script>
+
+<script for=MsChatPr event="OnChannelError(Channel, nErrorCode, strDescription)">
+    HandleEvent("Channel Error: " + strDescription + " (code = " + nErrorCode + ")");
+</script>
+
+<script for=MsChatPr event="OnChannelProperty(Channel, ChannelItems)">
+    if (nChanSrchResults != null)
+    {
+        AddChannelText(ChannelItems);
+    }
+</script>
+
+<script for=MsChatPr event="OnChannelPropertyChanged(Channel, strModifier, strProperty, strOldValue, strNewValue)">
+    var str = "";
+
+    if ((strOldValue == null) || (strOldValue == ""))
+    {
+        str = strModifier + " changed " + strProperty + " to " + strNewValue;
+    }
+    else
+    {
+        str = strModifier + " changed " + strProperty + " from " + strOldValue + " to " + strNewValue;
+    }
+
+    if (strProperty == "Topic")
+    {
+        txtChannelTopic.value = strNewValue;
+    }
+
+    if (strModifier == MsChatPr.NickName)
+    {
+        HandleEvent(str);
+    }
+    else
+    {
+        LogEvent(str);
+    }
+</script>
+
+<script for=MsChatPr event="OnUserProperty(UserItems)">
+    if (nUserSrchResults != null)
+    {
+        AddUserText(UserItems);
+    }
+</script>
+
+<script for=MsChatPr event="OnUserPropertyChanged(Channel, strModifier, strProperty, strOldValue, strNewValue)">
+    if ((strOldValue == txtNickName.value) && (strProperty == "Nickname"))
+    {
+        txtNickName.value = strNewValue;
+        HandleEvent("Nickname changed from " + strOldValue + " to " + strNewValue);
+    }
+</script>
+
+<script for=MsChatPr event="OnMessage(Channel, strSender, nType, strMessage, Recipients, DataMessageTag)">
+    switch(nType)
+    {
+        case 0:
+            AddChatText(strSender + " said: " + strMessage);
+            break;
+    
+        case 1:
+            AddChatText(strSender + " noticed: " + strMessage);
+            break;
+
+        case 32:
+            AddChatText(strSender + " whispered to " + ExtractList(Recipients) + ": " + strMessage);
+            break;
+
+        case 64:
+            AddChatText(strSender + " thought: " + strMessage);
+            break;
+
+        case 128:
+            AddChatText(strSender + " " + strMessage);
+            break;
+        
+        case 256:
+            AddChatText(strSender + " sent sound " + strMessage);
+            break;
+
+        case 512:
+            AddChatText(strSender + " sent CTCP " + strMessage);
+            break;
+    }
+</script>
+
+<script for=MsChatPr event="OnPrivateMessage(strSender, nType, strMessage, DataMessageTag)">
+    switch(nType)
+    {
+        case 0: 
+        case 1:
+        case 512:
+        case 513:
+        case 1024:
+        case 1025:
+        case 2048:
+        case 2049:
+            AddChatText(strSender + " said privately: " + strMessage);
+            break;
+    
+        case 32:
+            if ((strMessage == null) || (strMessage == ""))
+            {
+                AddChatText(strSender + " is away ");
+            }
+            else
+            {
+                AddChatText(strSender + " is away: " + strMessage);
+            }
+            break;
+
+        case 64:
+            AddChatText(strSender + " asked for version information");
+            break;
+
+        case 128:
+            AddChatText(strSender + " asked for lag time");
+            break;
+
+        case 256:
+            AddChatText(strSender + " asked for local time");
+            break;
+    }
+
+</script>
+
+<script for=MsChatPr event="OnServerTextMessage(nType, strMessage)">
+    switch (nType)
+    {   
+        case 0:
+            LogEvent("Server Message: " + strMessage);
+            break;
+        case 1:
+            LogEvent("Server Notice: " + strMessage);
+            break;
+        case 2:
+            LogEvent("Message of the Day: " + strMessage);
+            break;
+    }
+</script>
+
+<script for=MsChatPr event="OnProtocolMessage(strPrefix, strCommand, Parameters, EnableDefault)">
+    if (("" + Parameters) == "")
+    {
+        LogEvent("ProtocolMessage: " + strPrefix + " - " + strCommand);
+    }
+    else
+    {
+        LogEvent("ProtocolMessage: " + strPrefix + " - " + strCommand + " - " + Parameters);
+    }
+</script>
+
+<script for=MsChatPr event="OnAddMember(Channel, strMember, MemberItems)">
+    if (strMember != MsChatPr.Nickname)
+    {
+        var element = document.createElement("option");
+        lbMembers.options.add(element);
+        lbMembers.options(lbMembers.options.length-1).text = strMember;
+
+        if (!bFirstMemberList)
+        {
+            AddChatText(strMember + " joined the room");
+        }
+    }
+</script>
+
+<script for=MsChatPr event="OnDelMember(Channel, strMember)">
+    if (strMember != MsChatPr.Nickname)
+    {
+        AddChatText(strMember + " left the room");
+
+        for (i = 0; i < lbMembers.options.length; i++)
+        {
+            if (strMember == lbMembers.options(i).text)
+            {
+                lbMembers.options.remove(i);
+                break;
+            }
+        }
+
+        CheckMessageControlsStatus();
+    }
+</script>
+
+<script for=MsChatPr event="OnMemberKicked(Channel, strKicked, strKicker, strReason)">
+    if ((strReason == null) || (strReason == ""))
+    {
+        AddChatText(strKicker + " kicked " + strKicked + " out of the room");
+    }
+    else
+    {
+        AddChatText(strKicker + " kicked " + strKicked + " out of the room because " + strReason);
+    }
+</script>
+
+<script for=MsChatPr event="OnMemberPropertyChanged(Channel, strModified, strModifier, strProperty, strOldValue, strNewValue)">
+    if (strProperty == "Nickname")
+    {
+        AddChatText(strOldValue + " is now " + strNewValue);
+
+        for (i = 0; i < lbMembers.options.length; i++)
+        {
+            if (strOldValue == lbMembers.options(i).text)
+            {
+                lbMembers.options(i).text = strNewValue;
+                break;
+            }
+        }
+    }
+</script>
+
+<script for=MsChatPr event="OnEndEnumeration(Channel, nType)">
+    switch (nType)
+    {
+        case 1:
+            nUserSrchResults = -1;
+            break;
+
+        case 2:
+            nChanSrchResults = -1;
+            break;
+
+        case 5:
+            bFirstMemberList = false;
+            break;
+    }
+</script>
+
+<script for=MsChatPr event="OnInvitation(ChannelName, InviterItems)">
+    var strInviter = InviterItems.Item("Nickname");
+    if ((strInviter == null) || (strInviter == ""))
+    {
+        strInviter = "Someone";
+    }
+
+    HandleEvent(strInviter + " invited you to room: " + ChannelName);
+</script>
+
+</head>
+
+<script language=vbscript>
+
+function VBBuildRecipients
+    dim nSize
+    dim nCount
+    dim arRecipients()
+
+    nSize = 2
+    nCount = 0
+    redim arRecipients(nSize) 
+
+    dim i, j
+    for i = 0 to (lbMembers.options.length-1)
+        if (nSize = nCount) then
+            nSize = nSize + 5
+            redim preserve arRecipients(nSize)
+        end if
+
+        if (lbMembers.options(i).selected) then
+            arRecipients(nCount) = lbMembers.options(i).text
+            nCount = nCount + 1
+        end if
+    next
+
+    if (nCount = 0) then
+        VBBuildRecipients = null
+    else
+        redim preserve arRecipients(nCount)
+        VBBuildRecipients = arRecipients
+    end if
+end function
+
+</script>
+
+<body bgcolor=lavender>
+
+<hr id=hrConnection>
+
+<table>
+  <tr>
+    <td width=90 align=right>
+      Nickname:
+    </td>
+    <td>
+      <input type=text id=txtNickName  style="width:150">
+    </td>
+    <td width=60 align=right>
+      Server:
+    </td>
+    <td colspan=2>
+      <input type=text id=txtServer style="width:210">
+    </td>
+  </tr>
+  <tr>
+    <td width=90 align=right>
+      Real Name:
+    </td>
+    <td>
+      <input type=text id=txtRealName style="width:150">
+    </td>
+    <td>
+    </td>
+    <td width=100>
+      <input type=button id=btnConnection value="Connect">
+    </td>
+    <td>
+      <span id=spanConnectionState>(disconnected)</span>
+    </td>
+  </tr>
+</table>
+
+<hr id=hrChannel>
+
+<table>
+  <tr>
+    <td width=90 align=right>
+      Room:
+    </td>
+    <td>
+      <input type=text id=txtChannelName disabled style="width:150">
+    </td>
+    <td width=60>
+    </td>
+    <td width=100>
+      <input type=button id=btnChannel disabled value="Join">
+    </td>
+    <td>
+      <span id=spanChannelState>(closed)</span>
+    </td>
+  </tr>
+</table>
+
+<hr id=hrChat>
+
+<table>
+  <tr>
+    <td>
+      <textarea id=txtChat disabled readonly=true borders style="width:395px; height:184px"></textarea>
+    </td>
+    <td>
+      <select multiple id=lbMembers disabled onchange="CheckMessageControlsStatus()" style="background-color:white; width: 135px; height:184px">
+      </select>
+    </td>
+  </tr>
+</table>
+
+<hr>
+
+<table>
+  <tr>
+    <td width=405>
+        <input type=text id=txtMessage disabled style="width:290">
+        &nbsp;
+        <input type=button id=btnSend disabled value="Send">
+        &nbsp;
+        <input type=button id=btnAct disabled value="Act">
+    </td>
+    <td>
+        <input type=button id=btnWhisper disabled value="Whisper">
+        <input type=button id=btnKick disabled value="Kick">
+    </td>
+  </tr>
+</table>
+
+<hr>
+
+<table>
+  <tr>
+    <td>
+      <input type=text id=txtChannelTopic disabled style="width:320">
+    </td>
+    <td width=100>
+      <input type=button id=btnChannelTopic disabled value="Change Topic">
+    </td>
+  </tr>
+</table>
+
+<hr>
+
+<table>
+  <tr>
+    <td width=320 align=right>
+      <input type=text id=txtPrivMsg disabled style="width:320">
+      To:
+      <input type=text id=txtPrivMsgTo disabled style="width:225">
+    </td>
+    <td>
+      <input type=button id=btnPrivMsg disabled value="Send Private Message">
+    </td>
+  </tr>
+  <tr>
+  </tr>
+</table>
+
+<hr>
+
+<table>
+  <tr>
+    <td>
+      <input type=text id=txtInvite disabled style="width:320">
+    </td>
+    <td>
+      <input type=button id=btnInvite disabled value="Invite User to Room">
+    </td>
+  </tr>
+</table>
+
+<hr>
+
+<table>
+  <tr>
+    <td rowspan=2>
+      <input type=text id=txtBan disabled style="width:320">
+    </td>
+    <td>
+      <input type=button id=btnBan disabled value="Ban User">
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <input type=button id=btnUnban disabled value="Unban User">
+    </td>
+  </tr>
+</table>
+
+<hr>
+
+<table>
+  <tr>
+    <td>
+      <input type=text id=txtChangeNick disabled style="width:320">
+    </td>
+    <td>
+        <input type=button id=btnChangeNick value="Change Nickname" disabled>
+    </td>
+  </tr>
+    <td>
+      <input type=text id=txtAway disabled style="width:320">
+    </td>
+    <td>
+      <input type=button id=btnAway disabled value="Set Away">
+    <td>
+  </tr>
+</table>
+
+<hr>
+
+<table>
+  <tr>
+    <td width=150>
+      <input type=radio name=rbChanSrch disabled value="All" checked>For All
+    </td>
+    <td>
+      Channel Search
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <input type=radio name=rbChanSrch disabled value="Name">By Name
+    </td>
+    <td rowspan=5>
+      <textarea id=txtChanSrchResults disabled readonly=true borders wrap=off style="width=382px; height=150px"></textarea>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <input type=radio name=rbChanSrch disabled value="Topic">By Topic
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Search Text<br>
+      <input type=input id=txtChanSrch disabled style="width:130">
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <input type=button id=btnChanSrch disabled value="Fetch">
+    </td>
+  </tr>
+</table>
+
+<hr>
+
+<table>
+  <tr>
+    <td width=150>
+      <input type=radio name=rbUserSrch disabled value="All" checked>For All
+    </td>
+    <td>
+      User Search
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <input type=radio name=rbUserSrch disabled value="Name">By Nickname
+    </td>
+    <td rowspan=5>
+      <textarea id=txtUserSrchResults disabled readonly=true borders wrap=off style="width=382px; height=150px"></textarea>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Search Text<br>
+      <input type=input id=txtUserSrch disabled style="width:130">
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <input type=button id=btnUserSrch disabled value="Fetch">
+    </td>
+  </tr>
+</table>
+
+<hr>
+Event Log
+<br>
+<br>
+
+<textarea id=txtEvents readonly=true borders=true style="width:540px; height:150px"></textarea>
+
+</body>
+
+</html>

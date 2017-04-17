@@ -1,0 +1,11 @@
+all: dbg rtl
+
+clean:
+    nmake /f "mailto.mak" CFG="mailto - Win32 (WCE SH4) Release" CEConfigName="Dreamcast" CEVersion="212" CESubsystem="windowsce,2.12" CLEAN
+    nmake /f "mailto.mak" CFG="mailto - Win32 (WCE SH4) Debug" CEConfigName="Dreamcast" CEVersion="212" CESubsystem="windowsce,2.12" CLEAN
+
+dbg:
+    nmake /f "mailto.mak" CFG="mailto - Win32 (WCE SH4) Debug" CEConfigName="Dreamcast" CEVersion="212" CESubsystem="windowsce,2.12" 
+
+rtl:
+    nmake /f "mailto.mak" CFG="mailto - Win32 (WCE SH4) Release" CEConfigName="Dreamcast" CEVersion="212" CESubsystem="windowsce,2.12" 

@@ -1,0 +1,1114 @@
+<html>
+
+<head>
+
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+
+<!-- standby, codetype, and codebase are for running this page on PC -->
+<title>Puzzle - unconnected</title>
+
+<object ID=MsChatPr CLASSID="CLSID:039397C0-46DF-11D0-99CB-00C04FD64497" STANDBY="Dowloading the Microsoft Chat Protocol Control" CODETYPE="application/x-oleobject" CODEBASE="http://activex.microsoft.com/controls/mschat/mschatpr.cab"></object>
+
+<script language=jscript>
+
+var objArrayCreator  = null;
+var bFirstMemberList = false;
+var bIsHost          = true;
+var bInGame          = false;
+var arPlayers        = null;
+var nPlayer          = 0;
+var strHost          = "";
+var strPuzzle        = "";
+var strDisplay       = "";
+
+function CheckConnectionControlsStatus()
+{
+    var stateDisconnected = MsChatPr.ConnectionState == 0;
+
+    var stateConnectionButton = true;
+    if (stateDisconnected)
+    {
+        stateConnectionButton = (txtNickName.value != "") &&
+                                (txtRealName.value != "") &&
+                                (txtServer.value != "");
+    }
+    
+    EnableElement(btnConnection, stateConnectionButton);
+
+    EnableElement(txtNickName, stateDisconnected);
+    EnableElement(txtRealName, stateDisconnected);
+    EnableElement(txtServer, stateDisconnected);
+}
+
+function CheckChannelControlsStatus()
+{
+    var stateConnected = MsChatPr.ConnectionState == 4;
+    var stateOpened = MsChatPr.Channels(1).ChannelState == 2;
+    var stateClosed = MsChatPr.Channels(1).ChannelState == 0;
+
+    EnableElement(btnChannel, stateConnected &&
+                              txtChannelName.value != "");
+
+    EnableElement(txtChannelName, stateConnected && 
+                                  stateClosed);
+}
+
+function CheckMessageControlsStatus()
+{
+    var stateButton = (MsChatPr.Channels(1).ChannelState == 2) &&
+                      (txtMessage.value != "");
+
+    var stateItems = MsChatPr.Channels(1).ChannelState == 2;
+    var stateLB = lbMembers.selectedIndex != -1;
+    var stateText = MsChatPr.ConnectionState == 4;
+
+    EnableElement(btnSend, stateButton);
+
+    EnableElement(txtMessage, stateItems);
+    EnableElement(txtChat, stateText);
+    EnableElement(lbMembers, stateItems);
+}
+
+function SetFocusToElement(element)
+{
+    if (!element.disabled)
+    {
+        element.focus();
+    }
+}
+
+function EnableElement(element, bEnable)
+{
+    if (!bEnable && (document.activeElement == element))
+    {
+        element.blur();
+    }
+    
+    element.disabled = !bEnable;
+}
+
+function HandleEvent(strText)
+{
+    alert(strText);
+}
+
+function AddChatText(str)
+{
+    txtChat.insertAdjacentText("beforeEnd", str);
+    if (txtChat.innerText.length > 2000)
+    {
+        txtChat.innerText = txtChat.innerText.substr(1000);
+    }
+    txtChat.insertAdjacentText("beforeEnd", "\n");
+
+    txtChat.scrollTop = txtChat.scrollHeight - txtChat.clientHeight;
+}
+
+function ExtractList(List)
+{
+    var strList = "?";
+    if (List != null)
+    {
+        if (typeof(List) == "string")
+        {
+            strList = List;
+        }
+        else if (objArrayCreator == null)
+        {
+            strList = VBExtractList(List);
+        }
+        else
+        {
+            strList = JSExtractList(List);
+        }
+    }
+
+    return strList;
+}
+
+function VBExtractList(List)
+{
+     var VBList = new VBArray(List);
+     var l = VBList.lbound();
+     var u = VBList.ubound();
+     strList = VBList.getItem(l);
+
+     var i;
+     for (i = l; i < (u-1); i++)
+     {
+         strList = strList + ", " + VBList.getItem(i+1);
+     }
+
+     if (u > l)
+     {
+         if (u > (l+1))
+         {
+             strList = strList + ",";
+         }
+         strList += " and " + VBList.getItem(i+1);
+     }
+
+     return strList;
+}
+
+function JSExtractList(List)
+{
+    if (objArrayCreator == null)
+    {
+        return "?";
+    }
+
+    var str = objArrayCreator.CreateStringFromArray(List);
+    str = str.substr(0, str.length - 1);
+
+    var arList = str.split("\0");
+
+    if (arList.length == 0)
+    {
+        return "?";
+    }
+
+    var strList = arList[0];
+
+    var i;
+    for (i = 1; i < (arList.length - 1); i++)
+    {
+        strList += ", ";
+        strList += arList[i];
+    }
+
+    if (arList.length > 1)
+    {
+        if (arList.length > 2)
+        {
+            strList += ",";
+        }
+        strList += " and " + arList[i];
+    }
+
+    return strList;
+}
+
+function ConvertPuzzle()
+{
+    strPuzzle = strPuzzle.toUpperCase();
+    strDisplay = "";
+
+    var i;
+    var j;
+    for (i = 0; i < strPuzzle.length; i++)
+    {
+        j = strPuzzle.charAt(i);
+        if ((j >= "A") && (j <= "Z"))
+        {
+            strDisplay += "*";
+        }
+        else if (j == "*")
+        {
+            strDisplay += "#";
+        }
+        else
+        {
+            strDisplay += j;
+        }
+    }
+}
+
+function HandlePlayerTurn(bAdvance)
+{
+    if (bAdvance)
+    {
+        nPlayer = (nPlayer + 1) % arPlayers.length;
+    }
+
+    AddChatText("It is " + arPlayers[nPlayer] + "'s turn");
+    MsChatPr.Channels(1).SendMessage(2, arPlayers[nPlayer], null, "turn");
+}
+
+function HandleIncorrectGuess(strReason, strSender)
+{
+    AddChatText("The guess is " + strReason);
+    MsChatPr.Channels(1).SendMessage(2, strSender, null, strReason);
+    HandlePlayerTurn(true);
+}
+
+function SendPuzzleUpdate(strPuzzle)
+{
+    MsChatPr.Channels(1).SendMessage(2, strDisplay, null, "puzzle");
+}
+
+function HandleCorrectGuess(strSender)
+{
+    AddChatText("The guess is a hit");
+    MsChatPr.Channels(1).SendMessage(2, strSender, null, "hit");
+}
+
+function HandleSolved(strSender)
+{
+    AddChatText(strSender + " solved the puzzle!");
+    if (bIsHost)
+    {
+        nPlayer = 999;
+        MsChatPr.Channels(1).SendMessage(2, strSender, null, "solved");
+    }
+    bIsHost = true;
+    bInGame = false;
+    divPuzzle.style.display = "none";
+    divHost.style.display = "block";
+        hrChat.scrollIntoView();
+    alert(strSender + " solved the puzzle!");
+}
+
+function HandleEnd(bHostLeft)
+{
+    bInGame = false;
+    divPuzzle.style.display = "none";
+    divHost.style.display = "block";
+
+    if (bHostLeft)
+    {
+        bIsHost = true;
+        AddChatText("The host left the game");
+        alert("The host left the game");
+    }
+    else
+    {
+        AddChatText("No one left to play");
+        if (bIsHost)
+        {
+            nPlayer = 999;
+            MsChatPr.Channels(1).SendMessage(2, " ", null, "end");
+            alert("No one left to play");
+        }
+        else
+        {
+            bIsHost = true;
+        }
+    }
+}
+
+function HandleGameMessage(strSender, strMessage, strDataTag)
+{
+    if (strDataTag == "start")
+    {
+        bIsHost = false;
+        bInGame = true;
+        strHost = strMessage;
+        txtPuzzle.value = "";
+        divHost.style.display = "none";
+        divPuzzle.style.display = "block";
+        AddChatText("Game has started");
+        hrChat.scrollIntoView();
+        return;
+    }
+    else if (strDataTag == "spectator")
+    {
+        bIsHost = false;
+        bInGame = true;
+        txtPuzzle.value = "";
+        divHost.style.display = "none";
+        divPuzzle.style.display = "block";
+        AddChatText("You are a spectator");
+        alert("Game has already started, so you are a spectator");
+        return;
+    }
+
+    if (bIsHost)
+    {
+        if (!bInGame || (strSender != arPlayers[nPlayer]))
+        {          
+            return;
+        }
+
+        if (strDataTag == "guess")
+        {
+            var strGuess = strMessage.toString().toUpperCase().charAt(0);
+            AddChatText("The guess is " + strGuess);
+
+            if ((strGuess < "A") || (strGuess > "Z"))
+            {
+                HandleIncorrectGuess("invalid", strSender);
+                return;
+            }
+
+            if (strDisplay.lastIndexOf(strGuess) >= 0)
+            {
+                HandleIncorrectGuess("duplicate", strSender);
+                return;
+            }
+
+            if (strPuzzle.lastIndexOf(strGuess) < 0)
+            {
+                HandleIncorrectGuess("miss", strSender);
+                return;
+            }
+
+            var strTemp = "";
+            var i;
+            for (i = 0; i < strPuzzle.length; i++)
+            {
+                if (strPuzzle.charAt(i) == strGuess)
+                {
+                    strTemp += strGuess;
+                }
+                else
+                {
+                    strTemp += strDisplay.charAt(i);
+                }
+            }
+
+            strDisplay = strTemp;
+            txtPuzzle.value = strDisplay;
+
+            SendPuzzleUpdate();
+            HandleCorrectGuess(strSender);
+
+            if (strDisplay.lastIndexOf("*") < 0)
+            {
+                HandleSolved(strSender);
+            }
+            else
+            {
+                HandlePlayerTurn(false);
+            }
+        }
+    }
+    else
+    {
+        if (strDataTag == "puzzle")
+        {
+            txtPuzzle.value = strMessage;
+        }
+        else if (strDataTag == "turn")
+        {
+            AddChatText("It is " + strMessage + "'s turn");
+
+            if (strMessage == MsChatPr.Nickname)
+            {
+                var strGuess = prompt("Puzzle: " + txtPuzzle.value + "\n" + "It is your turn. What letter would you like to guess?", "");
+                if ((strGuess == null) || (strGuess == ""))
+                {
+                    strGuess = " ";
+                }
+                if (bInGame)
+                {
+                    MsChatPr.Channels(1).SendMessage(2, strGuess, null, "guess");
+                }
+            }
+        }
+        else if (strDataTag == "guess")
+        {
+            var strGuess = strMessage.toString().toUpperCase().charAt(0);
+            AddChatText("The guess is " + strGuess);
+        }
+        else if (strDataTag == "invalid")
+        {
+            AddChatText("The guess is invalid");
+        }
+        else if (strDataTag == "duplicate")
+        {
+            AddChatText("The guess is a duplicate");
+        }
+        else if (strDataTag == "miss")
+        {
+            AddChatText("The guess is a miss");
+        }
+        else if (strDataTag == "hit")
+        {
+            AddChatText("The guess is a hit");
+        }
+        else if (strDataTag == "solved")
+        {
+            HandleSolved(strMessage);
+        }
+        else if (strDataTag == "end")
+        {
+            HandleEnd(false);
+        }
+    }
+}
+
+</script>
+
+<script for=window event="onerror(strText, strUrl, nLine)">
+    HandleEvent("Script Error: " + strText + " (line = " + nLine + ")");    
+    return true;
+</script>
+
+<script for=window event="onload()">
+    bFirstMemberList = false;
+
+    MsChatPr.PropertyAccessTimeOut = 5000;
+
+    if (MsChatPr.Channels.Count == 0)
+    {
+        MsChatPr.Channels.Add();
+    }
+
+    if ((objArrayCreator == null) && (clientInformation.userAgent.indexOf("Dreamcast") > 0))
+    {
+        objArrayCreator = new ActiveXObject("MsChatPr.VBArray");
+    }
+
+    txtNickName.value = "";
+    txtRealName.value = "";
+    txtServer.value = "";
+    txtChannelName.value = "";
+    txtMessage.value = "";
+    txtChat.innerText = "";
+    while (lbMembers.options.length > 0)
+    {
+        lbMembers.options.remove(0);
+    }
+
+    CheckConnectionControlsStatus();
+    CheckChannelControlsStatus();
+    CheckMessageControlsStatus();
+
+    hrConnection.scrollIntoView();
+    SetFocusToElement(txtNickName);
+</script>
+
+<script for=window event="onunload()">
+    var nState = MsChatPr.ConnectionState;
+ 
+    switch (nState)
+    {
+        case 1:
+        case 3:
+           MsChatPr.CancelConnectLogin();
+           break;
+
+        case 2:
+        case 4:
+            MsChatPr.Disconnect();
+            break;            
+
+        case 0:
+        case 5:
+            break;
+    }
+</script>
+
+<script for=btnConnection event="onclick()">
+    hrConnection.scrollIntoView();
+    SetFocusToElement(btnConnection);
+
+    var nState = MsChatPr.ConnectionState;
+ 
+    switch (nState)
+    {
+        case 0:
+            MsChatPr.Login(txtServer.value, txtNickName.value, txtRealName.value);
+            break;
+
+        case 1:
+        case 3:
+           MsChatPr.CancelConnectLogin();
+           break;
+
+        case 2:
+        case 4:
+            MsChatPr.Disconnect();
+            break;            
+
+        case 5:
+            break;
+    }
+</script>
+
+<script for=btnChannel event="onclick()">
+    if (MsChatPr.ConnectionState == 4)
+    {
+        SetFocusToElement(btnChannel);
+
+        var nState = MsChatPr.Channels(1).ChannelState;
+
+        switch (nState)
+        {
+            case 0:        
+                bFirstMemberList = true;
+                MsChatPr.Channels(1).JoinChannel(txtChannelName.value);
+                break;
+            case 1:
+            case 2:
+                MsChatPr.Channels(1).LeaveChannel();
+                break;
+        }
+    }
+</script>
+
+<script for=btnSend event="onclick()">
+    if (MsChatPr.Channels(1).ChannelState == 2)
+    {
+        AddChatText(MsChatPr.NickName + " said: " + txtMessage.value);
+        MsChatPr.Channels(1).SendMessage(0, txtMessage.value);
+        hrChat.scrollIntoView();
+        txtMessage.value = "";
+        SetFocusToElement(txtMessage);
+    }
+
+    CheckMessageControlsStatus();
+</script>
+
+<script for=btnInvite event="onclick()">
+    if (MsChatPr.Channels(1).ChannelState == 2)
+    {
+        var strNick = prompt("Enter nickname of user to invite to the game:", "");
+        if ((strNick != null) && (strNick != "") && !bInGame)
+        {
+            HandleEvent("Inviting " + strNick + " to game in " + MsChatPr.Channels(1).ChannelName);
+            MsChatPr.Channels(1).SendInvitation(strNick);
+        }
+    }
+</script>
+
+<script for=btnStart event="onclick()">
+    if (MsChatPr.Channels(1).ChannelState == 2)
+    {
+        if (lbMembers.options.length < 1) 
+        {
+            alert("There are no players in the room");
+            return;
+        }
+
+        strPuzzle = prompt("Enter the puzzle text:", "");
+        if ((strPuzzle != null) && (strPuzzle != "") && !bInGame)
+        {
+            ConvertPuzzle();
+
+            if (strDisplay.lastIndexOf("*") < 0)
+            {
+                alert("There are no letters to guess in this puzzle");
+                return;
+            }
+  
+            divHost.style.display = "none";
+            arPlayers = new Array();
+            var i;
+            for (i = 0; i < lbMembers.options.length; i++)
+            {
+                arPlayers[i] = lbMembers.options[i].text;
+            }
+
+            txtPuzzle.value = strDisplay;
+            divPuzzle.style.display = "block";              
+
+            hrChat.scrollIntoView();
+            bInGame = true;
+            MsChatPr.Channels(1).SendMessage(2, MsChatPr.NickName, null, "start");
+            SendPuzzleUpdate();
+
+            nPlayer = 0;
+            HandlePlayerTurn(false);
+        }
+    }
+</script>
+
+<script for=txtNickName event="onkeyup()">
+    CheckConnectionControlsStatus();
+
+    if (window.event.keyCode == 13)
+    {
+        hrConnection.scrollIntoView();
+        SetFocusToElement(txtServer);
+    }
+</script>
+
+<script for=txtServer event="onkeyup()">
+    CheckConnectionControlsStatus();
+
+    if (window.event.keyCode == 13)
+    {
+        hrConnection.scrollIntoView();
+        SetFocusToElement(txtRealName);
+    }
+</script>
+
+<script for=txtRealName event="onkeyup()">
+    CheckConnectionControlsStatus();
+
+    if (window.event.keyCode == 13)
+    {
+        btnConnection.click();
+    }
+</script>
+
+<script for=txtChannelName event="onkeyup()">
+    CheckChannelControlsStatus();
+
+    if (window.event.keyCode == 13)
+    {
+        btnChannel.click();
+    }
+</script>
+
+<script for=txtMessage event="onkeyup()">
+    CheckMessageControlsStatus();
+
+    if (window.event.keyCode == 13)
+    {
+        btnSend.click();
+    }
+</script>
+
+<script for=MsChatPr event="OnConnectionState(nNewState)">
+    CheckConnectionControlsStatus();
+    CheckChannelControlsStatus();
+    CheckMessageControlsStatus();
+
+    var strState = "unknown";
+    var strTitle = "unknown"; 
+
+    switch (nNewState)
+    {
+        case 0:
+            btnConnection.value = "Connect";
+            strTitle = "not connected";
+            strState = "disconnected";
+            hrConnection.scrollIntoView();
+            SetFocusToElement(txtNickName);
+            break;
+
+        case 1:
+            btnConnection.value = "Cancel";
+            strTitle = "connecting";
+            strState = "connecting";
+            break;
+
+        case 2:
+            btnConnection.value = "Cancel";
+            strTitle = MsChatPr.ServerName;
+            strState = "connected";
+            break;
+
+        case 3:
+            btnConnection.value = "Cancel";
+            strTitle = MsChatPr.ServerName;
+            strState = "logging in";
+            break;
+
+        case 4:
+            btnConnection.value = "Disconnect";
+            strTitle = MsChatPr.ServerName;
+            strState = "logged in";
+            hrChannel.scrollIntoView();
+            SetFocusToElement(txtChannelName);
+            break;
+
+        case 5:
+            strTitle = "disconnecting";
+            strState = "disconnecting";
+            break;
+    }
+
+    document.title = "Puzzle - " + strTitle;
+    spanConnectionState.innerText = "(" + strState + ")"
+</script>
+
+<script for=MsChatPr event="OnConnectionError(nErrorCode, strDescription, ChannelName)">
+    if (ChannelName == null)
+    {
+        if (nErrorCode != 3133)
+        {
+            HandleEvent("Connection Error: " + strDescription + " (code = " + nErrorCode + ")");
+        }
+    }
+    else
+    {
+        HandleEvent("Connection Error: " + strDescription + " (code = " + nErrorCode + ") for channel " + ChannelName);
+    }
+</script>
+
+<script for=MsChatPr event="OnChannelState(Channel, nNewState)">
+    CheckChannelControlsStatus();
+    CheckMessageControlsStatus();
+
+    var strTitle = "unknown";
+    var strState = "unknown";
+
+    txtChat.innerText = "";
+
+    switch (nNewState)
+    {
+        case 0:
+            btnChannel.value = "Join";
+            strTitle = "";
+            strState = "closed";
+            while (lbMembers.options.length)
+            {
+                lbMembers.options.remove(0);
+            }
+
+            bInGame = false;
+            bIsHost = true;
+            divHost.style.display = "none";
+            divPuzzle.style.display = "none";
+            hrChannel.scrollIntoView();
+            SetFocusToElement(txtChannelName);
+            break;
+
+        case 1:
+            btnChannel.value = "Leave";
+            strTitle = "joining";
+            strState = "opening";
+            break;
+
+        case 2:
+            btnChannel.value = "Leave";
+            strTitle = Channel.ChannelName;
+            strState = "opened";
+            divHost.style.display = "block";
+            hrChat.scrollIntoView();
+            SetFocusToElement(txtMessage);
+            break;
+    }
+
+    CheckChannelControlsStatus();
+
+    if (strTitle == "")
+    {
+        document.title = "Puzzle - " + MsChatPr.ServerName;
+    }
+    else
+    {
+        document.title = "Puzzle - " + MsChatPr.ServerName + " : " + strTitle;
+    }
+
+    spanChannelState.innerText = "(" + strState + ")"
+</script>
+
+<script for=MsChatPr event="OnChannelError(Channel, nErrorCode, strDescription)">
+    HandleEvent("Channel Error: " + strDescription + " (code = " + nErrorCode + ")");
+</script>
+
+<script for=MsChatPr event="OnMessage(Channel, strSender, nType, strMessage, Recipients, DataMessageTag)">
+    switch(nType)
+    {
+        case 0:
+            AddChatText(strSender + " said: " + strMessage);
+            break;
+    
+        case 1:
+            AddChatText(strSender + " noticed: " + strMessage);
+            break;
+
+        case 2:
+            HandleGameMessage(strSender, strMessage, DataMessageTag);
+            break;
+
+        case 32:
+            AddChatText(strSender + " whispered to " + ExtractList(Recipients) + ": " + strMessage);
+            break;
+
+        case 64:
+            AddChatText(strSender + " thought: " + strMessage);
+            break;
+
+        case 128:
+            AddChatText(strSender + " " + strMessage);
+            break;
+        
+        case 256:
+            AddChatText(strSender + " sent sound " + strMessage);
+            break;
+
+        case 512:
+            AddChatText(strSender + " sent CTCP " + strMessage);
+            break;
+    }
+</script>
+
+<script for=MsChatPr event="OnPrivateMessage(strSender, nType, strMessage, DataMessageTag)">
+    switch(nType)
+    {
+        case 0: 
+        case 1:
+        case 512:
+        case 513:
+        case 1024:
+        case 1025:
+        case 2048:
+        case 2049:
+            AddChatText(strSender + " said privately: " + strMessage);
+            break;
+    
+        case 2:
+            HandleGameMessage(strSender, strMessage, DataMessageTag);
+            break;
+
+        case 32:
+            if ((strMessage == null) || (strMessage == ""))
+            {
+                AddChatText(strSender + " is away ");
+            }
+            else
+            {
+                AddChatText(strSender + " is away: " + strMessage);
+            }
+            break;
+
+        case 64:
+            AddChatText(strSender + " asked for version information");
+            break;
+
+        case 128:
+            AddChatText(strSender + " asked for lag time");
+            break;
+
+        case 256:
+            AddChatText(strSender + " asked for local time");
+            break;
+    }
+
+</script>
+
+<script for=MsChatPr event="OnAddMember(Channel, strMember, MemberItems)">
+    if (strMember != MsChatPr.Nickname)
+    {
+        var element = document.createElement("option");
+        lbMembers.options.add(element);
+        lbMembers.options(lbMembers.options.length-1).text = strMember;
+
+        if (!bFirstMemberList)
+        {
+            AddChatText(strMember + " joined the room");
+        }
+
+        if (bIsHost && bInGame)
+        {
+            SendPuzzleUpdate();
+            MsChatPr.Channels(1).SendMessage(2, " ", strMember, "spectator");
+            MsChatPr.Channels(1).SendMessage(2, arPlayers[nPlayer], strMember, "turn");
+        }
+    }
+</script>
+
+<script for=MsChatPr event="OnDelMember(Channel, strMember)">
+    if (strMember != MsChatPr.Nickname)
+    {
+        AddChatText(strMember + " left the room");
+
+        var i;
+        for (i = 0; i < lbMembers.options.length; i++)
+        {
+            if (strMember == lbMembers.options(i).text)
+            {
+                lbMembers.options.remove(i);
+                break;
+            }
+        }
+
+        CheckMessageControlsStatus();
+
+        if (bInGame && bIsHost)
+        {
+            var strCurrent = arPlayers[nPlayer];
+            var arTemp = new Array();
+            var j = 0;
+
+            for (i = 0; i < arPlayers.length; i++)
+            {
+                if (arPlayers[i] == strMember)
+                {
+                    if (i <= nPlayer)
+                    {
+                        nPlayer--;
+                    }
+                }
+                else
+                {
+                    arTemp[j] = arPlayers[i];
+                    j++;
+                }
+            }
+
+            arPlayers = arTemp;
+
+            if (arPlayers.length == 0)
+            {
+                HandleEnd(false);
+            }
+            else if (strCurrent == strMember)
+            {
+                HandlePlayerTurn(true);
+            }
+        }
+        else if (bInGame && (strMember == strHost))
+        {
+            HandleEnd(true);
+        }
+    }
+</script>
+
+<script for=MsChatPr event="OnMemberPropertyChanged(Channel, strModified, strModifier, strProperty, strOldValue, strNewValue)">
+    if (strProperty == "Nickname")
+    {
+        AddChatText(strOldValue + " is now " + strNewValue);
+
+        for (i = 0; i < lbMembers.options.length; i++)
+        {
+            if (strOldValue == lbMembers.options(i).text)
+            {
+                lbMembers.options(i).text = strNewValue;
+                break;
+            }
+        }
+    }
+</script>
+
+<script for=MsChatPr event="OnEndEnumeration(Channel, nType)">
+    if (nType == 5)
+    {
+        bFirstMemberList = false;
+    }
+</script>
+
+<script for=MsChatPr event="OnInvitation(ChannelName, InviterItems)">
+    var strInviter = InviterItems.Item("Nickname");
+    if ((strInviter == null) || (strInviter == ""))
+    {
+        strInviter = "Someone";
+    }
+
+    if (MsChatPr.Channels(1).ChannelState == 0)
+    {
+        if (confirm(strInviter + " invited you to room: " + ChannelName + 
+                    ". Would you like to go there?"))
+        {
+            txtChannelName.value = ChannelName;
+            EnableElement(btnChannel, true);
+            SetFocusToElement(btnChannel);
+            btnChannel.click();
+        }
+    }
+    else
+    {
+        HandleEvent(strInviter + " invited you to room: " + ChannelName);
+    }
+</script>
+
+</head>
+
+<body bgcolor=lavender>
+
+<hr id=hrConnection>
+
+<table>
+  <tr>
+    <td width=90 align=right>
+      Nickname:
+    </td>
+    <td>
+      <input type=text id=txtNickName  style="width:150">
+    </td>
+    <td width=60 align=right>
+      Server:
+    </td>
+    <td colspan=2>
+      <input type=text id=txtServer style="width:210">
+    </td>
+  </tr>
+  <tr>
+    <td width=90 align=right>
+      Real Name:
+    </td>
+    <td>
+      <input type=text id=txtRealName style="width:150">
+    </td>
+    <td>
+    </td>
+    <td width=100>
+      <input type=button id=btnConnection disabled value="Connect">
+    </td>
+    <td>
+      <span id=spanConnectionState>(disconnected)</span>
+    </td>
+  </tr>
+</table>
+
+<hr id=hrChannel>
+
+<table>
+  <tr>
+    <td width=90 align=right>
+      Room:
+    </td>
+    <td>
+      <input type=text id=txtChannelName disabled style="width:150">
+    </td>
+    <td width=60>
+    </td>
+    <td width=100>
+      <input type=button id=btnChannel disabled value="Join">
+    </td>
+    <td>
+      <span id=spanChannelState>(closed)</span>
+    </td>
+  </tr>
+</table>
+
+<hr id=hrChat>
+
+<div id=divHost style="display:none">
+  <table>
+    <tr>
+      <td width=90 align=right>
+        Game Host:
+      </td>
+      <td>
+        <input type=button id=btnInvite value="Invite User to Puzzle">
+        &nbsp;
+        <input type=button id=btnStart value="Start Game">
+      </td>
+    </tr>
+  </table>
+
+  <hr>
+</div>
+
+<div id=divPuzzle style="display:none">
+  <table>
+    <tr>
+      <td width=90 align=right>
+        Puzzle:
+      </td>
+      <td>
+        <input type=text id=txtPuzzle readOnly style="width:400">
+      </td>
+    </tr>
+  </table>
+
+  <hr>
+</div>
+
+<table>
+  <tr>
+    <td>
+      <textarea id=txtChat disabled readonly=true borders style="width:395px; height:138px"></textarea>
+    </td>
+    <td>
+      <select multiple id=lbMembers disabled onchange="CheckMessageControlsStatus()" style="background-color:white; width: 135px; height:138px">
+      </select>
+    </td>
+  </tr>
+</table>
+
+<hr>
+
+<table>
+  <tr>
+    <td>
+        <input type=text id=txtMessage disabled style="width:340">
+    </td>
+    <td>
+        <input type=button id=btnSend disabled value="Send">
+    </td>
+  </tr>
+</table>
+
+<hr>
+
+</body>
+
+</html>

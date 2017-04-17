@@ -1,0 +1,471 @@
+;++
+; THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
+; ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+; THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
+; PARTICULAR PURPOSE.
+; Copyright (c) 1995, 1996, 1997  Microsoft Corporation
+;
+; Module Name:
+;
+;        sh4opts.src
+;
+; Abstract:
+;
+;        This module contains optimizations for SH4 for d3dim.dll
+;
+; Author:
+;
+;        Jeff Simon (jeffsim) 2-19-98
+;
+;--
+
+    .list OFF
+    .include "kxsh3.h"
+    .list ON
+
+; Data field offsets for EnvMapVertices
+; D3DVERTEX offsets
+rX:          .equ    0
+rY:          .equ    4
+rZ:          .equ    8
+rNX:         .equ    12
+rNY:         .equ    16
+rNZ:         .equ    20
+rTU:         .equ    24
+rTV:         .equ    28
+
+; D3DMATRIX offsets
+mat_11       .equ 0 
+mat_12       .equ 4 
+mat_13       .equ 8 
+mat_14       .equ 12
+mat_21       .equ 16
+mat_22       .equ 20
+mat_23       .equ 24
+mat_24       .equ 28
+mat_31       .equ 32
+mat_32       .equ 36
+mat_33       .equ 40
+mat_34       .equ 44
+mat_41       .equ 48
+mat_42       .equ 52
+mat_43       .equ 56
+mat_44       .equ 60
+
+;***********************************************************************
+;
+;  EnvMapVertices  - Environment maps a list of vertices
+;  fr4 - value to get the cos of
+;  r4 - MungedVertexList  Address of Vertex List of which we'll be mapping the UV coordinates
+;  r5 - nNumVertices	  The number of vertices in the vertex list
+;  r6 - matWorld          Address of the world vector
+;  r7 - vFrom             Address of the viewpoint vector.
+;
+;***********************************************************************
+    LEAF_ENTRY _EnvMapVertices
+
+    ; Start out by loading the World matrix into the upper floating point bank register, since it stays
+    ; there throughout the entire loop
+    fmov.s @r6+, fr0
+    fmov.s @r6+, fr1
+    fmov.s @r6+, fr2
+    fmov.s @r6+, fr3
+    fmov.s @r6+, fr4
+    fmov.s @r6+, fr5
+    fmov.s @r6+, fr6
+    fmov.s @r6+, fr7
+    fmov.s @r6+, fr8
+    fmov.s @r6+, fr9
+    fmov.s @r6+, fr10
+    fmov.s @r6+, fr11
+    fmov.s @r6+, fr12
+    fmov.s @r6+, fr13
+    fmov.s @r6+, fr14
+    fmov.s @r6,  fr15
+
+    ; Swap the floating point bank register bit so that we're writing into the other set of FP registers.
+    frchg
+
+    ; Load vFrom into fr12..fr14;  this is constant throughout the loop.
+    fmov.s @r7+, fr12
+    fmov.s @r7+, fr13
+    fmov.s @r7,  fr14
+
+    ; offset r6 (*backwards* since we moved it forward at start of this function!) to point at _41.
+    add  #-12, r6
+
+    ; Now for the main loop - do this 'nNumVertices' times
+    ; note: r4 always points to current vertex
+    ; Note: For now, this assumes that there is always at least 1 vertex in the list!!!
+
+    ; Loop through this 'r5' (nNumVertices) times
+MainLoop:
+
+    ; 1. Transform current vertex's point and normal into world coordinates.
+    ; fr0..fr2 will contain vertex point; fr4..fr6 will contain vertex normal
+    ; Load current vertex point (load 1.0 into w)
+    fmov.s @r4+, fr0
+    fmov.s @r4+, fr1
+    fmov.s @r4+, fr2
+
+    ; Do the multiplication - results end up in fr0-fr3
+    ftrv xmtrx, fv0
+
+    ; Translate point
+    fmov.s @r6+, fr3
+    fsub.s fr3, fr0      ; fr0 = fr0 - matWorld._41
+    fmov.s @r6+, fr3
+    fsub.s fr3, fr1      ; fr1 = fr1 - matWorld._42
+    fmov.s @r6, fr3
+    fsub.s fr3, fr2      ; fr2 = fr2 - matWorld._43
+    
+    ; Offset r6 back to it's original point for the next matrix
+    add  #-8, r6
+
+    ; Now the vertex normal
+    fmov.s @r4+, fr4
+    fmov.s @r4+, fr5
+    fmov.s @r4+, fr6
+
+    ; Do the multiplication - results end up in fr4-fr6 (and garbles fr7)
+    ftrv xmtrx, fv4
+
+    ; Calculate the vector to the viewer.  'vFrom' remains constant throughout the entire loop, so
+    ; has been pre-stored in fr12..fr15
+    ; we will store vViewer in fr8..fr11
+
+    fmov.s fr12, fr8        ; vViewer.x = vFrom.x
+    fmov.s fr13, fr9        ; vViewer.y = vFrom.y
+    fmov.s fr14, fr10       ; vViewer.z = vFrom.z
+    fsub.s fr0,  fr8        ; vViewer.x = vFrom.x - vPnt.x
+    fsub.s fr1,  fr9        ; vViewer.y = vFrom.y - vPnt.y
+    fsub.s fr2,  fr10       ; vViewer.z = vFrom.z - vPnt.z
+
+    ; vViewer = vViewer / sqrt(vViewer.x * vViewer.x + vViewer.y * vViewer.y + vViewer.z * vViewer.z);
+    ; Note: We no longer need vPnt, so we can write over fr0..fr2
+
+    ; Calculate (vViewer.x * vViewer.x + vViewer.y * vViewer.y + vViewer.z * vViewer.z)
+    fmov.s fr8,  fr0
+    fmov.s fr9,  fr1
+    fmov.s fr10, fr2
+    
+    ; do the inner product
+    fipr   fv8, fv0       ;  fr3 = vViewer.x * vViewer.x + vViewer.y * vViewer.y + vViewer.z * vViewer.z
+
+    ; Get the inverse square root of it
+    fsrra  fr3            ; fr3 = 1 / sqrt(vViewer.x * vViewer.x + vViewer.y * vViewer.y + vViewer.z * vViewer.z);
+
+    ; multiply vViewer (still in fr8..fr10) times this (fr3).
+    fmul.s fr3, fr8
+    fmul.s fr3, fr9
+    fmul.s fr3, fr10
+
+    ; Quick recap - at this point;
+    ;   fr0..fr3   - garbage - can be overwritten
+    ;   fr4..fr6   - vNormal
+    ;   fr7        - Garbage
+    ;   fr8..fr10  - vViewer
+    ;   fr11       - Garbage
+    ;   fr12..fr14 - vFrom (constant throughout loop)
+    ;   fr15       - Garbage
+
+    ; Now, Reflect the view vector through the normal
+
+    ; Calculate inner product of vViewer and vNormal;  (vViewer.x*vNormal.x + vViewer.y*vNormal.y+vViewer.z*vNormal.z)
+    fipr   fv4, fv8         ; fr11 = (vViewer.x*vNormal.x + vViewer.y*vNormal.y+vViewer.z*vNormal.z)
+    fadd.s fr11, fr11       ; fr11 = 2.0f * (vViewer.x*vNormal.x + vViewer.y*vNormal.y+vViewer.z*vNormal.z)
+
+    ; Calculate vReflect.x (place it in fr0)
+    fmov.s fr4,  fr0        ; vReflect.x = vNormal.x
+    fmul.s fr11, fr0        ; vReflect.x = 2.0f * (vViewer.x*vNormal.x + vViewer.y*vNormal.y+vViewer.z*vNormal.z) * vNormal.x 
+    fsub.s fr8,  fr0        ; vReflect.x = vReflect.x - vViewer.x
+
+    ; Calculate vReflect.z (place it in fr1)
+    fmov.s fr6,  fr1        ; vReflect.z = vNormal.z
+    fmul.s fr11, fr1        ; vReflect.z = 2.0f * (vViewer.x*vNormal.x + vViewer.y*vNormal.y+vViewer.z*vNormal.z) * vNormal.x 
+    fsub.s fr10, fr1        ; vReflect.z = vReflect.z - vViewer.z
+
+    ; Finally, Compute the texture coordinates assuming the environment map is a fish-eye view of the sky.
+    ; The results will be copied into the tu and tv coordinates of the current D3DVERTEX.
+    ; First, tu
+    fldi1   fr2
+    fadd.s  fr2, fr0        ; fr0 = vReflect.z + 1.0f
+    fadd.s  fr2, fr2
+    fdiv.s  fr2, fr0        ; fr0 = (vReflect.z + 1.0f) / 2.0f
+
+    ; Second, tv
+    fldi1   fr3
+    fadd.s  fr3, fr1        ; fr1 = vReflect.z + 1.0f
+    fdiv.s  fr2, fr1        ; fr1 = (vReflect.z + 1.0f) / 2.0f
+
+    ; Calculated!  Move them into the destination vertex.
+    fmov.s  fr0, @r4  ; tu coordinate
+    add #4, r4
+    fmov.s  fr1, @r4  ; tv coordinate
+    add #4, r4         ; At this point, r4 points at the next vertex in the list (if any)
+
+
+    ; And finally, loop
+    add     #-1, r5
+    cmp/pl  r5
+    bt      MainLoop
+    nop     ; Todo - drop something in this delay slot!
+    
+
+    ; Swap the floating point bank register bit back to it's original value.
+    frchg   ; todo - move to after the 'rts' to avoid pipeline stall
+
+    ; We're done - get out of here!
+    rts
+    nop
+
+;***********************************************************************
+;
+;  matprod  - Matrix Product
+;  r4 - Address of Destination Matrix (could be == r4 or r5)
+;  r5 - Address of Source Matrix 1
+;  r6 - Address of Source Matrix 2
+;
+;***********************************************************************
+    LEAF_ENTRY _matprod
+
+    ; Integer Register Usage
+    ; R4        -   Argument 1 (Destination Matrix pointer)
+    ; R5        -   Argument 2 (Source Matrix 1 pointer)
+    ; R6        -   Argument 3 (Source Matrix 2 pointer)
+
+    ; Note - eventually this should all be inlined into the functions that call it so that 
+    ; we can do whatever integer match we desire in parallel.  Otherwise, this code gives
+    ; us no parallelism at all!
+
+    ; Load the first source matrix into FR bank 0 
+    fmov.s @r6+, fr0
+    fmov.s @r6+, fr1
+    fmov.s @r6+, fr2
+    fmov.s @r6+, fr3
+    fmov.s @r6+, fr4
+    fmov.s @r6+, fr5
+    fmov.s @r6+, fr6
+    fmov.s @r6+, fr7
+    fmov.s @r6+, fr8
+    fmov.s @r6+, fr9
+    fmov.s @r6+, fr10
+    fmov.s @r6+, fr11
+    fmov.s @r6+, fr12
+    fmov.s @r6+, fr13
+    fmov.s @r6+, fr14
+    fmov.s @r6,  fr15
+
+    ; Swap the floating point bank register bit so that we're writing into the other set of FP registers.
+    frchg
+
+    ; Now move the second matrix into the floating point registers
+    fmov.s @r5+, fr0
+    fmov.s @r5+, fr1
+    fmov.s @r5+, fr2
+    fmov.s @r5+, fr3
+    fmov.s @r5+, fr4
+    fmov.s @r5+, fr5
+    fmov.s @r5+, fr6
+    fmov.s @r5+, fr7
+    fmov.s @r5+, fr8
+    fmov.s @r5+, fr9
+    fmov.s @r5+, fr10
+    fmov.s @r5+, fr11
+    fmov.s @r5+, fr12
+    fmov.s @r5+, fr13
+    fmov.s @r5+, fr14
+    fmov.s @r5,  fr15
+
+	; Do the actual vector multiplications
+	ftrv xmtrx, fv0
+	ftrv xmtrx, fv4
+	ftrv xmtrx, fv8
+	ftrv xmtrx, fv12
+
+	; Finally copy the results out to the destination matrix.
+
+	; Pre-increment the destination address so we can pre-decrement r4 inline
+	add #60, r4
+
+    fmov.s fr15, @r4
+    fmov.s fr14, @-r4
+    fmov.s fr13, @-r4
+    fmov.s fr12, @-r4
+    fmov.s fr11, @-r4
+    fmov.s fr10, @-r4
+    fmov.s fr9, @-r4
+    fmov.s fr8, @-r4
+    fmov.s fr7, @-r4
+    fmov.s fr6, @-r4
+    fmov.s fr5, @-r4
+    fmov.s fr4, @-r4
+    fmov.s fr3, @-r4
+    fmov.s fr2, @-r4
+    fmov.s fr1, @-r4
+    fmov.s fr0, @-r4
+
+    ; Swap the floating point bank register bit back to it's original value.
+    frchg   ; todo - move to after the 'rts' to avoid pipeline stall
+
+    ; We're done - get out of here!
+    rts
+    nop
+	
+;***********************************************************************
+;
+;  appsqrt  - Approximate Square Root
+;  fr4 - value to get the sqrt of
+;
+;***********************************************************************
+    LEAF_ENTRY _appsqrt
+
+	; Note - eventually this should all be inlined into the functions that call it so that 
+	; we can do whatever integer match we desire in parallel.  Otherwise, this code gives
+	; us no parallelism at all!
+	
+	; Get the inverse square root
+	fsrra fr4
+
+	; We need to invert the returned value
+	; load '1.0' into fr5
+	fldi1 fr5
+
+	; invert fr4 (into fr5)
+	fdiv.s fr4, fr5
+
+	; fr4 needs to contain the return value 
+	fmov.s fr5, fr4
+
+	rts
+	nop
+
+;***********************************************************************
+;
+;  appinvsqrt  - Approximate Inverse Square Root
+;  fr4 - value to get the inverse sqrt of
+;
+;***********************************************************************
+    LEAF_ENTRY _appinvsqrt
+
+	; Note - eventually this should all be inlined into the functions that call it so that 
+	; we can do whatever integer match we desire in parallel.  Otherwise, this code gives
+	; us no parallelism at all!
+	
+	; Get the inverse square root
+	fsrra fr4
+
+	; fr4 needs to contain the return value - it already does!  Todo
+
+	rts
+	nop
+
+;***********************************************************************
+;
+;  appsin  - Approximate Sin
+;  fr4 - value to get the sin of
+;
+;***********************************************************************
+    LEAF_ENTRY _appsin
+
+	; Note - eventually this should all be inlined into the functions that call it so that 
+	; we can do whatever integer match we desire in parallel.  Otherwise, this code gives
+	; us no parallelism at all!
+
+	; First, load the value into FPUL 
+	flds fr4, fpul
+
+	; Now, get the approximate sin.  Note: fr4 ends up with sin, fr5 ends up with cos
+	fsca fpul, dr2
+
+	; fr4 needs to contain the return value.  Guess what - it already does!
+
+    ; We're done - get out of here!  Todo - inline the fsca above to after the rts to avoid the stll
+    rts
+    nop
+
+;***********************************************************************
+;
+;  appsin  - Approximate Cos
+;  fr4 - value to get the cos of
+;
+;***********************************************************************
+    LEAF_ENTRY _appcos
+
+	; Note - eventually this should all be inlined into the functions that call it so that 
+	; we can do whatever integer match we desire in parallel.  Otherwise, this code gives
+	; us no parallelism at all!
+
+	; First, load the value into FPUL 
+	flds fr4, fpul
+
+	; Now, get the approximate cos.  Note: fr4 ends up with sin, fr5 ends up with cos
+	fsca fpul, dr2
+
+	; fr4 needs to contain the return value.  
+	fmov.s fr5, fr4
+
+    ; We're done - get out of here!  Todo - inline the fmov above to after the rts to avoid the stll
+    rts
+    nop
+
+	
+;***********************************************************************
+;
+;  vectmatmult - Multiplies a vector times a matrix.  We will multiply
+;		vector 'A' times Matrix 'B', and place the results in Vector 'C'
+;
+;	r4	- address of source Vector 'A'
+;	r5	- address of source Matrix 'B'
+;	r6	- address of destination Vector 'C'
+;
+;***********************************************************************
+    LEAF_ENTRY _vectmatmult
+
+	; First, load the matrix 'B'
+    fmov.s @r5+, fr0
+    fmov.s @r5+, fr1
+    fmov.s @r5+, fr2
+    fmov.s @r5+, fr3
+    fmov.s @r5+, fr4
+    fmov.s @r5+, fr5
+    fmov.s @r5+, fr6
+    fmov.s @r5+, fr7
+    fmov.s @r5+, fr8
+    fmov.s @r5+, fr9
+    fmov.s @r5+, fr10
+    fmov.s @r5+, fr11
+    fmov.s @r5+, fr12
+    fmov.s @r5+, fr13
+    fmov.s @r5+, fr14
+    fmov.s @r5,  fr15
+
+	; Swap the floating point bank register bit so that we're writing into the other set of FP registers.
+    frchg
+
+	; Now, Load Vector 'A' (load 1.0 into w)
+	fmov.s @r4+, fr0
+	fmov.s @r4+, fr1
+	fmov.s @r4+, fr2
+	fldi1		 fr3
+
+	; Do the multiplication
+	ftrv xmtrx, fv0
+
+	; Copy the results to Vector 'C'
+	add #12, r6
+	fmov.s fr3, @r6
+	fmov.s fr2, @-r6
+	fmov.s fr1, @-r6
+	fmov.s fr0, @-r6
+
+    ; Swap the floating point bank register bit back to it's original value.
+    frchg   ; todo - move to after the 'rts' to avoid pipeline stall
+
+    ; We're done - get out of here!
+    rts
+    nop
+
+
+    .endf
+    .end

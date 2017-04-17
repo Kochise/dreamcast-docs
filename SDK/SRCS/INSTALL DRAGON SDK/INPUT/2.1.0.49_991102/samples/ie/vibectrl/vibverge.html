@@ -1,0 +1,90 @@
+<html>
+
+<head>
+
+<title>Vibration Pack Convergent/Divergent</title>
+
+<script language=jscript>
+var VibeCtrl;
+var strConvergent = "convergent";
+var strDivergent = "divergent";
+
+function OnTest(strType, nInitial)
+{
+    VibeCtrl.Scan();
+
+    var nPort;
+    var nDevice;
+
+    for (nPort = 1; nPort <= 4; nPort++)
+    {
+        nDevice = 1;
+        if (rbDevice[(nPort - 1) * 2].checked)  
+        {
+            break;
+        }
+        nDevice = 2;
+        if (rbDevice[(nPort - 1) * 2 + 1].checked)  
+        {
+            break;
+        }
+    }
+
+    if (!VibeCtrl.IsPluggedIn(nPort, nDevice))
+    {
+        alert("Vibration pack not plugged into specified port/device");
+        return;
+    }
+
+    if (!VibeCtrl.HasVariableIntensityCapability(nPort, nDevice, 1))
+    {
+        alert("Vibration pack does not have variable intensity capability");
+        return;
+    }
+
+    var fMaxFreq = VibeCtrl.GetMaximumFrequency(nPort, nDevice, 1);
+    
+    if (!VibeCtrl.Vibrate(nPort, nDevice, 1, false, strType, nInitial, "forward", fMaxFreq, 35))
+    {
+        alert("Could not vibrate on specified vibration pack");
+        return;
+    }
+}
+
+</script>
+
+<script language=jscript for=window event="onerror(strText, strUrl, nLine)">
+    alert("Script Error\n" + strText + "\nLine: " + nLine);
+    return true;
+</script>
+
+<script language=jscript for=window event="onload()">
+   VibeCtrl = new ActiveXObject("VibeCtrl.VibeCtrl");
+</script>
+
+</head>
+
+<body>
+
+Choose a vibration pack:
+<br>
+<input type=radio name=rbDevice checked>Port 1 Device 1
+<input type=radio name=rbDevice>Port 1 Device 2
+<br>
+<input type=radio name=rbDevice>Port 2 Device 1
+<input type=radio name=rbDevice>Port 2 Device 2
+<br>
+<input type=radio name=rbDevice>Port 3 Device 1
+<input type=radio name=rbDevice>Port 3 Device 2
+<br>
+<input type=radio name=rbDevice>Port 4 Device 1
+<input type=radio name=rbDevice>Port 4 Device 2
+<br>
+<br>
+<input type=button value="Test Convergent" onclick="OnTest(strConvergent, 7);">
+&nbsp;
+<input type=button value="Test Divergent" onclick="OnTest(strDivergent, 1);">
+
+</body>
+
+</html>
