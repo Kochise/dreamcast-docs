@@ -1,0 +1,2392 @@
+--- /dev/null	Sat Jun 15 12:20:06 2002
++++ sys/arch/dreamcast/conf/DCEXT	Sun Jun  9 02:36:31 2002
+@@ -0,0 +1,164 @@
++# $NetBSD: GENERIC,v 1.24 2002/05/03 01:36:02 thorpej Exp $
++#
++# GENERIC machine description file
++# 
++# This machine description file is used to generate the default NetBSD
++# kernel.  The generic kernel does not include all options, subsystems
++# and device drivers, but should be useful for most applications.
++#
++# The machine description file can be customised for your specific
++# machine to reduce the kernel size and improve its performance.
++#
++# For further information on compiling NetBSD kernels, see the config(8)
++# man page.
++#
++# For further information on hardware support for this architecture, see
++# the intro(4) man page.  For further information about kernel options
++# for this architecture, see the options(4) man page.  For an explanation
++# of each device driver in this file see the section 4 man page for the
++# device.
++
++include 	"arch/dreamcast/conf/std.dreamcast"
++
++options 	INCLUDE_CONFIG_FILE	# embed config file in kernel binary
++
++maxusers	16		# estimated number of users
++
++# Enable the hooks used for initializing the root memory-disk.
++#options 	MEMORY_DISK_HOOKS
++#options 	MEMORY_DISK_IS_ROOT	# force root on memory disk
++#options 	MEMORY_DISK_SERVER=0	# no userspace memory disk support
++#options 	MEMORY_DISK_ROOT_SIZE=2880	# size of memory disk, in blocks
++#options 	MEMORY_DISK_ROOT_SIZE=6000
++
++# Standard system options
++#options 	UCONSOLE	# users can use TIOCCONS (for xconsole)
++#options 	INSECURE	# disable kernel security levels
++
++#options 	RTC_OFFSET=-540
++options 	HZ=100		# clock interrupt generates every 1/HZ sec
++#options 	NTP		# NTP phase/frequency locked loop
++
++#options 	KTRACE		# system call tracing via ktrace(1)
++
++#options 	USERCONF	# userconf(4) support
++#options	PIPE_SOCKETPAIR	# smaller, but slower pipe(2)
++
++#options 	SYSVMSG		# System V-like message queues
++#options 	SYSVSEM		# System V-like semaphores
++#options 	SEMMNI=10	# number of semaphore identifiers
++#options 	SEMMNS=60	# number of semaphores in system
++#options 	SEMUME=10	# max number of undo entries per process
++#options 	SEMMNU=30	# number of undo structures in system
++#options 	SYSVSHM		# System V-like memory sharing
++#options 	SHMMAXPGS=1024	# 1024 pages is the default
++
++# Diagnostic/debugging support options
++#options 	DIAGNOSTIC	# cheap kernel consistency checks
++#options 	DEBUG		# expensive debugging checks/support
++#options 	DDB		# in-kernel debugger
++#options 	KGDB			# remote debugger
++#options 	"KGDB_DEVNAME=\"scif\"",KGDB_DEVRATE=57600
++#makeoptions	DEBUG="-g"	# compile full symbol table
++#options 	SYSCALL_DEBUG
++#options 	UVMHIST
++#options 	UVMHIST_PRINT
++
++# Compatibility options
++options 	COMPAT_43	# and 4.3BSD
++
++# Executable format options
++options 	EXEC_COFF	# COFF executables
++options 	EXEC_ELF32	# 32-bit ELF executables
++
++# File systems
++file-system 	FFS		# UFS
++file-system 	MFS		# memory file system
++file-system 	NFS		# Network File System client
++file-system 	PROCFS		# /proc
++file-system 	KERNFS		# /kern
++#file-system 	NULLFS		# loopback file system
++#file-system 	UMAPFS		# NULLFS + uid and gid remapping
++file-system	CD9660		# CD-ROM file system
++
++# File system options
++#options 	QUOTA		# UFS quotas
++#options 	NFSSERVER	# Network File System server
++
++# Networking options
++options 	INET		# IP + ICMP + TCP + UDP
++options 	NFS_BOOT_DHCP	# Support DHCP NFS root
++
++#options 	PCIVERBOSE	# verbose PCI device autoconfig messages
++#options 	PCI_CONFIG_DUMP	# verbosely dump PCI config space
++
++# Kernel root file system and dump configuration.
++#config		netbsd	root on ? type nfs
++#config		netbsd	root on wd0a type ffs
++config		netbsd	root on ? type ?
++
++
++# wscons options
++options 	WSEMUL_VT100		# VT100 / VT220 emulation
++options 	FONT_BOLD8x16
++
++#
++# Device configuration
++#
++
++mainbus0 at root
++
++cpu*		at mainbus?
++shb*		at mainbus?
++
++# Serial Devices
++#options		SCIFCONSOLE
++options 	SCIFCN_SPEED=57600
++scif0		at shb?
++
++pvr0		at shb?
++wsdisplay*	at pvr? console ?
++
++maple0		at shb?
++mkbd*		at maple? port ? subunit ?
++wskbd*		at mkbd? console ?
++
++gdrom0		at shb?
++
++#g2bus0		at shb?
++#gapspci*	at g2bus?			# GAPS PCI bridge
++#pci*		at gapspci?
++#rtk*		at pci? dev ? function ?	# SEGA Broadband Adapter
++#ukphy*		at mii? phy ?
++
++# DC-PP bus
++dppbus0		at shb?
++#wdc0		at dppbus? port 0x05c0 irq 0x0100
++wdc0		at dppbus? port 0x1000 irq 0x0010
++wd*		at wdc? drive?
++ne0		at dppbus? port 0x0a00 irq 0x0004
++ne1		at dppbus? port 0x0b00 irq 0x0001
++#com0		at dppbus? port 0x0be0 irq 0x8000
++
++#include		"std.slhc"
++
++# ATAPI bus support
++atapibus* at wdc? channel ?
++
++# ATAPI devices
++# flags have the same meaning as for IDE drives.
++cd*     at atapibus? drive ? flags 0x0000       # ATAPI CD-ROM drives
++#sd*     at atapibus? drive ? flags 0x0000       # ATAPI disk drives
++#uk*     at atapibus? drive ? flags 0x0000       # ATAPI unknown
++
++#pseudo-device	vnd		4	# disk-like interface to files
++#pseudo-device	bpfilter	8	# Berkeley packet filter
++#pseudo-device	bridge			# simple inter-network bridging
++#pseudo-device	ipfilter		# IP filter (firewall) and NAT
++pseudo-device	loop			# network loopback
++pseudo-device	pty			# pseudo-terminals
++#pseudo-device	ppp		2	# Point-to-Point Protocol
++#pseudo-device	pppoe			# PPP over Ethernet (RFC 2516)
++#pseudo-device	tun		2	# network tunneling over tty
++pseudo-device	rnd			# /dev/random and in-kernel generator
++pseudo-device	md		1	# memory disk device (ramdisk)
+--- /dev/null	Sat Jun 15 12:20:06 2002
++++ sys/arch/dreamcast/dev/dpp/wdc_dppbus.c	Sun Jun 16 22:51:52 2002
+@@ -0,0 +1,173 @@
++/*	$NetBSD: wdc_isa.c,v 1.19 2000/04/02 02:07:52 itojun Exp $ */
++
++/*-
++ * Copyright (c) 1998 The NetBSD Foundation, Inc.
++ * All rights reserved.
++ *
++ * This code is derived from software contributed to The NetBSD Foundation
++ * by Charles M. Hannum and by Onno van der Linden.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *        This product includes software developed by the NetBSD
++ *        Foundation, Inc. and its contributors.
++ * 4. Neither the name of The NetBSD Foundation nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
++ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include <sys/types.h>
++#include <sys/param.h>
++#include <sys/systm.h>
++#include <sys/device.h>
++#include <sys/malloc.h>
++#include <sys/callout.h>
++
++#include <machine/bus.h>
++#include <machine/intr.h>
++#include <sh3/bscreg.h>
++#include <machine/sysasicvar.h>
++
++#include <arch/dreamcast/dev/dpp/dppbusvar.h>
++
++#include <dev/ata/atavar.h>
++#include <dev/ic/wdcvar.h>
++
++#define	WDC_DPPBUS_REG_NPORTS		8
++#define	WDC_DPPBUS_AUXREG_OFFSET	0x818
++#define	WDC_DPPBUS_AUXREG_NPORTS	1
++#define	WDC_DPPBUS_IRQADDR		0xb400c000
++
++struct wdc_dppbus_softc {
++	struct	wdc_softc sc_wdcdev;
++	struct	channel_softc *wdc_chanptr;
++	struct	channel_softc wdc_channel;
++	struct	callout sc_intremu;
++	int	sc_irq;
++        void	*sc_ih;
++};
++
++int	wdc_dppbus_match	__P((struct device *, struct cfdata *, void *));
++void	wdc_dppbus_attach __P((struct device *, struct device *, void *));
++void	wdc_dppbus_intr	__P((void *));
++
++struct cfattach wdc_dppbus_ca = {
++	sizeof(struct wdc_dppbus_softc), wdc_dppbus_match, wdc_dppbus_attach
++};
++
++
++void
++wdc_dppbus_intr(v)
++	void *v;
++{
++  struct wdc_dppbus_softc *sc = v;  
++  int s;
++  u_int16_t irqs;
++
++  irqs = (*(__volatile u_int16_t *)WDC_DPPBUS_IRQADDR);
++  if((irqs & sc->sc_irq) == sc->sc_irq) {
++    s = splbio();
++    wdcintr(&sc->wdc_channel);
++    splx(s);
++  }
++
++  callout_reset(&sc->sc_intremu, 1, wdc_dppbus_intr, sc);
++}
++
++int
++wdc_dppbus_match(parent, match, aux)
++	struct device *parent;
++	struct cfdata *match;
++	void *aux;
++{
++	struct channel_softc ch;
++	struct dppbus_attach_args *da = aux;
++	int result = 0;
++	int auxoff = WDC_DPPBUS_AUXREG_OFFSET;
++
++	memset(&ch, 0, sizeof(ch));
++
++	ch.cmd_iot = da->da_iot;
++	if (bus_space_map(ch.cmd_iot, da->da_iobase, WDC_DPPBUS_REG_NPORTS, 0,
++			  &ch.cmd_ioh))
++	  goto out;
++
++	ch.ctl_iot = da->da_iot;
++	if (bus_space_map(ch.ctl_iot, da->da_iobase+auxoff,
++			  WDC_DPPBUS_AUXREG_NPORTS, 0, &ch.ctl_ioh))
++	  goto outunmap;
++
++	result = wdcprobe(&ch);
++	
++	bus_space_unmap(ch.ctl_iot, ch.ctl_ioh, WDC_DPPBUS_AUXREG_NPORTS);
++outunmap:
++	bus_space_unmap(ch.cmd_iot, ch.cmd_ioh, WDC_DPPBUS_REG_NPORTS);
++out:
++	return (result);
++}
++
++void
++wdc_dppbus_attach(parent, self, aux)
++	struct device *parent, *self;
++	void *aux;
++{
++	struct wdc_dppbus_softc *sc = (void *)self;
++	struct dppbus_attach_args *da = aux;
++
++	printf("\n");
++
++	sc->sc_irq = da->da_irq;
++	sc->wdc_channel.cmd_iot = da->da_iot;
++	sc->wdc_channel.ctl_iot = da->da_iot;
++	if (bus_space_map(sc->wdc_channel.cmd_iot, da->da_iobase,
++	    WDC_DPPBUS_REG_NPORTS, 0, &sc->wdc_channel.cmd_ioh) ||
++	    bus_space_map(sc->wdc_channel.ctl_iot,
++	      da->da_iobase+WDC_DPPBUS_AUXREG_OFFSET, WDC_DPPBUS_AUXREG_NPORTS,
++	      0, &sc->wdc_channel.ctl_ioh)) {
++		printf("%s: couldn't map registers\n",
++		    sc->sc_wdcdev.sc_dev.dv_xname);
++	}
++	sc->wdc_channel.data32iot = sc->wdc_channel.cmd_iot;
++	sc->wdc_channel.data32ioh = sc->wdc_channel.cmd_ioh;
++
++	callout_init(&sc->sc_intremu);
++	callout_reset(&sc->sc_intremu, 1, 
++		      wdc_dppbus_intr, sc);
++
++	sc->sc_wdcdev.cap |= WDC_CAPABILITY_DATA16 | WDC_CAPABILITY_PREATA;
++	sc->sc_wdcdev.PIO_cap = 0;
++	sc->wdc_chanptr = &sc->wdc_channel;
++	sc->sc_wdcdev.channels = &sc->wdc_chanptr;
++	sc->sc_wdcdev.nchannels = 1;
++	sc->wdc_channel.channel = 0;
++	sc->wdc_channel.wdc = &sc->sc_wdcdev;
++	sc->wdc_channel.ch_queue = malloc(sizeof(struct channel_queue),
++	    M_DEVBUF, M_NOWAIT);
++	if (sc->wdc_channel.ch_queue == NULL) {
++		printf("%s: can't allocate memory for command queue",
++		sc->sc_wdcdev.sc_dev.dv_xname);
++		return;
++	}
++	wdcattach(&sc->wdc_channel);
++}
++
+--- /dev/null	Sat Jun 15 12:20:06 2002
++++ sys/arch/dreamcast/dev/dpp/if_ne_dppbus.c	Sun Jun 16 22:51:31 2002
+@@ -0,0 +1,273 @@
++/*	$NetBSD: if_ne_isa.c,v 1.10 2001/02/12 18:49:04 thorpej Exp $	*/
++
++/*-
++ * Copyright (c) 1997, 1998 The NetBSD Foundation, Inc.
++ * All rights reserved.
++ *
++ * This code is derived from software contributed to The NetBSD Foundation
++ * by Jason R. Thorpe of the Numerical Aerospace Simulation Facility,
++ * NASA Ames Research Center.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the NetBSD
++ *	Foundation, Inc. and its contributors.
++ * 4. Neither the name of The NetBSD Foundation nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
++ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include "opt_inet.h"
++#include "opt_ns.h"
++#include "bpfilter.h"
++
++#include <sys/param.h>
++#include <sys/systm.h>
++#include <sys/mbuf.h>
++#include <sys/socket.h>
++#include <sys/ioctl.h>
++#include <sys/errno.h>
++#include <sys/syslog.h>
++#include <sys/select.h>
++#include <sys/device.h>
++
++#include <net/if.h>
++#include <net/if_dl.h>
++#include <net/if_ether.h>
++#include <net/if_media.h>
++
++#ifdef INET
++#include <netinet/in.h>
++#include <netinet/in_systm.h>
++#include <netinet/in_var.h>
++#include <netinet/ip.h>
++#include <netinet/if_inarp.h>
++#endif
++
++#ifdef NS
++#include <netns/ns.h>
++#include <netns/ns_if.h>
++#endif
++
++#if NBPFILTER > 0
++#include <net/bpf.h>
++#include <net/bpfdesc.h>
++#endif
++
++#include <machine/intr.h>
++#include <machine/bus.h>
++
++#include <dev/ic/dp8390reg.h>
++#include <dev/ic/dp8390var.h>
++
++#include <dev/ic/ne2000reg.h>
++#include <dev/ic/ne2000var.h>
++
++#include <dev/ic/rtl80x9reg.h>
++#include <dev/ic/rtl80x9var.h>          
++
++#include <machine/sysasicvar.h>
++#include <arch/dreamcast/dev/dpp/dppbusvar.h>
++
++#define	NE_DPPBUS_IRQADDR		0xb400c000
++
++int	ne_dppbus_match __P((struct device *, struct cfdata *, void *));
++void	ne_dppbus_attach __P((struct device *, struct device *, void *));
++void	ne_dppbus_intr	__P((void *));
++
++static
++void	ne_dppbus_test	__P((int));
++
++struct ne_dppbus_softc {
++	struct	ne2000_softc sc_ne2000;		/* real "ne2000" softc */
++	struct	callout sc_intremu;
++
++	/* DPPBUS-specific goo. */
++	int	sc_irq;
++};
++
++struct cfattach ne_dppbus_ca = {
++	sizeof(struct ne_dppbus_softc), ne_dppbus_match, ne_dppbus_attach
++};
++
++
++void
++ne_dppbus_intr(v)
++	void *v;
++{
++  struct ne_dppbus_softc *sc = v;  
++  struct ne2000_softc *nsc = &sc->sc_ne2000;
++  struct dp8390_softc *dsc = &nsc->sc_dp8390;
++  int s;
++  u_int16_t irqs;
++
++  irqs = (*(__volatile u_int16_t *)NE_DPPBUS_IRQADDR);
++  if((irqs & sc->sc_irq) == sc->sc_irq) {
++    s = splnet();
++    dp8390_intr(dsc);
++    splx(s);
++  }
++
++  callout_reset(&sc->sc_intremu, 1, ne_dppbus_intr, sc);
++}
++
++int
++ne_dppbus_match(parent, match, aux)
++	struct device *parent;
++	struct cfdata *match;
++	void *aux;
++{
++	struct dppbus_attach_args *da = aux;
++	bus_space_tag_t nict = da->da_iot;
++	bus_space_handle_t nich;
++	bus_space_tag_t asict;
++	bus_space_handle_t asich;
++	int rv = 0;
++
++	/* Disallow wildcarded values. */
++	if (da->da_irq == DPPBUSCF_IRQ_DEFAULT)
++		return (0);
++	if (da->da_iobase == DPPBUSCF_PORT_DEFAULT)
++		return (0);
++
++	/* Map i/o space. */
++	if (bus_space_map(nict, da->da_iobase, NE2000_NPORTS, 0, &nich))
++		return (0);
++
++	asict = nict;
++	if (bus_space_subregion(nict, nich, NE2000_ASIC_OFFSET,
++	    NE2000_ASIC_NPORTS, &asich))
++		goto out;
++
++	/* Look for an NE2000-compatible card. */
++	rv = ne2000_detect(nict, nich, asict, asich);
++///	if (rv)
++///		ia->ia_iosize = NE2000_NPORTS;
++
++ out:
++	bus_space_unmap(nict, nich, NE2000_NPORTS);
++	return (rv);
++}
++
++void
++ne_dppbus_attach(parent, self, aux)
++	struct device *parent, *self;
++	void *aux;
++{
++	struct ne_dppbus_softc *isc = (struct ne_dppbus_softc *)self;
++	struct ne2000_softc *nsc = &isc->sc_ne2000;
++	struct dp8390_softc *dsc = &nsc->sc_dp8390;
++	struct dppbus_attach_args *da = aux;
++	bus_space_tag_t nict = da->da_iot;
++	bus_space_handle_t nich;
++	bus_space_tag_t asict = nict;
++	bus_space_handle_t asich;
++	const char *typestr;
++	int netype;
++
++	printf("\n");
++
++	/* Map i/o space. */
++	if (bus_space_map(nict, da->da_iobase, NE2000_NPORTS, 0, &nich)) {
++		printf("%s: can't map i/o space\n", dsc->sc_dev.dv_xname);
++		return;
++	}
++
++	if (bus_space_subregion(nict, nich, NE2000_ASIC_OFFSET,
++	    NE2000_ASIC_NPORTS, &asich)) {
++		printf("%s: can't subregion i/o space\n", dsc->sc_dev.dv_xname);
++		return;
++	}
++
++	isc->sc_irq = da->da_irq;
++
++	dsc->sc_regt = nict;
++	dsc->sc_regh = nich;
++
++	nsc->sc_asict = asict;
++	nsc->sc_asich = asich;
++
++	/*
++	 * Detect it again, so we can print some information about the
++	 * interface.
++	 */
++	netype = ne2000_detect(nict, nich, asict, asich);
++	switch (netype) {
++	case NE2000_TYPE_NE1000:
++		typestr = "NE1000";
++		break;
++
++	case NE2000_TYPE_NE2000:
++		typestr = "NE2000";
++		/*
++		 * Check for a RealTek 8019.
++		 */
++		bus_space_write_1(nict, nich, ED_P0_CR,
++		    ED_CR_PAGE_0 | ED_CR_STP);
++		if (bus_space_read_1(nict, nich, NERTL_RTL0_8019ID0) ==
++								RTL0_8019ID0 &&
++		    bus_space_read_1(nict, nich, NERTL_RTL0_8019ID1) ==
++								RTL0_8019ID1) {
++			typestr = "NE2000 (RTL8019)";
++			dsc->sc_mediachange = rtl80x9_mediachange;
++			dsc->sc_mediastatus = rtl80x9_mediastatus;
++			dsc->init_card = rtl80x9_init_card;
++			dsc->sc_media_init = rtl80x9_media_init;
++		}
++		break;
++
++	default:
++		printf("%s: where did the card go?!\n", dsc->sc_dev.dv_xname);
++		return;
++	}
++
++	printf("%s: %s Ethernet\n", dsc->sc_dev.dv_xname, typestr);
++
++	/* This interface is always enabled. */
++	dsc->sc_enabled = 1;
++
++	/*
++	 * Do generic NE2000 attach.  This will read the station address
++	 * from the EEPROM.
++	 */
++	ne2000_attach(nsc, NULL);
++
++	/* Establish the interrupt handler. */
++	callout_init(&isc->sc_intremu);
++	callout_reset(&isc->sc_intremu, 1, ne_dppbus_intr, isc);
++///	isc->sc_ih = dppbus_intr_establish(ia->ia_ic, ia->ia_irq, IST_EDGE,
++///	    IPL_NET, dp8390_intr, dsc);
++///	if (isc->sc_ih == NULL)
++///		printf("%s: couldn't establish interrupt handler\n",
++///		    dsc->sc_dev.dv_xname);
++}
++
++
++
++
++
++
++
++
++
++
+--- /dev/null	Sat Jun 15 12:20:06 2002
++++ sys/arch/dreamcast/dev/dpp/wdc_dppbus.c	Sun Jun 16 22:51:52 2002
+@@ -0,0 +1,173 @@
++/*	$NetBSD: wdc_isa.c,v 1.19 2000/04/02 02:07:52 itojun Exp $ */
++
++/*-
++ * Copyright (c) 1998 The NetBSD Foundation, Inc.
++ * All rights reserved.
++ *
++ * This code is derived from software contributed to The NetBSD Foundation
++ * by Charles M. Hannum and by Onno van der Linden.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *        This product includes software developed by the NetBSD
++ *        Foundation, Inc. and its contributors.
++ * 4. Neither the name of The NetBSD Foundation nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
++ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include <sys/types.h>
++#include <sys/param.h>
++#include <sys/systm.h>
++#include <sys/device.h>
++#include <sys/malloc.h>
++#include <sys/callout.h>
++
++#include <machine/bus.h>
++#include <machine/intr.h>
++#include <sh3/bscreg.h>
++#include <machine/sysasicvar.h>
++
++#include <arch/dreamcast/dev/dpp/dppbusvar.h>
++
++#include <dev/ata/atavar.h>
++#include <dev/ic/wdcvar.h>
++
++#define	WDC_DPPBUS_REG_NPORTS		8
++#define	WDC_DPPBUS_AUXREG_OFFSET	0x818
++#define	WDC_DPPBUS_AUXREG_NPORTS	1
++#define	WDC_DPPBUS_IRQADDR		0xb400c000
++
++struct wdc_dppbus_softc {
++	struct	wdc_softc sc_wdcdev;
++	struct	channel_softc *wdc_chanptr;
++	struct	channel_softc wdc_channel;
++	struct	callout sc_intremu;
++	int	sc_irq;
++        void	*sc_ih;
++};
++
++int	wdc_dppbus_match	__P((struct device *, struct cfdata *, void *));
++void	wdc_dppbus_attach __P((struct device *, struct device *, void *));
++void	wdc_dppbus_intr	__P((void *));
++
++struct cfattach wdc_dppbus_ca = {
++	sizeof(struct wdc_dppbus_softc), wdc_dppbus_match, wdc_dppbus_attach
++};
++
++
++void
++wdc_dppbus_intr(v)
++	void *v;
++{
++  struct wdc_dppbus_softc *sc = v;  
++  int s;
++  u_int16_t irqs;
++
++  irqs = (*(__volatile u_int16_t *)WDC_DPPBUS_IRQADDR);
++  if((irqs & sc->sc_irq) == sc->sc_irq) {
++    s = splbio();
++    wdcintr(&sc->wdc_channel);
++    splx(s);
++  }
++
++  callout_reset(&sc->sc_intremu, 1, wdc_dppbus_intr, sc);
++}
++
++int
++wdc_dppbus_match(parent, match, aux)
++	struct device *parent;
++	struct cfdata *match;
++	void *aux;
++{
++	struct channel_softc ch;
++	struct dppbus_attach_args *da = aux;
++	int result = 0;
++	int auxoff = WDC_DPPBUS_AUXREG_OFFSET;
++
++	memset(&ch, 0, sizeof(ch));
++
++	ch.cmd_iot = da->da_iot;
++	if (bus_space_map(ch.cmd_iot, da->da_iobase, WDC_DPPBUS_REG_NPORTS, 0,
++			  &ch.cmd_ioh))
++	  goto out;
++
++	ch.ctl_iot = da->da_iot;
++	if (bus_space_map(ch.ctl_iot, da->da_iobase+auxoff,
++			  WDC_DPPBUS_AUXREG_NPORTS, 0, &ch.ctl_ioh))
++	  goto outunmap;
++
++	result = wdcprobe(&ch);
++	
++	bus_space_unmap(ch.ctl_iot, ch.ctl_ioh, WDC_DPPBUS_AUXREG_NPORTS);
++outunmap:
++	bus_space_unmap(ch.cmd_iot, ch.cmd_ioh, WDC_DPPBUS_REG_NPORTS);
++out:
++	return (result);
++}
++
++void
++wdc_dppbus_attach(parent, self, aux)
++	struct device *parent, *self;
++	void *aux;
++{
++	struct wdc_dppbus_softc *sc = (void *)self;
++	struct dppbus_attach_args *da = aux;
++
++	printf("\n");
++
++	sc->sc_irq = da->da_irq;
++	sc->wdc_channel.cmd_iot = da->da_iot;
++	sc->wdc_channel.ctl_iot = da->da_iot;
++	if (bus_space_map(sc->wdc_channel.cmd_iot, da->da_iobase,
++	    WDC_DPPBUS_REG_NPORTS, 0, &sc->wdc_channel.cmd_ioh) ||
++	    bus_space_map(sc->wdc_channel.ctl_iot,
++	      da->da_iobase+WDC_DPPBUS_AUXREG_OFFSET, WDC_DPPBUS_AUXREG_NPORTS,
++	      0, &sc->wdc_channel.ctl_ioh)) {
++		printf("%s: couldn't map registers\n",
++		    sc->sc_wdcdev.sc_dev.dv_xname);
++	}
++	sc->wdc_channel.data32iot = sc->wdc_channel.cmd_iot;
++	sc->wdc_channel.data32ioh = sc->wdc_channel.cmd_ioh;
++
++	callout_init(&sc->sc_intremu);
++	callout_reset(&sc->sc_intremu, 1, 
++		      wdc_dppbus_intr, sc);
++
++	sc->sc_wdcdev.cap |= WDC_CAPABILITY_DATA16 | WDC_CAPABILITY_PREATA;
++	sc->sc_wdcdev.PIO_cap = 0;
++	sc->wdc_chanptr = &sc->wdc_channel;
++	sc->sc_wdcdev.channels = &sc->wdc_chanptr;
++	sc->sc_wdcdev.nchannels = 1;
++	sc->wdc_channel.channel = 0;
++	sc->wdc_channel.wdc = &sc->sc_wdcdev;
++	sc->wdc_channel.ch_queue = malloc(sizeof(struct channel_queue),
++	    M_DEVBUF, M_NOWAIT);
++	if (sc->wdc_channel.ch_queue == NULL) {
++		printf("%s: can't allocate memory for command queue",
++		sc->sc_wdcdev.sc_dev.dv_xname);
++		return;
++	}
++	wdcattach(&sc->wdc_channel);
++}
++
+--- /dev/null	Sat Jun 15 12:20:06 2002
++++ sys/arch/dreamcast/dev/dpp/dppbus_bus_mem.c	Fri May 17 17:50:22 2002
+@@ -0,0 +1,325 @@
++/*	$NetBSD: g2bus_bus_mem.c,v 1.3 2001/02/01 01:01:50 thorpej Exp $	*/
++
++/*-
++ * Copyright (c) 2001 The NetBSD Foundation, Inc.
++ * All rights reserved.
++ *
++ * This code is derived from software contributed to The NetBSD Foundation
++ * by Jason R. Thorpe.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the NetBSD
++ *	Foundation, Inc. and its contributors.
++ * 4. Neither the name of The NetBSD Foundation nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
++ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++/*
++ * Bus space implementation for the SEGA G2 bus.
++ *
++ * NOTE: We only implement a small subset of what the bus_space(9)
++ * API specifies.  Right now, the GAPS PCI bridge is only used for
++ * the Dreamcast Broadband Adatper, so we only provide what the
++ * pci(4) and rtk(4) drivers need.
++ */
++
++#include <sys/cdefs.h>			/* RCS ID & Copyright macro defns */
++
++#include <sys/param.h>
++#include <sys/systm.h> 
++#include <sys/device.h>
++
++#include <machine/cpu.h> 
++#include <machine/bus.h>
++
++#include <dreamcast/dev/dpp/dppbusvar.h>
++
++#define  DPPBUS_STRIDE 2
++
++int	dppbus_bus_mem_map(void *, bus_addr_t, bus_size_t, int,
++	    bus_space_handle_t *);
++void	dppbus_bus_mem_unmap(void *, bus_space_handle_t, bus_size_t);
++
++u_int8_t dppbus_bus_mem_read_1(void *, bus_space_handle_t, bus_size_t);
++u_int16_t dppbus_bus_mem_read_2(void *, bus_space_handle_t, bus_size_t);
++u_int32_t dppbus_bus_mem_read_4(void *, bus_space_handle_t, bus_size_t);
++
++void	dppbus_bus_mem_write_1(void *, bus_space_handle_t, bus_size_t,
++	    u_int8_t);
++void	dppbus_bus_mem_write_2(void *, bus_space_handle_t, bus_size_t,
++	    u_int16_t);
++void	dppbus_bus_mem_write_4(void *, bus_space_handle_t, bus_size_t,
++	    u_int32_t);
++
++void	dppbus_bus_mem_read_region_1(void *, bus_space_handle_t, bus_size_t,
++	    u_int8_t *, bus_size_t);
++
++void	dppbus_bus_mem_read_multi_1(void *, bus_space_handle_t, bus_size_t,
++	    u_int8_t *, bus_size_t);
++
++void	dppbus_bus_mem_read_multi_2(void *, bus_space_handle_t, bus_size_t,
++	    u_int16_t *, bus_size_t);
++
++void	dppbus_bus_mem_write_region_1(void *, bus_space_handle_t, bus_size_t,
++	    const u_int8_t *, bus_size_t);
++
++void	dppbus_bus_mem_write_multi_1(void *, bus_space_handle_t, bus_size_t,
++	    const u_int8_t *, bus_size_t);
++
++void	dppbus_bus_mem_write_multi_2(void *, bus_space_handle_t, bus_size_t,
++	    const u_int16_t *, bus_size_t);
++
++int	dppbus_space_subregion(void *, bus_space_handle_t, bus_size_t,
++            bus_size_t, bus_space_handle_t *);
++
++
++void
++dppbus_bus_mem_init(struct dppbus_softc *sc)
++{
++	bus_space_tag_t t = &sc->sc_memt;
++
++	memset(t, 0, sizeof(*t));
++
++	t->dbs_map = dppbus_bus_mem_map;
++	t->dbs_unmap = dppbus_bus_mem_unmap;
++
++	t->dbs_r_1 = dppbus_bus_mem_read_1;
++	t->dbs_r_2 = dppbus_bus_mem_read_2;
++//	t->dbs_r_4 = dppbus_bus_mem_read_4;
++
++	t->dbs_w_1 = dppbus_bus_mem_write_1;
++	t->dbs_w_2 = dppbus_bus_mem_write_2;
++//	t->dbs_w_4 = dppbus_bus_mem_write_4;
++
++	t->dbs_rr_1 = dppbus_bus_mem_read_region_1;
++
++	t->dbs_wr_1 = dppbus_bus_mem_write_region_1;
++
++	t->dbs_rm_1 = dppbus_bus_mem_read_multi_1;
++	t->dbs_rm_2 = dppbus_bus_mem_read_multi_2;
++
++	t->dbs_wm_1 = dppbus_bus_mem_write_multi_1;
++	t->dbs_wm_2 = dppbus_bus_mem_write_multi_2;
++
++	t->dbs_subregion = dppbus_space_subregion;
++}
++
++int
++dppbus_bus_mem_map(void *v, bus_addr_t addr, bus_size_t size, int flags,
++    bus_space_handle_t *shp)
++{
++	addr |= 0xb4000000;
++
++	KASSERT((addr & SH3_PHYS_MASK) == addr);
++	*shp = SH3_PHYS_TO_P2SEG(addr);
++
++	return (0);
++}
++
++void
++dppbus_bus_mem_unmap(void *v, bus_space_handle_t sh, bus_size_t size)
++{
++
++	KASSERT(sh >= SH3_P2SEG_BASE && sh <= SH3_P2SEG_END);
++	/* Nothing to do. */
++}
++
++int
++dppbus_space_subregion(void *v, bus_space_handle_t handle,
++    bus_size_t offset, bus_size_t size, bus_space_handle_t *nhandlep)
++{
++	*nhandlep = handle + (offset<<DPPBUS_STRIDE);
++        return (0);
++}
++
++#define DPP_DELAY // printf("0x%8x ",(uint)(sh+(off<<2)));
++#define DPP_DELAY_ENTER DPP_DELAY
++#define DPP_DELAY_EXIT 
++#define DPP_DELAY_WRITE_ENTER DPP_DELAY
++#define DPP_DELAY_WRITE_EXIT
++
++u_int8_t
++dppbus_bus_mem_read_1(void *v, bus_space_handle_t sh, bus_size_t off)
++{
++	u_int8_t rv;
++
++	DPP_DELAY_ENTER;
++
++	rv = (*(__volatile u_int16_t *)(sh + (off<<DPPBUS_STRIDE))) & 0xff;
++
++	DPP_DELAY_EXIT;
++
++	return (rv);
++}
++
++u_int16_t
++dppbus_bus_mem_read_2(void *v, bus_space_handle_t sh, bus_size_t off)
++{
++	u_int16_t rv;
++
++	DPP_DELAY_ENTER;
++
++	rv = *(__volatile u_int16_t *)(sh + (off<<DPPBUS_STRIDE));
++
++	DPP_DELAY_EXIT;
++
++	return (rv);
++}
++
++u_int32_t
++dppbus_bus_mem_read_4(void *v, bus_space_handle_t sh, bus_size_t off)
++{
++	u_int32_t rv;
++
++	DPP_DELAY_ENTER;
++
++	rv = *(__volatile u_int32_t *)(sh + (off<<DPPBUS_STRIDE));
++
++	DPP_DELAY_EXIT;
++
++	return (rv);
++}
++
++void
++dppbus_bus_mem_write_1(void *v, bus_space_handle_t sh, bus_size_t off,
++    u_int8_t val)
++{
++
++	DPP_DELAY_WRITE_ENTER;
++
++	*(__volatile u_int16_t *)(sh + (off<<DPPBUS_STRIDE)) = val & 0xff;
++
++	DPP_DELAY_WRITE_EXIT;
++}
++
++void
++dppbus_bus_mem_write_2(void *v, bus_space_handle_t sh, bus_size_t off,
++    u_int16_t val)
++{
++
++	DPP_DELAY_WRITE_ENTER;
++
++	*(__volatile u_int16_t *)(sh + (off<<DPPBUS_STRIDE)) = val;
++
++	DPP_DELAY_WRITE_EXIT;
++}
++
++void
++dppbus_bus_mem_write_4(void *v, bus_space_handle_t sh, bus_size_t off,
++    u_int32_t val)
++{
++
++	DPP_DELAY_WRITE_ENTER;
++
++	*(__volatile u_int16_t *)(sh + (off<<DPPBUS_STRIDE)) = val;
++
++	DPP_DELAY_WRITE_EXIT;
++}
++
++void
++dppbus_bus_mem_read_region_1(void *v, bus_space_handle_t sh, bus_size_t off,
++    u_int8_t *addr, bus_size_t len)
++{
++	__volatile const u_int16_t *baddr = (u_int16_t *)(sh + (off<<DPPBUS_STRIDE));
++
++
++	while (len--) {
++		DPP_DELAY_ENTER;
++		*addr++ = *baddr;
++		baddr += 1 << (DPPBUS_STRIDE-1);
++		DPP_DELAY_EXIT;
++	}
++
++}
++
++void
++dppbus_bus_mem_read_multi_1(void *v, bus_space_handle_t sh, bus_size_t off,
++    u_int8_t *addr, bus_size_t len)
++{
++	__volatile const u_int16_t *baddr = (u_int16_t *)(sh + (off<<DPPBUS_STRIDE));
++
++	while (len--) {
++		DPP_DELAY_ENTER;
++		*addr++ = (*baddr) & 0xff;
++		DPP_DELAY_EXIT;
++	}
++
++}
++
++void
++dppbus_bus_mem_read_multi_2(void *v, bus_space_handle_t sh, bus_size_t off,
++    u_int16_t *addr, bus_size_t len)
++{
++	__volatile const u_int16_t *baddr = (u_int16_t *)(sh + (off<<DPPBUS_STRIDE));
++
++	while (len--) {
++		DPP_DELAY_ENTER;
++		*addr++ = *baddr;
++		DPP_DELAY_EXIT;
++	}
++}
++
++void
++dppbus_bus_mem_write_region_1(void *v, bus_space_handle_t sh, bus_size_t off,
++    const u_int8_t *addr, bus_size_t len)
++{
++	__volatile u_int16_t *baddr = (u_int16_t *)(sh + (off<<DPPBUS_STRIDE));
++
++	while (len--) {
++		DPP_DELAY_WRITE_ENTER;
++		*baddr = *addr++;
++		baddr += 1 << (DPPBUS_STRIDE-1);
++		DPP_DELAY_WRITE_EXIT;
++	}
++}
++
++void
++dppbus_bus_mem_write_multi_1(void *v, bus_space_handle_t sh, bus_size_t off,
++    const u_int8_t *addr, bus_size_t len)
++{
++	__volatile u_int16_t *baddr = (u_int16_t *)(sh + (off<<DPPBUS_STRIDE));
++
++
++	while (len--) {
++		DPP_DELAY_WRITE_ENTER;
++		*baddr = (*addr++) & 0xff;
++		DPP_DELAY_WRITE_EXIT;
++	}
++}
++
++void
++dppbus_bus_mem_write_multi_2(void *v, bus_space_handle_t sh, bus_size_t off,
++    const u_int16_t *addr, bus_size_t len)
++{
++	__volatile u_int16_t *baddr = (u_int16_t *)(sh + (off<<DPPBUS_STRIDE));
++
++	while (len--) {
++		DPP_DELAY_WRITE_ENTER;
++		*baddr = *addr++;
++		DPP_DELAY_WRITE_EXIT;
++	}
++}
++
++
+--- /dev/null	Sat Jun 15 12:20:06 2002
++++ sys/arch/dreamcast/dev/dpp/dppbus.c	Sat Jun  8 01:48:45 2002
+@@ -0,0 +1,109 @@
++/*	$NetBSD: g2bus.c,v 1.1 2001/01/31 18:33:24 thorpej Exp $	*/
++
++/*-
++ * Copyright (c) 2001 Marcus Comstedt
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by Marcus Comstedt.
++ * 4. Neither the name of The NetBSD Foundation nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
++ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include <sys/param.h>
++#include <sys/systm.h>
++#include <sys/kernel.h>
++#include <sys/conf.h>
++#include <sys/malloc.h>
++#include <sys/device.h>
++#include <sys/proc.h>
++
++#include <dreamcast/dev/dpp/dppbusvar.h>
++
++#include "locators.h"
++
++int	dppbusmatch(struct device *, struct cfdata *, void *);
++void	dppbusattach(struct device *, struct device *, void *);
++int	dppbusprint(void *, const char *);
++
++struct cfattach dppbus_ca = {
++	sizeof(struct dppbus_softc), dppbusmatch, dppbusattach
++};
++
++int	dppbussearch(struct device *, struct cfdata *, void *);
++
++int
++dppbusmatch(struct device *parent, struct cfdata *cf, void *aux)
++{
++	if (strcmp("dppbus", cf->cf_driver->cd_name))
++		return (0);
++
++        return (1);
++}
++
++void
++dppbusattach(struct device *parent, struct device *self, void *aux)
++{
++	struct dppbus_softc *sc = (void *) self;
++
++	printf("\n");
++
++	TAILQ_INIT(&sc->sc_subdevs);
++
++	(*(__volatile u_int16_t *)0xb400f000) = 0x0000;
++	delay(10);
++	(*(__volatile u_int16_t *)0xb400f000) = 0x0001;
++	delay(10);
++	(*(__volatile u_int16_t *)0xb400f000) = 0x0000;
++
++	dppbus_bus_mem_init(sc);
++
++	config_search(dppbussearch, self, NULL);
++}
++
++int
++dppbusprint(void *aux, const char *pnp)
++{
++
++	return (UNCONF);
++}
++
++int
++dppbussearch(struct device *parent, struct cfdata *cf, void *aux)
++{
++	struct dppbus_attach_args da;
++  	struct dppbus_softc *sc = (struct dppbus_softc *)parent;
++
++	da.da_iot = &sc->sc_memt;
++	da.da_iobase = cf->cf_loc[DPPBUSCF_PORT];
++	da.da_irq = cf->cf_loc[DPPBUSCF_IRQ];
++
++	if ((*cf->cf_attach->ca_match)(parent, cf, &da) > 0)
++		config_attach(parent, cf, &da, dppbusprint);
++  
++	return (0);
++}
++
++
+--- /dev/null	Sat Jun 15 12:20:06 2002
++++ sys/arch/dreamcast/dev/dpp/dppbusvar.h	Fri May 17 17:59:00 2002
+@@ -0,0 +1,72 @@
++/*	$NetBSD: g2busvar.h,v 1.1 2001/01/31 18:33:24 thorpej Exp $	*/
++
++/*-
++ * Copyright (c) 2001 Marcus Comstedt
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by Marcus Comstedt.
++ * 4. Neither the name of The NetBSD Foundation nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
++ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#ifndef _DREAMCAST_DPPBUSVAR_H_
++#define _DREAMCAST_DPPBUSVAR_H_
++
++#include <machine/bus.h>
++
++/*
++ * DC-PP driver attach arguments
++ */
++struct dppbus_attach_args {
++	bus_space_tag_t da_iot;
++	int	da_iobase;		/* base i/o address */
++	int	da_irq;			/* interrupt request */
++};
++
++/*
++ * Per-device DC-PP variables
++ */
++struct dppbusdev {
++	struct  device *dd_dev;		/* back pointer to generic */
++	TAILQ_ENTRY(dppbusdev)
++		dd_bchain;		/* bus chain */
++};
++
++/*
++ * master bus
++ */
++struct dppbus_softc {
++	struct	device sc_dev;		/* base device */
++	struct  dreamcast_bus_space sc_memt;
++	TAILQ_HEAD(, dppbusdev)
++		sc_subdevs;		/* list of all children */
++};
++
++void	dppbus_bus_mem_init(struct dppbus_softc *);
++
++#endif /* _DREAMCAST_DPPBUSVAR_H_ */
++
++
+--- /dev/null	Sat Jun 15 12:20:06 2002
++++ sys/arch/dreamcast/dev/dpp/if_ne_dppbus.c	Sun Jun 16 22:51:31 2002
+@@ -0,0 +1,273 @@
++/*	$NetBSD: if_ne_isa.c,v 1.10 2001/02/12 18:49:04 thorpej Exp $	*/
++
++/*-
++ * Copyright (c) 1997, 1998 The NetBSD Foundation, Inc.
++ * All rights reserved.
++ *
++ * This code is derived from software contributed to The NetBSD Foundation
++ * by Jason R. Thorpe of the Numerical Aerospace Simulation Facility,
++ * NASA Ames Research Center.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the NetBSD
++ *	Foundation, Inc. and its contributors.
++ * 4. Neither the name of The NetBSD Foundation nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
++ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include "opt_inet.h"
++#include "opt_ns.h"
++#include "bpfilter.h"
++
++#include <sys/param.h>
++#include <sys/systm.h>
++#include <sys/mbuf.h>
++#include <sys/socket.h>
++#include <sys/ioctl.h>
++#include <sys/errno.h>
++#include <sys/syslog.h>
++#include <sys/select.h>
++#include <sys/device.h>
++
++#include <net/if.h>
++#include <net/if_dl.h>
++#include <net/if_ether.h>
++#include <net/if_media.h>
++
++#ifdef INET
++#include <netinet/in.h>
++#include <netinet/in_systm.h>
++#include <netinet/in_var.h>
++#include <netinet/ip.h>
++#include <netinet/if_inarp.h>
++#endif
++
++#ifdef NS
++#include <netns/ns.h>
++#include <netns/ns_if.h>
++#endif
++
++#if NBPFILTER > 0
++#include <net/bpf.h>
++#include <net/bpfdesc.h>
++#endif
++
++#include <machine/intr.h>
++#include <machine/bus.h>
++
++#include <dev/ic/dp8390reg.h>
++#include <dev/ic/dp8390var.h>
++
++#include <dev/ic/ne2000reg.h>
++#include <dev/ic/ne2000var.h>
++
++#include <dev/ic/rtl80x9reg.h>
++#include <dev/ic/rtl80x9var.h>          
++
++#include <machine/sysasicvar.h>
++#include <arch/dreamcast/dev/dpp/dppbusvar.h>
++
++#define	NE_DPPBUS_IRQADDR		0xb400c000
++
++int	ne_dppbus_match __P((struct device *, struct cfdata *, void *));
++void	ne_dppbus_attach __P((struct device *, struct device *, void *));
++void	ne_dppbus_intr	__P((void *));
++
++static
++void	ne_dppbus_test	__P((int));
++
++struct ne_dppbus_softc {
++	struct	ne2000_softc sc_ne2000;		/* real "ne2000" softc */
++	struct	callout sc_intremu;
++
++	/* DPPBUS-specific goo. */
++	int	sc_irq;
++};
++
++struct cfattach ne_dppbus_ca = {
++	sizeof(struct ne_dppbus_softc), ne_dppbus_match, ne_dppbus_attach
++};
++
++
++void
++ne_dppbus_intr(v)
++	void *v;
++{
++  struct ne_dppbus_softc *sc = v;  
++  struct ne2000_softc *nsc = &sc->sc_ne2000;
++  struct dp8390_softc *dsc = &nsc->sc_dp8390;
++  int s;
++  u_int16_t irqs;
++
++  irqs = (*(__volatile u_int16_t *)NE_DPPBUS_IRQADDR);
++  if((irqs & sc->sc_irq) == sc->sc_irq) {
++    s = splnet();
++    dp8390_intr(dsc);
++    splx(s);
++  }
++
++  callout_reset(&sc->sc_intremu, 1, ne_dppbus_intr, sc);
++}
++
++int
++ne_dppbus_match(parent, match, aux)
++	struct device *parent;
++	struct cfdata *match;
++	void *aux;
++{
++	struct dppbus_attach_args *da = aux;
++	bus_space_tag_t nict = da->da_iot;
++	bus_space_handle_t nich;
++	bus_space_tag_t asict;
++	bus_space_handle_t asich;
++	int rv = 0;
++
++	/* Disallow wildcarded values. */
++	if (da->da_irq == DPPBUSCF_IRQ_DEFAULT)
++		return (0);
++	if (da->da_iobase == DPPBUSCF_PORT_DEFAULT)
++		return (0);
++
++	/* Map i/o space. */
++	if (bus_space_map(nict, da->da_iobase, NE2000_NPORTS, 0, &nich))
++		return (0);
++
++	asict = nict;
++	if (bus_space_subregion(nict, nich, NE2000_ASIC_OFFSET,
++	    NE2000_ASIC_NPORTS, &asich))
++		goto out;
++
++	/* Look for an NE2000-compatible card. */
++	rv = ne2000_detect(nict, nich, asict, asich);
++///	if (rv)
++///		ia->ia_iosize = NE2000_NPORTS;
++
++ out:
++	bus_space_unmap(nict, nich, NE2000_NPORTS);
++	return (rv);
++}
++
++void
++ne_dppbus_attach(parent, self, aux)
++	struct device *parent, *self;
++	void *aux;
++{
++	struct ne_dppbus_softc *isc = (struct ne_dppbus_softc *)self;
++	struct ne2000_softc *nsc = &isc->sc_ne2000;
++	struct dp8390_softc *dsc = &nsc->sc_dp8390;
++	struct dppbus_attach_args *da = aux;
++	bus_space_tag_t nict = da->da_iot;
++	bus_space_handle_t nich;
++	bus_space_tag_t asict = nict;
++	bus_space_handle_t asich;
++	const char *typestr;
++	int netype;
++
++	printf("\n");
++
++	/* Map i/o space. */
++	if (bus_space_map(nict, da->da_iobase, NE2000_NPORTS, 0, &nich)) {
++		printf("%s: can't map i/o space\n", dsc->sc_dev.dv_xname);
++		return;
++	}
++
++	if (bus_space_subregion(nict, nich, NE2000_ASIC_OFFSET,
++	    NE2000_ASIC_NPORTS, &asich)) {
++		printf("%s: can't subregion i/o space\n", dsc->sc_dev.dv_xname);
++		return;
++	}
++
++	isc->sc_irq = da->da_irq;
++
++	dsc->sc_regt = nict;
++	dsc->sc_regh = nich;
++
++	nsc->sc_asict = asict;
++	nsc->sc_asich = asich;
++
++	/*
++	 * Detect it again, so we can print some information about the
++	 * interface.
++	 */
++	netype = ne2000_detect(nict, nich, asict, asich);
++	switch (netype) {
++	case NE2000_TYPE_NE1000:
++		typestr = "NE1000";
++		break;
++
++	case NE2000_TYPE_NE2000:
++		typestr = "NE2000";
++		/*
++		 * Check for a RealTek 8019.
++		 */
++		bus_space_write_1(nict, nich, ED_P0_CR,
++		    ED_CR_PAGE_0 | ED_CR_STP);
++		if (bus_space_read_1(nict, nich, NERTL_RTL0_8019ID0) ==
++								RTL0_8019ID0 &&
++		    bus_space_read_1(nict, nich, NERTL_RTL0_8019ID1) ==
++								RTL0_8019ID1) {
++			typestr = "NE2000 (RTL8019)";
++			dsc->sc_mediachange = rtl80x9_mediachange;
++			dsc->sc_mediastatus = rtl80x9_mediastatus;
++			dsc->init_card = rtl80x9_init_card;
++			dsc->sc_media_init = rtl80x9_media_init;
++		}
++		break;
++
++	default:
++		printf("%s: where did the card go?!\n", dsc->sc_dev.dv_xname);
++		return;
++	}
++
++	printf("%s: %s Ethernet\n", dsc->sc_dev.dv_xname, typestr);
++
++	/* This interface is always enabled. */
++	dsc->sc_enabled = 1;
++
++	/*
++	 * Do generic NE2000 attach.  This will read the station address
++	 * from the EEPROM.
++	 */
++	ne2000_attach(nsc, NULL);
++
++	/* Establish the interrupt handler. */
++	callout_init(&isc->sc_intremu);
++	callout_reset(&isc->sc_intremu, 1, ne_dppbus_intr, isc);
++///	isc->sc_ih = dppbus_intr_establish(ia->ia_ic, ia->ia_irq, IST_EDGE,
++///	    IPL_NET, dp8390_intr, dsc);
++///	if (isc->sc_ih == NULL)
++///		printf("%s: couldn't establish interrupt handler\n",
++///		    dsc->sc_dev.dv_xname);
++}
++
++
++
++
++
++
++
++
++
++
+--- /dev/null	Sat Jun 15 12:20:06 2002
++++ sys/arch/dreamcast/dev/dpp/if_ne_dppbus.c.dev	Fri May 17 17:08:09 2002
+@@ -0,0 +1,234 @@
++/*	$NetBSD: if_ne_isa.c,v 1.10 2001/02/12 18:49:04 thorpej Exp $	*/
++
++/*-
++ * Copyright (c) 1997, 1998 The NetBSD Foundation, Inc.
++ * All rights reserved.
++ *
++ * This code is derived from software contributed to The NetBSD Foundation
++ * by Jason R. Thorpe of the Numerical Aerospace Simulation Facility,
++ * NASA Ames Research Center.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the NetBSD
++ *	Foundation, Inc. and its contributors.
++ * 4. Neither the name of The NetBSD Foundation nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
++ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
++ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
++ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include "opt_inet.h"
++#include "opt_ns.h"
++#include "bpfilter.h"
++
++#include <sys/param.h>
++#include <sys/systm.h>
++#include <sys/mbuf.h>
++#include <sys/socket.h>
++#include <sys/ioctl.h>
++#include <sys/errno.h>
++#include <sys/syslog.h>
++#include <sys/select.h>
++#include <sys/device.h>
++
++#include <net/if.h>
++#include <net/if_dl.h>
++#include <net/if_ether.h>
++#include <net/if_media.h>
++
++#ifdef INET
++#include <netinet/in.h>
++#include <netinet/in_systm.h>
++#include <netinet/in_var.h>
++#include <netinet/ip.h>
++#include <netinet/if_inarp.h>
++#endif
++
++#ifdef NS
++#include <netns/ns.h>
++#include <netns/ns_if.h>
++#endif
++
++#if NBPFILTER > 0
++#include <net/bpf.h>
++#include <net/bpfdesc.h>
++#endif
++
++#include <machine/intr.h>
++#include <machine/bus.h>
++
++#include <dev/ic/dp8390reg.h>
++#include <dev/ic/dp8390var.h>
++
++#include <dev/ic/ne2000reg.h>
++#include <dev/ic/ne2000var.h>
++
++#include <dev/ic/rtl80x9reg.h>
++#include <dev/ic/rtl80x9var.h>          
++
++#include <arch/dreamcast/dev/dpp/dppbusvar.h>
++
++int	ne_dppbus_match __P((struct device *, struct cfdata *, void *));
++void	ne_dppbus_attach __P((struct device *, struct device *, void *));
++
++struct ne_dppbus_softc {
++	struct	ne2000_softc sc_ne2000;		/* real "ne2000" softc */
++
++	/* DPPBUS-specific goo. */
++//	void	*sc_ih;				/* interrupt cookie */
++};
++
++struct cfattach ne_dppbus_ca = {
++	sizeof(struct ne_dppbus_softc), ne_dppbus_match, ne_dppbus_attach
++};
++
++int
++ne_dppbus_match(parent, match, aux)
++	struct device *parent;
++	struct cfdata *match;
++	void *aux;
++{
++	struct dppbus_attach_args *da = aux;
++	bus_space_tag_t nict = da->da_memt;
++	bus_space_handle_t nich;
++	bus_space_tag_t asict;
++	bus_space_handle_t asich;
++	int rv = 0;
++	/* Map i/o space. */
++	if (bus_space_map(nict, 0x01000c00, NE2000_NPORTS, 0, &nich))
++		return (0);
++
++	asict = nict;
++	if (bus_space_subregion(nict, nich, NE2000_ASIC_OFFSET,
++	    NE2000_ASIC_NPORTS, &asich))
++		goto out;
++
++	/* Look for an NE2000-compatible card. */
++	rv = ne2000_detect(nict, nich, asict, asich);
++
++///	if (rv)
++///		ia->ia_iosize = NE2000_NPORTS;
++
++ out:
++	bus_space_unmap(nict, nich, NE2000_NPORTS);
++	return (rv);
++}
++
++void
++ne_dppbus_attach(parent, self, aux)
++	struct device *parent, *self;
++	void *aux;
++{
++	struct ne_dppbus_softc *isc = (struct ne_dppbus_softc *)self;
++	struct ne2000_softc *nsc = &isc->sc_ne2000;
++	struct dp8390_softc *dsc = &nsc->sc_dp8390;
++	struct dppbus_attach_args *da = aux;
++	bus_space_tag_t nict = da->da_memt;
++	bus_space_handle_t nich;
++	bus_space_tag_t asict = nict;
++	bus_space_handle_t asich;
++	const char *typestr;
++	int netype;
++
++	printf("\n");
++
++	/* Map i/o space. */
++	if (bus_space_map(nict, 0x01000c00, NE2000_NPORTS, 0, &nich)) {
++		printf("%s: can't map i/o space\n", dsc->sc_dev.dv_xname);
++		return;
++	}
++
++	if (bus_space_subregion(nict, nich, NE2000_ASIC_OFFSET,
++	    NE2000_ASIC_NPORTS, &asich)) {
++		printf("%s: can't subregion i/o space\n", dsc->sc_dev.dv_xname);
++		return;
++	}
++
++	dsc->sc_regt = nict;
++	dsc->sc_regh = nich;
++
++	nsc->sc_asict = asict;
++	nsc->sc_asich = asich;
++
++	/*
++	 * Detect it again, so we can print some information about the
++	 * interface.
++	 */
++	netype = ne2000_detect(nict, nich, asict, asich);
++	switch (netype) {
++	case NE2000_TYPE_NE1000:
++		typestr = "NE1000";
++		break;
++
++	case NE2000_TYPE_NE2000:
++		typestr = "NE2000";
++		/*
++		 * Check for a RealTek 8019.
++		 */
++		bus_space_write_1(nict, nich, ED_P0_CR,
++		    ED_CR_PAGE_0 | ED_CR_STP);
++		if (bus_space_read_1(nict, nich, NERTL_RTL0_8019ID0) ==
++								RTL0_8019ID0 &&
++		    bus_space_read_1(nict, nich, NERTL_RTL0_8019ID1) ==
++								RTL0_8019ID1) {
++			typestr = "NE2000 (RTL8019)";
++			dsc->sc_mediachange = rtl80x9_mediachange;
++			dsc->sc_mediastatus = rtl80x9_mediastatus;
++			dsc->init_card = rtl80x9_init_card;
++			dsc->sc_media_init = rtl80x9_media_init;
++		}
++		break;
++
++	default:
++		printf("%s: where did the card go?!\n", dsc->sc_dev.dv_xname);
++		return;
++	}
++
++	printf("%s: %s Ethernet\n", dsc->sc_dev.dv_xname, typestr);
++
++	/* This interface is always enabled. */
++	dsc->sc_enabled = 1;
++
++	/*
++	 * Do generic NE2000 attach.  This will read the station address
++	 * from the EEPROM.
++	 */
++	ne2000_attach(nsc, NULL);
++
++	/* Establish the interrupt handler. */
++///	isc->sc_ih = dppbus_intr_establish(ia->ia_ic, ia->ia_irq, IST_EDGE,
++///	    IPL_NET, dp8390_intr, dsc);
++///	if (isc->sc_ih == NULL)
++///		printf("%s: couldn't establish interrupt handler\n",
++///		    dsc->sc_dev.dv_xname);
++}
++
++
++
++
++
++
++
++
++
++
+--- /dev/null	Sat Jun 15 12:20:06 2002
++++ sys/arch/dreamcast/dreamcast/disksubr.c	Fri May 17 17:40:38 2002
+@@ -0,0 +1,518 @@
++/*	$NetBSD: disksubr.c,v 1.44 2001/11/15 07:03:29 lukem Exp $	*/
++
++/*
++ * Copyright (c) 1982, 1986, 1988 Regents of the University of California.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)ufs_disksubr.c	7.16 (Berkeley) 5/4/91
++ */
++
++#include <sys/cdefs.h>
++__KERNEL_RCSID(0, "$NetBSD: disksubr.c,v 1.44 2001/11/15 07:03:29 lukem Exp $");
++
++#include <sys/param.h>
++#include <sys/systm.h>
++#include <sys/buf.h>
++#include <sys/disklabel.h>
++#include <sys/disk.h>
++#include <sys/syslog.h>
++
++#include "opt_mbr.h"
++
++int fat_types[] = { MBR_PTYPE_FAT12, MBR_PTYPE_FAT16S,
++		    MBR_PTYPE_FAT16B, MBR_PTYPE_FAT32,
++		    MBR_PTYPE_FAT32L, MBR_PTYPE_FAT16L,
++		    -1 };
++
++#define NO_MBR_SIGNATURE ((struct mbr_partition *) -1)
++
++static struct mbr_partition *
++mbr_findslice __P((struct mbr_partition* dp, struct buf *bp));
++
++/* 
++ * Scan MBR for  NetBSD partittion.  Return NO_MBR_SIGNATURE if no MBR found
++ * Otherwise, copy valid MBR partition-table into dp, and if a NetBSD
++ * partition is found, return a pointer to it; else return  NULL.
++ */
++static
++struct mbr_partition *
++mbr_findslice(dp, bp)
++	struct mbr_partition *dp;
++	struct buf *bp;
++{
++	struct mbr_partition *ourdp = NULL;
++	u_int16_t *mbrmagicp;
++	int i;
++
++	/* Note: Magic number is little-endian. */
++	mbrmagicp = (u_int16_t *)(bp->b_data + MBR_MAGICOFF);
++	if (*mbrmagicp != MBR_MAGIC)
++		return (NO_MBR_SIGNATURE);
++
++	/* XXX how do we check veracity/bounds of this? */
++	memcpy(dp, bp->b_data + MBR_PARTOFF, NMBRPART * sizeof(*dp));
++
++	/* look for NetBSD partition */
++	for (i = 0; i < NMBRPART; i++) {
++		if (dp[i].mbrp_typ == MBR_PTYPE_NETBSD) {
++			ourdp = &dp[i];
++			break;
++		}
++	}
++
++#ifdef COMPAT_386BSD_MBRPART
++	/* didn't find it -- look for 386BSD partition */
++	if (!ourdp) {
++		for (i = 0; i < NMBRPART; i++) {
++			if (dp[i].mbrp_typ == MBR_PTYPE_386BSD) {
++				printf("WARNING: old BSD partition ID!\n");
++				ourdp = &dp[i];
++ 				/*
++				 * If more than one matches, take last,
++				 * as NetBSD install tool does.
++				 */
++#if 0
++				break;
++#endif
++			}
++		}
++	}
++#endif	/* COMPAT_386BSD_MBRPART */
++
++		return (ourdp);
++}
++
++
++/*
++ * Attempt to read a disk label from a device
++ * using the indicated stategy routine.
++ * The label must be partly set up before this:
++ * secpercyl, secsize and anything required for a block i/o read
++ * operation in the driver's strategy/start routines
++ * must be filled in before calling us.
++ *
++ * If dos partition table requested, attempt to load it and
++ * find disklabel inside a DOS partition. Also, if bad block
++ * table needed, attempt to extract it as well. Return buffer
++ * for use in signalling errors if requested.
++ *
++ * Returns null on success and an error string on failure.
++ */
++char *
++readdisklabel(dev, strat, lp, osdep)
++	dev_t dev;
++	void (*strat) __P((struct buf *));
++	struct disklabel *lp;
++	struct cpu_disklabel *osdep;
++{
++	struct mbr_partition *dp;
++	struct partition *pp;
++	struct dkbad *bdp;
++	struct buf *bp;
++	struct disklabel *dlp;
++	char *msg = NULL;
++	int dospartoff, cyl, i, *ip;
++
++	/* minimal requirements for archtypal disk label */
++	if (lp->d_secsize == 0)
++		lp->d_secsize = DEV_BSIZE;
++	if (lp->d_secperunit == 0)
++		lp->d_secperunit = 0x1fffffff;
++#if 0
++	if (lp->d_ncylinders == 16383) {
++		printf("disklabel: Disk > 8G ... readjusting chs %d/%d/%d to ",
++			lp->d_ncylinders, lp->d_ntracks, lp->d_nsectors);
++		lp->d_ncylinders = lp->d_secperunit /  lp->d_ntracks / lp->d_nsectors;
++		printf("%d/%d/%d\n",
++			lp->d_ncylinders, lp->d_ntracks, lp->d_nsectors);
++	}
++#endif
++	lp->d_npartitions = RAW_PART + 1;
++	for (i = 0; i < RAW_PART; i++) {
++		lp->d_partitions[i].p_size = 0;
++		lp->d_partitions[i].p_offset = 0;
++	}
++	if (lp->d_partitions[i].p_size == 0)
++		lp->d_partitions[i].p_size = 0x1fffffff;
++	lp->d_partitions[i].p_offset = 0;
++
++	/* get a buffer and initialize it */
++	bp = geteblk((int)lp->d_secsize);
++	bp->b_dev = dev;
++
++	/* do dos partitions in the process of getting disklabel? */
++	dospartoff = 0;
++	cyl = LABELSECTOR / lp->d_secpercyl;
++	if (!osdep)
++		goto nombrpart;
++	dp = osdep->dosparts;
++
++	/* read master boot record */
++	bp->b_blkno = MBR_BBSECTOR;
++	bp->b_bcount = lp->d_secsize;
++	bp->b_flags |= B_READ;
++	bp->b_cylinder = MBR_BBSECTOR / lp->d_secpercyl;
++	(*strat)(bp);
++
++	/* if successful, wander through dos partition table */
++	if (biowait(bp)) {
++		msg = "dos partition I/O error";
++		goto done;
++	} else {
++		struct mbr_partition *ourdp = NULL;
++
++		ourdp = mbr_findslice(dp, bp);
++		if (ourdp ==  NO_MBR_SIGNATURE)
++			goto nombrpart;
++
++		for (i = 0; i < NMBRPART; i++, dp++) {
++			/* Install in partition e, f, g, or h. */
++			pp = &lp->d_partitions[RAW_PART + 1 + i];
++			pp->p_offset = dp->mbrp_start;
++			pp->p_size = dp->mbrp_size;
++			for (ip = fat_types; *ip != -1; ip++) {
++				if (dp->mbrp_typ == *ip)
++					pp->p_fstype = FS_MSDOS;
++			}
++			if (dp->mbrp_typ == MBR_PTYPE_LNXEXT2)
++				pp->p_fstype = FS_EX2FS;
++
++			if (dp->mbrp_typ == MBR_PTYPE_NTFS)
++				pp->p_fstype = FS_NTFS;
++
++			/* is this ours? */
++			if (dp == ourdp) {
++				/* need sector address for SCSI/IDE,
++				 cylinder for ESDI/ST506/RLL */
++				dospartoff = dp->mbrp_start;
++				cyl = MBR_PCYL(dp->mbrp_scyl, dp->mbrp_ssect);
++
++				/* update disklabel with details */
++				lp->d_partitions[2].p_size =
++				    dp->mbrp_size;
++				lp->d_partitions[2].p_offset = 
++				    dp->mbrp_start;
++#if 0
++				if (lp->d_ntracks != dp->mbrp_ehd + 1 ||
++				    lp->d_nsectors != DPSECT(dp->mbrp_esect)) {
++					printf("disklabel: BIOS sees chs %d/%d/%d as ",
++						lp->d_ncylinders, lp->d_ntracks,
++						lp->d_nsectors);
++					lp->d_ntracks = dp->mbrp_ehd + 1;
++					lp->d_nsectors = DPSECT(dp->mbrp_esect);
++					lp->d_secpercyl = lp->d_ntracks * lp->d_nsectors;
++					lp->d_ncylinders = lp->d_secperunit / lp->d_secpercyl;
++					if (! lp->d_ncylinders)
++						lp->d_ncylinders = 1;
++					printf("%d/%d/%d\n",
++						lp->d_ncylinders, lp->d_ntracks,
++						lp->d_nsectors);
++				    }
++#endif
++			}
++		}
++		lp->d_npartitions = RAW_PART + 1 + i;
++	}
++
++nombrpart:
++	/* next, dig out disk label */
++	bp->b_blkno = dospartoff + LABELSECTOR;
++	bp->b_cylinder = cyl;
++	bp->b_bcount = lp->d_secsize;
++	bp->b_flags &= ~(B_DONE);
++	bp->b_flags |= B_READ;
++	(*strat)(bp);
++
++	/* if successful, locate disk label within block and validate */
++	if (biowait(bp)) {
++		msg = "disk label I/O error";
++		goto done;
++	}
++	for (dlp = (struct disklabel *)bp->b_data;
++	    dlp <= (struct disklabel *)(bp->b_data + lp->d_secsize - sizeof(*dlp));
++	    dlp = (struct disklabel *)((char *)dlp + sizeof(long))) {
++		if (dlp->d_magic != DISKMAGIC || dlp->d_magic2 != DISKMAGIC) {
++			if (msg == NULL)
++				msg = "no disk label";
++		} else if (dlp->d_npartitions > MAXPARTITIONS ||
++			   dkcksum(dlp) != 0)
++			msg = "disk label corrupted";
++		else {
++			*lp = *dlp;
++			msg = NULL;
++			break;
++		}
++	}
++
++	if (msg)
++		goto done;
++
++	/* obtain bad sector table if requested and present */
++	if (osdep && (lp->d_flags & D_BADSECT)) {
++		struct dkbad *db;
++
++		bdp = &osdep->bad;
++		i = 0;
++		do {
++			/* read a bad sector table */
++			bp->b_flags &= ~(B_DONE);
++			bp->b_flags |= B_READ;
++			bp->b_blkno = lp->d_secperunit - lp->d_nsectors + i;
++			if (lp->d_secsize > DEV_BSIZE)
++				bp->b_blkno *= lp->d_secsize / DEV_BSIZE;
++			else
++				bp->b_blkno /= DEV_BSIZE / lp->d_secsize;
++			bp->b_bcount = lp->d_secsize;
++			bp->b_cylinder = lp->d_ncylinders - 1;
++			(*strat)(bp);
++
++			/* if successful, validate, otherwise try another */
++			if (biowait(bp)) {
++				msg = "bad sector table I/O error";
++			} else {
++				db = (struct dkbad *)(bp->b_data);
++#define DKBAD_MAGIC 0x4321
++				if (db->bt_mbz == 0
++					&& db->bt_flag == DKBAD_MAGIC) {
++					msg = NULL;
++					*bdp = *db;
++					break;
++				} else
++					msg = "bad sector table corrupted";
++			}
++		} while ((bp->b_flags & B_ERROR) && (i += 2) < 10 &&
++			i < lp->d_nsectors);
++	}
++
++done:
++	brelse(bp);
++	return (msg);
++}
++
++/*
++ * Check new disk label for sensibility
++ * before setting it.
++ */
++int
++setdisklabel(olp, nlp, openmask, osdep)
++	struct disklabel *olp, *nlp;
++	u_long openmask;
++	struct cpu_disklabel *osdep;
++{
++	int i;
++	struct partition *opp, *npp;
++
++	/* sanity clause */
++	if (nlp->d_secpercyl == 0 || nlp->d_secsize == 0
++		|| (nlp->d_secsize % DEV_BSIZE) != 0)
++			return(EINVAL);
++
++	/* special case to allow disklabel to be invalidated */
++	if (nlp->d_magic == 0xffffffff) {
++		*olp = *nlp;
++		return (0);
++	}
++
++	if (nlp->d_magic != DISKMAGIC || nlp->d_magic2 != DISKMAGIC ||
++	    dkcksum(nlp) != 0)
++		return (EINVAL);
++
++	/* XXX missing check if other dos partitions will be overwritten */
++
++	while (openmask != 0) {
++		i = ffs(openmask) - 1;
++		openmask &= ~(1 << i);
++		if (nlp->d_npartitions <= i)
++			return (EBUSY);
++		opp = &olp->d_partitions[i];
++		npp = &nlp->d_partitions[i];
++		if (npp->p_offset != opp->p_offset || npp->p_size < opp->p_size)
++			return (EBUSY);
++		/*
++		 * Copy internally-set partition information
++		 * if new label doesn't include it.		XXX
++		 */
++		if (npp->p_fstype == FS_UNUSED && opp->p_fstype != FS_UNUSED) {
++			npp->p_fstype = opp->p_fstype;
++			npp->p_fsize = opp->p_fsize;
++			npp->p_frag = opp->p_frag;
++			npp->p_cpg = opp->p_cpg;
++		}
++	}
++ 	nlp->d_checksum = 0;
++ 	nlp->d_checksum = dkcksum(nlp);
++	*olp = *nlp;
++	return (0);
++}
++
++
++/*
++ * Write disk label back to device after modification.
++ */
++int
++writedisklabel(dev, strat, lp, osdep)
++	dev_t dev;
++	void (*strat) __P((struct buf *));
++	struct disklabel *lp;
++	struct cpu_disklabel *osdep;
++{
++	struct mbr_partition *dp;
++	struct buf *bp;
++	struct disklabel *dlp;
++	int error, dospartoff, cyl;
++
++	/* get a buffer and initialize it */
++	bp = geteblk((int)lp->d_secsize);
++	bp->b_dev = dev;
++
++	/* do dos partitions in the process of getting disklabel? */
++	dospartoff = 0;
++	cyl = LABELSECTOR / lp->d_secpercyl;
++	if (!osdep)
++		goto nombrpart;
++	dp = osdep->dosparts;
++
++	/* read master boot record */
++	bp->b_blkno = MBR_BBSECTOR;
++	bp->b_bcount = lp->d_secsize;
++	bp->b_flags |= B_READ;
++	bp->b_cylinder = MBR_BBSECTOR / lp->d_secpercyl;
++	(*strat)(bp);
++
++	if ((error = biowait(bp)) == 0) {
++		struct mbr_partition *ourdp = NULL;
++
++		ourdp = mbr_findslice(dp, bp);
++		if (ourdp ==  NO_MBR_SIGNATURE)
++			goto nombrpart;
++
++		if (ourdp) {
++			/* need sector address for SCSI/IDE,
++			 cylinder for ESDI/ST506/RLL */
++			dospartoff = ourdp->mbrp_start;
++			cyl = MBR_PCYL(ourdp->mbrp_scyl, ourdp->mbrp_ssect);
++		}
++	}
++
++nombrpart:
++#ifdef maybe
++	/* disklabel in appropriate location? */
++	if (lp->d_partitions[2].p_offset != 0
++		&& lp->d_partitions[2].p_offset != dospartoff) {
++		error = EXDEV;		
++		goto done;
++	}
++#endif
++
++	/* next, dig out disk label */
++	bp->b_blkno = dospartoff + LABELSECTOR;
++	bp->b_cylinder = cyl;
++	bp->b_bcount = lp->d_secsize;
++	bp->b_flags &= ~(B_DONE);
++	bp->b_flags |= B_READ;
++	(*strat)(bp);
++
++	/* if successful, locate disk label within block and validate */
++	if ((error = biowait(bp)) != 0)
++		goto done;
++	for (dlp = (struct disklabel *)bp->b_data;
++	    dlp <= (struct disklabel *)(bp->b_data + lp->d_secsize - sizeof(*dlp));
++	    dlp = (struct disklabel *)((char *)dlp + sizeof(long))) {
++		if (dlp->d_magic == DISKMAGIC && dlp->d_magic2 == DISKMAGIC &&
++		    dkcksum(dlp) == 0) {
++			*dlp = *lp;
++			bp->b_flags &= ~(B_READ|B_DONE);
++			bp->b_flags |= B_WRITE;
++			(*strat)(bp);
++			error = biowait(bp);
++			goto done;
++		}
++	}
++	error = ESRCH;
++
++done:
++	brelse(bp);
++	return (error);
++}
++
++/*
++ * Determine the size of the transfer, and make sure it is
++ * within the boundaries of the partition. Adjust transfer
++ * if needed, and signal errors or early completion.
++ */
++int
++bounds_check_with_label(bp, lp, wlabel)
++	struct buf *bp;
++	struct disklabel *lp;
++	int wlabel;
++{
++	struct partition *p = lp->d_partitions + DISKPART(bp->b_dev);
++	int labelsector = lp->d_partitions[2].p_offset + LABELSECTOR;
++	int sz;
++
++	sz = howmany(bp->b_bcount, lp->d_secsize);
++
++	if (bp->b_blkno + sz > p->p_size) {
++		sz = p->p_size - bp->b_blkno;
++		if (sz == 0) {
++			/* If exactly at end of disk, return EOF. */
++			bp->b_resid = bp->b_bcount;
++			goto done;
++		}
++		if (sz < 0) {
++			/* If past end of disk, return EINVAL. */
++			bp->b_error = EINVAL;
++			goto bad;
++		}
++		/* Otherwise, truncate request. */
++		bp->b_bcount = sz << DEV_BSHIFT;
++	}
++
++	/* Overwriting disk label? */
++	if (bp->b_blkno + p->p_offset <= labelsector &&
++#if LABELSECTOR != 0
++	    bp->b_blkno + p->p_offset + sz > labelsector &&
++#endif
++	    (bp->b_flags & B_READ) == 0 && !wlabel) {
++		bp->b_error = EROFS;
++		goto bad;
++	}
++
++	/* calculate cylinder for disksort to order transfers with */
++	bp->b_cylinder = (bp->b_blkno + p->p_offset) /
++	    (lp->d_secsize / DEV_BSIZE) / lp->d_secpercyl;
++	return (1);
++
++bad:
++	bp->b_flags |= B_ERROR;
++done:
++	return (0);
++}
+--- sys/arch/dreamcast.orig/conf/files.dreamcast	Thu Apr 18 20:39:29 2002
++++ sys/arch/dreamcast/conf/files.dreamcast	Fri May 17 17:34:31 2002
+@@ -16,7 +16,7 @@
+ file	arch/dreamcast/dreamcast/machdep.c
+ file	arch/dreamcast/dreamcast/autoconf.c
+ file	arch/dreamcast/dreamcast/clock_machdep.c
+-file	arch/sh3/sh3/disksubr.c				disk
++file	arch/dreamcast/dreamcast/disksubr.c             disk
+ 
+ defparam opt_memsize.h	IOM_ROM_BEGIN IOM_ROM_SIZE IOM_RAM_BEGIN IOM_RAM_SIZE
+ 
+@@ -88,3 +88,25 @@
+ file	arch/dreamcast/dev/g2/gapspci.c			gapspci
+ file	arch/dreamcast/dev/g2/gapspci_dma.c		gapspci
+ file	arch/dreamcast/dev/g2/gapspci_pci.c		gapspci
++
++device	dppbus { [port = -1], [irq = -1] }
++attach	dppbus at shb
++file	arch/dreamcast/dev/dpp/dppbus.c			dppbus
++file	arch/dreamcast/dev/dpp/dppbus_bus_mem.c		dppbus
++
++attach	wdc at dppbus with wdc_dppbus
++file	arch/dreamcast/dev/dpp/wdc_dppbus.c		wdc_dppbus
++
++attach	ne at dppbus with ne_dppbus: rtl80x9
++file	arch/dreamcast/dev/dpp/if_ne_dppbus.c		ne_dppbus
++
++attach	com at dppbus with com_dppbus
++file	arch/dreamcast/dev/dpp/com_dppbus.c		com_dppbus
++
++include	"dev/usb/files.usb"
++
++device  slhc: usbus
++file    /home/ikehara/dev/usb/slhc.c    slhc    needs-flag
++attach	slhc at dppbus with slhc_dppbus
++file	/home/ikehara/dev/dppbus/slhc_dppbus.c	slhc_dppbus
++
+--- sys/arch/dreamcast.orig/conf/shl.x	Fri Apr 26 20:27:21 2002
++++ sys/arch/dreamcast/conf/shl.x	Sat May 18 12:01:10 2002
+@@ -1,6 +1,7 @@
+ /*	$NetBSD: shl.x,v 1.7 2002/04/25 17:02:41 uch Exp $	*/
+ 
+-OUTPUT_FORMAT("elf32-shl-nbsd")
++/*OUTPUT_FORMAT("elf32-shl-nbsd")*/
++OUTPUT_FORMAT("coff-shl")
+ OUTPUT_ARCH(sh)
+ ENTRY(start)
+ 
