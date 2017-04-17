@@ -1,0 +1,138 @@
+Lobby server 接続確認サンプルについて
+=====================================
+
+1.はじめに
+　このtestrunサンプルプログラムは、WindowsCE上のdctoolのコマンドラインで実行するロビーサーバのテストプログラムです。
+
+2.RASサーバとの接続準備作業
+　当テストプログラムを実行する前に、ドリームパスポートで情報を設定しなければなりません。
+　設定する情報は、以下の３つです。
+　－ログイン名
+　－接続RASサーバの電話番号
+　－接続ロビーサーバのIPアドレス
+
+ ドリームパスポートのメディアをDreamcastにセットしてユーザプロバイダ設定を実行します。
+ ① ログイン名登録
+　　サーバマシンでダイヤルイン許可のあるアカウントを使用します。
+　　例：ログイン名　　guest
+　　　　パスワード 　 Passguest
+ ② モデム設定
+　　ロビーサーバへの接続電話番号を設定します。
+　　電話番号１：RASサーバへの接続電話番号を設定
+　　　　　　　　例：03-9999-9999
+　　電話番号３：Lobbyサーバへの接続IPアドレスを設定
+　　　　　　　　例：120.255.255.255
+　サーバ側のTCP/IPプロパティで設定されたIPアドレスを設定します。
+　このIPアドレスを変更したい場合は、testrunプログラム内のSetRegInformationの部分のIPアドレスを設定しているところを修正してください。この関数内では、ドリームパスポートで設定した電話番号３のIPアドレスが使用されています。
+
+　その他適切な回線の種類（パルス・トーン）、外線発信番号（なし、あり）を設定します。
+ ③ドリームパスポートで設定した情報を書き込みます
+
+3.ロビーサービスプロバイダGUIDの設定
+  DirectPlay　Lobby　Service　Providerを使用するために、以下のレジストリ情報を設定してください。
+[HKEY_LOCAL_MACHINE\Software\Microsoft\DirectPlay\Lobby Providers]
+[HKEY_LOCAL_MACHINE\Software\Microsoft\DirectPlay\Lobby Providers\Lobby Connection For DirectPlay]
+	"Guid"="{17AF6382-87AF-11D3-ADF6-0020AF6849EF}"
+	"Path"="LobbySP.dll"
+	"dwReserved1"=dword:0
+	"dwReserved2"=dword:0
+
+4.テストプログラムのスタート
+  このテストプログラム参照して、アプリケーションを作成する場合、そのアプリケーションの初期処理で、必ず以下の項目について、WindowsCE上のレジストリに書き込んでください。
+
+ ① 接続するサーバのIPアドレス（上記で説明したドリームパスポートでも設定可）
+     "server address" = 該当サーバのIPアドレス(例:172.26.10.35)
+ ② クライアント名(マシンのユニークな名前 or 番号：必ず設定）
+     "client name" = 　マシン名（最大16文字）
+
+上記のレジストリ項目が、DirectPlay　LobbySPのAPIで参照用されて、ロビーサーバに接続されます。
+当サンプルプログラム内の関数SetRegInformationを参照してください。
+
+下記のコマンドで、実行するとロビーサーバへの接続から、ユーザ登録、グループ登録、ユーザ削除、グループ削除、ロビーサーバとの切り離し処理までを実行します。
+
+Usage:
+  s testrun [-c clientName] [-u username] [-g groupname] 
+
+-c 任意のクライアント名
+-u 任意のユーザ名
+-g 任意のグループ名
+
+例
+WindowsCE>s testrun -c YYYY -u AAAA -g GROUP-1
+
+上記のパラメータを指定しなければ、このサンプルプログラムの中で任意の名前で各パラメータを命名します。
+
+5.	テストプログラムの流れ
+テストプログラムの流れは、以下のようになっております。
+①	DirectPlayCreateでオブジェクトを作成
+②	IDirectPlay3：QueryInterfaceでDirectPlayのインタフェースを照会する
+③　DirectPlayLobbyCreateでオブジェクトを作成	
+④	IDirectPlayLobby2:QueryInterfaceでDirectPlayLobbyのインタフェースを照会する
+⑤	IDirectPlayLobby2:CreateCompoundAddressでDirectPlayアドレス情報の設定する。最初にLobbyプロバイダﾞのGUIDを設定しサイズを獲得するために呼び出し、その後実データを獲得する
+⑥	IDirectPlayLobby2:InitializeConnectionで接続の初期化を行なう。
+⑦	RasDialUpでRAS接続｡RAS経由でロビーサーバに電話接続します
+⑧	IDirectPlay3:Openでセッション生成
+⑨	IDirectPlay3:CreatePlayerでプレイヤを作成
+⑩	IDirectPlay3:SetPlayerDataでプレイヤ固有のデータ（例：スコア等）をサーバに送信する
+⑪	IDirectPlay3:GetPlayerDataでロビーサーバが管理する全ユーザ一覧を獲得
+最初にユーザ一覧のサイズを獲得するために呼び出し、その後データを獲得する。
+LSP_PLAYERDATA構造体のデータが返る。
+⑫	IDirectPlay3：EnumGroupsでグループ一覧を参照｡アプリが用意するコールバックが呼ばれる
+⑬	IDirectPlay3:GetGroupDataでロビーサーバが管理する全グループ一覧を獲得
+最初にグループ一覧のサイズを獲得するために呼び出し、その後データを獲得する。LSP_GROUPDATA構造体のデータが返る。
+⑭	IDirectPlay3:AddPlayerToGroupでプレイヤを任意のグループに参加させる
+⑮	IDirectPlay3:EnumGroupPlayersでグループ内プレイヤ一覧を取得
+アプリが用意するコールバックが呼ばれる。
+⑯	IDirectPlay3：DeletePlayerFromGroupでグループからプレイヤを削除
+⑰	IDirectPlay3：DestroyGroupでグループそのものを削除
+⑱	IDirectPlay3：DestroyPlayerでプレイヤそのものを削除
+⑲	IDirectPlay3：Closeでセッションを切断
+⑳	RasHungUpでRAS切断、電話切断
+
+
+Lobby Server 接続確認の簡易テストツール
+=======================================
+1.はじめに
+　このlobbytestプログラムは、WindowsNT上で動作する、ロビーサーバ接続テストプログラムです。
+
+2.インストール
+TestProgram for NT フォルダをフォルダごとＮＴ上の任意の場所にコピーする。
+
+3.レジストリの変更
+当テストプログラムがロビーサーバに接続するために必要となる、以下の情報をレジストリにあらかじめ登録しておかなければなりません。
+　　lobbytest.reg の内容を変更し、実行すればレジストリに登録されます。
+    "server address" = 該当サーバのIPアドレス(例:172.26.10.35)
+    "client name" = 必要なら変更する（最大16文字）
+    "user name" = 必要なら変更する （最大40文字）
+    "Loop" = ループの回数
+    "Message" = メッセージ表示の有無
+    "Sleep" =　各APIを呼ぶ間隔 
+
+　　上記変更後、実行(結合）する。
+　　なお、ＩＰアドレスは必ず設定してください。
+
+4.ロビーサーバ起動
+　ロビーサーバをはじめて起動する場合には、必ずロビー管理情報設定ツール（SetLobbyServ.exe）を使用して管理情報をレジストリにあらかじめ書き込む必要があります。詳細は、ロビーサーバ環境仕様書を参照してください。
+  ①lobbytest.exeを実行します。
+  ②ログ出力画面(SRSlog)が表示される.
+
+5. テストプログラムの起動
+    lobbytest.exe を実行する。
+  （MessageBoxに返答することでテストプロを動作させる）
+　テストプログラムの実行手順は、以下の通りになっており、①～⑧までが繰り返されます。
+  ①	ロビーサーバとの接続（ここで、いいえ（ＮＯ）を選択すると、テストを終了します）
+  ②	ユーザ登録
+  ③	サーバのロビー管理情報の取得
+  ④	メッセージの送信
+  ⑤	グループ作成（同時にグループに参加します）
+  ⑥	グループ脱退
+  ⑦	ユーザ削除
+  ⑧	接続解放
+
+6.接続の確認
+ロビーサーバと接続ができた場合は、サーバ側のログ画面に接続のトレース情報が表示されます。
+また、クライアント側でも、接続が正常に完了すると、次の要求メッセージが表示されます。
+
+7.テストプログラムの終了
+テストプログラム起動時の最初に出る（Let's begin this test）メッセージボックスで、いいえ（ＮＯ）を選択すれば、終了します。
+

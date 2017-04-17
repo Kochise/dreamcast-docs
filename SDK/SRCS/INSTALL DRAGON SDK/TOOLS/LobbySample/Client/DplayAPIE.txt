@@ -1,0 +1,137 @@
+DirectPlay LobbySP API Support
+
+This DirectPlay Lobby Service Provider supports the following APIs.
+The 0 seal is supported.
+
+0 :supported 
+- :not supported
+
+API			 Status			Notes
+---------------------------------------------------------------------
+DirectPlayCreate	   0	Create a DirectPlay interface
+DirectPlayEnumerate	   -	Enumerate a service provider
+DirectPlayLobbyCreate	   0	Generate a DirectPlay Lobby object instance
+QueryInterfase		   0	Obtain an interface pointer
+AddGroupToGroup		   -	Add a group to an existing group
+AddPlayerToGroup	   0	Add an existing player to an existing group
+CancelMessage		   -	Cancel a message
+CancelPriority		   -	Cancel a message that has a set priority
+Close			   0	Close a session
+CreateGroup		   0	Create a group
+CreateGroupInGroup	   -	Generate a group in the existing group
+CreatePlayer		   0	Create player
+DeleteGroupFromGroup	   -	Remove a shortcut for the group
+DeletePlayerFromGroup	   0	Delete a player from the group
+DestroyGroup		   0	Delete a group
+DestroyPlayer		   0	Delete a player
+EunmConnections		   -	Provider enumeration
+EnuGroupPlayers		   0	Enumerate a player in a specific group
+EnumGroups		   0	Enumerate a group
+EnumGroupsInGroup	   -	Enumerate a group shortcut
+EnumPlayers		   -	Enumerate a player
+EnumSessions		   -	Enumerate a session
+GetCaps	LP_GetCaps	   -	Obtain the ability of DirectPlay object
+GetGroupConnectionSettings -	Obtain the group connection information
+GetGroupData		   0 *1	Obtain the group information list from the server. Its size
+                                is the first information it obtains.  
+GetGroupFlags		   -	Obtain a group flag
+GetGroupName		   0	Obtain a group name
+GetGroupOwner		   -	Obtain a group owner's DPID
+GetGroupParent		   -	Obtain a parent group's DPID
+GetMessageCount		   -	Obtain a message number
+GetMessageQueue		   -	Obtain message queue information
+GetPlayerAccount	   -	Obtain player account information
+GetPlayerAddress	   -	Obtain a player's DirectPlay address
+GetPlayerCaps		   -	Obtain a player's abilities
+GetPlayerData		   0 *2	Obtain a player information list from the server. Its size
+                                is the first information it obtains.
+GetPlayerFlags		   -	Obtain a player flag
+GetPlayerName		   0	Obtain the player name
+GetSessionDesc		   0	Obtain the session property
+InitializeConnection	   0	Initialize the DirectPlay connection
+Open			   0	Join a session
+Receive			   -	Receive a message
+SecureOpen		   -	Security logon
+Send			   -	Transmit a message 
+SendChatMessage		   -	Transmit a text message
+SendEx			   -	Transmit a message
+SetGroupConnectionSettings -	Establish group connection settings
+SetGroupData		   -	Establish related data for a group
+SetGroupName		   -	Change the group name
+SetGroupOwner		   -	Change the group owner
+SetPlayerData		   0	Establish related data for a player
+SetPlayerName		   -	Change a player name
+SetSessionDesc		   -	Change the session property
+StartSession		   -	Initialize the start of DirectPlay session
+connect			   0	Connect to a session
+connectEx		   -	Connect to a session
+CreateAddress		   -	Generate a DirectPlay address
+CreateCompoundAddress	   0	Generate a DirectPlay address
+EnumAddress		   -	Enumerate an address
+EnumAddressTypes	   -	Enumerate an address type
+EnumLocalApplications	   -	Enumerate an application
+GetConnectionSettings	   -	Obtain the connection information
+ReceiveLobbyMessage	   -	Receive the message
+RegisterApplication	   -	Register the application
+RunApplication		   -	Start an application
+SendLobbyMessage	   -	Transmit a message
+SetConnectionSettings	   -	Modify the connection information
+SetLobbyMessageEvent	   -	Register the receiving event
+UnregisterApplication	   -	Delete the registration entry of an application
+WaitForConnectionSettings  -	Establish the wait mode while connection setting
+----------------------------------------------------------------------
+*1 Unlike the original function, GetGroupData acquires the group list information, which
+   the lobby server controls. This API always runs twice.
+
+   The first time it runs, it specifies the data acquisition region to NULL and obtain the
+   size of the group list. The second time it runs, it acquires the data to the specified
+   region. The structure of the obtain region is LPLSP_GROUPDATA (refer LSPlobby.h and
+   SRScom.h).
+
+[example]
+ DWORD dwSize;
+ LPLSP_GROUPDATA lpGroupData;	
+ First time
+ hr = g_lpDP->GetGroupData(g_idGroup,	        // Group ID
+                               NULL,            // Area pointer is NULL
+                               (LPDWORD)&dwSize,// Get size
+                               0);
+ if (hr != DPERR_BUFFERTOOSMALL) 
+ {
+   lpGroupData = (LPLSP_GROUPDATA)LocalAlloc(LMEM_FIXED,dwSize); 
+                                               // Get Memory
+   if (lpGroupData == 0) goto error;
+   Second time
+   hr = g_lpDP->GetGroupData(g_idGroup,	       // Group ID
+                            lpGroupData ,      // Get Area pointer
+                            (LPDWORD)&dwSize,  // Get size
+                            0);
+
+*2 Unlike the original function, GetPlayerData acquires the player information list, which
+   the lobby server controls. This API always runs twice.
+
+   The first time it runs, it specifies the data acquisition region to NULL and obtains the
+   size of the player list. The second time it runs, it acquires the data to the specified
+   region. The structure of the obtain region is LPLSP_GROUPDATA (refer LSPlobby.h and
+   SRScom.h).
+
+[Example]
+ DPID g_idPlayer;
+ LPLSP_PLAYERDATA lpPlayerData;	
+ First time
+ hr = g_lpDP->GetPlayerData(g_idPlayer,         //  Player ID
+                                NULL,           // Area pointer is NULL
+                                (LPDWORD)&dwSize,// Get size
+                                0);
+  if (hr != DPERR_BUFFERTOOSMALL)
+    {
+	llpPlayerData = (LPLSP_PLAYERDATA)LocalAlloc(LMEM_FIXED,dwSize);// Get Memory
+   if (lpPlayerData == 0) goto error;
+   Second time
+   hr = g_lpDP->GetPlayerData(g_idPlayer,      // Player ID
+                             lpPlayerData,     // Get Area pointer
+                             (LPDWORD)&dwSize, // Get size
+                             0);
+
+
+----------------------------------------------------------------------

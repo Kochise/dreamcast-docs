@@ -1,0 +1,94 @@
+// TYPE    DU SCRIPT : DRAGON
+// AUTEUR  DU SCRIPT : Kochise
+// VERSION DU SCRIPT : 2006/03/09
+
+[Code]
+var
+  g_bSkipPage   : Boolean;
+
+#ifdef USE_MODIFYREPAIRDELETE
+function ComponentList(Default: String): String;
+begin
+  Result := WizardSelectedComponents(False);
+end;
+#endif
+
+{ --- REGISTER ADD-IN ----------------------------------------------------------------------------------------------- }
+
+procedure RegisterAddin();
+var
+  l_oaStrSubKeys : TArrayOfString;
+  l_oStrRegRoot  : String;
+  l_nLoop        : Integer;
+begin
+  if RegGetSubkeyNames(HKEY_LOCAL_MACHINE, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy', l_oaStrSubKeys) then begin
+    for l_nLoop := 0 to GetArrayLength(l_oaStrSubKeys)-1 do begin
+      if CompareText('S-1-5', Copy(l_oaStrSubKeys[l_nLoop], 1, 5)) = 0 then begin
+        l_oStrRegRoot := l_oaStrSubKeys[l_nLoop]+'\Software\Microsoft\DevStudio\6.0\AddIns\Dreamcast Image Configuration Tool';
+
+        RegWriteStringValue(HKU, l_oStrRegRoot, '', '0');
+        RegWriteStringValue(HKU, l_oStrRegRoot, 'Description', 'This tool allows the developer to choose which components go into the Dreamcast Windows CE image, and build the BIN image.  It also provides the functionality to run an application automatically when the Windows CE OS boots up.');
+        RegWriteStringValue(HKU, l_oStrRegRoot, 'DisplayName', 'Dreamcast Image Configuration Tool');
+        RegWriteStringValue(HKU, l_oStrRegRoot, 'Filename', ExpandConstant('{app}\Tools\makeimgconfig.dll'));
+			end;
+    end;
+  end;
+end;
+
+procedure UnregisterAddin();
+var
+  l_oaStrSubKeys : TArrayOfString;
+  l_oStrRegRoot  : String;
+  l_nLoop        : Integer;
+begin
+  if RegGetSubkeyNames(HKEY_LOCAL_MACHINE, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Group Policy', l_oaStrSubKeys) then begin
+    for l_nLoop := 0 to GetArrayLength(l_oaStrSubKeys)-1 do begin
+      if CompareText('S-1-5', Copy(l_oaStrSubKeys[l_nLoop], 1, 5)) = 0 then begin
+        l_oStrRegRoot := l_oaStrSubKeys[l_nLoop]+'\Software\Microsoft\DevStudio\6.0\AddIns\Dreamcast Image Configuration Tool';
+
+        RegDeleteKeyIncludingSubkeys(HKU, l_oStrRegRoot);
+			end;
+    end;
+  end;
+end;
+
+{ --- INSTALL ------------------------------------------------------------------------------------------------------- }
+
+procedure ISSI_InitializeWizard();
+begin
+  g_bSkipPage := False;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then begin
+    // A la fin de l'installation, on enregistre l'add-in pour Visual C++ 6
+    RegisterAddin();
+  end;
+end;
+
+function ShouldSkipPage(CurPage: Integer): Boolean;
+begin
+  if (g_bSkipPage = True) and (CurPage <> wpInstalling) then begin
+    Result := True;
+#ifdef USE_MODIFYREPAIRDELETE
+  end else begin
+    if Pos('/SP-', UpperCase(GetCmdTail)) > 0 then begin
+    case CurPage of
+      wpWelcome, wpLicense, wpPassword, wpInfoBefore, wpUserInfo, wpSelectDir, wpSelectProgramGroup, wpInfoAfter:
+      Result := True;
+    end;
+  end;
+#endif
+  end;
+end;
+
+{ --- UNINSTALL ----------------------------------------------------------------------------------------------------- }
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usPostUninstall then begin
+    // A la fin de la désinstallation, on supprime l'add-in pour Visual C++ 6
+    UnregisterAddin();
+  end;
+end;

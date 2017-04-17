@@ -1,0 +1,114 @@
+Lobby server connection confirmation sample
+
+1. Overview
+The testrun sample program is a test program for testing lobby server connection, which can be executed from the dctool command line of Windows CE.
+
+2. Setup connection to RAS server
+Before executing this test program, the DreamPassport msut be configured first, and the following three information is needed:
+	user login name
+	phone number for the RAS server
+	the IP address of the RAS server
+
+Insert the Dreampassport CD media into the Dreamcast hardware, configure the user provider:
+1) Register user login name
+Use an account which has dial in permission at the server machine. For example, 
+	User login name:	guest
+	password:	Passguest
+2) Configure modem
+Set the phone number of lobby server. 
+	phone number1: Set to the phone number ti RAS server, e.g. 03-9999-9999
+	phone number3: set to the IP address of lobby server, e.g. 120.255.255.255
+The above IP address is the one in the TCP/IP property of server. If the IP address needs to be changed, modify the IP address field of SetRegInformation of testrun program. This function uses the phone number3 of Dreampassport as IP address.
+Other setting should be set correspondingly as well.
+
+3 Configure the GUID of lobby service provider
+In order to use DirectPlay Lobby Service Provider, the following registry information has to be configured.
+[HKEY_LOCAL_MACHINE\Software\Microsoft\DirectPlay\Lobby Providers]
+[HKEY_LOCAL_MACHINE\Software\Microsoft\DirectPlay\Lobby Providers\Lobby Connection For DirectPlay]
+	"Guid"="{17AF6382-87AF-11D3-ADF6-0020AF6849EF}"
+	"Path"="LobbySP.dll"
+	"dwReserved1"=dword:0
+	"dwReserved2"=dword:0
+4 Start the test program
+When using this test program in the application, the application must overwrite the following Windows CE registry during its initialization stage.
+1) The IP address of the server(which can also be set via DreamPassport per above description)
+	"server address"=the IP address of the server(e.g.: 172.26.10.35)
+2) Client name(unique name or id of the machince, this must be set)
+	"client name"=computer name
+These registry items are referenced by DirectPlay LobbySP API, refers to the SetRegInformation function in the sample program.
+In the following command, it connects to the lobby server, registers users, registers group, deletes user, deletes group, disconnects from lobby server.
+Usage:
+  s testrun [-c clientName] [-u username] [-g groupname] 
+
+-c client name
+-u user name
+-g group name
+
+e.g.
+WindowsCE>s testrun -c YYYY -u AAAA -g GROUP-1
+These parameters have to be specified, the sample program will specify these parameters randomly.
+
+5. Flow of test program
+The working flow of the test program is 
+1)	create object by DirectPlayCreate
+2) 	Query DirectPlay interface by IDirectPlay3：QueryInterface
+3)	create object by DirectPlayLobbyCreate
+4)	QUery DirectPlayLobby interface by IDirectPlayLobby2:QueryInterface
+5)	Set DirectPlay address by IDirectPlayLobby2:CreateCompoundAddress. First, get GUID size of lobby provider, then get the data.
+6)	Connection initialization with IDirectPlayLobby2:InitializeConnection.
+7)	Conect to RAS via RasDialUp, i.e. dial up via the phone of lobby server through RAS.
+8)	create session with IDirectPlay3:Open.
+9)	create player with IDirectPlay3:CreatePlayer.
+10) 	Set player data(e.g. score etc) to server with IDirectPlay3:SetPlayerData.
+11)	enumerate all users managed by lobby server with IDirectPlay3:GetPlayerData. First get the size of user lists, than get the data, returned via LSP_PLAYERDATA structure.
+12)	enumerate all groups with IDirectPlay3：EnumGroups. Call the callback routine prepared by the application.
+13)	enumerate all groups manager by the lobby server with IDirectPlay3:GetGroupData. First, get the size of group list, then, get the data, returned via LSP_GROUPDATA structure.
+14) 	Add player to any group with IDirectPlay3:AddPlayerToGroup.
+15)	Enumerate te players in the group with IDirectPlay3:EnumGroupPlayers. Call the callback routine prepared by the application.
+16)	Delete player from the group with IDirectPlay3：DeletePlayerFromGroup
+17)	Delete group itself with IDirectPlay3：DestroyGroup.
+18)	Destroy player with 	IDirectPlay3：DestroyPlayer.
+19)	close session with IDirectPlay3：Close.
+20)	Disconnect RAS and phone with RasHungUp.
+
+
+Simple test toll to confirm lobby server connection
+1. Overview
+The lobbytest sample program is a test program for testing lobby server connection, which can be executed from Windows NT.
+
+2. Installation
+Copy the TestProgram for NT folder to any place in the NT.
+
+3. Registry change
+First, the following registery has to be set in NT registry beofore testing lobby server connection. You can change the content of lobbytest.reg, then execute this program.
+	"server address"=IP address of this server(e.g. 172.26.10.35)
+	"client name"=change if necessary(maximum 16 characters)
+	"user name"=change if necessary(maximum 40 characters)
+Once these are changed, execute it. And IP address must be set.
+
+4. Start lobby server
+When starting lobby server first time, the lobby management configuration tool (SetLobbyServ.exe) must be used to set the management information in the registry. For more details, refer to the lobby server environment  specification.
+1) execute lobbytest.exe
+2) Log output screen (SRSlog) will show up.
+
+5. Start test program
+Start lobbytest.exe(the test program will be started if answering to MessageBox)
+The execution step of the test program is list below, and repeated from step 1 to 8.
+1) connect to lobby server (if answered no here, the test ends)
+2) register user
+3) get the lobby management information of the server
+4) send message
+5) create group (join the group at same time)
+6) Remove from group.
+7) delete user
+8) dismiss connection.
+
+6. Confirm connection
+When connected to lobby server, the connection trace information is shown on the server log screen. On the client side, when successully connected, it requests next message.
+
+7. Test program ends
+Initially when test program starts, if say no to the (let's begin this test) message box, the program ends.
+
+
+
+
