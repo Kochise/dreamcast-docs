@@ -1,0 +1,7492 @@
+/*  Metrowerks Standard Library  Version 4.0  1998 August 10  */
+
+/*  $Date: 1999/03/29 18:30:27 $ 
+ *  $Revision: 1.9 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Portions Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/**
+ **  locale
+ **/
+
+#ifndef _LOCALE
+#define _LOCALE
+
+#include <mslconfig>
+#include <clocale>
+#include <cctype>
+#ifndef _MSL_NO_WCHART
+	#include <cwctype>
+	#include <cwchar>
+#else
+	typedef int mbstate_t;
+#endif
+#include <ctime>
+#include <cstdlib>
+#include <cmath>
+#include <vector>
+#include <string>
+#include <typeinfo>
+#include <algorithm>
+#include <limits>
+#include <iosfwd>
+#include <RefCountedPtrArray.h>
+
+#ifndef RC_INVOKED
+
+#pragma options align=native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#ifndef _MSL_NO_CPP_NAMESPACE
+	namespace std {
+#endif
+
+#ifdef _MSL_NO_MEMBER_TEMPLATE
+
+	template<class charT> class collate;
+	template<class charT> class ctype;
+	template <class internT, class externT, class stateT> class codecvt;
+	template<class charT> class numpunct;
+	template<class charT, class InputIterator = istreambuf_iterator<charT> > class num_get;
+	template<class charT, class OutputIterator = ostreambuf_iterator<charT> > class num_put;
+	template<class charT> class timepunct;
+	template<class charT, class InputIterator = istreambuf_iterator<charT> > class time_get;
+	template<class charT, class OutputIterator = ostreambuf_iterator<charT> > class time_put;
+	template<class charT, bool International = false> class moneypunct;
+	template<class charT, class InputIterator = istreambuf_iterator<charT> > class money_get;
+	template<class charT, class OutputIterator = ostreambuf_iterator<charT> > class money_put;
+
+#endif
+
+class locale;
+
+// hh 980915 added support for compilers only supporting _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+	template <class Facet> const Facet& use_facet(const locale& loc);
+	template <class Facet> bool         has_facet(const locale& loc) _MSL_THROW;
+	#define _USE_FACET(FACET, LOCALE) use_facet< FACET >(LOCALE)
+	#define _HAS_FACET(FACET, LOCALE) has_facet< FACET >(LOCALE)
+#else
+	template <class Facet> const Facet& use_facet(const locale& loc, Facet*);
+	template <class Facet> bool         has_facet(const locale& loc, Facet*) _MSL_THROW;
+	#define _USE_FACET(FACET, LOCALE) use_facet(LOCALE, (FACET*)0)
+	#define _HAS_FACET(FACET, LOCALE) has_facet(LOCALE, (FACET*)0)
+#endif
+
+template <bool b> class __locale_imp;
+
+// _lib.locale_, locale:
+class locale
+{
+public:
+	// types:
+     class facet;
+     class id;
+	typedef int category;
+	static const category
+		none     = 0,
+		collate  = LC_COLLATE, ctype    = LC_CTYPE,
+		monetary = LC_MONETARY, numeric  = LC_NUMERIC,
+		time     = LC_TIME, messages = LC_MESSAGES,
+		all = collate | ctype | monetary | numeric | time  | messages;
+	// construct/copy/destroy:
+	locale() _MSL_THROW;
+	locale(const locale& other) _MSL_THROW;
+	explicit locale(const char* std_name);
+	locale(const locale& other, const char* std_name, category cat);
+	#ifndef _MSL_NO_MEMBER_TEMPLATE  // hh 980713 Temporarily moved into class definition to support compiler
+		template <class Facet>
+		locale(const locale& other, Facet* f)
+		{
+			imp_ = new __locale_imp<true>(*other.imp_);
+			if (f != 0)
+				imp_->replace(*f);
+			imp_->name() = "*";
+		}
+	#else
+		locale(const locale& other, _STD::collate<char>* f);
+		locale(const locale& other, _STD::ctype<char>* f);
+		locale(const locale& other, _STD::codecvt<char, char, mbstate_t>* f);
+		locale(const locale& other, _STD::numpunct<char>* f);
+		locale(const locale& other, _STD::num_get<char>* f);
+		locale(const locale& other, _STD::num_get<char, char*>* f);
+		locale(const locale& other, _STD::num_put<char>* f);
+		locale(const locale& other, _STD::timepunct<char>* f);
+		locale(const locale& other, _STD::time_get<char>* f);
+		locale(const locale& other, _STD::time_put<char>* f);
+		locale(const locale& other, _STD::moneypunct<char, false>* f);
+		locale(const locale& other, _STD::moneypunct<char, true>* f);
+		locale(const locale& other, _STD::money_get<char>* f);
+		locale(const locale& other, _STD::money_put<char>* f);
+		#ifndef _MSL_NO_WCHART
+			locale(const locale& other, _STD::collate<wchar_t>* f);
+			locale(const locale& other, _STD::ctype<wchar_t>* f);
+			locale(const locale& other, _STD::codecvt<wchar_t, char, mbstate_t>* f);
+			locale(const locale& other, _STD::numpunct<wchar_t>* f);
+			locale(const locale& other, _STD::num_get<wchar_t>* f);
+			locale(const locale& other, _STD::num_put<wchar_t>* f);
+			locale(const locale& other, _STD::timepunct<wchar_t>* f);
+			locale(const locale& other, _STD::time_get<wchar_t>* f);
+			locale(const locale& other, _STD::time_put<wchar_t>* f);
+			locale(const locale& other, _STD::moneypunct<wchar_t, false>* f);
+			locale(const locale& other, _STD::moneypunct<wchar_t, true>* f);
+			locale(const locale& other, _STD::money_get<wchar_t>* f);
+			locale(const locale& other, _STD::money_put<wchar_t>* f);
+		#endif
+	#endif
+	locale(const locale& other, const locale& one, category cat);
+	~locale() _MSL_THROW;
+	const locale& operator=(const locale& other) _MSL_THROW;
+
+	#ifndef _MSL_NO_MEMBER_TEMPLATE  // hh 980713 Temporarily moved into class definition to support compiler
+		template <class Facet>
+		locale
+		combine(const locale& other) const
+		{
+			if (!_HAS_FACET(Facet, other))
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw runtime_error("locale::combine domain error");
+			#else
+				{
+					fprintf(stderr, "locale::combine domain error");
+					exit(1);
+				}
+			#endif
+			locale result(*this);
+			result.make_unique();
+			result.imp_->replace(_USE_FACET(Facet, other));
+			return result;
+		}
+	#endif
+
+	// locale operations:
+	string name() const;
+	bool operator==(const locale& other) const;
+	bool operator!=(const locale& other) const;
+
+	#ifndef _MSL_NO_MEMBER_TEMPLATE  // hh 980713 Temporarily moved into class definition to support compiler
+		template <class charT, class Traits, class Allocator>
+		bool
+		operator()(const basic_string<charT,Traits,Allocator>& s1,
+		                   const basic_string<charT,Traits,Allocator>& s2) const
+		{
+			return bool(_USE_FACET(_STD::collate<charT>, *this).compare(  // hh 980803 added _STD::
+				s1.data(), s1.data()+s1.size(), s2.data(), s2.data()+s2.size()
+			) < 0);
+		}
+	#else
+			bool operator()(const string& s1, const string& s2) const;
+			#ifndef _MSL_NO_WCHART
+				bool operator()(const wstring& s1, const wstring& s2) const;
+			#endif
+	#endif
+	// global locale objects:
+	static       locale  global(const locale&);
+	static const locale& classic();
+#if 0 // _MSL_NO_MEMBER_TEMPLATE
+private:
+	template <class Facet> friend const Facet& use_facet(const locale& loc);
+	template <class Facet> friend bool has_facet(const locale& loc) _MSL_THROW;
+#endif
+	_RefCountedPtr<__locale_imp<true> > imp_;
+
+	static _RefCountedPtr<__locale_imp<true> > global_s;
+
+	locale(const _RefCountedPtr<__locale_imp<true> >& i);
+	void make_unique();
+	static locale make_classic();
+};
+
+// locale::facet
+
+class locale::facet
+{
+public:
+	static const bool is_standard = false;
+protected:
+	explicit facet(size_t refs = 0);
+	virtual ~facet();
+private:
+	facet(const facet&);                // not defined
+	void operator=(const facet&);       // not defined
+	facet* add_ref() const;
+	facet* rem_ref() const;
+
+	mutable size_t ref_;
+
+	friend class locale;
+	friend class __locale_imp<true>;
+};
+
+// _lib.locale.convenience_, convenience interfaces:
+template <class charT> bool isspace (charT c, const locale& loc);
+template <class charT> bool isprint (charT c, const locale& loc);
+template <class charT> bool iscntrl (charT c, const locale& loc);
+template <class charT> bool isupper (charT c, const locale& loc);
+template <class charT> bool islower (charT c, const locale& loc);
+template <class charT> bool isalpha (charT c, const locale& loc);
+template <class charT> bool isdigit (charT c, const locale& loc);
+template <class charT> bool ispunct (charT c, const locale& loc);
+template <class charT> bool isxdigit(charT c, const locale& loc);
+template <class charT> bool isalnum (charT c, const locale& loc);
+template <class charT> bool isgraph (charT c, const locale& loc);
+template <class charT> charT toupper(charT c, const locale& loc);
+template <class charT> charT tolower(charT c, const locale& loc);
+
+// _lib.category.ctype_ and _lib.facet.ctype.special_, ctype:
+
+// hh 990109
+class ctype_base
+{
+public:
+	enum mask
+	{
+		space = 0x06,
+		print = 0xDC,
+		cntrl = 0x03,
+		upper = 0x80,
+		lower = 0x40,
+		alpha = lower | upper,
+		digit = 0x10,
+		punct = 0x08,
+		xdigit= 0x20,
+		alnum = alpha | digit,
+		graph = alnum | punct
+	};
+};
+
+inline
+ctype_base::mask
+operator& (ctype_base::mask x, ctype_base::mask y)
+{
+	return (ctype_base::mask)((int)x & (int)y);
+}
+
+inline
+ctype_base::mask
+operator| (ctype_base::mask x, ctype_base::mask y)
+{
+	return (ctype_base::mask)((int)x | (int)y);
+}
+
+inline
+ctype_base::mask
+operator^ (ctype_base::mask x, ctype_base::mask y)
+{
+	return (ctype_base::mask)((int)x ^ (int)y);
+}
+
+inline
+ctype_base::mask
+operator~ (ctype_base::mask x)
+{
+	return (ctype_base::mask)(~int(x));
+}
+
+inline
+ctype_base::mask&
+operator&= (ctype_base::mask& x, ctype_base::mask y)
+{
+	x = x & y;
+	return x;
+}
+
+inline
+ctype_base::mask&
+operator|= (ctype_base::mask& x, ctype_base::mask y)
+{
+	x = x | y;
+	return x;
+}
+
+inline
+ctype_base::mask&
+operator^= (ctype_base::mask& x, ctype_base::mask y)
+{
+	x = x ^ y;
+	return x;
+}
+
+template <class charT>
+class ctype
+{
+};
+
+#ifndef _MSL_NO_WCHART
+
+	template <>
+	class ctype<wchar_t>
+		: public locale::facet,
+		  public ctype_base
+	{
+	public:
+		typedef wchar_t char_type;
+		explicit ctype(size_t refs = 0);
+		bool           is(mask m, wchar_t c) const;
+		const wchar_t* is(const wchar_t* low, const wchar_t* high, mask* vec) const;
+		const wchar_t* scan_is(mask m, const wchar_t* low, const wchar_t* high) const;
+		const wchar_t* scan_not(mask m, const wchar_t* low, const wchar_t* high) const;
+		wchar_t        toupper(wchar_t c) const;
+		const wchar_t* toupper(wchar_t* low, const wchar_t* high) const;
+		wchar_t        tolower(wchar_t c) const;
+		const wchar_t* tolower(wchar_t* low, const wchar_t* high) const;
+		wchar_t        widen(char c) const;
+		const char*    widen(const char* low, const char* high, wchar_t* to) const;
+		wstring widen(const string& s) const;  // hh 980803 added.  non-standard
+		char           narrow(wchar_t c, char dfault) const;
+		const wchar_t* narrow(const wchar_t* low, const wchar_t* high, char dfault, char* to) const;
+		static locale::id id;
+		static const bool is_standard = true;
+	protected:
+		~ctype();
+		virtual bool         do_is(mask m, wchar_t c) const;
+		virtual const wchar_t* do_is(const wchar_t* low, const wchar_t* high, mask* vec) const;
+		virtual const wchar_t* do_scan_is(mask m, const wchar_t* low, const wchar_t* high) const;
+		virtual const wchar_t* do_scan_not(mask m, const wchar_t* low, const wchar_t* high) const;
+		virtual wchar_t        do_toupper(wchar_t c) const;
+		virtual const wchar_t* do_toupper(wchar_t* low, const wchar_t* high) const;
+		virtual wchar_t        do_tolower(wchar_t c) const;
+		virtual const wchar_t* do_tolower(wchar_t* low, const wchar_t* high) const;
+		virtual wchar_t        do_widen(char c) const;
+		virtual const char*  do_widen(const char* low, const char* high, wchar_t* dest) const;
+		virtual char         do_narrow(wchar_t c, char dfault) const;
+		virtual const wchar_t* do_narrow(const wchar_t* low, const wchar_t* high,
+		                               char dfault, char* dest) const;
+	private:
+		ctype_base::mask classify(wchar_t c) const;
+	};
+
+#endif
+
+template <>
+class ctype<char>
+	: public locale::facet,
+	  public ctype_base
+{
+public:
+	typedef char char_type;
+	explicit ctype(const mask* tab = 0, bool del = false, size_t refs = 0);
+	bool is(mask m, char c) const;
+	const char* is(const char* low, const char* high, mask* vec) const;
+	const char* scan_is (mask m, const char* low, const char* high) const;
+	const char* scan_not(mask m, const char* low, const char* high) const;
+	char        toupper(char c) const;
+	const char* toupper(char* low, const char* high) const;
+	char        tolower(char c) const;
+	const char* tolower(char* low, const char* high) const;
+	char        widen(char c) const;
+	const char* widen(const char* low, const char* high, char* to) const;
+	string widen(const string& s) const;  // hh 980803 added.  non-standard
+	char        narrow(char c, char dfault) const;
+	const char* narrow(const char* low, const char* high, char dfault, char* to) const;
+	static locale::id id;
+	static const bool is_standard = true;
+	static const size_t table_size = 256;
+protected:
+	const mask* table() const _MSL_THROW;
+	static const mask* classic_table() _MSL_THROW;
+	~ctype();
+	virtual char        do_toupper(char c) const;
+	virtual const char* do_toupper(char* low, const char* high) const;
+	virtual char        do_tolower(char c) const;
+	virtual const char* do_tolower(char* low, const char* high) const;
+	virtual char        do_widen(char c) const;
+	virtual const char* do_widen(const char* low, const char* high, char* to) const;
+	virtual char        do_narrow(char c, char dfault) const;
+	virtual const char* do_narrow(const char* low, const char* high, char dfault, char* to) const;
+private:
+	const mask* table_;
+	bool owns_;
+};
+
+template <class charT>
+class ctype_byname
+	: public ctype<charT>
+{
+public:
+	typedef typename ctype<charT>::mask mask;
+	explicit ctype_byname(const char* name, size_t refs = 0);
+protected:
+	~ctype_byname();
+	virtual bool         do_is(mask m, charT c) const;
+	virtual const charT* do_is(const charT* low, const charT* high, mask* vec) const;
+	virtual const charT* do_scan_is(mask m, const charT* low, const charT* high) const;
+	virtual const charT* do_scan_not(mask m, const charT* low, const charT* high) const;
+	virtual charT        do_toupper(charT c) const;
+	virtual const charT* do_toupper(charT* low, const charT* high) const;
+	virtual charT        do_tolower(charT c) const;
+	virtual const charT* do_tolower(charT* low, const charT* high) const;
+	virtual charT        do_widen(char c) const;
+	virtual const char*  do_widen(const char* low, const char* high, charT* dest) const;
+	virtual char         do_narrow(charT c, char dfault) const;
+	virtual const charT* do_narrow(const charT* low, const charT* high,
+	                               char dfault, char* dest) const;
+private:
+	locale loc_;
+	const ctype<charT>& facet_;
+};
+
+template <>
+class ctype_byname<char>
+	: public ctype<char>
+{
+public:
+	explicit ctype_byname(const char* name, size_t refs = 0);
+protected:
+	~ctype_byname();
+	virtual char        do_toupper(char c) const;
+	virtual const char* do_toupper(char* low, const char* high) const;
+	virtual char        do_tolower(char c) const;
+	virtual const char* do_tolower(char* low, const char* high) const;
+	virtual char        do_widen(char c) const;
+	virtual const char* do_widen(const char* low, const char* high, char* to) const;
+	virtual char        do_narrow(char c, char dfault) const;
+	virtual const char* do_narrow(const char* low, const char* high, char dfault, char* to) const;
+private:
+	locale loc_;
+	const ctype<char>& facet_;
+};
+
+class codecvt_base
+{
+public:
+	enum result { ok, partial, error, noconv };
+};
+
+template <class internT, class externT, class stateT>
+class _Generic_codecvt
+	: public locale::facet,
+	  public codecvt_base
+{
+public:
+	typedef internT  intern_type;
+	typedef externT  extern_type;
+	typedef stateT state_type;
+
+	explicit _Generic_codecvt(size_t refs = 0);
+	result out(stateT& state,
+	           const internT* from, const internT* from_end, const internT*& from_next,
+	           externT* to, externT* to_limit, externT*& to_next) const;
+	result unshift(stateT& state, externT* to, externT* to_limit, externT*& to_next) const;
+	result in(stateT& state,
+	          const externT* from, const externT* from_end, const externT*& from_next,
+	          internT* to, internT* to_limit, internT*& to_next) const;
+	int encoding() const _MSL_THROW;
+	bool always_noconv() const _MSL_THROW;
+	int length(const stateT& state,
+	           const externT* from, const externT* from_end, size_t max) const;
+	int max_length() const _MSL_THROW;
+protected:
+	~_Generic_codecvt();
+#ifndef _OVERLOAD_CTY_OFF
+	virtual result do_out(stateT& state,
+	                      const internT* from, const internT* from_end, const internT*& from_next,
+	                      externT* to, externT* to_limit, externT*& to_next) const = 0;
+	virtual result do_in(stateT& state,
+	                     const externT* from, const externT* from_end, const externT*& from_next,
+	                     internT* to, internT* to_limit, internT*& to_next) const = 0;
+	virtual result do_unshift(stateT& state,
+	                          externT* to, externT* to_limit, externT*& to_next) const = 0;
+	virtual int do_encoding() const _MSL_THROW = 0;
+	virtual bool do_always_noconv() const _MSL_THROW = 0;
+	virtual int do_length(const stateT&, const externT* from,
+	                      const externT* end, size_t max) const = 0;
+	virtual int do_max_length() const _MSL_THROW = 0;
+#endif
+};
+
+template <class internT, class externT, class stateT>
+class codecvt
+{
+};
+
+template <>
+class codecvt<char, char, mbstate_t>
+	: public _Generic_codecvt<char, char, mbstate_t>
+{
+public:
+	explicit codecvt(size_t refs = 0);
+	static locale::id id;
+	static const bool is_standard = true;
+protected:
+	~codecvt();
+	virtual result do_out(mbstate_t& state,
+	                      const char* from, const char* from_end, const char*& from_next,
+	                      char* to, char* to_limit, char*& to_next) const;
+	virtual result do_in(mbstate_t& state,
+	                     const char* from, const char* from_end, const char*& from_next,
+	                     char* to, char* to_limit, char*& to_next) const;
+	virtual result do_unshift(mbstate_t& state,
+	                          char* to, char* to_limit, char*& to_next) const;
+	virtual int do_encoding() const _MSL_THROW;
+	virtual bool do_always_noconv() const _MSL_THROW;
+	virtual int do_length(const mbstate_t&, const char* from,
+	                      const char* end, size_t max) const;
+	virtual int do_max_length() const _MSL_THROW;
+private:
+// hh 990106
+//	result do_nothing(const char* from, const char* from_end, const char*& from_next,
+//	                  char* to, char* to_limit, char*& to_next) const;
+
+	#ifdef _OVERLOAD_CTY_OFF
+		friend class _Generic_codecvt<char, char, mbstate_t>;
+	#endif
+};
+
+#ifndef _MSL_NO_WCHART
+
+	template <>
+	class codecvt<wchar_t, char, mbstate_t>
+		: public _Generic_codecvt<wchar_t, char, mbstate_t>
+	{
+	public:
+		explicit codecvt(size_t refs = 0);
+		static locale::id id;
+		static const bool is_standard = true;
+	protected:
+		~codecvt();
+		virtual result do_out(mbstate_t& state,
+		                      const wchar_t* from, const wchar_t* from_end, const wchar_t*& from_next,
+		                      char* to, char* to_limit, char*& to_next) const;
+		virtual result do_in(mbstate_t& state,
+		                     const char* from, const char* from_end, const char*& from_next,
+		                     wchar_t* to, wchar_t* to_limit, wchar_t*& to_next) const;
+		virtual result do_unshift(mbstate_t& state,
+		                          char* to, char* to_limit, char*& to_next) const;
+		virtual int do_encoding() const _MSL_THROW;
+		virtual bool do_always_noconv() const _MSL_THROW;
+		virtual int do_length(const mbstate_t&, const char* from,
+		                      const char* end, size_t max) const;
+		virtual int do_max_length() const _MSL_THROW;
+
+		#ifdef _OVERLOAD_CTY_OFF
+			friend class _Generic_codecvt<wchar_t, char, mbstate_t>;
+		#endif
+	};
+
+#endif
+
+template <class internT, class externT, class stateT>
+class codecvt_byname
+	: public codecvt<internT, externT, stateT>
+{
+public:
+	typedef codecvt_base::result result;
+	explicit codecvt_byname(const char* loc, size_t refs = 0);
+protected:
+	~codecvt_byname();
+	virtual result do_out(stateT& state,
+	                      const internT* from, const internT* from_end, const internT*& from_next,
+	                      externT* to, externT* to_limit, externT*& to_next) const;
+	virtual result do_in(stateT& state,
+	                     const externT* from, const externT* from_end, const externT*& from_next,
+	                     internT* to, internT* to_limit, internT*& to_next) const;
+	virtual result do_unshift(stateT& state,
+	                          externT* to, externT* to_limit, externT*& to_next) const;
+	virtual int do_encoding() const _MSL_THROW;
+	virtual bool do_always_noconv() const _MSL_THROW;
+	virtual int do_length(const stateT& state, const externT* from,
+	                      const externT* end, size_t max) const;
+	virtual int do_max_length() const _MSL_THROW;
+private:
+	locale loc_;
+	const codecvt<internT, externT, stateT>& facet_;
+};
+
+// _lib.category.numeric_ and _lib.facet.numpunct_, numeric:
+
+template <class charT, class InputIterator = istreambuf_iterator<charT> >
+class num_get
+	: public locale::facet
+{
+	typedef typename basic_ios<charT>::fmtflags fmtflags;  // hh 980824 workaround circular dependency
+	typedef typename basic_ios<charT>::iostate iostate;  // hh 980824 workaround circular dependency
+public:
+	typedef charT            char_type;
+	typedef InputIterator    iter_type;
+	explicit num_get(size_t refs = 0);
+	iter_type get(iter_type in, iter_type end, ios_base& str, iostate& err,
+	              bool& val) const;
+	iter_type get(iter_type in, iter_type end, ios_base& str, iostate& err,
+	              long& val) const;
+	iter_type get(iter_type in, iter_type end, ios_base& str, iostate& err,
+	              unsigned short& val) const;
+	iter_type get(iter_type in, iter_type end, ios_base& str, iostate& err,
+	              unsigned int& val)   const;
+	iter_type get(iter_type in, iter_type end, ios_base& str, iostate& err,
+	              unsigned long& val)  const;
+	#ifdef __MSL_LONGLONG_SUPPORT__
+		iter_type get(iter_type in, iter_type end, ios_base& str, iostate& err,
+		              long long& val)  const;
+		iter_type get(iter_type in, iter_type end, ios_base& str, iostate& err,
+		              unsigned long long& val)  const;
+	#endif
+	#ifndef _No_Floating_Point
+		iter_type get(iter_type in, iter_type end, ios_base& str, iostate& err,
+		              float& val) const;
+		iter_type get(iter_type in, iter_type end, ios_base& str, iostate& err,
+		              double& val) const;
+		iter_type get(iter_type in, iter_type end, ios_base& str, iostate& err,
+		              long double& val) const;
+	#endif
+	iter_type get(iter_type in, iter_type end, ios_base& str, iostate& err,
+	              void*& val) const;
+	static locale::id id;
+	static const bool is_standard = true;
+protected:
+	~num_get();
+	virtual iter_type do_get(iter_type in, iter_type end, ios_base& str, iostate& err,
+	                         bool& val) const;
+	virtual iter_type do_get(iter_type in, iter_type end, ios_base& str, iostate& err,
+	                         long& val) const;
+	virtual iter_type do_get(iter_type in, iter_type end, ios_base& str, iostate& err,
+	                         unsigned short& val) const;
+	virtual iter_type do_get(iter_type in, iter_type end, ios_base& str, iostate& err,
+	                         unsigned int& val) const;
+	virtual iter_type do_get(iter_type in, iter_type end, ios_base& str, iostate& err,
+	                         unsigned long& val) const;
+	#ifdef __MSL_LONGLONG_SUPPORT__
+		virtual iter_type do_get(iter_type in, iter_type end, ios_base& str, iostate& err,
+		                         long long& val) const;
+		virtual iter_type do_get(iter_type in, iter_type end, ios_base& str, iostate& err,
+		                         unsigned long long& val) const;
+	#endif
+	#ifndef _No_Floating_Point
+		virtual iter_type do_get(iter_type in, iter_type end, ios_base& str, iostate& err,
+		                         float& val) const;
+		virtual iter_type do_get(iter_type in, iter_type end, ios_base& str, iostate& err,
+		                         double& val) const;
+		virtual iter_type do_get(iter_type in, iter_type end, ios_base& str, iostate& err,
+		                         long double& val) const;
+	#endif
+	virtual iter_type do_get(iter_type in, iter_type end, ios_base& str, iostate& err,
+	                         void*& val) const;
+private:
+	iter_type getoct(iter_type in, iter_type end, ios_base& str, iostate& err,
+	                 long& val) const;
+	iter_type getdec(iter_type in, iter_type end, ios_base& str, iostate& err,
+	                 long& val) const;
+	iter_type gethex(iter_type in, iter_type end, ios_base& str, iostate& err,
+	                 long& val) const;
+	iter_type getint(iter_type in, iter_type end, ios_base& str, iostate& err,
+	                 long& val) const;
+	int parseOctDigits(iter_type& in, iter_type end, ios_base& str,	iostate& err,
+	                   long& val) const;
+	int parseDecDigits(iter_type& in, iter_type end, ios_base& str,	iostate& err,
+	                   long& val) const;
+	int parseHexDigits(iter_type& in, iter_type end, ios_base& str,	iostate& err,
+	                   long& val) const;
+	#ifdef __MSL_LONGLONG_SUPPORT__
+		iter_type getoct(iter_type in, iter_type end, ios_base& str, iostate& err,
+		                 long long& val) const;
+		iter_type getdec(iter_type in, iter_type end, ios_base& str, iostate& err,
+		                 long long& val) const;
+		iter_type gethex(iter_type in, iter_type end, ios_base& str, iostate& err,
+		                 long long& val) const;
+		iter_type getint(iter_type in, iter_type end, ios_base& str, iostate& err,
+		                 long long& val) const;
+		int parseOctDigits(iter_type& in, iter_type end, ios_base& str,	iostate& err,
+		                   long long& val) const;
+		int parseDecDigits(iter_type& in, iter_type end, ios_base& str,	iostate& err,
+		                   long long& val) const;
+		int parseHexDigits(iter_type& in, iter_type end, ios_base& str,	iostate& err,
+		                   long long& val) const;
+	#endif
+	bool check_grouping(const string& allowed_grouping,
+	                    const vector<unsigned char>& actual_grouping) const;
+	bool parsesign(iter_type& in, iter_type end, ios_base& str, iostate& err) const;
+	iter_type ws(iter_type& in, iter_type end, ios_base& str, iostate& err) const;
+	#ifndef _No_Floating_Point
+		int parseFloatDigits(iter_type& in, iter_type end, ios_base& str, iostate& err,
+		                     long double& f, string& digits) const;
+		void parseNaN_Inf(iter_type& in, iter_type end, ios_base& str, iostate& err,
+		                  long double& f) const;
+		bool parseFraction(iter_type& in, iter_type end, ios_base& str, iostate& err,
+		                   long double& val, string& digits) const;
+		bool parseExponent(iter_type& in, iter_type end, ios_base& str, iostate& err,
+		                   long double& val, string& digits) const;
+	#endif
+};
+
+template <class charT, class OutputIterator = ostreambuf_iterator<charT> >
+class num_put
+	: public locale::facet
+{
+	typedef basic_string<charT, char_traits<charT>, allocator<charT> > string_type;
+public:
+	typedef charT            char_type;
+	typedef OutputIterator   iter_type;
+	explicit num_put(size_t refs = 0);
+	iter_type put(iter_type out, ios_base& str, char_type fill, bool val) const;
+	iter_type put(iter_type out, ios_base& str, char_type fill, long val) const;
+	iter_type put(iter_type out, ios_base& str, char_type fill, unsigned long val) const;
+	#ifdef __MSL_LONGLONG_SUPPORT__
+		iter_type put(iter_type out, ios_base& str, char_type fill, long long val) const;
+		iter_type put(iter_type out, ios_base& str, char_type fill, unsigned long long val) const;
+	#endif
+	#ifndef _No_Floating_Point
+		iter_type put(iter_type out, ios_base& str, char_type fill, double val) const;
+		iter_type put(iter_type out, ios_base& str, char_type fill, long double val) const;
+	#endif
+	iter_type put(iter_type out, ios_base& str, char_type fill, const void* val) const;
+	static locale::id id;
+	static const bool is_standard = true;
+protected:
+	~num_put();
+	virtual iter_type do_put(iter_type out, ios_base& str, char_type fill, bool val) const;
+	virtual iter_type do_put(iter_type out, ios_base& str, char_type fill, long val) const;
+	virtual iter_type do_put(iter_type out, ios_base& str, char_type fill, unsigned long val) const;
+	#ifdef __MSL_LONGLONG_SUPPORT__
+		virtual iter_type do_put(iter_type out, ios_base& str, char_type fill, long long val) const;
+		virtual iter_type do_put(iter_type out, ios_base& str, char_type fill, unsigned long long val) const;
+	#endif
+	#ifndef _No_Floating_Point
+		virtual iter_type do_put(iter_type out, ios_base& str, char_type fill, double val) const;
+		virtual iter_type do_put(iter_type out, ios_base& str, char_type fill, long double val) const;
+	#endif
+	virtual iter_type do_put(iter_type out, ios_base& str, char_type fill, const void* val) const;
+private:
+	typedef typename basic_ios<charT>::fmtflags fmtflags;  // hh 980824 workaround circular dependency
+	iter_type putoct(iter_type out, ios_base& str, char_type fill, unsigned long val) const;
+	iter_type putdec(iter_type out, ios_base& str, char_type fill, long val) const;
+	iter_type putdec(iter_type out, ios_base& str, char_type fill, unsigned long val) const;
+	iter_type puthex(iter_type out, ios_base& str, char_type fill, unsigned long val) const;
+	charT hextoa(fmtflags flag, const ctype<charT>& ct, unsigned long c) const;
+	int putdigits(ios_base& str, unsigned long val, charT* digits) const;
+	#ifdef __MSL_LONGLONG_SUPPORT__
+		iter_type putoct(iter_type out, ios_base& str, char_type fill, unsigned long long val) const;
+		iter_type putdec(iter_type out, ios_base& str, char_type fill, long long val) const;
+		iter_type putdec(iter_type out, ios_base& str, char_type fill, unsigned long long val) const;
+		iter_type puthex(iter_type out, ios_base& str, char_type fill, unsigned long long val) const;
+		int putdigits(ios_base& str, unsigned long long val, charT* digits) const;
+	#endif
+	#ifndef _No_Floating_Point
+		void fixed_digits(ios_base& str, long double val, string_type& digits) const;
+		void scientific_digits(ios_base& str, long double val, string_type& digits) const;
+		void g_digits(ios_base& str, long double val, string_type& digits) const;
+		void nan_digits(ios_base& str, long double val, string_type& digits) const;
+	#endif
+public:
+//	iter_type putnumber(iter_type out, ios_base& str, char_type fill,
+//	                    const charT* prefix, int plen, const charT* digits, int count) const;
+};
+
+template <class charT>
+class _Generic_numpunct
+	: public locale::facet
+{
+public:
+	typedef charT               char_type;
+	typedef basic_string<charT, char_traits<charT>, allocator<charT> > string_type;
+	explicit _Generic_numpunct(size_t refs = 0);
+	char_type    decimal_point()   const;
+	char_type    thousands_sep()   const;
+	string       grouping()        const;
+	string_type  truename()        const;
+	string_type  falsename()       const;
+protected:
+	~_Generic_numpunct();
+	virtual char_type    do_decimal_point() const = 0;
+	virtual char_type    do_thousands_sep() const = 0;
+	virtual string       do_grouping()      const = 0;
+	virtual string_type  do_truename()      const = 0;
+	virtual string_type  do_falsename()     const = 0;
+};
+
+template <class charT>
+class numpunct
+	: public _Generic_numpunct<charT>
+{
+public:
+	explicit numpunct(size_t refs = 0);
+protected:
+	~numpunct();
+};
+
+template <>
+class numpunct<char>
+	: public _Generic_numpunct<char>
+{
+public:
+	explicit numpunct(size_t refs = 0);
+	static locale::id id;
+	static const bool is_standard = true;
+protected:
+	~numpunct();
+	virtual char_type    do_decimal_point() const;
+	virtual char_type    do_thousands_sep() const;
+	virtual string       do_grouping()      const;
+	virtual string_type  do_truename()      const;
+	virtual string_type  do_falsename()     const;
+};
+
+#ifndef _MSL_NO_WCHART
+
+	template <>
+	class numpunct<wchar_t>
+		: public _Generic_numpunct<wchar_t>
+	{
+	public:
+		explicit numpunct(size_t refs = 0);
+		static locale::id id;
+		static const bool is_standard = true;
+	protected:
+		~numpunct();
+		virtual char_type    do_decimal_point() const;
+		virtual char_type    do_thousands_sep() const;
+		virtual string       do_grouping()      const;
+		virtual string_type  do_truename()      const;
+		virtual string_type  do_falsename()     const;
+	};
+
+#endif
+
+template <class charT>
+class numpunct_byname
+	: public numpunct<charT>
+{
+public:
+	explicit numpunct_byname(const char* loc, size_t refs = 0);
+protected:
+	typedef typename numpunct<charT>::char_type char_type;
+	typedef typename numpunct<charT>::string_type string_type;
+	~numpunct_byname();
+	virtual char_type    do_decimal_point() const;
+	virtual char_type    do_thousands_sep() const;
+	virtual string       do_grouping()      const;
+	virtual string_type  do_truename()      const;
+	virtual string_type  do_falsename()     const;
+private:
+	locale loc_;
+	const numpunct<charT>& facet_;
+};
+
+// _lib.category.collate_, collation:
+
+template <class charT>
+class collate
+	: public locale::facet
+{
+public:
+	typedef charT               char_type;
+	typedef basic_string<charT, char_traits<charT>, allocator<charT> > string_type;
+	explicit collate(size_t refs = 0);
+	int compare(const charT* low1, const charT* high1,
+	            const charT* low2, const charT* high2) const;
+	string_type transform(const charT* low, const charT* high) const;
+	long hash(const charT* low, const charT* high) const;
+	static locale::id id;
+	static const bool is_standard = true;
+protected:
+	~collate();
+	virtual int do_compare(const charT* low1, const charT* high1,
+	                       const charT* low2, const charT* high2) const;
+	virtual string_type do_transform(const charT* low, const charT* high) const;
+	virtual long do_hash(const charT* low, const charT* high) const;
+};
+
+template <class charT>
+class collate_byname
+	: public collate<charT>
+{
+public:
+	typedef basic_string<charT, char_traits<charT>, allocator<charT> > string_type;
+	explicit collate_byname(const char* loc, size_t refs = 0);
+protected:
+	~collate_byname();
+	virtual int do_compare(const charT* low1, const charT* high1,
+	                       const charT* low2, const charT* high2) const;
+	virtual string_type do_transform(const charT* low, const charT* high) const;
+	virtual long do_hash(const charT* low, const charT* high) const;
+private:
+	locale loc_;
+	const collate<charT>& facet_;
+};
+
+// _lib.category.time_, date and time:
+
+template <class charT>
+class _Generic_timepunct
+	: public locale::facet
+{
+public:
+	explicit _Generic_timepunct(size_t refs = 0);
+	const charT* weekday_name(size_t d) const;
+	const charT* month_name(size_t m) const;
+	const charT* am_pm(int hour) const;
+protected:
+	~_Generic_timepunct();
+#ifndef _OVERLOAD_TIMPUNCT_OFF
+	virtual const charT* do_weekday_name(size_t d) const = 0;
+	virtual const charT* do_month_name(size_t m) const = 0;
+	virtual const charT* do_am_pm(int hour) const = 0;
+#endif
+};
+
+template <class charT>
+class timepunct
+{
+};
+
+template <>
+class timepunct<char>
+	: public _Generic_timepunct<char>
+{
+public:
+	explicit timepunct(size_t refs = 0);
+	static locale::id id;
+	static const bool is_standard = true;
+protected:
+	~timepunct();
+	virtual const char* do_weekday_name(size_t d) const;
+	virtual const char* do_month_name(size_t m) const;
+	virtual const char* do_am_pm(int hour) const;
+
+	#ifdef _OVERLOAD_TIMPUNCT_OFF
+		friend class _Generic_timepunct<char>;
+	#endif
+};
+
+#ifndef _MSL_NO_WCHART
+
+	template <>
+	class timepunct<wchar_t>
+		: public _Generic_timepunct<wchar_t>
+	{
+	public:
+		explicit timepunct(size_t refs = 0);
+		static locale::id id;
+		static const bool is_standard = true;
+	protected:
+		~timepunct();
+		virtual const wchar_t* do_weekday_name(size_t d) const;
+		virtual const wchar_t* do_month_name(size_t m) const;
+		virtual const wchar_t* do_am_pm(int hour) const;
+
+		#ifdef _OVERLOAD_TIMPUNCT_OFF
+			friend class _Generic_timepunct<wchar_t>;
+		#endif
+	};
+
+#endif
+
+class time_base
+{
+public:
+	enum dateorder { no_order, dmy, mdy, ymd, ydm };
+};
+
+template <class charT, class InputIterator = istreambuf_iterator<charT> >
+class time_get
+	: public locale::facet,
+	  public time_base
+{
+	typedef typename basic_ios<charT>::iostate iostate;  // hh 980824 workaround circular dependency
+public:
+	typedef charT            char_type;
+	typedef InputIterator    iter_type;
+	explicit time_get(size_t refs = 0);
+	dateorder date_order() const;
+	iter_type get_time(iter_type in, iter_type end, ios_base& str,
+	                   iostate& err, tm* t) const;
+	iter_type get_date(iter_type in, iter_type end, ios_base& str,
+	                   iostate& err, tm* t) const;
+	iter_type get_weekday(iter_type in, iter_type end, ios_base& str,
+	                      iostate& err, tm* t) const;
+	iter_type get_monthname(iter_type in, iter_type end, ios_base& str,
+	                        iostate& err, tm* t) const;
+	iter_type get_year(iter_type in, iter_type end, ios_base& str,
+	                   iostate& err, tm* t) const;
+	static locale::id id;
+	static const bool is_standard = true;
+protected:
+	~time_get();
+	virtual dateorder do_date_order() const;
+	virtual iter_type do_get_time(iter_type in, iter_type end, ios_base& str,
+	                              iostate& err, tm* t) const;
+	virtual iter_type do_get_date(iter_type in, iter_type end, ios_base& str,
+	                              iostate& err, tm* t) const;
+	virtual iter_type do_get_weekday(iter_type in, iter_type end, ios_base& str,
+	                                 iostate& err, tm* t) const;
+	virtual iter_type do_get_monthname(iter_type in, iter_type end, ios_base& str,
+	                                   iostate& err, tm* t) const;
+	virtual iter_type do_get_year(iter_type in, iter_type end, ios_base& str,
+	                              iostate& err, tm* t) const;
+private:
+	iter_type finish_get_name(iter_type in, iter_type end, ios_base& str,
+	                          iostate& err, tm* t, size_t d, size_t i, bool weekday) const;
+};
+
+template <class charT, class InputIterator = istreambuf_iterator<charT> >
+class time_get_byname
+	: public time_get<charT, InputIterator>
+{
+public:
+	explicit time_get_byname(const char* loc, size_t refs = 0);
+protected:
+	typedef typename time_get<charT, InputIterator>::iter_type iter_type;
+	typedef typename basic_ios<charT>::iostate iostate;
+	typedef typename time_get<charT, InputIterator>::dateorder dateorder;
+	~time_get_byname();
+	virtual dateorder do_date_order() const;
+	virtual iter_type do_get_time(iter_type in, iter_type end, ios_base& str,
+	                              iostate& err, tm* t) const;
+	virtual iter_type do_get_date(iter_type in, iter_type end, ios_base& str,
+	                              iostate& err, tm* t) const;
+	virtual iter_type do_get_weekday(iter_type in, iter_type end, ios_base& str,
+	                                 iostate& err, tm* t) const;
+	virtual iter_type do_get_monthname(iter_type in, iter_type end, ios_base& str,
+	                                   iostate& err, tm* t) const;
+	virtual iter_type do_get_year(iter_type in, iter_type end, ios_base& str,
+	                              iostate& err, tm* t) const;
+private:
+	locale loc_;
+	const time_get<charT, InputIterator>& facet_;
+};
+
+template <class charT, class OutputIterator = ostreambuf_iterator<charT> >
+class time_put
+	: public locale::facet
+{
+public:
+	typedef charT            char_type;
+	typedef OutputIterator   iter_type;
+	explicit time_put(size_t refs = 0);
+	iter_type put(iter_type out, ios_base& str, char_type fill, const tm* tmb,
+	              const charT* pattern, const charT* pat_end) const;
+	iter_type put(iter_type out, ios_base& str, char_type fill,
+	              const tm* tmb, char format, char modifier = 0) const;
+	static locale::id id;
+	static const bool is_standard = true;
+protected:
+	~time_put();
+	virtual iter_type do_put(iter_type out, ios_base& str, char_type fill, const tm* tmb,
+	                         char format, char modifier) const;
+private:
+	bool isLeap(int y) const;
+	iter_type put_name(iter_type out, const charT* p, int max_out) const;
+	iter_type put_2digit(iter_type out, const ctype<charT>& ct, int num) const;
+};
+
+template <class charT, class OutputIterator = ostreambuf_iterator<charT> >
+class time_put_byname
+	: public time_put<charT, OutputIterator>
+{
+public:
+	explicit time_put_byname(const char*, size_t refs = 0);
+protected:
+	typedef typename time_put<charT, OutputIterator>::iter_type iter_type;
+	typedef typename time_put<charT, OutputIterator>::char_type char_type;
+	~time_put_byname();
+	virtual iter_type do_put(iter_type out, ios_base& str, char_type fill, const tm* tmb,
+	                         char format, char modifier) const;
+private:
+	locale loc_;
+	const time_put<charT, OutputIterator>& facet_;
+};
+
+// _lib.category.monetary_, money:
+
+template <class charT, class InputIterator = istreambuf_iterator<charT> >
+class money_get
+	: public locale::facet
+{
+	typedef typename basic_ios<charT>::iostate iostate;  // hh 980824 workaround circular dependency
+public:
+	typedef charT               char_type;
+	typedef InputIterator       iter_type;
+	typedef basic_string<charT, char_traits<charT>, allocator<charT> > string_type;
+	explicit money_get(size_t refs = 0);
+	#ifndef _No_Floating_Point
+		iter_type get(iter_type in, iter_type end, bool intl, ios_base& str,
+		              iostate& err, long double& units) const;
+	#endif
+	iter_type get(iter_type in, iter_type end, bool intl, ios_base& str,
+	              iostate& err, string_type& digits) const;
+	static locale::id id;
+	static const bool is_standard = true;
+protected:
+	~money_get();
+	#ifndef _No_Floating_Point
+		virtual iter_type do_get(iter_type in, iter_type end, bool intl, ios_base& str,
+		                         iostate& err, long double& units) const;
+	#endif
+	virtual iter_type do_get(iter_type in, iter_type end, bool intl, ios_base& str,
+	                         iostate& err, string_type& digits) const;
+private:
+	bool consume_str(iter_type& in, iter_type end, iostate& err,
+		string_type::const_iterator start, string_type::const_iterator finish) const;
+	int parseMoneyDigits(iter_type& in, iter_type end, ios_base& str,
+		iostate& err, bool intl, string_type& digits) const;
+	bool parseFraction(iter_type& in, iter_type end, ios_base& str,
+		iostate& err, bool intl, string_type& digits) const;
+	bool check_grouping(const string& allowed_grouping,
+		const vector<unsigned char>& actual_grouping) const;
+};
+
+template <class charT, class OutputIterator = ostreambuf_iterator<charT> >
+class money_put
+	: public locale::facet
+{
+public:
+	typedef charT               char_type;
+	typedef OutputIterator      iter_type;
+	typedef basic_string<charT, char_traits<charT>, allocator<charT> > string_type;
+	explicit money_put(size_t refs = 0);
+	#ifndef _No_Floating_Point
+		iter_type put(iter_type out, bool intl, ios_base& str, char_type fill,
+		              long double units) const;
+	#endif
+	iter_type put(iter_type out, bool intl, ios_base& str, char_type fill,
+	              const string_type& digits) const;
+	static locale::id id;
+	static const bool is_standard = true;
+protected:
+	~money_put();
+	#ifndef _No_Floating_Point
+		virtual iter_type do_put(iter_type out, bool intl, ios_base& str, char_type fill,
+		                         long double units) const;
+	#endif
+	virtual iter_type do_put(iter_type out, bool intl, ios_base& str, char_type fill,
+	                         const string_type& digits) const;
+private:
+	typedef typename basic_ios<charT>::fmtflags fmtflags;  // hh 980824 workaround circular dependency
+	string_type put_value(bool intl, ios_base& str, string_type::const_iterator begin,
+	                                                string_type::const_iterator end) const;
+	iter_type putnumber(iter_type out, ios_base& str, char_type fill,
+	                    string_type::const_iterator begin, string_type::const_iterator middle,
+	                    string_type::const_iterator end) const;
+};
+
+class money_base
+{
+public:
+	enum part { none, space, symbol, sign, value };
+	struct pattern { char field[4]; };
+};
+
+template <class charT, bool International = false>
+class _Generic_moneypunct
+	: public locale::facet,
+	  public money_base
+{
+public:
+	typedef charT char_type;
+	typedef basic_string<charT, char_traits<charT>, allocator<charT> > string_type;
+	explicit _Generic_moneypunct(size_t refs = 0);
+	charT        decimal_point() const;
+	charT        thousands_sep() const;
+	string       grouping()      const;
+	string_type  curr_symbol()   const;
+	string_type  positive_sign() const;
+	string_type  negative_sign() const;
+	int          frac_digits()   const;
+	pattern      pos_format()    const;
+	pattern      neg_format()    const;
+	static const bool intl = International;
+protected:
+	~_Generic_moneypunct();
+	virtual charT        do_decimal_point() const = 0;
+	virtual charT        do_thousands_sep() const = 0;
+	virtual string       do_grouping()      const = 0;
+	virtual string_type  do_curr_symbol()   const = 0;
+	virtual string_type  do_positive_sign() const = 0;
+	virtual string_type  do_negative_sign() const = 0;
+	virtual int          do_frac_digits()   const = 0;
+	virtual pattern      do_pos_format()    const = 0;
+	virtual pattern      do_neg_format()    const = 0;
+};
+
+template <class charT, bool International = false>
+class moneypunct
+	: public _Generic_moneypunct<charT, International>
+{
+public:
+	explicit moneypunct(size_t refs = 0);
+protected:
+	~moneypunct();
+};
+
+template <>
+class moneypunct<char, false>
+	: public _Generic_moneypunct<char, false>
+{
+public:
+	explicit moneypunct(size_t refs = 0);
+	static locale::id id;
+	static const bool is_standard = true;
+protected:
+	~moneypunct();
+	virtual char         do_decimal_point() const;
+	virtual char         do_thousands_sep() const;
+	virtual string       do_grouping()      const;
+	virtual string_type  do_curr_symbol()   const;
+	virtual string_type  do_positive_sign() const;
+	virtual string_type  do_negative_sign() const;
+	virtual int          do_frac_digits()   const;
+	virtual pattern      do_pos_format()    const;
+	virtual pattern      do_neg_format()    const;
+};
+
+template <>
+class moneypunct<char, true>
+	: public _Generic_moneypunct<char, true>
+{
+public:
+	explicit moneypunct(size_t refs = 0);
+	static locale::id id;
+	static const bool is_standard = true;
+protected:
+	~moneypunct();
+	virtual char         do_decimal_point() const;
+	virtual char         do_thousands_sep() const;
+	virtual string       do_grouping()      const;
+	virtual string_type  do_curr_symbol()   const;
+	virtual string_type  do_positive_sign() const;
+	virtual string_type  do_negative_sign() const;
+	virtual int          do_frac_digits()   const;
+	virtual pattern      do_pos_format()    const;
+	virtual pattern      do_neg_format()    const;
+};
+
+#ifndef _MSL_NO_WCHART
+
+	template <>
+	class moneypunct<wchar_t, false>
+		: public _Generic_moneypunct<wchar_t, false>
+	{
+	public:
+		explicit moneypunct(size_t refs = 0);
+		static locale::id id;
+		static const bool is_standard = true;
+	protected:
+		~moneypunct();
+		virtual wchar_t      do_decimal_point() const;
+		virtual wchar_t      do_thousands_sep() const;
+		virtual string       do_grouping()      const;
+		virtual string_type  do_curr_symbol()   const;
+		virtual string_type  do_positive_sign() const;
+		virtual string_type  do_negative_sign() const;
+		virtual int          do_frac_digits()   const;
+		virtual pattern      do_pos_format()    const;
+		virtual pattern      do_neg_format()    const;
+	};
+
+	template <>
+	class moneypunct<wchar_t, true>
+		: public _Generic_moneypunct<wchar_t, true>
+	{
+	public:
+		explicit moneypunct(size_t refs = 0);
+		static locale::id id;
+		static const bool is_standard = true;
+	protected:
+		~moneypunct();
+		virtual wchar_t      do_decimal_point() const;
+		virtual wchar_t      do_thousands_sep() const;
+		virtual string       do_grouping()      const;
+		virtual string_type  do_curr_symbol()   const;
+		virtual string_type  do_positive_sign() const;
+		virtual string_type  do_negative_sign() const;
+		virtual int          do_frac_digits()   const;
+		virtual pattern      do_pos_format()    const;
+		virtual pattern      do_neg_format()    const;
+	};
+
+#endif
+
+template <class charT, bool Intl = false>
+class moneypunct_byname
+	: public moneypunct<charT, Intl>
+{
+public:
+	explicit moneypunct_byname(const char* loc, size_t refs = 0);
+protected:
+	typedef typename moneypunct<charT, Intl>::string_type string_type;
+	~moneypunct_byname();
+	virtual charT        do_decimal_point() const;
+	virtual charT        do_thousands_sep() const;
+	virtual string       do_grouping()      const;
+	virtual string_type  do_curr_symbol()   const;
+	virtual string_type  do_positive_sign() const;
+	virtual string_type  do_negative_sign() const;
+	virtual int          do_frac_digits()   const;
+	virtual money_base::pattern      do_pos_format()    const;
+	virtual money_base::pattern      do_neg_format()    const;
+private:
+	locale loc_;
+	const moneypunct<charT, Intl>& facet_;
+};
+
+#ifndef _MSL_NO_MESSAGE_FACET
+
+	// _lib.category.messages_, message retrieval:
+
+	class messages_base
+	{
+	public:
+		typedef int catalog;
+	};
+
+	template <class charT>
+	class messages
+		: public locale::facet,
+		  public messages_base
+	{
+	public:
+		typedef charT char_type;
+		typedef basic_string<charT, char_traits<charT>, allocator<charT> > string_type;
+		explicit messages(size_t refs = 0);
+		catalog open(const string& fn, const locale& loc) const;
+		string_type get(catalog c, int set, int msgid, const string_type& dfault) const;
+		void close(catalog c) const;
+		static locale::id id;
+		static const bool is_standard = true;
+	protected:
+		~messages();
+		_VIRTUAL_MES catalog do_open(const string& fn, const locale& loc) const;
+		_VIRTUAL_MES string_type do_get(catalog c, int set, int msgid, const string_type& dfault) const;
+		_VIRTUAL_MES void do_close(catalog c) const;
+	};
+
+	template <class charT>
+	class messages_byname
+		: public messages<charT>
+	{
+	public:
+		explicit messages_byname(const char* loc, size_t refs = 0);
+	protected:
+		~messages_byname();
+		_VIRTUAL_MES catalog do_open(const string& fn, const locale& loc) const;
+		_VIRTUAL_MES string_type do_get(catalog c, int set, int msgid, const string_type& dfault) const;
+		_VIRTUAL_MES void do_close(catalog c) const;
+	private:
+		locale loc_;
+		const messages<charT>& facet_;
+	};
+
+#endif
+
+// Implementation
+
+// locale::facet
+
+inline
+locale::facet::facet(size_t refs)
+	: ref_(refs)
+{
+}
+
+inline
+locale::facet::~facet()
+{
+}
+
+inline
+locale::facet*
+locale::facet::add_ref() const
+{
+	ref_++;
+	return const_cast<facet*>(this);
+}
+
+inline
+locale::facet*
+locale::facet::rem_ref() const
+{
+	return --ref_ == 0 ? const_cast<facet*>(this) : 0;
+}
+
+// locale::id
+
+class locale::id {
+public:
+	id();
+private:
+	void operator=(const id&);  // not defined
+	id(const id&);              // not defined
+
+	size_t id_;
+	static size_t id_count_s;
+
+	friend class __locale_imp<true>;
+	#if 0 // _MSL_NO_MEMBER_TEMPLATE
+		size_t get();
+		template <class Facet> friend const Facet& use_facet(const locale& loc);
+		template <class Facet> friend bool has_facet(const locale& loc) _MSL_THROW;
+	#else
+		public:
+			size_t get();
+	#endif
+};
+
+inline
+locale::id::id()
+{
+}
+
+inline
+size_t
+locale::id::get()
+{
+	if (id_ == 0)
+		id_ = ++id_count_s;
+	return id_;
+}
+
+// __locale_imp
+
+__MSL_FIX_ITERATORS__(locale::facet*)
+
+template <bool b>
+class __locale_imp
+{
+public:
+	explicit __locale_imp(size_t size = 0);
+	__locale_imp(const __locale_imp& rhs);
+	__locale_imp(const locale& other, const locale& one, locale::category cat);
+	~__locale_imp();
+	__locale_imp& operator =(const __locale_imp& rhs);
+	size_t size() const;
+	locale::facet*& operator [](size_t i);
+	locale::facet* const& operator [](size_t i) const;
+	string& name();
+	const string& name() const;
+	void resize(size_t size);
+	#ifndef _MSL_NO_MEMBER_TEMPLATE  // hh 980713 Temporarily moved into class definition to support compiler
+		template <class Facet>
+		void
+		replace(const Facet& f)
+		{
+			size_t id = f.id.get();
+			if (id >= facets_.size())
+				facets_.resize(id+1);
+			locale::facet*& p = facets_[id];
+			if (p != 0)
+				delete static_cast<locale::facet*>(p->rem_ref());
+			p = f.add_ref();
+		}
+	#else
+		void replace(const _STD::collate<char>& f);
+		void replace(const _STD::ctype<char>& f);
+		void replace(const _STD::codecvt<char, char, mbstate_t>& f);
+		void replace(const _STD::numpunct<char>& f);
+		void replace(const _STD::num_get<char>& f);
+		void replace(const _STD::num_get<char, char*>& f);
+		void replace(const _STD::num_put<char>& f);
+		void replace(const _STD::num_put<char, char*>& f);
+		void replace(const _STD::timepunct<char>& f);
+		void replace(const _STD::time_get<char>& f);
+		void replace(const _STD::time_put<char>& f);
+		void replace(const _STD::moneypunct<char, false>& f);
+		void replace(const _STD::moneypunct<char, true>& f);
+		void replace(const _STD::money_get<char>& f);
+		void replace(const _STD::money_put<char>& f);
+		#ifndef _MSL_NO_WCHART
+			void replace(const _STD::collate<wchar_t>& f);
+			void replace(const _STD::ctype<wchar_t>& f);
+			void replace(const _STD::codecvt<wchar_t, char, mbstate_t>& f);
+			void replace(const _STD::numpunct<wchar_t>& f);
+			void replace(const _STD::num_get<wchar_t>& f);
+			void replace(const _STD::num_put<wchar_t>& f);
+			void replace(const _STD::timepunct<wchar_t>& f);
+			void replace(const _STD::time_get<wchar_t>& f);
+			void replace(const _STD::time_put<wchar_t>& f);
+			void replace(const _STD::moneypunct<wchar_t, false>& f);
+			void replace(const _STD::moneypunct<wchar_t, true>& f);
+			void replace(const _STD::money_get<wchar_t>& f);
+			void replace(const _STD::money_put<wchar_t>& f);
+		#endif
+	#endif
+private:
+	vector<locale::facet*> facets_;
+	string name_;
+};
+
+template <bool b>
+__locale_imp<b>::__locale_imp(size_t size)
+	: facets_(size),
+	  name_("*")
+{
+}
+
+template <bool b>
+__locale_imp<b>::__locale_imp(const __locale_imp& rhs)
+	: facets_(rhs.facets_),
+	  name_(rhs.name_)
+{
+	size_t end = facets_.size();
+	for (size_t i = 0; i < end; ++i)
+	{
+		locale::facet* p = facets_[i];
+		if (p != 0)
+			p->add_ref();
+	}
+}
+
+template <bool b>
+__locale_imp<b>::__locale_imp(const locale& other, const locale& one, locale::category cat)
+{
+	*this = *other.imp_;
+	if (cat & locale::collate)
+	{
+		replace(_USE_FACET(_STD::collate<char>, one));
+		#ifndef _MSL_NO_WCHART
+			replace(_USE_FACET(_STD::collate<wchar_t>, one));
+		#endif
+	}
+	if (cat & locale::ctype)
+	{
+		replace(_USE_FACET(_STD::ctype<char>, one));
+		#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+			replace(use_facet<_STD::codecvt<char, char, mbstate_t> >(one));
+		#else
+			replace(use_facet(one, (_STD::codecvt<char, char, mbstate_t>*)0));
+		#endif
+		#ifndef _MSL_NO_WCHART
+			replace(_USE_FACET(_STD::ctype<wchar_t>, one));
+			#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+				replace(use_facet<_STD::codecvt<wchar_t, char, mbstate_t> >(one));
+			#else
+				replace(use_facet(one, (_STD::codecvt<wchar_t, char, mbstate_t>*)0));
+			#endif
+		#endif
+	}
+	if (cat & locale::monetary)
+	{
+		replace(_USE_FACET(_STD::moneypunct<char>, one));
+		#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+			replace(use_facet<_STD::moneypunct<char, true> >(one));
+		#else
+			replace(use_facet(one, (_STD::moneypunct<char, true>*)0));
+		#endif
+		replace(_USE_FACET(_STD::money_get<char>, one));
+		replace(_USE_FACET(_STD::money_put<char>, one));
+		#ifndef _MSL_NO_WCHART
+			replace(_USE_FACET(_STD::moneypunct<wchar_t>, one));
+			#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+				replace(use_facet<_STD::moneypunct<wchar_t, true> >(one));
+			#else
+				replace(use_facet(one, (_STD::moneypunct<wchar_t, true>*)0));
+			#endif
+			replace(_USE_FACET(_STD::money_get<wchar_t>, one));
+			replace(_USE_FACET(_STD::money_put<wchar_t>, one));
+		#endif
+	}
+	if (cat & locale::numeric)
+	{
+		replace(_USE_FACET(_STD::numpunct<char>, one));
+		replace(_USE_FACET(_STD::num_get<char>, one));
+		replace(_USE_FACET(_STD::num_put<char>, one));
+		#ifndef _MSL_NO_WCHART
+			replace(_USE_FACET(_STD::numpunct<wchar_t>, one));
+			replace(_USE_FACET(_STD::num_get<wchar_t>, one));
+			replace(_USE_FACET(_STD::num_put<wchar_t>, one));
+		#endif
+	}
+	if (cat & locale::time)
+	{
+		replace(_USE_FACET(_STD::timepunct<char>, one));
+		replace(_USE_FACET(_STD::time_get<char>, one));
+		replace(_USE_FACET(_STD::time_put<char>, one));
+		#ifndef _MSL_NO_WCHART
+			replace(_USE_FACET(_STD::timepunct<wchar_t>, one));
+			replace(_USE_FACET(_STD::time_get<wchar_t>, one));
+			replace(_USE_FACET(_STD::time_put<wchar_t>, one));
+		#endif
+	}
+	if (other.name() != "*")
+		name() = other.name();
+	else
+		name() = one.name();
+}
+
+template <bool b>
+__locale_imp<b>::~__locale_imp()
+{
+	size_t end = facets_.size();
+	for (size_t i = 0; i < end; ++i)
+	{
+		locale::facet* p = facets_[i];
+		if (p != 0)
+			delete static_cast<locale::facet*>(p->rem_ref());
+	}
+}
+
+template <bool b>
+__locale_imp<b>&
+__locale_imp<b>::operator =(const __locale_imp& rhs)
+{
+	if (this != &rhs)
+	{
+		size_t end = facets_.size();
+		for (size_t i = 0; i < end; ++i)
+		{
+			locale::facet* p = facets_[i];
+			if (p != 0)
+				delete static_cast<locale::facet*>(p->rem_ref());
+		}
+		facets_ = rhs.facets_;
+		end = facets_.size();
+		{  // hh 980816 ARM/Standard neutral for-scoping
+		for (size_t i = 0; i < end; ++i)
+		{
+			locale::facet* p = facets_[i];
+			if (p != 0)
+				p->add_ref();
+		}
+		}
+		name_ = rhs.name_;
+	}
+	return *this;
+}
+
+template <bool b>
+inline
+size_t
+__locale_imp<b>::size() const
+{
+	return facets_.size();
+}
+
+template <bool b>
+inline
+locale::facet*&
+__locale_imp<b>::operator [](size_t i)
+{
+	return facets_[i];
+}
+
+template <bool b>
+inline
+locale::facet* const&
+__locale_imp<b>::operator [](size_t i) const
+{
+	return facets_[i];
+}
+
+template <bool b>
+inline
+string&
+__locale_imp<b>::name()
+{
+	return name_;
+}
+
+template <bool b>
+inline
+const string&
+__locale_imp<b>::name() const
+{
+	return name_;
+}
+
+template <bool b>
+inline
+void
+__locale_imp<b>::resize(size_t size)
+{
+	facets_.resize(size);
+}
+
+#ifdef _MSL_NO_MEMBER_TEMPLATE
+	#define _MAKE_REPLACE(MyFacet)                                     \
+		template <bool b>                                              \
+		void                                                           \
+		__locale_imp<b>::replace(const MyFacet& f)                     \
+		{                                                              \
+			size_t id = f.id.get();                                    \
+			if (id >= facets_.size())                                  \
+				facets_.resize(id+1);                                  \
+			locale::facet*& p = facets_[id];                           \
+			if (p != 0)                                                \
+				delete static_cast<locale::facet*>(p->rem_ref());      \
+			p = f.add_ref();                                           \
+		}
+
+	_MAKE_REPLACE(_STD::collate<char>)
+	_MAKE_REPLACE(_STD::ctype<char>)
+	typedef _STD::codecvt<char, char, mbstate_t> __codecvt1;
+	_MAKE_REPLACE(__codecvt1)
+	_MAKE_REPLACE(_STD::numpunct<char>)
+	_MAKE_REPLACE(_STD::num_get<char>)
+	typedef _STD::num_get<char, char*> __numget1;
+	_MAKE_REPLACE(__numget1)
+	_MAKE_REPLACE(_STD::num_put<char>)
+	typedef _STD::num_put<char, char*> __numput1;
+	_MAKE_REPLACE(__numput1)
+	_MAKE_REPLACE(_STD::timepunct<char>)
+	_MAKE_REPLACE(_STD::time_get<char>)
+	_MAKE_REPLACE(_STD::time_put<char>)
+	_MAKE_REPLACE(_STD::moneypunct<char>)
+	typedef _STD::moneypunct<char, true> __moneypunct1;
+	_MAKE_REPLACE(__moneypunct1)
+	_MAKE_REPLACE(_STD::money_get<char>)
+	_MAKE_REPLACE(_STD::money_put<char>)
+	#ifndef _MSL_NO_WCHART
+		_MAKE_REPLACE(_STD::collate<wchar_t>)
+		_MAKE_REPLACE(_STD::ctype<wchar_t>)
+		typedef _STD::codecvt<wchar_t, char, mbstate_t> __codecvt2;
+		_MAKE_REPLACE(__codecvt2)
+		_MAKE_REPLACE(_STD::numpunct<wchar_t>)
+		_MAKE_REPLACE(_STD::num_get<wchar_t>)
+		_MAKE_REPLACE(_STD::num_put<wchar_t>)
+		_MAKE_REPLACE(_STD::timepunct<wchar_t>)
+		_MAKE_REPLACE(_STD::time_get<wchar_t>)
+		_MAKE_REPLACE(_STD::time_put<wchar_t>)
+		_MAKE_REPLACE(_STD::moneypunct<wchar_t>)
+		typedef _STD::moneypunct<wchar_t, true> __moneypunct2;
+		_MAKE_REPLACE(__moneypunct2)
+		_MAKE_REPLACE(_STD::money_get<wchar_t>)
+		_MAKE_REPLACE(_STD::money_put<wchar_t>)
+	#endif
+
+	#undef _MAKE_REPLACE
+#endif
+
+// locale
+
+inline
+locale::locale() _MSL_THROW
+	: imp_(global_s)
+{
+	if (imp_ == 0)
+		imp_ = classic().imp_;
+}
+
+inline
+locale::locale(const locale& other) _MSL_THROW
+	: imp_(other.imp_)
+{
+}
+
+inline
+locale::locale(const char* std_name)
+{
+	imp_ = classic().imp_;
+	if (std_name == 0)
+		#ifndef _MSL_NO_EXCEPTIONS
+			throw runtime_error("locale constructed with null name");
+		#else
+			{
+				fprintf(stderr, "locale constructed with null name");
+				exit(1);
+			}
+		#endif
+	string name(std_name);
+	if (name != "" && name != "C")
+		#ifndef _MSL_NO_EXCEPTIONS
+			throw runtime_error(string("locale constructed with unsupported name: ") + name);
+		#else
+			{
+				fprintf(stderr, "locale constructed with unsupported name");
+				exit(1);
+			}
+		#endif
+	if (name != "C")
+	{
+		make_unique();
+		imp_->name() = name;
+	}
+}
+
+inline
+locale::locale(const locale& other, const char* std_name, category cat)
+{
+	imp_ = locale(other, locale(std_name), cat).imp_;
+}
+
+inline
+locale::locale(const locale& other, const locale& one, category cat)
+{
+	imp_ = new __locale_imp<true>(other, one, cat);
+}
+
+inline
+locale::locale(const _RefCountedPtr<__locale_imp<true> >& i)
+	: imp_(i)
+{
+}
+
+inline
+locale::~locale() _MSL_THROW
+{
+}
+
+inline
+const locale&
+locale::operator=(const locale& other) _MSL_THROW
+{
+	imp_ = other.imp_;
+	return *this;
+}
+
+inline
+string
+locale::name() const
+{
+	return imp_->name();
+}
+
+inline
+bool
+locale::operator ==(const locale& other) const
+{
+	return bool(imp_ == other.imp_);
+}
+
+inline
+bool
+locale::operator !=(const locale& other) const
+{
+	return bool(imp_ != other.imp_);
+}
+
+inline
+void
+locale::make_unique()
+{
+	if (imp_.isNonUnique())
+		imp_ = new __locale_imp<true>(*imp_);
+}
+
+// use_facet
+
+template <bool __b>
+struct __chooser
+{
+};
+
+#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+	template <class Facet>
+	inline
+	const Facet&
+	use_facet(const locale& loc)
+	{
+		return __use_facet<Facet>(loc, __chooser<Facet::is_standard>());
+	}
+#else
+	template <class Facet>
+	inline
+	const Facet&
+	use_facet(const locale& loc, Facet* p)
+	{
+		return __use_facet(loc, p, __chooser<Facet::is_standard>());
+	}
+#endif
+
+template <class NonStandardFacet>
+const NonStandardFacet&
+#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+	__use_facet(const locale& loc, __chooser<false>)
+#else
+	__use_facet(const locale& loc, Facet*, __chooser<false>)
+#endif
+{
+	size_t id = NonStandardFacet::id.get();
+	locale::facet* fp;
+	if (id >= loc.imp_->size() || (fp = (*loc.imp_)[id]) == 0)
+	#ifndef _MSL_NO_EXCEPTIONS
+		throw bad_cast();
+	#else
+		{
+			fprintf(stderr, "bad cast in use_facet");
+			exit(1);
+		}
+	#endif
+	return static_cast<NonStandardFacet const&>(*fp);
+}
+
+template <class StandardFacet>
+const StandardFacet&
+#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+	__use_facet(const locale& loc, __chooser<true>)
+#else
+	__use_facet(const locale& loc, StandardFacet*, __chooser<true>)
+#endif
+{
+	size_t id = StandardFacet::id.get();
+	locale::facet* fp;
+	if (id >= loc.imp_->size() || (fp = (*loc.imp_)[id]) == 0)
+	{
+		const_cast<locale&>(loc).imp_->replace(*(new StandardFacet()));
+		fp = (*loc.imp_)[id];
+	}
+	return static_cast<StandardFacet const&>(*fp);
+}
+
+// has_facet
+
+#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+	template <class Facet>
+	inline
+	bool
+	has_facet(const locale& loc) _MSL_THROW
+	{
+		return bool(__has_facet<Facet>(loc, __chooser<Facet::is_standard>()));
+	}
+#else
+	template <class Facet>
+	inline
+	bool
+	has_facet(const locale& loc, Facet* p) _MSL_THROW
+	{
+		return bool(__has_facet(loc, p, __chooser<Facet::is_standard>()));
+	}
+#endif
+
+template <class NonStandardFacet>
+bool
+#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+	__has_facet(const locale& loc, __chooser<false>) _MSL_THROW
+#else
+	__has_facet(const locale& loc, NonStandardFacet*, __chooser<false>) _MSL_THROW
+#endif
+{
+	size_t id = NonStandardFacet::id.get();
+	if (id >= loc.imp_->size())
+		return false;
+	return bool((*loc.imp_)[id] != 0);
+}
+
+template <class StandardFacet>
+inline
+bool
+#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+	__has_facet(const locale&, __chooser<true>) _MSL_THROW
+#else
+	__has_facet(const locale&, StandardFacet*, __chooser<true>) _MSL_THROW
+#endif
+{
+	return true;
+}
+
+#ifndef _No_Floating_Point
+
+	// Binary Coded Decimal class
+	// hh 980802 Added to assist in the printing of floating point values
+
+	class _BCD
+	{
+	public:
+		_BCD();
+		_BCD(long double x, int limit = INT_MAX);
+		_BCD(const char* mantissa, int exponent);
+		_BCD& operator += (_BCD rhs);
+		_BCD& operator *= (_BCD rhs);
+		string to_string(int precision, int& exponent) const;
+		int exponent() const;
+		char leading_digit() const;
+	private:
+		string mantissa_;
+		short exp_;
+		bool round_;  // hh 981018
+
+		void trim();
+	};
+
+	_BCD __two_exp(short x);
+
+	inline
+	_BCD::_BCD()
+		: exp_(0),
+		  round_(false)
+	{
+	}
+
+	inline
+	void
+	_BCD::trim()
+	{
+		string::iterator i = mantissa_.end();
+		while (i != mantissa_.begin() && *(i-1) == char())
+			--i;
+		mantissa_.resize(size_t(i - mantissa_.begin()));
+	}
+
+	inline
+	int
+	_BCD::exponent() const
+	{
+		return exp_;
+	}
+
+	inline
+	_BCD
+	operator + (const _BCD& lhs, const _BCD& rhs)
+	{
+		return _BCD(lhs) += rhs;
+	}
+
+	inline
+	char
+	_BCD::leading_digit() const
+	{
+		return mantissa_[0];
+	}
+
+#endif // _No_Floating_Point
+
+#ifndef _MSL_NO_WCHART
+
+	// ctype<wchar_t>
+
+	template<>
+	inline
+	ctype<wchar_t>::ctype(size_t refs)
+		: facet(refs)
+	{
+	}
+
+	template<>
+	inline
+	ctype<wchar_t>::~ctype()
+	{
+	}
+
+	template<>
+	inline
+	bool
+	ctype<wchar_t>::is(mask m, wchar_t c) const
+	{
+		return bool(do_is(m, c));
+	}
+
+	template<>
+	inline
+	const wchar_t*
+	ctype<wchar_t>::is(const wchar_t* low, const wchar_t* high, mask* vec) const
+	{
+		return do_is(low, high, vec);
+	}
+
+	template<>
+	inline
+	const wchar_t*
+	ctype<wchar_t>::scan_is(mask m, const wchar_t* low, const wchar_t* high) const
+	{
+		return do_scan_is(m, low, high);
+	}
+
+	template<>
+	inline
+	const wchar_t*
+	ctype<wchar_t>::scan_not(mask m, const wchar_t* low, const wchar_t* high) const
+	{
+		return do_scan_not(m, low, high);
+	}
+
+	template<>
+	inline
+	wchar_t
+	ctype<wchar_t>::toupper(wchar_t c) const
+	{
+		return do_toupper(c);
+	}
+
+	template<>
+	inline
+	const wchar_t*
+	ctype<wchar_t>::toupper(wchar_t* low, const wchar_t* high) const
+	{
+		return do_toupper(low, high);
+	}
+
+	template<>
+	inline
+	wchar_t
+	ctype<wchar_t>::tolower(wchar_t c) const
+	{
+		return do_tolower(c);
+	}
+
+	template<>
+	inline
+	const wchar_t*
+	ctype<wchar_t>::tolower(wchar_t* low, const wchar_t* high) const
+	{
+		return do_tolower(low, high);
+	}
+
+	template<>
+	inline
+	wchar_t
+	ctype<wchar_t>::widen(char c) const
+	{
+		return do_widen(c);
+	}
+
+	template<>
+	inline
+	const char*
+	ctype<wchar_t>::widen(const char* low, const char* high, wchar_t* to) const
+	{
+		return do_widen(low, high, to);
+	}
+
+	template<>
+	inline
+	char
+	ctype<wchar_t>::narrow(wchar_t c, char dfault) const
+	{
+		return do_narrow(c, dfault);
+	}
+
+	template<>
+	inline
+	const wchar_t*
+	ctype<wchar_t>::narrow(const wchar_t* low, const wchar_t* high, char dfault, char* to) const
+	{
+		return do_narrow(low, high, dfault, to);
+	}
+
+	template<>
+	inline
+	bool
+	ctype<wchar_t>::do_is(mask m, wchar_t c) const
+	{
+		return bool(classify(c) & m);
+	}
+
+	template<>
+	inline
+	wchar_t
+	ctype<wchar_t>::do_toupper(wchar_t c) const
+	{
+		return towupper(c);
+	}
+
+	template<>
+	inline
+	wchar_t
+	ctype<wchar_t>::do_tolower(wchar_t c) const
+	{
+		return towlower(c);
+	}
+
+	template<>
+	inline
+	wchar_t
+	ctype<wchar_t>::do_widen(char c) const
+	{
+		return wchar_t(c);
+	}
+
+	template<>
+	inline
+	char
+	ctype<wchar_t>::do_narrow(wchar_t c, char dfault) const
+	{
+		if (c >= 0x00FF)
+			return dfault;
+		return char(c);
+	}
+
+#endif
+
+// ctype<char>
+
+template<>
+inline
+bool
+ctype<char>::is(mask m, char c) const
+{
+	return bool(table_[(unsigned char)c] & m);
+}
+
+template<>
+inline
+char
+ctype<char>::toupper(char c) const
+{
+	return do_toupper(c);
+}
+
+template<>
+inline
+const char*
+ctype<char>::toupper(char* low, const char* high) const
+{
+	return do_toupper(low, high);
+}
+
+template<>
+inline
+char
+ctype<char>::tolower(char c) const
+{
+	return do_tolower(c);
+}
+
+template<>
+inline
+const char*
+ctype<char>::tolower(char* low, const char* high) const
+{
+	return do_tolower(low, high);
+}
+
+template<>
+inline
+char
+ctype<char>::widen(char c) const
+{
+	return do_widen(c);
+}
+
+template<>
+inline
+const char*
+ctype<char>::widen(const char* low, const char* high, char* to) const
+{
+	return do_widen(low, high, to);
+}
+
+// hh 980803 added.  non-standard
+template<>
+inline
+string
+ctype<char>::widen(const string& s) const
+{
+	return s;
+}
+
+template<>
+inline
+char
+ctype<char>::narrow(char c, char dfault) const
+{
+	return do_narrow(c, dfault);
+}
+
+template<>
+inline
+const char*
+ctype<char>::narrow(const char* low, const char* high, char dfault, char* to) const
+{
+	return do_narrow(low, high, dfault, to);
+}
+
+template<>
+inline
+const ctype_base::mask*
+ctype<char>::table() const _MSL_THROW
+   {
+        return table_; 
+   }
+
+extern ctype_base::mask __mask_map[ctype<char>::table_size];
+
+template <>
+inline
+const ctype_base::mask*
+ctype<char>::classic_table() _MSL_THROW
+{
+	return __mask_map;
+}
+
+template<>
+inline
+char
+ctype<char>::do_toupper(char c) const
+{
+	return char(_STD::toupper(c));
+}
+
+template<>
+inline
+char
+ctype<char>::do_tolower(char c) const
+{
+	return char(_STD::tolower(c));
+}
+
+template<>
+inline
+char
+ctype<char>::do_widen(char c) const
+{
+	return c;
+}
+
+template<>
+inline
+const char*
+ctype<char>::do_widen(const char* low, const char* high, char* to) const
+{
+	memcpy(to, low, size_t(high-low));
+	return high;
+}
+
+template<>
+inline
+char
+ctype<char>::do_narrow(char c, char) const
+{
+	return c;
+}
+
+template<>
+inline
+const char*
+ctype<char>::do_narrow(const char* low, const char* high, char, char* to) const
+{
+	memcpy(to, low, size_t(high-low));
+	return high;
+}
+
+// ctype_byname<charT>
+
+template <class charT>
+ctype_byname<charT>::ctype_byname(const char* name, size_t refs)
+	: ctype(refs),
+	loc_(name),
+	facet_(_USE_FACET(ctype<charT>, loc_))
+{
+}
+
+template <class charT>
+inline
+ctype_byname<charT>::~ctype_byname()
+{
+}
+
+template <class charT>
+inline
+bool
+ctype_byname<charT>::do_is(mask m, charT c) const
+{
+	return bool(facet_.is(m, c));
+}
+
+template <class charT>
+inline
+const charT*
+ctype_byname<charT>::do_is(const charT* low, const charT* high, mask* vec) const
+{
+	return facet_.is(low, high, vec);
+}
+
+template <class charT>
+inline
+const charT*
+ctype_byname<charT>::do_scan_is(mask m, const charT* low, const charT* high) const
+{
+	return facet_.scan_is(m, low, high);
+}
+
+template <class charT>
+inline
+const charT*
+ctype_byname<charT>::do_scan_not(mask m, const charT* low, const charT* high) const
+{
+	return facet_.scan_not(m, low, high);
+}
+
+template <class charT>
+inline
+charT
+ctype_byname<charT>::do_toupper(charT c) const
+{
+	return facet_.toupper(c);
+}
+
+template <class charT>
+inline
+const charT*
+ctype_byname<charT>::do_toupper(charT* low, const charT* high) const
+{
+	return facet_.toupper(low, high);
+}
+
+template <class charT>
+inline
+charT
+ctype_byname<charT>::do_tolower(charT c) const
+{
+	return facet_.tolower(c);
+}
+
+template <class charT>
+inline
+const charT*
+ctype_byname<charT>::do_tolower(charT* low, const charT* high) const
+{
+	return facet_.tolower(low, high);
+}
+
+template <class charT>
+inline
+charT
+ctype_byname<charT>::do_widen(char c) const
+{
+	return facet_.widen(c);
+}
+
+template <class charT>
+inline
+const char*
+ctype_byname<charT>::do_widen(const char* low, const char* high, charT* dest) const
+{
+	return facet_.widen(low, high, dest);
+}
+
+template <class charT>
+inline
+char
+ctype_byname<charT>::do_narrow(charT c, char dfault) const
+{
+	return facet_.narrow(c, dfault);
+}
+
+template <class charT>
+inline
+const charT*
+ctype_byname<charT>::do_narrow(const charT* low, const charT* high, char dfault, char* dest) const
+{
+	return facet_.narrow(low, high, dfault, dest);
+}
+
+// ctype_byname<char>
+
+template <>
+inline
+ctype_byname<char>::~ctype_byname()
+{
+}
+
+template <>
+inline
+char
+ctype_byname<char>::do_toupper(char c) const
+{
+	return facet_.toupper(c);
+}
+
+template <>
+inline
+const char*
+ctype_byname<char>::do_toupper(char* low, const char* high) const
+{
+	return facet_.toupper(low, high);
+}
+
+template <>
+inline
+char
+ctype_byname<char>::do_tolower(char c) const
+{
+	return facet_.tolower(c);
+}
+
+template <>
+inline
+const char*
+ctype_byname<char>::do_tolower(char* low, const char* high) const
+{
+	return facet_.tolower(low, high);
+}
+
+template <>
+inline
+char
+ctype_byname<char>::do_widen(char c) const
+{
+	return facet_.widen(c);
+}
+
+template <>
+inline
+const char*
+ctype_byname<char>::do_widen(const char* low, const char* high, char* to) const
+{
+	return facet_.widen(low, high, to);
+}
+
+template <>
+inline
+char
+ctype_byname<char>::do_narrow(char c, char dfault) const
+{
+	return facet_.narrow(c, dfault);
+}
+
+template <>
+inline
+const char*
+ctype_byname<char>::do_narrow(const char* low, const char* high, char dfault, char* to) const
+{
+	return facet_.narrow(low, high, dfault, to);
+}
+
+// _lib.locale.convenience_, convenience interfaces:
+
+template <class charT>
+inline
+bool
+isspace(charT c, const locale& loc)
+{
+	return bool(_USE_FACET(ctype<charT>, loc).is(ctype_base::space, c));
+}
+
+template <class charT>
+inline
+bool
+isprint(charT c, const locale& loc)
+{
+	return bool(_USE_FACET(ctype<charT>, loc).is(ctype_base::print, c));
+}
+
+template <class charT>
+inline
+bool
+iscntrl(charT c, const locale& loc)
+{
+	return bool(_USE_FACET(ctype<charT>, loc).is(ctype_base::cntrl, c));
+}
+
+template <class charT>
+inline
+bool
+isupper(charT c, const locale& loc)
+{
+	return bool(_USE_FACET(ctype<charT>, loc).is(ctype_base::upper, c));
+}
+
+template <class charT>
+inline
+bool
+islower(charT c, const locale& loc)
+{
+	return bool(_USE_FACET(ctype<charT>, loc).is(ctype_base::lower, c));
+}
+
+template <class charT>
+inline
+bool
+isalpha(charT c, const locale& loc)
+{
+	return bool(_USE_FACET(ctype<charT>, loc).is(ctype_base::alpha, c));
+}
+
+template <class charT>
+inline
+bool
+isdigit(charT c, const locale& loc)
+{
+	return bool(_USE_FACET(ctype<charT>, loc).is(ctype_base::digit, c));
+}
+
+template <class charT>
+inline
+bool
+ispunct(charT c, const locale& loc)
+{
+	return bool(_USE_FACET(ctype<charT>, loc).is(ctype_base::punct, c));
+}
+
+template <class charT>
+inline
+bool
+isxdigit(charT c, const locale& loc)
+{
+	return bool(_USE_FACET(ctype<charT>, loc).is(ctype_base::xdigit, c));
+}
+
+template <class charT>
+inline
+bool
+isalnum(charT c, const locale& loc)
+{
+	return bool(_USE_FACET(ctype<charT>, loc).is(ctype_base::alnum, c));
+}
+
+template <class charT>
+inline
+bool
+isgraph(charT c, const locale& loc)
+{
+	return bool(_USE_FACET(ctype<charT>, loc).is(ctype_base::graph, c));
+}
+
+// _Generic_codecvt <class internT, class externT, class stateT>
+
+template <class internT, class externT, class stateT>
+_Generic_codecvt<internT, externT, stateT>::_Generic_codecvt(size_t refs)
+	: facet(refs)
+{
+}
+
+template <class internT, class externT, class stateT>
+inline
+_Generic_codecvt<internT, externT, stateT>::~_Generic_codecvt()
+{
+}
+
+#ifndef _OVERLOAD_CTY_OFF
+
+	template <class internT, class externT, class stateT>
+	inline
+	codecvt_base::result
+	_Generic_codecvt<internT, externT, stateT>::out(stateT& state,
+		const internT* from, const internT* from_end, const internT*& from_next,
+		externT* to, externT* to_limit, externT*& to_next) const
+	{
+		return do_out(state, from, from_end, from_next, to, to_limit, to_next);
+	}
+
+	template <class internT, class externT, class stateT>
+	inline
+	codecvt_base::result
+	_Generic_codecvt<internT, externT, stateT>::unshift(stateT& state,
+		externT* to, externT* to_limit, externT*& to_next) const
+	{
+		return do_unshift(state, to, to_limit, to_next);
+	}
+
+	template <class internT, class externT, class stateT>
+	inline
+	codecvt_base::result
+	_Generic_codecvt<internT, externT, stateT>::in(stateT& state,
+		const externT* from, const externT* from_end, const externT*& from_next,
+		internT* to, internT* to_limit, internT*& to_next) const
+	{
+		return do_in(state, from, from_end, from_next, to, to_limit, to_next);
+	}
+
+	template <class internT, class externT, class stateT>
+	inline
+	int
+	_Generic_codecvt<internT, externT, stateT>::encoding() const _MSL_THROW
+	{
+		return do_encoding();
+	}
+
+	template <class internT, class externT, class stateT>
+	inline
+	bool
+	_Generic_codecvt<internT, externT, stateT>::always_noconv() const _MSL_THROW
+	{
+		return bool(do_always_noconv());
+	}
+
+	template <class internT, class externT, class stateT>
+	inline
+	int
+	_Generic_codecvt<internT, externT, stateT>::length(const stateT& state,
+		const externT* from, const externT* from_end, size_t max) const
+	{
+		return do_length(state, from, from_end, max);
+	}
+
+	template <class internT, class externT, class stateT>
+	inline
+	int
+	_Generic_codecvt<internT, externT, stateT>::max_length() const _MSL_THROW
+	{
+		return do_max_length();
+	}
+
+#else
+
+	template <class internT, class externT, class stateT>
+	inline
+	codecvt_base::result
+	_Generic_codecvt<internT, externT, stateT>::out(stateT& state,
+		const internT* from, const internT* from_end, const internT*& from_next,
+		externT* to, externT* to_limit, externT*& to_next) const
+	{
+		return ((const codecvt<internT, externT, stateT>*)this)->do_out(state, from, from_end, from_next, to, to_limit, to_next);
+	}
+
+	template <class internT, class externT, class stateT>
+	inline
+	codecvt_base::result
+	_Generic_codecvt<internT, externT, stateT>::unshift(stateT& state,
+		externT* to, externT* to_limit, externT*& to_next) const
+	{
+		return ((const codecvt<internT, externT, stateT>*)this)->do_unshift(state, to, to_limit, to_next);
+	}
+
+	template <class internT, class externT, class stateT>
+	inline
+	codecvt_base::result
+	_Generic_codecvt<internT, externT, stateT>::in(stateT& state,
+		const externT* from, const externT* from_end, const externT*& from_next,
+		internT* to, internT* to_limit, internT*& to_next) const
+	{
+		return ((const codecvt<internT, externT, stateT>*)this)->do_in(state, from, from_end, from_next, to, to_limit, to_next);
+	}
+
+	template <class internT, class externT, class stateT>
+	inline
+	int
+	_Generic_codecvt<internT, externT, stateT>::encoding() const _MSL_THROW
+	{
+		return ((const codecvt<internT, externT, stateT>*)this)->do_encoding();
+	}
+
+	template <class internT, class externT, class stateT>
+	inline
+	bool
+	_Generic_codecvt<internT, externT, stateT>::always_noconv() const _MSL_THROW
+	{
+		return bool((const codecvt<internT, externT, stateT>*)this)->do_always_noconv();
+	}
+
+	template <class internT, class externT, class stateT>
+	inline
+	int
+	_Generic_codecvt<internT, externT, stateT>::length(const stateT& state,
+		const externT* from, const externT* from_end, size_t max) const
+	{
+		return ((const codecvt<internT, externT, stateT>*)this)->do_length(state, from, from_end, max);
+	}
+
+	template <class internT, class externT, class stateT>
+	inline
+	int
+	_Generic_codecvt<internT, externT, stateT>::max_length() const _MSL_THROW
+	{
+		return ((const codecvt<internT, externT, stateT>*)this)->do_max_length();
+	}
+
+#endif
+
+// codecvt<char, char, mbstate_t>
+
+	template <>
+	inline
+	codecvt<char, char, mbstate_t>::~codecvt()
+	{
+	}
+
+	template <>
+	inline
+	codecvt_base::result
+	codecvt<char, char, mbstate_t>::do_out(mbstate_t&,
+		const char* from, const char*, const char*& from_next,
+		char* to, char*, char*& to_next) const
+	{
+		from_next = from;  // hh 990106
+		to_next = to;
+		return noconv;
+	}
+
+	template <>
+	inline
+	codecvt_base::result
+	codecvt<char, char, mbstate_t>::do_in(mbstate_t&,
+		const char* from, const char*, const char*& from_next,
+		char* to, char*, char*& to_next) const
+	{
+		from_next = from;  // hh 990106
+		to_next = to;
+		return noconv;
+	}
+
+	template <>
+	inline
+	codecvt_base::result
+	codecvt<char, char, mbstate_t>::do_unshift(mbstate_t&, char*, char*, char*&) const
+	{
+		return noconv;
+	}
+
+	template <>
+	inline
+	int
+	codecvt<char, char, mbstate_t>::do_encoding() const _MSL_THROW
+	{
+		return 1;
+	}
+
+	template <>
+	inline
+	bool
+	codecvt<char, char, mbstate_t>::do_always_noconv() const _MSL_THROW
+	{
+		return true;
+	}
+
+	template <>
+	inline
+	int
+	codecvt<char, char, mbstate_t>::do_length(const mbstate_t&, const char* from,
+		const char* end, size_t max) const
+	{
+		return min(int(end-from), int(max));
+	}
+
+	template <>
+	inline
+	int
+	codecvt<char, char, mbstate_t>::do_max_length() const _MSL_THROW
+	{
+		return 1;
+	}
+
+#ifndef _MSL_NO_WCHART
+
+	// codecvt<wchar_t, char, mbstate_t>
+
+	template <>
+	inline
+	codecvt<wchar_t, char, mbstate_t>::~codecvt()
+	{
+	}
+
+	template <>
+	inline
+	codecvt_base::result
+	codecvt<wchar_t, char, mbstate_t>::do_unshift(mbstate_t&, char*, char*, char*&) const
+	{
+		return noconv;
+	}
+
+	template <>
+	inline
+	int
+	codecvt<wchar_t, char, mbstate_t>::do_encoding() const _MSL_THROW
+	{
+		return 1;
+	}
+
+	template <>
+	inline
+	bool
+	codecvt<wchar_t, char, mbstate_t>::do_always_noconv() const _MSL_THROW
+	{
+		return false;
+	}
+
+	template <>
+	inline
+	int
+	codecvt<wchar_t, char, mbstate_t>::do_length(const mbstate_t&, const char* from,
+		const char* end, size_t max) const
+	{
+		return min(int(end-from), int(max));
+	}
+
+	template <>
+	inline
+	int
+	codecvt<wchar_t, char, mbstate_t>::do_max_length() const _MSL_THROW
+	{
+		return 1;
+	}
+
+#endif  // hh 980824 moved to not include codecvt_byname
+
+template <class internT, class externT, class stateT>
+codecvt_byname<internT, externT, stateT>::codecvt_byname(const char* loc, size_t refs)
+	: codecvt(refs),
+	loc_(loc),
+	#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+		facet_(use_facet<codecvt<internT, externT, stateT> >(loc_))
+	#else
+		facet_(use_facet(loc_, (codecvt<internT, externT, stateT>*)0))
+	#endif
+{
+}
+
+template <class internT, class externT, class stateT>
+inline
+codecvt_byname<internT, externT, stateT>::~codecvt_byname()
+{
+}
+
+template <class internT, class externT, class stateT>
+inline
+codecvt_base::result
+codecvt_byname<internT, externT, stateT>::do_out(stateT& state,
+	const internT* from, const internT* from_end, const internT*& from_next,
+	externT* to, externT* to_limit, externT*& to_next) const
+{
+	return facet_.out(state, from, from_end, from_next, to, to_limit, to_next);
+}
+
+template <class internT, class externT, class stateT>
+inline
+codecvt_base::result
+codecvt_byname<internT, externT, stateT>::do_in(stateT& state,
+	const externT* from, const externT* from_end, const externT*& from_next,
+	internT* to, internT* to_limit, internT*& to_next) const
+{
+	return facet_.in(state, from, from_end, from_next, to, to_limit, to_next);
+}
+
+template <class internT, class externT, class stateT>
+inline
+codecvt_base::result
+codecvt_byname<internT, externT, stateT>::do_unshift(stateT& state,
+	externT* to, externT* to_limit, externT*& to_next) const
+{
+	return facet_.unshift(state, to, to_limit, to_next);
+}
+
+template <class internT, class externT, class stateT>
+inline
+int
+codecvt_byname<internT, externT, stateT>::do_encoding() const _MSL_THROW
+{
+	return facet_.encoding();
+}
+
+template <class internT, class externT, class stateT>
+inline
+bool
+codecvt_byname<internT, externT, stateT>::do_always_noconv() const _MSL_THROW
+{
+	return bool(facet_.always_noconv());
+}
+
+template <class internT, class externT, class stateT>
+inline
+int
+codecvt_byname<internT, externT, stateT>::do_length(const stateT& state, const externT* from,
+	const externT* end, size_t max) const
+{
+	return facet_.length(state, from, end, max);
+}
+
+template <class internT, class externT, class stateT>
+inline
+int
+codecvt_byname<internT, externT, stateT>::do_max_length() const _MSL_THROW
+{
+	return facet_.max_length();
+}
+
+// num_get<charT, InputIterator>
+
+template <class charT, class InputIterator>
+num_get<charT, InputIterator>::num_get(size_t refs)
+	: facet(refs)
+{
+}
+
+template <class charT, class InputIterator>
+inline
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::get(iter_type in, iter_type end, ios_base& str,
+	iostate& err, bool& val) const
+{
+	return do_get(in, end, str, err, val);
+}
+
+template <class charT, class InputIterator>
+inline
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::get(iter_type in, iter_type end, ios_base& str,
+	iostate& err, long& val) const
+{
+	return do_get(in, end, str, err, val);
+}
+
+template <class charT, class InputIterator>
+inline
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::get(iter_type in, iter_type end, ios_base& str,
+	iostate& err, unsigned short& val) const
+{
+	return do_get(in, end, str, err, val);
+}
+
+template <class charT, class InputIterator>
+inline
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::get(iter_type in, iter_type end, ios_base& str,
+	iostate& err, unsigned int& val) const
+{
+	return do_get(in, end, str, err, val);
+}
+
+template <class charT, class InputIterator>
+inline
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::get(iter_type in, iter_type end, ios_base& str,
+	iostate& err, unsigned long& val) const
+{
+	return do_get(in, end, str, err, val);
+}
+
+#ifdef __MSL_LONGLONG_SUPPORT__
+
+	template <class charT, class InputIterator>
+	inline
+	typename num_get<charT, InputIterator>::iter_type
+	num_get<charT, InputIterator>::get(iter_type in, iter_type end, ios_base& str,
+		iostate& err, long long& val)  const
+	{
+		return do_get(in, end, str, err, val);
+	}
+
+	template <class charT, class InputIterator>
+	inline
+	typename num_get<charT, InputIterator>::iter_type
+	num_get<charT, InputIterator>::get(iter_type in, iter_type end, ios_base& str,
+		iostate& err, unsigned long long& val)  const
+	{
+		return do_get(in, end, str, err, val);
+	}
+
+#endif
+
+#ifndef _No_Floating_Point
+
+	template <class charT, class InputIterator>
+	inline
+	typename num_get<charT, InputIterator>::iter_type
+	num_get<charT, InputIterator>::get(iter_type in, iter_type end, ios_base& str,
+		iostate& err, float& val) const
+	{
+		return do_get(in, end, str, err, val);
+	}
+
+	template <class charT, class InputIterator>
+	inline
+	typename num_get<charT, InputIterator>::iter_type
+	num_get<charT, InputIterator>::get(iter_type in, iter_type end, ios_base& str,
+		iostate& err, double& val) const
+	{
+		return do_get(in, end, str, err, val);
+	}
+
+	template <class charT, class InputIterator>
+	inline
+	typename num_get<charT, InputIterator>::iter_type
+	num_get<charT, InputIterator>::get(iter_type in, iter_type end, ios_base& str,
+		iostate& err, long double& val) const
+	{
+		return do_get(in, end, str, err, val);
+	}
+
+#endif
+
+template <class charT, class InputIterator>
+inline
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::get(iter_type in, iter_type end, ios_base& str,
+	iostate& err, void*& val) const
+{
+	return do_get(in, end, str, err, val);
+}
+
+template <class charT, class InputIterator>
+locale::id num_get<charT, InputIterator>::id;
+
+template <class charT, class InputIterator>
+inline
+num_get<charT, InputIterator>::~num_get()
+{
+}
+
+template <class charT, class InputIterator>
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::do_get(iter_type in, iter_type end, ios_base& str,
+	iostate& err, bool& val) const
+{
+	if (str.flags() & ios_base::boolalpha)
+	{
+		typedef basic_string<charT, char_traits<charT>, allocator<charT> > string_type;
+		const locale& loc = str.getloc();
+		const numpunct<charT>& np = _USE_FACET(numpunct<charT>, loc);
+		string_type truename = np.truename();
+		const size_t truelen = truename.size();
+		string_type falsename = np.falsename();
+		const size_t falselen = falsename.size();
+		string_type::const_iterator t = truename.begin();
+		size_t truecount = 0;
+		string_type::const_iterator f = falsename.begin();
+		size_t falsecount = 0;
+		// Collect number of matching characters in truecount and falsecount
+		// Careful about true and false names like:  true, truenot
+		while (t || f)
+		{
+			charT c = *in;
+			bool consumed = false;
+			if (t && *t++ == c)
+			{
+				truecount++;
+				consumed = true;
+				if (truecount == truelen)
+					t = 0;
+			}
+			else
+				t = 0;
+			if (f && *f++ == c)
+			{
+				falsecount++;
+				consumed = true;
+				if (falsecount == falselen)
+					f = 0;
+			}
+			else
+				f = 0;
+			if (consumed && ++in == end)
+			{
+				err |= ios_base::eofbit;
+				break;
+			}
+		}
+		// Decide if either a true or false was read.  Test by comparing truecount to truelen
+		// Careful that both true and false tests may pass (e.g. true, truenot).
+		// Guard by testing longest name first.
+		if (truelen > falselen)
+		{
+			if (truecount == truelen)
+				val = true;
+			else if (falsecount == falselen)
+				val = false;
+			else
+				err |= ios_base::failbit;
+		}
+		else {
+			if (falsecount == falselen)
+				val = false;
+			else if (truecount == truelen)
+				val = true;
+			else
+				err |= ios_base::failbit;
+		}
+	}
+	else {
+		long value = 2;
+		do_get(in, end, str, err, value);
+		if (value == 0)
+			val = false;
+		else if (value == 1)
+			val = true;
+		else
+			err |= ios_base::failbit;
+	}
+	return in;
+}
+
+template <class charT, class InputIterator>
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::do_get(iter_type in, iter_type end, ios_base& str,
+	iostate& err, long& val) const
+{
+	fmtflags f = str.flags() & ios_base::basefield;
+	if (f & ios_base::oct)
+		return getoct(in, end, str, err, val);
+	if (f & ios_base::hex)
+		return gethex(in, end, str, err, val);
+	if (f == 0)
+		return getint(in, end, str, err, val);
+	return getdec(in, end, str, err, val);
+}
+
+template <class charT, class InputIterator>
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::do_get(iter_type in, iter_type end, ios_base& str,
+	iostate& err, unsigned short& val) const
+{
+	long i;
+	iter_type result = do_get(in, end, str, err, i);
+	if (!(err & ios_base::failbit))
+		val = (unsigned short)i;
+	return result;
+}
+
+template <class charT, class InputIterator>
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::do_get(iter_type in, iter_type end, ios_base& str,
+	iostate& err, unsigned int& val) const
+{
+	long i;
+	iter_type result = do_get(in, end, str, err, i);
+	if (!(err & ios_base::failbit))
+		val = (unsigned int)i;
+	return result;
+}
+
+template <class charT, class InputIterator>
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::do_get(iter_type in, iter_type end, ios_base& str,
+	iostate& err, unsigned long& val) const
+{
+	long i;
+	iter_type result = do_get(in, end, str, err, i);
+	if (!(err & ios_base::failbit))
+		val = (unsigned long)i;
+	return result;
+}
+
+#ifdef __MSL_LONGLONG_SUPPORT__
+
+	template <class charT, class InputIterator>
+	typename num_get<charT, InputIterator>::iter_type
+	num_get<charT, InputIterator>::do_get(iter_type in, iter_type end, ios_base& str,
+		iostate& err, long long& val) const
+	{
+		fmtflags f = str.flags() & ios_base::basefield;
+		if (f & ios_base::oct)
+			return getoct(in, end, str, err, val);
+		if (f & ios_base::hex)
+			return gethex(in, end, str, err, val);
+		if (f == 0)
+			return getint(in, end, str, err, val);
+		return getdec(in, end, str, err, val);
+	}
+
+	template <class charT, class InputIterator>
+	typename num_get<charT, InputIterator>::iter_type
+	num_get<charT, InputIterator>::do_get(iter_type in, iter_type end, ios_base& str,
+		iostate& err, unsigned long long& val) const
+	{
+		long long i;
+		iter_type result = do_get(in, end, str, err, i);
+		if (!(err & ios_base::failbit))
+			val = (unsigned long long)i;
+		return result;
+	}
+
+#endif
+
+#ifndef _No_Floating_Point
+
+	template <class charT, class InputIterator>
+	typename num_get<charT, InputIterator>::iter_type
+	num_get<charT, InputIterator>::do_get(iter_type in, iter_type end, ios_base& str,
+		iostate& err, float& val) const
+	{
+		long double f;
+		iter_type result = do_get(in, end, str, err, f);
+		if (!(err & ios_base::failbit))
+			val = (float)f;
+		return result;
+	}
+
+	template <class charT, class InputIterator>
+	typename num_get<charT, InputIterator>::iter_type
+	num_get<charT, InputIterator>::do_get(iter_type in, iter_type end, ios_base& str,
+		iostate& err, double& val) const
+	{
+		long double f;
+		iter_type result = do_get(in, end, str, err, f);
+		if (!(err & ios_base::failbit))
+			val = (double)f;
+		return result;
+	}
+
+	template <class charT, class InputIterator>
+	typename num_get<charT, InputIterator>::iter_type
+	num_get<charT, InputIterator>::do_get(iter_type in, iter_type end, ios_base& str,
+		iostate& err, long double& val) const
+	{
+		bool minus = parsesign(in, end, str, err);
+		long double f = 0;
+		string digits;
+		int count = parseFloatDigits(in, end, str, err, f, digits);
+		if (err & ios_base::failbit)
+			return in;
+		if (isfinite(f))
+		{
+			bool found_digits = parseFraction(in, end, str, err, f, digits);
+			if (!found_digits && count == 0)
+			{
+				err |= ios_base::failbit;
+				return in;
+			}
+			parseExponent(in, end, str, err, f, digits);
+			if (err & ios_base::failbit)
+				return in;
+			val = strtod(digits.c_str(), 0);
+		}
+		else
+			val = f;
+		if (minus)
+			val = -val;
+		return in;
+	}
+
+#endif
+
+// hh 980825 forward declare
+class _SaveFlags;
+
+template <class charT, class InputIterator>
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::do_get(iter_type in, iter_type end, ios_base& str,
+	iostate& err, void*& val) const
+{
+	_SaveFlags save_flags(str);
+	hex(str);
+	showbase(str);
+	long i;
+	iter_type result = do_get(in, end, str, err, i);
+	if (!(err & ios_base::failbit))
+		val = (void*)i;
+	return result;
+}
+
+template <class charT, class InputIterator>
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::getoct(iter_type in, iter_type end, ios_base& str,
+	iostate& err, long& val) const
+{
+	bool minus = parsesign(in, end, str, err);
+	long i;
+	int count = parseOctDigits(in, end, str, err, i);
+	if (count == 0)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	val = i;
+	if (minus)
+		val = -val;
+	return in;
+}
+
+template <class charT, class InputIterator>
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::getdec(iter_type in, iter_type end, ios_base& str,
+	iostate& err, long& val) const
+{
+	bool minus = parsesign(in, end, str, err);
+	long i;
+	int count = parseDecDigits(in, end, str, err, i);
+	if (count == 0)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	val = i;
+	if (minus)
+		val = -val;
+	return in;
+}
+
+template <class charT, class InputIterator>
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::gethex(iter_type in, iter_type end, ios_base& str,
+	iostate& err, long& val) const
+{
+	bool minus = parsesign(in, end, str, err);
+	long i;
+	int count = parseHexDigits(in, end, str, err, i);
+	if (count == 0)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	val = i;
+	if (minus)
+		val = -val;
+	return in;
+}
+
+template <class charT, class InputIterator>
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::getint(iter_type in, iter_type end, ios_base& str,
+	iostate& err, long& val) const
+{
+	bool minus = parsesign(in, end, str, err);
+	if (in == end)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	char c = ct.narrow(ct.toupper(*in), char());
+	if (c == '0')
+	{
+		if (++in == end)
+		{
+			val = 0;
+			err |= ios_base::eofbit;
+			return in;
+		}
+		c = ct.narrow(ct.toupper(*in), char());
+		if (c == 'X')
+		{
+			if (++in == end) {
+				err |= ios_base::eofbit | ios_base::failbit;
+				return in;
+			}
+			long i;
+			int count = parseHexDigits(in, end, str, err, i);
+			if (count == 0)
+			{
+				err |= ios_base::failbit;
+				return in;
+			}
+			val = i;
+			if (minus)
+				val = -val;
+			return in;
+		}
+		long i;
+		parseOctDigits(in, end, str, err, i);
+		if (!(err & ios_base::failbit))
+			val = i;
+		if (minus)
+			val = -val;
+		return in;
+	}
+	long i;
+	int count = parseDecDigits(in, end, str, err, i);
+	if (count == 0)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	val = i;
+	if (minus)
+		val = -val;
+	return in;
+}
+
+template <class charT, class InputIterator>
+int
+num_get<charT, InputIterator>::parseOctDigits(iter_type& in, iter_type end, ios_base& str,
+	iostate& err, long& val) const
+{
+	if (in == end)
+		return 0;
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+	charT thousands_sep = np.thousands_sep();
+	string allowed_grouping = np.grouping();
+	bool might_group = allowed_grouping.size() > 0;
+	bool perform_grouping_check = false;
+	bool firstDigit = true;  // hh 980803 don't include leading 0 in grouping check
+	vector<unsigned char> actual_grouping;
+	unsigned char ng = 0;
+	val = 0;
+	int count = 0;
+	while (true)  // hh 980803 no range checking
+	{
+		charT d = *in;
+		if (ng != 0 && might_group && d == thousands_sep)
+		{
+			actual_grouping.push_back(ng);
+			ng = 0;
+			perform_grouping_check = true;
+			goto cycle;
+		}
+		{
+		char dn = ct.narrow(d, char());
+		if (!ct.is(ctype_base::digit, d) || dn == '8' || dn == '9')
+			break;
+		val <<= 3;
+		val |= long(dn - '0');
+		++count;
+		if (!(firstDigit && dn == '0'))
+			++ng;
+		firstDigit = false;
+		}
+	cycle:
+		if (++in == end)
+		{
+			err |= ios_base::eofbit;
+			break;
+		}
+	}
+	if (perform_grouping_check)
+	{
+		if (ng != 0)  // hh 980804
+			actual_grouping.push_back(ng);
+		if (check_grouping(allowed_grouping, actual_grouping))
+		{
+			err |= ios_base::failbit;
+			count = 0;
+		}
+	}
+	return count;
+}
+
+template <class charT, class InputIterator>
+int
+num_get<charT, InputIterator>::parseDecDigits(iter_type& in, iter_type end, ios_base& str,
+	iostate& err, long& val) const
+{
+	if (in == end)
+		return 0;
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+	charT thousands_sep = np.thousands_sep();
+	string allowed_grouping = np.grouping();
+	bool might_group = allowed_grouping.size() > 0;
+	bool perform_grouping_check = false;
+	vector<unsigned char> actual_grouping;
+	unsigned char ng = 0;
+	val = 0;
+	int count = 0;
+	while (true)  // hh 980803 no range checking
+	{
+		charT d = *in;
+		if (ng != 0 && might_group && d == thousands_sep)  // hh 980804
+		{
+			actual_grouping.push_back(ng);
+			ng = 0;
+			perform_grouping_check = true;
+			goto cycle;
+		}
+		{
+		char dn = ct.narrow(d, char());
+		if (!ct.is(ctype_base::digit, d))
+			break;
+		val *= 10;
+		val += long(dn - '0');
+		++count;
+		++ng;
+		}
+	cycle:
+		if (++in == end)
+		{
+			err |= ios_base::eofbit;
+			break;
+		}
+	}
+	if (perform_grouping_check)
+	{
+		if (ng != 0)  // hh 980804
+			actual_grouping.push_back(ng);
+		if (check_grouping(allowed_grouping, actual_grouping))
+		{
+			err |= ios_base::failbit;
+			count = 0;
+		}
+	}
+	return count;
+}
+
+template <class charT, class InputIterator>
+int
+num_get<charT, InputIterator>::parseHexDigits(iter_type& in, iter_type end, ios_base& str,
+	iostate& err, long& val) const
+{
+	if (in == end)
+		return 0;
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+	charT thousands_sep = np.thousands_sep();
+	string allowed_grouping = np.grouping();
+	bool might_group = allowed_grouping.size() > 0;
+	bool perform_grouping_check = false;
+	vector<unsigned char> actual_grouping;
+	unsigned char ng = 0;
+	val = 0;
+	int count = 0;
+	bool parsed_prefix = false;
+	bool next_dn_could_be_x = false;
+	while (true)  // hh 980803 no range checking
+	{
+		charT d = *in;
+		if (ng != 0 && might_group && d == thousands_sep)  // hh 980804
+		{
+			actual_grouping.push_back(ng);
+			ng = 0;
+			perform_grouping_check = true;
+			goto cycle;
+		}
+		{
+		char dn = ct.narrow(ct.toupper(d), char());
+		if (next_dn_could_be_x && dn == 'X')
+		{
+			count = 0;
+			ng = 0;
+			goto cycle;
+		}
+		if (!ct.is(ctype_base::xdigit, d))
+			break;
+		val <<= 4;
+		if (ct.is(ctype_base::digit, d))
+			val |= long(dn - '0');
+		else
+			val |= long(dn - 'A' + 10);
+		++count;
+		++ng;
+		if (!parsed_prefix && dn == '0')
+			next_dn_could_be_x = true;
+		else
+			next_dn_could_be_x = false;
+		}
+	cycle:
+		parsed_prefix = true;
+		if (++in == end)
+		{
+			err |= ios_base::eofbit;
+			break;
+		}
+	}
+	if (perform_grouping_check)
+	{
+		if (ng != 0)  // hh 980804
+			actual_grouping.push_back(ng);
+		if (check_grouping(allowed_grouping, actual_grouping))
+		{
+			err |= ios_base::failbit;
+			count = 0;
+		}
+	}
+	return count;
+}
+
+#ifdef __MSL_LONGLONG_SUPPORT__
+
+	template <class charT, class InputIterator>
+	typename num_get<charT, InputIterator>::iter_type
+	num_get<charT, InputIterator>::getoct(iter_type in, iter_type end, ios_base& str,
+		iostate& err, long long& val) const
+	{
+		bool minus = parsesign(in, end, str, err);
+		long long i;
+		int count = parseOctDigits(in, end, str, err, i);
+		if (count == 0)
+		{
+			err |= ios_base::failbit;
+			return in;
+		}
+		val = i;
+		if (minus)
+			val = -val;
+		return in;
+	}
+
+	template <class charT, class InputIterator>
+	typename num_get<charT, InputIterator>::iter_type
+	num_get<charT, InputIterator>::getdec(iter_type in, iter_type end, ios_base& str,
+		iostate& err, long long& val) const
+	{
+		bool minus = parsesign(in, end, str, err);
+		long long i;
+		int count = parseDecDigits(in, end, str, err, i);
+		if (count == 0)
+		{
+			err |= ios_base::failbit;
+			return in;
+		}
+		val = i;
+		if (minus)
+			val = -val;
+		return in;
+	}
+
+	template <class charT, class InputIterator>
+	typename num_get<charT, InputIterator>::iter_type
+	num_get<charT, InputIterator>::gethex(iter_type in, iter_type end, ios_base& str,
+		iostate& err, long long& val) const
+	{
+		bool minus = parsesign(in, end, str, err);
+		long long i;
+		int count = parseHexDigits(in, end, str, err, i);
+		if (count == 0)
+		{
+			err |= ios_base::failbit;
+			return in;
+		}
+		val = i;
+		if (minus)
+			val = -val;
+		return in;
+	}
+
+	template <class charT, class InputIterator>
+	typename num_get<charT, InputIterator>::iter_type
+	num_get<charT, InputIterator>::getint(iter_type in, iter_type end, ios_base& str,
+		iostate& err, long long& val) const
+	{
+		bool minus = parsesign(in, end, str, err);
+		if (in == end)
+		{
+			err |= ios_base::failbit;
+			return in;
+		}
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		char c = ct.narrow(ct.toupper(*in), char());
+		if (c == '0')
+		{
+			if (++in == end)
+			{
+				val = 0;
+				err |= ios_base::eofbit;
+				return in;
+			}
+			c = ct.narrow(ct.toupper(*in), char());
+			if (c == 'X')
+			{
+				if (++in == end) {
+					err |= ios_base::eofbit | ios_base::failbit;
+					return in;
+				}
+				long long i;
+				int count = parseHexDigits(in, end, str, err, i);
+				if (count == 0)
+				{
+					err |= ios_base::failbit;
+					return in;
+				}
+				val = i;
+				if (minus)
+					val = -val;
+				return in;
+			}
+			long long i;
+			parseOctDigits(in, end, str, err, i);
+			if (!(err & ios_base::failbit))
+				val = i;
+			if (minus)
+				val = -val;
+			return in;
+		}
+		long long i;
+		int count = parseDecDigits(in, end, str, err, i);
+		if (count == 0)
+		{
+			err |= ios_base::failbit;
+			return in;
+		}
+		val = i;
+		if (minus)
+			val = -val;
+		return in;
+	}
+
+	template <class charT, class InputIterator>
+	int
+	num_get<charT, InputIterator>::parseOctDigits(iter_type& in, iter_type end, ios_base& str,
+		iostate& err, long long& val) const
+	{
+		if (in == end)
+			return 0;
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+		charT thousands_sep = np.thousands_sep();
+		string allowed_grouping = np.grouping();
+		bool might_group = allowed_grouping.size() > 0;
+		bool perform_grouping_check = false;
+		bool firstDigit = true;  // hh 980803 don't include leading 0 in grouping check
+		vector<unsigned char> actual_grouping;
+		unsigned char ng = 0;
+		val = 0;
+		int count = 0;
+		while (true)  // hh 980803 no range checking
+		{
+			charT d = *in;
+			if (ng != 0 && might_group && d == thousands_sep)
+			{
+				actual_grouping.push_back(ng);
+				ng = 0;
+				perform_grouping_check = true;
+				goto cycle;
+			}
+			{
+			char dn = ct.narrow(d, char());
+			if (!ct.is(ctype_base::digit, d) || dn == '8' || dn == '9')
+				break;
+			val <<= 3;
+			val |= (long long)(dn - '0');
+			++count;
+			if (!(firstDigit && dn == '0'))
+				++ng;
+			firstDigit = false;
+			}
+		cycle:
+			if (++in == end)
+			{
+				err |= ios_base::eofbit;
+				break;
+			}
+		}
+		if (perform_grouping_check)
+		{
+			if (ng != 0)  // hh 980804
+				actual_grouping.push_back(ng);
+			if (check_grouping(allowed_grouping, actual_grouping))
+			{
+				err |= ios_base::failbit;
+				count = 0;
+			}
+		}
+		return count;
+	}
+
+	template <class charT, class InputIterator>
+	int
+	num_get<charT, InputIterator>::parseDecDigits(iter_type& in, iter_type end, ios_base& str,
+		iostate& err, long long& val) const
+	{
+		if (in == end)
+			return 0;
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+		charT thousands_sep = np.thousands_sep();
+		string allowed_grouping = np.grouping();
+		bool might_group = allowed_grouping.size() > 0;
+		bool perform_grouping_check = false;
+		vector<unsigned char> actual_grouping;
+		unsigned char ng = 0;
+		val = 0;
+		int count = 0;
+		while (true)  // hh 980803 no range checking
+		{
+			charT d = *in;
+			if (ng != 0 && might_group && d == thousands_sep)  // hh 980804
+			{
+				actual_grouping.push_back(ng);
+				ng = 0;
+				perform_grouping_check = true;
+				goto cycle;
+			}
+			{
+			char dn = ct.narrow(d, char());
+			if (!ct.is(ctype_base::digit, d))
+				break;
+			val *= 10;
+			val += (long long)(dn - '0');
+			++count;
+			++ng;
+			}
+		cycle:
+			if (++in == end)
+			{
+				err |= ios_base::eofbit;
+				break;
+			}
+		}
+		if (perform_grouping_check)
+		{
+			if (ng != 0)  // hh 980804
+				actual_grouping.push_back(ng);
+			if (check_grouping(allowed_grouping, actual_grouping))
+			{
+				err |= ios_base::failbit;
+				count = 0;
+			}
+		}
+		return count;
+	}
+
+	template <class charT, class InputIterator>
+	int
+	num_get<charT, InputIterator>::parseHexDigits(iter_type& in, iter_type end, ios_base& str,
+		iostate& err, long long& val) const
+	{
+		if (in == end)
+			return 0;
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+		charT thousands_sep = np.thousands_sep();
+		string allowed_grouping = np.grouping();
+		bool might_group = allowed_grouping.size() > 0;
+		bool perform_grouping_check = false;
+		vector<unsigned char> actual_grouping;
+		unsigned char ng = 0;
+		val = 0;
+		int count = 0;
+		bool parsed_prefix = false;
+		bool next_dn_could_be_x = false;
+		while (true)  // hh 980803 no range checking
+		{
+			charT d = *in;
+			if (ng != 0 && might_group && d == thousands_sep)  // hh 980804
+			{
+				actual_grouping.push_back(ng);
+				ng = 0;
+				perform_grouping_check = true;
+				goto cycle;
+			}
+			{
+			char dn = ct.narrow(ct.toupper(d), char());
+			if (next_dn_could_be_x && dn == 'X')
+			{
+				count = 0;
+				ng = 0;
+				goto cycle;
+			}
+			if (!ct.is(ctype_base::xdigit, d))
+				break;
+			val <<= 4;
+			if (ct.is(ctype_base::digit, d))
+				val |= (long long)(dn - '0');
+			else
+				val |= (long long)(dn - 'A' + 10);
+			++count;
+			++ng;
+			if (!parsed_prefix && dn == '0')
+				next_dn_could_be_x = true;
+			else
+				next_dn_could_be_x = false;
+			}
+		cycle:
+			parsed_prefix = true;
+			if (++in == end)
+			{
+				err |= ios_base::eofbit;
+				break;
+			}
+		}
+		if (perform_grouping_check)
+		{
+			if (ng != 0)  // hh 980804
+				actual_grouping.push_back(ng);
+			if (check_grouping(allowed_grouping, actual_grouping))
+			{
+				err |= ios_base::failbit;
+				count = 0;
+			}
+		}
+		return count;
+	}
+
+#endif
+
+// return true if in error
+template <class charT, class InputIterator>
+bool
+num_get<charT, InputIterator>::check_grouping(const string& allowed_grouping,
+	const vector<unsigned char>& actual_grouping) const
+{
+	int all = -1;
+	unsigned char ng = CHAR_MAX;
+	for (int act = (int)actual_grouping.size() - 1; act >= 0; --act)
+	{
+		if (++all < allowed_grouping.size())
+			ng = (unsigned char)allowed_grouping[size_t(all)];
+		if (ng >= CHAR_MAX)
+			continue;
+		if (act == 0)  // hh 980803 leading group may have less than ng digits
+		{
+			if (actual_grouping[size_t(act)] > ng)
+				return true;
+		}
+		else
+		{
+			if (actual_grouping[size_t(act)] != ng)
+				return true;
+		}
+	}
+	return false;
+}
+
+template <class charT, class InputIterator>
+bool
+num_get<charT, InputIterator>::parsesign(iter_type& in, iter_type end, ios_base& str,
+	iostate& err) const
+{
+	bool result = false;
+	if (in == end)
+		return false;
+	charT sw = *in;
+	char s = _USE_FACET(ctype<charT>, str.getloc()).narrow(sw, char());
+	if (s == '-')
+	{
+		if (++in == end)
+			err |= ios_base::eofbit;
+		result = true;
+		ws(in, end, str, err);
+	}
+	else if (s == '+')
+	{
+		if (++in == end)
+			err |= ios_base::eofbit;
+		ws(in, end, str, err);
+	}
+	return result;
+}
+
+template <class charT, class InputIterator>
+typename num_get<charT, InputIterator>::iter_type
+num_get<charT, InputIterator>::ws(iter_type& in, iter_type end, ios_base& str,
+	iostate& err) const
+{
+	if (in == end)
+		return in;
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	while (true)
+	{
+		charT c = *in;
+		if (!ct.is(ctype_base::space, c))
+			break;
+		if (++in == end)
+		{
+			err |= ios_base::eofbit;
+			break;
+		}
+	}
+	return in;
+}
+
+#ifndef _No_Floating_Point
+
+	template <class charT, class InputIterator>
+	int
+	num_get<charT, InputIterator>::parseFloatDigits(iter_type& in, iter_type end, ios_base& str,
+		iostate& err, long double& f, string& digits) const
+	{
+		if (in == end)
+			return 0;
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+		charT thousands_sep = np.thousands_sep();
+		string allowed_grouping = np.grouping();
+		bool might_group = allowed_grouping.size() > 0;
+		bool perform_grouping_check = false;
+		vector<unsigned char> actual_grouping;
+		unsigned char ng = 0;
+		int count = 0;
+		f = 0;
+		while (true)
+		{
+			charT dw = *in;
+			if (ng != 0 && might_group && dw == thousands_sep)  // hh 980804
+			{
+				actual_grouping.push_back(ng);
+				ng = 0;
+				perform_grouping_check = true;
+				goto cycle;
+			}
+			if (!ct.is(ctype_base::digit, dw))
+			{
+				if (count == 0)
+					parseNaN_Inf(in, end, str, err, f);
+				break;
+			}
+			{
+			char d = ct.narrow(ct.toupper(dw), char());
+			f *= 10.0L;
+			f += (long double)(d - '0');
+			digits += d;
+			++count;
+			++ng;
+			}
+		cycle:
+			if (++in == end)
+			{
+				err |= ios_base::eofbit;
+				break;
+			}
+		}
+		if (perform_grouping_check)
+		{
+			if (ng != 0)  // hh 980804
+				actual_grouping.push_back(ng);
+			if (check_grouping(allowed_grouping, actual_grouping))
+			{
+				err |= ios_base::failbit;
+				count = 0;
+			}
+		}
+		return count;
+	}
+
+	template <class charT, class InputIterator>
+	void
+	num_get<charT, InputIterator>::parseNaN_Inf(iter_type& in, iter_type end, ios_base& str,
+		iostate& err, long double& f) const
+	{
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		char d = ct.narrow(ct.toupper(*in), char());
+		switch (d)
+		{
+		case 'I':
+			if (++in == end)
+			{
+				err |= ios_base::eofbit | ios_base::failbit;
+				break;
+			}
+			d = ct.narrow(ct.toupper(*in), char());
+			if (d != 'N')
+			{
+				err |= ios_base::failbit;
+				break;
+			}
+			if (++in == end)
+			{
+				err |= ios_base::eofbit | ios_base::failbit;
+				break;
+			}
+			d = ct.narrow(ct.toupper(*in), char());
+			if (d != 'F')
+			{
+				err |= ios_base::failbit;
+				break;
+			}
+			f = INFINITY;
+			break;
+		case 'N':
+			if (++in == end)
+			{
+				err |= ios_base::eofbit | ios_base::failbit;
+				break;
+			}
+			d = ct.narrow(ct.toupper(*in), char());
+			if (d != 'A')
+			{
+				err |= ios_base::failbit;
+				break;
+			}
+			if (++in == end)
+			{
+				err |= ios_base::eofbit | ios_base::failbit;
+				break;
+			}
+			d = ct.narrow(ct.toupper(*in), char());
+			if (d != 'N')
+			{
+				err |= ios_base::failbit;
+				break;
+			}
+			f = NAN;
+			break;
+		}
+	}
+
+	template <class charT, class InputIterator>
+	bool
+	num_get<charT, InputIterator>::parseFraction(iter_type& in, iter_type end, ios_base& str,
+		iostate& err, long double& val, string& digits) const
+	{
+		if (in == end)
+			return false;
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+		charT c = *in;
+		bool foundDigit = false;
+		if (c == np.decimal_point())
+		{
+			digits += '.';
+			long double shift = 0.1L;
+			while (true)
+			{
+				if (++in == end)
+				{
+					err |= ios_base::eofbit;
+					break;
+				}
+				c = *in;
+				if (!ct.is(ctype_base::digit, c))
+					break;
+				char d = ct.narrow(c, char());
+				val += (d - '0') * shift;
+				shift *= 0.1L;
+				digits += d;
+				foundDigit = true;
+			}
+		}
+		return foundDigit;
+	}
+
+	template <class charT, class InputIterator>
+	bool
+	num_get<charT, InputIterator>::parseExponent(iter_type& in, iter_type end, ios_base& str,
+		iostate& err, long double& val, string& digits) const
+	{
+		if (in == end)
+			return false;
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		char c = ct.narrow(ct.toupper(*in), char());
+		if (c == 'E')
+		{
+			digits += 'E';
+			if (++in == end)
+			{
+				err |= ios_base::eofbit | ios_base::failbit;
+				return false;
+			}
+			bool minus = parsesign(in, end, str, err);
+			if (minus)
+				digits += '-';
+			if (in == end)
+			{
+				err |= ios_base::failbit;
+				return false;
+			}
+			long e = 0;
+			int count = 0;
+			while (count < 10)
+			{
+				charT d = *in;
+				if (!ct.is(ctype_base::digit, d))
+					break;
+				char dn = ct.narrow(d, char());
+				e *= 10;
+				e += long(dn - '0');
+				digits += dn;
+				++count;
+				if (++in == end)
+				{
+					err |= ios_base::eofbit;
+					break;
+				}
+			}
+			if (count == 0)
+			{
+				err |= ios_base::failbit;
+				return false;
+			}
+			if (minus)
+				e = -e;
+			val *= powl(10.0L, e);
+			return true;
+		}
+		return false;
+	}
+
+#endif
+
+// num_put<charT, InputIterator>
+
+template <class charT, class OutputIterator>
+num_put<charT, OutputIterator>::num_put(size_t refs)
+	: facet(refs)
+{
+}
+
+template <class charT, class OutputIterator>
+inline
+typename num_put<charT, OutputIterator>::iter_type
+num_put<charT, OutputIterator>::put(iter_type out, ios_base& str, char_type fill,
+	bool val) const
+{
+	return bool(do_put(out, str, fill, val));
+}
+
+template <class charT, class OutputIterator>
+inline
+typename num_put<charT, OutputIterator>::iter_type
+num_put<charT, OutputIterator>::put(iter_type out, ios_base& str, char_type fill,
+	long val) const
+{
+	return do_put(out, str, fill, val);
+}
+
+template <class charT, class OutputIterator>
+inline
+typename num_put<charT, OutputIterator>::iter_type
+num_put<charT, OutputIterator>::put(iter_type out, ios_base& str, char_type fill,
+	unsigned long val) const
+{
+	return do_put(out, str, fill, val);
+}
+
+#ifdef __MSL_LONGLONG_SUPPORT__
+
+	template <class charT, class OutputIterator>
+	inline
+	typename num_put<charT, OutputIterator>::iter_type
+	num_put<charT, OutputIterator>::put(iter_type out, ios_base& str, char_type fill,
+		long long val) const
+	{
+		return do_put(out, str, fill, val);
+	}
+
+	template <class charT, class OutputIterator>
+	inline
+	typename num_put<charT, OutputIterator>::iter_type
+	num_put<charT, OutputIterator>::put(iter_type out, ios_base& str, char_type fill,
+		unsigned long long val) const
+	{
+		return do_put(out, str, fill, val);
+	}
+
+#endif
+
+#ifndef _No_Floating_Point
+
+	template <class charT, class OutputIterator>
+	inline
+	typename num_put<charT, OutputIterator>::iter_type
+	num_put<charT, OutputIterator>::put(iter_type out, ios_base& str, char_type fill,
+		double val) const
+	{
+		return do_put(out, str, fill, val);
+	}
+
+	template <class charT, class OutputIterator>
+	inline
+	typename num_put<charT, OutputIterator>::iter_type
+	num_put<charT, OutputIterator>::put(iter_type out, ios_base& str, char_type fill,
+		long double val) const
+	{
+		return do_put(out, str, fill, val);
+	}
+
+#endif
+
+template <class charT, class OutputIterator>
+inline
+typename num_put<charT, OutputIterator>::iter_type
+num_put<charT, OutputIterator>::put(iter_type out, ios_base& str, char_type fill,
+	const void* val) const
+{
+	return do_put(out, str, fill, val);
+}
+
+template <class charT, class OutputIterator>
+locale::id num_put<charT, OutputIterator>::id;
+
+template <class charT, class OutputIterator>
+inline
+num_put<charT, OutputIterator>::~num_put()
+{
+}
+
+template <class charT, class OutputIterator>
+typename num_put<charT, OutputIterator>::iter_type
+num_put<charT, OutputIterator>::do_put(iter_type out, ios_base& str, char_type fill,
+	bool val) const
+{
+	if (str.flags() & ios_base::boolalpha)
+	{
+		const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+		string_type s = val ? np.truename() : np.falsename();
+		return __putnumber(out, str, fill, (const charT*)0, 0, s.c_str(), int(s.size()));
+	}
+	return do_put(out, str, fill, long(val));
+}
+
+template <class charT, class OutputIterator>
+typename num_put<charT, OutputIterator>::iter_type
+num_put<charT, OutputIterator>::do_put(iter_type out, ios_base& str, char_type fill,
+	long val) const
+{
+	switch (str.flags() & ios_base::basefield)
+	{
+	case ios_base::oct:
+		return putoct(out, str, fill, (unsigned long)val);
+	case ios_base::hex:
+		return puthex(out, str, fill, (unsigned long)val);
+	}
+	return putdec(out, str, fill, val);
+}
+
+template <class charT, class OutputIterator>
+typename num_put<charT, OutputIterator>::iter_type
+num_put<charT, OutputIterator>::do_put(iter_type out, ios_base& str, char_type fill,
+	unsigned long val) const
+{
+	switch (str.flags() & ios_base::basefield)
+	{
+	case ios_base::oct:
+		return putoct(out, str, fill, val);
+	case ios_base::hex:
+		return puthex(out, str, fill, val);
+	}
+	return putdec(out, str, fill, val);
+}
+
+#ifdef __MSL_LONGLONG_SUPPORT__
+
+	template <class charT, class OutputIterator>
+	typename num_put<charT, OutputIterator>::iter_type
+	num_put<charT, OutputIterator>::do_put(iter_type out, ios_base& str, char_type fill,
+		long long val) const
+	{
+		switch (str.flags() & ios_base::basefield)
+		{
+		case ios_base::oct:
+			return putoct(out, str, fill, (unsigned long long)val);
+		case ios_base::hex:
+			return puthex(out, str, fill, (unsigned long long)val);
+		}
+		return putdec(out, str, fill, val);
+	}
+
+	template <class charT, class OutputIterator>
+	typename num_put<charT, OutputIterator>::iter_type
+	num_put<charT, OutputIterator>::do_put(iter_type out, ios_base& str, char_type fill,
+		unsigned long long val) const
+	{
+		switch (str.flags() & ios_base::basefield)
+		{
+		case ios_base::oct:
+			return putoct(out, str, fill, val);
+		case ios_base::hex:
+			return puthex(out, str, fill, val);
+		}
+		return putdec(out, str, fill, val);
+	}
+
+#endif
+
+#ifndef _No_Floating_Point
+
+	template <class charT, class OutputIterator>
+	typename num_put<charT, OutputIterator>::iter_type
+	num_put<charT, OutputIterator>::do_put(iter_type out, ios_base& str, char_type fill,
+		double val) const
+	{
+		return do_put(out, str, fill, (long double)val);
+	}
+
+	template <class charT, class OutputIterator>
+	typename num_put<charT, OutputIterator>::iter_type
+	num_put<charT, OutputIterator>::do_put(iter_type out, ios_base& str, char_type fill,
+		long double val) const
+	{
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+		int plen = 0;
+		charT prefix;
+		if (val >= 0 && str.flags() & ios_base::showpos)
+		{
+			plen = 1;
+			prefix = ct.widen('+');
+		}
+		else if (val < 0)
+		{
+			plen = 1;
+			prefix = ct.widen('-');
+			val = -val;
+		}
+		string_type digits;
+		if (isfinite(val))
+		{
+			switch (str.flags() & ios_base::floatfield)
+			{
+			case ios_base::fixed:
+				fixed_digits(str, val, digits);
+				break;
+			case ios_base::scientific:
+				scientific_digits(str, val, digits);
+				break;
+			default:
+				g_digits(str, val, digits);
+				break;
+			}
+		} else
+			nan_digits(str, val, digits);
+		return __putnumber(out, str, fill, &prefix, plen, digits.c_str(), (int)digits.size());
+	}
+
+#endif
+
+template <class charT, class OutputIterator>
+typename num_put<charT, OutputIterator>::iter_type
+num_put<charT, OutputIterator>::do_put(iter_type out, ios_base& str, char_type fill,
+	const void* val) const
+{
+	_SaveFlags save_flags(str);
+	hex(str);
+	showbase(str);
+	internal(str);
+	str.width(10);
+	iter_type result = do_put(out, str, fill, (unsigned long)val);
+	return result;
+}
+
+template <class charT, class OutputIterator>
+typename num_put<charT, OutputIterator>::iter_type
+num_put<charT, OutputIterator>::putoct(iter_type out, ios_base& str, char_type fill,
+	unsigned long val) const
+{
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	int plen = 0;
+	char_type prefix;
+	charT digits[22];
+	charT* d = digits;
+	int count = 0;
+	if (val == 0 || str.flags() & ios_base::showbase)
+	{
+		*d++ = ct.widen('0');
+		count++;
+	}
+	if (val != 0)
+		count += putdigits(str, val, d);
+	return __putnumber(out, str, fill, &prefix, plen, digits, count);
+}
+
+template <class charT, class OutputIterator>
+typename num_put<charT, OutputIterator>::iter_type
+num_put<charT, OutputIterator>::putdec(iter_type out, ios_base& str, char_type fill,
+	long val) const
+{
+	int plen = 0;
+	char_type prefix;
+	if (val >= 0 && str.flags() & ios_base::showpos)
+	{
+		prefix = _USE_FACET(ctype<charT>, str.getloc()).widen('+');
+		plen = 1;
+	}
+	else if (val < 0)
+	{
+		plen = 1;
+		prefix = _USE_FACET(ctype<charT>, str.getloc()).widen('-');
+		val = -val;
+	}
+	charT digits[19];
+	int count = putdigits(str, (unsigned long)val, digits);
+	return __putnumber(out, str, fill, &prefix, plen, digits, count);
+}
+
+template <class charT, class OutputIterator>
+typename num_put<charT, OutputIterator>::iter_type
+num_put<charT, OutputIterator>::putdec(iter_type out, ios_base& str, char_type fill,
+	unsigned long val) const
+{
+	int plen = 0;
+	char_type prefix;
+	charT digits[19];
+	int count = putdigits(str, val, digits);
+	return __putnumber(out, str, fill, &prefix, plen, digits, count);
+}
+
+template <class charT, class OutputIterator>
+typename num_put<charT, OutputIterator>::iter_type
+num_put<charT, OutputIterator>::puthex(iter_type out, ios_base& str, char_type fill,
+	unsigned long val) const
+{
+	int plen = 0;
+	char_type prefix[3];
+	char_type* p = prefix;
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	if (str.flags() & ios_base::showbase)
+	{
+		*p++ = ct.widen('0');
+		if (str.flags() & ios_base::uppercase)
+			*p++ = ct.widen('X');
+		else
+			*p++ = ct.widen('x');
+		plen += 2;
+	}
+	charT digits[15];
+	int count = putdigits(str, val, digits);
+	return __putnumber(out, str, fill, prefix, plen, digits, count);
+}
+
+template <class charT, class OutputIterator>
+charT
+num_put<charT, OutputIterator>::hextoa(typename basic_ios<charT>::fmtflags flag, const ctype<charT>& ct,
+	unsigned long c) const
+{
+	if (c < 10)
+		return ct.widen(char(c + '0'));
+	if (flag & ios_base::uppercase)
+		return ct.widen(char(c - 10 + 'A'));
+	return ct.widen(char(c - 10 + 'a'));
+}
+
+template <class charT, class OutputIterator>
+int
+num_put<charT, OutputIterator>::putdigits(ios_base& str, unsigned long val, charT* digits) const
+{
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	// Pick off 0 as special case
+	if (val == 0)
+	{
+		*digits = ct.widen('0');
+		return 1;
+	}
+	const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+	unsigned long base = 10;
+	switch (str.flags() & ios_base::basefield)
+	{
+	case ios_base::oct:
+		base = 8;
+		break;
+	case ios_base::hex:
+		base = 16;
+		break;
+	}
+	// Print digits (in reverse order)
+	charT* d = digits;
+	string allowed_grouping = np.grouping();
+	bool might_group = bool(allowed_grouping.size() > 0);
+	size_t ng = 0;
+	unsigned char ig = 0;
+	unsigned char g = 0;
+	if (might_group)
+	{
+		g = (unsigned char)allowed_grouping[ng];
+		if (g == 0)
+			might_group = false;
+	}
+	fmtflags flag = str.flags();
+	while (val != 0)
+	{
+		*d++ = hextoa(flag, ct, val % base);
+		val /= base;
+		if (val != 0 && might_group)
+		{
+			if (++ig == g)
+			{
+				*d++ = np.thousands_sep();
+				if (++ng < allowed_grouping.size())
+				{
+					g = (unsigned char)allowed_grouping[ng];
+					if (g == 0)
+						might_group = false;
+				}
+				ig = 0;
+			}
+		}
+	}
+	// Fix reverse order
+	reverse(digits, d);
+	return d - digits;
+}
+
+#ifdef __MSL_LONGLONG_SUPPORT__
+
+	template <class charT, class OutputIterator>
+	typename num_put<charT, OutputIterator>::iter_type
+	num_put<charT, OutputIterator>::putoct(iter_type out, ios_base& str, char_type fill,
+		unsigned long long val) const
+	{
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		int plen = 0;
+		char_type prefix;
+		charT digits[44];
+		charT* d = digits;
+		int count = 0;
+		if (val == 0 || str.flags() & ios_base::showbase)
+		{
+			*d++ = ct.widen('0');
+			count++;
+		}
+		if (val != 0)
+			count += putdigits(str, val, d);
+		return __putnumber(out, str, fill, &prefix, plen, digits, count);
+	}
+
+	template <class charT, class OutputIterator>
+	typename num_put<charT, OutputIterator>::iter_type
+	num_put<charT, OutputIterator>::putdec(iter_type out, ios_base& str, char_type fill,
+		long long val) const
+	{
+		int plen = 0;
+		char_type prefix;
+		if (val >= 0 && str.flags() & ios_base::showpos)
+		{
+			prefix = _USE_FACET(ctype<charT>, str.getloc()).widen('+');
+			plen = 1;
+		}
+		else if (val < 0)
+		{
+			plen = 1;
+			prefix = _USE_FACET(ctype<charT>, str.getloc()).widen('-');
+			val = -val;
+		}
+		charT digits[39];
+		int count = putdigits(str, (unsigned long long)val, digits);  // hh 980811 was usigned long
+		return __putnumber(out, str, fill, &prefix, plen, digits, count);
+	}
+
+	template <class charT, class OutputIterator>
+	typename num_put<charT, OutputIterator>::iter_type
+	num_put<charT, OutputIterator>::putdec(iter_type out, ios_base& str, char_type fill,
+		unsigned long long val) const
+	{
+		int plen = 0;
+		char_type prefix;
+		charT digits[39];
+		int count = putdigits(str, val, digits);
+		return __putnumber(out, str, fill, &prefix, plen, digits, count);
+	}
+
+	template <class charT, class OutputIterator>
+	typename num_put<charT, OutputIterator>::iter_type
+	num_put<charT, OutputIterator>::puthex(iter_type out, ios_base& str, char_type fill,
+		unsigned long long val) const
+	{
+		int plen = 0;
+		char_type prefix[3];
+		char_type* p = prefix;
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		if (str.flags() & ios_base::showbase)
+		{
+			*p++ = ct.widen('0');
+			if (str.flags() & ios_base::uppercase)
+				*p++ = ct.widen('X');
+			else
+				*p++ = ct.widen('x');
+			plen += 2;
+		}
+		charT digits[31];
+		int count = putdigits(str, val, digits);
+		return __putnumber(out, str, fill, prefix, plen, digits, count);
+	}
+
+	template <class charT, class OutputIterator>
+	int
+	num_put<charT, OutputIterator>::putdigits(ios_base& str, unsigned long long val, charT* digits) const
+	{
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		// Pick off 0 as special case
+		if (val == 0)
+		{
+			*digits = ct.widen('0');
+			return 1;
+		}
+		const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+		int base = 10;
+		switch (str.flags() & ios_base::basefield)
+		{
+		case ios_base::oct:
+			base = 8;
+			break;
+		case ios_base::hex:
+			base = 16;
+			break;
+		}
+		// Print digits (in reverse order)
+		charT* d = digits;
+		string allowed_grouping = np.grouping();
+		bool might_group = allowed_grouping.size() > 0;
+		size_t ng = 0;
+		unsigned char ig = 0;
+		unsigned char g = 0;
+		if (might_group)
+		{
+			g = (unsigned char)allowed_grouping[ng];
+			if (g == 0)
+				might_group = false;
+		}
+		fmtflags flag = str.flags();
+		while (val != 0)
+		{
+			*d++ = hextoa(flag, ct, (unsigned long)(val % base));
+			val /= base;
+			if (val != 0 && might_group)
+			{
+				if (++ig == g)
+				{
+					*d++ = np.thousands_sep();
+					if (++ng < allowed_grouping.size())
+					{
+						g = (unsigned char)allowed_grouping[ng];
+						if (g == 0)
+							might_group = false;
+					}
+					ig = 0;
+				}
+			}
+		}
+		// Fix reverse order
+		reverse(digits, d);
+		return d - digits;
+	}
+
+#endif
+
+#ifndef _No_Floating_Point
+
+	// hh 980802 Rewrote to give better accuracy
+	template <class charT, class OutputIterator>
+	void
+	num_put<charT, OutputIterator>::fixed_digits(ios_base& str, long double val,
+		string_type& digits) const
+	{
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+		// Pick off 0 as special case
+		if (val == 0)
+		{
+			digits = ct.widen('0');
+			if (str.flags() & ios_base::showpoint || str.precision() > 0)
+				digits += np.decimal_point();
+			digits.append((size_t)str.precision(), ct.widen('0'));
+			return;
+		}
+		int exponent = (int)floorl(log10l(val));         // hh 990328
+		_BCD bcd(val, str.precision() + exponent + 1);  // hh 981018
+		exponent = bcd.exponent();
+		digits = ct.widen(bcd.to_string(max(str.precision() + exponent + 1, 1), exponent));  // hh 980903
+		if (exponent != bcd.exponent())  // hh 980902
+			digits = ct.widen(bcd.to_string(max(str.precision() + exponent + 1, 1), exponent));
+		// Pad with zeroes as necessary and add decimal point
+		if (exponent >= 0 && exponent < digits.size() - 1)
+		{
+			if (str.flags() & ios_base::showpoint || str.precision() > 0)
+				digits.insert(size_t(exponent+1), 1, np.decimal_point());
+			digits.append(str.precision() + exponent+2-digits.size(), ct.widen('0'));
+		}
+		else if (exponent < 0)
+		{  // hh 980903
+			int nz = -exponent - 1;
+			if (nz > str.precision())
+			{
+				digits = ct.widen('0');
+				if (str.flags() & ios_base::showpoint || str.precision() > 0)
+					digits += np.decimal_point();
+				digits.append(size_t(str.precision()), ct.widen('0'));
+			}
+			else if (nz < str.precision())
+			{
+				digits.insert(digits.begin(), size_t(nz), ct.widen('0'));
+				digits.insert(digits.begin(), np.decimal_point());
+				digits.insert(digits.begin(), ct.widen('0'));
+			}
+			else  // nz == str.precision()
+			{
+				digits = ct.widen('0');
+				digits.append(size_t(str.precision()), ct.widen('0'));
+				if (bcd.leading_digit() >= 5)
+					++(*(digits.end() - 1));
+				if (str.flags() & ios_base::showpoint || str.precision() > 0)
+					digits.insert(digits.begin()+1, np.decimal_point());
+			}
+		}
+		else
+		{
+			digits.append(exponent+1-digits.size(), ct.widen('0'));
+			if (str.flags() & ios_base::showpoint || str.precision() > 0)
+				digits += np.decimal_point();
+			digits.append((size_t)str.precision(), ct.widen('0'));
+		}
+		// Do grouping
+		string allowed_grouping = np.grouping();
+		if (allowed_grouping.size() > 0 && digits.size() > 1)
+		{
+			size_t i = digits.find(np.decimal_point());  // hh 980812
+			if (i == string_type::npos)
+				i = digits.size();
+			size_t ng = 0;
+			unsigned char g = (unsigned char)allowed_grouping[ng];
+			size_t ig = 0;
+			while (--i > 0)
+			{
+				if (++ig == g)
+				{
+					digits.insert(i, 1, np.thousands_sep());
+					if (++ng < allowed_grouping.size())
+						g = (unsigned char)allowed_grouping[ng];
+					ig = 0;
+				}
+			}
+		}
+	}
+
+	// hh 980802 Rewrote to give better accuracy
+	template <class charT, class OutputIterator>
+	void
+	num_put<charT, OutputIterator>::scientific_digits(ios_base& str, long double val,
+		string_type& digits) const
+	{
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+		// Pick off 0 as special case
+		if (val == 0)
+		{
+			digits = ct.widen('0');
+			long p = str.precision();
+			if (str.flags() & ios_base::showpoint || p > 0)
+				digits += np.decimal_point();
+			if (p > 0)
+				digits.append(size_t(p), ct.widen('0'));
+			if (str.flags() & ios_base::uppercase)
+				digits += ct.widen('E');
+			else
+				digits += ct.widen('e');
+			digits += ct.widen('+');
+			digits.append(2, ct.widen('0'));
+			return;
+		}
+		_BCD bcd(val, str.precision() + 1);
+		int d;
+		digits = ct.widen(bcd.to_string(str.precision() + 1, d));
+		// Pad with zeroes as necessary and add decimal point
+		bool dp = false;  // hh 980903
+		if (str.flags() & ios_base::showpoint || str.precision() > 0)
+		{
+			digits.insert(digits.begin()+1, np.decimal_point());
+			dp = true;
+		}
+		if (str.precision() + 1 + dp > digits.size())
+			digits.append(str.precision() + 1 + dp - digits.size(), ct.widen('0'));
+		// Print exponent
+		if (str.flags() & ios_base::uppercase)
+			digits += ct.widen('E');
+		else
+			digits += ct.widen('e');
+		if (d < 0)
+		{
+			digits += ct.widen('-');
+			d = -d;
+		}
+		else
+			digits += ct.widen('+');
+		// Exponent must have at least 2 digits (standard)
+		if (d < 10)
+		{
+			digits += ct.widen('0');
+			digits += ct.widen(char(d + '0'));
+		}
+		else {
+			size_t oldlen = digits.size();
+			while (d > 0)
+			{
+				digits += ct.widen(char(d % 10 + '0'));
+				d /= 10;
+			}
+			reverse(digits.begin() + oldlen, digits.end());
+		}
+	}
+
+	template <class charT, class OutputIterator>
+	void
+	num_put<charT, OutputIterator>::g_digits(ios_base& str, long double val,
+		string_type& digits) const
+	{
+		// If precision is 0, make it 1 (standard)
+		int prec = str.precision();  // hh 980825
+		if (prec == 0)
+			prec = 1;
+		prec = str.precision(prec);
+		// Decide which format based on exponent and precision.
+		// Keep track of decision with fix.
+		bool fix;
+		if (val == 0)
+		{
+			str.precision(str.precision()-1);
+			fixed_digits(str, val, digits);
+			fix = true;
+		}
+		else {
+			long double integer;
+			long double frac = modfl(log10l(val), &integer);
+			int d = int(integer);
+			if (val < 1 && frac != 0)
+				--d;
+			if (d < -4 || d >= str.precision())
+			{
+				str.precision(str.precision()-1);
+				scientific_digits(str, val, digits);
+				fix = false;
+			}
+			else {
+				str.precision(str.precision()-d-1);
+				fixed_digits(str, val, digits);
+				fix = true;
+			}
+		}
+		// Optionally remove trailing zero's and decimal point
+		if (!(str.flags() & ios_base::showpoint))
+		{
+			const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+			const numpunct<charT>& np = _USE_FACET(numpunct<charT>, str.getloc());
+			size_t e;
+			string_type::iterator i;
+			if (fix)
+			{
+				e = digits.find(np.decimal_point());
+				i = digits.end() - 1;
+			}
+			else {
+				if (str.flags() & ios_base::uppercase)
+					e = digits.rfind(ct.widen('E'));
+				else
+					e = digits.rfind(ct.widen('e'));
+				i = digits.begin() + e - 1;
+				e = digits.find(np.decimal_point());
+			}
+			if (e < digits.size())
+			{
+				while (*i == ct.widen('0'))
+				{
+					digits.erase(i);
+					--i;
+				}
+				if (*i == np.decimal_point())
+					digits.erase(i);
+			}
+		}
+		// Reset precision
+		str.precision(prec);
+	}
+
+	template <class charT, class OutputIterator>
+	void
+	num_put<charT, OutputIterator>::nan_digits(ios_base& str, long double val,
+		string_type& digits) const
+	{
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		if (isnan(val))
+		{
+			digits = ct.widen('n');
+			digits += ct.widen('a');
+			digits += ct.widen('n');
+		}
+		else {
+			digits = ct.widen('i');
+			digits += ct.widen('n');
+			digits += ct.widen('f');
+		}
+		if (str.flags() & ios_base::uppercase)
+			ct.toupper(digits.begin(), digits.end());
+	}
+
+#endif
+
+template <class charT, class OutputIterator>
+OutputIterator
+__putnumber(OutputIterator out, ios_base& str, charT fill,
+	const charT* prefix, int plen, const charT* digits, int count)
+{
+	// Determine amount of padding
+	int pad = 0;
+	if (str.width() > plen + count)
+		pad = str.width() - (plen + count);
+	// Write prefix and digits, inserting padding in the correct place
+	ios_base::fmtflags adjust = str.flags() & ios_base::adjustfield;
+	if (adjust == ios_base::right || adjust == 0)
+	{
+		for (int i = 0; i < pad; ++i)
+			*out++ = fill;
+	}
+	{  // hh 980811 for-scoping neutral
+	for (int i = 0; i < plen; ++i)
+		*out++ = *prefix++;
+	}
+	if (adjust == ios_base::internal)
+	{
+		for (int i = 0; i < pad; ++i)
+			*out++ = fill;
+	}
+	{  // hh 980811 for-scoping neutral
+	for (int i = 0; i < count; ++i)
+		*out++ = *digits++;
+	}
+	if (adjust == ios_base::left)
+	{
+		for (int i = 0; i < pad; ++i)
+			*out++ = fill;
+	}
+	// Set width to 0 (standard)
+	str.width(0);
+	return out;
+}
+
+// _Generic_numpunct<charT>
+
+template <class charT>
+_Generic_numpunct<charT>::_Generic_numpunct(size_t refs)
+	: facet(refs)
+{
+}
+
+template <class charT>
+typename _Generic_numpunct<charT>::char_type
+_Generic_numpunct<charT>::decimal_point() const
+{
+	return do_decimal_point();
+}
+
+template <class charT>
+typename _Generic_numpunct<charT>::char_type
+_Generic_numpunct<charT>::thousands_sep() const
+{
+	return do_thousands_sep();
+}
+
+template <class charT>
+string
+_Generic_numpunct<charT>::grouping() const
+{
+	return do_grouping();
+}
+
+template <class charT>
+typename _Generic_numpunct<charT>::string_type
+_Generic_numpunct<charT>::truename() const
+{
+	return do_truename();
+}
+
+template <class charT>
+typename _Generic_numpunct<charT>::string_type
+_Generic_numpunct<charT>::falsename() const
+{
+	return do_falsename();
+}
+
+template <class charT>
+inline
+_Generic_numpunct<charT>::~_Generic_numpunct()
+{
+}
+
+// numpunct<charT>
+
+template <class charT>
+inline
+numpunct<charT>::numpunct(size_t refs)
+	: _Generic_numpunct(refs)
+{
+}
+
+template <class charT>
+inline
+numpunct<charT>::~numpunct()
+{
+}
+
+// numpunct<char>
+
+template <>
+inline
+numpunct<char>::~numpunct()
+{
+}
+
+template <>
+inline
+numpunct<char>::char_type
+numpunct<char>::do_decimal_point() const
+{
+	return '.';
+}
+
+template <>
+inline
+numpunct<char>::char_type
+numpunct<char>::do_thousands_sep() const
+{
+	return ',';
+}
+
+template <>
+inline
+string
+numpunct<char>::do_grouping() const
+{
+	return string();
+}
+
+template <>
+inline
+numpunct<char>::string_type
+numpunct<char>::do_truename() const
+{
+	return string_type("true");
+}
+
+template <>
+inline
+numpunct<char>::string_type
+numpunct<char>::do_falsename() const
+{
+	return string_type("false");
+}
+
+#ifndef _MSL_NO_WCHART
+
+	// numpunct<wchar_t>
+
+	template <>
+	inline
+	numpunct<wchar_t>::~numpunct()
+	{
+	}
+
+	template <>
+	inline
+	numpunct<wchar_t>::char_type
+	numpunct<wchar_t>::do_decimal_point() const
+	{
+		return L'.';
+	}
+
+	template <>
+	inline
+	numpunct<wchar_t>::char_type
+	numpunct<wchar_t>::do_thousands_sep() const
+	{
+		return L',';
+	}
+
+	template <>
+	inline
+	string
+	numpunct<wchar_t>::do_grouping() const
+	{
+		return string();
+	}
+
+	template <>
+	inline
+	numpunct<wchar_t>::string_type
+	numpunct<wchar_t>::do_truename() const
+	{
+		return string_type(L"true");
+	}
+
+	template <>
+	inline
+	numpunct<wchar_t>::string_type
+	numpunct<wchar_t>::do_falsename() const
+	{
+		return string_type(L"false");
+	}
+
+#endif
+
+// numpunct_byname<charT>
+
+template <class charT>
+numpunct_byname<charT>::numpunct_byname(const char* loc, size_t refs)
+	: numpunct(refs),
+	loc_(loc),
+	facet_(_USE_FACET(numpunct<charT>, loc_))
+{
+}
+
+template <class charT>
+inline
+numpunct_byname<charT>::~numpunct_byname()
+{
+}
+
+template <class charT>
+inline
+typename numpunct_byname<charT>::char_type
+numpunct_byname<charT>::do_decimal_point() const
+{
+	return facet_.decimal_point();
+}
+
+template <class charT>
+inline
+typename numpunct_byname<charT>::char_type
+numpunct_byname<charT>::do_thousands_sep() const
+{
+	return facet_.thousands_sep();
+}
+
+template <class charT>
+inline
+string
+numpunct_byname<charT>::do_grouping() const
+{
+	return facet_.grouping();
+}
+
+template <class charT>
+inline
+typename numpunct_byname<charT>::string_type
+numpunct_byname<charT>::do_truename() const
+{
+	return facet_.truename();
+}
+
+template <class charT>
+inline
+typename numpunct_byname<charT>::string_type
+numpunct_byname<charT>::do_falsename() const
+{
+	return facet_.falsename();
+}
+
+// collate<charT>
+
+template <class charT>
+collate<charT>::collate(size_t refs)
+	: facet(refs)
+{
+}
+
+template <class charT>
+inline
+int
+collate<charT>::compare(const charT* low1, const charT* high1,
+	const charT* low2, const charT* high2) const
+{
+	return do_compare(low1, high1, low2, high2);
+}
+
+template <class charT>
+inline
+typename collate<charT>::string_type
+collate<charT>::transform(const charT* low, const charT* high) const
+{
+	return do_transform(low, high);
+}
+
+template <class charT>
+inline
+long
+collate<charT>::hash(const charT* low, const charT* high) const
+{
+	return do_hash(low, high);
+}
+
+template <class charT>
+locale::id collate<charT>::id;
+
+template <class charT>
+inline
+collate<charT>::~collate()
+{
+}
+
+template <class charT>
+inline
+typename collate<charT>::string_type
+collate<charT>::do_transform(const charT* low, const charT* high) const
+{
+	return string_type(low, high);
+}
+
+template <class charT>
+int
+collate<charT>::do_compare(const charT* low1, const charT* high1,
+	const charT* low2, const charT* high2) const
+{
+	for (; low1 != high1 && low2 != high2; ++low1, ++low2)
+	{
+		if (*low1 < *low2)
+			return -1;
+		if (*low2 < *low1)
+			return 1;
+	}
+	if (low1 == high1 && low2 == high2)
+		return 0;
+	if (low1 == high1)
+		return -1;
+	return 1;
+}
+
+template <class charT>
+long
+collate<charT>::do_hash(const charT* low, const charT* high) const
+{
+	static const unsigned long m = 4294967291u;  // hh 980825
+	unsigned long result = 0;
+	for (; low < high; ++low)
+		result = ((result << numeric_limits<charT>::digits) + *low) % m;
+	return long(result);
+}
+
+// collate_byname<charT>
+
+template <class charT>
+collate_byname<charT>::collate_byname(const char* loc, size_t refs)
+	: collate(refs),
+	loc_(loc),
+	facet_(_USE_FACET(collate<charT>, loc_))
+{
+}
+
+template <class charT>
+inline
+collate_byname<charT>::~collate_byname()
+{
+}
+
+template <class charT>
+inline
+int
+collate_byname<charT>::do_compare(const charT* low1, const charT* high1,
+	const charT* low2, const charT* high2) const
+{
+	return facet_.compare(low1, high1, low2, high2);
+}
+
+template <class charT>
+inline
+typename collate_byname<charT>::string_type
+collate_byname<charT>::do_transform(const charT* low, const charT* high) const
+{
+	return facet_.transform(low, high);
+}
+
+template <class charT>
+inline
+long
+collate_byname<charT>::do_hash(const charT* low, const charT* high) const
+{
+	return facet_.hash(low, high);
+}
+
+// _Generic_timepunct<charT>
+
+template <class charT>
+_Generic_timepunct<charT>::_Generic_timepunct(size_t refs)
+	: facet(refs)
+{
+}
+
+#ifndef _OVERLOAD_TIMPUNCT_OFF
+
+	template <class charT>
+	const charT*
+	_Generic_timepunct<charT>::weekday_name(size_t d) const
+	{
+		return do_weekday_name(d);
+	}
+
+	template <class charT>
+	const charT*
+	_Generic_timepunct<charT>::month_name(size_t m) const
+	{
+		return do_month_name(m);
+	}
+
+	template <class charT>
+	const charT*
+	_Generic_timepunct<charT>::am_pm(int hour) const
+	{
+		return do_am_pm(hour);
+	}
+
+#else
+
+	template <class charT>
+	inline
+	const charT*
+	_Generic_timepunct<charT>::weekday_name(size_t d) const
+	{
+		return ((const timepunct<charT>*)this)->do_weekday_name(d);
+	}
+
+	template <class charT>
+	inline
+	const charT*
+	_Generic_timepunct<charT>::month_name(size_t m) const
+	{
+		return ((const timepunct<charT>*)this)->do_month_name(m);
+	}
+
+	template <class charT>
+	inline
+	const charT*
+	_Generic_timepunct<charT>::am_pm(int hour) const
+	{
+		return ((const timepunct<charT>*)this)->do_am_pm(hour);
+	}
+
+#endif
+
+template <class charT>
+inline
+_Generic_timepunct<charT>::~_Generic_timepunct()
+{
+}
+
+// timepunct<char>
+
+template<>
+inline
+timepunct<char>::~timepunct()
+{
+}
+
+#ifndef _MSL_NO_WCHART
+
+	// timepunct<wchar_t>
+
+	template<>
+	inline
+	timepunct<wchar_t>::~timepunct()
+	{
+	}
+
+#endif
+
+// time_get<charT, InputIterator>
+
+template <class charT, class InputIterator>
+time_get<charT, InputIterator>::time_get(size_t refs)
+	: facet(refs)
+{
+}
+
+template <class charT, class InputIterator>
+inline
+time_base::dateorder
+time_get<charT, InputIterator>::date_order() const
+{
+	return do_date_order();
+}
+
+template <class charT, class InputIterator>
+inline
+typename time_get<charT, InputIterator>::iter_type
+time_get<charT, InputIterator>::get_time(iter_type s, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	return do_get_time(s, end, str, err, t);
+}
+
+template <class charT, class InputIterator>
+inline
+typename time_get<charT, InputIterator>::iter_type
+time_get<charT, InputIterator>::get_date(iter_type s, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	return do_get_date(s, end, str, err, t);
+}
+
+template <class charT, class InputIterator>
+inline
+typename time_get<charT, InputIterator>::iter_type
+time_get<charT, InputIterator>::get_weekday(iter_type s, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	return do_get_weekday(s, end, str, err, t);
+}
+
+template <class charT, class InputIterator>
+inline
+typename time_get<charT, InputIterator>::iter_type
+time_get<charT, InputIterator>::get_monthname(iter_type s, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	return do_get_monthname(s, end, str, err, t);
+}
+
+template <class charT, class InputIterator>
+inline
+typename time_get<charT, InputIterator>::iter_type
+time_get<charT, InputIterator>::get_year(iter_type s, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	return do_get_year(s, end, str, err, t);
+}
+
+template <class charT, class InputIterator>
+locale::id time_get<charT, InputIterator>::id;
+
+template <class charT, class InputIterator>
+inline
+time_get<charT, InputIterator>::~time_get()
+{
+}
+
+template <class charT, class InputIterator>
+inline
+time_base::dateorder
+time_get<charT, InputIterator>::do_date_order() const
+{
+	return no_order;
+}
+
+template <class charT, class InputIterator>
+typename time_get<charT, InputIterator>::iter_type
+time_get<charT, InputIterator>::do_get_time(iter_type in, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+		const num_get<charT, iter_type>& ng = use_facet<num_get<charT, iter_type> >(str.getloc());
+	#else
+		const num_get<charT, iter_type>& ng = use_facet(str.getloc(), (num_get<charT, iter_type>*)0);
+	#endif
+	_SaveFlags save_str(str);
+	dec(str);
+	long hour = -1;
+	in = ng.get(in, end, str, err, hour);
+	if (in == end || hour < 0 || hour > 23)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	char colon = ct.narrow(*in, char());
+	if (colon != ':')
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	if (++in == end)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	long minute = -1;
+	in = ng.get(in, end, str, err, minute);
+	if (in == end || minute < 0 || minute > 59)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	colon = ct.narrow(*in, char());
+	if (colon != ':')
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	if (++in == end)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	long second = -1;
+	in = ng.get(in, end, str, err, second);
+	if (second < 0 || second > 60)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	t->tm_hour = int(hour);
+	t->tm_min = int(minute);
+	t->tm_sec = int(second);
+	return in;
+}
+
+template <class charT, class InputIterator>
+typename time_get<charT, InputIterator>::iter_type
+time_get<charT, InputIterator>::do_get_date(iter_type in, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+		const num_get<charT, iter_type>& ng = use_facet<num_get<charT, iter_type> >(str.getloc());
+	#else
+		const num_get<charT, iter_type>& ng = use_facet(str.getloc(), (num_get<charT, iter_type>*)0);
+	#endif
+	tm temp;
+	in = do_get_weekday(in, end, str, err, &temp);
+	if (in == end || ++in == end)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	in = do_get_monthname(in, end, str, err, &temp);
+	if (in == end || ++in == end)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	unsigned int d;
+	in = ng.get(in, end, str, err, d);
+	if (in == end || ++in == end)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	temp.tm_mday = int(d);
+	in = do_get_year(in, end, str, err, &temp);
+	if (!(err & ios_base::failbit))
+		*t = temp;
+	return in;
+}
+
+template <class charT, class InputIterator>
+typename time_get<charT, InputIterator>::iter_type
+time_get<charT, InputIterator>::do_get_weekday(iter_type in, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	if (in == end)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	char c = ct.narrow(*in, char());
+	switch (c)
+	{
+	case 'S':
+		if (++in == end)
+		{
+			err |= ios_base::failbit | ios_base::failbit;
+			return in;
+		}
+		c = ct.narrow(*in, char());
+		switch (c)
+		{
+		case 'u':
+			return finish_get_name(in, end, str, err, t, 0, 2, true);
+		case 'a':
+			return finish_get_name(in, end, str, err, t, 6, 2, true);
+		}
+		err |= ios_base::failbit;
+		return in;
+	case 'M':
+		return finish_get_name(in, end, str, err, t, 1, 1, true);
+	case 'T':
+		if (++in == end)
+		{
+			err |= ios_base::failbit | ios_base::failbit;
+			return in;
+		}
+		c = ct.narrow(*in, char());
+		switch (c)
+		{
+		case 'u':
+			return finish_get_name(in, end, str, err, t, 2, 2, true);
+		case 'h':
+			return finish_get_name(in, end, str, err, t, 4, 2, true);
+		}
+		err |= ios_base::failbit;
+		return in;
+	case 'W':
+		return finish_get_name(in, end, str, err, t, 3, 1, true);
+	case 'F':
+		return finish_get_name(in, end, str, err, t, 5, 1, true);
+	}
+	err |= ios_base::failbit;
+	return in;
+}
+
+template <class charT, class InputIterator>
+typename time_get<charT, InputIterator>::iter_type
+time_get<charT, InputIterator>::do_get_monthname(iter_type in, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	if (in == end)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	char c = ct.narrow(*in, char());
+	switch (c)
+	{
+	case 'J':
+		if (++in == end)
+		{
+			err |= ios_base::failbit | ios_base::failbit;
+			return in;
+		}
+		c = ct.narrow(*in, char());
+		switch (c)
+		{
+		case 'a':
+			return finish_get_name(in, end, str, err, t, 0, 2, false);
+		case 'u':
+			if (++in == end)
+			{
+				err |= ios_base::failbit | ios_base::failbit;
+				return in;
+			}
+			c = ct.narrow(*in, char());
+			switch (c)
+			{
+			case 'n':
+				return finish_get_name(in, end, str, err, t, 5, 3, false);
+			case 'l':
+				return finish_get_name(in, end, str, err, t, 6, 3, false);
+			}
+		}
+		err |= ios_base::failbit;
+		return in;
+	case 'F':
+		return finish_get_name(in, end, str, err, t, 1, 1, false);
+	case 'M':
+		if (++in == end)
+		{
+			err |= ios_base::failbit | ios_base::failbit;
+			return in;
+		}
+		c = ct.narrow(*in, char());
+		switch (c)
+		{
+		case 'a':
+			if (++in == end)
+			{
+				err |= ios_base::failbit | ios_base::failbit;
+				return in;
+			}
+			c = ct.narrow(*in, char());
+			switch (c)
+			{
+			case 'r':
+				return finish_get_name(in, end, str, err, t, 2, 3, false);
+			case 'y':
+				return finish_get_name(in, end, str, err, t, 4, 3, false);
+			}
+		}
+		err |= ios_base::failbit;
+		return in;
+	case 'A':
+		if (++in == end)
+		{
+			err |= ios_base::failbit | ios_base::failbit;
+			return in;
+		}
+		c = ct.narrow(*in, char());
+		switch (c)
+		{
+		case 'p':
+			return finish_get_name(in, end, str, err, t, 3, 2, false);
+		case 'u':
+			return finish_get_name(in, end, str, err, t, 7, 2, false);
+		}
+		err |= ios_base::failbit;
+		return in;
+	case 'S':
+		return finish_get_name(in, end, str, err, t, 8, 1, false);
+	case 'O':
+		return finish_get_name(in, end, str, err, t, 9, 1, false);
+	case 'N':
+		return finish_get_name(in, end, str, err, t, 10, 1, false);
+	case 'D':
+		return finish_get_name(in, end, str, err, t, 11, 1, false);
+	}
+	err |= ios_base::failbit;
+	return in;
+}
+
+template <class charT, class InputIterator>
+typename time_get<charT, InputIterator>::iter_type
+time_get<charT, InputIterator>::do_get_year(iter_type in, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+		const num_get<charT, iter_type>& ng = use_facet<num_get<charT, iter_type> >(str.getloc());
+	#else
+		const num_get<charT, iter_type>& ng = use_facet(str.getloc(), (num_get<charT, iter_type>*)0);
+	#endif
+	_SaveFlags save_str(str);
+	dec(str);
+	long year;
+	in = ng.get(in, end, str, err, year);
+	if (!(err & ios_base::failbit))
+		t->tm_year = int(year-1900);  // Century is significant.  98 does not mean 1998
+	return in;
+}
+
+template <class charT, class InputIterator>
+typename time_get<charT, InputIterator>::iter_type
+time_get<charT, InputIterator>::finish_get_name(iter_type in, iter_type end, ios_base& str,
+	iostate& err, tm* t, size_t d, size_t i, bool weekday) const
+{
+	const timepunct<charT>& tp = _USE_FACET(timepunct<charT>, str.getloc());
+	const charT* p;
+	if (weekday)
+		p = tp.weekday_name(d);
+	else
+		p = tp.month_name(d);
+	--i;
+	for (p += i; *p; ++p, ++i)
+	{
+		if (*in != *p)
+		{
+			if (i == 3)
+				break;
+			err |= ios_base::failbit;
+			return in;
+		}
+		if (++in == end)
+		{
+			err |= ios_base::eofbit;
+			if (i == 2 || *++p == 0)
+				break;
+			err |= ios_base::failbit;
+			return in;
+		}
+	}
+	if (weekday)
+		t->tm_wday = int(d);
+	else
+		t->tm_mon = int(d);
+	return in;
+}
+
+// time_get_byname<charT, InputIterator>
+
+template <class charT, class InputIterator>
+time_get_byname<charT, InputIterator>::time_get_byname(const char* loc, size_t refs)
+	: time_get(refs),
+	loc_(loc),
+	#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+		facet_(use_facet<time_get<charT, InputIterator> >(loc_))
+	#else
+		facet_(use_facet(loc_, (time_get<charT, InputIterator>*)0))
+	#endif
+{
+}	
+
+template <class charT, class InputIterator>
+inline
+time_get_byname<charT, InputIterator>::~time_get_byname()
+{
+}
+
+template <class charT, class InputIterator>
+inline
+typename time_get_byname<charT, InputIterator>::dateorder
+time_get_byname<charT, InputIterator>::do_date_order() const
+{
+	return facet_.date_order();
+}
+
+template <class charT, class InputIterator>
+inline
+typename time_get_byname<charT, InputIterator>::iter_type
+time_get_byname<charT, InputIterator>::do_get_time(iter_type in, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	return facet_.get_time(in, end, str, err, t);
+}
+
+template <class charT, class InputIterator>
+inline
+typename time_get_byname<charT, InputIterator>::iter_type
+time_get_byname<charT, InputIterator>::do_get_date(iter_type in, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	return facet_.get_date(in, end, str, err, t);
+}
+
+template <class charT, class InputIterator>
+inline
+typename time_get_byname<charT, InputIterator>::iter_type
+time_get_byname<charT, InputIterator>::do_get_weekday(iter_type in, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	return facet_.get_weekday(in, end, str, err, t);
+}
+
+template <class charT, class InputIterator>
+inline
+typename time_get_byname<charT, InputIterator>::iter_type
+time_get_byname<charT, InputIterator>::do_get_monthname(iter_type in, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	return facet_.get_monthname(in, end, str, err, t);
+}
+
+template <class charT, class InputIterator>
+inline
+typename time_get_byname<charT, InputIterator>::iter_type
+time_get_byname<charT, InputIterator>::do_get_year(iter_type in, iter_type end, ios_base& str,
+	iostate& err, tm* t) const
+{
+	return facet_.get_year(in, end, str, err, t);
+}
+
+template <class charT, class OutputIterator>
+time_put<charT, OutputIterator>::time_put(size_t refs)
+	: facet(refs)
+{
+}
+
+template <class charT, class OutputIterator>
+typename time_put<charT, OutputIterator>::iter_type
+time_put<charT, OutputIterator>::put(iter_type out, ios_base& str, char_type fill, const tm* tmb,
+	const charT* pattern, const charT* pat_end) const
+{
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	while (pattern != pat_end)
+	{
+		charT formatw = *pattern;
+		char format = ct.narrow(formatw, char());
+		if (format == '%')
+		{
+			if (++pattern == pat_end)
+			{
+				*out++ = formatw;
+				break;
+			}
+			format = ct.narrow(*pattern, char());
+			out = do_put(out, str, fill, tmb, format, char());  // hh 980803 last arg was missing
+		} else
+			*out++ = formatw;
+		++pattern;
+	}
+	return out;
+}
+
+template <class charT, class OutputIterator>
+inline
+typename time_put<charT, OutputIterator>::iter_type
+time_put<charT, OutputIterator>::put(iter_type out, ios_base& str, char_type fill,
+	const tm* tmb, char format, char modifier) const
+{
+	return do_put(out, str, fill, tmb, format, modifier);
+}
+
+template <class charT, class OutputIterator>
+locale::id time_put<charT, OutputIterator>::id;
+
+template <class charT, class OutputIterator>
+inline
+time_put<charT, OutputIterator>::~time_put()
+{
+}
+
+template <class charT, class OutputIterator>
+typename time_put<charT, OutputIterator>::iter_type
+time_put<charT, OutputIterator>::put_name(iter_type out, const charT* p, int max_out) const
+{
+	for (int i = 0; i < max_out && *p; ++i)
+		*out++ = *p++;
+	return out;
+}
+
+template <class charT, class OutputIterator>
+typename time_put<charT, OutputIterator>::iter_type
+time_put<charT, OutputIterator>::put_2digit(iter_type out, const ctype<charT>& ct, int num) const
+{
+	*out++ = ct.widen(char(num / 10 + '0'));
+	*out++ = ct.widen(char(num % 10 + '0'));
+	return out;
+}
+
+template <class charT, class OutputIterator>
+typename time_put<charT, OutputIterator>::iter_type
+time_put<charT, OutputIterator>::do_put(iter_type out, ios_base& str, char_type fill, const tm* tmb,
+	char format, char) const
+{
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	const timepunct<charT>& tp = _USE_FACET(timepunct<charT>, str.getloc());
+	#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+		const num_put<charT, OutputIterator>& np = use_facet<num_put<charT, OutputIterator> >(str.getloc());
+	#else
+		const num_put<charT, OutputIterator>& np = use_facet(str.getloc(), (num_put<charT, OutputIterator>*)0);
+	#endif
+	_SaveFlags save_str(str);
+	dec(str);
+	str.width(0);
+	switch (format)
+	{
+	case 'a':
+		out = put_name(out, tp.weekday_name(size_t(tmb->tm_wday)), 3);
+		break;
+	case 'A':
+		out = put_name(out, tp.weekday_name(size_t(tmb->tm_wday)), INT_MAX);
+		break;
+	case 'b':
+		out = put_name(out, tp.month_name(size_t(tmb->tm_mon)), 3);
+		break;
+	case 'B':
+		out = put_name(out, tp.month_name(size_t(tmb->tm_mon)), INT_MAX);
+		break;
+	case 'c':
+		out = put_name(out, tp.weekday_name(size_t(tmb->tm_wday)), INT_MAX);
+		*out++ = fill;
+		out = put_name(out, tp.month_name(size_t(tmb->tm_mon)), INT_MAX);
+		*out++ = fill;
+		out = put_2digit(out, ct, tmb->tm_mday);
+		*out++ = fill;
+		out = put_2digit(out, ct, tmb->tm_hour);  // hh 980803 added %c
+		*out++ = ct.widen(char(':'));
+		out = put_2digit(out, ct, tmb->tm_min);
+		*out++ = ct.widen(char(':'));
+		out = put_2digit(out, ct, tmb->tm_sec);
+		*out++ = fill;
+		out = np.put(out, str, fill, long(tmb->tm_year + 1900));
+		break;
+	case 'd':
+		out = put_2digit(out, ct, tmb->tm_mday);
+		break;
+	case 'F':
+		out = np.put(out, str, fill, long(tmb->tm_year + 1900));
+		*out++ = ct.widen('-');
+		out = put_2digit(out, ct, tmb->tm_mon+1);
+		*out++ = ct.widen('-');
+		out = put_2digit(out, ct, tmb->tm_mday);
+		break;
+	case 'g':
+	case 'G':
+		{
+		int y = tmb->tm_year + 1900;
+		int d = tmb->tm_yday;
+		if (d > 59 && isLeap(y))
+			--d;
+		int w = tmb->tm_wday;
+		if (w == 0)
+			w = 7;
+		--w;
+		int offset = 3 - (d - w + 10) % 7;
+		w = d - w + offset;
+		if (w < 0)
+			--y;
+		else if (w >= 364 && offset < 3)
+			++y;
+		if (format == 'g')
+		{
+			y %= 100;
+			out = put_2digit(out, ct, y);
+		} else
+			out = np.put(out, str, fill, long(y));
+		}
+		break;
+	case 'H':
+		out = put_2digit(out, ct, tmb->tm_hour);
+		break;
+	case 'I':
+		{
+		int h = tmb->tm_hour % 12;
+		if (h == 0)
+			h = 12;
+		out = put_2digit(out, ct, h);
+		}
+		break;
+	case 'j':
+		{
+		int d = tmb->tm_yday + 1;
+		*out++ = ct.widen(char(d / 100 + '0'));
+		d %= 100;
+		out = put_2digit(out, ct, d);
+		}
+		break;
+	case 'm':
+		out = put_2digit(out, ct, tmb->tm_mon+1);
+		break;
+	case 'M':
+		out = put_2digit(out, ct, tmb->tm_min);
+		break;
+	case 'p':
+		out = put_name(out, tp.am_pm(tmb->tm_hour), INT_MAX);
+		break;
+	case 'S':
+		out = put_2digit(out, ct, tmb->tm_sec);
+		break;
+	case 'T':
+	case 'X':
+		out = put_2digit(out, ct, tmb->tm_hour);
+		*out++ = ct.widen(char(':'));
+		out = put_2digit(out, ct, tmb->tm_min);
+		*out++ = ct.widen(char(':'));
+		out = put_2digit(out, ct, tmb->tm_sec);
+		break;
+	case 'u':
+		*out++ = ct.widen(char(tmb->tm_wday + 1 + '0'));
+		break;
+	case 'U':
+		{
+		int w = tmb->tm_yday - tmb->tm_wday;
+		if (w >= 0)
+			w = w / 7 + 1;
+		else
+			w = 0;
+		out = put_2digit(out, ct, w);
+		}
+		break;
+	case 'V':
+		{
+		int y = tmb->tm_year + 1900;
+		int w = tmb->tm_wday;
+		if (w == 0)
+			w = 7;
+		--w;
+		int offset = 3 - (tmb->tm_yday - w + 10) % 7;
+		w = tmb->tm_yday - w + offset;
+		if (w < 0)
+		{
+			switch (offset)
+			{
+			case -3:
+				w = 53;
+				break;
+			case -2:
+				w = 52;
+				if (isLeap(y-1))
+					++w;
+				break;
+			case -1:
+				w = 52;
+				break;
+			}
+		}
+		else if (w >= 364)
+		{
+			w = 53;
+			switch (offset)
+			{
+			case -1:
+			case 0:
+			case 1:
+				w = 1;
+				break;
+			case 2:
+				if (!isLeap(y))
+					w = 1;
+				break;
+			}
+		}
+		else
+			w = w / 7 + 1;
+		out = put_2digit(out, ct, w);
+		}
+		break;
+	case 'w':
+		*out++ = ct.widen(char(tmb->tm_wday + '0'));  // hh 980803 only output 1 digit
+		break;
+	case 'W':
+		{
+		int w = tmb->tm_wday;
+		if (w == 0)
+			w = 7;
+		--w;
+		w = tmb->tm_yday - w;
+		if (w >= 0)
+			w = w / 7 + 1;
+		else
+			w = 0;
+		out = put_2digit(out, ct, w);
+		}
+		break;
+	case 'x':
+		out = put_name(out, tp.weekday_name(size_t(tmb->tm_wday)), INT_MAX);  // hh 980803
+		*out++ = fill;
+		out = put_name(out, tp.month_name(size_t(tmb->tm_mon)), INT_MAX);
+		*out++ = fill;
+		out = put_2digit(out, ct, tmb->tm_mday);
+		*out++ = fill;
+		out = np.put(out, str, fill, long(tmb->tm_year + 1900));
+		break;
+	case 'y':
+		out = put_2digit(out, ct, tmb->tm_year);
+		break;
+	case 'Y':
+		out = np.put(out, str, fill, long(tmb->tm_year + 1900));
+		break;
+	case 'z':
+	case 'Z':
+		break;
+	case '%':
+		*out++ = ct.widen('%');
+		break;
+	}
+	return out;
+}
+
+template <class charT, class OutputIterator>
+bool
+time_put<charT, OutputIterator>::isLeap(int y) const
+{
+	if (y % 400 == 0)
+		return true;
+	else if (y % 100 == 0)
+		return false;
+	return bool(y % 4 == 0);
+}
+
+// time_put_byname<charT, OutputIterator>
+
+template <class charT, class OutputIterator>
+time_put_byname<charT, OutputIterator>::time_put_byname(const char* loc, size_t refs)
+	: time_put(refs),
+	loc_(loc),
+	#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+		facet_(use_facet<time_put<charT, OutputIterator> >(loc_))
+	#else
+		facet_(use_facet(loc_, (time_put<charT, OutputIterator>*)0))
+	#endif
+{
+}
+
+template <class charT, class OutputIterator>
+inline
+time_put_byname<charT, OutputIterator>::~time_put_byname()
+{
+}
+
+template <class charT, class OutputIterator>
+inline
+typename time_put_byname<charT, OutputIterator>::iter_type
+time_put_byname<charT, OutputIterator>::do_put(iter_type out, ios_base& str,
+	char_type fill, const tm* tmb, char format, char modifier) const
+{
+	return facet_.put(out, str, fill, tmb, format, modifier);
+}
+
+// money_get<charT, InputIterator>
+
+template <class charT, class InputIterator>
+money_get<charT, InputIterator>::money_get(size_t refs)
+	: facet(refs)
+{
+}
+
+#ifndef _No_Floating_Point
+
+	template <class charT, class InputIterator>
+	inline
+	typename money_get<charT, InputIterator>::iter_type
+	money_get<charT, InputIterator>::get(iter_type in, iter_type end, bool intl, ios_base& str,
+		iostate& err, long double& units) const
+	{
+		return do_get(in, end, intl, str, err, units);
+	}
+
+#endif
+
+template <class charT, class InputIterator>
+inline
+typename money_get<charT, InputIterator>::iter_type
+money_get<charT, InputIterator>::get(iter_type in, iter_type end, bool intl, ios_base& str,
+	iostate& err, string_type& digits) const
+{
+	return do_get(in, end, intl, str, err, digits);
+}
+
+template <class charT, class InputIterator>
+locale::id money_get<charT, InputIterator>::id;
+
+template <class charT, class InputIterator>
+inline
+money_get<charT, InputIterator>::~money_get()
+{
+}
+
+#ifndef _No_Floating_Point
+
+	template <class charT, class InputIterator>
+	typename money_get<charT, InputIterator>::iter_type
+	money_get<charT, InputIterator>::do_get(iter_type in, iter_type end, bool intl, ios_base& str,
+		iostate& err, long double& units) const
+	{
+		string_type digits;
+		in = do_get(in, end, intl, str, err, digits);
+		if (!(err & ios_base::failbit))
+		{
+			const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+			const string_type& cdigits = digits;
+			string_type::const_iterator i = cdigits.begin();
+			bool minus = false;
+			if (ct.narrow(*i, char()) == '-')
+			{
+				minus = true;
+				++i;
+			}
+			units = 0;
+			while (i != cdigits.end())
+			{
+				if (!ct.is(ctype_base::digit, *i))
+					break;
+				units *= 10;
+				units += ct.narrow(*i, char()) - '0';
+				++i;
+			}
+			if (minus)
+				units = -units;
+		}
+		return in;
+	}
+
+#endif
+
+template <class charT, class InputIterator>
+typename money_get<charT, InputIterator>::iter_type
+money_get<charT, InputIterator>::do_get(iter_type in, iter_type end, bool intl, ios_base& str,
+	iostate& err, string_type& digits) const
+{
+	if (in == end)
+	{
+		err |= ios_base::failbit;
+		return in;
+	}
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+		const moneypunct<charT, true>& mpp = use_facet<moneypunct<charT, true> >(str.getloc());
+		const moneypunct<charT, false>& mpn = use_facet<moneypunct<charT, false> >(str.getloc());
+	#else
+		const moneypunct<charT, true>& mpp = use_facet(str.getloc(), (moneypunct<charT, true>*)0);
+		const moneypunct<charT, false>& mpn = use_facet(str.getloc(), (moneypunct<charT, false>*)0);
+	#endif
+	money_base::pattern pat = intl ? mpp.neg_format() : mpn.neg_format();
+	int pend = 4;
+	if (static_cast<money_base::part>(pat.field[pend-1]) == money_base::none)  // hh 980804
+		--pend;
+	string_type result;
+	int more_sign = 0;
+	const string_type pos(intl ? mpp.positive_sign() : mpn.positive_sign());
+	const string_type neg(intl ? mpp.negative_sign() : mpn.negative_sign());
+	for (int p = 0; p < pend; ++p)
+	{
+		switch (static_cast<money_base::part>(pat.field[p]))
+		{
+		case money_base::space:
+			if (ct.is(ctype_base::space, *in))
+			{
+				if (++in == end) {
+					err |= ios_base::eofbit;
+					break;
+				}
+			}
+			else
+				err |= ios_base::failbit;
+		case money_base::none:
+			while (ct.is(ctype_base::space, *in))
+			{
+				if (++in == end) {
+					err |= ios_base::eofbit;
+					break;
+				}
+			}
+			break;
+		case money_base::symbol:
+			{
+			const string_type symbol(intl ? mpp.curr_symbol() : mpn.curr_symbol());
+			if (str.flags() & ios_base::showbase)
+			{
+				if (!consume_str(in, end, err, symbol.begin(), symbol.end()))
+					err |= ios_base::failbit;
+			} else
+			{
+				if (p < pend-1 || more_sign)
+					consume_str(in, end, err, symbol.begin(), symbol.end());
+			}
+			}
+			break;
+		case money_base::sign:
+			if (pos.size() > 0 && *in == pos[0])
+			{
+				if (++in == end)
+					err |= ios_base::eofbit;
+				if (pos.size() > 1)
+					more_sign = 1;
+			}
+			else if (neg.size() > 0 && *in == neg[0])
+			{
+				result.insert(result.begin(), ct.widen('-'));
+				if (++in == end)
+					err |= ios_base::eofbit;
+				if (neg.size() > 1)
+					more_sign = -1;
+			}
+			else if (pos.size() != 0 && neg.size() != 0)
+				err |= ios_base::failbit;
+			break;
+		case money_base::value:
+			{
+			int count = parseMoneyDigits(in, end, str, err, intl, result);
+			if (err & ios_base::failbit)
+				break;
+			bool found_digits = parseFraction(in, end, str, err, intl, result);
+			if (!found_digits && count == 0)
+				err |= ios_base::failbit;
+			}
+			break;
+		}
+		if (err)
+			break;
+	}
+	if (!(err & ios_base::failbit) && more_sign)
+	{
+		if (more_sign > 0)
+		{
+			if (!consume_str(in, end, err, pos.begin() + 1, pos.end()))
+				err |= ios_base::failbit;
+		}
+		else {
+			if (!consume_str(in, end, err, neg.begin() + 1, neg.end()))
+				err |= ios_base::failbit;
+		}
+	}
+	if (!(err & ios_base::failbit))
+		digits = result;
+	return in;
+}
+
+template <class charT, class InputIterator>
+bool
+money_get<charT, InputIterator>::consume_str(iter_type& in, iter_type end, iostate& err,
+	string_type::const_iterator start, string_type::const_iterator finish) const
+{
+	while (start != finish)
+	{
+		if (*start != *in)
+			return false;
+		++start;
+		if (++in == end)
+		{
+			err |= ios_base::eofbit;
+			if (start != finish)
+				return false;
+			break;
+		}
+	}
+	return true;
+}
+
+template <class charT, class InputIterator>
+int
+money_get<charT, InputIterator>::parseMoneyDigits(iter_type& in, iter_type end, ios_base& str,
+	iostate& err, bool intl, string_type& digits) const
+{
+	if (in == end)
+		return 0;
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+		const moneypunct<charT, true>& mpp = use_facet<moneypunct<charT, true> >(str.getloc());
+		const moneypunct<charT, false>& mpn = use_facet<moneypunct<charT, false> >(str.getloc());
+	#else
+		const moneypunct<charT, true>& mpp = use_facet(str.getloc(), (moneypunct<charT, true>*)0);
+		const moneypunct<charT, false>& mpn = use_facet(str.getloc(), (moneypunct<charT, false>*)0);
+	#endif
+	charT thousands_sep = intl ? mpp.thousands_sep() : mpn.thousands_sep();
+	const string allowed_grouping(intl ? mpp.grouping() : mpn.grouping());
+	bool might_group = allowed_grouping.size() > 0;
+	bool perform_grouping_check = false;
+	vector<unsigned char> actual_grouping;
+	unsigned char ng = 0;
+	int count = 0;
+	while (true)
+	{
+		charT d = *in;
+		if (ng != 0 && might_group && d == thousands_sep)  // hh 980804
+		{
+			actual_grouping.push_back(ng);
+			ng = 0;
+			perform_grouping_check = true;
+			goto cycle;
+		}
+		if (!ct.is(ctype_base::digit, d))
+			break;
+		digits += d;
+		++count;
+		++ng;
+	cycle:
+		if (++in == end)
+		{
+			err |= ios_base::eofbit;
+			break;
+		}
+	}
+	if (perform_grouping_check)
+	{
+		if (ng != 0)  // hh 980804
+			actual_grouping.push_back(ng);
+		if (check_grouping(allowed_grouping, actual_grouping))
+		{
+			err |= ios_base::failbit;
+			count = 0;
+		}
+	}
+	return count;
+}
+
+template <class charT, class InputIterator>
+bool
+money_get<charT, InputIterator>::parseFraction(iter_type& in, iter_type end, ios_base& str,
+	iostate& err, bool intl, string_type& digits) const
+{
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+		const moneypunct<charT, true>& mpp = use_facet<moneypunct<charT, true> >(str.getloc());
+		const moneypunct<charT, false>& mpn = use_facet<moneypunct<charT, false> >(str.getloc());
+	#else
+		const moneypunct<charT, true>& mpp = use_facet(str.getloc(), (moneypunct<charT, true>*)0);
+		const moneypunct<charT, false>& mpn = use_facet(str.getloc(), (moneypunct<charT, false>*)0);
+	#endif
+	bool foundDigit = false;
+	int maxcount = intl ? mpp.frac_digits() : mpn.frac_digits();
+	if (in == end)
+	{
+		digits.append(size_t(maxcount), ct.widen('0')); // hh 980804 
+		return false;
+	}
+	int count = 0;
+	charT decimal_point = intl ? mpp.decimal_point() : mpn.decimal_point();
+	if (maxcount > 0 && *in == decimal_point)
+	{
+		for (; count < maxcount; ++count)
+		{
+			if (++in == end)
+			{
+				err |= ios_base::eofbit;
+				break;
+			}
+			charT c = *in;
+			if (!ct.is(ctype_base::digit, c))
+			{
+				err |= ios_base::failbit;
+				break;
+			}
+			digits += c;
+			foundDigit = true;
+		}
+		if (!err)
+		{
+			if (++in == end)  // hh 980804  fraction must be exactly maxcount digits
+				err |= ios_base::eofbit;
+			else if (ct.is(ctype_base::digit, *in))
+				err |= ios_base::failbit;
+		}
+	}
+	else
+		digits.append(size_t(maxcount), ct.widen('0')); // hh 980804 
+	return foundDigit;
+}
+
+// return true if in error
+template <class charT, class InputIterator>
+bool
+money_get<charT, InputIterator>::check_grouping(const string& allowed_grouping,
+	const vector<unsigned char>& actual_grouping) const
+{
+	int all = -1;
+	unsigned char ng = CHAR_MAX;
+	for (int act = (int)actual_grouping.size() - 1; act >= 0; --act)
+	{
+		if (++all < allowed_grouping.size())
+			ng = (unsigned char)allowed_grouping[size_t(all)];
+		if (ng >= CHAR_MAX)
+			continue;
+		if (act == 0)  // hh 980803 leading group may have less than ng digits
+		{
+			if (actual_grouping[size_t(act)] > ng)
+				return true;
+		}
+		else
+		{
+			if (actual_grouping[size_t(act)] != ng)
+				return true;
+		}
+	}
+	return false;
+}
+
+// money_put<charT, OutputIterator>
+
+template <class charT, class OutputIterator>
+money_put<charT, OutputIterator>::money_put(size_t refs)
+	: facet(refs)
+{
+}
+
+#ifndef _No_Floating_Point
+
+	template <class charT, class OutputIterator>
+	inline
+	typename money_put<charT, OutputIterator>::iter_type
+	money_put<charT, OutputIterator>::put(iter_type out, bool intl, ios_base& str, char_type fill,
+		long double units) const
+	{
+		return do_put(out, intl, str, fill, units);
+	}
+
+#endif
+
+template <class charT, class OutputIterator>
+inline
+typename money_put<charT, OutputIterator>::iter_type
+money_put<charT, OutputIterator>::put(iter_type out, bool intl, ios_base& str, char_type fill,
+	const string_type& digits) const
+{
+	return do_put(out, intl, str, fill, digits);
+}
+
+template <class charT, class OutputIterator>
+locale::id money_put<charT, OutputIterator>::id;
+
+template <class charT, class OutputIterator>
+inline
+money_put<charT, OutputIterator>::~money_put()
+{
+}
+
+#ifndef _No_Floating_Point
+
+	template <class charT, class OutputIterator>
+	typename money_put<charT, OutputIterator>::iter_type
+	money_put<charT, OutputIterator>::do_put(iter_type out, bool intl, ios_base& str, char_type fill,
+		long double units) const
+	{
+		const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+		string_type digits;
+		if (units == 0)
+			digits = ct.widen('0');
+		else {
+			bool minus = units < 0;
+			if (minus)
+				units = -units;
+			while (units > 0)
+			{
+				long double d = modfl(units/10.0L, &units);
+				d *= 10.0L;
+				digits += ct.widen(char(char(d+.5) + '0'));
+			}
+			reverse(digits.begin(), digits.end());
+			if (minus)
+				digits.insert(digits.begin(), ct.widen('-'));
+		}
+		return do_put(out, intl, str, fill, digits);
+	}
+
+#endif
+
+template <class charT, class OutputIterator>
+typename money_put<charT, OutputIterator>::iter_type
+money_put<charT, OutputIterator>::do_put(iter_type out, bool intl, ios_base& str, char_type fill,
+	const string_type& digits) const
+{
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+		const moneypunct<charT, true>& mpp = use_facet<moneypunct<charT, true> >(str.getloc());
+		const moneypunct<charT, false>& mpn = use_facet<moneypunct<charT, false> >(str.getloc());
+	#else
+		const moneypunct<charT, true>& mpp = use_facet(str.getloc(), (moneypunct<charT, true>*)0);
+		const moneypunct<charT, false>& mpn = use_facet(str.getloc(), (moneypunct<charT, false>*)0);
+	#endif
+	string_type::const_iterator s = digits.begin();
+	bool minus = *s == ct.widen('-');
+	money_base::pattern pat;
+	if (minus)
+	{
+		pat = intl ? mpp.neg_format() : mpn.neg_format();
+		++s;
+	}
+	else
+		pat = intl ? mpp.pos_format() : mpn.pos_format();
+	string_type result;
+	string_type::size_type pend = result.size();  // hh 981126
+	bool more_sign = false;
+	const string_type plus_minus(minus ?
+		  (intl ? mpp.negative_sign() : mpn.negative_sign())
+		: (intl ? mpp.positive_sign() : mpn.positive_sign())
+	);
+	for (int p = 0; p < 4; ++p)
+	{
+		switch (static_cast<money_base::part>(pat.field[p]))
+		{
+		case money_base::space:
+			result += fill;  // hh 980804
+		case money_base::none:
+			pend = result.size();  // hh 981126
+			break;
+		case money_base::symbol:
+			if (str.flags() & ios_base::showbase)
+				result += intl ? mpp.curr_symbol() : mpn.curr_symbol();
+			break;
+		case money_base::sign:
+			result += plus_minus[0];
+			if (plus_minus.size() > 1)
+				more_sign = true;
+			break;
+		case money_base::value:
+			result += put_value(intl, str, s, digits.end());
+			break;
+		}
+	}
+	if (more_sign)
+	{
+		for (s = plus_minus.begin() + 1; s != plus_minus.end(); ++s)
+			result += *s;
+	}
+	return putnumber(out, str, fill, result.begin(), result.begin() + pend, result.end());  // hh 980804   // hh 981126
+}
+
+template <class charT, class OutputIterator>
+typename money_put<charT, OutputIterator>::string_type
+money_put<charT, OutputIterator>::put_value(bool intl, ios_base& str,
+	string_type::const_iterator begin, string_type::const_iterator end) const
+{
+	const ctype<charT>& ct = _USE_FACET(ctype<charT>, str.getloc());
+	#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+		const moneypunct<charT, true>& mpp = use_facet<moneypunct<charT, true> >(str.getloc());
+		const moneypunct<charT, false>& mpn = use_facet<moneypunct<charT, false> >(str.getloc());
+	#else
+		const moneypunct<charT, true>& mpp = use_facet(str.getloc(), (moneypunct<charT, true>*)0);
+		const moneypunct<charT, false>& mpn = use_facet(str.getloc(), (moneypunct<charT, false>*)0);
+	#endif
+	string_type result;
+	while (begin != end)
+	{
+		if (!ct.is(ctype_base::digit, *begin))
+			break;
+		result += *begin;
+		++begin;
+	}
+	int i = int(result.size());
+	int frac = intl ? mpp.frac_digits() : mpn.frac_digits();
+	if (frac > 0)
+	{
+		i -= frac;
+		result.insert(size_t(i), 1, intl ? mpp.decimal_point() : mpn.decimal_point());
+	}
+	const string allowed_grouping(intl ? mpp.grouping() : mpn.grouping());
+	size_t ng = 0;
+	unsigned char g = (unsigned char)(-1);
+	charT thousands_sep = intl ? mpp.thousands_sep() : mpn.thousands_sep();
+	while (i > 0)
+	{
+		if (ng < allowed_grouping.size())
+		{
+			g = (unsigned char)allowed_grouping[ng++];
+			if (g == 0)
+				g = (unsigned char)(-1);
+		}
+		i -= g;
+		if (i > 0)
+			result.insert(size_t(i), 1, thousands_sep);
+	}
+	return result;
+}
+
+template <class charT, class OutputIterator>
+typename money_put<charT, OutputIterator>::iter_type
+money_put<charT, OutputIterator>::putnumber(iter_type out, ios_base& str, char_type fill,
+	string_type::const_iterator begin, string_type::const_iterator middle,
+	string_type::const_iterator end) const
+{
+	// Determine amount of padding
+	int pad = 0;
+	int plen = middle - begin;
+	int count = end - middle;
+	if (str.width() > plen + count)
+		pad = str.width() - (plen + count);
+	// Write prefix and digits, inserting padding in the correct place
+	fmtflags adjust = str.flags() & ios_base::adjustfield;
+	if (adjust == ios_base::right || adjust == 0)
+	{
+		for (int i = 0; i < pad; ++i)
+			*out++ = fill;
+	}
+	{  // hh 980811 for-scoping neutral
+	for (int i = 0; i < plen; ++i)
+		*out++ = *begin++;
+	}
+	if (adjust == ios_base::internal)
+	{
+		for (int i = 0; i < pad; ++i)
+			*out++ = fill;
+	}
+	{  // hh 980811 for-scoping neutral
+	for (int i = 0; i < count; ++i)
+		*out++ = *middle++;
+	}
+	if (adjust == ios_base::left)
+	{
+		for (int i = 0; i < pad; ++i)
+			*out++ = fill;
+	}
+	// Set width to 0 (standard)
+	str.width(0);
+	return out;
+}
+
+// _Generic_moneypunct<charT, International>
+
+template <class charT, bool International>
+_Generic_moneypunct<charT, International>::_Generic_moneypunct(size_t refs)
+	: facet(refs)
+{
+}
+
+template <class charT, bool International>
+charT
+_Generic_moneypunct<charT, International>::decimal_point() const
+{
+	return do_decimal_point();
+}
+
+template <class charT, bool International>
+charT
+_Generic_moneypunct<charT, International>::thousands_sep() const
+{
+	return do_thousands_sep();
+}
+
+template <class charT, bool International>
+string
+_Generic_moneypunct<charT, International>::grouping() const
+{
+	return do_grouping();
+}
+
+template <class charT, bool International>
+typename _Generic_moneypunct<charT, International>::string_type
+_Generic_moneypunct<charT, International>::curr_symbol() const
+{
+	return do_curr_symbol();
+}
+
+template <class charT, bool International>
+typename _Generic_moneypunct<charT, International>::string_type
+_Generic_moneypunct<charT, International>::positive_sign() const
+{
+	return do_positive_sign();
+}
+
+template <class charT, bool International>
+typename _Generic_moneypunct<charT, International>::string_type
+_Generic_moneypunct<charT, International>::negative_sign() const
+{
+	return do_negative_sign();
+}
+
+template <class charT, bool International>
+int
+_Generic_moneypunct<charT, International>::frac_digits() const
+{
+	return do_frac_digits();
+}
+
+template <class charT, bool International>
+money_base::pattern
+_Generic_moneypunct<charT, International>::pos_format() const
+{
+	return do_pos_format();
+}
+
+template <class charT, bool International>
+money_base::pattern
+_Generic_moneypunct<charT, International>::neg_format() const
+{
+	return do_neg_format();
+}
+
+template <class charT, bool International>
+inline
+_Generic_moneypunct<charT, International>::~_Generic_moneypunct()
+{
+}
+
+// moneypunct<charT, International>
+
+template <class charT, bool International>
+inline
+moneypunct<charT, International>::moneypunct(size_t refs)
+	: _Generic_moneypunct(refs)
+{
+}
+
+template <class charT, bool International>
+inline
+moneypunct<charT, International>::~moneypunct()
+{
+}
+
+// moneypunct<char, false>
+
+template <>
+inline
+moneypunct<char, false>::~moneypunct()
+{
+}
+
+template <>
+inline
+char
+moneypunct<char, false>::do_decimal_point() const
+{
+	return '.';
+}
+
+template <>
+inline
+char
+moneypunct<char, false>::do_thousands_sep() const
+{
+	return ',';
+}
+
+template <>
+inline
+string
+moneypunct<char, false>::do_grouping() const
+{
+	return string(1, '\003');
+}
+
+template <>
+inline
+moneypunct<char, false>::string_type
+moneypunct<char, false>::do_curr_symbol() const
+{
+	return string_type(1, '$');
+}
+
+template <>
+inline
+moneypunct<char, false>::string_type
+moneypunct<char, false>::do_positive_sign() const
+{
+	return string_type();
+}
+
+template <>
+inline
+moneypunct<char, false>::string_type
+moneypunct<char, false>::do_negative_sign() const
+{
+	return string_type(1, '-');
+}
+
+template <>
+inline
+int
+moneypunct<char, false>::do_frac_digits() const
+{
+	return 2;
+}
+
+template <>
+inline
+money_base::pattern
+moneypunct<char, false>::do_pos_format() const
+{
+	pattern result = {{char(symbol), char(sign), char(none), char(value)}};
+	return result;
+}
+
+template <>
+inline
+money_base::pattern
+moneypunct<char, false>::do_neg_format() const
+{
+	pattern result = {{char(symbol), char(sign), char(none), char(value)}};
+	return result;
+}
+
+// moneypunct<char, true>
+
+template <>
+inline
+moneypunct<char, true>::~moneypunct()
+{
+}
+
+template <>
+inline
+char
+moneypunct<char, true>::do_decimal_point() const
+{
+	return '.';
+}
+
+template <>
+inline
+char
+moneypunct<char, true>::do_thousands_sep() const
+{
+	return ',';
+}
+
+template <>
+inline
+string
+moneypunct<char, true>::do_grouping() const
+{
+	return string(1, '\003');
+}
+
+template <>
+inline
+moneypunct<char, true>::string_type
+moneypunct<char, true>::do_curr_symbol() const
+{
+	return string_type("USD ");
+}
+
+template <>
+inline
+moneypunct<char, true>::string_type
+moneypunct<char, true>::do_positive_sign() const
+{
+	return string_type();
+}
+
+template <>
+inline
+moneypunct<char, true>::string_type
+moneypunct<char, true>::do_negative_sign() const
+{
+	return string_type("()");
+}
+
+template <>
+inline
+int
+moneypunct<char, true>::do_frac_digits() const
+{
+	return 2;
+}
+
+template <>
+inline
+money_base::pattern
+moneypunct<char, true>::do_pos_format() const
+{
+	pattern result = {{char(symbol), char(sign), char(none), char(value)}};
+	return result;
+}
+
+template <>
+inline
+money_base::pattern
+moneypunct<char, true>::do_neg_format() const
+{
+	pattern result = {{char(symbol), char(sign), char(none), char(value)}};
+	return result;
+}
+
+#ifndef _MSL_NO_WCHART
+
+	// moneypunct<wchar_t, false>
+
+	template <>
+	inline
+	moneypunct<wchar_t, false>::~moneypunct()
+	{
+	}
+
+	template <>
+	inline
+	wchar_t
+	moneypunct<wchar_t, false>::do_decimal_point() const
+	{
+		return L'.';
+	}
+
+	template <>
+	inline
+	wchar_t
+	moneypunct<wchar_t, false>::do_thousands_sep() const
+	{
+		return L',';
+	}
+
+	template <>
+	inline
+	string
+	moneypunct<wchar_t, false>::do_grouping() const
+	{
+		return string(1, L'\003');
+	}
+
+	template <>
+	inline
+	moneypunct<wchar_t, false>::string_type
+	moneypunct<wchar_t, false>::do_curr_symbol() const
+	{
+		return string_type(1, L'$');
+	}
+
+	template <>
+	inline
+	moneypunct<wchar_t, false>::string_type
+	moneypunct<wchar_t, false>::do_positive_sign() const
+	{
+		return string_type();
+	}
+
+	template <>
+	inline
+	moneypunct<wchar_t, false>::string_type
+	moneypunct<wchar_t, false>::do_negative_sign() const
+	{
+		return string_type(1, L'-');
+	}
+
+	template <>
+	inline
+	int
+	moneypunct<wchar_t, false>::do_frac_digits() const
+	{
+		return 2;
+	}
+
+	template <>
+	inline
+	money_base::pattern
+	moneypunct<wchar_t, false>::do_pos_format() const
+	{
+		pattern result = {{char(symbol), char(sign), char(none), char(value)}};
+		return result;
+	}
+
+	template <>
+	inline
+	money_base::pattern
+	moneypunct<wchar_t, false>::do_neg_format() const
+	{
+		pattern result = {{char(symbol), char(sign), char(none), char(value)}};
+		return result;
+	}
+
+	// moneypunct<wchar_t, true>
+
+	template <>
+	inline
+	moneypunct<wchar_t, true>::~moneypunct()
+	{
+	}
+
+	template <>
+	inline
+	wchar_t
+	moneypunct<wchar_t, true>::do_decimal_point() const
+	{
+		return L'.';
+	}
+
+	template <>
+	inline
+	wchar_t
+	moneypunct<wchar_t, true>::do_thousands_sep() const
+	{
+		return L',';
+	}
+
+	template <>
+	inline
+	string
+	moneypunct<wchar_t, true>::do_grouping() const
+	{
+		return string(1, L'\003');
+	}
+
+	template <>
+	inline
+	moneypunct<wchar_t, true>::string_type
+	moneypunct<wchar_t, true>::do_curr_symbol() const
+	{
+		return string_type(L"USD ");
+	}
+
+	template <>
+	inline
+	moneypunct<wchar_t, true>::string_type
+	moneypunct<wchar_t, true>::do_positive_sign() const
+	{
+		return string_type();
+	}
+
+	template <>
+	inline
+	moneypunct<wchar_t, true>::string_type
+	moneypunct<wchar_t, true>::do_negative_sign() const
+	{
+		return string_type(L"()");
+	}
+
+	template <>
+	inline
+	int
+	moneypunct<wchar_t, true>::do_frac_digits() const
+	{
+		return 2;
+	}
+
+	template <>
+	inline
+	money_base::pattern
+	moneypunct<wchar_t, true>::do_pos_format() const
+	{
+		pattern result = {{char(symbol), char(sign), char(none), char(value)}};
+		return result;
+	}
+
+	template <>
+	inline
+	money_base::pattern
+	moneypunct<wchar_t, true>::do_neg_format() const
+	{
+		pattern result = {{char(symbol), char(sign), char(none), char(value)}};
+		return result;
+	}
+
+#endif
+
+// moneypunct_byname<charT, Intl>
+
+template <class charT, bool Intl>
+moneypunct_byname<charT, Intl>::moneypunct_byname(const char* loc, size_t refs)
+	: moneypunct(refs),
+	loc_(loc),
+	#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+		facet_(use_facet<moneypunct<charT, Intl> >(loc_))
+	#else
+		facet_(use_facet(loc_, (moneypunct<charT, Intl>*)0))
+	#endif
+{
+}
+
+template <class charT, bool Intl>
+inline
+moneypunct_byname<charT, Intl>::~moneypunct_byname()
+{
+}
+
+template <class charT, bool Intl>
+inline
+charT
+moneypunct_byname<charT, Intl>::do_decimal_point() const
+{
+	return facet_.decimal_point();
+}
+
+template <class charT, bool Intl>
+inline
+charT
+moneypunct_byname<charT, Intl>::do_thousands_sep() const
+{
+	return facet_.thousands_sep();
+}
+
+template <class charT, bool Intl>
+inline
+string
+moneypunct_byname<charT, Intl>::do_grouping() const
+{
+	return facet_.grouping();
+}
+
+template <class charT, bool Intl>
+inline
+typename moneypunct_byname<charT, Intl>::string_type
+moneypunct_byname<charT, Intl>::do_curr_symbol() const
+{
+	return facet_.curr_symbol();
+}
+
+template <class charT, bool Intl>
+inline
+typename moneypunct_byname<charT, Intl>::string_type
+moneypunct_byname<charT, Intl>::do_positive_sign() const
+{
+	return facet_.positive_sign();
+}
+
+template <class charT, bool Intl>
+inline
+typename moneypunct_byname<charT, Intl>::string_type
+moneypunct_byname<charT, Intl>::do_negative_sign() const
+{
+	return facet_.negative_sign();
+}
+
+template <class charT, bool Intl>
+inline
+int
+moneypunct_byname<charT, Intl>::do_frac_digits() const
+{
+	return facet_.frac_digits();
+}
+
+template <class charT, bool Intl>
+inline
+money_base::pattern
+moneypunct_byname<charT, Intl>::do_pos_format() const
+{
+	return facet_.pos_format();
+}
+
+template <class charT, bool Intl>
+inline
+money_base::pattern
+moneypunct_byname<charT, Intl>::do_neg_format() const
+{
+	return facet_.neg_format();
+}
+
+#ifndef _MSL_NO_MESSAGE_FACET
+
+	// messages<charT>
+
+	template <class charT>
+	messages<charT>::messages(size_t refs)
+		: facet(refs)
+	{
+	}
+
+	template <class charT>
+	messages_base::catalog
+	messages<charT>::open(const string& fn, const locale& loc) const
+	{
+		return do_open(fn, loc);
+	}
+
+	template <class charT>
+	messages<charT>::string_type
+	messages<charT>::get(catalog c, int set, int msgid, const string_type& dfault) const
+	{
+		return get(c, set, msgid, dfault);
+	}
+
+	template <class charT>
+	void
+	messages<charT>::close(catalog c) const
+	{
+		return do_close(c);
+	}
+
+	template <class charT>
+	locale::id messages<charT>::id;
+
+	template <class charT>
+	messages<charT>::~messages()
+	{
+	}
+
+	template <class charT>
+	messages_base::catalog
+	messages<charT>::do_open(const string& fn, const locale& loc) const
+	{
+	}
+
+	template <class charT>
+	messages<charT>::string_type
+	messages<charT>::do_get(catalog c, int set, int msgid, const string_type& dfault) const
+	{
+	}
+
+	template <class charT>
+	void
+	messages<charT>::do_close(catalog c) const
+	{
+	}
+
+	// messages_byname<charT>
+
+	template <class charT>
+	messages_byname<charT>::messages_byname(const char* loc, size_t refs)
+		: messages(refs),
+		loc_(loc),
+		facet_(_USE_FACET(messages<charT>, loc_))
+	{
+	}
+
+	template <class charT>
+	messages_byname<charT>::~messages_byname()
+	{
+	}
+
+	template <class charT>
+	money_base::catalog
+	messages_byname<charT>::do_open(const string& fn, const locale& loc) const
+	{
+		return facet_.open(fn, loc);
+	}
+
+	template <class charT>
+	messages_byname<charT>::string_type
+	messages_byname<charT>::do_get(catalog c, int set, int msgid, const string_type& dfault) const
+	{
+		return facet_.get(c, set, msgid, dfault);
+	}
+
+	template <class charT>
+	void
+	messages_byname<charT>::do_close(catalog c) const
+	{
+		return facet_.close(c);
+	}
+
+#endif
+
+#ifndef _MSL_NO_CPP_NAMESPACE
+	} // namespace std
+#endif
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
+#pragma options align=reset
+
+#endif // RC_INVOKED
+
+#endif // _LOCALE
+
+// hh 980702 Modified num_put and num_get for void* to respect implementation dependent
+//           historic formattting conventions.  This involved insuring that void* was printed
+//           out in the format 0xXXXXXXXX with leading 0's if necessary.
+// hh 980713 Temporarily moved member templates into class definition to support compiler
+// hh 980802 Rewrote fixed_digits and scientific digits for more accurate printing
+// hh 980803 added _STD:: to disambiguate the facet collate from the enum
+// hh 980803 last arg was missing in a call to time_put::do_put.
+// hh 980811 changed unsigned long to unsigned long long putdec
+// hh 980811 Applied for-scoping neutral code
+// hh 980812 Fixed bug in inserting thousands seperators into floating point output
+// hh 980824 moved codecvt_byname out from under #ifdef MSIPL_WCHART
+// hh 980902 #ifdef'd out exception code when ndef MSIPL_EXCEPT
+// hh 980915 Modified file so that it would work without MSIPL_EXPLICIT_FUNC_TEMPLATE_ARG
+// hh 981018 Modified _BCD helper class to not round if it uses sprintf
+// hh 981111 Removed dependence on compiler support for default template args in string declarations
+// hh 981126 Changed pend from an iterator to a position in money_put
+// hh 981220 Added base class qualifiers to several typedefs in derived classes
+// hh 981220 Added class modifier to several friend declarations
+// hh 981220 Added typename to appropriate return types
+// hh 990109 Created a C lib independent ctype_base (suggested by bc).
+// hh 990120 changed name of MSIPL flags
+// hh 990215 removed _OVERLOAD_MONPUNCT_OFF and _OVERLOAD_NUMPUNCT_OFF, no longer needed
+// hh 990328 Fixed bug in floating point output rounding

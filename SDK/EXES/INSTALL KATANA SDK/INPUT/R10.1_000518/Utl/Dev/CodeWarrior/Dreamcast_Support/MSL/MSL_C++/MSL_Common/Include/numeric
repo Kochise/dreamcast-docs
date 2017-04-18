@@ -1,0 +1,222 @@
+/*  Metrowerks Standard Library  */
+
+/*  $Date: 1999/01/23 00:25:41 $ 
+ *  $Revision: 1.6 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Portions Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/**
+ **  numeric      // hh 971223 Changed filename from numeric.h to numeric
+ **
+ **  Lib++  : The Modena C++ Standard Library,
+ **           Version 2.4, October 1997
+ **
+ **  Copyright (c) 1995-1997 Modena Software Inc.
+ **/
+
+#ifndef _NUMERIC        // hh 971223 Made include guards standard
+#define _NUMERIC
+
+#include <mcompile.h>
+
+#ifndef RC_INVOKED // hh 971230
+
+#pragma options align=native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#ifdef MSIPL_USING_NAMESPACE
+	namespace std {
+#endif
+
+// Section 26.4 -- Generic numeric operations
+
+// Section 26.4.1 -- Accumulate
+
+template <class InputIterator, class T>
+inline
+T accumulate (InputIterator first, InputIterator last, T init)
+{
+    for (; first != last; ++first) 
+        init = init + *first;
+    return init;
+}
+
+template <class InputIterator, class T, class BinaryOperation>
+inline
+T accumulate (InputIterator first, InputIterator last, T init,
+             BinaryOperation binary_op)
+{
+    for (; first != last; ++first) 
+        init = binary_op (init, *first);
+    return init;
+}
+
+// Section 26.4.2 -- inner product
+
+template <class InputIterator1, class InputIterator2, class T>
+inline
+T inner_product (InputIterator1 first1, InputIterator1 last1,
+                InputIterator2 first2, T init)
+{
+    for (; first1 != last1; ++first1, ++first2) 
+        init = init + (*first1 * *first2);
+    return init;
+}
+
+template <class InputIterator1, class InputIterator2, class T,
+          class BinaryOperation1, class BinaryOperation2>
+inline
+T inner_product (InputIterator1 first1, InputIterator1 last1,
+                 InputIterator2 first2, T init,
+                 BinaryOperation1 binary_op1,
+                 BinaryOperation2 binary_op2)
+{
+    for (; first1 != last1; ++first1, ++first2) 
+        init = binary_op1 (init, binary_op2 (*first1, *first2));
+    return init;
+}
+
+template <class InputIterator, class OutputIterator, class T>
+inline
+OutputIterator __partial_sum (InputIterator first, InputIterator last,
+                             OutputIterator result, T*)
+{
+    T value = *first;
+    while (++first != last)
+    {
+        value = value + *first;
+        *++result = value;
+    }
+    return ++result;
+}
+
+// Section 26.4.3 -- Partial Sum
+
+template <class InputIterator, class OutputIterator>
+inline
+OutputIterator partial_sum (InputIterator first, InputIterator last,
+                            OutputIterator result)
+{
+    typedef typename iterator_traits <InputIterator>::value_type
+                     Value;
+    if (first == last) return result;
+    *result = *first;
+    return __partial_sum (first, last, result, (Value*)0);
+}
+
+template <class InputIterator, class OutputIterator, class T,
+          class BinaryOperation>
+inline
+OutputIterator __partial_sum (InputIterator first, InputIterator last,
+                              OutputIterator result, T*,
+                              BinaryOperation binary_op)
+{
+    T value = *first;
+    while (++first != last)
+    {
+        value = binary_op (value, *first);
+        *++result = value;
+    }
+    return ++result;
+}
+
+template <class InputIterator, class OutputIterator, class BinaryOperation>
+inline
+OutputIterator
+partial_sum (InputIterator first, InputIterator last,
+             OutputIterator result, BinaryOperation binary_op)
+{
+    typedef typename iterator_traits <InputIterator>::value_type
+                     Value;
+    if (first == last) return result;
+    *result = *first;
+    return __partial_sum (first, last, result,
+                          (Value*)0, binary_op);
+}
+
+template <class InputIterator, class OutputIterator, class T>
+inline
+OutputIterator
+__adjacent_difference (InputIterator first, InputIterator last, 
+                       OutputIterator result, T*)
+{
+    T value = *first;
+    while (++first != last)
+    {
+        T tmp = *first;
+        *++result = tmp - value;
+        value = tmp;
+    }
+    return ++result;
+}
+
+// Section 26.4.4 -- Adjacent Difference
+
+template <class InputIterator, class OutputIterator>
+inline
+OutputIterator
+adjacent_difference (InputIterator first, InputIterator last, 
+                     OutputIterator result)
+{
+    typedef typename iterator_traits <InputIterator>::value_type
+                     Value;
+    if (first == last) return result;
+    *result = *first;
+    return __adjacent_difference (first, last, result, (Value*)0);
+}
+
+template <class InputIterator, class OutputIterator, class T, 
+          class BinaryOperation>
+inline
+OutputIterator
+__adjacent_difference (InputIterator first, InputIterator last, 
+                       OutputIterator result, T*,
+                       BinaryOperation binary_op)
+{
+    T value = *first;
+    while (++first != last)
+    {
+        T tmp = *first;
+        *++result = binary_op (tmp, value);
+        value = tmp;
+    }
+    return ++result;
+}
+
+template <class InputIterator, class OutputIterator, class BinaryOperation>
+inline
+OutputIterator
+adjacent_difference (InputIterator first, InputIterator last,
+                     OutputIterator result,
+                     BinaryOperation binary_op)
+{
+    typedef typename iterator_traits <InputIterator>::value_type
+                     Value;
+    if (first == last) return result;
+    *result = *first;
+    return __adjacent_difference (first, last, result, (Value*)0,
+                                  binary_op);
+}
+
+#ifdef MSIPL_USING_NAMESPACE
+	} // namespace std
+#endif
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
+#pragma options align=reset
+
+#endif // RC_INVOKED
+
+#endif /* MSIPL_NUMERIC_H */
+
+// hh 971223 Made include guards standard
+// hh 971223 added alignment wrapper
+// hh 971223 Changed filename from numeric.h to numeric
+// hh 971230 added RC_INVOKED wrapper

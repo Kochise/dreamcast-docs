@@ -1,0 +1,209 @@
+/*  Metrowerks Standard Library  */
+
+/*  $Date: 1999/01/23 00:25:42 $ 
+ *  $Revision: 1.6 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Portions Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/**
+ **  utility           // hh 971226 Changed filename from utility.h to utility
+ **
+ **  Lib++  : The Modena C++ Standard Library,
+ **           Version 2.4, October 1997
+ **
+ **  Copyright (c) 1995-1997 Modena Software Inc.
+ **/
+
+#ifndef  _UTILITY           // hh 971226 Made include guards standard
+#define  _UTILITY
+
+#include <mcompile.h>
+
+//#include <iosfwd>    // hh 971220 fixed MOD_INCLUDE  // hh 980130 commented out.
+
+#ifndef RC_INVOKED // hh 971230
+
+#pragma options align=native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#ifdef MSIPL_USING_NAMESPACE
+	namespace std {
+#endif
+
+// Subclause 20.2.1 -- Operators
+
+#ifdef MSIPL_USING_NAMESPACE
+namespace rel_ops {
+
+template <class T>
+inline bool operator!= (const T& x, const T& y)
+{ return bool(! (x == y)); } 
+
+template <class T>
+inline bool operator> (const T& x, const T& y)
+{ return bool(y < x); }
+
+template <class T>
+inline bool operator<= (const T& x, const T& y)
+{ return  bool(!(y < x));}
+
+template <class T>
+inline bool operator>= (const T& x, const T& y)
+{ return  bool(!(x < y));}
+
+}  /* namespace rel_ops */
+#endif
+
+// Section 20.2.2 -- Pair
+
+template <class T1, class T2>
+struct pair {
+	typedef T1 first_type;
+	typedef T2 second_type;
+
+	T1 first;
+	T2 second;
+
+	pair() : first(T1()), second(T2()) {}
+	pair(const T1& x, const T2& y) : first(x), second(y) {}
+
+	#ifdef MSIPL_MEMBER_TEMPLATE
+		template<class U, class V>
+		pair(const pair<U, V>& p) : first(p.first), second(p.second) {}
+	#endif
+};
+
+template <class T1, class T2>
+inline bool operator== (const pair<T1, T2>& x, const pair<T1, T2>& y)
+{ return bool(x.first == y.first && x.second == y.second); }
+
+template <class T1, class T2>
+inline bool operator< (const pair<T1, T2>& x, const pair<T1, T2>& y)
+{ return bool(x.first < y.first || (! (y.first < x.first) && x.second < y.second)); }
+
+template <class T1, class T2>
+inline bool operator!= (const pair<T1, T2>& x, const pair<T1, T2>& y)
+{ return bool(!(x == y)); }
+
+template <class T1, class T2>
+inline bool operator<= (const pair<T1, T2>& x, const pair<T1, T2>& y)
+{ return bool(!(y < x)); }
+
+template <class T1, class T2>
+inline bool operator> (const pair<T1, T2>& x, const pair<T1, T2>& y)
+{ return bool(y < x); }
+
+template <class T1, class T2>
+inline bool operator >= (const pair<T1, T2>& x, const pair<T1, T2>& y)
+{ return bool(!(x < y)); }
+
+template <class T1, class T2>
+inline pair<T1, T2> make_pair (const T1& x, const T2& y)
+{ return pair<T1, T2> (x, y); }
+
+// hh 980518 **** WARNING ****  triple is not standard.
+// struct triple -- For Implementation Of Hash Tables
+
+template <class T1, class T2, class T3>
+struct triple {
+    T1 first;
+    T2 second;
+    T3 third;
+    triple (const T1& a, const T2& b, const T3& c) :
+           first (a), second (b), third (c) {}
+};
+
+template <class T1, class T2, class T3>
+inline bool operator== (const triple<T1, T2, T3>& x, const triple<T1, T2, T3>& y)
+{ return bool(x.first == y.first && x.second == y.second && x.third == y.third); }
+
+template <class T1, class T2, class T3>
+inline bool operator< (const triple<T1, T2, T3>& x, const triple<T1, T2, T3>& y)
+{
+    return bool(x.first < y.first ||
+           (! (y.first < x.first) && (x.second < y.second ||
+          (! y.second < x.second) && (x.third < y.third))));
+}
+
+template <class T1, class T2, class T3>
+inline triple<T1, T2, T3> make_triple (const T1& x, const T2& y, const T3& z)
+{ return triple<T1, T2, T3> (x, y, z); }
+/* Pro5
+// hh 980113 **** WARNING ****  restrictor is not standard.
+//           It will not be maintained, and will eventually disappear.
+//           If you use it, move it into your own code.
+
+// Section 20.2.2.3 -- Restrictor
+
+#ifndef __GNUC__
+
+template <class T>
+class restrictor {
+protected:
+    T value;
+public:
+    restrictor (const T& x) : value (x) {}
+    template <class TT>
+    friend bool operator== (const restrictor<TT>& x, const restrictor<TT>& y);
+    template <class TT>
+    friend bool operator< (const restrictor<TT>& x, const restrictor<TT>& y);
+    template <class TT>
+    friend bool operator!= (const restrictor<TT>& x, const restrictor<TT>& y);
+    template <class TT>
+    friend bool operator<= (const restrictor<TT>& x, const restrictor<TT>& y);
+    template <class TT>
+    friend bool operator>= (const restrictor<TT>& x, const restrictor<TT>& y);
+    template <class TT>
+    friend bool operator> (const restrictor<TT>& x, const restrictor<TT>& y);
+};
+
+template <class T>
+inline bool operator== (const restrictor<T>& x, const restrictor<T>& y)
+{ return (x.value == y.value); }
+
+template <class T>
+inline bool operator< (const restrictor<T>& x, const restrictor<T>& y)
+{ return (x.value < y.value); }
+
+template <class T>
+inline bool operator!= (const restrictor<T>& x, const restrictor<T>& y)
+{ return !(x.value == y.value); }
+
+template <class T>
+inline bool operator>= (const restrictor<T>& x, const restrictor<T>& y)
+{ return !(x.value < y.value); }
+
+template <class T>
+inline bool operator<= (const restrictor<T>& x, const restrictor<T>& y)
+{ return !(y.value < x.value); }
+
+template <class T>
+inline bool operator> (const restrictor<T>& x, const restrictor<T>& y)
+{ return (y.value < x.value); }
+
+#endif
+*/
+#ifdef MSIPL_USING_NAMESPACE
+	} // namespace std
+#endif
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
+#pragma options align=reset
+
+#endif // RC_INVOKED
+
+#endif /* MSIPL_UTILITY_H */
+
+// hh 971220 fixed MOD_INCLUDE
+// hh 971226 Changed filename from utility.h to utility
+// hh 971226 Made include guards standard
+// hh 971226 added alignment wrapper
+// hh 971230 added RC_INVOKED wrapper
+// hh 980130 commented out <iosfwd>

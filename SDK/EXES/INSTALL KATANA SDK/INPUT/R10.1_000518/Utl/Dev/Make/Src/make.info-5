@@ -1,0 +1,1199 @@
+This is Info file make.info, produced by Makeinfo version 1.67 from the
+input file make.texinfo.
+
+INFO-DIR-SECTION The GNU make utility
+START-INFO-DIR-ENTRY
+* Make: (make.info).               The GNU make utility.
+END-INFO-DIR-ENTRY
+
+   This file documents the GNU Make utility, which determines
+automatically which pieces of a large program need to be recompiled,
+and issues the commands to recompile them.
+
+   This is Edition 0.52, last updated 20 May 1998, of `The GNU Make
+Manual', for `make', Version 3.77.
+
+   Copyright (C) 1988, '89, '90, '91, '92, '93, '94, '95, '96, '97, '98
+Free Software Foundation, Inc.
+
+   Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+   Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided that
+the entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+
+   Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be stated in a
+translation approved by the Free Software Foundation.
+
+
+File: make.info,  Node: Origin Function,  Next: Shell Function,  Prev: Foreach Function,  Up: Functions
+
+The `origin' Function
+=====================
+
+   The `origin' function is unlike most other functions in that it does
+not operate on the values of variables; it tells you something *about*
+a variable.  Specifically, it tells you where it came from.
+
+   The syntax of the `origin' function is:
+
+     $(origin VARIABLE)
+
+   Note that VARIABLE is the *name* of a variable to inquire about; not
+a *reference* to that variable.  Therefore you would not normally use a
+`$' or parentheses when writing it.  (You can, however, use a variable
+reference in the name if you want the name not to be a constant.)
+
+   The result of this function is a string telling you how the variable
+VARIABLE was defined:
+
+`undefined'
+     if VARIABLE was never defined.
+
+`default'
+     if VARIABLE has a default definition, as is usual with `CC' and so
+     on.  *Note Variables Used by Implicit Rules: Implicit Variables.
+     Note that if you have redefined a default variable, the `origin'
+     function will return the origin of the later definition.
+
+`environment'
+     if VARIABLE was defined as an environment variable and the `-e'
+     option is *not* turned on (*note Summary of Options: Options
+     Summary.).
+
+`environment override'
+     if VARIABLE was defined as an environment variable and the `-e'
+     option *is* turned on (*note Summary of Options: Options Summary.).
+
+`file'
+     if VARIABLE was defined in a makefile.
+
+`command line'
+     if VARIABLE was defined on the command line.
+
+`override'
+     if VARIABLE was defined with an `override' directive in a makefile
+     (*note The `override' Directive: Override Directive.).
+
+`automatic'
+     if VARIABLE is an automatic variable defined for the execution of
+     the commands for each rule (*note Automatic Variables: Automatic.).
+
+   This information is primarily useful (other than for your curiosity)
+to determine if you want to believe the value of a variable.  For
+example, suppose you have a makefile `foo' that includes another
+makefile `bar'.  You want a variable `bletch' to be defined in `bar' if
+you run the command `make -f bar', even if the environment contains a
+definition of `bletch'.  However, if `foo' defined `bletch' before
+including `bar', you do not want to override that definition.  This
+could be done by using an `override' directive in `foo', giving that
+definition precedence over the later definition in `bar';
+unfortunately, the `override' directive would also override any command
+line definitions.  So, `bar' could include:
+
+     ifdef bletch
+     ifeq "$(origin bletch)" "environment"
+     bletch = barf, gag, etc.
+     endif
+     endif
+
+If `bletch' has been defined from the environment, this will redefine
+it.
+
+   If you want to override a previous definition of `bletch' if it came
+from the environment, even under `-e', you could instead write:
+
+     ifneq "$(findstring environment,$(origin bletch))" ""
+     bletch = barf, gag, etc.
+     endif
+
+   Here the redefinition takes place if `$(origin bletch)' returns
+either `environment' or `environment override'.  *Note Functions for
+String Substitution and Analysis: Text Functions.
+
+
+File: make.info,  Node: Shell Function,  Prev: Origin Function,  Up: Functions
+
+The `shell' Function
+====================
+
+   The `shell' function is unlike any other function except the
+`wildcard' function (*note The Function `wildcard': Wildcard Function.)
+in that it communicates with the world outside of `make'.
+
+   The `shell' function performs the same function that backquotes
+(``') perform in most shells: it does "command expansion".  This means
+that it takes an argument that is a shell command and returns the
+output of the command.  The only processing `make' does on the result,
+before substituting it into the surrounding text, is to convert each
+newline or carriage-return / newline pair to a single space.  It also
+removes the trailing (carriage-return and) newline, if it's the last
+thing in the result.
+
+   The commands run by calls to the `shell' function are run when the
+function calls are expanded.  In most cases, this is when the makefile
+is read in.  The exception is that function calls in the commands of
+the rules are expanded when the commands are run, and this applies to
+`shell' function calls like all others.
+
+   Here are some examples of the use of the `shell' function:
+
+     contents := $(shell cat foo)
+
+sets `contents' to the contents of the file `foo', with a space (rather
+than a newline) separating each line.
+
+     files := $(shell echo *.c)
+
+sets `files' to the expansion of `*.c'.  Unless `make' is using a very
+strange shell, this has the same result as `$(wildcard *.c)'.
+
+
+File: make.info,  Node: Running,  Next: Implicit Rules,  Prev: Functions,  Up: Top
+
+How to Run `make'
+*****************
+
+   A makefile that says how to recompile a program can be used in more
+than one way.  The simplest use is to recompile every file that is out
+of date.  Usually, makefiles are written so that if you run `make' with
+no arguments, it does just that.
+
+   But you might want to update only some of the files; you might want
+to use a different compiler or different compiler options; you might
+want just to find out which files are out of date without changing them.
+
+   By giving arguments when you run `make', you can do any of these
+things and many others.
+
+   The exit status of `make' is always one of three values:
+`0'
+     The exit status is zero if `make' is successful.
+
+`2'
+     The exit status is two if `make' encounters any errors.  It will
+     print messages describing the particular errors.
+
+`1'
+     The exit status is one if you use the `-q' flag and `make'
+     determines that some target is not already up to date.  *Note
+     Instead of Executing the Commands: Instead of Execution.
+
+* Menu:
+
+* Makefile Arguments::          How to specify which makefile to use.
+* Goals::                       How to use goal arguments to specify which
+                                  parts of the makefile to use.
+* Instead of Execution::        How to use mode flags to specify what
+                                  kind of thing to do with the commands
+                                  in the makefile other than simply
+                                  execute them.
+* Avoiding Compilation::        How to avoid recompiling certain files.
+* Overriding::                  How to override a variable to specify
+                                  an alternate compiler and other things.
+* Testing::                     How to proceed past some errors, to
+                                  test compilation.
+* Options Summary::             Summary of Options
+
+
+File: make.info,  Node: Makefile Arguments,  Next: Goals,  Up: Running
+
+Arguments to Specify the Makefile
+=================================
+
+   The way to specify the name of the makefile is with the `-f' or
+`--file' option (`--makefile' also works).  For example, `-f altmake'
+says to use the file `altmake' as the makefile.
+
+   If you use the `-f' flag several times and follow each `-f' with an
+argument, all the specified files are used jointly as makefiles.
+
+   If you do not use the `-f' or `--file' flag, the default is to try
+`GNUmakefile', `makefile', and `Makefile', in that order, and use the
+first of these three which exists or can be made (*note Writing
+Makefiles: Makefiles.).
+
+
+File: make.info,  Node: Goals,  Next: Instead of Execution,  Prev: Makefile Arguments,  Up: Running
+
+Arguments to Specify the Goals
+==============================
+
+   The "goals" are the targets that `make' should strive ultimately to
+update.  Other targets are updated as well if they appear as
+dependencies of goals, or dependencies of dependencies of goals, etc.
+
+   By default, the goal is the first target in the makefile (not
+counting targets that start with a period).  Therefore, makefiles are
+usually written so that the first target is for compiling the entire
+program or programs they describe.  If the first rule in the makefile
+has several targets, only the first target in the rule becomes the
+default goal, not the whole list.
+
+   You can specify a different goal or goals with arguments to `make'.
+Use the name of the goal as an argument.  If you specify several goals,
+`make' processes each of them in turn, in the order you name them.
+
+   Any target in the makefile may be specified as a goal (unless it
+starts with `-' or contains an `=', in which case it will be parsed as
+a switch or variable definition, respectively).  Even targets not in
+the makefile may be specified, if `make' can find implicit rules that
+say how to make them.
+
+   `Make' will set the special variable `MAKECMDGOALS' to the list of
+goals you specified on the command line.  If no goals were given on the
+command line, this variable is empty.  Note that this variable should
+be used only in special circumstances.
+
+   An example of appropriate use is to avoid including `.d' files
+during `clean' rules (*note Automatic Dependencies::.), so `make' won't
+create them only to immediately remove them again:
+
+     sources = foo.c bar.c
+     
+     ifneq ($(MAKECMDGOALS),clean)
+     include $(sources:.c=.d)
+     endif
+
+   One use of specifying a goal is if you want to compile only a part of
+the program, or only one of several programs.  Specify as a goal each
+file that you wish to remake.  For example, consider a directory
+containing several programs, with a makefile that starts like this:
+
+     .PHONY: all
+     all: size nm ld ar as
+
+   If you are working on the program `size', you might want to say
+`make size' so that only the files of that program are recompiled.
+
+   Another use of specifying a goal is to make files that are not
+normally made.  For example, there may be a file of debugging output,
+or a version of the program that is compiled specially for testing,
+which has a rule in the makefile but is not a dependency of the default
+goal.
+
+   Another use of specifying a goal is to run the commands associated
+with a phony target (*note Phony Targets::.) or empty target (*note
+Empty Target Files to Record Events: Empty Targets.).  Many makefiles
+contain a phony target named `clean' which deletes everything except
+source files.  Naturally, this is done only if you request it
+explicitly with `make clean'.  Following is a list of typical phony and
+empty target names.  *Note Standard Targets::, for a detailed list of
+all the standard target names which GNU software packages use.
+
+`all'
+     Make all the top-level targets the makefile knows about.
+
+`clean'
+     Delete all files that are normally created by running `make'.
+
+`mostlyclean'
+     Like `clean', but may refrain from deleting a few files that people
+     normally don't want to recompile.  For example, the `mostlyclean'
+     target for GCC does not delete `libgcc.a', because recompiling it
+     is rarely necessary and takes a lot of time.
+
+`distclean'
+`realclean'
+`clobber'
+     Any of these targets might be defined to delete *more* files than
+     `clean' does.  For example, this would delete configuration files
+     or links that you would normally create as preparation for
+     compilation, even if the makefile itself cannot create these files.
+
+`install'
+     Copy the executable file into a directory that users typically
+     search for commands; copy any auxiliary files that the executable
+     uses into the directories where it will look for them.
+
+`print'
+     Print listings of the source files that have changed.
+
+`tar'
+     Create a tar file of the source files.
+
+`shar'
+     Create a shell archive (shar file) of the source files.
+
+`dist'
+     Create a distribution file of the source files.  This might be a
+     tar file, or a shar file, or a compressed version of one of the
+     above, or even more than one of the above.
+
+`TAGS'
+     Update a tags table for this program.
+
+`check'
+`test'
+     Perform self tests on the program this makefile builds.
+
+
+File: make.info,  Node: Instead of Execution,  Next: Avoiding Compilation,  Prev: Goals,  Up: Running
+
+Instead of Executing the Commands
+=================================
+
+   The makefile tells `make' how to tell whether a target is up to date,
+and how to update each target.  But updating the targets is not always
+what you want.  Certain options specify other activities for `make'.
+
+`-n'
+`--just-print'
+`--dry-run'
+`--recon'
+     "No-op".  The activity is to print what commands would be used to
+     make the targets up to date, but not actually execute them.
+
+`-t'
+`--touch'
+     "Touch".  The activity is to mark the targets as up to date without
+     actually changing them.  In other words, `make' pretends to compile
+     the targets but does not really change their contents.
+
+`-q'
+`--question'
+     "Question".  The activity is to find out silently whether the
+     targets are up to date already; but execute no commands in either
+     case.  In other words, neither compilation nor output will occur.
+
+`-W FILE'
+`--what-if=FILE'
+`--assume-new=FILE'
+`--new-file=FILE'
+     "What if".  Each `-W' flag is followed by a file name.  The given
+     files' modification times are recorded by `make' as being the
+     present time, although the actual modification times remain the
+     same.  You can use the `-W' flag in conjunction with the `-n' flag
+     to see what would happen if you were to modify specific files.
+
+   With the `-n' flag, `make' prints the commands that it would
+normally execute but does not execute them.
+
+   With the `-t' flag, `make' ignores the commands in the rules and
+uses (in effect) the command `touch' for each target that needs to be
+remade.  The `touch' command is also printed, unless `-s' or `.SILENT'
+is used.  For speed, `make' does not actually invoke the program
+`touch'.  It does the work directly.
+
+   With the `-q' flag, `make' prints nothing and executes no commands,
+but the exit status code it returns is zero if and only if the targets
+to be considered are already up to date.  If the exit status is one,
+then some updating needs to be done.  If `make' encounters an error,
+the exit status is two, so you can distinguish an error from a target
+that is not up to date.
+
+   It is an error to use more than one of these three flags in the same
+invocation of `make'.
+
+   The `-n', `-t', and `-q' options do not affect command lines that
+begin with `+' characters or contain the strings `$(MAKE)' or
+`${MAKE}'.  Note that only the line containing the `+' character or the
+strings `$(MAKE)' or `${MAKE}' is run regardless of these options.
+Other lines in the same rule are not run unless they too begin with `+'
+or contain `$(MAKE)' or `${MAKE}' (*Note How the `MAKE' Variable Works:
+MAKE Variable.)
+
+   The `-W' flag provides two features:
+
+   * If you also use the `-n' or `-q' flag, you can see what `make'
+     would do if you were to modify some files.
+
+   * Without the `-n' or `-q' flag, when `make' is actually executing
+     commands, the `-W' flag can direct `make' to act as if some files
+     had been modified, without actually modifying the files.
+
+   Note that the options `-p' and `-v' allow you to obtain other
+information about `make' or about the makefiles in use (*note Summary
+of Options: Options Summary.).
+
+
+File: make.info,  Node: Avoiding Compilation,  Next: Overriding,  Prev: Instead of Execution,  Up: Running
+
+Avoiding Recompilation of Some Files
+====================================
+
+   Sometimes you may have changed a source file but you do not want to
+recompile all the files that depend on it.  For example, suppose you
+add a macro or a declaration to a header file that many other files
+depend on.  Being conservative, `make' assumes that any change in the
+header file requires recompilation of all dependent files, but you know
+that they do not need to be recompiled and you would rather not waste
+the time waiting for them to compile.
+
+   If you anticipate the problem before changing the header file, you
+can use the `-t' flag.  This flag tells `make' not to run the commands
+in the rules, but rather to mark the target up to date by changing its
+last-modification date.  You would follow this procedure:
+
+  1. Use the command `make' to recompile the source files that really
+     need recompilation.
+
+  2. Make the changes in the header files.
+
+  3. Use the command `make -t' to mark all the object files as up to
+     date.  The next time you run `make', the changes in the header
+     files will not cause any recompilation.
+
+   If you have already changed the header file at a time when some files
+do need recompilation, it is too late to do this.  Instead, you can use
+the `-o FILE' flag, which marks a specified file as "old" (*note
+Summary of Options: Options Summary.).  This means that the file itself
+will not be remade, and nothing else will be remade on its account.
+Follow this procedure:
+
+  1. Recompile the source files that need compilation for reasons
+     independent of the particular header file, with `make -o
+     HEADERFILE'.  If several header files are involved, use a separate
+     `-o' option for each header file.
+
+  2. Touch all the object files with `make -t'.
+
+
+File: make.info,  Node: Overriding,  Next: Testing,  Prev: Avoiding Compilation,  Up: Running
+
+Overriding Variables
+====================
+
+   An argument that contains `=' specifies the value of a variable:
+`V=X' sets the value of the variable V to X.  If you specify a value in
+this way, all ordinary assignments of the same variable in the makefile
+are ignored; we say they have been "overridden" by the command line
+argument.
+
+   The most common way to use this facility is to pass extra flags to
+compilers.  For example, in a properly written makefile, the variable
+`CFLAGS' is included in each command that runs the C compiler, so a
+file `foo.c' would be compiled something like this:
+
+     cc -c $(CFLAGS) foo.c
+
+   Thus, whatever value you set for `CFLAGS' affects each compilation
+that occurs.  The makefile probably specifies the usual value for
+`CFLAGS', like this:
+
+     CFLAGS=-g
+
+   Each time you run `make', you can override this value if you wish.
+For example, if you say `make CFLAGS='-g -O'', each C compilation will
+be done with `cc -c -g -O'.  (This illustrates how you can use quoting
+in the shell to enclose spaces and other special characters in the
+value of a variable when you override it.)
+
+   The variable `CFLAGS' is only one of many standard variables that
+exist just so that you can change them this way.  *Note Variables Used
+by Implicit Rules: Implicit Variables, for a complete list.
+
+   You can also program the makefile to look at additional variables of
+your own, giving the user the ability to control other aspects of how
+the makefile works by changing the variables.
+
+   When you override a variable with a command argument, you can define
+either a recursively-expanded variable or a simply-expanded variable.
+The examples shown above make a recursively-expanded variable; to make a
+simply-expanded variable, write `:=' instead of `='.  But, unless you
+want to include a variable reference or function call in the *value*
+that you specify, it makes no difference which kind of variable you
+create.
+
+   There is one way that the makefile can change a variable that you
+have overridden.  This is to use the `override' directive, which is a
+line that looks like this: `override VARIABLE = VALUE' (*note The
+`override' Directive: Override Directive.).
+
+
+File: make.info,  Node: Testing,  Next: Options Summary,  Prev: Overriding,  Up: Running
+
+Testing the Compilation of a Program
+====================================
+
+   Normally, when an error happens in executing a shell command, `make'
+gives up immediately, returning a nonzero status.  No further commands
+are executed for any target.  The error implies that the goal cannot be
+correctly remade, and `make' reports this as soon as it knows.
+
+   When you are compiling a program that you have just changed, this is
+not what you want.  Instead, you would rather that `make' try compiling
+every file that can be tried, to show you as many compilation errors as
+possible.
+
+   On these occasions, you should use the `-k' or `--keep-going' flag.
+This tells `make' to continue to consider the other dependencies of the
+pending targets, remaking them if necessary, before it gives up and
+returns nonzero status.  For example, after an error in compiling one
+object file, `make -k' will continue compiling other object files even
+though it already knows that linking them will be impossible.  In
+addition to continuing after failed shell commands, `make -k' will
+continue as much as possible after discovering that it does not know
+how to make a target or dependency file.  This will always cause an
+error message, but without `-k', it is a fatal error (*note Summary of
+Options: Options Summary.).
+
+   The usual behavior of `make' assumes that your purpose is to get the
+goals up to date; once `make' learns that this is impossible, it might
+as well report the failure immediately.  The `-k' flag says that the
+real purpose is to test as much as possible of the changes made in the
+program, perhaps to find several independent problems so that you can
+correct them all before the next attempt to compile.  This is why Emacs'
+`M-x compile' command passes the `-k' flag by default.
+
+
+File: make.info,  Node: Options Summary,  Prev: Testing,  Up: Running
+
+Summary of Options
+==================
+
+   Here is a table of all the options `make' understands:
+
+`-b'
+`-m'
+     These options are ignored for compatibility with other versions of
+     `make'.
+
+`-C DIR'
+`--directory=DIR'
+     Change to directory DIR before reading the makefiles.  If multiple
+     `-C' options are specified, each is interpreted relative to the
+     previous one: `-C / -C etc' is equivalent to `-C /etc'.  This is
+     typically used with recursive invocations of `make' (*note
+     Recursive Use of `make': Recursion.).
+
+`-d'
+`--debug'
+     Print debugging information in addition to normal processing.  The
+     debugging information says which files are being considered for
+     remaking, which file-times are being compared and with what
+     results, which files actually need to be remade, which implicit
+     rules are considered and which are applied--everything interesting
+     about how `make' decides what to do.
+
+`-e'
+`--environment-overrides'
+     Give variables taken from the environment precedence over
+     variables from makefiles.  *Note Variables from the Environment:
+     Environment.
+
+`-f FILE'
+`--file=FILE'
+`--makefile=FILE'
+     Read the file named FILE as a makefile.  *Note Writing Makefiles:
+     Makefiles.
+
+`-h'
+`--help'
+     Remind you of the options that `make' understands and then exit.
+
+`-i'
+`--ignore-errors'
+     Ignore all errors in commands executed to remake files.  *Note
+     Errors in Commands: Errors.
+
+`-I DIR'
+`--include-dir=DIR'
+     Specifies a directory DIR to search for included makefiles.  *Note
+     Including Other Makefiles: Include.  If several `-I' options are
+     used to specify several directories, the directories are searched
+     in the order specified.
+
+`-j [JOBS]'
+`--jobs=[JOBS]'
+     Specifies the number of jobs (commands) to run simultaneously.
+     With no argument, `make' runs as many jobs simultaneously as
+     possible.  If there is more than one `-j' option, the last one is
+     effective.  *Note Parallel Execution: Parallel, for more
+     information on how commands are run.  Note that this option is
+     ignored on MS-DOS.
+
+`-k'
+`--keep-going'
+     Continue as much as possible after an error.  While the target that
+     failed, and those that depend on it, cannot be remade, the other
+     dependencies of these targets can be processed all the same.
+     *Note Testing the Compilation of a Program: Testing.
+
+`-l [LOAD]'
+`--load-average[=LOAD]'
+`--max-load[=LOAD]'
+     Specifies that no new jobs (commands) should be started if there
+     are other jobs running and the load average is at least LOAD (a
+     floating-point number).  With no argument, removes a previous load
+     limit.  *Note Parallel Execution: Parallel.
+
+`-n'
+`--just-print'
+`--dry-run'
+`--recon'
+     Print the commands that would be executed, but do not execute them.
+     *Note Instead of Executing the Commands: Instead of Execution.
+
+`-o FILE'
+`--old-file=FILE'
+`--assume-old=FILE'
+     Do not remake the file FILE even if it is older than its
+     dependencies, and do not remake anything on account of changes in
+     FILE.  Essentially the file is treated as very old and its rules
+     are ignored.  *Note Avoiding Recompilation of Some Files: Avoiding
+     Compilation.
+
+`-p'
+`--print-data-base'
+     Print the data base (rules and variable values) that results from
+     reading the makefiles; then execute as usual or as otherwise
+     specified.  This also prints the version information given by the
+     `-v' switch (see below).  To print the data base without trying to
+     remake any files, use `make -p -f /dev/null'.
+
+`-q'
+`--question'
+     "Question mode".  Do not run any commands, or print anything; just
+     return an exit status that is zero if the specified targets are
+     already up to date, one if any remaking is required, or two if an
+     error is encountered.  *Note Instead of Executing the Commands:
+     Instead of Execution.
+
+`-r'
+`--no-builtin-rules'
+     Eliminate use of the built-in implicit rules (*note Using Implicit
+     Rules: Implicit Rules.).  You can still define your own by writing
+     pattern rules (*note Defining and Redefining Pattern Rules:
+     Pattern Rules.).  The `-r' option also clears out the default list
+     of suffixes for suffix rules (*note Old-Fashioned Suffix Rules:
+     Suffix Rules.).  But you can still define your own suffixes with a
+     rule for `.SUFFIXES', and then define your own suffix rules.  Note
+     that only *rules* are affected by the `-r' option; default
+     variables remain in effect (*note Variables Used by Implicit
+     Rules: Implicit Variables.).
+
+`-s'
+`--silent'
+`--quiet'
+     Silent operation; do not print the commands as they are executed.
+     *Note Command Echoing: Echoing.
+
+`-S'
+`--no-keep-going'
+`--stop'
+     Cancel the effect of the `-k' option.  This is never necessary
+     except in a recursive `make' where `-k' might be inherited from
+     the top-level `make' via `MAKEFLAGS' (*note Recursive Use of
+     `make': Recursion.) or if you set `-k' in `MAKEFLAGS' in your
+     environment.
+
+`-t'
+`--touch'
+     Touch files (mark them up to date without really changing them)
+     instead of running their commands.  This is used to pretend that
+     the commands were done, in order to fool future invocations of
+     `make'.  *Note Instead of Executing the Commands: Instead of
+     Execution.
+
+`-v'
+`--version'
+     Print the version of the `make' program plus a copyright, a list
+     of authors, and a notice that there is no warranty; then exit.
+
+`-w'
+`--print-directory'
+     Print a message containing the working directory both before and
+     after executing the makefile.  This may be useful for tracking
+     down errors from complicated nests of recursive `make' commands.
+     *Note Recursive Use of `make': Recursion.  (In practice, you
+     rarely need to specify this option since `make' does it for you;
+     see *Note The `--print-directory' Option: -w Option.)
+
+`--no-print-directory'
+     Disable printing of the working directory under `-w'.  This option
+     is useful when `-w' is turned on automatically, but you do not
+     want to see the extra messages.  *Note The `--print-directory'
+     Option: -w Option.
+
+`-W FILE'
+`--what-if=FILE'
+`--new-file=FILE'
+`--assume-new=FILE'
+     Pretend that the target FILE has just been modified.  When used
+     with the `-n' flag, this shows you what would happen if you were
+     to modify that file.  Without `-n', it is almost the same as
+     running a `touch' command on the given file before running `make',
+     except that the modification time is changed only in the
+     imagination of `make'.  *Note Instead of Executing the Commands:
+     Instead of Execution.
+
+`--warn-undefined-variables'
+     Issue a warning message whenever `make' sees a reference to an
+     undefined variable.  This can be helpful when you are trying to
+     debug makefiles which use variables in complex ways.
+
+
+File: make.info,  Node: Implicit Rules,  Next: Archives,  Prev: Running,  Up: Top
+
+Using Implicit Rules
+********************
+
+   Certain standard ways of remaking target files are used very often.
+For example, one customary way to make an object file is from a C
+source file using the C compiler, `cc'.
+
+   "Implicit rules" tell `make' how to use customary techniques so that
+you do not have to specify them in detail when you want to use them.
+For example, there is an implicit rule for C compilation.  File names
+determine which implicit rules are run.  For example, C compilation
+typically takes a `.c' file and makes a `.o' file.  So `make' applies
+the implicit rule for C compilation when it sees this combination of
+file name endings.
+
+   A chain of implicit rules can apply in sequence; for example, `make'
+will remake a `.o' file from a `.y' file by way of a `.c' file.
+
+   The built-in implicit rules use several variables in their commands
+so that, by changing the values of the variables, you can change the
+way the implicit rule works.  For example, the variable `CFLAGS'
+controls the flags given to the C compiler by the implicit rule for C
+compilation.
+
+   You can define your own implicit rules by writing "pattern rules".
+
+   "Suffix rules" are a more limited way to define implicit rules.
+Pattern rules are more general and clearer, but suffix rules are
+retained for compatibility.
+
+* Menu:
+
+* Using Implicit::              How to use an existing implicit rule
+                                  to get the commands for updating a file.
+* Catalogue of Rules::          A list of built-in implicit rules.
+* Implicit Variables::          How to change what predefined rules do.
+* Chained Rules::               How to use a chain of implicit rules.
+* Pattern Rules::               How to define new implicit rules.
+* Last Resort::                 How to defining commands for rules
+                                  which cannot find any.
+* Suffix Rules::                The old-fashioned style of implicit rule.
+* Implicit Rule Search::        The precise algorithm for applying
+                                  implicit rules.
+
+
+File: make.info,  Node: Using Implicit,  Next: Catalogue of Rules,  Up: Implicit Rules
+
+Using Implicit Rules
+====================
+
+   To allow `make' to find a customary method for updating a target
+file, all you have to do is refrain from specifying commands yourself.
+Either write a rule with no command lines, or don't write a rule at
+all.  Then `make' will figure out which implicit rule to use based on
+which kind of source file exists or can be made.
+
+   For example, suppose the makefile looks like this:
+
+     foo : foo.o bar.o
+             cc -o foo foo.o bar.o $(CFLAGS) $(LDFLAGS)
+
+Because you mention `foo.o' but do not give a rule for it, `make' will
+automatically look for an implicit rule that tells how to update it.
+This happens whether or not the file `foo.o' currently exists.
+
+   If an implicit rule is found, it can supply both commands and one or
+more dependencies (the source files).  You would want to write a rule
+for `foo.o' with no command lines if you need to specify additional
+dependencies, such as header files, that the implicit rule cannot
+supply.
+
+   Each implicit rule has a target pattern and dependency patterns.
+There may be many implicit rules with the same target pattern.  For
+example, numerous rules make `.o' files: one, from a `.c' file with the
+C compiler; another, from a `.p' file with the Pascal compiler; and so
+on.  The rule that actually applies is the one whose dependencies exist
+or can be made.  So, if you have a file `foo.c', `make' will run the C
+compiler; otherwise, if you have a file `foo.p', `make' will run the
+Pascal compiler; and so on.
+
+   Of course, when you write the makefile, you know which implicit rule
+you want `make' to use, and you know it will choose that one because you
+know which possible dependency files are supposed to exist.  *Note
+Catalogue of Implicit Rules: Catalogue of Rules, for a catalogue of all
+the predefined implicit rules.
+
+   Above, we said an implicit rule applies if the required dependencies
+"exist or can be made".  A file "can be made" if it is mentioned
+explicitly in the makefile as a target or a dependency, or if an
+implicit rule can be recursively found for how to make it.  When an
+implicit dependency is the result of another implicit rule, we say that
+"chaining" is occurring.  *Note Chains of Implicit Rules: Chained Rules.
+
+   In general, `make' searches for an implicit rule for each target, and
+for each double-colon rule, that has no commands.  A file that is
+mentioned only as a dependency is considered a target whose rule
+specifies nothing, so implicit rule search happens for it.  *Note
+Implicit Rule Search Algorithm: Implicit Rule Search, for the details
+of how the search is done.
+
+   Note that explicit dependencies do not influence implicit rule
+search.  For example, consider this explicit rule:
+
+     foo.o: foo.p
+
+The dependency on `foo.p' does not necessarily mean that `make' will
+remake `foo.o' according to the implicit rule to make an object file, a
+`.o' file, from a Pascal source file, a `.p' file.  For example, if
+`foo.c' also exists, the implicit rule to make an object file from a C
+source file is used instead, because it appears before the Pascal rule
+in the list of predefined implicit rules (*note Catalogue of Implicit
+Rules: Catalogue of Rules.).
+
+   If you do not want an implicit rule to be used for a target that has
+no commands, you can give that target empty commands by writing a
+semicolon (*note Defining Empty Commands: Empty Commands.).
+
+
+File: make.info,  Node: Catalogue of Rules,  Next: Implicit Variables,  Prev: Using Implicit,  Up: Implicit Rules
+
+Catalogue of Implicit Rules
+===========================
+
+   Here is a catalogue of predefined implicit rules which are always
+available unless the makefile explicitly overrides or cancels them.
+*Note Canceling Implicit Rules: Canceling Rules, for information on
+canceling or overriding an implicit rule.  The `-r' or
+`--no-builtin-rules' option cancels all predefined rules.
+
+   Not all of these rules will always be defined, even when the `-r'
+option is not given.  Many of the predefined implicit rules are
+implemented in `make' as suffix rules, so which ones will be defined
+depends on the "suffix list" (the list of dependencies of the special
+target `.SUFFIXES').  The default suffix list is: `.out', `.a', `.ln',
+`.o', `.c', `.cc', `.C', `.p', `.f', `.F', `.r', `.y', `.l', `.s',
+`.S', `.mod', `.sym', `.def', `.h', `.info', `.dvi', `.tex', `.texinfo',
+`.texi', `.txinfo', `.w', `.ch' `.web', `.sh', `.elc', `.el'.  All of
+the implicit rules described below whose dependencies have one of these
+suffixes are actually suffix rules.  If you modify the suffix list, the
+only predefined suffix rules in effect will be those named by one or
+two of the suffixes that are on the list you specify; rules whose
+suffixes fail to be on the list are disabled.  *Note Old-Fashioned
+Suffix Rules: Suffix Rules, for full details on suffix rules.
+
+Compiling C programs
+     `N.o' is made automatically from `N.c' with a command of the form
+     `$(CC) -c $(CPPFLAGS) $(CFLAGS)'.
+
+Compiling C++ programs
+     `N.o' is made automatically from `N.cc' or `N.C' with a command of
+     the form `$(CXX) -c $(CPPFLAGS) $(CXXFLAGS)'.  We encourage you to
+     use the suffix `.cc' for C++ source files instead of `.C'.
+
+Compiling Pascal programs
+     `N.o' is made automatically from `N.p' with the command `$(PC) -c
+     $(PFLAGS)'.
+
+Compiling Fortran and Ratfor programs
+     `N.o' is made automatically from `N.r', `N.F' or `N.f' by running
+     the Fortran compiler.  The precise command used is as follows:
+
+    `.f'
+          `$(FC) -c $(FFLAGS)'.
+
+    `.F'
+          `$(FC) -c $(FFLAGS) $(CPPFLAGS)'.
+
+    `.r'
+          `$(FC) -c $(FFLAGS) $(RFLAGS)'.
+
+Preprocessing Fortran and Ratfor programs
+     `N.f' is made automatically from `N.r' or `N.F'.  This rule runs
+     just the preprocessor to convert a Ratfor or preprocessable
+     Fortran program into a strict Fortran program.  The precise
+     command used is as follows:
+
+    `.F'
+          `$(FC) -F $(CPPFLAGS) $(FFLAGS)'.
+
+    `.r'
+          `$(FC) -F $(FFLAGS) $(RFLAGS)'.
+
+Compiling Modula-2 programs
+     `N.sym' is made from `N.def' with a command of the form `$(M2C)
+     $(M2FLAGS) $(DEFFLAGS)'.  `N.o' is made from `N.mod'; the form is:
+     `$(M2C) $(M2FLAGS) $(MODFLAGS)'.
+
+Assembling and preprocessing assembler programs
+     `N.o' is made automatically from `N.s' by running the assembler,
+     `as'.  The precise command is `$(AS) $(ASFLAGS)'.
+
+     `N.s' is made automatically from `N.S' by running the C
+     preprocessor, `cpp'.  The precise command is `$(CPP) $(CPPFLAGS)'.
+
+Linking a single object file
+     `N' is made automatically from `N.o' by running the linker
+     (usually called `ld') via the C compiler.  The precise command
+     used is `$(CC) $(LDFLAGS) N.o $(LOADLIBES)'.
+
+     This rule does the right thing for a simple program with only one
+     source file.  It will also do the right thing if there are multiple
+     object files (presumably coming from various other source files),
+     one of which has a name matching that of the executable file.
+     Thus,
+
+          x: y.o z.o
+
+     when `x.c', `y.c' and `z.c' all exist will execute:
+
+          cc -c x.c -o x.o
+          cc -c y.c -o y.o
+          cc -c z.c -o z.o
+          cc x.o y.o z.o -o x
+          rm -f x.o
+          rm -f y.o
+          rm -f z.o
+
+     In more complicated cases, such as when there is no object file
+     whose name derives from the executable file name, you must write
+     an explicit command for linking.
+
+     Each kind of file automatically made into `.o' object files will
+     be automatically linked by using the compiler (`$(CC)', `$(FC)' or
+     `$(PC)'; the C compiler `$(CC)' is used to assemble `.s' files)
+     without the `-c' option.  This could be done by using the `.o'
+     object files as intermediates, but it is faster to do the
+     compiling and linking in one step, so that's how it's done.
+
+Yacc for C programs
+     `N.c' is made automatically from `N.y' by running Yacc with the
+     command `$(YACC) $(YFLAGS)'.
+
+Lex for C programs
+     `N.c' is made automatically from `N.l' by by running Lex.  The
+     actual command is `$(LEX) $(LFLAGS)'.
+
+Lex for Ratfor programs
+     `N.r' is made automatically from `N.l' by by running Lex.  The
+     actual command is `$(LEX) $(LFLAGS)'.
+
+     The convention of using the same suffix `.l' for all Lex files
+     regardless of whether they produce C code or Ratfor code makes it
+     impossible for `make' to determine automatically which of the two
+     languages you are using in any particular case.  If `make' is
+     called upon to remake an object file from a `.l' file, it must
+     guess which compiler to use.  It will guess the C compiler, because
+     that is more common.  If you are using Ratfor, make sure `make'
+     knows this by mentioning `N.r' in the makefile.  Or, if you are
+     using Ratfor exclusively, with no C files, remove `.c' from the
+     list of implicit rule suffixes with:
+
+          .SUFFIXES:
+          .SUFFIXES: .o .r .f .l ...
+
+Making Lint Libraries from C, Yacc, or Lex programs
+     `N.ln' is made from `N.c' by running `lint'.  The precise command
+     is `$(LINT) $(LINTFLAGS) $(CPPFLAGS) -i'.  The same command is
+     used on the C code produced from `N.y' or `N.l'.
+
+TeX and Web
+     `N.dvi' is made from `N.tex' with the command `$(TEX)'.  `N.tex'
+     is made from `N.web' with `$(WEAVE)', or from `N.w' (and from
+     `N.ch' if it exists or can be made) with `$(CWEAVE)'.  `N.p' is
+     made from `N.web' with `$(TANGLE)' and `N.c' is made from `N.w'
+     (and from `N.ch' if it exists or can be made) with `$(CTANGLE)'.
+
+Texinfo and Info
+     `N.dvi' is made from `N.texinfo', `N.texi', or `N.txinfo', with
+     the command `$(TEXI2DVI) $(TEXI2DVI_FLAGS)'.  `N.info' is made from
+     `N.texinfo', `N.texi', or `N.txinfo', with the command
+     `$(MAKEINFO) $(MAKEINFO_FLAGS)'.
+
+RCS
+     Any file `N' is extracted if necessary from an RCS file named
+     either `N,v' or `RCS/N,v'.  The precise command used is
+     `$(CO) $(COFLAGS)'.  `N' will not be extracted from RCS if it
+     already exists, even if the RCS file is newer.  The rules for RCS
+     are terminal (*note Match-Anything Pattern Rules: Match-Anything
+     Rules.), so RCS files cannot be generated from another source;
+     they must actually exist.
+
+SCCS
+     Any file `N' is extracted if necessary from an SCCS file named
+     either `s.N' or `SCCS/s.N'.  The precise command used is
+     `$(GET) $(GFLAGS)'.  The rules for SCCS are terminal (*note
+     Match-Anything Pattern Rules: Match-Anything Rules.), so SCCS
+     files cannot be generated from another source; they must actually
+     exist.
+
+     For the benefit of SCCS, a file `N' is copied from `N.sh' and made
+     executable (by everyone).  This is for shell scripts that are
+     checked into SCCS.  Since RCS preserves the execution permission
+     of a file, you do not need to use this feature with RCS.
+
+     We recommend that you avoid using of SCCS.  RCS is widely held to
+     be superior, and is also free.  By choosing free software in place
+     of comparable (or inferior) proprietary software, you support the
+     free software movement.
+
+   Usually, you want to change only the variables listed in the table
+above, which are documented in the following section.
+
+   However, the commands in built-in implicit rules actually use
+variables such as `COMPILE.c', `LINK.p', and `PREPROCESS.S', whose
+values contain the commands listed above.
+
+   `make' follows the convention that the rule to compile a `.X' source
+file uses the variable `COMPILE.X'.  Similarly, the rule to produce an
+executable from a `.X' file uses `LINK.X'; and the rule to preprocess a
+`.X' file uses `PREPROCESS.X'.
+
+   Every rule that produces an object file uses the variable
+`OUTPUT_OPTION'.  `make' defines this variable either to contain `-o
+$@', or to be empty, depending on a compile-time option.  You need the
+`-o' option to ensure that the output goes into the right file when the
+source file is in a different directory, as when using `VPATH' (*note
+Directory Search::.).  However, compilers on some systems do not accept
+a `-o' switch for object files.  If you use such a system, and use
+`VPATH', some compilations will put their output in the wrong place.  A
+possible workaround for this problem is to give `OUTPUT_OPTION' the
+value `; mv $*.o $@'.
+
+
+File: make.info,  Node: Implicit Variables,  Next: Chained Rules,  Prev: Catalogue of Rules,  Up: Implicit Rules
+
+Variables Used by Implicit Rules
+================================
+
+   The commands in built-in implicit rules make liberal use of certain
+predefined variables.  You can alter these variables in the makefile,
+with arguments to `make', or in the environment to alter how the
+implicit rules work without redefining the rules themselves.
+
+   For example, the command used to compile a C source file actually
+says `$(CC) -c $(CFLAGS) $(CPPFLAGS)'.  The default values of the
+variables used are `cc' and nothing, resulting in the command `cc -c'.
+By redefining `CC' to `ncc', you could cause `ncc' to be used for all C
+compilations performed by the implicit rule.  By redefining `CFLAGS' to
+be `-g', you could pass the `-g' option to each compilation.  *All*
+implicit rules that do C compilation use `$(CC)' to get the program
+name for the compiler and *all* include `$(CFLAGS)' among the arguments
+given to the compiler.
+
+   The variables used in implicit rules fall into two classes: those
+that are names of programs (like `CC') and those that contain arguments
+for the programs (like `CFLAGS').  (The "name of a program" may also
+contain some command arguments, but it must start with an actual
+executable program name.)  If a variable value contains more than one
+argument, separate them with spaces.
+
+   Here is a table of variables used as names of programs in built-in
+rules:
+
+`AR'
+     Archive-maintaining program; default `ar'.
+
+`AS'
+     Program for doing assembly; default `as'.
+
+`CC'
+     Program for compiling C programs; default `cc'.
+
+`CXX'
+     Program for compiling C++ programs; default `g++'.
+
+`CO'
+     Program for extracting a file from RCS; default `co'.
+
+`CPP'
+     Program for running the C preprocessor, with results to standard
+     output; default `$(CC) -E'.
+
+`FC'
+     Program for compiling or preprocessing Fortran and Ratfor programs;
+     default `f77'.
+
+`GET'
+     Program for extracting a file from SCCS; default `get'.
+
+`LEX'
+     Program to use to turn Lex grammars into C programs or Ratfor
+     programs; default `lex'.
+
+`PC'
+     Program for compiling Pascal programs; default `pc'.
+
+`YACC'
+     Program to use to turn Yacc grammars into C programs; default
+     `yacc'.
+
+`YACCR'
+     Program to use to turn Yacc grammars into Ratfor programs; default
+     `yacc -r'.
+
+`MAKEINFO'
+     Program to convert a Texinfo source file into an Info file; default
+     `makeinfo'.
+
+`TEX'
+     Program to make TeX DVI files from TeX source; default `tex'.
+
+`TEXI2DVI'
+     Program to make TeX DVI files from Texinfo source; default
+     `texi2dvi'.
+
+`WEAVE'
+     Program to translate Web into TeX; default `weave'.
+
+`CWEAVE'
+     Program to translate C Web into TeX; default `cweave'.
+
+`TANGLE'
+     Program to translate Web into Pascal; default `tangle'.
+
+`CTANGLE'
+     Program to translate C Web into C; default `ctangle'.
+
+`RM'
+     Command to remove a file; default `rm -f'.
+
+   Here is a table of variables whose values are additional arguments
+for the programs above.  The default values for all of these is the
+empty string, unless otherwise noted.
+
+`ARFLAGS'
+     Flags to give the archive-maintaining program; default `rv'.
+
+`ASFLAGS'
+     Extra flags to give to the assembler (when explicitly invoked on a
+     `.s' or `.S' file).
+
+`CFLAGS'
+     Extra flags to give to the C compiler.
+
+`CXXFLAGS'
+     Extra flags to give to the C++ compiler.
+
+`COFLAGS'
+     Extra flags to give to the RCS `co' program.
+
+`CPPFLAGS'
+     Extra flags to give to the C preprocessor and programs that use it
+     (the C and Fortran compilers).
+
+`FFLAGS'
+     Extra flags to give to the Fortran compiler.
+
+`GFLAGS'
+     Extra flags to give to the SCCS `get' program.
+
+`LDFLAGS'
+     Extra flags to give to compilers when they are supposed to invoke
+     the linker, `ld'.
+
+`LFLAGS'
+     Extra flags to give to Lex.
+
+`PFLAGS'
+     Extra flags to give to the Pascal compiler.
+
+`RFLAGS'
+     Extra flags to give to the Fortran compiler for Ratfor programs.
+
+`YFLAGS'
+     Extra flags to give to Yacc.
+

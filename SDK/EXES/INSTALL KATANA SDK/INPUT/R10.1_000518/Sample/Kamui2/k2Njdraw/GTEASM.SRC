@@ -1,0 +1,836 @@
+;----------------------------------------------------------------------------
+;			Assembler Globals
+;----------------------------------------------------------------------------
+		.EXPORT			_MatrixBuffer
+		.EXPORT			_ViewMatrix
+		.EXPORT			_LightVector
+
+		.EXPORT			_CurrentGlobal
+		.EXPORT			_CurrentOpaqueGlobal
+		.EXPORT			_CurrentTransGlobal
+		.EXPORT			_CurrentPunchGlobal
+
+		.EXPORT			_kgAmbientColor
+		.EXPORT			_kgPallalelLightDir
+		.EXPORT			_kgPallalelLightColor
+
+		.EXPORT			_kgScreenCenterX
+		.EXPORT			_kgScreenCenterY
+		.EXPORT			_kgScreenDistance
+		.EXPORT			_kgScreenScaleX
+		.EXPORT			_kgScreenScaleY
+
+;----------------------------------------------------------------------------
+;			Assembler Exports
+;----------------------------------------------------------------------------
+		.EXPORT			_kgFinalizeView
+		.EXPORT			_kgSetAngleRotateX
+		.EXPORT			_kgSetAngleRotateY
+
+		.EXPORT			_kgSetIdentity
+		.EXPORT			_kgSetMatrix
+		.EXPORT			_kgGetMatrix
+
+		.EXPORT			_kgScale
+		.EXPORT			_kgTranslate
+
+		.EXPORT			_kgRotateX
+		.EXPORT			_kgRotateY
+		.EXPORT			_kgRotateZ
+
+		.EXPORT			_kgProjection
+		.EXPORT			_kgPoint
+		.EXPORT			_kgVector
+		.EXPORT			_kgEnvMap
+		.EXPORT			_kgInnerProduct
+		.EXPORT			_kgOuterProduct
+		.EXPORT			_kgPreprocessLight
+		.EXPORT			_kgCalcLambert
+
+		.EXPORT			_kgSetUnitMatrix
+
+		.SECTION		PSG,CODE,ALIGN=32
+
+		.ALIGN 32
+_MatrixBuffer:
+		.RES.L		(256)
+_ViewMatrix:
+		.RES.L		(16)
+_MatrixWork:
+		.RES.L		(16)
+
+_CurrentGlobal:
+_CurrentOpaqueGlobal:
+		.RES.L		(16)
+_CurrentTransGlobal:
+		.RES.L		(16)
+_CurrentPunchGlobal:
+		.RES.L		(16)
+
+_kgAmbientColor:
+		.RES.L		(4)
+_kgPallalelLightDir:			;	/* 平行光源 */
+		.RES.L		(4)
+_kgPallalelLightDir1:			;	/* 平行光源 1 */
+		.RES.L		(4)
+_kgPallalelLightDir2:			;	/* 平行光源 2 */
+		.RES.L		(4)
+
+_kgPallalelLightColor:			;	/* 平行光源の色 */
+		.RES.L		(4)
+_kgPallalelLightColor1:			;	/* 平行光源の色 1 */
+		.RES.L		(4)
+_kgPallalelLightColor2:			;	/* 平行光源の色 2*/
+		.RES.L		(4)
+
+_LightVector:
+		.RES.L		(4)
+_LightVector1:
+		.RES.L		(4)
+_LightVector2:
+		.RES.L		(4)
+
+_kgScreenCenterX:
+		.RES.L	(1)
+_kgScreenCenterY:
+		.RES.L	(1)
+_kgScreenDistance:
+		.RES.L	(1)
+_kgScreenScaleX:
+		.RES.L	(1)
+_kgScreenScaleY:
+		.RES.L	(1)
+
+
+_kgSetIdentity:
+		fmov.s		FR15, 	@-r15
+		fmov.s		FR14, 	@-r15
+		fmov.s		FR13, 	@-r15
+		fmov.s		FR12, 	@-r15
+
+		fldi1		FR0		;_11
+		fldi0		FR1		;_12
+		fldi0		FR2		;_13
+		fldi0		FR3		;_14
+		fldi0		FR4		;_21
+		fldi1		FR5		;_22
+		fldi0		FR6		;_23
+		fldi0		FR7		;_24
+		fldi0		FR8		;_31
+		fldi0		FR9		;_32
+		fldi1		FR10	;_33
+		fldi0		FR11	;_34
+		fldi0		FR12	;_41
+		fldi0		FR13	;_42
+		fldi0		FR14	;_43
+		fldi1		FR15	;_44
+		frchg
+
+		fmov.s		@r15+, 	FR12 	
+		fmov.s		@r15+,	FR13
+		fmov.s		@r15+,	FR14
+		rts
+		fmov.s		@r15+,	FR15
+
+_kgSetMatrix:
+		fschg
+		fmov		@r4+, 	XD0
+		fmov		@r4+, 	XD2
+		fmov		@r4+, 	XD4
+		fmov		@r4+, 	XD6
+		fmov		@r4+, 	XD8
+		fmov		@r4+, 	XD10
+		fmov		@r4+, 	XD12
+		fmov		@r4+, 	XD14
+		rts
+		fschg
+
+_kgGetMatrix:
+		add			#64, 	r4
+		fschg
+		fmov		XD14,	@-r4 
+		fmov		XD12, 	@-r4 
+		fmov		XD10, 	@-r4 
+		fmov		XD8, 	@-r4 
+		fmov		XD6, 	@-r4 
+		fmov		XD4, 	@-r4 
+		fmov		XD2, 	@-r4 
+		fmov		XD0, 	@-r4 
+		rts
+		fschg
+
+;----------------------
+;	Scaling	(X, Y, Z) X Scale FR4 = XScale, FR5=YScale, FR6=ZScale
+;----------------------
+_kgScale:							; X Scale FR4 = XScale, FR5=YScale, FR6=ZScale
+		fschg
+		fmov		XD0, DR0		; FR0 = _11 FR1 = _12  Current Matrix
+		fmov		XD2, DR2		; FR2 = _13 FR3 = _14
+		fmul		FR4, FR0		;
+		fmul		FR5, FR1		;
+		fmov		DR0, XD0		; FR0,1 -> XF0,1
+		fmul		FR6, FR2		;
+		fmov		DR2, XD2		; FR2,3 -> XF2,3
+
+		fmov		XD4, DR0		; FR0 = _21 FR1 = _22  Current Matrix
+		fmov		XD6, DR2		; FR2 = _23 FR3 = _24
+		fmul		FR4, FR0		;
+		fmul		FR5, FR1		;
+		fmov		DR0, XD4		; FR0,1 -> XF4,5
+		fmul		FR6, FR2		;
+		fmov		DR2, XD6		; FR2,3 -> XF6,7
+
+		fmov		XD8, DR0		; FR0 = _31 FR1 = _32  Current Matrix
+		fmov		XD10, DR2		; FR2 = _33 FR3 = _34
+		fmul		FR4, FR0		;
+		fmul		FR5, FR1		;
+		fmov		DR0, XD8		; FR0,1 -> XF8,9
+		fmul		FR6, FR2		;
+		fmov		DR2, XD10		; FR2,3 -> XF10,11
+
+		fmov		XD12, DR0		; FR0 = _41 FR1 = _42  Current Matrix
+		fmov		XD14, DR2		; FR2 = _43 FR3 = _44
+		fmul		FR4, FR0		;
+		fmul		FR5, FR1		;
+		fmov		DR0, XD4		; FR0,1 -> XF12,13
+		fmul		FR6, FR2		;
+		fmov		DR2, XD6		; FR2,3 -> XF14,15
+
+		rts
+		fschg
+
+;----------------------
+;	Translate	(X, Y, Z) X Scale FR4 = Xtrans, FR5=Ytrans, FR6=Ztrans
+;----------------------
+_kgTranslate:
+		fldi1		FR7
+		ftrv		XMTRX,	FV4
+		fschg
+		fmov		DR4,	XD12
+		fmov		DR6,	XD14
+		rts
+		fschg
+;----------------------
+;	Rotate X pole	R4 = X angle
+;----------------------
+_kgRotateX:
+		fmov.s		FR15, 	@-r15	; Push Registers
+		fmov.s		FR14, 	@-r15
+		fmov.s		FR13, 	@-r15
+		fmov.s		FR12, 	@-r15
+
+		fschg
+		lds			R4, 	FPUL
+		fsca		FPUL, 	DR0		; FR0 = sin(R4) FR1 = cos(R4) R4 is angle
+
+		fmov		XD12, 	DR12
+		fmov		XD14, 	DR14
+		fschg
+
+		fldi0		FR4
+		fmov		FR1,	FR5
+		fmov		FR0,	FR6
+		fneg		FR6
+		fldi0		FR7
+		ftrv		XMTRX,	FV4
+
+		fldi0		FR8
+		fmov		FR0,	FR9
+		fmov		FR1,	FR10
+		fldi0		FR11
+		ftrv		XMTRX,	FV8
+		fschg
+
+		fmov		XD0, 	DR0
+		fmov		XD2, 	DR2
+		frchg
+
+		fschg
+		fmov.s		@r15+, 	FR12 	;Pop Registers
+		fmov.s		@r15+,	FR13
+		fmov.s		@r15+,	FR14
+		rts
+		fmov.s		@r15+,	FR15
+
+;----------------------
+;	Rotate Y pole	R4 = Y angle
+;----------------------
+_kgRotateY:
+		fmov.s		FR15, 	@-r15	; Push Registers
+		fmov.s		FR14, 	@-r15
+		fmov.s		FR13, 	@-r15
+		fmov.s		FR12, 	@-r15
+
+		fschg
+		lds			R4, 	FPUL
+		fsca		FPUL, 	DR4		; FR4 = sin(R4) FR5 = cos(R4) R4 is angle
+		fmov		XD12, 	DR12	; _41 to _44 to Forword
+		fmov		XD14, 	DR14
+
+		fschg
+		fmov		FR5,	FR0
+		fldi0		FR1
+		fmov		FR4,	FR2
+		fldi0		FR3
+		ftrv		XMTRX,	FV0
+
+		fmov		FR4,	FR8
+		fneg		FR8
+		fldi0		FR9
+		fmov		FR5,	FR10
+		fldi0		FR11
+		ftrv		XMTRX,	FV8
+		fschg
+
+		fmov		XD4, 	DR4
+		fmov		XD6, 	DR6
+		fschg
+		frchg
+
+		fmov.s		@r15+, 	FR12 	;Pop Registers
+		fmov.s		@r15+,	FR13
+		fmov.s		@r15+,	FR14
+		rts
+		fmov.s		@r15+,	FR15
+
+;----------------------
+;	Rotate Z pole	R4 = Z angle
+;----------------------
+_kgRotateZ:
+		fmov.s		FR15, 	@-r15	; Push Registers
+		fmov.s		FR14, 	@-r15
+		fmov.s		FR13, 	@-r15
+		fmov.s		FR12, 	@-r15
+
+		fschg
+		lds			R4, 	FPUL
+		fsca		FPUL, 	DR8		; FR8 = sin(R4) FR9 = cos(R4) R4 is angle
+		fmov		XD12, 	DR12	; _41 to _44 to Forword
+		fmov		XD14, 	DR14
+
+		fschg
+		fmov.s		FR9,	FR0
+		fmov.s		FR8,	FR1
+		fneg		FR1
+		fldi0		FR2
+		fldi0		FR3
+		ftrv		XMTRX,	FV0
+
+		fmov.s		FR8,	FR4
+		fmov.s		FR9,	FR5
+		fldi0		FR6
+		fldi0		FR7
+		ftrv		XMTRX,	FV4
+		fschg
+
+		fmov		XD8, 	DR8
+		fmov		XD10, 	DR10
+		fschg
+		frchg
+
+		fmov.s		@r15+, 	FR12 	;Pop Registers
+		fmov.s		@r15+,	FR13
+		fmov.s		@r15+,	FR14
+		rts
+		fmov.s		@r15+,	FR15
+
+_kgProjection:
+		mov.l		#_kgScreenCenterX, r0
+		fmov.s		@r5+, 	FR0
+		fmov.s		@r5+, 	FR1
+		fmov.s		@r5+, 	FR2
+		fldi1		FR3
+		ftrv		XMTRX,	FV0		; FR0 --- X(3D) FR1 --- Y(3D) FR2 --- Z(3D)
+
+		fmov.s		@r0+, 	FR4		; FR4 = CenterX
+		fmov.s		@r0+, 	FR5		; FR5 = CenterY
+		fmov.s		@r0+, 	FR6		; FR6 = Distance
+		fmov.s		@r0+,	FR8		; FR8 = ScaleX
+		fmov.s		@r0+,	FR9		; FR9 = ScaleX
+
+		fsub		FR6, 	FR2		; FR2 = Z - Distance
+		mov.l		#0		,r0
+		fldi1		FR7
+		fdiv		FR2, 	FR7		; FR7 = 1.0f / (Z - Distance)
+		add			#12,	r4
+		fmul		FR7,	FR6		; FR6 = Distance / (Z - Distance)
+
+		fmov.s		FR7,	@-r4	; 1/Z
+		fmul		FR6,	FR1		; Pers * Y
+		fmul		FR9,	FR1		; ScaleY * Pers * Y
+		fadd		FR5,	FR1		; += CenterY
+		fmov.s		FR1,	@-r4	; Y
+
+		fldi1		FR5
+		fcmp/GT		FR7,	FR5		; Comp 1/Z
+		bt			_kgProjection_10
+
+		add			#1,		r0		; Overflow Near Clipping
+_kgProjection_10:
+		fmul		FR8,	FR0		; ScaleX * X
+		fmul		FR6, 	FR0		; Pers * X
+		fadd		FR4,	FR0		; += CenterX
+		rts
+		fmov.s		FR0,	@-r4	; X
+
+_kgInnerProduct:
+		fmov.s		@r4+, 	FR0
+		fmov.s		@r4+, 	FR1
+		fmov.s		@r4+, 	FR2
+		fldi0		FR3
+
+		fmov.s		@r5+, 	FR4
+		fmov.s		@r5+, 	FR5
+		fmov.s		@r5+, 	FR6
+		fldi0		FR7
+
+		fipr		FV0,	FV4
+		rts
+		fmov		FR7,	FR0
+
+_kgOuterProduct:
+		rts
+		fldi0		FR0
+
+
+_kgPreprocessLight:
+		fmov.s		FR15, 	@-r15
+		fmov.s		FR14, 	@-r15
+		fmov.s		FR13, 	@-r15
+		fmov.s		FR12, 	@-r15
+
+		mov.l		#3,		r2
+		mov.l		#_LightVector, r1
+		mov.l		#_kgPallalelLightDir, r0
+
+_kgPreprocessLight_10:
+		add			#12,	r1
+		fmov		@r0+,	FR12
+		fmov		@r0+,	FR13
+		fmov		@r0+,	FR14
+		add			#4,		r0
+		fldi0		FR15
+
+		fschg
+		fmov		XD0,	DR0
+		fmov		XD2,	DR2
+		fipr		FV12,	FV0
+		fmov		XD4,	DR4
+		fmov		XD6,	DR6
+		fipr		FV12,	FV4
+		fmov		XD8,	DR8
+		fmov		XD10,	DR10
+		fipr		FV12,	FV8
+		fschg
+
+		fmov		FR11,	@-r1
+		fmov		FR7,	@-r1
+		fmov		FR3,	@-r1
+		dt			r2
+		bf/S		_kgPreprocessLight_10
+		add			#16,	r1
+
+		fmov.s		@r15+, 	FR12 	
+		fmov.s		@r15+,	FR13
+		fmov.s		@r15+,	FR14
+		rts
+		fmov.s		@r15+,	FR15
+
+_kgDataMask:
+	.DATA.L		H'000000FF
+_kgNormalizeVal
+	.FDATA.S	F'0.00392156863			; 1/256.0f
+
+_kgCalcLambert:
+		fmov.s		FR15, 	@-r15
+		fmov.s		FR14, 	@-r15
+		fmov.s		FR13, 	@-r15
+		fmov.s		FR12, 	@-r15
+
+		;------ Calc Inner Product ---------
+		fmov.s		@r5+, 	FR0			; Vertex Normal
+		fmov.s		@r5+, 	FR1
+		fmov.s		@r5+, 	FR2
+		fldi0		FR3
+
+		mov.l		#_LightVector,		r0
+		fmov.s		@r0+, 	FR4
+		fmov.s		@r0+, 	FR5
+		fmov.s		@r0+, 	FR6
+		add			#4,		r0
+		fldi0		FR7
+		fipr		FV0,	FV4		;FR7 = Inner Product Light 1
+
+		fmov.s		@r0+, 	FR8
+		fmov.s		@r0+, 	FR9
+		fmov.s		@r0+, 	FR10
+		add			#4,		r0
+		fldi0		FR11
+		fipr		FV0,	FV8		;FR11 = Inner Product Light 2
+
+		fmov.s		@r0+, 	FR12
+		fmov.s		@r0+, 	FR13
+		fmov.s		@r0+, 	FR14
+		add			#4,		r0
+		fldi0		FR15
+		fipr		FV0,	FV12	;FR15 = Inner Product Light 3
+
+		; -------- Cast Diffuse Light ---------
+		mov.l		#_kgNormalizeVal,	r1
+		fmov.s		@r1,		FR0				; FR0 --- 1/256.0
+		mov.l		#_kgDataMask,		r1
+		mov.l		@r1,		r1				; r1 -- 8bit mask bit
+
+		mov.b		@r6+,		r2
+		and			r1,			r2				; bit mask
+		lds			r2,			FPUL
+		float		FPUL,		FR10			; Cast B
+		fmul		FR0,		FR10			; FR10 Diffuse B	FR10 Diff B
+
+		mov.b		@r6+,		r2
+		and			r1,			r2				; bit mask
+		lds			r2,			FPUL
+		float		FPUL,		FR12			; Cast G
+		fmul		FR0,		FR12			; FR12 Diffuse G
+
+		mov.b		@r6+,		r2
+		and			r1,			r2				; bit mask
+		lds			r2,			FPUL
+		float		FPUL,		FR13			; Cast R
+		fmul		FR0,		FR13			; FR12 Diffuse R
+
+		mov.b		@r6+,		r2
+		and			r1,			r2				; bit mask
+		lds			r2,			FPUL
+		float		FPUL,		FR14			; Cast A
+		fmul		FR0,		FR14			; FR12 Diffuse A
+
+		; ------- Actual Calculation ------------
+		mov.l		#_kgPallalelLightColor,		r1
+		mov.l		#_kgAmbientColor,			r2
+		mov.l		#_kgPallalelLightColor1, 	r3
+		mov.l		#_kgPallalelLightColor2,	r5
+
+		;------- Red ----------
+		fmov.s		@r1+,	FR0		; Pallalel Light No.1 R Color -> FR0
+		fmov.s		@r2+,	FR4		; Ambient R Color -> FR4
+		fmul		FR7,	FR0		; Calc Light 1
+		fmov.s		@r3+,	FR1
+		fmul		FR11, 	FR1
+		fadd		FR1,	FR0		; Add Light 2
+		fmov.s		@r5+,	FR2
+		fmul		FR15,	FR2
+		fadd		FR2,	FR0		; Add Light 3
+
+		fmul		FR13,	FR0		; Mul Diffuse
+
+		fadd		FR4,	FR0		;R += Ambient
+		fcmp/GT		FR4,	FR0
+		fmov.s		@r1+,	FR1
+		bt			_kgCalcLambert_10
+
+		fmov.s		FR4,	FR0		; Satulation
+_kgCalcLambert_10:
+
+		;------- Green ----------
+		fmov.s		@r2+,	FR5
+		fmul		FR7,	FR1		; Calc Light 1
+		fmov.s		@r3+,	FR2
+		fmul		FR11, 	FR2
+		fadd		FR2,	FR1		; Add Light 2
+		fmov.s		@r5+,	FR3
+		fmul		FR15,	FR3
+		fadd		FR3,	FR1		; Add Light 3
+
+		fmul		FR12,	FR1		; Mul Diffuse
+
+		fadd		FR5,	FR1		; G += Ambient
+		fcmp/GT		FR5,	FR1
+		fmov.s		@r1+,	FR2
+		bt			_kgCalcLambert_20
+
+		fmov.s		FR5,	FR1
+_kgCalcLambert_20:
+
+		;------- Blue ----------
+		fmov.s		@r2+,	FR6
+		fmul		FR7,	FR2		; Calc Light 1
+		fmov.s		@r3+,	FR5
+		fmul		FR11, 	FR5
+		fadd		FR5,	FR2		; Add Light 2
+		fmov.s		@r5+,	FR4
+		fmul		FR15,	FR4
+		fadd		FR4,	FR2		; Add Light 3
+
+		fmul		FR10,	FR2		; Mul Diffuse
+
+		fadd		FR6,	FR2		; B += Ambient
+		fcmp/GT		FR6,	FR2
+		add			#32,	r4		;Store Pointer
+		bt				_kgCalcLambert_30
+
+		fmov.s		FR6,	FR2
+_kgCalcLambert_30:
+		fldi1		FR5
+		fmov.s		FR2,	FR4			; Offset B
+		fsub		FR5,	FR4
+		fmov.s		FR4,	@-r4
+
+		fmov.s		FR1,	FR6			; Offset G
+		fsub		FR5,	FR6
+		fmov.s		FR6,	@-r4
+
+		fmov.s		FR0,	FR4			; Offset R
+		fsub		FR5,	FR4
+		fmov.s		FR4,	@-r4
+
+		fmov.s		FR14,	@-r4		; Offset A
+		fmov.s		FR2,	@-r4		; Face B
+		fmov.s		FR1,	@-r4		; Face G
+		fmov.s		FR0,	@-r4		; Face R
+		fmov.s		FR14,	@-r4		; Face A
+_kgCalcLambert_99:
+		fmov.s		@r15+, 	FR12 	
+		fmov.s		@r15+,	FR13
+		fmov.s		@r15+,	FR14
+		rts
+		fmov.s		@r15+,	FR15
+		rts
+
+;------------------
+;	For View Matrix Calc
+;------------------
+_kgFinalizeView:
+		fschg
+		fmov		XD2, DR0		;Negate _13
+		fneg		FR0
+		fmov		DR0, XD2
+		fmov		XD0, DR0
+		fneg		FR1
+		fmov		DR0, XD0		;Negate _12
+
+		fmov		XD6, DR0		;Negate _23
+		fneg		FR0
+		fmov		DR0, XD6
+		fmov		XD4, DR0
+		fneg		FR1
+		fmov		DR0, XD4		;Negate _22
+
+		fmov		XD10, DR0		;Negate _33
+		fneg		DR0
+		fmov		DR0, XD10
+		fmov		XD8, DR0
+		fneg		FR1
+		fmov		DR0, XD8		;Negate _32
+
+		fmov		XD14, DR0		;Negate _43
+		fneg		FR0
+		fmov		DR0, XD14
+
+		fmov		XD12, DR0
+		fneg		FR1
+		fmov		DR0, XD12		;Negate _42
+		bra			_kgGetMatrix
+		fschg
+
+_kgSetAngleRotateY:
+		fmov.s		FR15, 	@-r15
+		fmov.s		FR14, 	@-r15
+		fmov.s		FR13, 	@-r15
+		fmov.s		FR12, 	@-r15
+
+		fmov.s		FR4,	FR0 	;_11 cos a
+		fmov.s		FR5,	FR2		;_13 sin a
+		fmov.s		FR5,	FR8		;_31 sin a
+		fneg		FR2				;_13 -sin a
+		fmov.s		FR4,	FR10	;_33 cos a
+
+		fldi0		FR1		;_12
+		fldi0		FR3		;_14
+		ftrv		XMTRX, 	FV0
+
+		fldi0		FR4		;_21
+		fldi1		FR5		;_22
+		fldi0		FR6		;_23
+		fldi0		FR7		;_24
+		ftrv		XMTRX, 	FV4
+
+		fldi0		FR9		;_32
+		fldi0		FR11	;_34
+		ftrv		XMTRX, 	FV8
+
+		fldi0		FR12	;_41
+		fldi0		FR13	;_42
+		fldi0		FR14	;_43
+		fldi1		FR15	;_44
+		ftrv		XMTRX, 	FV12
+		frchg
+
+		fmov.s		@r15+, 	FR12 	
+		fmov.s		@r15+,	FR13
+		fmov.s		@r15+,	FR14
+		rts
+		fmov.s		@r15+,	FR15
+
+_kgSetAngleRotateX:
+		fmov.s		FR15, 	@-r15
+		fmov.s		FR14, 	@-r15
+		fmov.s		FR13, 	@-r15
+		fmov.s		FR12, 	@-r15
+
+		fmov.s		FR5,	FR6		;_23 sin b
+		fmov.s		FR5,	FR9		;_32 sin b
+		fmov.s		FR4,	FR5		;_22 cos b
+		fmov.s		FR4,	FR10	;_33 cos b
+		fneg		FR6				; -sin b
+
+		fldi1		FR0		;_11
+		fldi0		FR1		;_12
+		fldi0		FR2		;_13
+		fldi0		FR3		;_14
+		ftrv		XMTRX, 	FV0
+
+		fldi0		FR4		;_21
+		fldi0		FR7		;_24	paste  ohya
+		ftrv		XMTRX, 	FV4
+
+		fldi0		FR8		;_31
+		fldi0		FR11	;_34
+		ftrv		XMTRX, 	FV8
+
+		fldi0		FR12	;_41
+		fldi0		FR13	;_42
+		fldi0		FR14	;_43
+		fldi1		FR15	;_44
+		ftrv		XMTRX, 	FV12
+		frchg
+
+		fmov.s		@r15+, 	FR12
+		fmov.s		@r15+,	FR13
+		fmov.s		@r15+,	FR14
+		rts
+		fmov.s		@r15+,	FR15
+
+_kgHalf
+	.FDATA.S	F'0.5
+
+_kgEnvMap:
+		fmov.s		@r5+, 	FR0
+		fmov.s		@r5+, 	FR1
+		fmov.s		@r5+, 	FR2
+
+		mov.l		#_kgHalf, r1
+		fmov.s		@r1,	FR5
+
+		fldi0		FR3
+		ftrv		XMTRX,	FV0		; FR0 --- X(3D) FR1 --- Y(3D) FR2 --- Z(3D)
+		add			#8,	r4
+		fldi0		FR3
+		fipr		FV0,	FV0
+		fldi1		FR4
+		fsrra		FR3				; 1.0f / sqrt (x * x + y * y + z * z)
+		fmul		FR3, 	FR1		;
+		fadd		FR4,	FR1		; += 1.0f
+		fmul		FR5,	FR1		; /= 2
+		fmov.s		FR1,	@-r4	; V
+
+		fmul		FR3, 	FR0		; += 1.0f
+		fadd		FR4,	FR0		; /= 2
+		fmul		FR5,	FR0		;
+		rts
+		fmov.s		FR0,	@-r4	; U
+
+_kgVector:
+		fmov.s		@r5+, 	FR0
+		fmov.s		@r5+, 	FR1
+		fmov.s		@r5+, 	FR2
+		fldi0		FR3
+		ftrv		XMTRX,	FV0		; FR0 --- X(3D) FR1 --- Y(3D) FR2 --- Z(3D)
+		add			#12,	r4
+		fldi0		FR3
+		fipr		FV0,	FV0
+		fsrra		FR3				; 1.0f / sqrt (x * x + y * y + z * z)
+		fmul		FR3, 	FR2		;
+		fmov.s		FR2,	@-r4	; Z
+		fmul		FR3, 	FR1		;
+		fmov.s		FR1,	@-r4	; Y
+		fmul		FR3, 	FR0		;
+		rts
+		fmov.s		FR0,	@-r4	; X
+
+_kgPoint:
+		fmov.s		@r5+, 	FR0
+		fmov.s		@r5+, 	FR1
+		fmov.s		@r5+, 	FR2
+		fldi1		FR3
+		ftrv		XMTRX,	FV0		; FR0 --- X(3D) FR1 --- Y(3D) FR2 --- Z(3D)
+		add			#12,	r4
+		fmov.s		FR2,	@-r4	; Z
+		fmov.s		FR1,	@-r4	; Y
+		rts
+		fmov.s		FR0,	@-r4	; X
+
+_kgSetUnitMatrix:				; r4 matrix pointer
+		add			#64, r4
+		fschg
+		fldi0		FR0
+		fldi0		FR1
+		fmov		DR0, @-r4
+		fldi0		FR2
+		fldi1		FR3
+		fmov		DR2, @-r4
+
+		fldi0		FR0
+		fldi0		FR1
+		fmov		DR0, @-r4
+		fldi1		FR2
+		fldi0		FR3
+		fmov		DR2, @-r4
+
+		fldi0		FR0
+		fldi1		FR1
+		fmov		DR0, @-r4
+		fldi0		FR2
+		fldi0		FR3
+		fmov		DR2, @-r4
+
+		fldi1		FR0
+		fldi0		FR1
+		fmov		DR0, @-r4
+		fldi0		FR2
+		fldi0		FR3
+		fmov		DR2, @-r4
+		rts
+		fschg
+
+_VAL:
+	.FDATA.S	F'500
+	.FDATA.S	F'320
+	.FDATA.S	F'240
+	
+		.EXPORT			_kgProjectionEx
+_kgProjectionEx:
+		mov.l		#_VAL, r0
+		fmov.s		@r5+, 	FR0
+		fmov.s		@r5+, 	FR1
+		fmov.s		@r5+, 	FR2
+		fldi1		FR3
+		ftrv		XMTRX,	FV0		; FR0 --- X(3D) FR1 --- Y(3D) FR2 --- Z(3D)
+
+		fmov.s		@r0+, 	FR4		; FR4 = 500.f
+		fdiv		FR2, 	FR4		; FR7 = 500.f / Z
+		add			#12,	r4
+		fmov.s		@r0+, 	FR5		; FR5 = 320.f
+		fmov.s		@r0+, 	FR6		; FR6 = 240.f
+
+		fmul		FR4,	FR0
+		fadd		FR5,	FR0
+		fmul		FR4,	FR1
+		fadd		FR6,	FR1
+		
+		fmov.s		FR4,	@-r4	; 1/Z
+		fmov.s		FR1,	@-r4	; Y
+		rts
+		fmov.s		FR0,	@-r4	; X
+
+	.END

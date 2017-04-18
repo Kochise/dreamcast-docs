@@ -1,0 +1,806 @@
+========================================================================
+Metrowerks Dreamcast Linker Release Notes 
+========================================================================
+
+Version: 2.3.1 build 10
+Date:    February 9, 2000
+
+===========================================================================
+Changes in This Version
+===========================================================================
+The linker command files for the linker in R2_FC3 are not compatible with this
+release of the linker. Please refer to the following for 
+details of the new linker command file format.
+
+
+ELF Linker and Command Language
+
+
+The CodeWarrior ELF (Executable and Linking Format) Linker can do more than
+make a program file out of the object files of your project. The linker has
+several extended functions that allow you to manipulate your program's code
+in different ways. You can define variables during linking, control the
+link order to the granularity of a single function, and change the
+alignment.
+
+
+All of these functions are accessed through commands in the linker command
+file (LCF). The linker command file has its own language complete with
+keywords, directives, and expressions, that are used to create the powerful
+specification for your output code.
+
+
+The linker command file's syntax and structure is similar to that of a
+programming language. This language is described in the following sections:
+
+
+Structure of Linker Command Files-discusses command file organization.
+Linker Command File Syntax-how to program the linker to do specific tasks.
+Alphabetical Keyword Listing-an alphabetical listing of LCF functions and
+commands.
+
+
+Understanding how ELF linkers work will help you understand our linker
+command file format. If you would like to become more familiar with the
+meaning of terms such as .data and the concepts of storage allocation and
+symbol management, we recommend that you read the following book:
+John R. Levine,
+Linkers and Loaders,
+Ap Professional, 1999, ISBN 1-5586-0496-0.
+
+
+
+Structure of Linker Command Files
+
+
+Linker command files contain three main segments. These segments are listed
+below in the order they should appear in the command file:
+
+
+Memory Segment-map memory segments
+Sections Segment-define segment contents
+Closure Blocks-force functions into closure
+
+
+A command file must contain a memory segment and a sections segment.
+Closure segments are optional.
+
+
+Memory Segment
+In the memory segment, we divide our available memory into segments. The
+memory segment format looks like Listing 6.1.
+
+
+A sample MEMORY segment
+MEMORY {
+    segment_1 (RWX): ORIGIN = 0x80001000, LENGTH = 0x19000
+    segment_2 (RWX): ORIGIN = AFTER(segment_1), LENGTH = 0
+    segment_x (RWX): ORIGIN = memory address, LENGTH = segment size
+     and so on...
+}
+The (RWX) portion consists of ELF access permission flags, read, write, and
+execute. If CodeWarrior has overlay support for your target, the O flag is
+also available, and it represents a section of memory that is reserved for
+an overlay.
+ORIGIN represents the start address of the memory segment.
+LENGTH represents the size of the memory segment.
+
+
+If we can not predict how much space a segment will occupy, we can use the
+function AFTER and LENGTH = 0 (unlimited length) to fill in the unknown
+values.
+For a detailed examination of the MEMORY segment, please read "MEMORY"
+elsewhere in this document.
+
+
+Sections Segment
+Inside the sections segment, we define the contents of our memory segments,
+and define any global symbols that we wish to use in our output file.
+The format of a typical sections block looks like Listing 6.2. In this
+sample segment,
+
+
+A sample SECTIONS segment
+SECTIONS {
+   .section_name : #the section name is for your reference
+   {               #the section name must begin with a '.'
+      filename.c  (.text) #put the .text section from filename.c
+      filename2.c (.text) #then the .text section from filename2.c
+      filename.c  (.data)
+      filename2.c (.data)
+      filename.c  (.bss)
+      filename2.c (.bss)
+      . = ALIGN (0x10);   #align next section on 16-byte boundary.
+   } > segment_1     #this means "map these contents to segment_1"
+
+
+   .next_section_name:
+   {
+      more content descriptions
+   } > segment_x      # end of .next_section_name definition
+}                     # end of the sections block
+
+
+For a detailed examination of the SECTIONS segment, please read "SECTIONS"
+elsewhere in this document.
+
+
+Closure Blocks
+The linker is very good at deadstripping unused code and data. We may
+sometimes find, however, that we have symbols that need to be kept in our
+output file even if they are never directly referenced. Interrupt handlers,
+for example, are usually linked at special addresses, without any explicit
+jumps to transfer control to these places.
+
+
+Closure blocks provide a way for us to make symbols immune from
+deadstripping. The closure is transitive, meaning that symbols referenced
+by the symbol we are closing are also forced into closure, as are any
+symbols referenced by those symbols, and so on.
+The two types of closure blocks available to us are as follows:
+
+
+Symbol-level
+Use FORCE_ACTIVE when you want to include a symbol into the link that would
+not be otherwise included. For example:
+A sample symbol-level closure block
+FORCE_ACTIVE {break_handler, interrupt_handler, my_function}
+
+
+Section-level
+Use KEEP_SECTION when you want to keep a section (usually a user-defined
+section) in the link. For example:
+A sample section-level closure block
+KEEP_SECTION {.interrupt1, .interrupt2}
+
+
+A variant is REF_INCLUDE. It keeps a section in the link, but only if the
+file where it is coming from is referenced. This is very useful to include
+version numbers. For example:
+A sample section-level closure block with file dependency
+REF_INCLUDE {.version}
+
+
+
+Linker Command File Syntax
+
+
+This section describes some practical ways in which you can use the
+commands of the linker command file to perform common tasks.
+
+
+Alignment
+Arithmetic Operations
+Comments
+Deadstrip Prevention
+Exception Tables
+Alphabetical Keyword Listing
+File Selection
+Function Selection
+Stack and Heap
+Static Initializers
+Writing Data Directly to Memory
+
+
+
+Alignment
+To align data on a specific byte-boundary, you use the ALIGN and ALIGNALL
+commands to bump the location counter to the desired boundary. For example,
+the following fragment uses ALIGN to bump the location counter to the next
+16-byte boundary.
+
+
+file.c (.text)
+. = ALIGN (0x10);
+file.c (.data)    # aligned on a 16-byte boundary.
+
+
+The same thing can be accomplished with ALIGNALL as follows:
+
+
+file.c (.text)
+ALIGNALL (0x10);  #everything past this point aligned on 16 bytes
+file.c (.data)
+
+
+For more information, see "ALIGN" on page 108 and "ALIGNALL" on page 108.
+
+
+Arithmetic Operations
+You may use standard C arithmetic and logical operations when you define
+and use symbols in the linker command file. Table 6.1 shows the order of
+precedence for each operator. All operators are left-associative. To learn
+more about C operators, refer to the C Compiler Reference.
+
+
+
+Precedence  Operators
+highest (1) - — !
+2   *  /  %
+3   +  -
+4   >>   <<
+5   ==  !=   >   <   <=   >=
+6   &
+7   |
+8   &&
+9   ||
+
+
+Comments
+You may add comments to your file by using the pound character (#), C-style
+slash and asterisks (/*, */), or C++ style double-slashes (//). Comments
+are ignored by the LCF parser. The following are valid comments:
+
+
+#  This is a one-line comment
+/* This is a
+             multiline comment */
+* (.text) // This is a partial-line comment
+
+
+Deadstrip Prevention
+CodeWarrior removes unused code and data from the output file in a process
+known as deadstripping. To prevent the linker from deadstripping
+unreferenced code and data, use the FORCE_ACTIVE, KEEP_SECTION, and
+REF_INCLUDE directives to preserve them in the output file. Information on
+these directives can be found in "FORCE_ACTIVE" , "KEEP_SECTION" , and
+"REF_INCLUDE" elsewhere in this document.
+
+
+Exception Tables
+Exception tables are only required for C++. To create an exception table,
+add the EXCEPTION command to the end of your code section block. The two
+symbols, __exception_table_start__ and __exception_table_end__ are known to
+the runtime system.
+
+
+Creating an exception table
+  __exception_table_start__ = .;
+  EXCEPTION
+  __exception_table_end__ = .;
+
+
+Expressions, Variables and Integral Types
+This section discusses variables, expressions, and integral types.
+
+
+Variables and Symbols
+All symbol names in a Linker Command File start with the underscore
+character (_), followed by letters, digits, or underscore characters. These
+are all valid lines for a command file:
+_dec_num = 99999999;
+_hex_num_ = 0x9011276;
+
+
+Expressions and Assignments
+You can create global symbols and assign addresses to these global symbols
+using the standard assignment operator, as shown:
+_symbolicname = some_expression;
+
+
+An assignment may only be used at the start of an expression, you cannot
+use something like this:
+_sym1 + _sym2 = _sym3;  # ILLEGAL!
+
+
+A semicolon is required at the end of an assignment statement.
+
+
+When an expression is evaluated and assigned to a variable, it is given
+either an absolute or a relocatable type. An absolute expression type is
+one in which the symbol contains the value that it will have in the output
+file. A relocatable expression is one in which the value is expressed as a
+fixed offset from the base of a section.
+
+
+Integral Types
+The syntax for Linker Command File expressions is very similar to the
+syntax of the C programming language. All integer types are long or
+unsigned long.
+Octal integers (commonly know as base eight integers) are specified with a
+leading zero, followed by numeral in the range of zero through seven. For
+example, here are some valid octal patterns you could put in your linker
+command file:
+
+
+_octal_number  = 01234567;
+_octal_number2 = 03245;
+
+
+Decimal integers are specified as a non-zero numeral, followed by numerals
+in the range of zero through nine. Here are some examples of valid decimal
+integers you could put in your linker command file:
+
+
+_dec_num = 99999999;
+_decimal_number = 123245;
+_decyone = 9011276;
+
+
+Hexadecimal (base sixteen) integers are specified as 0x or 0X (a zero with
+an X), followed by numerals in the range of zero through nine, and/or
+characters a through f. Here are some examples of valid hexadecimal
+integers you could put in your linker command file:
+
+
+_somenumber = 0x999999FF;
+_fudgefactorspace = 0X123245EE;
+_hexonyou = 0xFFEE;
+
+
+To create a negative integer, use the minus sign (-) in front of the
+number, as in:
+_decimal_number = -123456;
+
+
+
+File Selection
+When defining the contents of a SECTION block, you must specify the source
+files that are contributing their sections. The standard way of doing this
+is to simply list the files.
+
+
+SECTIONS {
+  .example_section :
+    {
+       main.c  (.text)
+       file2.c (.text)
+       file3.c (.text)
+
+
+In a large project, the list can grow to become very long. For this reason,
+we have the '*' keyword. It represents the filenames of every file in your
+project. Note that since we have already added the .text sections from the
+files main.c, file2.c, and file3.c, the '*' keyword will not add the .text
+sections from those files again.
+
+
+       *  (.text)
+
+
+Sometimes you may only want to include the files from a particular file
+group. The 'GROUP' keyword allows you to specify all the files of a named
+file group.
+
+
+        GROUP(fileGroup1) (.text)
+        GROUP(fileGroup1) (.data)
+     } > MYSEGMENT
+}
+
+
+See also "SECTIONS" elsewhere in this document.
+
+
+
+Function Selection
+The OBJECT keyword gives you precise control over how functions are placed
+within your section. For example, if you want the functions bar and foo to
+be placed before anything else in a section, you might use something like
+the following:
+
+
+SECTIONS {
+  .program_section :
+    {
+      OBJECT (bar, main.c)
+      OBJECT (foo, main.c)
+      * (.text)
+     } > ROOT
+
+
+When using C++, you must specify functions by their mangled names.
+It is important to note that if an object is written once using the
+'OBJECT' function selection keyword, the same object will not be written
+again using the '*' file selection keyword.
+
+
+See also "SECTIONS" elsewhere in this document.
+
+
+
+Stack and Heap
+To reserve space for the stack and heap, we perform some arithmetic
+operations to set the values of the symbols used by the runtime. The
+following is a code fragment from a section definition that illustrates
+this arithmetic (Listing 6.9).
+Setting up some heap
+   _heap_addr = .;
+   _heap_size = 0x2000;  /* this is the size of our heap */
+   _heap_end = _heap_addr + _heap_size;
+   . = _heap_end         /* reserve the space */
+We do the same thing for the stack, using the ending address of the heap as
+the start of our stack.
+Setting up the stack
+   _stack_size = 0x2000; /* this is the size of our stack */
+   _stack_addr = heap_end + _stack_size;
+   . = _stack_addr;
+
+
+
+Static Initializers
+Static initializers must be invoked to initialize static data before main()
+starts. The CodeWarrior linker uses the STATICINIT keyword to generate the
+static initializer sections.
+In your linker command file, use something similar to the following to tell
+the linker where to put the table (relative to the '.' location counter):
+   ___sinit__ = .;
+   STATICINIT
+The symbol ___sinit__ is known to the runtime. In the startup code, you can
+use something similar to the following to accompany the use of static
+initializers in the linker command file:
+#ifdef __cplusplus
+/* call the c++ static initializers */
+__call_static_initializers();
+#endif
+
+
+
+Writing Data Directly to Memory
+You can write data directly to memory using the WRITEx command in the
+linker command file. WRITEB writes a byte, WRITEH writes a two-byte
+halfword, and WRITEW writes a four-byte word. The data is inserted at the
+section's current address.
+Embedding data directly into the output.
+.example_data_section :
+{
+   WRITEB 0x48;  /*  'H'  */
+   WRITEB 0x69;  /*  'i'  */
+   WRITEB 0x21;  /*  '!'  */
+The example shown in Listing 6.11 is similar to the technique used to
+insert overlay headers on targets that have overlay support.
+If you want to insert a complete binary file, you can use the INCLUDE command.
+Embedding a binary file into the output.
+    _musicStart = .;
+    INCLUDE (music.mid)
+    _musicEnd = .;
+}  > DATA
+The binary file must be included in your IDE project, and the file's
+extension must be typed as a resource file in the File Mappings target
+settings panel. For an illustration of how this is done, see Figure 6.1.
+For more help with resource files, please refer to the IDE User Guide.
+Marking a binary file type as a resource in File Mappings
+
+
+
+Alphabetical Keyword Listing
+The following is an alphabetical list of all the valid linker command file
+functions, keywords, directives, and commands:
+. (location counter)
+ADDR
+ALIGN
+ALIGNALL
+EXCEPTION
+FORCE_ACTIVE
+GROUP
+INCLUDE
+KEEP_SECTION
+MEMORY
+OBJECT
+OVERLAYID
+REF_INCLUDE
+SECTIONS
+SIZEOF
+SIZEOF_ROM
+WRITEB
+WRITEH
+WRITEW
+
+
+. (location counter)
+The period character '.' always maintains the current position of the
+output location. Since the period always refers to a location in a SECTIONS
+block, it can not be used outside a section definition.
+
+
+'.'  may appear anywhere a symbol is allowed. Assigning a value to '.' that
+is greater than its current value causes the location counter to move, but
+the location counter can never be decremented.
+
+
+This effect can be used to create empty space in an output section. In the
+example that follows, the location counter is moved to a position that is
+0x10000 bytes past the symbol __start.
+
+
+Moving the location counter
+..data :
+{
+     *.(data)
+     *.(bss)
+     *.(COMMON)
+     __start = .;
+     . = __start + 0x10000;
+     __end = .;
+} > DATA
+
+
+
+ADDR
+The ADDR function returns the address of the named section or memory segment.
+Prototype
+ADDR (sectionName | segmentName)
+In the example below, we use ADDR to assign the address of ROOT to the
+symbol __rootbasecode (Listing 6.14).
+ADDR() function
+MEMORY{
+    ROOT  (RWX) : ORIGIN = 0x80000400, LENGTH = 0
+}
+
+
+SECTIONS{
+  .code :
+  {
+  __rootbasecode = ADDR(ROOT);
+     *.(text);
+  } > ROOT
+}
+
+
+
+ALIGN
+The ALIGN function returns the value of the location counter aligned on a
+boundary specified by the value of alignValue.
+Prototype
+ALIGN(alignValue)
+alignValue must be a power of two.
+Please note that ALIGN does not update the location counter; it only
+performs arithmetic. To update the location counter, you have to use an
+assignment such as the following.
+. = ALIGN(0x10);    #update location counter to 16 byte alignment
+
+
+
+ALIGNALL
+ALIGNALL is the command version of the ALIGN function. It forces the
+minimum alignment for all the objects in the current segment to the value
+of alignValue.
+Prototype
+ALIGNALL(alignValue);
+alignValue must be a power of two.
+Unlike its counterpart ALIGN, ALIGNALL is an actual command. It updates the
+location counter as each object is written to the output (Listing 6.15).
+ALIGNALL example
+.code :
+{
+    ALIGNALL(16);  // Align code on 16 byte boundary
+    *    (.init)
+    *    (.text)
+
+
+    ALIGNALL(64);  //align data on 64 byte boundary
+    *    (.rodata)
+} > .text
+
+
+
+EXCEPTION
+The EXCEPTION command creates the exception table index in the output file.
+Exception tables are only required for C++. To create an exception table,
+add the EXCEPTION command to the end of your code section block. The two
+symbols, __exception_table_start__ and __exception_table_end__ are known to
+the runtime system.
+Creating an exception table
+  __exception_table_start__ = .;
+  EXCEPTION
+  __exception_table_end__ = .;
+
+
+
+FORCE_ACTIVE
+The FORCE_ACTIVE directive allows you to specify symbols that you do not
+want the linker to deadstrip.
+Prototype
+FORCE_ACTIVE{ symbol[, symbol] }
+
+
+
+GROUP
+The GROUP keyword allows you to selectively include files and sections from
+certain overlay groups.
+Prototype
+GROUP (overlay) (sectionType)
+For example, if you specify this:
+GROUP (BAR) (.bss)
+you are specifying all the .bss sections of the files in the overlay named BAR.
+
+
+
+INCLUDE
+The INCLUDE command allows you to include a binary file in the output file.
+Prototype
+INCLUDE filename
+
+
+
+KEEP_SECTION
+The KEEP_SECTION directive allows you to specify sections that you do not
+want the linker to deadstrip.
+Prototype
+KEEP_SECTION{ sectionType[, sectionType] }
+
+
+
+MEMORY
+The MEMORY directive allows you to describe the location and size of memory
+segment blocks in the target. Using this directive, you tell the linker the
+memory areas to avoid, and the memory areas into which it should link your
+code and date.
+The linker command file may only contain one MEMORY directive. However,
+within the confines of the MEMORY directive, you may define as many memory
+segments as you wish.
+Prototype
+MEMORY { memory_spec }
+The memory_spec is:
+segmentName (accessFlags) : ORIGIN = address, LENGTH = length
+[> fileName]
+segmentName can include alphanumeric characters and underscore '_' characters.
+accessFlags are passed into the output ELF file (Phdr.p_flags). The
+accessFlags can be:
+R-read  W-write
+X-executable    O-overlay (if supported)
+
+
+address is one of the following:
+a memory address
+You can specify a hex address such as 0x80000400.
+an AFTER command
+If you do not want to compute the addresses using offsets, you can use the
+AFTER(name [,name]) command to tell the linker to place the memory segment
+after the specified segment. In the following example, overlay1 and
+overlay2 are placed after the code segment, and data is placed after the
+overlay segments.
+MEMORY{
+code     (RWX)  : ORIGIN = 0x80000400, LENGTH = 0
+overlay1 (RWXO) : ORIGIN = AFTER(code), LENGTH = 0
+overlay2 (RWXO) : ORIGIN = AFTER(code), LENGTH = 0
+data      (RWX) : ORIGIN = AFTER (overlay1, overlay2), LENGTH = 0
+}
+When multiple memory segments are specified as parameters for AFTER, the
+highest memory address is used. This is useful for overlays when you do not
+know which overlay takes up the most memory space.
+
+
+length is one of the following:
+a value greater than zero
+If you try to put more code and data into a memory segment than your
+specified length allows, the linker stops with an error.
+autolength by specifying zero
+When the length is 0, the linker lets you put as much code and data into a
+memory segment as you want.
+
+
+There is no overflow checking with autolength. You can end up with an
+unexpected result if you use the autolength feature without leaving enough
+free memory space to contain the memory segment. For this reason, when you
+use autolength, we recommend that you use the AFTER keyword to specify
+origin addresses.
+> fileName is an option to write the segment to a binary file on disk
+>instead of an ELF program header. The binary file is put in the same
+>folder as the ELF output file. This option has two variants:
+> fileName
+writes the segment to a new file.
+>> fileName
+appends the segment to an existing file.
+
+
+
+OBJECT
+The OBJECT keyword gives you control over the order in which functions are
+placed in the output file.
+Prototype
+OBJECT (function, sourcefile.c)
+It is important to note that if an object is written to the outfile using
+the OBJECT keyword, the same object will not be written again by either the
+GROUP keyword or the '*' wildcard selector.
+
+
+
+OVERLAYID
+The OVERLAYID function returns the overlay ID of a given section. This
+function is useful only if CodeWarrior supports overlays for your target.
+Prototype
+OVERLAYID (sectionName | segmentName)
+This function is commonly used to write part of the overlay header . For
+example:
+WRITEW OVERLAYID (.myoverlay);
+
+
+
+REF_INCLUDE
+The REF_INCLUDE directive allows you to specify sections that you do not
+want the linker to deadstrip, but only if they satisfy a certain condition:
+the file that contains the section must be referenced. This is useful if
+you want to include version information from your sourcefile components.
+Prototype
+REF_INCLUDE{ sectionType [, sectionType]}
+
+
+
+SECTIONS
+A basic SECTIONS directive has the following form:
+Prototype
+SECTIONS { <section_spec> }
+section_spec is one of the following:
+sectionName : [AT (loadAddress)] {contents}  > segmentName
+or,
+sectionName : [AT (loadAddress]] {contents} >> segmentName
+sectionName is the section name for the output section. It must start with
+a period character. For example, ".mysection".
+AT (loadAddress) is an optional parameter that specifies the address of the
+section. The default (if not specified) is to make the load address the
+same as the relocation address.
+contents are made up of statements. These statements can
+assign a value to a symbol. See "Alphabetical Keyword Listing" on page 106,
+"Arithmetic Operations" on page 98, and ". (location counter)" on page 107.
+describe the placement of an output section, including which input sections
+are placed into it. See "File Selection" on page 101, "Function Selection"
+on page 102, and "Alignment" on page 97.
+segmentName is the predefined memory segment into which you want to put the
+contents of the section. The two variants are:
+> segmentName
+This places the section contents at the beginning of the memory segment
+segmentName.
+>> segmentName
+This appends the section contents to the memory segment segmentName.
+Here is an example section definition
+An example section definition
+SECTIONS {
+  .text : {
+            _textSegmentStart = .;
+            foobar.c (.text)
+            . = ALIGN (0x10);
+            barfoo.c (.text)
+            _textSegmentEnd = .;
+  }
+  .data : { *(.data) }
+  .bss  : { *(.bss)
+            *(COMMON)
+  }
+}
+
+
+
+SIZEOF
+The SIZEOF function returns the size of the given segment or section. The
+return value is the size in bytes.
+Prototype
+SIZEOF(segmentName | sectionName)
+
+
+
+WRITEB
+WRITEB inserts a byte of data at the current address of a section.
+Prototype
+WRITEB (expression);
+expression is any expression that returns a value 0x00 to 0xFF.
+
+
+
+WRITEH
+WRITEH inserts a halfword of data at the current address of a section.
+Prototype
+WRITEH (expression);
+expression is any expression that returns a value 0x0000 to 0xFFFF.
+
+
+
+WRITEW
+WRITEW inserts a word of data at the current address of a section.
+Prototype
+WRITEW (expression);
+expression is any expression that returns a value 0x00000000 to 0xFFFFFFFF.
+
+
+
+========================================================================
+Contacting Metrowerks
+========================================================================
+
+For bug reports, technical questions, and suggestions, please use the
+forms in the Release Notes folder on the CD, and send them to
+
+
+emb_support@metroweks.com
+
+========================================================================

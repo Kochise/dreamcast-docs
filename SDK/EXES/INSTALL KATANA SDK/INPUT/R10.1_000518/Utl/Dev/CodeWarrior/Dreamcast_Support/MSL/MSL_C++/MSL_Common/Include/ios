@@ -1,0 +1,1015 @@
+/*  Metrowerks Standard Library  */
+
+/*  $Date: 1999/01/23 00:25:40 $ 
+ *  $Revision: 1.6 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Portions Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/**
+ **  ios        // hh 971222 Changed filename from ios.h to ios
+ **
+ **  Lib++  : The Modena C++ Standard Library,
+ **           Version 2.4, October 1997
+ **
+ **  Copyright (c) 1995-1997 Modena Software Inc.
+ **/
+
+#ifndef _IOS              // hh 971207 Made include guards standard
+#define _IOS
+
+#include <mcompile.h>
+
+#include <iosfwd>      // hh 971220 fixed MOD_INCLUDE
+#include <mutex.h>     // hh 971220 fixed MOD_INCLUDE
+
+#ifdef MSIPL_ANSI_HEADER
+# include <locale>     // hh 971220 fixed MOD_INCLUDE
+#else
+# include <mlocale.h>  // hh 971220 fixed MOD_INCLUDE
+#endif
+
+#include <vector>      // hh 971220 fixed MOD_INCLUDE
+#include <utility>     // hh 971227 added <utility>
+#include <iterator>     // hh 971227 added <iterator>
+
+#ifndef RC_INVOKED // hh 971230
+
+#pragma options align=native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#ifdef MSIPL_USING_NAMESPACE
+	namespace std {
+#endif
+
+typedef int  streamsize;
+
+// hh 980909 fpos added
+template <class stateT>
+class fpos
+{
+public:
+	fpos(streamoff o);
+	operator streamoff() const;
+	fpos& operator += (streamoff o);
+	fpos& operator -= (streamoff o);
+	fpos operator + (streamoff o) const;
+	fpos operator - (streamoff o) const;
+	// _lib.fpos.members_ Members
+	stateT state() const;
+	void state(stateT s);
+private:
+	streamoff offset_;
+	stateT st_;
+};
+
+template <class stateT>
+inline
+fpos<stateT>::fpos(streamoff o)
+	: offset_(o),
+	  st_(stateT())
+{
+}
+
+template <class stateT>
+inline
+fpos<stateT>::operator streamoff() const
+{
+	return offset_;
+}
+
+template <class stateT>
+inline
+fpos<stateT>&
+fpos<stateT>::operator += (streamoff o)
+{
+	offset_ += o;
+	return *this;
+}
+
+template <class stateT>
+inline
+fpos<stateT>&
+fpos<stateT>::operator -= (streamoff o)
+{
+	offset_ -= o;
+	return *this;
+}
+
+template <class stateT>
+inline
+fpos<stateT>
+fpos<stateT>::operator + (streamoff o) const
+{
+	return fpos<stateT>(offset_ + o);
+}
+
+template <class stateT>
+inline
+fpos<stateT>
+fpos<stateT>::operator - (streamoff o) const
+{
+	return fpos<stateT>(offset_ - o);
+}
+
+template <class stateT>
+inline
+stateT
+fpos<stateT>::state() const
+{
+	return st_;
+}
+
+template <class stateT>
+inline
+void
+fpos<stateT>::state(stateT s)
+{
+	st_ = s;
+}
+
+template <class  stateT>
+inline
+streamoff
+operator - (const fpos<stateT>& lhs, const fpos<stateT>& rhs)
+{
+	return streamoff(lhs) - streamoff(rhs);
+}
+
+class ios_base;
+
+template<class charT, class traits> class basic_ios;
+
+// 27.4.6, Format flag -- fmtflags -- Manipulators
+inline ios_base& boolalpha (ios_base&);
+inline ios_base& noboolalpha (ios_base&);
+inline ios_base& showbase (ios_base&);
+inline ios_base& noshowbase (ios_base&);
+inline ios_base& showpoint (ios_base&);
+inline ios_base& noshowpoint (ios_base&);
+inline ios_base& showpos (ios_base&);
+inline ios_base& noshowpos (ios_base&);
+inline ios_base& skipws (ios_base&);
+inline ios_base& noskipws (ios_base&);
+inline ios_base& uppercase (ios_base&);
+inline ios_base& nouppercase (ios_base&);
+
+// 27.4.6.2, Format flag -- fmtflags -- adjustfield:
+inline ios_base& internal (ios_base&);
+inline ios_base& left (ios_base&);
+inline ios_base& right (ios_base&);
+
+// 27.4.6.3, Format flag -- fmtflags -- basefield:
+inline ios_base& dec (ios_base&);
+inline ios_base& hex (ios_base&);
+inline ios_base& oct (ios_base&);
+
+// 27.4.6.4, Format flag -- fmtflags -- floatfield:
+inline ios_base& fixed (ios_base&);
+inline ios_base& scientific (ios_base&);
+
+class ios_base
+{
+
+ public:
+     // Nested class for exception handling in failure conditions
+#ifdef   MSIPL_EXCEPT
+#ifndef  __EDG_EXCEPT_CLASSES
+     class failure : public exception 
+     {
+         string errmsg;
+
+      public:
+         explicit failure (const string& what_arg  =  "Failure reported")
+                           : errmsg (what_arg) // hh 971227 removed base initialization
+         {  }  
+
+         virtual ~failure () MSIPL_THROW 
+         {  } 
+
+         virtual const char* what () const MSIPL_THROW
+         { 
+               return errmsg.c_str ();
+         }
+     };
+#else
+     class failure : public msipl_exception
+     {
+         string errmsg;
+      public:
+         explicit failure (const string& what_arg) 
+                      : msipl_exception (what_arg.c_str ()), errmsg (what_arg)
+         {   }
+
+         virtual ~failure () MSIPL_THROW 
+         {   }
+
+         virtual const char* what () const MSIPL_THROW 
+         {
+              return errmsg.c_str ();
+         }
+     };
+#endif
+#endif
+
+     enum fmt_flags
+     {
+          null         =  0, 
+          boolalpha    =  1<<0, 
+          dec          =  1<<1, 
+          fixed        =  1<<2, 
+          hex          =  1<<3, 
+          internal     =  1<<4, 
+          left         =  1<<5, 
+          oct          =  1<<6, 
+          right        =  1<<7, 
+          scientific   =  1<<8, 
+          showbase     =  1<<9, 
+          showpoint    =  1<<10, 
+          showpos      =  1<<11, 
+          skipws       =  1<<12, 
+          unitbuf      =  1<<13, 
+          uppercase    =  1<<14, 
+          adjustfield  =  left  | right | internal, 
+          basefield    =  dec   | hex   | oct, 
+          floatfield   =  fixed | scientific
+     };
+
+     enum io_state
+     {
+          badbit   = 1<<0, 
+          eofbit   = 1<<1, 
+          failbit  = 1<<2, 
+          goodbit  = 0
+     };
+
+     enum open_mode
+     {
+          app       = 1<<0, 
+          ate       = 1<<1, 
+          binary    = 1<<2, 
+          in        = 1<<3, 
+          out       = 1<<4, 
+          trunc     = 1<<5
+     };
+
+     enum seekdir
+     {
+          beg      = 1<<0, 
+          cur      = 1<<1, 
+          end      = 1<<2
+     };
+
+     typedef long  int fmtflags;     
+     typedef short int openmode;
+     typedef short int iostate;
+
+     class Init 
+     {
+      public:
+         Init ();
+         ~Init ();
+      private:
+#ifdef MSIPL_MULTITHREAD
+         static mutex_arith<int, mutex> *init_cnt;
+#else
+         static int *init_cnt;
+#endif
+    };
+
+     // 27.4.2.2 fmtflags state:
+
+     inline fmtflags flags () const;
+     inline fmtflags flags (fmtflags fmtfl_arg);
+     inline fmtflags setf (fmtflags fmtfl_arg);
+     inline fmtflags setf (fmtflags fmtfl_arg, fmtflags mask);
+     inline void unsetf (fmtflags mask);
+     inline streamsize precision () const;
+     inline streamsize precision (streamsize prec_arg);
+     inline streamsize width () const;
+     inline streamsize width (streamsize wide_arg);
+
+     // 27.4.2.3 locales:
+
+     locale imbue (const locale& loc_arg);
+     locale getloc () const;
+
+     // 27.4.2.5 storage:
+
+     inline static int xalloc ();
+     long& iword (int index_arg);
+     void*& pword (int index_arg);
+
+     // destructor
+     virtual ~ios_base ();
+
+     // 27.4.2.6 callbacks:
+
+     enum event
+     {
+          erase_event, 
+          imbue_event, 
+          copyfmt_event
+     };
+ 
+     typedef  void (*event_callback) (event, ios_base&, int index);
+     void register_callback (event_callback fn, int index);
+
+     static bool sync_with_stdio (bool sync = true);
+
+private:
+     typedef pair<event_callback, int>                  event_pair;
+     typedef vector<event_pair, allocator<event_pair> > ev_vector_type;
+     typedef vector<long, allocator<long> >             l_vector_type;
+     typedef vector<void*, allocator<void*> >           v_vector_type;
+protected:
+     ios_base ();
+public:  // hh 981111
+     static void throwfailure ();
+protected:
+
+	// hh 980513  revamping this class.  It must be able to construct itself with
+	//            its default constructor, without touching any memory (leave itself
+	//            completely indeterminant).  This is for the proper construction of
+	//            the standard streams, cin, cout, etc.  This means only POD's for
+	//            members.
+     locale*                         loc_;
+     event_pair*                     rvec_;
+     size_t                          rvec_size_;
+     size_t                          rvec_max_size_;
+     streamsize                      prec;
+     streamsize                      wide;
+     iostate                         state;
+     fmtflags                        fmtfl;
+     iostate                         except;
+     long*                           ivec_;
+     size_t                          ivecLen_;
+     void**                          pvec_;
+     size_t                          pvecLen_;
+     static  int                     index;
+
+     DEC_OBJ_LOCK(_mutex)
+
+	// hh 981226
+	#ifdef MSIPL_MULTITHREAD
+		mutex& mutex();
+	#endif
+
+private:
+ 
+// not to be defined
+     ios_base (const ios_base& base);
+     ios_base& operator =  (const ios_base& base);
+};
+
+__MSL_FIX_ITERATORS__(ios_base::event_pair)
+
+inline ios_base::fmtflags ios_base::flags () const 
+{
+    READ_LOCK(_mutex);
+    return (fmtfl);
+}
+
+inline ios_base::fmtflags ios_base::flags (fmtflags fmtfl_arg)
+{
+    WRITE_LOCK(_mutex);
+    fmtflags  fmtfl_sav = fmtfl;
+    fmtfl = fmtfl_arg;
+    return (fmtfl_sav);
+}
+
+inline ios_base::fmtflags ios_base::setf (fmtflags fmtfl_arg)
+{
+    WRITE_LOCK(_mutex);
+    fmtflags  fmtfl_sav = fmtfl;
+    fmtfl |=  fmtfl_arg;
+    return (fmtfl_sav);
+}
+ 
+inline ios_base::fmtflags ios_base::setf (fmtflags fmtfl_arg, fmtflags mask)
+{
+    WRITE_LOCK(_mutex);
+    fmtflags  fmtfl_sav = fmtfl;
+    fmtfl &=  (~mask);
+    fmtfl |=  (fmtfl_arg & mask);
+    return (fmtfl_sav);
+}
+
+inline void ios_base::unsetf (fmtflags mask)
+{
+    WRITE_LOCK(_mutex);
+    fmtfl &=  (~mask);
+}
+
+inline streamsize ios_base::precision () const 
+{
+    READ_LOCK(_mutex);
+    return (prec);
+}
+
+inline streamsize ios_base::precision (streamsize prec_arg)
+{
+    WRITE_LOCK(_mutex);
+    streamsize prec_sav = prec;
+    prec = prec_arg;
+    return (prec_sav);
+}
+
+inline streamsize ios_base::width () const 
+{
+    READ_LOCK(_mutex);
+    return (wide);
+}
+ 
+inline streamsize ios_base::width (streamsize wide_arg)
+{
+   WRITE_LOCK(_mutex);
+   streamsize wide_sav = wide;
+   wide = wide_arg;
+   return (wide_sav);
+}
+
+inline bool ios_base::sync_with_stdio (bool)  // hh 971228 removed argument sync
+{
+   return true;
+}
+
+inline int ios_base::xalloc ()
+{
+#ifdef MSIPL_MULTITHREAD
+   static mutex _mut;
+   _mut.acquire ();
+   int tmp = index++;
+   _mut.release ();
+   return tmp;
+#else
+   return index++;
+#endif
+}
+
+// hh 981226
+#ifdef MSIPL_MULTITHREAD
+
+	template<class charT, class traits>
+	inline
+	mutex&
+	ios_base::mutex()
+	{
+		return _mutex;
+	}
+
+#endif
+
+template<class charT, class traits>
+class basic_ios : public ios_base 
+{
+ public:
+      //   Public typdef declaration
+
+     typedef charT char_type;
+     typedef typename traits::int_type int_type;
+     typedef typename traits::pos_type pos_type;
+     typedef typename traits::off_type off_type;
+     typedef traits traits_type;
+
+     // 27.4.5.3 Constructor/destructor:
+
+     inline operator void* () const;
+     inline bool operator! () const;
+     inline iostate rdstate () const;
+     inline void clear (iostate state_arg = goodbit);
+     inline void setstate (iostate state_arg);
+     inline bool good () const;
+     inline bool eof () const;
+     inline bool fail () const;
+     inline bool bad () const;
+
+     inline iostate exceptions () const;
+     inline void exceptions (iostate except_arg);
+
+     // 27.4.5.1 Constructor/destructor:
+
+     explicit basic_ios (basic_streambuf<char_type, traits>* sb_arg);
+     virtual ~basic_ios ();
+
+     // 27.4.5.2 Members:
+
+     inline basic_ostream<char_type, traits>* tie () const;
+     inline basic_ostream<char_type, traits>* 
+                          tie (basic_ostream<char_type, traits>* tiestr_arg);
+
+     inline basic_streambuf<char_type, traits>* rdbuf () const;
+     inline basic_streambuf<char_type, traits>*
+                             rdbuf (basic_streambuf<char_type, traits>* sb_arg);
+
+     basic_ios<charT, traits>& copyfmt (const basic_ios<charT, traits>& rhs);
+
+     inline char_type fill () const;
+     inline char_type fill (char_type ch);
+
+     // 27.4.2.3 Locales:
+
+     locale imbue (const locale& loc_arg);
+
+     inline char narrow (char_type c, char dfault) const;
+     inline char_type widen (char c) const;
+
+ protected:
+     // Data members
+
+     basic_streambuf<char_type, traits>* sb;
+     basic_ostream<char_type, traits>* tiestr;
+     char_type fillch;
+
+     inline basic_ios ();
+     void init (basic_streambuf<char_type, traits>* sb_arg);
+
+ private:
+     // not to be defined
+
+     basic_ios (const basic_ios<char_type, traits>& rhs);  
+     basic_ios& operator =  (const basic_ios<char_type, traits>& rhs);  
+};
+
+template<class charT, class traits> 
+inline basic_ios<charT, traits>::
+                 basic_ios (basic_streambuf<charT, traits>* sb_arg):ios_base ()
+{
+    init (sb_arg);
+}
+
+template<class charT, class traits>
+inline basic_ios<charT, traits>::basic_ios ():ios_base ()
+{
+}
+
+template<class charT, class traits>
+//inline  // hh 980129
+void basic_ios<charT, traits>
+                      ::init (basic_streambuf<charT, traits>* sb_arg)
+{
+    WRITE_LOCK(_mutex);
+    sb     = sb_arg;
+    tiestr = 0;
+    state  = sb_arg ? goodbit : badbit;
+    except = goodbit;
+    fmtfl  = skipws | dec;
+    wide   = 0;
+    prec   = 6;
+    loc_   = new locale ();
+    rvec_ = 0;
+    rvec_size_ = 0;
+    rvec_max_size_ = 0;
+    ivec_ = 0;
+    ivecLen_ = 0;
+    pvec_ = 0;
+    pvecLen_ = 0;
+#ifdef MSIPL_EXPLICIT_FUNC_TEMPLATE_ARG
+    fillch = use_facet<ctype <char_type> > (*loc_).widen (' ');
+#else
+    fillch = use_facet (*loc_,  (ctype<char_type>*) (0)).widen (' ');
+#endif
+}
+
+template<class charT, class traits>
+inline basic_ios<charT, traits>::~basic_ios ()
+{   }
+ 
+template<class charT, class traits> 
+inline basic_ostream<charT, traits>* basic_ios<charT, traits>::tie () const
+{
+    READ_LOCK(_mutex);
+    return tiestr;
+}
+
+template<class charT, class traits>
+inline basic_ostream<charT, traits>* basic_ios<charT, traits>::
+                                 tie (basic_ostream<charT, traits>* tiestr_arg)
+{
+    WRITE_LOCK(_mutex);
+    basic_ostream<charT, traits>*  tiestr_sav = tiestr;
+    tiestr = tiestr_arg;
+    return (tiestr_sav);
+}
+
+template<class charT, class traits>
+inline basic_streambuf<charT, traits>* basic_ios<charT, traits>::rdbuf () const 
+{
+    READ_LOCK(_mutex);
+    return (sb);
+}
+
+template<class charT, class traits> 
+inline basic_streambuf<charT, traits>* basic_ios<charT, traits>::
+                                  rdbuf (basic_streambuf<charT, traits>* sb_arg)
+{
+    WRITE_LOCK(_mutex);
+    basic_streambuf<charT, traits>*  sb_sav = sb;
+
+    // Should there be a call to sb_sav->sync () ?
+    sb=sb_arg;  // hh 971229 warning supression
+    if (sb) 
+     state = goodbit;
+    else
+     if ( (state=badbit) & except) 
+            throwfailure (); 
+    return (sb_sav);
+}
+
+template<class charT, class traits>
+//inline  // hh 980129
+locale basic_ios<charT, traits>::imbue (const locale& loc_arg)
+{
+    WRITE_LOCK(_mutex);
+    locale loc_save = *loc_;
+    size_t i = rvec_size_;
+    delete loc_;
+    loc_ = new locale(loc_arg);
+    for ( ; i > 0 ; --i)
+         (*(rvec_[i-1].first))(imbue_event, *this, rvec_[i-1].second);
+    if (sb)
+     sb->pubimbue (loc_arg);
+    return loc_save;
+}
+
+template<class charT, class traits>
+char basic_ios<charT, traits>::narrow (char_type c, char dfault) const 
+{
+    READ_LOCK(_mutex);
+#ifdef MSIPL_EXPLICIT_FUNC_TEMPLATE_ARG 
+    return use_facet<ctype<char_type> > (*loc_).narrow (c, dfault);
+#else
+    return use_facet (*loc_,  (ctype<char_type>*) (0)).narrow (c, dfault);
+#endif
+}
+
+template<class charT, class traits>
+typename basic_ios<charT, traits>::char_type 
+                                   basic_ios<charT, traits>::widen (char c)const
+{
+    READ_LOCK(_mutex);
+#ifdef MSIPL_EXPLICIT_FUNC_TEMPLATE_ARG 
+    return use_facet<ctype<char_type> > (*loc_).widen (c);
+#else
+    return use_facet (*loc_,  (ctype<char_type>*) (0)).widen (c);
+#endif
+}
+
+template<class charT, class traits>
+inline
+typename basic_ios<charT, traits>::char_type
+basic_ios<charT, traits>::fill () const 
+{
+    READ_LOCK(_mutex);
+    return (fillch);
+}
+
+template<class charT, class traits>
+inline
+typename basic_ios<charT, traits>::char_type
+basic_ios<charT, traits>::fill (char_type fillch_arg)
+{
+    WRITE_LOCK(_mutex);
+    char_type fillch_sav = fillch;
+    fillch               = fillch_arg;
+    return (fillch_sav);
+}
+
+template<class charT, class traits> 
+//inline  // hh 980129
+basic_ios<charT, traits>& basic_ios<charT, traits>
+                                 ::copyfmt (const basic_ios<charT, traits>& rhs)
+{
+    if (this !=  &rhs)
+    {
+        WRITE_LOCK(_mutex);
+        int i = rvec_size_;
+        for ( ; i > 0 ; --i)
+             (*(rvec_[i-1].first))(erase_event, *this, rvec_[i-1].second);
+        {
+           READ_LOCK(rhs._mutex);
+           delete loc_;
+           loc_   = new locale(*rhs.loc_);
+           tiestr = rhs.tiestr;
+           fillch = rhs.fillch;
+           fmtfl  = rhs.fmtfl;
+           wide   = rhs.wide;
+           prec   = rhs.prec;
+           
+           if (ivecLen_ < rhs.ivecLen_)
+           {
+               ivecLen_ = rhs.ivecLen_;
+               delete [] ivec_;
+               ivec_ = new long [ivecLen_];
+           }
+           for (i = 0; i < rhs.ivecLen_; ++i)
+               ivec_[i] = rhs.ivec_[i];
+           for (; i < ivecLen_; ++i)
+               ivec_[i] = 0;
+           
+           if (pvecLen_ < rhs.pvecLen_)
+           {
+               pvecLen_ = rhs.pvecLen_;
+               delete [] pvec_;
+               pvec_ = new void* [pvecLen_];
+           }
+           for (i = 0; i < rhs.pvecLen_; ++i)
+               pvec_[i] = rhs.pvec_[i];
+           for (; i < pvecLen_; ++i)
+               pvec_[i] = 0;
+           
+           if (rvec_max_size_ < rhs.rvec_size_)
+           {
+               rvec_max_size_ = rhs.rvec_size_;
+               delete [] rvec_;
+               rvec_ = new event_pair [rvec_max_size_];
+           }
+           rvec_size_ = rhs.rvec_size_;
+           for (i = 0; i < rvec_size_; ++i)
+               rvec_[i] = rhs.rvec_[i];
+
+        //  CHECK Sequence of registered call back;
+           i = rvec_size_;
+           for ( ; i > 0 ; --i)
+                (*(rvec_[i-1].first))(copyfmt_event, *this, rvec_[i-1].second);
+           except = rhs.except;
+        }
+         if (!sb) 
+           state|= badbit;
+     if (state & except) 
+            throwfailure ();
+     }
+    return *this;
+}
+
+template<class charT, class traits>
+inline basic_ios<charT, traits>::operator void* () const
+{
+    READ_LOCK(_mutex);
+    return state& (failbit|badbit) ? 0:sb;
+}
+
+template<class charT, class traits>
+inline bool basic_ios<charT, traits>::operator! () const
+{
+    READ_LOCK(_mutex);
+    return bool(state & (failbit | badbit));  // hh 980920
+}
+
+template<class charT, class traits>
+inline ios_base::iostate basic_ios<charT, traits>::rdstate () const
+{
+    READ_LOCK(_mutex);
+    return state;
+}
+
+template<class charT, class traits>
+inline void basic_ios<charT, traits>::clear (iostate state_arg)
+{
+    WRITE_LOCK(_mutex);
+    if (sb) 
+        state = state_arg; 
+    else 
+        state = iostate(state_arg | badbit);
+    if (state & except) 
+        throwfailure ();
+}
+
+template<class charT, class traits>
+inline void basic_ios<charT, traits>::setstate (iostate state_arg)
+{
+    WRITE_LOCK(_mutex);
+    if (sb) 
+        state |=  state_arg;
+    else 
+        state |=  iostate(state_arg | badbit);
+    if (state & except) 
+        throwfailure ();
+}
+
+template<class charT, class traits>
+inline bool basic_ios<charT, traits>::good () const
+{
+    READ_LOCK(_mutex);
+    return bool(!state);
+}
+
+template<class charT, class traits>
+inline bool basic_ios<charT, traits>::eof () const 
+{
+    READ_LOCK(_mutex);
+    return bool(state & eofbit);
+}
+
+template<class charT, class traits>
+inline bool basic_ios<charT, traits>::fail () const
+{
+    READ_LOCK(_mutex);
+    return bool(state & (failbit | badbit));
+}
+
+template<class charT, class traits>
+inline bool basic_ios<charT, traits>::bad () const 
+{
+    READ_LOCK(_mutex);
+    return bool(state & badbit);
+}
+
+template<class charT, class traits>
+inline ios_base::iostate basic_ios<charT, traits>::exceptions () const 
+{
+    READ_LOCK(_mutex);
+    return except;
+}
+
+template<class charT, class traits>
+inline void basic_ios<charT, traits>::exceptions (iostate except_arg)
+{
+    WRITE_LOCK(_mutex);
+    except = except_arg;
+    if (!sb) 
+        state|= badbit;
+    if (except&state) 
+        throwfailure ();
+}
+
+// 27.4.6 ios_base manipulators
+
+// 27.4.6.1 fmtflags manipulators
+inline ios_base& boolalpha (ios_base&  str)
+{
+    str.setf (ios_base::boolalpha);
+    return (str);
+}
+
+inline ios_base&  noboolalpha (ios_base&  str)
+{
+    str.unsetf (ios_base::boolalpha);
+    return (str);
+}
+
+inline ios_base&  showbase (ios_base&  str)
+{
+    str.setf (ios_base::showbase);
+    return (str);
+}
+
+inline ios_base&  noshowbase (ios_base&  str)
+{
+    str.unsetf (ios_base::showbase);
+    return (str);
+}
+
+inline ios_base&  showpoint (ios_base&  str)
+{
+    str.setf (ios_base::showpoint);
+    return (str);
+}
+
+inline ios_base&  noshowpoint (ios_base&  str)
+{
+    str.unsetf (ios_base::showpoint);
+    return (str);
+}
+
+inline ios_base&  showpos (ios_base&  str)
+{
+    str.setf (ios_base::showpos);
+    return (str);
+}
+
+inline ios_base&  noshowpos (ios_base&  str)
+{
+    str.unsetf (ios_base::showpos);
+    return (str);
+}
+
+inline ios_base&  skipws (ios_base&  str)
+{
+    str.setf (ios_base::skipws);
+    return (str);
+}
+
+inline ios_base&  noskipws (ios_base&  str)
+{
+    str.unsetf (ios_base::skipws);
+    return (str);
+}
+
+inline ios_base&  uppercase (ios_base&  str)
+{
+    str.setf (ios_base::uppercase);
+    return (str);
+}
+
+inline ios_base&  nouppercase (ios_base&  str)
+{
+    str.unsetf (ios_base::uppercase);
+    return (str);
+}
+
+inline ios_base& unitbuf (ios_base& str)
+{
+    str.setf (ios_base::unitbuf);
+    return (str);
+}
+
+inline ios_base& nounitbuf (ios_base& str)
+{
+    str.unsetf (ios_base::unitbuf);
+    return (str);
+}
+
+// 27.4.6.2 adjustfield manipulators
+inline ios_base&  internal (ios_base&  str)
+{
+    str.setf (ios_base::internal, ios_base::adjustfield);
+    return (str);
+}
+
+inline ios_base&  left (ios_base&  str)
+{
+    str.setf (ios_base::left, ios_base::adjustfield);
+    return (str);
+}
+
+inline ios_base&  right (ios_base&  str)
+{
+    str.setf (ios_base::right, ios_base::adjustfield);
+    return (str);
+}
+
+// 27.4.6.3 basefield manipulators
+inline ios_base&  dec (ios_base&  str)
+{
+    str.setf (ios_base::dec, ios_base::basefield);
+    return (str);
+}
+
+inline ios_base&  hex (ios_base&  str)
+{
+    str.setf (ios_base::hex, ios_base::basefield);
+    return (str);
+}
+
+inline ios_base&  oct (ios_base&  str)
+{
+    str.setf (ios_base::oct, ios_base::basefield);
+    return (str);
+}
+
+// 27.4.6.4 floatfield manipulators
+inline ios_base&  fixed (ios_base&  str)
+{
+    str.setf (ios_base::fixed, ios_base::floatfield);
+    return (str);
+}
+
+inline ios_base&  scientific (ios_base&  str)
+{
+    str.setf (ios_base::scientific, ios_base::floatfield);
+    return (str);
+}
+
+// Auxillary helper class to that saves and restores ios_base::fmtflags on the stack
+
+class _SaveFlags
+{
+public:
+	_SaveFlags(ios_base& str) : str_(str), flags_(str_.flags()) {}
+	~_SaveFlags() {str_.flags(flags_);}
+private:
+	ios_base& str_;
+	ios_base::fmtflags flags_;
+
+	_SaveFlags(const _SaveFlags&);              // Not defined
+	_SaveFlags& operator= (const _SaveFlags&);  // Not defined
+};
+
+#ifdef MSIPL_USING_NAMESPACE
+	} // namespace std
+#endif
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
+#pragma options align=reset
+
+#endif // RC_INVOKED
+
+#endif /* MSIPL_IOS_H */
+
+// hh 971220 fixed MOD_INCLUDE
+// hh 971222 added wrapper for alignment
+// hh 971222 Changed filename from ios.h to ios
+// hh 971222 Made include guards standard
+// hh 971230 added RC_INVOKED wrapper
+// hh 980202 moved streamoff from <iosfwd> per standard
+// hh 980909 fpos added
+// hh 981111 made throwfailure() public
+// hh 981220 Added typename to appropriate return types
+// hh 981226 Added mutex accessor to help encapsulate future changes

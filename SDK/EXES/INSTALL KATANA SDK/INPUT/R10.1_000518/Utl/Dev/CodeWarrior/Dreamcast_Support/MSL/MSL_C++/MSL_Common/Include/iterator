@@ -1,0 +1,1429 @@
+/*  Metrowerks Standard Library  */
+
+/*  $Date: 1999/01/23 00:25:40 $ 
+ *  $Revision: 1.6 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Portions Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/**
+ **  iterator    // hh 971222 Changed filename from iterator.h to iterator
+ **
+ **  Lib++  : The Modena C++ Standard Library,
+ **           Version 2.4, October 1997
+ **
+ **  Copyright (c) 1995-1997 Modena Software Inc.
+ **/
+
+#ifndef _ITERATOR            // hh 971222 Made include guards standard
+#define _ITERATOR
+
+#include <mcompile.h>
+
+#include <iosfwd>     // hh 971220 fixed MOD_INCLUDE
+#include <cstddef>    // hh 971220 fixed MOD_C_INCLUDE
+#include <mutex.h>    // hh 971220 fixed MOD_C_INCLUDE
+
+#ifndef RC_INVOKED // hh 971230
+
+#pragma options align=native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#ifdef MSIPL_USING_NAMESPACE
+	namespace std {
+#endif
+
+// Subclause 24.3.1 -- Standard iterator tags
+
+struct input_iterator_tag                                             {};
+struct output_iterator_tag                                            {};
+struct forward_iterator_tag       : public input_iterator_tag         {}; 
+struct bidirectional_iterator_tag : public forward_iterator_tag       {};
+struct random_access_iterator_tag : public bidirectional_iterator_tag {};
+
+// Subclause 24.3.2 -- Basic iterators
+
+template <class Category, class T, class DEFTEMPARG(Distance, ptrdiff_t),
+          class DEFTEMPARG(Pointer, T*),class DEFTEMPARG(Reference, T&) >    
+struct iterator {
+     typedef Distance  difference_type;
+     typedef T         value_type;
+     typedef Pointer   pointer;
+     typedef Reference reference;
+     typedef Category  iterator_category;
+};
+
+template <class Iterator>
+struct iterator_traits {
+     typedef typename Iterator::difference_type    difference_type;
+     typedef typename Iterator::value_type         value_type;
+     typedef typename Iterator::pointer            pointer;
+     typedef typename Iterator::reference          reference;
+     typedef typename Iterator::iterator_category  iterator_category;
+};
+
+#ifdef MSIPL_PARTIAL_SPECIALIZATION
+
+	template <class T>
+	struct iterator_traits <T*> {
+		typedef ptrdiff_t                    difference_type;
+		typedef T                            value_type;
+		typedef T*                           pointer;
+		typedef T&                           reference;
+		typedef random_access_iterator_tag   iterator_category;
+	};
+
+	// hh 980518 added specialization for const T*
+	template <class T>
+	struct iterator_traits <const T*> {
+		typedef ptrdiff_t                    difference_type;
+		typedef T                            value_type;
+		typedef const T*                     pointer;
+		typedef const T&                     reference;
+		typedef random_access_iterator_tag   iterator_category;
+	};
+
+	#define __MSL_FIX_ITERATORS__(myType)
+
+#else
+
+// Specialization for Pointer type iterators
+
+// hh 980107 Completed and organized list of built-in types
+#ifdef MSIPL_BOOL_BUILTIN
+	null_template
+	struct iterator_traits <const bool*> {
+	     typedef ptrdiff_t                    difference_type;
+	     typedef const bool                   value_type;
+	     typedef const bool *                 pointer;
+	     typedef const bool &                 reference;
+	     typedef random_access_iterator_tag   iterator_category;
+	};
+
+	null_template
+	struct iterator_traits <bool*> {
+	     typedef ptrdiff_t                    difference_type;
+	     typedef bool                         value_type;
+	     typedef bool *                       pointer;
+	     typedef bool &                       reference;
+	     typedef random_access_iterator_tag   iterator_category;
+	};
+#endif
+
+null_template
+struct iterator_traits <const char*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef const char                   value_type;
+     typedef const char *                 pointer;
+     typedef const char &                 reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <char*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef char                         value_type;
+     typedef char *                       pointer;
+     typedef char &                       reference;
+     typedef random_access_iterator_tag   iterator_category;
+ };
+
+null_template
+struct iterator_traits <const signed char*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef const signed char            value_type;
+     typedef const signed char *          pointer;
+     typedef const signed char &          reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <signed char*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef signed char                  value_type;
+     typedef signed char *                pointer;
+     typedef signed char &                reference;
+     typedef random_access_iterator_tag   iterator_category;
+ };
+
+null_template
+struct iterator_traits <const unsigned char*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef const unsigned char          value_type;
+     typedef const unsigned char *        pointer;
+     typedef const unsigned char &        reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <unsigned char*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef unsigned char                value_type;
+     typedef unsigned char *              pointer;
+     typedef unsigned char &              reference;
+     typedef random_access_iterator_tag   iterator_category;
+ };
+
+#ifdef MSIPL_WCHART
+
+	null_template
+	struct iterator_traits <const wchar_t*> {
+	     typedef ptrdiff_t                    difference_type;
+	     typedef const wchar_t                value_type;
+	     typedef const wchar_t *              pointer;
+	     typedef const wchar_t &              reference;
+	     typedef random_access_iterator_tag   iterator_category;
+	};
+
+	null_template
+	struct iterator_traits <wchar_t*> {
+	     typedef ptrdiff_t                    difference_type;
+	     typedef wchar_t                      value_type;
+	     typedef wchar_t *                    pointer;
+	     typedef wchar_t &                    reference;
+	     typedef random_access_iterator_tag   iterator_category;
+	 };
+
+#endif
+
+null_template
+struct iterator_traits <const short*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef const short                  value_type;
+     typedef const short *                pointer;
+     typedef const short &                reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <short*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef short                        value_type;
+     typedef short *                      pointer;
+     typedef short &                      reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <const unsigned short*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef const unsigned short         value_type;
+     typedef const unsigned short *       pointer;
+     typedef const unsigned short &       reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <unsigned short*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef unsigned short               value_type;
+     typedef unsigned short *             pointer;
+     typedef unsigned short &             reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <const int*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef const int                    value_type;
+     typedef const int  *                 pointer;
+     typedef const int  &                 reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <int*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef int                          value_type;
+     typedef int  *                       pointer;
+     typedef int  &                       reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <const unsigned int*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef const unsigned int           value_type;
+     typedef const unsigned int  *        pointer;
+     typedef const unsigned int  &        reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <unsigned int*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef unsigned int                 value_type;
+     typedef unsigned int  *              pointer;
+     typedef unsigned int  &              reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <const long*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef const long                   value_type;
+     typedef const long *                 pointer;
+     typedef const long &                 reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <long*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef long                         value_type;
+     typedef long *                       pointer;
+     typedef long &                       reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <const unsigned long*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef const unsigned long          value_type;
+     typedef const unsigned long *        pointer;
+     typedef const unsigned long &        reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <unsigned long*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef unsigned long                value_type;
+     typedef unsigned long *              pointer;
+     typedef unsigned long &              reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <const long long*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef const long long              value_type;
+     typedef const long long *            pointer;
+     typedef const long long &            reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <long long*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef long long                    value_type;
+     typedef long long *                  pointer;
+     typedef long long &                  reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <const unsigned long long*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef const unsigned long long     value_type;
+     typedef const unsigned long long *   pointer;
+     typedef const unsigned long long &   reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <unsigned long long*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef unsigned long long           value_type;
+     typedef unsigned long long *         pointer;
+     typedef unsigned long long &         reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+#ifndef _No_Floating_Point
+
+null_template
+struct iterator_traits <const float*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef const float                  value_type;
+     typedef const float *                pointer;
+     typedef const float &                reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <float*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef float                        value_type;
+     typedef float *                      pointer;
+     typedef float &                      reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <const double*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef const double                 value_type;
+     typedef const double *               pointer;
+     typedef const double &               reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <double*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef double                       value_type;
+     typedef double *                     pointer;
+     typedef double &                     reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <const long double*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef const long double            value_type;
+     typedef const long double *          pointer;
+     typedef const long double &          reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <long double*> {
+     typedef ptrdiff_t                    difference_type;
+     typedef long double                  value_type;
+     typedef long double *                pointer;
+     typedef long double &                reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+#endif // _No_Floating_Point
+
+null_template
+struct iterator_traits <void * const *> {
+     typedef ptrdiff_t                    difference_type;
+     typedef void *const                  value_type;
+     typedef void *const *                pointer;
+     typedef void *const &                reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+null_template
+struct iterator_traits <void * *> {
+     typedef ptrdiff_t                    difference_type;
+     typedef void *                       value_type;
+     typedef void * *                     pointer;
+     typedef void * &                     reference;
+     typedef random_access_iterator_tag   iterator_category;
+};
+
+// hh 971207 moved __MSL_FIX_ITERATORS__ from mcompile.h
+// hh 971222 updated __MSL_FIX_ITERATORS__
+//970415 bkoz via Dennis C. De Mars
+#define __MSL_FIX_ITERATORS__(myType) \
+        null_template \
+        struct MSIPLSTD::iterator_traits <myType*> { \
+            typedef ptrdiff_t                    difference_type; \
+            typedef myType                       value_type; \
+            typedef myType*                      pointer; \
+            typedef myType&                      reference; \
+            typedef random_access_iterator_tag   iterator_category; \
+        };
+
+#endif
+/*    // hh 971227 non-standard
+struct output_iterator
+     : public iterator <output_iterator_tag, void, void, void, void> {};
+
+template <class T, class DEFTEMPARG(Distance, ptrdiff_t)>    
+struct input_iterator 
+     : public iterator <input_iterator_tag, T, Distance> {};
+
+template <class T, class DEFTEMPARG(Distance, ptrdiff_t)>    
+struct forward_iterator
+     : public iterator <forward_iterator_tag, T, Distance> {};
+
+template <class T, class DEFTEMPARG(Distance, ptrdiff_t)>    
+struct bidirectional_iterator
+     : public iterator <bidirectional_iterator_tag, T, Distance> {};
+
+template <class T, class DEFTEMPARG(Distance, ptrdiff_t)>    
+struct random_access_iterator
+     : public iterator <random_access_iterator_tag, T, Distance> {};
+*/
+
+template <class InputIterator>
+typename iterator_traits<InputIterator>::difference_type
+__distance(InputIterator first, InputIterator last, input_iterator_tag)
+{
+	typename iterator_traits<InputIterator>::difference_type n = 0;
+	for (n = 0; first != last; ++first, ++n)
+	{}
+	return n;
+}
+
+// hh 980518 removed specializations for Bidirectional and Forward iterators
+
+template <class RandomAccessIterator>
+inline
+typename iterator_traits<RandomAccessIterator>::difference_type
+__distance(RandomAccessIterator first, RandomAccessIterator last, random_access_iterator_tag)
+{
+	return last - first;
+}
+
+template <class InputIterator>
+inline
+typename iterator_traits<InputIterator>::difference_type
+distance(InputIterator first, InputIterator last)
+{
+	return __distance(first, last, iterator_traits<InputIterator>::iterator_category());
+}
+
+template <class InputIterator, class Distance>
+void
+__advance(InputIterator& i, Distance n, input_iterator_tag)
+{
+	while (n--)
+		++i;
+}
+
+// hh 980518 removed specializations for Forward iterators
+
+template <class BidirectionalIterator, class Distance>
+void
+__advance(BidirectionalIterator& i, Distance n, bidirectional_iterator_tag)
+{
+	if (n > 0)
+		while (n--)
+			++i;
+	else
+		while (n++)
+			--i;
+}
+
+template <class RandomAccessIterator, class Distance>
+inline
+void
+__advance(RandomAccessIterator& i, Distance n, random_access_iterator_tag)
+{
+	i += n;
+}
+
+template <class InputIterator, class Distance>
+inline
+void
+advance(InputIterator& i, Distance n)
+{
+	__advance(i, n, iterator_traits<InputIterator>::iterator_category());
+}
+
+// Subclause 24.4 -- Predefined iterators
+// Section 24.4.1 -- Reverse iterators
+// Subclause 24.4.1.3 and 24.4.1.4 -- class reverse_iterator
+
+// hh 980519 rewriting reverse_iterator without the mutex stuff.
+//           I believe that the mutex will be too expensive when turned on here
+//           and that it will be better for the user to mutex only those
+//           reverse_iterator's that are explicitly shared among threads.
+//           If you disagree, let me know.  Meanwhile, the old implementation
+//           is only a comment away.
+
+template <class Iterator>
+class reverse_iterator
+	: public iterator<typename iterator_traits<Iterator>::iterator_category,
+	                  typename iterator_traits<Iterator>::value_type,
+	                  typename iterator_traits<Iterator>::difference_type,
+	                  typename iterator_traits<Iterator>::pointer,
+	                  typename iterator_traits<Iterator>::reference>
+{
+protected:
+	Iterator current;
+public:
+	typedef Iterator iterator_type;
+	typedef typename iterator_traits<Iterator>::difference_type difference_type;
+	typedef typename iterator_traits<Iterator>::reference reference;
+	typedef typename iterator_traits<Iterator>::pointer pointer;
+
+	reverse_iterator();
+	explicit reverse_iterator(Iterator x);
+
+	#ifdef MSIPL_MEMBER_TEMPLATE  // hh 980713 Temporarily moved into class definition to support compiler
+		template <class U>
+		inline
+		reverse_iterator(const reverse_iterator<U>& u)
+			: current(Iterator(u.base()))	// hh 981001
+		{
+		}
+	#endif
+
+	Iterator base() const;
+	reference operator*() const;
+	pointer   operator->() const;
+	reverse_iterator& operator++();
+	reverse_iterator  operator++(int);
+	reverse_iterator& operator--();
+	reverse_iterator  operator--(int);
+
+	reverse_iterator  operator+ (difference_type n) const;
+	reverse_iterator& operator+=(difference_type n);
+	reverse_iterator  operator- (difference_type n) const;
+	reverse_iterator& operator-=(difference_type n);
+	reference operator[](difference_type n) const;
+};
+
+template <class Iterator>
+inline
+reverse_iterator<Iterator>::reverse_iterator()
+{
+}
+
+template <class Iterator>
+inline
+reverse_iterator<Iterator>::reverse_iterator(Iterator x)
+	: current(x)
+{
+}
+
+template <class Iterator>
+inline
+Iterator
+reverse_iterator<Iterator>::base() const
+{
+	return current;
+}
+
+template <class Iterator>
+inline
+typename reverse_iterator<Iterator>::reference
+reverse_iterator<Iterator>::operator*() const
+{
+	Iterator tmp = current;
+	return *--tmp;
+}
+
+template <class Iterator>
+inline
+typename reverse_iterator<Iterator>::pointer
+reverse_iterator<Iterator>::operator->() const
+{
+	return &(operator*());
+}
+
+template <class Iterator>
+inline
+reverse_iterator<Iterator>&
+reverse_iterator<Iterator>::operator++()
+{
+	--current;
+	return *this;
+}
+
+template <class Iterator>
+inline
+reverse_iterator<Iterator>
+reverse_iterator<Iterator>::operator++(int)
+{
+	reverse_iterator tmp = *this;
+	--current;
+	return tmp;
+}
+
+template <class Iterator>
+inline
+reverse_iterator<Iterator>&
+reverse_iterator<Iterator>::operator--()
+{
+	++current;
+	return *this;
+}
+
+template <class Iterator>
+inline
+reverse_iterator<Iterator>
+reverse_iterator<Iterator>::operator--(int)
+{
+	reverse_iterator tmp = *this;
+	++current;
+	return tmp;
+}
+
+template <class Iterator>
+inline
+reverse_iterator<Iterator>
+reverse_iterator<Iterator>::operator+ (difference_type n) const
+{
+	return reverse_iterator(current-n);
+}
+
+template <class Iterator>
+inline
+reverse_iterator<Iterator>&
+reverse_iterator<Iterator>::operator+=(difference_type n)
+{
+	current -= n;
+	return *this;
+}
+
+template <class Iterator>
+inline
+reverse_iterator<Iterator>
+reverse_iterator<Iterator>::operator- (difference_type n) const
+{
+	return reverse_iterator(current+n);
+}
+
+template <class Iterator>
+inline
+reverse_iterator<Iterator>&
+reverse_iterator<Iterator>::operator-=(difference_type n)
+{
+	current += n;
+	return *this;
+}
+
+template <class Iterator>
+inline
+typename reverse_iterator<Iterator>::reference
+reverse_iterator<Iterator>::operator[](difference_type n) const
+{
+	return current[-n-1];
+}
+
+template <class Iterator>
+inline
+bool
+operator==(const reverse_iterator<Iterator>& x, const reverse_iterator<Iterator>& y)
+{
+	return bool(x.base() == y.base());
+}
+
+template <class Iterator>
+inline
+bool
+operator<(const reverse_iterator<Iterator>& x, const reverse_iterator<Iterator>& y)
+{
+	return bool(x.base() > y.base());
+}
+
+template <class Iterator>
+inline
+bool
+operator!=(const reverse_iterator<Iterator>& x, const reverse_iterator<Iterator>& y)
+{
+	return bool(x.base() != y.base());
+}
+
+template <class Iterator>
+inline
+bool
+operator>(const reverse_iterator<Iterator>& x, const reverse_iterator<Iterator>& y)
+{
+	return bool(x.base() < y.base());
+}
+
+template <class Iterator>
+inline
+bool
+operator>=(const reverse_iterator<Iterator>& x, const reverse_iterator<Iterator>& y)
+{
+	return bool(x.base() <= y.base());
+}
+
+template <class Iterator>
+inline
+bool
+operator<=(const reverse_iterator<Iterator>& x, const reverse_iterator<Iterator>& y)
+{
+	return bool(x.base() >= y.base());
+}
+
+template <class Iterator>
+inline
+typename reverse_iterator<Iterator>::difference_type
+operator-(const reverse_iterator<Iterator>& x, const reverse_iterator<Iterator>& y)
+{
+	return y.base() - x.base();
+}
+
+template <class Iterator>
+inline
+reverse_iterator<Iterator>
+operator+(typename reverse_iterator<Iterator>::difference_type n, const reverse_iterator<Iterator>& x)
+{
+	return reverse_iterator<Iterator>(x.base() - n);
+}
+
+/*
+template <class Iterator> 
+class reverse_iterator 
+     : public iterator<typename iterator_traits<Iterator>::difference_type,
+                       typename iterator_traits<Iterator>::value_type,
+                       typename iterator_traits<Iterator>::pointer,
+                       typename iterator_traits<Iterator>::reference,
+                       typename iterator_traits<Iterator>::iterator_category>
+{
+
+public:
+     typedef typename iterator_traits<Iterator>::difference_type difference_type;
+     typedef typename iterator_traits<Iterator>::value_type      value_type;
+     typedef typename iterator_traits<Iterator>::pointer         pointer;     // hh 971227
+     typedef typename iterator_traits<Iterator>::reference       reference;   // hh 971227
+     typedef typename iterator_traits<Iterator>::iterator_category 
+                                                              iterator_category;
+     typedef Iterator                                            iterator_type;
+     typedef typename reverse_iterator<Iterator>::difference_type Distance;
+     typedef reverse_iterator<Iterator>                           self;
+
+// hh 971227 All friend declarations used to look like this.  This is overly
+//           friendly, and besides, requires more compiler than we have right now.
+//     template<class Iter>
+//     friend bool operator== (const reverse_iterator<Iter>& x, 
+//                             const reverse_iterator<Iter>& y);
+
+	friend bool operator== <Iterator>(const reverse_iterator& x, const reverse_iterator& y);
+	friend bool operator!= <Iterator>(const reverse_iterator& x, const reverse_iterator& y);
+	friend bool operator<  <Iterator>(const reverse_iterator& x, const reverse_iterator& y);
+	friend bool operator<= <Iterator>(const reverse_iterator& x, const reverse_iterator& y);
+	friend bool operator>= <Iterator>(const reverse_iterator& x, const reverse_iterator& y);
+	friend bool operator>  <Iterator>(const reverse_iterator& x, const reverse_iterator& y);
+	friend difference_type operator- <Iterator>(const reverse_iterator& x, const reverse_iterator& y);  // hh 980113 moved out
+	friend reverse_iterator operator+ <Iterator>(difference_type n, const reverse_iterator& x);  // hh 980113 moved out
+
+protected:
+     Iterator current;
+     DEC_OBJ_LOCK(_mutex)
+
+public:
+     reverse_iterator () {}
+
+     explicit reverse_iterator (Iterator x) : current (x) {}
+
+     ~reverse_iterator () { }
+
+     Iterator base () const 
+     {    
+          READ_LOCK(_mutex); 
+          return current; 
+     }
+     reference operator* () const 
+     { 
+          READ_LOCK(_mutex); 
+          Iterator tmp = current;
+          return reference(*(--tmp));
+     }
+     pointer operator-> () const 
+     { 
+          READ_LOCK(_mutex); 
+          return &(operator* ());
+     }
+
+     self& operator++ ()
+     {
+          WRITE_LOCK(_mutex);
+          --current;
+          return *this;
+     }
+     self operator++ (int)
+     {
+          WRITE_LOCK(_mutex);
+          self tmp = *this;
+          --current;
+          return tmp;
+     }
+     self& operator-- ()
+     {
+          WRITE_LOCK(_mutex);
+          ++current;
+          return *this;
+     }
+     self operator-- (int)
+     {
+         WRITE_LOCK(_mutex);
+         self tmp = *this;
+         ++current;
+         return tmp;
+     }
+
+     self operator+ (Distance n) const
+     {
+         READ_LOCK(_mutex);
+         Iterator tmp = current;
+         advance (tmp, -n);
+         return self(tmp);
+     }
+     self& operator+= (Distance n)
+     {
+         WRITE_LOCK(_mutex);
+         *this = *this + n;
+         return *this;
+     }
+     self operator- (Distance n) const
+     {
+         READ_LOCK(_mutex);
+         Iterator tmp = current;
+         advance (tmp, n);
+         return self(tmp);
+     }
+     self& operator-= (Distance n)
+     {
+         WRITE_LOCK(_mutex);
+         *this = *this - n;
+         return *this;
+     }
+
+     reference operator[] (difference_type n) const   // hh 971227 changed Distance to difference_type
+     { 
+         READ_LOCK(_mutex);
+         return current[-n-1];
+     }
+};
+
+template <class Iterator>
+inline bool 
+operator== (const reverse_iterator<Iterator>& x, const reverse_iterator<Iterator>& y)
+{ 
+     return y.current == x.current; 
+}
+
+template <class Iterator>
+inline bool 
+operator!= (const reverse_iterator<Iterator>& x, const reverse_iterator<Iterator>& y)
+{ 
+     return y.current != x.current; 
+}
+
+template <class Iterator>
+inline bool 
+operator< (const reverse_iterator<Iterator>& x, const reverse_iterator<Iterator>& y)
+{ 
+     return y.current < x.current; 
+}
+
+template <class Iterator>
+inline bool 
+operator<= (const reverse_iterator<Iterator>& x, const reverse_iterator<Iterator>& y)
+{ 
+     return y.current <= x.current; 
+}
+
+template <class Iterator>
+inline bool 
+operator>= (const reverse_iterator<Iterator>& x, const reverse_iterator<Iterator>& y)
+{ 
+     return y.current >= x.current; 
+}
+
+template <class Iterator>
+inline bool 
+operator> (const reverse_iterator<Iterator>& x, const reverse_iterator<Iterator>& y)
+{ 
+     return y.current > x.current; 
+}
+
+template <class Iterator>
+inline
+typename reverse_iterator<Iterator>::difference_type
+operator- (const reverse_iterator<Iterator>& x, const reverse_iterator<Iterator>& y)
+{  
+	return y.current - x.current; 
+}
+
+template <class Iterator>
+inline
+reverse_iterator<Iterator>
+operator+ (typename reverse_iterator<Iterator>::difference_type n,
+	const reverse_iterator<Iterator>& x)
+{  
+	return reverse_iterator<Iterator> (x.current - n);
+} 
+*/
+// Subclause 24.4.2 -- Insert iterators
+// Section 24.4.2.1 -- class back_insert_iterator
+template <class Container>
+class back_insert_iterator 
+     : public iterator <output_iterator_tag, void, void, void, void> {
+
+protected:
+     Container * container;
+
+public:
+     typedef Container container_type;
+
+     explicit back_insert_iterator (Container& x) : container (&x) {}
+
+     back_insert_iterator<Container>&
+     operator= (const typename Container::value_type& value)
+     { 
+          container->push_back (value); 
+          return *this; 
+     }
+
+     back_insert_iterator<Container>& operator*()      { return *this; }
+     back_insert_iterator<Container>& operator++ ()    { return *this; }
+     back_insert_iterator<Container>& operator++ (int) { return *this; }
+};
+
+template <class Container>
+inline back_insert_iterator<Container> back_inserter (Container& x)
+{ return back_insert_iterator<Container> (x); }
+
+// Section 24.4.2.3 -- class front_insert_iterator
+
+template <class Container>
+class front_insert_iterator 
+     : public iterator <output_iterator_tag, void, void, void, void> {
+
+protected:
+     Container * container;
+
+public:
+     typedef Container container_type;
+
+     explicit front_insert_iterator (Container& x) : container (&x) {}
+
+     front_insert_iterator<Container>&
+     operator= (const typename Container::value_type& value)
+     { 
+          container->push_front (value); 
+          return *this; 
+     }
+
+     front_insert_iterator<Container>& operator*()      { return *this; }
+     front_insert_iterator<Container>& operator++ ()    { return *this; }
+     front_insert_iterator<Container>& operator++ (int) { return *this; }
+};
+
+template <class Container>
+inline front_insert_iterator<Container> front_inserter (Container& x)
+{ return front_insert_iterator<Container> (x); }
+
+// Section 24.4.2.5 -- class insert_iterator
+
+template <class Container>
+class insert_iterator 
+     : public iterator <output_iterator_tag, void, void, void, void> {
+
+protected:
+     Container * container;
+     typename Container::iterator iter;
+
+public:
+     typedef Container container_type;
+
+     insert_iterator (Container& x, typename Container::iterator i) 
+         : container (&x), iter (i) {}
+
+     insert_iterator<Container>&
+     operator= (const typename Container::value_type& value)
+     { 
+         iter = container->insert (iter, value);
+         ++iter;
+         return *this;
+     }
+
+     insert_iterator<Container>& operator*()      { return *this; }
+     insert_iterator<Container>& operator++ ()    { return *this; }
+     insert_iterator<Container>& operator++ (int) { return *this; }
+};
+
+#ifdef __GNUC__
+
+template <class Container, class Iterator>
+inline insert_iterator<Container> inserter (Container& x, Iterator i)
+{ return insert_iterator<Container> (x, typename Container::iterator (i)); }  // hh 980924
+
+#else
+
+template <class Container, class Iterator>
+inline insert_iterator<Container> inserter (Container& x, Iterator i)
+{ return insert_iterator<Container> (x, Container::iterator (i)); }  // hh 980924
+
+#endif
+
+// Subclause stream iterators
+
+// hh 980514 rewrote
+template <class T, class DEFTEMPARG(charT, char), class DEFTEMPARG(traits, char_traits<charT>),
+	class DEFTEMPARG(Distance, ptrdiff_t)>    
+class istream_iterator 
+	: public iterator<input_iterator_tag, T, Distance, const T*, const T&>
+{
+public:
+	typedef charT char_type;
+	typedef traits traits_type; 
+	typedef basic_istream<charT, traits> istream_type;
+	istream_iterator();
+	istream_iterator(istream_type& s);
+	const T& operator*() const;
+	const T* operator->() const;
+	istream_iterator& operator++();
+	istream_iterator operator++(int);
+	friend bool operator== <T, charT, traits, Distance>(const istream_iterator& lhs,
+	                                                    const istream_iterator& rhs);
+	friend bool operator!= <T, charT, traits, Distance>(const istream_iterator& lhs,
+	                                                    const istream_iterator& rhs);
+private:
+	istream_type* in_stream_;
+	T value_;
+};
+
+template <class T, class charT, class traits, class Distance>
+inline
+bool
+operator== (const istream_iterator<T, charT, traits, Distance>& lhs,
+            const istream_iterator<T, charT, traits, Distance>& rhs)
+{
+	return bool(lhs.in_stream_ == rhs.in_stream_);
+}
+
+template <class T, class charT, class traits, class Distance>
+inline
+bool
+operator!= (const istream_iterator<T, charT, traits, Distance>& lhs,
+            const istream_iterator<T, charT, traits, Distance>& rhs)
+{
+	return bool(lhs.in_stream_ != rhs.in_stream_);
+}
+
+template <class T, class charT, class traits, class Distance>
+inline
+istream_iterator<T, charT, traits, Distance>::istream_iterator()
+	: in_stream_(0)
+{
+}
+
+// hh 980924
+template <class T, class charT, class traits, class Distance>
+inline
+istream_iterator<T, charT, traits, Distance>::istream_iterator(istream_type& s)
+	: in_stream_(&s)
+{
+	if (in_stream_)
+	{
+		*in_stream_ >> value_;
+		if (in_stream_->fail())
+			in_stream_ = 0;
+	}
+}
+
+template <class T, class charT, class traits, class Distance>
+inline
+const T&
+istream_iterator<T, charT, traits, Distance>::operator*() const
+{
+	return value_;
+}
+
+template <class T, class charT, class traits, class Distance>
+inline
+const T*
+istream_iterator<T, charT, traits, Distance>::operator->() const
+{
+	return &value_;
+}
+
+template <class T, class charT, class traits, class Distance>
+inline
+istream_iterator<T, charT, traits, Distance>&
+istream_iterator<T, charT, traits, Distance>::operator++()
+{
+	if (in_stream_)
+	{
+		*in_stream_ >> value_;
+		if (in_stream_->fail())   // hh 980924
+			in_stream_ = 0;
+	}
+	return *this;
+}
+
+template <class T, class charT, class traits, class Distance>
+inline
+istream_iterator<T, charT, traits, Distance>
+istream_iterator<T, charT, traits, Distance>::operator++(int)
+{
+	istream_iterator tmp(*this);
+	if (in_stream_)
+	{
+		*in_stream_ >> value_;
+		if (in_stream_->fail())   // hh 980924
+			in_stream_ = 0;
+	}
+	return tmp;
+}
+
+/*
+// hh 971222 Added default argument to charT per 24.5.1.3
+template <class T, class DEFTEMPARG(charT, char), class DEFTEMPARG(traits, char_traits<charT>), 
+          class DEFTEMPARG(Distance, ptrdiff_t)>    
+class istream_iterator 
+     : public iterator <input_iterator_tag, T, Distance, const T*, const T&> {
+
+	// hh 980114 Moved out.  Compiler doesn't support it in template definition.
+	//           Updated friend template syntax
+	friend bool operator== <T, charT, traits, Distance>(
+		const istream_iterator<T, charT, traits, Distance>& x,
+		const istream_iterator<T, charT, traits, Distance>& y);
+
+	// hh 980114 Moved out.  Compiler doesn't support it in template definition.
+	//           Updated friend template syntax
+	friend bool operator!= <T, charT, traits, Distance>(
+		const istream_iterator<T, charT, traits, Distance>& x,
+		const istream_iterator<T, charT, traits, Distance>& y);
+
+public:
+     typedef charT   char_type;
+     typedef traits  traits_type; 
+     typedef basic_istream<charT, traits>   istream_type;
+     typedef typename iterator <input_iterator_tag, T, 
+                                Distance, const T*, const T&>::pointer pointer; 
+
+private:
+     istream_type* in_stream;
+     T             value;
+     bool          end_marker;
+     DEC_OBJ_LOCK(is_mutex)
+
+     void read ()
+     {
+         WRITE_LOCK(is_mutex);
+         end_marker = (*in_stream) ? true : false;
+         if (end_marker) *in_stream >> value;
+         end_marker = (*in_stream) ? true : false;
+      }
+
+public:
+     istream_iterator ()           : in_stream (&cin), end_marker (false) {}
+     istream_iterator (istream_type& s) : in_stream (&s) { read (); }
+     istream_iterator (const istream_iterator& x)
+         : in_stream(x.in_stream), end_marker (x.end_marker), value (x.value) {}
+     ~istream_iterator () {}
+ 
+     const T& operator* () const  { READ_LOCK(is_mutex); return value; }
+     const T* operator-> () const { return &(operator *()); }
+ 
+     istream_iterator& operator++ ()
+     { 
+         read (); 
+         return *this; 
+     }
+ 
+     istream_iterator operator++ (int)
+     {
+         istream_iterator tmp = *this;
+         read ();
+         return tmp;
+     }
+};
+ 
+template <class T, class charT, class traits, class Distance>
+inline
+bool
+operator== (const istream_iterator<T, charT, traits, Distance>& x,
+            const istream_iterator<T, charT, traits, Distance>& y)
+{
+	return x.in_stream == y.in_stream && x.end_marker == y.end_marker ||
+		x.end_marker == false && y.end_marker == false;
+}
+
+template <class T, class charT, class traits, class Distance>
+inline
+bool
+operator!= (const istream_iterator<T, charT, traits, Distance>& x,
+            const istream_iterator<T, charT, traits, Distance>& y)
+{
+	return !(x == y);
+}
+*/
+// hh 971222 Added default argument to charT per 24.5.2.2
+template <class T, class DEFTEMPARG(charT, char), class DEFTEMPARG(traits, char_traits<charT>) > 
+class ostream_iterator 
+     : public iterator <output_iterator_tag, void, void, void, void> {
+
+public:
+     typedef charT   char_type;
+     typedef traits  traits_type; 
+     typedef basic_ostream<charT, traits>   ostream_type;
+     typedef typename iterator <output_iterator_tag, void,
+                                void, void, void>::pointer pointer;
+ 
+private:
+     ostream_type* out_stream;
+     const charT*  delim;
+     DEC_MUTEX(os_mutex)
+
+public:
+     ostream_iterator (ostream_type& s)  
+         : out_stream (&s), delim (0)                   {}
+     ostream_iterator (ostream_type& s, const charT* delimiter) 
+         : out_stream (&s), delim (delimiter)           {}
+//     ostream_iterator (const ostream_iterator& x)     // hh 980519 superfluous
+//         : out_stream (x.out_stream), delim (x.delim) {}
+//     ~ostream_iterator () {}
+
+     ostream_iterator<T, charT, traits>& operator= (const T& value)
+     { 
+         LOCK(bl_mut, os_mutex);
+         *out_stream << value;
+         if (delim) *out_stream << delim;
+         return *this;
+     }
+     ostream_iterator<T, charT, traits>& operator* ()      { return *this; }
+     ostream_iterator<T, charT, traits>& operator++ ()     { return *this; } 
+     ostream_iterator<T, charT, traits>& operator++ (int)  { return *this; } 
+};
+
+// hh 980924 added init method
+template <class charT, class DEFTEMPARG(traits, char_traits<charT>) >
+class istreambuf_iterator
+	: public iterator <input_iterator_tag, charT, typename traits::off_type, charT*, charT&>
+{
+public:
+	typedef charT                          char_type;
+	typedef traits                         traits_type;
+	typedef typename traits::int_type      int_type;
+	typedef basic_streambuf<charT, traits> streambuf_type;
+	typedef basic_istream<charT, traits>   istream_type;
+//	typedef  typename traits::off_type     off_type;
+//	typedef  typename traits::pos_type     pos_type;
+
+	class proxy
+	{
+	public :
+		charT operator *() {return keep_;}
+	private:
+		proxy(charT keep, basic_streambuf<charT, traits>* sbuf) : sbuf_(sbuf), keep_(keep) {}
+
+		basic_streambuf<charT, traits>* sbuf_;
+		charT keep_;
+	
+		friend class istreambuf_iterator;
+	};
+
+	istreambuf_iterator() MSIPL_THROW : sbuf_(0) {}
+	istreambuf_iterator(istream_type& is) MSIPL_THROW : sbuf_(is.rdbuf()) {init();}
+	istreambuf_iterator(streambuf_type* sb) MSIPL_THROW : sbuf_ (sb) {init();}
+	istreambuf_iterator(const proxy& p) MSIPL_THROW : sbuf_(p.sbuf_) {init();}
+	charT operator *() const {return sbuf_ ? traits::to_char_type(sbuf_->sgetc()) : charT();}
+	istreambuf_iterator& operator++ () {increment(); return *this;}
+	proxy operator ++(int) {charT c = increment(); return proxy(c, sbuf_);}
+	bool equal(const istreambuf_iterator& b) const {return bool(!(sbuf_ == 0 ^ b.sbuf_ == 0));}
+private:
+	charT increment();
+	void init();
+
+	streambuf_type* sbuf_;
+};
+
+template <class charT, class traits>
+void
+istreambuf_iterator<charT, traits>::init()
+{
+	if (sbuf_)
+	{
+		if (traits::eq_int_type(sbuf_->sgetc(), traits::eof()))
+			sbuf_ = 0;
+	}
+}
+
+template <class charT, class traits>
+charT
+istreambuf_iterator<charT, traits>::increment()
+{
+	if (sbuf_)
+	{
+		int_type c = sbuf_->sbumpc();  // hh 980803 removed traits:: from int_type
+		if (traits::eq_int_type(sbuf_->sgetc(), traits::eof()))
+			sbuf_ = 0;
+		return traits::to_char_type(c);
+	}
+	return charT();
+}
+
+template <class charT, class traits>
+inline bool operator== (const istreambuf_iterator<charT, traits>& a,
+            const istreambuf_iterator<charT, traits>& b)
+{ return bool(a.equal (b)); }
+
+template <class charT, class traits>
+inline bool operator!= (const istreambuf_iterator<charT, traits>& a,
+            const istreambuf_iterator<charT, traits>& b)
+{ return bool(! (a.equal (b))); }
+
+template <class charT, class DEFTEMPARG(traits, char_traits<charT>) >
+class ostreambuf_iterator
+     : public iterator <output_iterator_tag, void, void, void, void> {
+
+public:
+     typedef  charT                         char_type;
+     typedef  traits                        traits_type;
+     typedef  typename traits::pos_type     pos_type;
+     typedef  typename traits::off_type     off_type;
+     typedef  typename traits::int_type     int_type;
+     typedef  basic_ostream<charT, traits>   ostream_type;
+     typedef  basic_streambuf<charT, traits> streambuf_type;
+
+     ostreambuf_iterator (ostream_type& s)  MSIPL_THROW
+         : sbuf_ (s.rdbuf ()), failed_(false) {}
+
+     ostreambuf_iterator (streambuf_type* s) MSIPL_THROW
+         : sbuf_ (s), failed_(false) {}
+
+     ostreambuf_iterator& operator* ()     { return *this; }
+     ostreambuf_iterator& operator++ ()    { return *this; }
+     ostreambuf_iterator& operator++ (int) { return *this; }
+
+     ostreambuf_iterator& operator= (char_type c); // hh 980507 uninlined
+     bool failed () const MSIPL_THROW { return bool(failed_); }
+
+private:
+     streambuf_type*  sbuf_;
+     bool             failed_;
+};
+
+template <class charT, class traits>
+ostreambuf_iterator<charT, traits>&
+ostreambuf_iterator<charT, traits>::operator= (char_type c) 
+{
+	if (!failed_ && traits::eq_int_type(sbuf_->sputc (c), traits::eof ()))
+		failed_ = true;
+	return *this;
+}
+
+#ifdef MSIPL_USING_NAMESPACE
+	} // namespace std
+#endif
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
+#pragma options align=reset
+
+#endif // RC_INVOKED
+
+#endif /* MSIPL_ITERATOR_H */
+
+// hh 971220 fixed MOD_INCLUDE and MOD_C_INCLUDE
+// hh 971222 added wrapper for alignment
+// hh 971222 Changed filename from iterator.h to iterator
+// hh 971222 Made include guards standard
+// hh 971222 updated __MSL_FIX_ITERATORS__
+// hh 971222 Added default argument to istream_iterator template argument charT per 24.5.1.3
+// hh 971222 Added default argument to ostream_iterator template argument charT per 24.5.2.2
+// hh 971227 Changed friend declarations in reverse_iterator.  This was overly
+//           friendly, and besides, requires more compiler than we have right now.
+// hh 971227 non-standard stuff commented out
+// hh 971227 Pointer renamed to pointer in several places per standard
+// hh 971227 Reference renamed to reference in several places per standard
+// hh 971230 added RC_INVOKED wrapper
+// hh 980106 if inlined compiler instantiates reverse_iterator::op[] whether it is need or not.
+//           this causes problems with bidirectional iterators.
+// hh 980107 Completed and organized list of built-in types for iterator_traits specialization
+// hh 980114 Moved istream_iterator comparison methods out of template definition.
+// hh 980408 wrapped with #ifndef _No_Floating_Point 
+// hh 980518 added specialization for const T*
+// hh 980518 removed __advance & __distance specializations for Bidirectional and Forward iterators
+// hh 980519 rewrote reverse_iterator
+// hh 980514 rewrote istream_iterator
+// hh 980702 modified inheritance structure of iterator tags to match standard
+// hh 980702 modified istreambuf_iterator<charT, traits>::increment() so that it worked correctly
+// hh 980713 Temporarily moved member templates into class definition to support compiler
+// hh 980803 removed traits:: from int_type in istreambuf_iterator::increment()
+// hh 980924 Fixed bug in istream_iterator
+// hh 980924 Added typename
+// hh 981001 Fixed copy constructor of reverse_iterator
+// hh 981220 Added typename to appropriate return types
+// hh 981220 Added class modifier to several friend declarations

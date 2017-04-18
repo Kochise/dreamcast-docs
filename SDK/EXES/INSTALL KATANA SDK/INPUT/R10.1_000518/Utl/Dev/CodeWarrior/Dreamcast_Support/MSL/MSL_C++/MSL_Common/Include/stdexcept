@@ -1,0 +1,117 @@
+/*  Metrowerks Standard Library  Version 4.0  1998 August 10  */
+
+/*  $Date: 1999/03/24 17:56:09 $ 
+ *  $Revision: 1.8 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/************************************************************************/
+/*	Project...:	Standard C++ Library									*/
+/*	Name......:	stdexcept												*/
+/*	Purpose...:	exception handling										*/
+/************************************************************************/
+
+#ifndef _STDEXCEPT
+#define _STDEXCEPT
+
+#include <mslconfig>
+#include <exception>
+#include <MSLstring.h>
+
+#ifndef RC_INVOKED // hh 971230
+
+#pragma options align=native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#ifndef _MSL_NO_CPP_NAMESPACE
+	namespace std {
+#endif
+
+	template <class T> class allocator;
+	template<class charT> struct char_traits;
+	template <class charT, class traits, class Allocator> class basic_string;
+	typedef basic_string<char, char_traits<char>, allocator<char> > string;
+
+	class logic_error : public exception {
+	public:
+		explicit logic_error(const char* what_arg) : what_(what_arg) {}
+		explicit logic_error(const string& what_arg) : what_(what_arg) {}
+		virtual const char* what() const _MSL_THROW {return what_.c_str();}
+	private:
+		_MSLstring what_;
+	};
+
+	class domain_error : public logic_error {
+	public:
+		explicit domain_error(const char* what_arg) : logic_error(what_arg) {}
+		explicit domain_error(const string& what_arg) : logic_error(what_arg) {}
+	};
+
+	class invalid_argument : public logic_error {
+	public:
+		explicit invalid_argument(const char* what_arg) : logic_error(what_arg) {}
+		explicit invalid_argument(const string& what_arg) : logic_error(what_arg) {}
+	};
+
+	class length_error : public logic_error {
+	public:
+		explicit length_error(const char* what_arg) : logic_error(what_arg) {}
+		explicit length_error(const string& what_arg) : logic_error(what_arg) {}
+	};
+
+	class out_of_range : public logic_error {
+	public:
+		explicit out_of_range(const char* what_arg) : logic_error(what_arg) {}
+		explicit out_of_range(const string& what_arg) : logic_error(what_arg) {}
+	};
+
+	class runtime_error : public exception {
+	public:
+		explicit runtime_error(const char* what_arg) : what_(what_arg) {}
+		explicit runtime_error(const string& what_arg) : what_(what_arg) {}
+		virtual const char* what() const _MSL_THROW {return what_.c_str();}
+	private:
+		_MSLstring what_;
+	};
+
+	class range_error : public runtime_error {
+	public:
+		explicit range_error(const char* what_arg) : runtime_error(what_arg) {}
+		explicit range_error(const string& what_arg) : runtime_error(what_arg) {}
+	};
+
+	class overflow_error : public runtime_error {
+	public:
+		explicit overflow_error(const char* what_arg) : runtime_error(what_arg) {}
+		explicit overflow_error(const string& what_arg) : runtime_error(what_arg) {}
+	};
+
+	class underflow_error : public runtime_error {
+	public:
+		explicit underflow_error(const char* what_arg) : runtime_error(what_arg) {}
+		explicit underflow_error(const string& what_arg) : runtime_error(what_arg) {}
+	};
+
+#ifndef _MSL_NO_CPP_NAMESPACE
+	} // namespace std 
+#endif
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
+#pragma options align=reset
+
+#endif // RC_INVOKED
+
+#endif
+// hh 971226 complete rewrite to break dependence on <string>
+// hh 971230 added RC_INVOKED wrapper
+// hh 990120 changed name of MSIPL flags
+// hh 990314 Added nonstandard const char* constructors to all of the standard exceptions.
+//           This is both a cpu and memory optimization.  This helps avoid instantiating
+//           basic_string unless client code explicitly uses basic_string.

@@ -1,0 +1,2039 @@
+/*  Metrowerks Standard Library  */
+
+/*  $Date: 1999/03/02 17:34:51 $ 
+ *  $Revision: 1.9 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Portions Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/**
+ ** complex       // hh 971221 Changed filename from complex.h to complex
+ **
+ **/
+
+#ifndef _COMPLEX           // hh 971221 Made include guards standard
+#define _COMPLEX
+
+#include <mslconfig>
+
+#include <cmath>
+#include <iosfwd>
+
+#ifndef RC_INVOKED
+
+#pragma options align=native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#ifndef _No_Floating_Point
+
+#ifndef _MSL_NO_CPP_NAMESPACE
+	namespace std {
+#endif
+
+// Section 26.1 -- complex Numbers
+
+template<class T>
+class complex
+{
+public:
+	typedef T value_type;
+
+	complex(const T& re = T(), const T& im = T());
+
+	#ifndef _MSL_NO_MEMBER_TEMPLATE  // hh 980713 Temporarily moved into class definition to support compiler
+		template <class X>
+		inline
+		complex(const complex<X>& rhs)
+			: re_(T(rhs.real())),
+			  im_(T(rhs.imag()))
+		{
+		}
+	#endif
+
+	T real() const;
+	T imag() const;
+
+	complex<T>& operator= (const T& rhs);
+	complex<T>& operator+=(const T& rhs);
+	complex<T>& operator-=(const T& rhs);
+	complex<T>& operator*=(const T& rhs);
+	complex<T>& operator/=(const T& rhs);
+
+	#ifndef _MSL_NO_MEMBER_TEMPLATE  // hh 980713 Temporarily moved into class definition to support compiler
+
+		template <class X>
+		inline
+		complex<T>&
+		operator= (const complex<X>& rhs)
+		{
+			re_ = (T)rhs.real();
+			im_ = (T)rhs.imag();
+			return *this;
+		}
+
+		template <class X>
+		inline
+		complex<T>&
+		operator+=(const complex<X>& rhs)
+		{
+			re_ += (T)rhs.real();
+			im_ += (T)rhs.imag();
+			return *this;
+		}
+
+		template <class X>
+		inline
+		complex<T>&
+		operator-=(const complex<X>& rhs)
+		{
+			re_ -= (T)rhs.real();
+			im_ -= (T)rhs.imag();
+			return *this;
+		}
+
+		#ifdef _MSL_CX_LIMITED_RANGE
+
+			template <class X>
+			complex<T>&
+			operator*=(const complex<X>& rhs)
+			{
+				T re = re_;
+				re_ = re * (T)rhs.real() - im_ * (T)rhs.imag();
+				im_ = re * (T)rhs.imag() + im_ * (T)rhs.real();
+				return *this;
+			}
+
+			template <class X>
+			complex<T>&
+			operator/=(const complex<X>& rhs)
+			{
+				T denom = (T)rhs.real() * (T)rhs.real() + (T)rhs.imag() * (T)rhs.imag();
+				T re = re_;
+				re_ = (re * (T)rhs.real() + im_ * (T)rhs.imag()) / denom;
+				im_ = (im_ * (T)rhs.real() - re * (T)rhs.imag()) / denom;
+				return *this;
+			}
+
+		#else	// ! _MSL_CX_LIMITED_RANGE
+
+			template <class X>
+			complex<T>&
+			operator*=(const complex<X>& rhs)
+			{
+				T a = re_;
+				T b = im_;
+				T c = (T)rhs.real();
+				T d = (T)rhs.imag();
+				T ac = a * c;
+				T bd = b * d;
+				T ad = a * d;
+				T bc = b * c;
+				re_ = ac - bd;
+				im_ = ad + bc;
+				// Recover infinities that computed as NaN+iNaN ... 
+				if (isnan(re_) && isnan(im_))
+				{
+					bool recalc = false;
+					if ( isinf(a) || isinf(b) ) // z is infinite
+					{
+						// "Box" the infinity ... 
+						a = copysign(isinf(a) ? T(1) : T(0), a);
+						b = copysign(isinf(b) ? T(1) : T(0), b);
+						// Change NaNs in the other factor to 0 ...
+						if (isnan(c))
+							c = copysign(T(0), c);
+						if (isnan(d))
+							d = copysign(T(0), d);
+						recalc = true;
+					}
+					if ( isinf(c) || isinf(d) ) // w is infinite
+					{
+						// "Box" the infinity ...
+						c = copysign(isinf(c) ? T(1) : T(0), c);
+						d = copysign(isinf(d) ? T(1) : T(0), d);
+						// Change NaNs in the other factor to 0 ...
+						if (isnan(a))
+							a = copysign(T(0), a);
+						if (isnan(b))
+							b = copysign(T(0), b);
+						recalc = true;
+					}
+					if (!recalc) {
+						// Recover infinities from overflow cases ... 
+						if (isinf(ac) || isinf(bd) || isinf(ad) || isinf(bc))
+						{
+							// Change all NaNs to 0 ...
+							if (isnan(a))
+								a = copysign(T(0), a);
+							if (isnan(b))
+								b = copysign(T(0), b);
+							if (isnan(c))
+								c = copysign(T(0), c);
+							if (isnan(d))
+								d = copysign(T(0), d);
+							recalc = true;
+						}
+					}
+					if (recalc)
+					{
+						re_ = copysign(T(HUGE_VAL), ( a * c - b * d ));
+						im_ = copysign(T(HUGE_VAL), ( a * d + b * c ));
+					}
+				}
+				return *this;
+			}
+
+			template <class X>
+			complex<T>&
+			operator/=(const complex<X>& rhs)
+			{
+				int ilogbw = 0;
+				T a = re_;
+				T b = im_;
+				T c = (T)rhs.real();
+				T d = (T)rhs.imag();
+				T logbw = logb(fmax(fabs(c), fabs(d)));
+				if (isfinite(logbw))
+				{
+					ilogbw = (int)logbw;
+					c = scalbn(c, -ilogbw);
+					d = scalbn(d, -ilogbw);
+				}
+				T denom = c * c + d * d;
+				re_ = scalbn((a * c + b * d) / denom, -ilogbw);
+				im_ = scalbn((b * c - a * d) / denom, -ilogbw);
+
+				// Recover infinities and zeros that computed
+				// as NaN+iNaN; the only cases are non-zero/zero,
+				// infinite/finite, and finite/infinite, ...
+
+				if (isnan(re_) && isnan(im_))
+				{
+					if ((denom == 0) && (!isnan(a) || !isnan(b)))
+					{
+						re_ = copysign(T(HUGE_VAL), c) * a;
+						im_ = copysign(T(HUGE_VAL), c) * b;
+					}
+					else if ((isinf(a) || isinf(b)) && isfinite(c) && isfinite(d))
+					{
+						a = copysign(isinf(a) ? T(1) : T(0), a);
+						b = copysign(isinf(b) ? T(1) : T(0), b);
+						re_ = copysign(T(HUGE_VAL), ( a * c + b * d ));
+						im_ = copysign(T(HUGE_VAL), ( b * c - a * d ));
+					}
+					else if (isinf(logbw) && isfinite(a) && isfinite(b))
+					{
+						c = copysign(isinf(c) ? T(1) : T(0), c);
+						d = copysign(isinf(d) ? T(1) : T(0), d);
+						re_ = T(0) * ( a * c + b * d );
+						im_ = T(0) * ( b * c - a * d );
+					}
+				}
+				return *this;
+			}
+
+		#endif	// _MSL_CX_LIMITED_RANGE
+
+	#else	// ! _MSL_NO_MEMBER_TEMPLATE
+		complex<T>& operator+=(const complex& rhs);
+		complex<T>& operator-=(const complex& rhs);
+		complex<T>& operator*=(const complex& rhs);
+		complex<T>& operator/=(const complex& rhs);
+	#endif
+private:
+	T re_;
+	T im_;
+};
+
+template <> class complex<double>;
+template <> class complex<long double>;
+
+template <>
+class complex<float>
+{
+public:
+	typedef float value_type;
+
+	complex(float re = 0.0f, float im = 0.0f);
+	explicit complex(const complex<double>& rhs);
+	explicit complex(const complex<long double>& rhs);
+	float real() const;
+	float imag() const;
+
+	complex<float>& operator= (float rhs);
+	complex<float>& operator+=(float rhs);
+	complex<float>& operator-=(float rhs);
+	complex<float>& operator*=(float rhs);
+	complex<float>& operator/=(float rhs);
+
+	#ifndef _MSL_NO_MEMBER_TEMPLATE  // hh 980713 Temporarily moved into class definition to support compiler
+
+		template <class X>
+		inline
+		complex<float>&
+		operator= (const complex<X>& rhs)
+		{
+			re_ = (float)rhs.real();
+			im_ = (float)rhs.imag();
+			return *this;
+		}
+
+		template <class X>
+		inline
+		complex<float>&
+		operator+=(const complex<X>& rhs)
+		{
+			re_ += (float)rhs.real();
+			im_ += (float)rhs.imag();
+			return *this;
+		}
+
+		template <class X>
+		inline
+		complex<float>&
+		operator-=(const complex<X>& rhs)
+		{
+			re_ -= (float)rhs.real();
+			im_ -= (float)rhs.imag();
+			return *this;
+		}
+
+		#ifdef _MSL_CX_LIMITED_RANGE
+
+			template <class X>
+			complex<float>&
+			operator*=(const complex<X>& rhs)
+			{
+				float re = re_;
+				re_ = re * (float)rhs.real() - im_ * (float)rhs.imag();
+				im_ = re * (float)rhs.imag() + im_ * (float)rhs.real();
+				return *this;
+			}
+
+			template <class X>
+			complex<float>&
+			operator/=(const complex<X>& rhs)
+			{
+				float denom = (float)rhs.real() * (float)rhs.real()
+				            + (float)rhs.imag() * (float)rhs.imag();
+				float re = re_;
+				re_ = (re * (float)rhs.real() + im_ * (float)rhs.imag()) / denom;
+				im_ = (im_ * (float)rhs.real() - re * (float)rhs.imag()) / denom;
+				return *this;
+			}
+
+		#else
+
+			template <class X>
+			complex<float>&
+			operator*=(const complex<X>& rhs)
+			{
+				float a = re_;
+				float b = im_;
+				float c = (float)rhs.real();
+				float d = (float)rhs.imag();
+				float ac = a * c;
+				float bd = b * d;
+				float ad = a * d;
+				float bc = b * c;
+				re_ = ac - bd;
+				im_ = ad + bc;
+				// Recover infinities that computed as NaN+iNaN ... 
+				if (isnan(re_) && isnan(im_))
+				{
+					bool recalc = false;
+					if ( isinf(a) || isinf(b) ) // z is infinite
+					{
+						// "Box" the infinity ... 
+						a = copysignf(isinf(a) ? 1.0F : 0.0F, a);
+						b = copysignf(isinf(b) ? 1.0F : 0.0F, b);
+						// Change NaNs in the other factor to 0 ...
+						if (isnan(c))
+							c = copysignf(0.0F, c);
+						if (isnan(d))
+							d = copysignf(0.0F, d);
+						recalc = true;
+					}
+					if ( isinf(c) || isinf(d) ) // w is infinite
+					{
+						// "Box" the infinity ...
+						c = copysignf(isinf(c) ? 1.0F : 0.0F, c);
+						d = copysignf(isinf(d) ? 1.0F : 0.0F, d);
+						// Change NaNs in the other factor to 0 ...
+						if (isnan(a))
+							a = copysignf(0.0F, a);
+						if (isnan(b))
+							b = copysignf(0.0F, b);
+						recalc = true;
+					}
+					if (!recalc) {
+						// Recover infinities from overflow cases ... 
+						if (isinf(ac) || isinf(bd) || isinf(ad) || isinf(bc))
+						{
+							// Change all NaNs to 0 ...
+							if (isnan(a))
+								a = copysignf(0.0F, a);
+							if (isnan(b))
+								b = copysignf(0.0F, b);
+							if (isnan(c))
+								c = copysignf(0.0F, c);
+							if (isnan(d))
+								d = copysignf(0.0F, d);
+							recalc = true;
+						}
+					}
+					if (recalc)
+					{
+						re_ = copysignf(HUGE_VALF, ( a * c - b * d ));
+						im_ = copysignf(HUGE_VALF, ( a * d + b * c ));
+					}
+				}
+				return *this;
+			}
+
+			template <class X>
+			complex<float>&
+			operator/=(const complex<X>& rhs)
+			{
+				int ilogbw = 0;
+				float a = re_;
+				float b = im_;
+				float c = (float)rhs.real();
+				float d = (float)rhs.imag();
+				float logbw = logbf(fmaxf(fabsf(c), fabsf(d)));
+				if (isfinite(logbw))
+				{
+					ilogbw = (int)logbw;
+					c = scalbnf(c, -ilogbw);
+					d = scalbnf(d, -ilogbw);
+				}
+				float denom = c * c + d * d;
+				re_ = scalbnf((a * c + b * d) / denom, -ilogbw);
+				im_ = scalbnf((b * c - a * d) / denom, -ilogbw);
+
+				// Recover infinities and zeros that computed
+				// as NaN+iNaN; the only cases are non-zero/zero,
+				// infinite/finite, and finite/infinite, ...
+
+				if (isnan(re_) && isnan(im_))
+				{
+					if ((denom == 0) && (!isnan(a) || !isnan(b)))
+					{
+						re_ = copysignf(HUGE_VALF, c) * a;
+						im_ = copysignf(HUGE_VALF, c) * b;
+					}
+					else if ((isinf(a) || isinf(b)) && isfinite(c) && isfinite(d))
+					{
+						a = copysignf(isinf(a) ? 1.0F : 0.0F, a);
+						b = copysignf(isinf(b) ? 1.0F : 0.0F, b);
+						re_ = copysignf(HUGE_VALF, ( a * c + b * d ));
+						im_ = copysignf(HUGE_VALF, ( b * c - a * d ));
+					}
+					else if (isinf(logbw) && isfinite(a) && isfinite(b))
+					{
+						c = copysignf(isinf(c) ? 1.0F : 0.0F, c);
+						d = copysignf(isinf(d) ? 1.0F : 0.0F, d);
+						re_ = 0.0F * ( a * c + b * d );
+						im_ = 0.0F * ( b * c - a * d );
+					}
+				}
+				return *this;
+			}
+
+		#endif	// _MSL_CX_LIMITED_RANGE
+	#else	// ! _MSL_NO_MEMBER_TEMPLATE
+		complex<float>& operator+=(const complex& rhs);
+		complex<float>& operator-=(const complex& rhs);
+		complex<float>& operator*=(const complex& rhs);
+		complex<float>& operator/=(const complex& rhs);
+
+		complex<float>& operator= (const complex<double>& rhs);
+		complex<float>& operator+=(const complex<double>& rhs);
+		complex<float>& operator-=(const complex<double>& rhs);
+		complex<float>& operator*=(const complex<double>& rhs);
+		complex<float>& operator/=(const complex<double>& rhs);
+
+		complex<float>& operator= (const complex<long double>& rhs);
+		complex<float>& operator+=(const complex<long double>& rhs);
+		complex<float>& operator-=(const complex<long double>& rhs);
+		complex<float>& operator*=(const complex<long double>& rhs);
+		complex<float>& operator/=(const complex<long double>& rhs);
+	#endif
+private:
+	float re_;
+	float im_;
+};
+
+template <>
+class complex<double>
+{
+public:
+	typedef double value_type;
+
+	complex(double re = 0.0, double im = 0.0);
+	complex(const complex<float>& rhs);
+	explicit complex(const complex<long double>& rhs);
+	double real() const;
+	double imag() const;
+
+	complex<double>& operator= (double rhs);
+	complex<double>& operator+=(double rhs);
+	complex<double>& operator-=(double rhs);
+	complex<double>& operator*=(double rhs);
+	complex<double>& operator/=(double rhs);
+
+	#ifndef _MSL_NO_MEMBER_TEMPLATE  // hh 980713 Temporarily moved into class definition to support compiler
+
+		template <class X>
+		inline
+		complex<double>&
+		operator= (const complex<X>& rhs)
+		{
+			re_ = (double)rhs.real();
+			im_ = (double)rhs.imag();
+			return *this;
+		}
+
+		template <class X>
+		inline
+		complex<double>&
+		operator+=(const complex<X>& rhs)
+		{
+			re_ += (double)rhs.real();
+			im_ += (double)rhs.imag();
+			return *this;
+		}
+
+		template <class X>
+		inline
+		complex<double>&
+		operator-=(const complex<X>& rhs)
+		{
+			re_ -= (double)rhs.real();
+			im_ -= (double)rhs.imag();
+			return *this;
+		}
+
+		#ifdef _MSL_CX_LIMITED_RANGE
+
+			template <class X>
+			complex<double>&
+			operator*=(const complex<X>& rhs)
+			{
+				double re = re_;
+				re_ = re * (double)rhs.real() - im_ * (double)rhs.imag();
+				im_ = re * (double)rhs.imag() + im_ * (double)rhs.real();
+				return *this;
+			}
+
+			template <class X>
+			complex<double>&
+			operator/=(const complex<X>& rhs)
+			{
+				double denom = (double)rhs.real() * (double)rhs.real()
+				             + (double)rhs.imag() * (double)rhs.imag();
+				double re = re_;
+				re_ = (re * (double)rhs.real() + im_ * (double)rhs.imag()) / denom;
+				im_ = (im_ * (double)rhs.real() - re * (double)rhs.imag()) / denom;
+				return *this;
+			}
+
+		#else	// !_MSL_CX_LIMITED_RANGE
+
+			template <class X>
+			complex<double>&
+			operator*=(const complex<X>& rhs)
+			{
+				double a = re_;
+				double b = im_;
+				double c = (double)rhs.real();
+				double d = (double)rhs.imag();
+				double ac = a * c;
+				double bd = b * d;
+				double ad = a * d;
+				double bc = b * c;
+				re_ = ac - bd;
+				im_ = ad + bc;
+				// Recover infinities that computed as NaN+iNaN ... 
+				if (isnan(re_) && isnan(im_))
+				{
+					bool recalc = false;
+					if ( isinf(a) || isinf(b) ) // z is infinite
+					{
+						// "Box" the infinity ... 
+						a = copysign(isinf(a) ? 1.0 : 0.0, a);
+						b = copysign(isinf(b) ? 1.0 : 0.0, b);
+						// Change NaNs in the other factor to 0 ...
+						if (isnan(c))
+							c = copysign(0.0, c);
+						if (isnan(d))
+							d = copysign(0.0, d);
+						recalc = true;
+					}
+					if ( isinf(c) || isinf(d) ) // w is infinite
+					{
+						// "Box" the infinity ...
+						c = copysign(isinf(c) ? 1.0 : 0.0, c);
+						d = copysign(isinf(d) ? 1.0 : 0.0, d);
+						// Change NaNs in the other factor to 0 ...
+						if (isnan(a))
+							a = copysign(0.0, a);
+						if (isnan(b))
+							b = copysign(0.0, b);
+						recalc = true;
+					}
+					if (!recalc) {
+						// Recover infinities from overflow cases ... 
+						if (isinf(ac) || isinf(bd) || isinf(ad) || isinf(bc))
+						{
+							// Change all NaNs to 0 ...
+							if (isnan(a))
+								a = copysign(0.0, a);
+							if (isnan(b))
+								b = copysign(0.0, b);
+							if (isnan(c))
+								c = copysign(0.0, c);
+							if (isnan(d))
+								d = copysign(0.0, d);
+							recalc = true;
+						}
+					}
+					if (recalc)
+					{
+						re_ = copysign(HUGE_VAL, ( a * c - b * d ));
+						im_ = copysign(HUGE_VAL, ( a * d + b * c ));
+					}
+				}
+				return *this;
+			}
+
+			template <class X>
+			complex<double>&
+			operator/=(const complex<X>& rhs)
+			{
+				int ilogbw = 0;
+				double a = re_;
+				double b = im_;
+				double c = (double)rhs.real();
+				double d = (double)rhs.imag();
+				double logbw = logb(fmax(fabs(c), fabs(d)));
+				if (isfinite(logbw))
+				{
+					ilogbw = (int)logbw;
+					c = scalbn(c, -ilogbw);
+					d = scalbn(d, -ilogbw);
+				}
+				double denom = c * c + d * d;
+				re_ = scalbn((a * c + b * d) / denom, -ilogbw);
+				im_ = scalbn((b * c - a * d) / denom, -ilogbw);
+
+				// Recover infinities and zeros that computed
+				// as NaN+iNaN; the only cases are non-zero/zero,
+				// infinite/finite, and finite/infinite, ...
+
+				if (isnan(re_) && isnan(im_))
+				{
+					if ((denom == 0) && (!isnan(a) || !isnan(b)))
+					{
+						re_ = copysign(HUGE_VAL, c) * a;
+						im_ = copysign(HUGE_VAL, c) * b;
+					}
+					else if ((isinf(a) || isinf(b)) && isfinite(c) && isfinite(d))
+					{
+						a = copysign(isinf(a) ? 1.0 : 0.0, a);
+						b = copysign(isinf(b) ? 1.0 : 0.0, b);
+						re_ = copysign(HUGE_VAL, ( a * c + b * d ));
+						im_ = copysign(HUGE_VAL, ( b * c - a * d ));
+					}
+					else if (isinf(logbw) && isfinite(a) && isfinite(b))
+					{
+						c = copysign(isinf(c) ? 1.0 : 0.0, c);
+						d = copysign(isinf(d) ? 1.0 : 0.0, d);
+						re_ = 0.0 * ( a * c + b * d );
+						im_ = 0.0 * ( b * c - a * d );
+					}
+				}
+				return *this;
+			}
+
+		#endif	// _MSL_CX_LIMITED_RANGE
+
+	#else	// ! _MSL_NO_MEMBER_TEMPLATE
+		complex<double>& operator+=(const complex& rhs);
+		complex<double>& operator-=(const complex& rhs);
+		complex<double>& operator*=(const complex& rhs);
+		complex<double>& operator/=(const complex& rhs);
+
+		complex<double>& operator= (const complex<float>& rhs);
+		complex<double>& operator+=(const complex<float>& rhs);
+		complex<double>& operator-=(const complex<float>& rhs);
+		complex<double>& operator*=(const complex<float>& rhs);
+		complex<double>& operator/=(const complex<float>& rhs);
+
+		complex<double>& operator= (const complex<long double>& rhs);
+		complex<double>& operator+=(const complex<long double>& rhs);
+		complex<double>& operator-=(const complex<long double>& rhs);
+		complex<double>& operator*=(const complex<long double>& rhs);
+		complex<double>& operator/=(const complex<long double>& rhs);
+	#endif
+private:
+	double re_;
+	double im_;
+};
+
+template <>
+class complex<long double>
+{
+public:
+	typedef long double value_type;
+
+	complex(long double re = 0.0, long double im = 0.0);
+	complex(const complex<float>& rhs);
+	complex(const complex<double>& rhs);
+	long double real() const;
+	long double imag() const;
+
+	complex<long double>& operator= (long double rhs);
+	complex<long double>& operator+=(long double rhs);
+	complex<long double>& operator-=(long double rhs);
+	complex<long double>& operator*=(long double rhs);
+	complex<long double>& operator/=(long double rhs);
+
+	#ifndef _MSL_NO_MEMBER_TEMPLATE  // hh 980713 Temporarily moved into class definition to support compiler
+
+		template <class X>
+		inline
+		complex<long double>&
+		operator= (const complex<X>& rhs)
+		{
+			re_ = (long double)rhs.real();
+			im_ = (long double)rhs.imag();
+			return *this;
+		}
+
+		template <class X>
+		inline
+		complex<long double>&
+		operator+=(const complex<X>& rhs)
+		{
+			re_ += (long double)rhs.real();
+			im_ += (long double)rhs.imag();
+			return *this;
+		}
+
+		template <class X>
+		inline
+		complex<long double>&
+		operator-=(const complex<X>& rhs)
+		{
+			re_ -= (long double)rhs.real();
+			im_ -= (long double)rhs.imag();
+			return *this;
+		}
+
+		#ifdef _MSL_CX_LIMITED_RANGE
+
+			template <class X>
+			complex<long double>&
+			operator*=(const complex<X>& rhs)
+			{
+				long double re = re_;
+				re_ = re * (long double)rhs.real() - im_ * (long double)rhs.imag();
+				im_ = re * (long double)rhs.imag() + im_ * (long double)rhs.real();
+				return *this;
+			}
+
+			template <class X>
+			complex<long double>&
+			operator/=(const complex<X>& rhs)
+			{
+				long double denom = (long double)rhs.real() * (long double)rhs.real()
+				                  + (long double)rhs.imag() * (long double)rhs.imag();
+				long double re = re_;
+				re_ = (re * (long double)rhs.real() + im_ * (long double)rhs.imag()) / denom;
+				im_ = (im_ * (long double)rhs.real() - re * (long double)rhs.imag()) / denom;
+				return *this;
+			}
+
+		#else	// ! _MSL_CX_LIMITED_RANGE
+
+			template <class X>
+			complex<long double>&
+			operator*=(const complex<X>& rhs)
+			{
+				long double a = re_;
+				long double b = im_;
+				long double c = (long double)rhs.real();
+				long double d = (long double)rhs.imag();
+				long double ac = a * c;
+				long double bd = b * d;
+				long double ad = a * d;
+				long double bc = b * c;
+				re_ = ac - bd;
+				im_ = ad + bc;
+				// Recover infinities that computed as NaN+iNaN ... 
+				if (isnan(re_) && isnan(im_))
+				{
+					bool recalc = false;
+					if ( isinf(a) || isinf(b) ) // z is infinite
+					{
+						// "Box" the infinity ... 
+						a = copysignl(isinf(a) ? 1.0L : 0.0L, a);
+						b = copysignl(isinf(b) ? 1.0L : 0.0L, b);
+						// Change NaNs in the other factor to 0 ...
+						if (isnan(c))
+							c = copysignl(0.0L, c);
+						if (isnan(d))
+							d = copysignl(0.0L, d);
+						recalc = true;
+					}
+					if ( isinf(c) || isinf(d) ) // w is infinite
+					{
+						// "Box" the infinity ...
+						c = copysignl(isinf(c) ? 1.0L : 0.0L, c);
+						d = copysignl(isinf(d) ? 1.0L : 0.0L, d);
+						// Change NaNs in the other factor to 0 ...
+						if (isnan(a))
+							a = copysignl(0.0L, a);
+						if (isnan(b))
+							b = copysignl(0.0L, b);
+						recalc = true;
+					}
+					if (!recalc) {
+						// Recover infinities from overflow cases ... 
+						if (isinf(ac) || isinf(bd) || isinf(ad) || isinf(bc))
+						{
+							// Change all NaNs to 0 ...
+							if (isnan(a))
+								a = copysignl(0.0L, a);
+							if (isnan(b))
+								b = copysignl(0.0L, b);
+							if (isnan(c))
+								c = copysignl(0.0L, c);
+							if (isnan(d))
+								d = copysignl(0.0L, d);
+							recalc = true;
+						}
+					}
+					if (recalc)
+					{
+						re_ = copysignl(HUGE_VALL, ( a * c - b * d ));
+						im_ = copysignl(HUGE_VALL, ( a * d + b * c ));
+					}
+				}
+				return *this;
+			}
+
+			template <class X>
+			complex<long double>&
+			operator/=(const complex<X>& rhs)
+			{
+				int ilogbw = 0;
+				long double a = re_;
+				long double b = im_;
+				long double c = (long double)rhs.real();
+				long double d = (long double)rhs.imag();
+				long double logbw = logbl(fmaxl(fabsl(c), fabsl(d)));
+				if (isfinite(logbw))
+				{
+					ilogbw = (int)logbw;
+					c = scalbnl(c, -ilogbw);
+					d = scalbnl(d, -ilogbw);
+				}
+				long double denom = c * c + d * d;
+				re_ = scalbnl((a * c + b * d) / denom, -ilogbw);
+				im_ = scalbnl((b * c - a * d) / denom, -ilogbw);
+
+				// Recover infinities and zeros that computed
+				// as NaN+iNaN; the only cases are non-zero/zero,
+				// infinite/finite, and finite/infinite, ...
+
+				if (isnan(re_) && isnan(im_))
+				{
+					if ((denom == 0) && (!isnan(a) || !isnan(b)))
+					{
+						re_ = copysignl(HUGE_VALL, c) * a;
+						im_ = copysignl(HUGE_VALL, c) * b;
+					}
+					else if ((isinf(a) || isinf(b)) && isfinite(c) && isfinite(d))
+					{
+						a = copysignl(isinf(a) ? 1.0L : 0.0L, a);
+						b = copysignl(isinf(b) ? 1.0L : 0.0L, b);
+						re_ = copysignl(HUGE_VALL, ( a * c + b * d ));
+						im_ = copysignl(HUGE_VALL, ( b * c - a * d ));
+					}
+					else if (isinf(logbw) && isfinite(a) && isfinite(b))
+					{
+						c = copysignl(isinf(c) ? 1.0L : 0.0L, c);
+						d = copysignl(isinf(d) ? 1.0L : 0.0L, d);
+						re_ = 0.0L * ( a * c + b * d );
+						im_ = 0.0L * ( b * c - a * d );
+					}
+				}
+				return *this;
+			}
+
+		#endif	// _MSL_CX_LIMITED_RANGE
+
+	#else	// ! _MSL_NO_MEMBER_TEMPLATE
+		complex<long double>& operator+=(const complex& rhs);
+		complex<long double>& operator-=(const complex& rhs);
+		complex<long double>& operator*=(const complex& rhs);
+		complex<long double>& operator/=(const complex& rhs);
+
+		complex<long double>& operator= (const complex<float>& rhs);
+		complex<long double>& operator+=(const complex<float>& rhs);
+		complex<long double>& operator-=(const complex<float>& rhs);
+		complex<long double>& operator*=(const complex<float>& rhs);
+		complex<long double>& operator/=(const complex<float>& rhs);
+
+		complex<long double>& operator= (const complex<double>& rhs);
+		complex<long double>& operator+=(const complex<double>& rhs);
+		complex<long double>& operator-=(const complex<double>& rhs);
+		complex<long double>& operator*=(const complex<double>& rhs);
+		complex<long double>& operator/=(const complex<double>& rhs);
+	#endif
+private:
+	long double re_;
+	long double im_;
+};
+
+// For documentation purposes...
+// _lib.complex.ops_ operators:
+// template<class T> complex<T> operator+(const complex<T>&, const complex<T>&);
+// template<class T> complex<T> operator+(const complex<T>&, const T&);
+// template<class T> complex<T> operator+(const T&, const complex<T>&);
+// template<class T> complex<T> operator-(const complex<T>&, const complex<T>&);
+// template<class T> complex<T> operator-(const complex<T>&, const T&);
+// template<class T> complex<T> operator-(const T&, const complex<T>&);
+// template<class T> complex<T> operator*(const complex<T>&, const complex<T>&);
+// template<class T> complex<T> operator*(const complex<T>&, const T&);
+// template<class T> complex<T> operator*(const T&, const complex<T>&);
+// template<class T> complex<T> operator/(const complex<T>&, const complex<T>&);
+// template<class T> complex<T> operator/(const complex<T>&, const T&);
+// template<class T> complex<T> operator/(const T&, const complex<T>&);
+// template<class T> complex<T> operator+(const complex<T>&);
+// template<class T> complex<T> operator-(const complex<T>&);
+// template<class T> bool operator==(const complex<T>&, const complex<T>&);
+// template<class T> bool operator==(const complex<T>&, const T&);
+// template<class T> bool operator==(const T&, const complex<T>&);
+// template<class T> bool operator!=(const complex<T>&, const complex<T>&);
+// template<class T> bool operator!=(const complex<T>&, const T&);
+// template<class T> bool operator!=(const T&, const complex<T>&);
+// template<class T, class charT, class traits>
+//		basic_istream<charT, traits>&
+//		operator>>(basic_istream<charT, traits>&, complex<T>&);
+// template<class T, class charT, class traits>
+//		basic_ostream<charT, traits>&
+//		operator<<(basic_ostream<charT, traits>&, const complex<T>&);
+// _lib.complex.value.ops_ values:
+// template<class T> T real(const complex<T>&);
+// template<class T> T imag(const complex<T>&);
+// template<class T> T abs(const complex<T>&);
+// template<class T> T arg(const complex<T>&);
+// template<class T> T norm(const complex<T>&);
+// template<class T> complex<T> conj(const complex<T>&);
+// template<class T> complex<T> polar(const T&, const T&);
+// _lib.complex.transcendentals_ transcendentals:
+// template<class T> complex<T> cos  (const complex<T>&);
+// template<class T> complex<T> cosh (const complex<T>&);
+// template<class T> complex<T> exp  (const complex<T>&);
+// template<class T> complex<T> log  (const complex<T>&);
+// template<class T> complex<T> log10(const complex<T>&);
+// template<class T> complex<T> pow(const complex<T>&, int);
+// template<class T> complex<T> pow(const complex<T>&, const T&);
+// template<class T> complex<T> pow(const complex<T>&, const complex<T>&);
+// template<class T> complex<T> pow(const T&, const complex<T>&);
+// template<class T> complex<T> sin  (const complex<T>&);
+// template<class T> complex<T> sinh (const complex<T>&);
+// template<class T> complex<T> sqrt (const complex<T>&);
+// template<class T> complex<T> tan  (const complex<T>&);
+// template<class T> complex<T> tanh (const complex<T>&);
+
+// Implementation
+
+// Accessors
+
+template <class T>
+inline
+T
+complex<T>::real() const
+{
+	return re_;
+}
+
+template <>
+inline
+float
+complex<float>::real() const
+{
+	return re_;
+}
+
+template <>
+inline
+double
+complex<double>::real() const
+{
+	return re_;
+}
+
+template <>
+inline
+long double
+complex<long double>::real() const
+{
+	return re_;
+}
+
+// -
+
+template <class T>
+inline
+T
+complex<T>::imag() const
+{
+	return im_;
+}
+
+template <>
+inline
+float
+complex<float>::imag() const
+{
+	return im_;
+}
+
+template <>
+inline
+double
+complex<double>::imag() const
+{
+	return im_;
+}
+
+template <>
+inline
+long double
+complex<long double>::imag() const
+{
+	return im_;
+}
+
+// Constructors
+
+template <class T>
+inline
+complex<T>::complex(const T& re, const T& im)
+	: re_(re),
+	  im_(im)
+{
+}
+
+template <>
+inline
+complex<float>::complex(float re, float im)
+	: re_(re),
+	  im_(im)
+{
+}
+
+template <>
+inline
+complex<double>::complex(double re, double im)
+	: re_(re),
+	  im_(im)
+{
+}
+
+template <>
+inline
+complex<long double>::complex(long double re, long double im)
+	: re_(re),
+	  im_(im)
+{
+}
+
+// -
+
+template <>
+inline
+complex<float>::complex(const complex<double>& rhs)
+	: re_((float)rhs.real()),
+	  im_((float)rhs.imag())
+{
+}
+
+template <>
+inline
+complex<float>::complex(const complex<long double>& rhs)
+	: re_((float)rhs.real()),
+	  im_((float)rhs.imag())
+{
+}
+
+template <>
+inline
+complex<double>::complex(const complex<float>& rhs)
+	: re_(rhs.real()),
+	  im_(rhs.imag())
+{
+}
+
+template <>
+inline
+complex<double>::complex(const complex<long double>& rhs)
+	: re_((double)rhs.real()),
+	  im_((double)rhs.imag())
+{
+}
+
+template <>
+inline
+complex<long double>::complex(const complex<float>& rhs)
+	: re_(rhs.real()),
+	  im_(rhs.imag())
+{
+}
+
+template <>
+inline
+complex<long double>::complex(const complex<double>& rhs)
+	: re_(rhs.real()),
+	  im_(rhs.imag())
+{
+}
+
+// Scalar member operaters
+
+template <class T>
+inline
+complex<T>&
+complex<T>::operator= (const T& rhs)
+{
+	re_ = rhs;
+	im_ = T();
+	return *this;
+}
+
+template <>
+inline
+complex<float>&
+complex<float>::operator= (float rhs)
+{
+	re_ = rhs;
+	im_ = 0.0F;
+	return *this;
+}
+
+template <>
+inline
+complex<double>&
+complex<double>::operator= (double rhs)
+{
+	re_ = rhs;
+	im_ = 0.0;
+	return *this;
+}
+
+template <>
+inline
+complex<long double>&
+complex<long double>::operator= (long double rhs)
+{
+	re_ = rhs;
+	im_ = 0.0L;
+	return *this;
+}
+
+// -
+
+template <class T>
+inline
+complex<T>&
+complex<T>::operator+=(const T& rhs)
+{
+	re_ += rhs;
+	return *this;
+}
+
+template <>
+inline
+complex<float>&
+complex<float>::operator+=(float rhs)
+{
+	re_ += rhs;
+	return *this;
+}
+
+template <>
+inline
+complex<double>&
+complex<double>::operator+=(double rhs)
+{
+	re_ += rhs;
+	return *this;
+}
+
+template <>
+inline
+complex<long double>&
+complex<long double>::operator+=(long double rhs)
+{
+	re_ += rhs;
+	return *this;
+}
+
+// -
+
+template <class T>
+inline
+complex<T>&
+complex<T>::operator-=(const T& rhs)
+{
+	re_ -= rhs;
+	return *this;
+}
+
+template <>
+inline
+complex<float>&
+complex<float>::operator-=(float rhs)
+{
+	re_ -= rhs;
+	return *this;
+}
+
+template <>
+inline
+complex<double>&
+complex<double>::operator-=(double rhs)
+{
+	re_ -= rhs;
+	return *this;
+}
+
+template <>
+inline
+complex<long double>&
+complex<long double>::operator-=(long double rhs)
+{
+	re_ -= rhs;
+	return *this;
+}
+
+// -
+
+template <class T>
+inline
+complex<T>&
+complex<T>::operator*=(const T& rhs)
+{
+	re_ *= rhs;
+	im_ *= rhs;
+	return *this;
+}
+
+template <>
+inline
+complex<float>&
+complex<float>::operator*=(float rhs)
+{
+	re_ *= rhs;
+	im_ *= rhs;
+	return *this;
+}
+
+template <>
+inline
+complex<double>&
+complex<double>::operator*=(double rhs)
+{
+	re_ *= rhs;
+	im_ *= rhs;
+	return *this;
+}
+
+template <>
+inline
+complex<long double>&
+complex<long double>::operator*=(long double rhs)
+{
+	re_ *= rhs;
+	im_ *= rhs;
+	return *this;
+}
+
+// -
+
+template <class T>
+inline
+complex<T>&
+complex<T>::operator/=(const T& rhs)
+{
+	re_ /= rhs;
+	im_ /= rhs;
+	return *this;
+}
+
+template <>
+inline
+complex<float>&
+complex<float>::operator/=(float rhs)
+{
+	re_ /= rhs;
+	im_ /= rhs;
+	return *this;
+}
+
+template <>
+inline
+complex<double>&
+complex<double>::operator/=(double rhs)
+{
+	re_ /= rhs;
+	im_ /= rhs;
+	return *this;
+}
+
+template <>
+inline
+complex<long double>&
+complex<long double>::operator/=(long double rhs)
+{
+	re_ /= rhs;
+	im_ /= rhs;
+	return *this;
+}
+
+// Non-Scalar member operaters
+
+#ifdef _MSL_NO_MEMBER_TEMPLATE
+
+	template <>
+	inline
+	complex<float>&
+	complex<float>::operator= (const complex<double>& rhs)
+	{
+		re_ = (float)rhs.real();
+		im_ = (float)rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<float>&
+	complex<float>::operator= (const complex<long double>& rhs)
+	{
+		re_ = (float)rhs.real();
+		im_ = (float)rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<double>&
+	complex<double>::operator= (const complex<float>& rhs)
+	{
+		re_ = rhs.real();
+		im_ = rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<double>&
+	complex<double>::operator= (const complex<long double>& rhs)
+	{
+		re_ = (double)rhs.real();
+		im_ = (double)rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<long double>&
+	complex<long double>::operator= (const complex<float>& rhs)
+	{
+		re_ = rhs.real();
+		im_ = rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<long double>&
+	complex<long double>::operator= (const complex<double>& rhs)
+	{
+		re_ = rhs.real();
+		im_ = rhs.imag();
+		return *this;
+	}
+
+	// -
+
+	template <class T>
+	inline
+	complex<T>&
+	complex<T>::operator+=(const complex& rhs)
+	{
+		re_ += rhs.real();
+		im_ += rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<float>&
+	complex<float>::operator+=(const complex& rhs)
+	{
+		re_ += rhs.real();
+		im_ += rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<float>&
+	complex<float>::operator+=(const complex<double>& rhs)
+	{
+		re_ += (float)rhs.real();
+		im_ += (float)rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<float>&
+	complex<float>::operator+=(const complex<long double>& rhs)
+	{
+		re_ += (float)rhs.real();
+		im_ += (float)rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<double>&
+	complex<double>::operator+=(const complex& rhs)
+	{
+		re_ += rhs.real();
+		im_ += rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<double>&
+	complex<double>::operator+=(const complex<float>& rhs)
+	{
+		re_ += rhs.real();
+		im_ += rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<double>&
+	complex<double>::operator+=(const complex<long double>& rhs)
+	{
+		re_ += (double)rhs.real();
+		im_ += (double)rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<long double>&
+	complex<long double>::operator+=(const complex& rhs)
+	{
+		re_ += rhs.real();
+		im_ += rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<long double>&
+	complex<long double>::operator+=(const complex<float>& rhs)
+	{
+		re_ += rhs.real();
+		im_ += rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<long double>&
+	complex<long double>::operator+=(const complex<double>& rhs)
+	{
+		re_ += rhs.real();
+		im_ += rhs.imag();
+		return *this;
+	}
+
+	// -
+
+	template <class T>
+	inline
+	complex<T>&
+	complex<T>::operator-=(const complex& rhs)
+	{
+		re_ -= rhs.real();
+		im_ -= rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<float>&
+	complex<float>::operator-=(const complex& rhs)
+	{
+		re_ -= rhs.real();
+		im_ -= rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<float>&
+	complex<float>::operator-=(const complex<double>& rhs)
+	{
+		re_ -= (float)rhs.real();
+		im_ -= (float)rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<float>&
+	complex<float>::operator-=(const complex<long double>& rhs)
+	{
+		re_ -= (float)rhs.real();
+		im_ -= (float)rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<double>&
+	complex<double>::operator-=(const complex& rhs)
+	{
+		re_ -= rhs.real();
+		im_ -= rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<double>&
+	complex<double>::operator-=(const complex<float>& rhs)
+	{
+		re_ -= rhs.real();
+		im_ -= rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<double>&
+	complex<double>::operator-=(const complex<long double>& rhs)
+	{
+		re_ -= (double)rhs.real();
+		im_ -= (double)rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<long double>&
+	complex<long double>::operator-=(const complex& rhs)
+	{
+		re_ -= rhs.real();
+		im_ -= rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<long double>&
+	complex<long double>::operator-=(const complex<float>& rhs)
+	{
+		re_ -= rhs.real();
+		im_ -= rhs.imag();
+		return *this;
+	}
+
+	template <>
+	inline
+	complex<long double>&
+	complex<long double>::operator-=(const complex<double>& rhs)
+	{
+		re_ -= rhs.real();
+		im_ -= rhs.imag();
+		return *this;
+	}
+
+	// -
+
+	template <class T>
+	complex<T>&
+	complex<T>::operator*=(const complex& rhs)
+	{
+		T re = re_;
+		re_ = re * rhs.real() - im_ * rhs.imag();
+		im_ = re * rhs.imag() + im_ * rhs.real();
+		return *this;
+	}
+
+	// Specializations for float, double and long double in complex.cpp
+
+	template <class T>
+	complex<T>&
+	complex<T>::operator/=(const complex& rhs)
+	{
+		T denom = rhs.real() * rhs.real() + rhs.imag() * rhs.imag();
+		T re = re_;
+		re_ = (re * rhs.real() + im_ * rhs.imag()) / denom;
+		im_ = (im_ * rhs.real() - re * rhs.imag()) / denom;
+		return *this;
+	}
+
+	// Specializations for float, double and long double in complex.cpp
+
+#endif
+
+template<class T>
+inline
+complex<T>
+operator+(const complex<T>& lhs, const complex<T>& rhs)
+{
+	return complex<T>(lhs.real() + rhs.real(), lhs.imag() + rhs.imag());
+}
+
+template<class T>
+inline
+complex<T>
+operator+(const complex<T>& lhs, const T& rhs)
+{
+	return complex<T>(lhs.real() + rhs, lhs.imag());
+}
+
+template<class T>
+inline
+complex<T>
+operator+(const T& lhs, const complex<T>& rhs)
+{
+	return complex<T>(lhs + rhs.real(), rhs.imag());
+}
+
+template<class T>
+inline
+complex<T>
+operator-(const complex<T>& lhs, const complex<T>& rhs)
+{
+	return complex<T>(lhs.real() - rhs.real(), lhs.imag() - rhs.imag());
+}
+
+template<class T>
+inline
+complex<T>
+operator-(const complex<T>& lhs, const T& rhs)
+{
+	return complex<T>(lhs.real() - rhs, lhs.imag());
+}
+
+template<class T>
+inline
+complex<T>
+operator-(const T& lhs, const complex<T>& rhs)
+{
+	return complex<T>(lhs - rhs.real(), -rhs.imag());
+}
+
+template<class T>
+complex<T>
+operator*(const complex<T>& lhs, const complex<T>& rhs)
+{
+	return complex<T>(lhs) *= rhs;
+}
+
+template<class T>
+inline
+complex<T>
+operator*(const complex<T>& lhs, const T& rhs)
+{
+	return complex<T>(lhs.real() * rhs, lhs.imag() * rhs);
+}
+
+template<class T>
+inline
+complex<T>
+operator*(const T& lhs, const complex<T>& rhs)
+{
+	return complex<T>(lhs * rhs.real(), lhs * rhs.imag());
+}
+
+template<class T>
+complex<T>
+operator/(const complex<T>& lhs, const complex<T>& rhs)
+{
+	return complex<T>(lhs) /= rhs;
+}
+
+template<class T>
+inline
+complex<T>
+operator/(const complex<T>& lhs, const T& rhs)
+{
+	return complex<T>(lhs.real() / rhs, lhs.imag() / rhs);
+}
+
+template<class T>
+complex<T>
+operator/(const T& lhs, const complex<T>& rhs)
+{
+	return complex<T>(lhs) /= rhs;
+}
+
+template<class T>
+inline
+complex<T>
+operator+(const complex<T>& x)
+{
+	return x;
+}
+
+template<class T>
+inline
+complex<T>
+operator-(const complex<T>& x)
+{
+	return complex<T>(-x.real(), -x.imag());
+}
+
+template<class T>
+inline
+bool
+operator==(const complex<T>& lhs, const complex<T>& rhs)
+{
+	return bool(lhs.real() == rhs.real() && lhs.imag() == rhs.imag());
+}
+
+template<class T>
+inline
+bool
+operator==(const complex<T>& lhs, const T& rhs)
+{
+	return bool(lhs.real() == rhs && lhs.imag() == T());
+}
+
+template<class T>
+inline
+bool
+operator==(const T& lhs, const complex<T>& rhs)
+{
+	return bool(lhs == rhs.real() && T() == rhs.imag());
+}
+
+template<class T>
+inline
+bool
+operator!=(const complex<T>& lhs, const complex<T>& rhs)
+{
+	return bool(lhs.real() != rhs.real() || lhs.imag() != rhs.imag());
+}
+
+template<class T>
+inline
+bool
+operator!=(const complex<T>& lhs, const T& rhs)
+{
+	return bool(lhs.real() != rhs || lhs.imag() != T()0;
+}
+
+template<class T>
+inline
+bool
+operator!=(const T& lhs, const complex<T>& rhs)
+{
+	return bool(lhs != rhs.real() || T() != rhs.imag());
+}
+
+// hh 980824 forward declare
+class ios_base;
+template <class charT> class ctype;
+
+template<class T, class charT, class traits>
+basic_istream<charT, traits>&
+operator>>(basic_istream<charT, traits>& is, complex<T>& x)
+{
+	#ifndef _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+		const ctype<charT>& ct = use_facet<ctype<charT> >(is.getloc());
+	#else
+		const ctype<charT>& ct = use_facet(is.getloc(), (ctype<charT>*)0);
+	#endif
+	T re = T();
+	T im = T();
+	charT ch = charT();
+	is >> ch;
+	char c = ct.narrow(ch, char());
+	if (c == '(')               // if '(' : one of (re), (re, im)
+    {
+		is >> re >> ch;
+		c = ct.narrow(ch, char());
+		if (c == ',')
+		{
+			is >> im >> ch;
+			c = ct.narrow(ch, char());
+		}
+		if (c != ')')           // no ')' : error
+		{
+			is.setstate(ios_base::failbit);
+			return is;
+		}
+	}
+	else if(!is.fail())         // no '(' in the beginning: "re"
+	{
+		is.putback(ch);    
+		is >> re;
+	}
+	if (!is.fail())
+		x = complex<T>(re, im);
+	return is;
+}
+
+template<class T, class charT, class traits>
+basic_ostream<charT, traits>&
+operator<<(basic_ostream<charT, traits>& os, const complex<T>& x)
+{
+	return os << '(' << x.real() << ',' << x.imag() << ')';
+}
+
+template<class T>
+inline
+T
+real(const complex<T>& x)
+{
+	return x.real();
+}
+
+template<class T>
+inline
+T
+imag(const complex<T>& x)
+{
+	return x.imag();
+}
+
+template<class T>
+inline
+T
+abs(const complex<T>& x)
+{
+	return sqrt(x.real() * x.real() + x.imag() * x.imag());
+}
+
+template <>
+inline
+float
+abs<float>(const complex<float>& x)
+{
+	return hypotf(x.real(), x.imag());
+}
+
+template <>
+inline
+double
+abs<double>(const complex<double>& x)
+{
+	return hypot(x.real(), x.imag());
+}
+
+template <>
+inline
+long double
+abs<long double>(const complex<long double>& x)
+{
+	return hypotl(x.real(), x.imag());
+}
+
+template<class T>
+inline
+T
+arg(const complex<T>& x)
+{
+	return atan2(x.imag(), x.real());
+}
+
+template<class T>
+inline
+T
+norm(const complex<T>& x)
+{
+	return x.real() * x.real() + x.imag() * x.imag();
+}
+
+template<class T>
+inline
+complex<T>
+conj(const complex<T>& x)
+{
+	return complex<T>(x.real(), -x.imag());
+}
+
+template<class T>
+inline
+complex<T>
+polar(const T& r)
+{
+	return complex<T>(r);
+}
+
+template<class T>
+inline
+complex<T>
+polar(const T& r, const T& theta)
+{
+	return complex<T>(r * cos(theta), r * sin(theta));
+}
+
+template<class T>
+complex<T> cos(const complex<T>& x)
+{
+	return complex<T>(cos(x.real()) * cosh(x.imag()),
+	                 -sin(x.real()) * sinh(x.imag()));
+}
+
+template<class T>
+complex<T>
+cosh(const complex<T>& x)
+{
+	return complex<T>(cosh(x.real()) * cos(x.imag()),
+	                  sinh(x.real()) * sin(x.imag()));
+}
+
+template<class T>
+complex<T>
+exp(const complex<T>& x)
+{
+	T exp_x = exp(x.real());
+	return complex<T>(exp_x * cos(x.imag()), exp_x * sin(x.imag()));
+}
+
+template<class T>
+complex<T>
+log(const complex<T>& x)
+{
+	return complex<T>(log(abs(x)), arg(x));
+}
+
+template<class T>
+complex<T>
+log10(const complex<T>& x)
+{
+	static T normalize = T(1) / log(T(10));
+	return log(x) * normalize;
+}
+
+template<class T>
+complex<T>
+pow(const complex<T>& x, int y)
+{
+	return exp((T)y * log(x));
+}
+/* hh 980731 possible patch for complex<int> problems
+             will have to wait for partial ordering.
+template <>
+complex<int>
+pow<int>(const complex<int>& x, int y);
+*/
+template<class T>
+complex<T>
+pow(const complex<T>& x, const T& y)
+{
+	return exp(y * log(x));
+}
+
+template<class T>
+complex<T>
+pow(const complex<T>& x, const complex<T>& y)
+{
+	return exp(y * log(x));
+}
+
+template<class T>
+complex<T>
+pow(const T& x, const complex<T>& y)
+{
+	return exp(y * (T)log(x));
+}
+
+template<class T>
+complex<T>
+sin(const complex<T>& x)
+{
+	return complex<T>(sin(x.real()) * cosh(x.imag()),
+	                  cos(x.real()) * sinh(x.imag()));
+}
+
+template<class T>
+complex<T>
+sinh(const complex<T>& x)
+{
+	return complex<T>(sinh(x.real()) * cos(x.imag()),
+	                  cosh(x.real()) * sin(x.imag()));
+}
+
+template<class T>
+complex<T>
+sqrt(const complex<T>& x)
+{
+	if (x == complex<T>())  // hh 990301
+		return complex<T>();
+	return polar(T(sqrt(abs(x))), T(0.5)*arg(x));  // hh 980811 cast sqrt back to T in case __ANSI_OVERLOAD__ is off
+}
+
+template<class T>
+complex<T>
+tan(const complex<T>& x)
+{
+	T u2 = T(2) * x.real();
+	T v2 = T(2) * x.imag();
+	T denom = cos(u2) + cosh(v2);
+	return complex<T>(sin(u2) / denom, sinh(v2) / denom);
+}
+
+template<class T>
+complex<T>
+tanh(const complex<T>& x)
+{
+	T u2 = T(2) * x.real();
+	T v2 = T(2) * x.imag();
+	T denom = cosh(u2) + cos(v2);
+	return complex<T>(sinh(u2) / denom, sin(v2) / denom);
+}
+
+#ifndef _MSL_NO_CPP_NAMESPACE
+	} // namespace std
+#endif
+
+#endif // _No_Floating_Point
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
+#pragma options align=reset
+
+#endif // RC_INVOKED
+
+#endif // _COMPLEX
+
+// hh 980713 Temporarily moved member templates into class definition to support compiler
+// hh 980811 cast sqrt back to T in sqrt in case __ANSI_OVERLOAD__ is off
+// hh 990120 changed name of MSIPL flags
+// hh 990301 Made sqrt(0) a special case to avoid atan2(0,0)

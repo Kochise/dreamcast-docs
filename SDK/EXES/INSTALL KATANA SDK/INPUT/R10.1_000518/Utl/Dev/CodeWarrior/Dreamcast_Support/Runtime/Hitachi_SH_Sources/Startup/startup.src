@@ -1,0 +1,84 @@
+;	Hitachi SH Runtime
+;	Copyright 2000 Metrowerks Inc.
+		
+		.EXPORT		_start
+		.EXPORT		__ExitProcess
+		.IMPORT		___call_static_initializers
+		.IMPORT 	SG_SEC
+		.IMPORT 	_exit
+		.IMPORT		__stack_begin
+		.IMPORT		__sbss
+		.IMPORT		__ebss
+
+		.SECTION    .text
+
+_start:
+			; Make FP round to nearest
+
+		STS		fpscr,R0	; fpscr -> R0
+		AND		#0x6,R0		; set bits 0/1 to 0
+		LDS		R0,fpscr	; R0 -> fpscr
+		
+			; Init stack pointer
+		
+		MOVA	_stack_ref,R0
+		MOV.L	@R0,R15
+		
+			; Reset bss section
+		
+		MOV.L	_ebss_ref,R5
+		MOV.L	_sbss_ref,R4
+		MOV		#0,R0
+		MOV		R0,R3
+		BRA		end_loop
+		SUB		R4,R5
+start_loop:
+		MOV.B	R3,@(R0,R4)
+		ADD		#1,R0
+end_loop:
+		CMP/GT	R0,R5
+		BT		start_loop	
+		
+			;	Initializations before main
+		
+		MOV.L	_staticinit_ref, R0
+		JSR		@R0
+		NOP
+		
+			;	Call entry point
+		
+		MOV.L	_entry_ref, R0
+		JSR		@R0
+		NOP
+		
+			;	Call exit
+			;	main reason is for __destroy_global_chain() to be called 
+			; 	and any user defined functions in atexit()
+
+		MOV.L	_exit_ref, R0
+		JSR		@R0
+		NOP
+		
+__ExitProcess:	
+			;	Loop forever, abort() and exit() call this to terminate
+
+		BRA		__ExitProcess
+		NOP
+		
+_start_end:
+
+		.ALIGN		4
+_entry_ref:
+		.DATA.L	SG_SEC
+_exit_ref:
+		.DATA.L _exit
+_staticinit_ref:
+		.DATA.L	___call_static_initializers
+_stack_ref:
+		.DATA.L	__stack_begin
+_sbss_ref:
+		.DATA.L	__sbss;
+_ebss_ref:
+		.DATA.L	__ebss;
+		
+		.END

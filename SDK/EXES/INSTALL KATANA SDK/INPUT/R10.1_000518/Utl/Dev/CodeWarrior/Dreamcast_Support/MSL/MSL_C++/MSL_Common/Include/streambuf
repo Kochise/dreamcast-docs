@@ -1,0 +1,573 @@
+/*  Metrowerks Standard Library  */
+
+/*  $Date: 1999/01/23 00:25:41 $ 
+ *  $Revision: 1.6 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Portions Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/**
+ **  streambuf            // hh 971226 Changed filename from streambuf.h to streambuf
+ **
+ **  Lib++  : The Modena C++ Standard Library,
+ **           Version 2.4, October 1997
+ **
+ **  Copyright (c) 1995-1997 Modena Software Inc.
+ **/
+
+#ifndef _STREAMBUF        // hh 971226 Made include guards standard
+#define _STREAMBUF
+
+#include <mcompile.h>
+
+#include <ios>    // hh 971220 fixed MOD_INCLUDE
+
+#ifndef RC_INVOKED // hh 971230
+
+#pragma options align=native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#ifdef MSIPL_USING_NAMESPACE
+	namespace std {
+#endif
+
+template<class charT, class traits> 
+class basic_streambuf {
+
+public:
+     //Types
+     typedef  charT char_type;
+     typedef  typename traits::int_type int_type;
+     typedef  typename traits::pos_type pos_type;
+     typedef  typename traits::off_type off_type;
+     typedef  traits                    traits_type;
+
+     virtual ~basic_streambuf ();
+
+     // 27.5.2.2.1 Locales:
+
+     locale pubimbue (const locale &);
+     locale getloc () const;
+
+     // 27.5.2.2.2 buffers and positioning:
+
+     basic_streambuf<char_type, traits> * 
+                 pubsetbuf (char_type *, streamsize);
+     pos_type pubseekoff (off_type off, ios_base::seekdir way, 
+                 ios_base::openmode which=ios_base::in | ios_base::out);
+     pos_type pubseekpos (pos_type sp, 
+                 ios_base::openmode which=ios_base::in | ios_base::out);
+     int pubsync ();
+
+     // Get and Put areas:
+     // 27.5.2.2.3 Get areas:
+ 
+     streamsize in_avail ();
+     int_type snextc ();
+     int_type sbumpc ();
+     int_type sgetc ();
+     streamsize sgetn (char_type *, streamsize);
+
+     // 27.5.2.2.4 Putback:
+
+     int_type sputbackc (char_type);
+     int_type sungetc ();
+ 
+     // 27.5.2.2.5 Put areas:
+
+     int_type sputc (char_type c);
+     streamsize sputn (const char_type* , streamsize);
+ 
+protected:
+    basic_streambuf ();
+
+     // 27.5.2.3.1 Get area:
+
+     char_type* eback () const;
+     char_type* gptr () const;
+     char_type* egptr () const;
+     void gbump (int);
+     void setg (char_type *, char_type *, char_type *);
+ 
+     // 27.5.2.3.2 Put area:
+
+     char_type* pbase () const;
+     char_type* pptr () const;
+     char_type* epptr () const;
+     void pbump (int);
+     void setp (char_type *, char_type *);
+
+     // 27.5.2.4 Virtual functions:
+     // 27.5.2.4.1 Locales:
+
+     virtual void imbue (const locale&);
+
+     // 27.5.2.4.2 Buffer management and positioning:
+     virtual basic_streambuf<char_type, traits>* setbuf (char_type*, streamsize);
+     virtual pos_type seekoff (off_type off, ios_base::seekdir way, 
+              ios_base::openmode which=ios_base::in | ios_base::out);
+     virtual pos_type seekpos (pos_type sp, ios_base::openmode which =
+              ios_base::in | ios_base::out);
+     virtual int sync ();
+
+     // 27.5.2.4.3 Get area:
+     virtual int showmanyc ();
+     virtual streamsize xsgetn (char_type* s, streamsize n);
+     virtual int_type underflow ();
+     virtual int_type uflow ();
+
+     // 27.5.2.4.4 Putback:
+     virtual int_type pbackfail (int_type c=traits::eof ());
+
+     // 27.5.2.4.3 Get area:
+     virtual streamsize xsputn (const char_type* s, streamsize n);
+     virtual int_type overflow (int_type c=traits::eof ());
+ 
+     //  protected data member
+     locale       loc;
+     char_type*   gbeg;
+     char_type*   gnext;
+     char_type*   gend;
+     char_type*   pbeg;
+     char_type*   pnext;
+     char_type*   pend;
+
+     // mutex locks for the get and put area.
+     DEC_OBJ_LOCK(_mutex)
+
+private:
+     // to be undefined
+//     basic_streambuf (const basic_streambuf<charT, traits>&  rhs); // hh 980703 or perhaps to be defined
+//     basic_streambuf<charT, traits>&
+//     operator= (const basic_streambuf<charT, traits>&  rhs); 
+};
+
+template<class charT, class traits>
+inline basic_streambuf<charT, traits>::basic_streambuf () 
+{
+     gbeg=gnext=gend=pbeg=pnext=pend=0;
+//     loc = locale ();  // hh 980129 comment out sleep cycle
+}
+
+// 27.5.2.2.1 Locales:
+template<class charT, class traits>
+// inline // hh 980508 uninlined
+locale 
+basic_streambuf<charT, traits>::pubimbue (const locale& loc_arg)
+{
+     WRITE_LOCK(_mutex);
+     locale  loc_sav=loc;
+     imbue (loc_arg);
+     return  loc_sav;
+}
+ 
+template<class charT, class traits>
+inline locale 
+basic_streambuf<charT, traits>::getloc () const 
+{
+     READ_LOCK(_mutex);
+     return loc;
+}
+ 
+// 27.5.2.2.2 Buffer management and positioning:
+template<class charT, class traits>
+inline basic_streambuf<charT, traits>* basic_streambuf<charT, traits>::
+                                      pubsetbuf (char_type* s, streamsize n)
+{
+     WRITE_LOCK(_mutex);
+     return setbuf (s, n);
+}
+
+template<class charT, class traits>
+inline
+typename basic_streambuf<charT, traits>::pos_type
+basic_streambuf<charT, traits>::pubseekoff (off_type  off, 
+                               ios_base::seekdir way, ios_base::openmode which)
+{
+     WRITE_LOCK(_mutex);
+     return seekoff (off, way, which);
+}
+
+template<class charT, class traits>
+inline
+typename basic_streambuf<charT, traits>::pos_type
+basic_streambuf<charT, traits>::pubseekpos (pos_type sp, ios_base::openmode which)
+{
+     WRITE_LOCK(_mutex);
+     return seekpos (sp, which);
+}
+
+template<class charT, class traits>
+inline int 
+basic_streambuf<charT, traits>::pubsync ()
+{
+     WRITE_LOCK(_mutex);
+     return sync ();
+}
+
+// 27.5.2.2.3 Get area:
+template<class charT, class traits>
+inline streamsize 
+basic_streambuf<charT, traits>::in_avail ()
+{
+     WRITE_LOCK(_mutex);
+     return (gnext && gnext<gend ? (gend-gnext) : showmanyc ());
+}
+
+template<class charT, class traits>
+inline
+typename basic_streambuf<charT, traits>::int_type
+basic_streambuf<charT, traits>::snextc ()
+{
+     WRITE_LOCK(_mutex);
+     int_type ch=gnext&&gnext<gend?*gnext++:uflow ();
+     return traits::eq_int_type (ch, traits::eof ()) ? ch:
+            (gnext&&gnext < gend ? traits::to_int_type (*gnext):underflow ());
+}
+
+template<class charT, class traits>
+inline
+typename basic_streambuf<charT, traits>::int_type
+basic_streambuf<charT, traits>::sbumpc ()
+{
+     WRITE_LOCK(_mutex);
+     return (gnext && gnext < gend ? traits::to_int_type (*gnext++) : uflow ());
+}
+
+template<class charT, class traits>
+inline
+typename basic_streambuf<charT, traits>::int_type
+basic_streambuf<charT, traits>::sgetc ()
+{
+     WRITE_LOCK(_mutex);
+     return (gnext && gnext<gend ? traits::to_int_type (*gnext) : underflow ());
+}
+
+template<class charT, class traits>
+inline streamsize 
+basic_streambuf<charT, traits>::sgetn (char_type* s, streamsize n)
+{
+     WRITE_LOCK(_mutex);
+     return xsgetn (s, n);
+}
+
+// 27.5.2.2.4 Putback:
+template<class charT, class traits> 
+inline
+typename basic_streambuf<charT, traits>::int_type
+basic_streambuf<charT, traits>::sputbackc (char_type c)
+{
+     WRITE_LOCK(_mutex);
+     return ( (gnext && gbeg < gnext && (traits::eq (c, * (gnext-1)))) 
+                                   ? traits::to_int_type (*--gnext) 
+                                   : pbackfail (traits::to_int_type (c)));
+}
+
+template<class charT, class traits> 
+inline
+typename basic_streambuf<charT, traits>::int_type
+basic_streambuf<charT, traits>::sungetc ()
+{
+     WRITE_LOCK(_mutex);
+     return (gnext && gbeg < gnext ? traits::to_int_type (*--gnext)
+                                   : pbackfail ());
+}
+
+// 27.5.2.2.5 Put area:
+template<class charT, class traits>
+inline
+typename basic_streambuf<charT, traits>::int_type
+basic_streambuf<charT, traits>::sputc (char_type c)
+{
+     WRITE_LOCK(_mutex);
+     return (pnext && pnext < pend ? traits::to_int_type (*pnext++=c)
+             :overflow (traits::to_int_type (c)));
+}
+
+template<class charT, class traits>
+inline streamsize 
+basic_streambuf<charT, traits>::sputn (const char_type* s, streamsize n)
+{
+     WRITE_LOCK(_mutex);
+     return xsputn (s, n);
+}
+
+// 27.5.2.3.1 Get area access:
+template<class charT, class traits>
+inline charT* 
+basic_streambuf<charT, traits>::eback () const 
+{
+     READ_LOCK(_mutex);
+     return gbeg;
+}
+
+template<class charT, class traits> 
+inline charT* 
+basic_streambuf<charT, traits>::gptr () const 
+{
+     READ_LOCK(_mutex);
+     return gnext;
+}
+
+template<class charT, class traits>
+inline charT* 
+basic_streambuf<charT, traits>::egptr () const 
+{
+     READ_LOCK(_mutex);
+     return gend;
+}
+
+template<class charT, class traits>
+inline void 
+basic_streambuf<charT, traits>::gbump (int n)
+{
+     WRITE_LOCK(_mutex);
+     gnext+=n;
+}
+
+template<class charT, class traits>
+inline void 
+basic_streambuf<charT, traits>::setg (char_type* gbeg_arg, char_type* gnext_arg, 
+                                      char_type* gend_arg)
+{
+     WRITE_LOCK(_mutex);
+     gbeg=gbeg_arg; 
+     gnext=gnext_arg;
+     gend=gend_arg;
+}
+
+// 27.5.2.3.2 Put area access:
+template<class charT, class traits>
+inline charT* 
+basic_streambuf<charT, traits>::pbase () const 
+{
+     READ_LOCK(_mutex);
+     return pbeg;
+}
+
+template<class charT, class traits>
+inline charT* 
+basic_streambuf<charT, traits>::pptr () const 
+{
+     READ_LOCK(_mutex);
+     return pnext;
+}
+
+template<class charT, class traits>
+inline charT* 
+basic_streambuf<charT, traits>::epptr () const 
+{
+     READ_LOCK(_mutex);
+     return pend;
+}
+
+template<class charT, class traits>
+inline void 
+basic_streambuf<charT, traits>::pbump (int n)
+{
+     WRITE_LOCK(_mutex);
+     pnext+=n;
+}
+ 
+template<class charT, class traits> 
+inline void 
+basic_streambuf<charT, traits>::setp (char_type* pbeg_arg, char_type* pend_arg)
+{
+     WRITE_LOCK(_mutex);
+     pnext=pbeg=pbeg_arg;
+     pend=pend_arg;
+}
+
+template<class charT, class traits>
+inline basic_streambuf<charT, traits>::~basic_streambuf () { }
+
+// 27.5.2.4.1 Locales:
+template<class charT, class traits> 
+inline void
+basic_streambuf<charT, traits>::imbue (const locale& locarg)
+{ 
+     loc=locarg;   //Virtual Func. Derived classes should take care of this
+}
+
+// 27.5.2.4.2 Buffer management and positioning:
+
+    // default behaviour
+
+template<class charT, class traits> 
+inline basic_streambuf<charT, traits>*
+basic_streambuf<charT, traits>::setbuf (char_type*, streamsize)
+{
+     return this;
+}
+    // default behaviour assuming this to be an invalid pos_type
+
+template<class charT, class traits>
+inline
+typename basic_streambuf<charT, traits>::pos_type
+basic_streambuf<charT, traits>::seekoff (off_type, ios_base::seekdir, 
+                                         ios_base::openmode)
+{
+     return pos_type (-1);
+}
+
+    // default behaviour assuming this to be an invalid pos_type
+template<class charT, class traits> 
+inline
+typename basic_streambuf<charT, traits>::pos_type
+basic_streambuf<charT, traits>::seekpos (pos_type, ios_base::openmode)
+{
+     return pos_type (-1);
+}
+
+    // default behaviour 
+
+template<class charT, class traits>
+inline int basic_streambuf<charT, traits>::sync ()
+{
+     return 0;
+}
+
+// 27.5.2.4.3 Get area:
+
+    // default behaviour 
+
+template<class charT, class traits>
+inline int 
+basic_streambuf<charT, traits>::showmanyc ()
+{
+     return 0;
+}
+
+template<class charT, class traits> 
+//inline  // hh 980129
+streamsize
+basic_streambuf<charT, traits>::xsgetn (char_type* s, streamsize n)
+{
+     streamsize  nvalue=0;
+     off_type    nsize;
+     int_type    ch;
+
+     while (n > 0) {
+        nvalue += (nsize = n>gend-gnext ? gend-gnext : n);
+        n      -=  nsize;
+        traits::copy (s, gnext, size_t(nsize));
+        s += nsize; gnext += nsize;
+        if (n > 0)
+        { 
+           if (traits::eq_int_type ( (ch = uflow ()), traits::eof ())) 
+               break;
+           else 
+           { 
+               *s++ = traits::to_char_type (ch); 
+               ++nvalue; 
+               --n;
+           }
+        }
+     } 
+     return nvalue;
+} 
+
+    // default behaviour
+
+template<class charT, class traits>
+inline
+typename basic_streambuf<charT, traits>::int_type
+basic_streambuf<charT, traits>::underflow ()
+{
+     return traits::eof ();
+}
+    // default behaviour
+
+template<class charT, class traits>
+inline
+typename basic_streambuf<charT, traits>::int_type
+basic_streambuf<charT, traits>::uflow ()
+{
+    // default behaviour
+
+    if (underflow () == traits::eof ()) 
+        return traits::eof ();
+    else 
+        return traits::to_int_type (*gnext++);
+}
+
+// 27.5.2.4.4 Putback:
+
+    // default behaviour
+
+template<class charT, class traits> 
+inline
+typename basic_streambuf<charT, traits>::int_type
+basic_streambuf<charT, traits>::pbackfail (int_type)
+{
+     return traits::eof ();
+}
+
+
+// 27.5.2.4.5 Put area
+template<class charT, class traits> 
+//inline  // hh 980129
+streamsize
+basic_streambuf<charT, traits>::xsputn (const char_type* s, streamsize n)
+{
+     streamsize  nvalue=0;
+     off_type    nsize;
+     while (n > 0) {
+        nsize = (n > pend - pnext ? pend - pnext : n);
+        nvalue += nsize; 
+        n -= nsize;
+        traits::copy (pnext, s, size_t(nsize));
+        s += nsize; pnext += nsize;
+        if (n > 0)
+           if (traits::eq_int_type (overflow (traits::to_int_type (*s)), 
+                                    traits::eof ()))
+                break;
+           else {
+                ++s;
+                ++nvalue;
+                --n;
+           }
+    } 
+    return nvalue;
+}
+
+    // default behaviour
+
+template<class charT, class traits>
+inline
+typename basic_streambuf<charT, traits>::int_type
+basic_streambuf<charT, traits>::overflow (int_type)
+{
+     return traits::eof ();
+}
+
+typedef basic_streambuf<char, char_traits<char> > streambuf;
+
+#ifdef MSIPL_WCHART
+typedef basic_streambuf<wchar_t, char_traits<wchar_t> > wstreambuf;
+#endif
+
+#ifdef MSIPL_USING_NAMESPACE
+	} // namespace std 
+#endif
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
+#pragma options align=reset
+
+#endif // RC_INVOKED
+
+#endif /* MSIPL_STREAMBUF_H */
+
+// hh 971220 fixed MOD_INCLUDE
+// hh 971226 Made include guards standard
+// hh 971226 bkoz added alignment wrapper
+// hh 971226 Changed filename from streambuf.h to streambuf
+// hh 971230 added RC_INVOKED wrapper
+// hh 980129 comment out sleep cycle from basic_streambuf constructor
+// hh 981220 Added typename to appropriate return types

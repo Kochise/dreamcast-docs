@@ -1,0 +1,1413 @@
+/*  Metrowerks Standard Library  */
+
+/*  $Date: 1999/01/23 00:25:41 $ 
+ *  $Revision: 1.6 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Portions Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/**
+ **  ostream
+ **/
+
+#ifndef _OSTREAM
+#define _OSTREAM
+
+#include <mslconfig>
+#include <iosfwd>
+#include <ios>
+#include <streambuf>
+#include <mutex.h>
+
+#ifndef RC_INVOKED
+
+#pragma options align=native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#ifndef _MSL_NO_CPP_NAMESPACE
+	namespace std {
+#endif
+
+//  lib.ostream.inserters.character character inserters
+template<class charT, class traits>
+basic_ostream<charT, traits>&
+operator<< (basic_ostream<charT, traits>& out, charT c);
+
+template<class charT, class traits>
+basic_ostream<charT, traits>&
+operator<< (basic_ostream<charT, traits>& out, char c);
+
+//  specialization
+template<class traits>
+basic_ostream<char,traits>&
+operator<< (basic_ostream<char, traits>& out, char c);
+
+//  signed and unsigned
+template<class traits>
+basic_ostream<char, traits>&
+operator<< (basic_ostream<char, traits>& out, signed char c);
+
+template<class traits>
+basic_ostream<char, traits>&
+operator<<(basic_ostream<char, traits>& out, unsigned char c);
+
+template<class charT, class traits>
+basic_ostream<charT, traits>&
+operator<< (basic_ostream<charT, traits>& out, const charT* s);
+
+template<class charT, class traits>
+basic_ostream<charT, traits>&
+operator<< (basic_ostream<charT, traits>& out, const char* s);
+
+//  partial specializationss
+template<class traits>
+basic_ostream<char, traits>&
+operator<< (basic_ostream<char, traits>& out, const char* s);
+
+//   signed and unsigned
+template<class traits>
+basic_ostream<char, traits>&
+operator<< (basic_ostream<char, traits>& out, const signed char* s);
+
+template<class traits>
+basic_ostream<char, traits>&
+operator<< (basic_ostream<char, traits>& out, const unsigned char* s);
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+endl(basic_ostream<charT, traits>& os);
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+ends(basic_ostream<charT, traits>& os);
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+flush(basic_ostream<charT, traits>& os);
+
+template <class charT, class traits>
+class basic_ostream
+	: virtual public basic_ios<charT,traits>
+{
+public:
+	//  Types (inherited from  basic_ios  (lib.ios)):
+	typedef charT                     char_type;
+	typedef typename traits::int_type int_type;
+	typedef typename traits::pos_type pos_type;
+	typedef typename traits::off_type off_type;
+	typedef traits                    traits_type;
+
+	//  lib.ostream.cons Constructor/destructor:
+	basic_ostream();  // Non-standard
+	explicit basic_ostream(basic_streambuf<char_type, traits>* sb);
+	// virtual ~basic_ostream();  // Compiler generated destructor used.
+
+	//  lib.ostream::sentry Prefix/suffix:
+	class sentry
+	{
+	public:
+		explicit sentry(basic_ostream<charT, traits>& os)
+			: ok_(false),
+			  uncaught_exception_(false),
+			  os_(os)
+		{
+			#ifdef _MSL_MULTITHREAD
+				os_.mutex().acquire();
+			#endif
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				if (os_.good())
+				{
+					if (os_.tie() != 0)
+						os_.tie()->flush();
+					if (os_.good())
+						ok_ = true;
+					else
+						os_.setstate(failbit);
+				}
+				else
+					os_.setstate(failbit);
+			#ifndef _MSL_NO_EXCEPTIONS 
+			}
+			catch (...)
+			{
+				if (!(os_.rdstate() & failbit))
+					os_.state |= badbit;
+				if (os_.exceptions() & os_.rdstate())
+				{
+					#ifdef _MSL_MULTITHREAD
+						os_.mutex().release();
+					#endif
+					throw;
+				}
+			}
+			#endif
+		}
+		~sentry()
+		{
+			if (!os_.fail() && os_.flags() & ios_base::unitbuf && !uncaught_exception_) // uncaught_exception() not yet implemented
+				os_.flush();
+			#ifdef _MSL_MULTITHREAD
+				os_.mutex().release();
+			#endif
+		}
+//		operator bool() const {return bool(ok_);}
+		operator int() const {return ok_;}	// as 990422 hack for Sega
+	private:
+		bool ok_;
+		bool uncaught_exception_;
+		basic_ostream<charT, traits>& os_;
+
+		sentry(const sentry&);            //   not defined
+		sentry& operator=(const sentry&); //   not defined
+
+		friend class basic_ostream;
+		friend basic_ostream& operator<< <charT, traits>(basic_ostream& out, charT c);
+		friend basic_ostream& operator<< <charT, traits>(basic_ostream& out, char c);
+		friend basic_ostream<char, traits>& operator<< <traits>(basic_ostream<char, traits>& out, char c);
+		friend basic_ostream& operator<< <charT, traits>(basic_ostream& out, const charT* s);
+		friend basic_ostream& operator<< <charT, traits>(basic_ostream& out, const char* s);
+		friend basic_ostream<char, traits>& operator<< <traits>(basic_ostream<char, traits>& out, const char* s);
+	};
+	friend class sentry;
+
+	//  lib.ostream.formatted Formatted output:
+	basic_ostream& operator<< (basic_ostream& (*pf)(basic_ostream&));
+	basic_ostream& operator<< (basic_ios<charT, traits>& (*pf)(basic_ios<charT, traits>&));
+	basic_ostream& operator<< (ios_base& (*pf)(ios_base&));
+
+	#ifndef _MSL_NO_BOOL
+		basic_ostream& operator<< (bool n);
+	#endif
+	basic_ostream& operator<< (short n);
+	basic_ostream& operator<< (unsigned short n);
+	basic_ostream& operator<< (int n);
+	basic_ostream& operator<< (unsigned int n);
+	basic_ostream& operator<< (long n);
+	basic_ostream& operator<< (unsigned long n);
+	#ifdef __MSL_LONGLONG_SUPPORT__
+		basic_ostream& operator<< (long long n);
+		basic_ostream& operator<< (unsigned long long n);
+	#endif
+	#ifndef _No_Floating_Point
+		basic_ostream& operator<< (float f);
+		basic_ostream& operator<< (double f);
+		basic_ostream& operator<< (long double f);
+	#endif
+
+	basic_ostream& operator<< (const void* p);
+	basic_ostream& operator<< (basic_streambuf<char_type, traits>* sb);
+
+	//  lib.ostream.unformatted Unformatted output:
+	basic_ostream& put(char_type c);
+	basic_ostream& write(const char_type* s, streamsize n);
+
+	basic_ostream& flush();
+
+	//  lib.ostream.seeks seeks:
+	pos_type tellp();
+	basic_ostream& seekp(pos_type pos);
+	basic_ostream& seekp(off_type off, ios_base::seekdir dir);
+
+	friend basic_ostream& operator<< <charT, traits>(basic_ostream& out, charT c);
+	friend basic_ostream& operator<< <charT, traits>(basic_ostream& out, char c);
+	friend basic_ostream<char, traits>& operator<< <traits>(basic_ostream<char, traits>& out, char c);
+	friend basic_ostream& operator<< <charT, traits>(basic_ostream& out, const charT* s);
+	friend basic_ostream& operator<< <charT, traits>(basic_ostream& out, const char* s);
+	friend basic_ostream<char, traits>& operator<< <traits>(basic_ostream<char, traits>& out, const char* s);
+};
+
+// basic_ostream Implementation
+
+template <class charT, class traits>
+inline
+basic_ostream<charT, traits>::basic_ostream()
+{
+}
+
+template <class charT, class traits>
+basic_ostream<charT, traits>::basic_ostream(basic_streambuf<char_type, traits>* sb)
+{
+	init(sb);
+}
+
+template <class charT, class traits>
+inline
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::operator<< (basic_ostream& (*pf)(basic_ostream&))
+{
+	return pf(*this);
+}
+
+template <class charT, class traits>
+inline
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::operator<< (basic_ios<charT, traits>& (*pf)(basic_ios<charT, traits>&))
+{
+	pf(*this);
+	return *this;
+}
+
+template <class charT, class traits>
+inline
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::operator<< (ios_base& (*pf)(ios_base&))
+{
+	pf(*this);
+	return *this;
+}
+
+#ifndef _MSL_NO_BOOL
+
+	template <class charT, class traits>
+	basic_ostream<charT, traits>&
+	basic_ostream<charT, traits>::operator<< (bool n)
+	{
+		sentry ok(*this);
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			if (ok)
+			{
+				bool failed;
+				#ifndef _MSL_NO_EXCEPTIONS
+				try
+				{
+				#endif
+					typedef typename num_put<charT, ostreambuf_iterator<charT, traits> > num_put_type;
+					const num_put_type& np = _USE_FACET(num_put_type, getloc());
+					failed = np.put(*this, *this, fill(), n).failed();
+				#ifndef _MSL_NO_EXCEPTIONS
+				}
+				catch (...)
+				{
+					state |= badbit;
+					if (exceptions() & badbit)
+						throw;
+				}
+				#endif
+				if (failed)
+					setstate(failbit | badbit);
+			}
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			ok.uncaught_exception_ = true;
+			throw;
+		}
+		#endif
+		return *this;
+	}
+
+#endif // _MSL_NO_BOOL
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::operator<< (short n)
+{
+	sentry ok(*this);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			bool failed;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				typedef typename num_put<charT, ostreambuf_iterator<charT, traits> > num_put_type;
+				const num_put_type& np = _USE_FACET(num_put_type, getloc());
+				fmtflags f = flags() & ios_base::basefield;
+				if (f == oct || f == hex)
+					failed = np.put(*this, *this, fill(), (unsigned long)(unsigned short)n).failed();
+				else
+					failed = np.put(*this, *this, fill(), (long)n).failed();
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			if (failed)
+				setstate(failbit | badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return *this;
+}
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::operator<< (unsigned short n)
+{
+	sentry ok(*this);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			bool failed;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				typedef typename num_put<charT, ostreambuf_iterator<charT, traits> > num_put_type;
+				const num_put_type& np = _USE_FACET(num_put_type, getloc());
+				failed = np.put(*this, *this, fill(), (unsigned long)n).failed();
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			if (failed)
+				setstate(failbit | badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return *this;
+}
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::operator<< (int n)
+{
+	sentry ok(*this);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			bool failed;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				typedef typename num_put<charT, ostreambuf_iterator<charT, traits> > num_put_type;
+				const num_put_type& np = _USE_FACET(num_put_type, getloc());
+				fmtflags f = flags() & ios_base::basefield;
+				if (f == oct || f == hex)
+					failed = np.put(*this, *this, fill(), (unsigned long)(unsigned int)n).failed();
+				else
+					failed = np.put(*this, *this, fill(), (long)n).failed();
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			if (failed)
+				setstate(failbit | badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return *this;
+}
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::operator<< (unsigned int n)
+{
+	sentry ok(*this);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			bool failed;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				typedef typename num_put<charT, ostreambuf_iterator<charT, traits> > num_put_type;
+				const num_put_type& np = _USE_FACET(num_put_type, getloc());
+				failed = np.put(*this, *this, fill(), (unsigned long)n).failed();
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			if (failed)
+				setstate(failbit | badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return *this;
+}
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::operator<< (long n)
+{
+	sentry ok(*this);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			bool failed;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				typedef typename num_put<charT, ostreambuf_iterator<charT, traits> > num_put_type;
+				const num_put_type& np = _USE_FACET(num_put_type, getloc());
+				failed = np.put(*this, *this, fill(), n).failed();
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			if (failed)
+				setstate(failbit | badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return *this;
+}
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::operator<< (unsigned long n)
+{
+	sentry ok(*this);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			bool failed;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				typedef typename num_put<charT, ostreambuf_iterator<charT, traits> > num_put_type;
+				const num_put_type& np = _USE_FACET(num_put_type, getloc());
+				failed = np.put(*this, *this, fill(), n).failed();
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			if (failed)
+				setstate(failbit | badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return *this;
+}
+
+#ifdef __MSL_LONGLONG_SUPPORT__
+
+	template <class charT, class traits>
+	basic_ostream<charT, traits>&
+	basic_ostream<charT, traits>::operator<< (long long n)
+	{
+		sentry ok(*this);
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			if (ok)
+			{
+				bool failed;
+				#ifndef _MSL_NO_EXCEPTIONS
+				try
+				{
+				#endif
+					typedef typename num_put<charT, ostreambuf_iterator<charT, traits> > num_put_type;
+					const num_put_type& np = _USE_FACET(num_put_type, getloc());
+					failed = np.put(*this, *this, fill(), n).failed();
+				#ifndef _MSL_NO_EXCEPTIONS
+				}
+				catch (...)
+				{
+					state |= badbit;
+					if (exceptions() & badbit)
+						throw;
+				}
+				#endif
+				if (failed)
+					setstate(failbit | badbit);
+			}
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			ok.uncaught_exception_ = true;
+			throw;
+		}
+		#endif
+		return *this;
+	}
+
+	template <class charT, class traits>
+	basic_ostream<charT, traits>&
+	basic_ostream<charT, traits>::operator<< (unsigned long long n)
+	{
+		sentry ok(*this);
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			if (ok)
+			{
+				bool failed;
+				#ifndef _MSL_NO_EXCEPTIONS
+				try
+				{
+				#endif
+					typedef typename num_put<charT, ostreambuf_iterator<charT, traits> > num_put_type;
+					const num_put_type& np = _USE_FACET(num_put_type, getloc());
+					failed = np.put(*this, *this, fill(), n).failed();
+				#ifndef _MSL_NO_EXCEPTIONS
+				}
+				catch (...)
+				{
+					state |= badbit;
+					if (exceptions() & badbit)
+						throw;
+				}
+				#endif
+				if (failed)
+					setstate(failbit | badbit);
+			}
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			ok.uncaught_exception_ = true;
+			throw;
+		}
+		#endif
+		return *this;
+	}
+
+#endif // __MSL_LONGLONG_SUPPORT__
+
+#ifndef _No_Floating_Point
+
+	template <class charT, class traits>
+	basic_ostream<charT, traits>&
+	basic_ostream<charT, traits>::operator<< (float n)
+	{
+		sentry ok(*this);
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			if (ok)
+			{
+				bool failed;
+				#ifndef _MSL_NO_EXCEPTIONS
+				try
+				{
+				#endif
+					typedef typename num_put<charT, ostreambuf_iterator<charT, traits> > num_put_type;
+					const num_put_type& np = _USE_FACET(num_put_type, getloc());
+					failed = np.put(*this, *this, fill(), n).failed();
+				#ifndef _MSL_NO_EXCEPTIONS
+				}
+				catch (...)
+				{
+					state |= badbit;
+					if (exceptions() & badbit)
+						throw;
+				}
+				#endif
+				if (failed)
+					setstate(failbit | badbit);
+			}
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			ok.uncaught_exception_ = true;
+			throw;
+		}
+		#endif
+		return *this;
+	}
+
+	template <class charT, class traits>
+	basic_ostream<charT, traits>&
+	basic_ostream<charT, traits>::operator<< (double n)
+	{
+		sentry ok(*this);
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			if (ok)
+			{
+				bool failed;
+				#ifndef _MSL_NO_EXCEPTIONS
+				try
+				{
+				#endif
+					typedef typename num_put<charT, ostreambuf_iterator<charT, traits> > num_put_type;
+					const num_put_type& np = _USE_FACET(num_put_type, getloc());
+					failed = np.put(*this, *this, fill(), n).failed();
+				#ifndef _MSL_NO_EXCEPTIONS
+				}
+				catch (...)
+				{
+					state |= badbit;
+					if (exceptions() & badbit)
+						throw;
+				}
+				#endif
+				if (failed)
+					setstate(failbit | badbit);
+			}
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			ok.uncaught_exception_ = true;
+			throw;
+		}
+		#endif
+		return *this;
+	}
+
+	template <class charT, class traits>
+	basic_ostream<charT, traits>&
+	basic_ostream<charT, traits>::operator<< (long double n)
+	{
+		sentry ok(*this);
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			if (ok)
+			{
+				bool failed;
+				#ifndef _MSL_NO_EXCEPTIONS
+				try
+				{
+				#endif
+					typedef typename num_put<charT, ostreambuf_iterator<charT, traits> > num_put_type;
+					const num_put_type& np = _USE_FACET(num_put_type, getloc());
+					failed = np.put(*this, *this, fill(), n).failed();
+				#ifndef _MSL_NO_EXCEPTIONS
+				}
+				catch (...)
+				{
+					state |= badbit;
+					if (exceptions() & badbit)
+						throw;
+				}
+				#endif
+				if (failed)
+					setstate(failbit | badbit);
+			}
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			ok.uncaught_exception_ = true;
+			throw;
+		}
+		#endif
+		return *this;
+	}
+
+#endif // _No_Floating_Point
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::operator<< (const void* p)
+{
+	sentry ok(*this);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			bool failed;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				typedef typename num_put<charT, ostreambuf_iterator<charT, traits> > num_put_type;
+				const num_put_type& np = _USE_FACET(num_put_type, getloc());
+				const ctype<charT>& ct = _USE_FACET(ctype<charT>, getloc());
+				failed = np.put(*this, *this, ct.widen('0'), p).failed();
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			if (failed)
+				setstate(failbit | badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return *this;
+}
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::operator<< (basic_streambuf<char_type, traits>* sb)
+{
+	sentry ok(*this);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		bool didnt_insert = true;
+		if (sb == 0)
+			setstate(badbit);
+		else if (ok)
+		{
+			bool didnt_insert = true;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				int_type c = sb->sgetc();
+				while (true)
+				{
+					if (traits::eq_int_type(c, traits::eof()))
+						break;
+					if (traits::eq_int_type(rdbuf()->sputc(traits::to_char_type(c)),
+					                        traits::eof()))
+						break;
+					didnt_insert = false;
+					c = sb->snextc();
+				}
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+		}
+		if (didnt_insert)
+			setstate(failbit);
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return *this;
+}
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::put(char_type c)
+{
+	sentry ok(*this);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			bool failed;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				failed = traits::eq_int_type(rdbuf()->sputc(c), traits::eof());
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			if (failed)
+				setstate(failbit | badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return *this;
+}
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::write(const char_type* s, streamsize n)
+{
+	sentry ok(*this);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			streamsize nwritten;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				nwritten = rdbuf()->sputn(s, n);
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			if (n != nwritten)
+				setstate(failbit | badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return *this;
+}
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::flush()
+{
+	sentry ok(*this);
+	ok.uncaught_exception_ = true;  // to keep from calling flush() recursively during ~sentry()
+	if (rdbuf() != 0)
+	{
+		bool failed = false;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			if (rdbuf()->pubsync() == -1)
+				failed = true;
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		if (failed)
+			setstate(badbit);
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+typename basic_ostream<charT, traits>::pos_type
+basic_ostream<charT, traits>::tellp()
+{
+	sentry ok(*this);
+	if (!fail())
+	{
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			return rdbuf()->pubseekoff(0, ios_base::cur, ios_base::out);
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+			{
+				ok.uncaught_exception_ = true;
+				throw;
+			}
+		}
+		#endif
+	}
+	return pos_type(-1);
+}
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::seekp(pos_type pos)
+{
+	sentry ok(*this);
+	if (!fail())
+	{
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			rdbuf()->pubseekpos(pos, ios_base::out);
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+			{
+				ok.uncaught_exception_ = true;
+				throw;
+			}
+		}
+		#endif
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+basic_ostream<charT, traits>&
+basic_ostream<charT, traits>::seekp(off_type off, ios_base::seekdir dir)
+{
+	sentry ok(*this);
+	if (!fail())
+	{
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			rdbuf()->pubseekoff(off, dir, ios_base::out);
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+			{
+				ok.uncaught_exception_ = true;
+				throw;
+			}
+		}
+		#endif
+	}
+	return *this;
+}
+
+template<class charT, class traits>
+basic_ostream<charT, traits>&
+operator<< (basic_ostream<charT, traits>& out, charT c)
+{
+	basic_ostream<charT, traits>::sentry ok(out);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			bool failed;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				failed = __putnumber(ostreambuf_iterator<charT, traits>(out), out, out.fill(),
+					(const charT*)0, 0, &c, 1).failed();
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				out.state |= ios_base::badbit;
+				if (out.exceptions() & ios_base::badbit)
+					throw;
+			}
+			#endif
+			if (failed)
+				out.setstate(ios_base::failbit | ios_base::badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return out;
+}
+
+template<class charT, class traits>
+basic_ostream<charT, traits>&
+operator<< (basic_ostream<charT, traits>& out, char c)
+{
+	basic_ostream<charT, traits>::sentry ok(out);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			bool failed;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				charT cw = out.widen(c);
+				failed = __putnumber(ostreambuf_iterator<charT, traits>(out), out, out.fill(),
+					(const charT*)0, 0, &cw, 1).failed();
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				out.state |= ios_base::badbit;
+				if (out.exceptions() & ios_base::badbit)
+					throw;
+			}
+			#endif
+			if (failed)
+				out.setstate(ios_base::failbit | ios_base::badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return out;
+}
+
+template<class traits>
+basic_ostream<char,traits>&
+operator<< (basic_ostream<char, traits>& out, char c)
+{
+	basic_ostream<char, traits>::sentry ok(out);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			bool failed;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				failed = __putnumber(ostreambuf_iterator<char, traits>(out), out, out.fill(),
+					(const char*)0, 0, &c, 1).failed();
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				out.state |= ios_base::badbit;
+				if (out.exceptions() & ios_base::badbit)
+					throw;
+			}
+			#endif
+			if (failed)
+				out.setstate(ios_base::failbit | ios_base::badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return out;
+}
+
+template<class traits>
+inline
+basic_ostream<char, traits>&
+operator<< (basic_ostream<char, traits>& out, signed char c)
+{
+	return out << (char)c;
+}
+
+template<class traits>
+inline
+basic_ostream<char, traits>&
+operator<< (basic_ostream<char, traits>& out, unsigned char c)
+{
+	return out << (char)c;
+}
+
+template<class charT, class traits>
+basic_ostream<charT, traits>&
+operator<< (basic_ostream<charT, traits>& out, const charT* s)
+{
+	basic_ostream<charT, traits>::sentry ok(out);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			bool failed;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				failed = __putnumber(ostreambuf_iterator<charT, traits>(out), out, out.fill(),
+					(const charT*)0, 0, s, (int)traits::length(s)).failed();
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				out.state |= ios_base::badbit;
+				if (out.exceptions() & ios_base::badbit)
+					throw;
+			}
+			#endif
+			if (failed)
+				out.setstate(ios_base::failbit | ios_base::badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return out;
+}
+
+template<class charT, class traits>
+basic_ostream<charT, traits>&
+operator<< (basic_ostream<charT, traits>& out, const char* s)
+{
+	basic_ostream<charT, traits>::sentry ok(out);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			bool failed;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				typedef typename ctype<charT> ctype_type;
+				const ctype_type& ct = _USE_FACET(ctype_type, out.getloc());
+				basic_string<charT, traits> w_string = ct.widen(string(s));
+				failed = __putnumber(ostreambuf_iterator<charT, traits>(out), out, out.fill(),
+					(const charT*)0, 0, w_string.c_str(), (int)w_string.size()).failed();
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				out.state |= ios_base::badbit;
+				if (out.exceptions() & ios_base::badbit)
+					throw;
+			}
+			#endif
+			if (failed)
+				out.setstate(ios_base::failbit | ios_base::badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return out;
+}
+
+template<class traits>
+basic_ostream<char, traits>&
+operator<< (basic_ostream<char, traits>& out, const char* s)
+{
+	basic_ostream<char, traits>::sentry ok(out);
+	#ifndef _MSL_NO_EXCEPTIONS
+	try
+	{
+	#endif
+		if (ok)
+		{
+			bool failed;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				failed = __putnumber(ostreambuf_iterator<char, traits>(out), out, out.fill(),
+					(const char*)0, 0, s, (int)traits::length(s)).failed();
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				out.state |= ios_base::badbit;
+				if (out.exceptions() & ios_base::badbit)
+					throw;
+			}
+			#endif
+			if (failed)
+				out.setstate(ios_base::failbit | ios_base::badbit);
+		}
+	#ifndef _MSL_NO_EXCEPTIONS
+	}
+	catch (...)
+	{
+		ok.uncaught_exception_ = true;
+		throw;
+	}
+	#endif
+	return out;
+}
+
+template<class traits>
+inline
+basic_ostream<char, traits>&
+operator<< (basic_ostream<char, traits>& out, const signed char* s)
+{
+	return out << (const char*)s;
+}
+
+template<class traits>
+inline
+basic_ostream<char, traits>&
+operator<< (basic_ostream<char, traits>& out, const unsigned char* s)
+{
+	return out << (const char*)s;
+}
+
+template <class charT, class traits>
+inline
+basic_ostream<charT, traits>&
+endl(basic_ostream<charT, traits>& os)
+{
+	return os.put(os.widen('\n')).flush();
+}
+
+template <class charT, class traits>
+inline
+basic_ostream<charT, traits>&
+ends(basic_ostream<charT, traits>& os)
+{
+	return os.put(charT());
+}
+
+template <class charT, class traits>
+inline
+basic_ostream<charT, traits>&
+flush(basic_ostream<charT, traits>& os)
+{
+	return os.flush();
+}
+
+#ifndef _MSL_NO_CPP_NAMESPACE
+	} // namespace std 
+#endif
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
+#pragma options align=reset
+
+#endif // RC_INVOKED
+
+#endif // _OSTREAM
+
+// hh 971220 fixed MOD_INCLUDE
+// hh 971223 Changed filename from ostream.h to ostream
+// hh 971223 added alignment wrapper
+// hh 971223 Made include guards standard
+// hh 971229 Moved sentry member definitions into class.  Compiler doesn't support non-inlined
+//           template nested classes.
+// hh 971229 changed ? : to if because compiler doesn't support complex expression in ? :
+// hh 971230 added RC_INVOKED wrapper
+// hh 980109 added long long support
+// hh 980408 wrapped up in #ifndef _No_Floating_Point
+// hh 980702 changed the output of void* to fill with '0' instead of the fill char from locale
+//           so that void*'s would be properly formatted.
+// hh 981220 Added class modifier to several friend declarations
+// hh 981220 Added typename to appropriate return types
+// hh 981231 Rewrote

@@ -1,0 +1,761 @@
+/*  Metrowerks Standard Library  */
+
+/*  $Date: 1999/01/23 00:25:39 $ 
+ *  $Revision: 1.6 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Portions Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/**
+ **  fstream
+ **/
+
+#ifndef _FSTREAM
+#define _FSTREAM
+
+#include <mslconfig>
+#include <iosfwd>
+#include <streambuf>
+#include <ostream>
+#include <istream>
+#include <cstdio>
+#include <cstring>
+
+#ifndef RC_INVOKED
+
+#pragma options align=native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#ifndef _MSL_NO_CPP_NAMESPACE
+	namespace std {
+#endif
+
+extern "C" void write(int iFileNo, char* pBuf, int uiCount);
+
+template <class charT, class traits>
+class basic_filebuf
+	: public basic_streambuf<charT, traits>
+{
+public:
+	typedef charT                     char_type;
+	typedef typename traits::int_type int_type;
+	typedef typename traits::pos_type pos_type;
+	typedef typename traits::off_type off_type;
+	typedef traits                    traits_type;
+
+	//  lib.filebuf.cons Constructors/destructor:
+	// Nonstandard, but serves as standard default constructor
+	basic_filebuf(FILE* file = 0);
+	virtual ~basic_filebuf();
+
+	//  lib.filebuf.members Members:
+	bool is_open() const;
+	basic_filebuf* open(const char* s, ios_base::openmode mode);
+	basic_filebuf* close();
+
+protected:
+	//  lib.filebuf.virtuals Overridden virtual functions:
+	// virtual streamsize showmanyc();  // use basic_streambuf
+	virtual int_type underflow();
+	virtual int_type uflow();
+	virtual int_type pbackfail(int_type c = traits::eof());
+	virtual int_type overflow (int_type c = traits::eof());
+
+	// virtual basic_streambuf<charT,traits>* setbuf(char_type* s, streamsize n);  // default behavior which should be "do nothing"
+	virtual pos_type seekoff(off_type off, ios_base::seekdir way,
+		ios_base::openmode which = ios_base::in | ios_base::out);
+	virtual pos_type seekpos(pos_type sp, ios_base::openmode which = ios_base::in | ios_base::out); // set overflow_called_last_
+	virtual int      sync();
+	virtual void     imbue(const locale& loc);
+private:
+	typedef typename traits_type::state_type state_type;
+	typedef typename codecvt<charT, char, typename traits::state_type> Converter;
+
+	FILE* file_;
+	state_type state_;
+	const Converter* a_codecvt_;
+	static const size_t input_buffer_size_s = 14;
+	charT input_buffer_[input_buffer_size_s];
+	bool overflow_called_last_;
+	bool always_noconv_;
+
+	bool unshift();
+};
+
+template <class charT, class traits>
+class basic_ifstream
+	: public basic_istream<charT, traits>
+{
+public:
+	typedef charT                     char_type;
+	typedef typename traits::int_type int_type;
+	typedef typename traits::pos_type pos_type;
+	typedef typename traits::off_type off_type;
+	typedef traits                    traits_type;
+
+	//  lib.ifstream.cons Constructors:
+	basic_ifstream();
+	explicit basic_ifstream(const char* s, ios_base::openmode mode = ios_base::in);
+
+	//  lib.ifstream.members Members:
+	basic_filebuf<charT, traits>* rdbuf() const;
+
+	bool is_open();
+	void open(const char* s, ios_base::openmode mode = ios_base::in);
+	void close();
+private:
+	basic_filebuf<charT, traits> sb_;
+};
+
+template <class charT, class traits>
+class basic_ofstream
+	: public basic_ostream<charT, traits>
+{
+public:
+	typedef charT                     char_type;
+	typedef typename traits::int_type int_type;
+	typedef typename traits::pos_type pos_type;
+	typedef typename traits::off_type off_type;
+	typedef traits                    traits_type;
+
+	//  lib.ofstream.cons Constructors:
+	basic_ofstream();
+	explicit basic_ofstream(const char* s, ios_base::openmode mode = ios_base::out);
+
+	//  lib.ofstream.members Members:
+	basic_filebuf<charT,traits>* rdbuf() const;
+
+	bool is_open();
+	void open(const char* s, ios_base::openmode mode = ios_base::out);
+	void close();
+private:
+	basic_filebuf<charT, traits> sb_;
+};
+
+template <class charT, class traits>
+class basic_fstream
+	: public basic_iostream<charT, traits>
+{
+public:
+	typedef charT                     char_type;
+	typedef typename traits::int_type int_type;
+	typedef typename traits::pos_type pos_type;
+	typedef typename traits::off_type off_type;
+	typedef traits                    traits_type;
+
+	//  constructors/destructor
+	basic_fstream();
+	explicit basic_fstream(const char* s, ios_base::openmode mode = ios_base::in | ios_base::out);
+
+	//  Members:
+	basic_filebuf<charT,traits>* rdbuf() const;
+	bool is_open();
+	void open(const char* s, ios_base::openmode mode = ios_base::in | ios_base::out);
+	void close();
+private:
+	basic_filebuf<charT, traits> sb_;
+};
+
+// basic_filebuf Implementation
+
+// Nonstandard, but serves as standard default constructor
+
+template <class charT, class traits>
+basic_filebuf<charT, traits>::basic_filebuf(FILE* file)
+	: file_(file),
+	  state_(state_type()),
+	  overflow_called_last_(false)
+{
+	setg(input_buffer_, input_buffer_, input_buffer_);
+	a_codecvt_ = &_USE_FACET(Converter, getloc());
+	always_noconv_ = a_codecvt_->always_noconv();
+}
+
+template <class charT, class traits>
+inline
+basic_filebuf<charT, traits>::~basic_filebuf()
+{
+	if (file_ != stdin && file_ != stdout && file_ != stderr)
+		close();
+}
+
+template <class charT, class traits>
+inline
+bool
+basic_filebuf<charT, traits>::is_open() const
+{
+	return bool(file_ != 0);
+}
+
+template <class charT, class traits>
+basic_filebuf<charT,traits>*
+basic_filebuf<charT, traits>::open(const char* s, ios_base::openmode mode)
+{
+	if (file_ != 0)
+		return 0;
+	const char* modstr;
+	switch (mode & ~ios_base::ate)
+	{
+	case ios_base::out:
+	case ios_base::out | ios_base::trunc:
+		modstr = "w";
+		break;
+	case ios_base::out | ios_base::app:
+		modstr = "a";
+		break;
+	case ios_base::in:
+		modstr = "r";
+		break;
+	case ios_base::in | ios_base::out:
+		modstr = "r+";
+		break;
+	case ios_base::in | ios_base::out | ios_base::trunc:
+		modstr = "w+";
+		break;
+	case ios_base::binary | ios_base::out:
+	case ios_base::binary | ios_base::out | ios_base::trunc:
+		modstr = "wb";
+		break;
+	case ios_base::binary | ios_base::out | ios_base::app:
+		modstr = "ab";
+		break;
+	case ios_base::binary | ios_base::in:
+		modstr = "rb";
+		break;
+	case ios_base::binary | ios_base::in | ios_base::out:
+		modstr = "r+b";
+		break;
+	case ios_base::binary | ios_base::in | ios_base::out | ios_base::trunc:
+		modstr = "w+b";
+		break;
+	default:
+		return 0;
+	}
+	file_ = fopen(s, modstr);
+	if (file_ == 0)
+		return 0;
+	if (mode & ios_base::ate && fseek(file_, 0, SEEK_END))
+	{
+		delete [] eback();
+		close();
+		return 0;
+	}
+	return this;
+}
+
+template <class charT, class traits>
+basic_filebuf<charT, traits>*
+basic_filebuf<charT, traits>::close()
+{
+	if (file_ == 0)
+		return 0;
+//	if (pptr() > pbase() && traits::eq_int_type(overflow(), traits::eof()))  // needed if put buffer enabled
+//		return 0;
+	if (overflow_called_last_)
+	{
+		if (!unshift())
+			return 0;
+		overflow_called_last_ = false;
+	}
+	if (fclose(file_) != 0)
+		return 0;
+	file_ = 0;
+	return this;
+}
+
+template <class charT, class traits>
+typename basic_filebuf<charT, traits>::int_type
+basic_filebuf<charT, traits>::underflow()
+{
+	overflow_called_last_ = false;
+	if (file_ == 0)
+		return traits::eof();
+	if (gptr() < egptr())
+		return traits::to_int_type(*gptr());
+	int_type result = uflow();
+	if (!traits::eq_int_type(result, traits::eof()))
+		gbump(-1);
+	return result;
+}
+
+template <class charT, class traits>
+typename basic_filebuf<charT, traits>::int_type
+basic_filebuf<charT, traits>::uflow()
+{
+	overflow_called_last_ = false;
+	if (file_ == 0)
+		return traits::eof();
+	if (gptr() < egptr())
+	{
+		gbump(1);
+		return traits::to_int_type(*(gptr() - 1));
+	}
+	if (always_noconv_)
+	{
+		int result = fgetc(file_);
+		if (result == EOF)
+			return traits::eof();
+		size_t n = size_t(egptr() - eback());
+		if (n == input_buffer_size_s)
+		{
+			traits::move(eback(), eback() + input_buffer_size_s/3, input_buffer_size_s - input_buffer_size_s/3);
+			n /= 3;
+		}
+		setg(input_buffer_, input_buffer_ + n + 1, input_buffer_ + n + 1);
+		char_type c = traits::to_char_type((int_type)result);
+		*(gptr() - 1) = c;
+		return traits::to_int_type(c);
+	}
+	int n = a_codecvt_->encoding();
+	if (n == 1)
+	{
+		int ci = fgetc(file_);
+		if (ci == EOF)
+			return traits::eof();
+		const char extern_buf = char(ci);
+		const char* extern_end;
+		char_type intern_buf;
+		char_type* intern_end;
+		codecvt_base::result r = a_codecvt_->in(state_, &extern_buf, &extern_buf + 1, extern_end,
+		                                        &intern_buf, &intern_buf + 1, intern_end);
+		switch (r)
+		{
+		case codecvt_base::error:
+		case codecvt_base::partial:
+			return traits::eof();
+		case codecvt_base::noconv:
+			intern_buf = (char_type)extern_buf;
+			break;
+//		case codecvt_base::ok:
+//			break;
+		}
+		size_t es = size_t(egptr() - eback());
+		if (es == input_buffer_size_s)
+		{
+			traits::move(eback(), eback() + input_buffer_size_s/3, input_buffer_size_s - input_buffer_size_s/3);
+			es /= 3;
+		}
+		setg(input_buffer_, input_buffer_ + es + 1, input_buffer_ + es + 1);
+		*(gptr() - 1) = intern_buf;
+		return traits::to_int_type(intern_buf);
+	}
+	string extern_buf;
+	for (; n > 1; --n)
+	{
+		int ci = fgetc(file_);
+		if (ci == EOF)
+			return traits::eof();
+		extern_buf += char(ci);
+	}
+	char_type intern_buf;
+	char_type* intern_end;
+	codecvt_base::result r = codecvt_base::partial;
+	while (r == codecvt_base::partial)
+	{
+		int ci = fgetc(file_);
+		if (ci == EOF)
+			return traits::eof();
+		char c = char(ci);
+		extern_buf += c;
+		const char* ex = extern_buf.c_str();
+		const char* extern_end;
+		codecvt_base::result r = a_codecvt_->in(state_, ex, ex+extern_buf.size(), extern_end,
+		                                        &intern_buf, &intern_buf + 1, intern_end);
+		switch (r)
+		{
+		case codecvt_base::error:
+			return traits::eof();
+		case codecvt_base::noconv:
+			intern_buf = (char_type)extern_buf[0];
+			break;
+	//	case codecvt_base::ok:
+	//	case codecvt_base::partial:
+	//		break;
+		}
+	}
+	size_t es = size_t(egptr() - eback());
+	if (es == input_buffer_size_s)
+	{
+		traits::move(eback(), eback() + input_buffer_size_s/3, input_buffer_size_s - input_buffer_size_s/3);
+		es /= 3;
+	}
+	setg(input_buffer_, input_buffer_ + es + 1, input_buffer_ + es + 1);
+	*(gptr() - 1) = intern_buf;
+	return traits::to_int_type(intern_buf);
+}
+
+template <class charT, class traits>
+typename basic_filebuf<charT, traits>::int_type
+basic_filebuf<charT, traits>::pbackfail(int_type c)
+{
+	if (file_ == 0 || gptr() <= eback())
+		return traits::eof();
+	gbump(-1);
+	if (!traits::eq_int_type(c, traits::eof()))
+		*gptr() = traits::to_char_type(c);
+	return traits::not_eof(c);
+}
+
+template <class charT, class traits>
+typename basic_filebuf<charT, traits>::int_type
+basic_filebuf<charT, traits>::overflow(int_type c)
+{
+	overflow_called_last_ = true;
+	if (file_ == 0)
+		return traits::eof();
+	if (traits::eq_int_type(c, traits::eof()))
+		return traits::not_eof(c);
+	if (always_noconv_)
+	{
+//		int err = fputc(c, file_);
+		int err = putc(c, file_);
+		if (err == EOF)
+			return traits::eof();
+		return c;
+	}
+	int n = a_codecvt_->encoding();
+	if (n == 1)
+	{
+		char extern_buf;
+		char* extern_end;
+		const char_type intern_buf = traits::to_char_type(c);
+		const char_type* intern_end;
+		codecvt_base::result r = a_codecvt_->out(state_, &intern_buf, &intern_buf + 1, intern_end,
+		                                         &extern_buf, &extern_buf + 1, extern_end);
+		switch (r)
+		{
+		case codecvt_base::error:
+		case codecvt_base::partial:
+			return traits::eof();
+		case codecvt_base::noconv:
+			extern_buf = (char)intern_buf;
+			break;
+//		case codecvt_base::ok:
+//			break;
+		}
+//		if (fputc(extern_buf, file_) == EOF)
+//			return traits::eof();
+		write(1, &extern_buf, 1);
+		return c;
+	}
+	string extern_buf(3, char());
+	const char_type intern_buf = traits::to_char_type(c);
+	const char_type* intern_end;
+	codecvt_base::result r = codecvt_base::partial;
+	while (r == codecvt_base::partial)
+	{
+		char* ex = const_cast<char*>(extern_buf.c_str());
+		char* extern_end;
+		codecvt_base::result r = a_codecvt_->out(state_, &intern_buf, &intern_buf + 1, intern_end,
+		                                         ex, ex + extern_buf.size(), extern_end);
+		switch (r)
+		{
+		case codecvt_base::error:
+			return traits::eof();
+		case codecvt_base::noconv:
+			extern_buf = char(intern_buf);
+			break;
+		case codecvt_base::ok:
+			extern_buf.resize(string::size_type(extern_end - ex));
+			break;
+		case codecvt_base::partial:
+			extern_buf.resize(2*extern_buf.size() + 1);
+			break;
+		}
+	}
+//	const string& s = extern_buf;
+//	for (string::const_iterator i = s.begin(); i != s.end(); ++i)
+//	{
+//		if (fputc(*i, file_) == EOF)
+//			return traits::eof();
+//	}
+	write(1, &extern_buf[0], extern_buf.size());
+	return c;
+}
+
+template <class charT, class traits>
+typename basic_filebuf<charT, traits>::pos_type
+basic_filebuf<charT, traits>::seekoff(off_type off, ios_base::seekdir way, ios_base::openmode which)
+{
+	int width = a_codecvt_->encoding();
+	if (file_ == 0 || off != 0 && width <= 0)
+		return pos_type(-1);
+	if ((way != ios_base::cur || off != 0) && overflow_called_last_ && width < 0)
+	{
+		if (!unshift())
+			return pos_type(-1);
+	}
+	int whence;
+	switch (way)
+	{
+	case ios_base::beg:
+		whence = SEEK_SET;
+		break;
+	case ios_base::cur:
+		whence = SEEK_CUR;
+		if ((which & ios_base::in) != 0)
+			off -= egptr() - gptr();
+		break;
+	case ios_base::end:
+		whence = SEEK_END;
+		break;
+	default:
+		return pos_type(-1);
+	}
+	if (width < 0)
+		width = 0;
+	if (fseek(file_, width * off, whence) != 0)
+		return pos_type(-1);
+	if ((which & ios_base::in) != 0)
+		setg(input_buffer_, input_buffer_, input_buffer_);
+	overflow_called_last_ = false;
+	return ftell(file_);
+}
+
+template <class charT, class traits>
+typename basic_filebuf<charT, traits>::pos_type
+basic_filebuf<charT, traits>::seekpos(pos_type sp, ios_base::openmode which)
+{
+	if (file_ == 0 || (which & (ios_base::in | ios_base::out)) == 0)
+		return pos_type(-1);
+	int width = a_codecvt_->encoding();
+	if ((which & ios_base::out) != 0 && overflow_called_last_ && width < 0)
+	{
+		if (!unshift())
+			return pos_type(-1);
+	}
+	if (fseek(file_, (streamoff)sp, SEEK_SET) != 0)
+		return pos_type(-1);
+	if ((which & ios_base::in) != 0)
+		setg(input_buffer_, input_buffer_, input_buffer_);
+	overflow_called_last_ = false;
+	return sp;
+}
+
+template <class charT, class traits>
+inline
+int
+basic_filebuf<charT, traits>::sync()
+{
+	return (file_ == 0 || fflush(file_)) ? -1 : 0;
+}
+
+template <class charT, class traits>
+void
+basic_filebuf<charT, traits>::imbue(const locale& loc)
+{
+	basic_streambuf::imbue(loc);
+	a_codecvt_ = &_USE_FACET(Converter, getloc());
+	always_noconv_ = a_codecvt_->always_noconv();
+}
+
+// returns true if successful
+template <class charT, class traits>
+bool
+basic_filebuf<charT, traits>::unshift()
+{
+	codecvt_base::result r = codecvt_base::partial;
+	while (r == codecvt_base::partial)
+	{
+		char to[4];
+		char* to_next = to;
+		r = a_codecvt_->unshift(state_, to, to + 4, to_next);
+		switch (r)
+		{
+		case codecvt_base::error:
+			return bool(0);
+		case codecvt_base::noconv:
+			break;
+		case codecvt_base::ok:
+		case codecvt_base::partial:
+			{
+			char* t = to;
+			while (t < to_next)
+			{
+//				if (fputc(*t++, file_) == EOF)
+//					return false;
+				write(1, t++, 1);
+			}
+			}
+			break;
+		}
+	}
+	return true;
+}
+
+// basic_ifstream Implementation
+
+template <class charT, class traits>
+basic_ifstream<charT, traits>::basic_ifstream()
+	: basic_istream(&sb_)
+{
+}
+
+template <class charT, class traits>
+basic_ifstream<charT, traits>::basic_ifstream(const char* s, ios_base::openmode mode)
+	: basic_istream(&sb_)
+{
+	if (rdbuf()->open(s, openmode(mode | in)) == 0)
+		setstate(failbit);
+}
+
+template <class charT, class traits>
+inline
+basic_filebuf<charT, traits>*
+basic_ifstream<charT, traits>::rdbuf() const
+{
+	return const_cast<basic_filebuf<charT, traits>*>(&sb_);
+}
+
+template <class charT, class traits>
+inline
+bool
+basic_ifstream<charT, traits>::is_open()
+{
+	return bool(rdbuf()->is_open());
+}
+
+template <class charT, class traits>
+inline
+void
+basic_ifstream<charT, traits>::open(const char* s, ios_base::openmode mode)
+{
+	if (rdbuf()->open(s, openmode(mode | in)) == 0)
+		setstate(failbit);
+}
+
+template <class charT, class traits>
+inline
+void
+basic_ifstream<charT, traits>::close()
+{
+	if (rdbuf()->close() == 0)
+		setstate(failbit);
+}
+
+// basic_ofstream Implementation
+
+template <class charT, class traits>
+basic_ofstream<charT, traits>::basic_ofstream()
+	: basic_ostream(&sb_)
+{
+}
+
+template <class charT, class traits>
+basic_ofstream<charT, traits>::basic_ofstream(const char* s, ios_base::openmode mode)
+	: basic_ostream(&sb_)
+{
+	if (rdbuf()->open(s, openmode(mode | out)) == 0)
+		setstate(failbit);
+}
+
+template <class charT, class traits>
+inline
+basic_filebuf<charT,traits>*
+basic_ofstream<charT, traits>::rdbuf() const
+{
+	return const_cast<basic_filebuf<charT, traits>*>(&sb_);
+}
+
+template <class charT, class traits>
+inline
+bool
+basic_ofstream<charT, traits>::is_open()
+{
+	return bool(rdbuf()->is_open());
+}
+
+template <class charT, class traits>
+inline
+void
+basic_ofstream<charT, traits>::open(const char* s, ios_base::openmode mode)
+{
+	if (rdbuf()->open(s, openmode(mode | out)) == 0)
+		setstate(failbit);
+}
+
+template <class charT, class traits>
+inline
+void
+basic_ofstream<charT, traits>::close()
+{
+	if (rdbuf()->close() == 0)
+		setstate(failbit);
+}
+
+// basic_fstream Implementation
+
+template <class charT, class traits>
+basic_fstream<charT, traits>::basic_fstream()
+	: basic_iostream(&sb_)
+{
+}
+
+template <class charT, class traits>
+basic_fstream<charT, traits>::basic_fstream(const char* s, ios_base::openmode mode)
+	: basic_iostream(&sb_)
+{
+	if (rdbuf()->open(s, mode) == 0)
+		setstate(failbit);
+}
+
+template <class charT, class traits>
+inline
+basic_filebuf<charT,traits>*
+basic_fstream<charT, traits>::rdbuf() const
+{
+	return const_cast<basic_filebuf<charT, traits>*>(&sb_);
+}
+
+template <class charT, class traits>
+inline
+bool
+basic_fstream<charT, traits>::is_open()
+{
+	return bool(rdbuf()->is_open());
+}
+
+template <class charT, class traits>
+inline
+void
+basic_fstream<charT, traits>::open(const char* s, ios_base::openmode mode)
+{
+	if (rdbuf()->open(s, mode) == 0)
+		setstate(failbit);
+}
+
+template <class charT, class traits>
+inline
+void
+basic_fstream<charT, traits>::close()
+{
+	if (rdbuf()->close() == 0)
+		setstate(failbit);
+}
+
+#ifndef _MSL_NO_CPP_NAMESPACE
+	} // namespace std
+#endif
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
+#pragma options align=reset
+
+#endif // RC_INVOKED
+
+#endif // _FSTREAM
+
+// hh 971220 fixed MOD_INCLUDE
+// hh 971221 Changed filename from fstream.h to fstream
+// hh 971221 Made include guards standard
+// hh 971229 deleted unused arguments from setbuf
+// hh 971230 added RC_INVOKED wrapper
+// hh 980108 added explicit bool cast in case it is typedefed to int in is_open
+// hh 980129 changed to <istream> from <iostream>
+// hh 981220 Added typename to appropriate return types
+// hh 990104 Rewrote

@@ -1,0 +1,215 @@
+MkScript Revision 1.81
+-------------------------------------------------------------------------------------------------
+MkScript is a utility to create build scripts for the aggregation of audio assets with MkBank.
+-------------------------------------------------------------------------------------------------
+
+A bank contains a group of concatenated audio assets and a block of header
+information. Two file name extensions have been appointed for these assets,
+.oss (script) and .kat (bank files)
+
+To build a bank, first place the audio assets that will comprise the bank into
+a directory, then run this utility with the assetPath arg pointing to that 
+directory. 
+
+Two types of digital audio files are supported, Microsoft .wav and AIFF files.
+Wave files must have the extension .wav and AIFF files must have the extension 
+.aif for the tool to function properly.
+
+Only MONO sound files are supported, if a stereo sound file is found an error will be 
+generated and execution will stop.
+
+Sound files may be either looped front to back or they may have a sustain loop. 
+
+If the Loop flag is set and the file is a wave file it will be looped front to back. 
+
+If the file is an AIFF file and loop points are not set in the file it will be looped 
+front to back. 
+
+If the AIFF file has a sustain loop set the loop points will be determined by the 
+loop points set in the file. 
+
+Release loops are not supported, if a release loop is encountered MkScript will issue 
+a warning and execution will continue. 
+
+c:\>MkScript mybank.kat assetPath assets\
+
+This will produce a new file in that directory called mybank.oss, this is a
+build script for use with MkBank.
+
+All files in the assets\ directory will be added to the script, if the file type
+can be determined via the extension it will be added as a known asset type with
+parameters that are set to reasonable default values.
+
+If the asset type can not be determined it will be added as an UNKNOWN type
+asset with all parameters set to 0.
+
+Make sure that your asset directory does not contain any cruft (spurious files)
+as these will be included into your bank build script. 
+
+If you examine the script with a text editor you will find that it contains
+a little bit of information on each of the files in the directory.
+
+You can modify these scripts by hand easily with any text editor to create
+samples that are looping, random pitch playback and volume correction. 
+
+If you run the tool more then once note that the old script did not get over
+written, it was renamed .osa, .osb, .osc etc. this will prevent hand edits 
+from being inadvertantly lost.
+------------------------------------------------------------------------------- 
+Usage:
+
+MkScript bankFileName.kat [assetPath Assets\] [scriptPath Scripts\] [adpcm] [random percentage]
+
+Arguments to MkScript:
+
+[assetPath Assets\] - [scriptPath Scripts\]
+
+All paths must end with a slash.
+
+[adpcm]
+
+By default (if this arg is omitted) the Adpcm tag will be set to 0 (no 
+compression) if the adpcm arg is included on the command line all of the 
+adpcm tags in the script will be set to 1 (use ADPCM compression).
+
+ADPCM compression will only work on 16 bit data, if an 8 bit file is 
+encountered with this arg set; the Adpcm flag will be set to 0.
+
+If one of the sounds in a bank does not respond well to compression the tag
+can be hand edited to be 0 (no compression) for that specific sound.
+
+[random 10]
+------------------------------------------------------------------------------- 
+Production using mkscript.exe
+
+In a production setting you will have the sound effects for each level/bank
+seperated into directories.
+
+Further you will have a script directory that is the output directory for
+the build scripts.
+
+By using the assetPath and scriptPath args scripts can be built for the correct
+groups of assets.
+
+Be aware that any files in the asset directory will be added to the bank so 
+if there are batch files, old scripts etc. in that directory they will be added
+to your bank. 
+
+It is a good idea to verify that each script contains all the required assets
+and does not contain spurious files.
+
+------------------------------------------------------------------------------- 
+Documentation on the contents of the script follow. This information is in the
+top of every script file as well as in this readme. 
+------------------------------------------------------------------------------- 
+Comments are preceeded with a ';' (semi-colon) character...
+
+All tags are non-case sensitive, the caps are purely for readability.
+the format of the tags is:
+ 
+Tag Argument 
+
+The argument is seperated from the tag by any whitespace char, 
+i.e. space or tab
+------------------------------------------------------------------------------- 
+Global header section
+
+BankFileName		mybank1.kat
+
+This is the name of the file that will be created by the program mkbank
+the file name is an 8.3 file name and does not include a path.
+
+The extension is .kat (Bank) but is not restricted to that.
+------------------------------------------------------------------------------- 
+* Wave Files
+
+Certain items can not be determined from the wave files directly, these 
+items will need to be adjusted by hand.
+
+The main tag that will be adjusted is the loop tag which controls
+sample looping. Set this to 1 for loop, 0 for non-looping.
+
+	WaveFile				wav\elevator.wav
+
+This is the soundfile that is being added to the bank, the arg is an
+8.3 filename with a path.
+
+	SampleRate				22050
+
+This is the real world sample rate of the file.
+
+	Loop					0
+
+If set to 0 the file will play onec, if set to 1 it will loop front to back.
+
+	AssetEnd
+
+This is the end of an asset record, this tag has no argument.
+------------------------------------------------------------------------------- 
+* Midi Files:
+
+	MidiFileType0			e:\code\mkscript\mixed\Short5.mid
+
+This is the MIDI file that is being added to the bank, the arg is an
+8.3 filename with a path.
+
+	Volume					127
+
+This is the MIDI port volume and controls the overall volume of the MIDI file.
+This is not the same as Channel Volume rather it is the MASTER volume for the 
+MIDI stream.
+
+	GmMode					1
+
+Set to one if this is a GM compliant file.
+
+	AssetEnd
+
+This is the end of an asset record, this tag has no argument.
+-------------------------------------------------------------------------------------------
+* Fob and Fpb Files:
+
+There are currently no supported arguments for DSP program banks.
+
+	FobProgramBank			e:\code\mkscript\mixed\patches.fob 
+
+	or...
+
+	FpbProgramBank			e:\code\mkscript\mixed\patches.fpb 
+	
+	AssetEnd
+
+This is the end of an asset record, this tag has no argument.
+-------------------------------------------------------------------------------------------
+* Mtb (Sega Midi Tone Bank) Files
+
+There are currently no supported arguments for MIDI tone banks.
+
+	MidiToneBank			e:\code\mkscript\mixed\tonebank.mtb 
+
+This is the tone bank file that is being added to the bank, the arg is an
+8.3 filename with a path.
+
+	AssetEnd
+
+This is the end of an asset record, this tag has no argument.
+-------------------------------------------------------------------------------------------
+* Unknown file type
+
+Files of any type can be packed into a katbank, these assets have
+8 user arguments that can be retrieved via the bank API. The argument
+tags are signed 32 bit values:
+
+	UnknownFileType			e:\code\mkscript\mixed\Unknown.unk 
+	Parameter0				0
+	Parameter1				0
+	Parameter2				0
+	Parameter3				0
+	Parameter4				0
+	Parameter5				0
+	Parameter6				0
+	Parameter7				0
+	AssetEnd
+------------------------------------------------------------------------------- 
+End of MkScript readme.
+------------------------------------------------------------------------------- 

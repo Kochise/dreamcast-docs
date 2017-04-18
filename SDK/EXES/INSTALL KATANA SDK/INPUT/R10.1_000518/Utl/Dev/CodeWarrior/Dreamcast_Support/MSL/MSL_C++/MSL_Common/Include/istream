@@ -1,0 +1,1411 @@
+/*  Metrowerks Standard Library  */
+
+/*  $Date: 1999/01/23 00:25:40 $ 
+ *  $Revision: 1.6 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Portions Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/**
+ **  istream
+ **/
+
+#ifndef _ISTREAM
+#define _ISTREAM
+
+#include <mslconfig>
+#include <iosfwd>
+#include <limits>
+#include <algorithm>
+#include <string>
+#include <ios>
+#include <ostream>
+#include <mutex.h>
+
+#ifndef RC_INVOKED
+
+#pragma options align=native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#ifndef _MSL_NO_CPP_NAMESPACE
+	namespace std {
+#endif
+
+template <class charT, class traits>
+basic_istream<charT,traits>&
+ws(basic_istream<charT,traits>& is);
+
+template <class charT, class traits>
+class basic_istream
+	: virtual public basic_ios<charT, traits>
+{
+public:
+	//  Types (inherited from  basic_ios  (lib.ios)):
+	typedef charT                     char_type;
+	typedef typename traits::int_type int_type;
+	typedef typename traits::pos_type pos_type;
+	typedef typename traits::off_type off_type;
+	typedef traits                    traits_type;
+
+	//  lib.istream.cons Constructor/destructor:
+	basic_istream();  // Non-standard
+	explicit basic_istream(basic_streambuf<charT, traits>* sb);
+	// virtual ~basic_istream();  // Compiler generated destructor used.
+
+	//  lib.istream::sentry Prefix/suffix:
+	class sentry
+	{
+	public:
+		explicit sentry(basic_istream<charT,traits>& is, bool noskipws = false)
+			: ok_(false)
+			  #ifdef _MSL_MULTITHREAD
+				  , mutex_(is.mutex())
+			  #endif
+		{
+			#ifdef _MSL_MULTITHREAD
+				mutex_.acquire();
+			#endif
+			#ifndef _MSL_NO_EXCEPTIONS 
+			try
+			{
+			#endif
+				if (noskipws)
+					is.gcount_ = 0;
+				if (is.good())
+				{
+					if (is.tie() != 0)
+						is.tie()->flush();
+					if (!noskipws && is.flags() & ios_base::skipws)
+					{
+						typedef ctype<charT> ctype_type;
+						const ctype_type& ct = _USE_FACET(ctype_type, is.getloc());
+						int_type c;
+						for (c = is.rdbuf()->sgetc();
+							ct.is(ct.space, traits::to_char_type(c));
+							c = is.rdbuf()->snextc())
+						{}
+						if (traits::eq_int_type(c, traits::eof()))
+							is.setstate(eofbit | failbit);
+					}
+					if (is.good())
+						ok_ = true;
+					else
+						is.setstate(failbit);
+				}
+				else
+					is.setstate(failbit);
+			#ifndef _MSL_NO_EXCEPTIONS 
+			}
+			catch (...)
+			{
+				if (!(is.rdstate() & failbit))
+					is.state |= badbit;
+				if (is.exceptions() & is.rdstate())
+				{
+					#ifdef _MSL_MULTITHREAD
+						mutex_.release();
+					#endif
+					throw;
+				}
+			}
+			#endif
+		}
+		~sentry()
+		{
+			#ifdef _MSL_MULTITHREAD
+				mutex_.release();
+			#endif
+		}
+		operator bool() const {return bool(ok_);}
+	private:
+		bool ok_;
+		#ifdef _MSL_MULTITHREAD
+			mutex& mutex_;
+		#endif
+
+		sentry(const sentry&);            //   not defined
+		sentry& operator=(const sentry&); //   not defined
+	};
+	friend class sentry;
+
+	//  lib.istream.formatted Formatted input:
+	basic_istream& operator>> (basic_istream& (*pf)(basic_istream&));
+	basic_istream& operator>> (basic_ios<charT, traits>& (*pf)(basic_ios<charT, traits>&));
+	basic_istream& operator>> (ios_base& (*pf)(ios_base&));
+
+	#ifndef _MSL_NO_BOOL
+		basic_istream& operator>>(bool& n);
+	#endif
+	basic_istream& operator>> (short& n);
+	basic_istream& operator>> (unsigned short& n);
+	basic_istream& operator>> (int& n);
+	basic_istream& operator>> (unsigned int& n);
+	basic_istream& operator>> (long& n);
+	basic_istream& operator>> (unsigned long& n);
+	#ifdef __MSL_LONGLONG_SUPPORT__
+		basic_istream& operator>> (long long& n);
+		basic_istream& operator>> (unsigned long long& n);
+	#endif
+	#ifndef _No_Floating_Point
+		basic_istream& operator>> (float& f);
+		basic_istream& operator>> (double& f);
+		basic_istream& operator>> (long double& f);
+	#endif
+
+	basic_istream& operator>> (void*& p);
+	basic_istream& operator>> (basic_streambuf<char_type, traits>* sb);
+
+	//  lib.istream.unformatted Unformatted input:
+	streamsize gcount() const;
+	int_type get();
+	basic_istream& get(char_type& c);
+	basic_istream& get(char_type* s, streamsize n);
+	basic_istream& get(char_type* s, streamsize n, char_type delim);
+	basic_istream& get(basic_streambuf<char_type, traits>& sb);
+	basic_istream& get(basic_streambuf<char_type, traits>& sb, char_type delim);
+
+	basic_istream& getline(char_type* s, streamsize n);
+	basic_istream& getline(char_type* s, streamsize n, char_type delim);
+
+	basic_istream& ignore(streamsize n = 1, int_type delim = traits::eof());
+	int_type       peek();
+	basic_istream& read(char_type* s, streamsize n);
+	streamsize     readsome(char_type* s, streamsize n);
+
+	basic_istream& putback(char_type c);
+	basic_istream& unget();
+	int sync();
+
+	pos_type tellg();
+	basic_istream& seekg(pos_type pos);
+	basic_istream& seekg(off_type off, ios_base::seekdir dir);
+private:
+	streamsize gcount_;
+
+	friend basic_istream& operator>> <charT, traits>(basic_istream& in, charT& c);
+	friend basic_istream& operator>> <charT, traits>(basic_istream& in, charT* s);
+	friend basic_istream& ws<charT, traits>(basic_istream& is);
+};
+
+//  lib.istream::extractors character extraction templates:
+template<class charT, class traits>
+basic_istream<charT,traits>&
+operator>> (basic_istream<charT,traits>& in, charT& c);
+
+template<class traits>
+basic_istream<char,traits>&
+operator>> (basic_istream<char,traits>& in, unsigned char& c);
+
+template<class traits>
+basic_istream<char,traits>&
+operator>> (basic_istream<char,traits>& in, signed char& c);
+
+template<class charT, class traits>
+basic_istream<charT,traits>&
+operator>> (basic_istream<charT,traits>& in, charT* s);
+
+template<class traits>
+basic_istream<char,traits>&
+operator>> (basic_istream<char,traits>& in, unsigned char* s);
+
+template<class traits>
+basic_istream<char,traits>&
+operator>> (basic_istream<char,traits>& in, signed char* s);
+
+template <class charT, class traits>
+class basic_iostream
+	: public basic_istream<charT,traits>,
+	  public basic_ostream<charT,traits>
+{
+public:
+	//  constructor/destructor
+	explicit basic_iostream(basic_streambuf<charT,traits>* sb);
+	// virtual ~basic_iostream();  // Compiler generated destructor used.
+};
+
+// basic_istream Implementation
+
+template <class charT, class traits>
+inline
+basic_istream<charT, traits>::basic_istream()
+{
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>::basic_istream(basic_streambuf<charT, traits>* sb)
+	: gcount_(0)
+{
+	init(sb);
+}
+
+template <class charT, class traits>
+inline
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::operator>> (basic_istream& (*pf)(basic_istream&))
+{
+	return pf(*this);
+}
+
+template <class charT, class traits>
+inline
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::operator>> (basic_ios<charT, traits>& (*pf)(basic_ios<charT, traits>&))
+{
+	pf(*this);
+	return *this;
+}
+
+template <class charT, class traits>
+inline
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::operator>> (ios_base& (*pf)(ios_base&))
+{
+	pf(*this);
+	return *this;
+}
+
+#ifndef _MSL_NO_BOOL
+
+	template <class charT, class traits>
+	basic_istream<charT, traits>&
+	basic_istream<charT, traits>::operator>>(bool& n)
+	{
+		sentry ok(*this);
+		if (ok)
+		{
+			iostate err = 0;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				typedef num_get<charT, istreambuf_iterator<charT, traits> > numget;
+				_USE_FACET(numget, getloc()).get(*this, 0, *this, err, n);
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			setstate(err);
+		}
+		return *this;
+	}
+
+#endif // _MSL_NO_BOOL
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::operator>>(short& n)
+{
+	sentry ok(*this);
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			typedef num_get<charT, istreambuf_iterator<charT, traits> > numget;
+			long tmp;
+			_USE_FACET(numget, getloc()).get(*this, 0, *this, err, tmp);
+			if (!(err & failbit))
+			{
+				short tmp2 = static_cast<short>(tmp);
+				if (tmp2 == tmp)
+					n = tmp2;
+				else
+					err |= failbit;
+			}
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::operator>>(unsigned short& n)
+{
+	sentry ok(*this);
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			typedef num_get<charT, istreambuf_iterator<charT, traits> > numget;
+			_USE_FACET(numget, getloc()).get(*this, 0, *this, err, n);
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::operator>>(int& n)
+{
+	sentry ok(*this);
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			typedef num_get<charT, istreambuf_iterator<charT, traits> > numget;
+			long tmp;
+			_USE_FACET(numget, getloc()).get(*this, 0, *this, err, tmp);
+			if (!(err & failbit))
+			{
+				int tmp2 = static_cast<int>(tmp);
+				if (tmp2 == tmp)
+					n = tmp2;
+				else
+					err |= failbit;
+			}
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::operator>>(unsigned int& n)
+{
+	sentry ok(*this);
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			typedef num_get<charT, istreambuf_iterator<charT, traits> > numget;
+			_USE_FACET(numget, getloc()).get(*this, 0, *this, err, n);
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::operator>>(long& n)
+{
+	sentry ok(*this);
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			typedef num_get<charT, istreambuf_iterator<charT, traits> > numget;
+			_USE_FACET(numget, getloc()).get(*this, 0, *this, err, n);
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::operator>>(unsigned long& n)
+{
+	sentry ok(*this);
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			typedef num_get<charT, istreambuf_iterator<charT, traits> > numget;
+			_USE_FACET(numget, getloc()).get(*this, 0, *this, err, n);
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+	}
+	return *this;
+}
+
+#ifdef __MSL_LONGLONG_SUPPORT__
+
+	template <class charT, class traits>
+	basic_istream<charT, traits>&
+	basic_istream<charT, traits>::operator>>(long long& n)
+	{
+		sentry ok(*this);
+		if (ok)
+		{
+			iostate err = 0;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				typedef num_get<charT, istreambuf_iterator<charT, traits> > numget;
+				_USE_FACET(numget, getloc()).get(*this, 0, *this, err, n);
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			setstate(err);
+		}
+		return *this;
+	}
+
+	template <class charT, class traits>
+	basic_istream<charT, traits>&
+	basic_istream<charT, traits>::operator>>(unsigned long long& n)
+	{
+		sentry ok(*this);
+		if (ok)
+		{
+			iostate err = 0;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				typedef num_get<charT, istreambuf_iterator<charT, traits> > numget;
+				_USE_FACET(numget, getloc()).get(*this, 0, *this, err, n);
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			setstate(err);
+		}
+		return *this;
+	}
+
+#endif // __MSL_LONGLONG_SUPPORT__
+
+#ifndef _No_Floating_Point
+
+	template <class charT, class traits>
+	basic_istream<charT, traits>&
+	basic_istream<charT, traits>::operator>>(float& f)
+	{
+		sentry ok(*this);
+		if (ok)
+		{
+			iostate err = 0;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				typedef num_get<charT, istreambuf_iterator<charT, traits> > numget;
+				_USE_FACET(numget, getloc()).get(*this, 0, *this, err, f);
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			setstate(err);
+		}
+		return *this;
+	}
+
+	template <class charT, class traits>
+	basic_istream<charT, traits>&
+	basic_istream<charT, traits>::operator>>(double& f)
+	{
+		sentry ok(*this);
+		if (ok)
+		{
+			iostate err = 0;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				typedef num_get<charT, istreambuf_iterator<charT, traits> > numget;
+				_USE_FACET(numget, getloc()).get(*this, 0, *this, err, f);
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			setstate(err);
+		}
+		return *this;
+	}
+
+	template <class charT, class traits>
+	basic_istream<charT, traits>&
+	basic_istream<charT, traits>::operator>>(long double& f)
+	{
+		sentry ok(*this);
+		if (ok)
+		{
+			iostate err = 0;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				typedef num_get<charT, istreambuf_iterator<charT, traits> > numget;
+				_USE_FACET(numget, getloc()).get(*this, 0, *this, err, f);
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				state |= badbit;
+				if (exceptions() & badbit)
+					throw;
+			}
+			#endif
+			setstate(err);
+		}
+		return *this;
+	}
+
+#endif // _No_Floating_Point
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::operator>>(void*& p)
+{
+	sentry ok(*this);
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			typedef num_get<charT, istreambuf_iterator<charT, traits> > numget;
+			_USE_FACET(numget, getloc()).get(*this, 0, *this, err, p);
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::operator>> (basic_streambuf<char_type, traits>* sb)
+{
+	iostate err = 0;
+	bool didnt_insert = true;
+	sentry ok(*this);
+	if (ok && sb != 0)
+	{
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			int_type c = rdbuf()->sgetc();
+			while (true)
+			{
+				if (traits::eq_int_type(c, traits::eof()))
+				{
+					err |= eofbit;
+					break;
+				}
+				if (traits::eq_int_type(sb->sputc(traits::to_char_type(c)),
+				                        traits::eof()))
+					break;
+				didnt_insert = false;
+				c = rdbuf()->snextc();
+			}
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+	}
+	if (didnt_insert)
+		err |= failbit;
+	setstate(err);
+	return *this;
+}
+
+template <class charT, class traits>
+inline
+streamsize
+basic_istream<charT, traits>::gcount() const
+{
+	return gcount_;
+}
+
+template <class charT, class traits>
+typename basic_istream<charT, traits>::int_type
+basic_istream<charT, traits>::get()
+{
+	int_type c = traits::eof();
+	sentry ok(*this, true);
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			c = rdbuf()->sbumpc();
+			if (!traits::eq_int_type(c, traits::eof()))
+				gcount_ = 1;
+			else
+				err = eofbit | failbit;
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+	}
+	return c;
+}
+
+template <class charT, class traits>
+inline
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::get(char_type& c)
+{
+	int_type ci = get();
+	if (!traits::eq_int_type(ci, traits::eof()))
+		c = traits::to_char_type(ci);
+	return *this;
+}
+
+template <class charT, class traits>
+inline
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::get(char_type* s, streamsize n)
+{
+	return get(s, n, widen('\n'));
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::get(char_type* s, streamsize n, char_type delim)
+{
+	sentry ok(*this, true);
+	if (s == 0 || n <= 0)
+	{
+		setstate(failbit);
+		return *this;
+	}
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			--n;
+			while (n > 0)
+			{
+				int_type ci = rdbuf()->sgetc();
+				if (traits::eq_int_type(ci, traits::eof()))
+				{
+					err |= eofbit;
+					break;
+				}
+				char_type c = traits::to_char_type(ci);
+				if (traits::eq(c, delim))
+					break;
+				*s++ = c;
+				rdbuf()->sbumpc();
+				++gcount_;
+				--n;
+			}
+			if (gcount_ == 0)
+				err |= failbit;
+			*s = charT();
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+inline
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::get(basic_streambuf<char_type, traits>& sb)
+{
+	return get(sb, widen('\n'));
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::get(basic_streambuf<char_type, traits>& sb, char_type delim)
+{
+	sentry ok(*this, true);
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			while (true)
+			{
+				int_type ci = rdbuf()->sgetc();
+				if (traits::eq_int_type(ci, traits::eof()))
+				{
+					err |= eofbit;
+					break;
+				}
+				char_type c = traits::to_char_type(ci);
+				if (traits::eq(c, delim))
+					break;
+				if (traits::eq_int_type(sb.sputc(c), traits::eof()))
+					break;
+				rdbuf()->sbumpc();
+				++gcount_;
+			}
+			if (gcount_ == 0)
+				err |= failbit;
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+		}
+		#endif
+		setstate(err);
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+inline
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::getline(char_type* s, streamsize n)
+{
+	return getline(s, n, widen('\n'));
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::getline(char_type* s, streamsize n, char_type delim)
+{
+	sentry ok(*this, true);
+	if (s == 0 || n <= 0)
+	{
+		setstate(failbit);
+		return *this;
+	}
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			while (true)
+			{
+				int_type ci = rdbuf()->sgetc();
+				if (traits::eq_int_type(ci, traits::eof()))
+				{
+					err |= eofbit;
+					break;
+				}
+				char_type c = traits::to_char_type(ci);
+				if (traits::eq(c, delim))
+				{
+					rdbuf()->sbumpc();
+					++gcount_;
+					break;
+				}
+				if (n == 1)
+				{
+					err |= failbit;
+					break;
+				}
+				rdbuf()->sbumpc();
+				++gcount_;
+				*s++ = c;
+				--n;
+			}
+			if (gcount_ == 0)
+				err |= failbit;
+			*s = charT();
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::ignore(streamsize n, int_type delim)
+{
+	sentry ok(*this, true);
+	if (n <= 0)
+		return *this;
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			while (n > 0)
+			{
+				int_type ci = rdbuf()->sbumpc();
+				if (traits::eq_int_type(ci, traits::eof()))
+				{
+					err |= eofbit;
+					break;
+				}
+				++gcount_;
+				if (traits::eq_int_type(ci, delim))
+					break;
+				--n;
+			}
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+inline
+typename basic_istream<charT, traits>::int_type
+basic_istream<charT, traits>::peek()
+{
+	if (good())
+		return rdbuf()->sgetc();
+	return traits::eof();
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::read(char_type* s, streamsize n)
+{
+	sentry ok(*this, true);
+	if (s == 0 || n <= 0)
+	{
+		setstate(failbit);
+		return *this;
+	}
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			while (n > 0)
+			{
+				int_type ci = rdbuf()->sbumpc();
+				if (traits::eq_int_type(ci, traits::eof()))
+				{
+					err |= eofbit | failbit;
+					break;
+				}
+				++gcount_;
+				*s++ = traits::to_char_type(ci);
+				--n;
+			}
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+streamsize
+basic_istream<charT, traits>::readsome(char_type* s, streamsize n)
+{
+	streamsize t = rdbuf()->in_avail();
+	switch (t)
+	{
+	case -1:
+		gcount_ = 0;
+		setstate(eofbit);
+		break;
+	case 0:
+		gcount_ = 0;
+		break;
+	default:
+		read(s, min(n, t));
+		break;
+	}
+	return gcount_;
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::putback(char_type c)
+{
+	sentry ok(*this, true);
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			if (traits::eq_int_type(rdbuf()->sputbackc(c), traits::eof()))
+				err = badbit;
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::unget()
+{
+	sentry ok(*this, true);
+	if (ok)
+	{
+		iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			if (traits::eq_int_type(rdbuf()->sungetc(), traits::eof()))
+				err = badbit;
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+int
+basic_istream<charT, traits>::sync()
+{
+	sentry ok(*this, true);
+	if (rdbuf() != 0)
+	{
+		iostate err = 0;
+		int result = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			if (rdbuf()->pubsync() == -1)
+			{
+				err = badbit;
+				result = -1;
+			}
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+		setstate(err);
+		return result;
+	}
+	return -1;
+}
+
+template <class charT, class traits>
+typename basic_istream<charT, traits>::pos_type
+basic_istream<charT, traits>::tellg()
+{
+	sentry ok(*this, true);
+	if (!fail())
+	{
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			return rdbuf()->pubseekoff(0, ios_base::cur, ios_base::in);
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+	}
+	return pos_type(-1);
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::seekg(pos_type pos)
+{
+	sentry ok(*this, true);
+	if (!fail())
+	{
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			rdbuf()->pubseekpos(pos, ios_base::in);
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+	}
+	return *this;
+}
+
+template <class charT, class traits>
+basic_istream<charT, traits>&
+basic_istream<charT, traits>::seekg(off_type off, ios_base::seekdir dir)
+{
+	sentry ok(*this, true);
+	if (!fail())
+	{
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			rdbuf()->pubseekoff(off, dir, ios_base::in);
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			state |= badbit;
+			if (exceptions() & badbit)
+				throw;
+		}
+		#endif
+	}
+	return *this;
+}
+
+template<class charT, class traits>
+basic_istream<charT,traits>&
+operator>>(basic_istream<charT,traits>& in, charT& c)
+{
+	typename basic_istream<charT,traits>::sentry ok(in);
+	if (ok)
+	{
+		ios_base::iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			typename basic_istream<charT,traits>::int_type ci = in.rdbuf()->sbumpc();
+			if (!traits::eq_int_type(ci, traits::eof()))
+				c = traits::to_char_type(ci);
+			else
+				err = ios_base::eofbit | ios_base::failbit;
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			in.state |= ios_base::badbit;
+			if (in.exceptions() & ios_base::badbit)
+				throw;
+		}
+		#endif
+		in.setstate(err);
+	}
+	return in;
+}
+
+template<class traits>
+basic_istream<char,traits>&
+operator>>(basic_istream<char,traits>& in, unsigned char& c)
+{
+	char tmp;
+	in >> tmp;
+	if (!in.fail())
+		c = static_cast<unsigned char>(tmp);
+	return in;
+}
+
+template<class traits>
+basic_istream<char,traits>&
+operator>>(basic_istream<char,traits>& in, signed char& c)
+{
+	char tmp;
+	in >> tmp;
+	if (!in.fail())
+		c = static_cast<signed char>(tmp);
+	return in;
+}
+
+template<class charT, class traits>
+basic_istream<charT,traits>&
+operator>>(basic_istream<charT,traits>& in, charT* s)
+{
+	typename basic_istream<charT,traits>::sentry ok(in);
+	if (s == 0)
+	{
+		in.setstate(ios_base::failbit);
+		return in;
+	}
+	if (ok)
+	{
+		ios_base::iostate err = 0;
+		size_t n = (size_t)in.width();
+		if (n == 0)
+			n = numeric_limits<size_t>::max();
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			typedef ctype<charT> ctype_type;
+			const ctype_type& ct = _USE_FACET(ctype_type, in.getloc());
+			--n;
+			bool didnt_read_one = true;
+			while (n > 0)
+			{
+				typename basic_istream<charT,traits>::int_type ci = in.rdbuf()->sgetc();
+				if (traits::eq_int_type(ci, traits::eof()))
+				{
+					err |= ios_base::eofbit;
+					break;
+				}
+				typename basic_istream<charT,traits>::char_type c = traits::to_char_type(ci);
+				if (ct.is(ct.space, c) || traits::eq(c, charT()))
+					break;
+				in.rdbuf()->sbumpc();
+				didnt_read_one = false;
+				--n;
+				*s++ = c;
+			}
+			*s = charT();
+			if (didnt_read_one)
+				err |= ios_base::failbit;
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			in.state |= ios_base::badbit;
+			if (in.exceptions() & ios_base::badbit)
+				throw;
+		}
+		#endif
+		in.width(0);
+		in.setstate(err);
+	}
+	return in;
+}
+
+template<class traits>
+inline
+basic_istream<char,traits>&
+operator>>(basic_istream<char,traits>& in, unsigned char* s)
+{
+	in >> reinterpret_cast<char*>(s);
+	return in;
+}
+
+template<class traits>
+inline
+basic_istream<char,traits>&
+operator>>(basic_istream<char,traits>& in, signed char* s)
+{
+	in >> reinterpret_cast<char*>(s);
+	return in;
+}
+
+template <class charT, class traits>
+basic_istream<charT,traits>&
+ws(basic_istream<charT,traits>& is)
+{
+	typename basic_istream<charT,traits>::sentry ok(is, true);
+	if (ok)
+	{
+		ios_base::iostate err = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			typedef ctype<charT> ctype_type;
+			const ctype_type& ct = _USE_FACET(ctype_type, is.getloc());
+			typename basic_istream<charT,traits>::int_type c;
+			for (c = is.rdbuf()->sgetc();
+				ct.is(ct.space, traits::to_char_type(c));
+				c = is.rdbuf()->snextc())
+			{}
+			if (traits::eq_int_type(c, traits::eof()))
+				err = ios_base::eofbit;
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			is.state |= ios_base::badbit;
+			if (is.exceptions() & ios_base::badbit)
+				throw;
+		}
+		#endif
+		is.setstate(err);
+	}
+	return is;
+}
+
+// basic_iostream Implementation
+
+template <class charT, class traits>
+basic_iostream<charT, traits>::basic_iostream(basic_streambuf<charT,traits>* sb)
+	: basic_istream<charT, traits>(sb)
+{
+}
+
+#ifndef _MSL_NO_CPP_NAMESPACE
+	} // namespace std 
+#endif
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
+#pragma options align=reset
+
+#endif // RC_INVOKED
+
+#endif // _ISTREAM
+
+// hh 971220 fixed MOD_INCLUDE and MOD_C_INCLUDE
+// hh 971222 added wrapper for alignment
+// hh 971222 Changed filename from istream.h to istream
+// hh 971222 Made include guards standard
+// hh 971229 Moved sentry member definitions into class.  Compiler doesn't support non-inlined
+//           template nested classes.
+// hh 971229 changed ? : to if because compiler doesn't support complex expression in ? :
+// hh 971230 added RC_INVOKED wrapper
+// hh 980107 added long long support
+// hh 980129 moved iostream into here per standard, added <ostream>
+// hh 980408 wrapped up in #ifndef _No_Floating_Point
+// hh 981220 Added class modifier to several friend declarations
+// hh 981220 Added typename to appropriate return types
+// hh 981226 Rewrote.

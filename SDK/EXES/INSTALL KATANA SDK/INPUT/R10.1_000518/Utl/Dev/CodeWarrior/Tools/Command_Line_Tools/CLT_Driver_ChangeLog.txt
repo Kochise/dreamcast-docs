@@ -1,0 +1,633 @@
+===========================================================================
+Command-Line Driver ChangeLog
+===========================================================================
+
+Date:    February 3, 2000
+Authors: Ed Swartz, Stephen Chong
+
+[<operating system>]    affects all tools hosted on <operating system>.  
+[<processor>]           affects options / plugins targeting <processor>.
+[std]                   affects the "standard" generic options (most tools).  
+[pars]                  affects the command-line parser (all tools).
+[drvr]                  affects the command-line driver (all tools).
+
+===========================================================================
+Changes in This Version
+===========================================================================
+
+2000/01/12:
+
+[drvr/mpw] More fully enabled use of MultiFinder memory.  This mainly 
+affects linkers, which load a lot of object code into memory.  I apologize
+for overlooking this vitally important issue when porting the driver.
+
+2000/01/11:
+
+[drvr] Linkers now honor the absence of plugin flag
+"kAllowDuplicateFileNames" by refusing to add the same file to the
+project twice.  No warning is generated unless the verbosity level is
+2 or above ("-v -v").  Most MW linkers have been able to handle
+including the same library twice with no ill effects, but this creates
+extra work.  This case arises most often with Makefiles ported from
+Unix, which might say "-lLib1 -lLib2 -lLib1" to work around
+traditional Unix linker behavior, which does not allow Lib1 and Lib2
+to mutually reference each other.
+
+[drvr] Added spaces around the "Command line:" information when
+calling a linker from the compiler with verbosity enabled ("-v").  This
+should help declutter the text a bit.
+
+1999/12/21:
+
+[drvr] When the compiler cannot find the built-in linker, it will properly
+note this fact when verbose (-v) is specified.  (The compiler can guess
+the linker's name based on its own name.)
+
+1999/12/09:
+
+[drvr] In access path dump (with "-v|verbose" option), added indicator
+"[d]" meaning that paths are added by default (either from environment
+variables or target requirements).
+
+1999/12/07:
+
+[drvr] Changed output for "-v|verbose" option with respect to active
+access paths and link order.  Recursive paths (followed by "[r]" in
+the output) will not be expanded unless "-v -v" is passed.  In the
+link order, files are displayed relative to the current working
+directory instead of the form they took on the command line (such as
+seen in "-lobjectfile.o" which used to display "objectfile.o" without
+giving the path it was found in).
+
+1999/11/19:
+
+[std]	Clarified documentation for "-ansi" option.  This is the same as 
+specifying "-enum xxx", "-stdkeywords xxx", and "-strict xxx".  
+
+1999/11/18:
+
+[drvr/std]	Added an option to control pathname canonicalization, which
+modifies the change made on 1999/11/10 (which fixed a bug reported earlier).
+"Canonicalization" means converting volume and path separators from the
+style of one OS to that of the host OS.  
+
+The new option "-convertpaths" controls canonicalization of pathnames in 
+#include files.  It is similar to the MacOS IDE's "Interpret DOS/Unix paths" 
+checkbox.
+
+When turned off, filenames are interpreted literally, and must apply to the
+filesystem standards of the host OS (so "I/O Test.h" can be a filename on
+MacOS, not a file found in directory "I").  When turned on, an attempt is 
+made to guess whether a pathname is in the format of a foreign operating 
+system, and is converted before searching (so "sys/stat.h" can be used on 
+MacOS to find file "stat.h" in directory "sys").
+
+Note that this option only affects canonicalization in #includes (and
+#pragma precompile_header).  Filenames, pathnames entered on the command
+line, and paths in environment variables are not canonicalized.
+
+Also, note that this option has little effect on Win32, since the path
+separators for Mac and Un*x (':' and '/') are already illegal in filenames.
+
+This option is on by default for cross compilers targeting MacOS, Windows,
+or Un*x, and off by default for native or embedded compilers.
+
+1999/11/10:
+
+[pars/beos]	The -l<root> option will now search the current directory implicitly
+before looking in access paths.  
+
+[pars]  When using -l<root>, if a library is not found, the error message will 
+indicate what it was looking for:
+
+	### mwld Usage Error:
+	#   Library 'libROOT.{lib|a}' not found
+
+[pars]	Fixed error message reported when a "-o" option is used without any
+source files.  Instead of saying "only one output allowed", it says "output
+specified without source."
+
+[drvr]	Canonicalize filenames passed through Dropin API before doing 
+operations on them.  This allows more compatibility with sources adapted 
+from other OSes (i.e., using "sys/stat.h" on DOS or MacOS).
+
+[drvr]	Cleaned up file searching code.
+
+1999/11/08:
+
+[drvr/beos]	Use /tmp on BeOS for temporary files.
+
+[drvr]	Only emit filename part of executable in "-version" help.  This is
+because some OSes will always send the full pathname in argv[0], making for 
+an ugly display.
+
+1999/09/17:
+
+[drvr]	In the "-msgstyle gcc" style, information messages are now 
+preceded by the program name.  Now, all messages typically generated by
+a compiler will have the same syntax, to assist message parsers dependent
+upon the gcc style.  Status messages (such as generated with "-verbose"
+still do not have these prefixes).
+
+1999/08/16:
+
+[drvr/pars]	Changed format for version string to drop subrelease and letter
+options (like 2.3.1fc2), now substituting a build number instead, as
+applicable (2.3.1 build 87).
+
+1999/08/11:
+
+[std]	Changed documentation for "-inline level=0" -- this is the same
+as "-inline on", not "-inline off".
+		
+1999/07/16:
+
+[pars]	Re-added message telling users how to get help when they enter
+"programname" by itself.  Also, "--help" is supported for compatibility 
+with GNU-style tools.
+
+1999/07/14:
+
+[drvr]	Shunted CWStatus messages to appear with "-v" and not with "-p".
+This means that function compiling progress messages will only appear with
+"-v" (if at all).
+
+[pars/win32]	Treat EOF character (0x1a) in response files (@file.rsp) 
+as end of input for compatibility with old DOS tools.
+
+[drvr/pars/win32]	Never fail if "-I"ncluding a nonexistent directory,
+but only generate a warning or an alert if the error is severe.  The
+warning can be masked with "-warn nocmdline".  A nonmaskable alert is 
+generated in extreme cases, such as if the path refers to a file, to a 
+missing network server, or has bad syntax.
+
+1999/07/12:
+
+[std]	Changed form of -nodefaults, -nostdinc, -nostdlib, and
+-nostdsects options to allow positive forms (-defaults, -stdlib,
+-stdsects).  Clarified that "-dis" implies "-nostdlib".
+
+[std/non-Mac] Disabled -multibyte[aware] option since it is not
+available in non-MPW command-line tools.  Command-line tools do not support
+multibyte source except under MPW.
+
+1999/07/07:
+
+[std]	Allow compiler to support "-sym full" when linker doesn't.  Change
+message to say "store full paths to source files".
+
+[drvr]	Driver can cache multiple precompiled headers.  Dependencies on
+precompiled headers are emitted with make options.  Total include file
+cache is increased to eight megabytes from four.
+
+[drvr]	When creating Macintosh files on non-Mac hosts, system area of
+resource fork file is zeroed.
+
+[drvr]	Added ability to display CW plugin callbacks when verbose level
+is at least four.  Common callbacks are enabled at level five.
+
+[drvr]	Allow non-code-generating compilers to be used.
+
+1999/07/01:
+
+[std]	Overlay options:  clarify that overlays are only needed in lieu of 
+linker command files.
+
+[drvr]	Reorganized some filesystem code to avoid possible bus errors
+on Solaris.  This code affects reading and writing of timestamps,
+file sizes, and file types.
+
+1999/06/29:
+
+[drvr]	Allow empty strings to appear as filenames, include paths, or
+prefix files, and silently ignore them.
+
+1999/06/28:
+
+[drvr]	If the "#pragma precompile_target filename" feature is used, 
+'filename' is intepreted relative to the source directory of the header 
+file.  This corresponds to the IDE's algorithm.  When using the 
+"-precompile filename" option, however, the filename is interpreted 
+relative to the current working directory, as usual. 
+
+1999/06/17:
+
+[std]	Documented that "-g" is the same as "-sym on" in tools where
+it is not the same as "-sym full".  (Before, did not say anything.)
+
+[drvr]	"-msgstyle gcc" changed by removing the name of the program in
+status and info messages.
+
+1999/06/02:
+
+[drvr]	Fix up messages that are passed with trailing newlines and
+remove them from output.  This tightens up messages passed from sloppy
+linkers.
+
+1999/05/21:
+
+[pars]	Change the error to a warning when using "-I<bad directory>".
+
+1999/04/20:
+
+[std]	Change "-inline all" so that it enables autoinlining, as its
+name implies.  This breaks compatibility with the original MPW option,
+which had "-inline on|all|full" doing the exact same thing, which was
+to honor the "inline" keyword.  Adding autoinlining allows other
+functions to be inlined.  (As "-inline on,auto" did.)
+
+[std]	Section mappings options:  added "-nostdsect" which disables
+default section mappings for CODE and DATA.  Also, specifying a
+section size of 0 means the linker decides the size.
+
+1999/04/13:
+
+[pars]	Options may now specify that an argument is intended to 
+represent text file output.  The parser verifies that the argument
+is a legal file path and complains if the file exists and is not a
+text file.  This makes it safer to use optional arguments with options
+like "-map [filename]", so that object files or libraries are not
+overwritten when the user forgets the argument is optional:
+
+	mwld -map file.obj -o file.exe
+	
+	### mwld Usage Warning:
+	#   Not using non-text file 'file.obj' as optional argument
+	#   while parsing option '-map'
+
+1999/04/05:
+
+[pars]	Updated option messages for ignored/deprecated/substituted/etc
+options so the name of the option is not repeated in the text of the
+message.  (It would say:  "Option 'foo' is ignored\nwhile parsing option
+'foo'".)
+
+[std]	Option "-lang c" now forces the compiler to accept the source
+as C instead of interpreting the extension by adding "#pragma cplusplus
+off".
+
+1999/03/05:
+
+[drvr]	Added disassemble-to-file (-S).  
+
+[drvr]	Store temporary files in directories pointed to by %TMPDIR%,
+%TEMP%, %TMP%, ({TempFolder} in MPW) etc., instead of the current 
+working directory.
+
+[pars]	Updated runtime to allow proper interpretation of quoted 
+arguments on the command line.  Quote marks group arguments together, 
+and are eaten up unless preceded with an escape character.  So the 
+option "-Dname=\"value\"" works as expected.  Response file parser
+updated to use this syntax too.
+
+===========================================================================
+New Features in This Version
+===========================================================================
+
+2000/02/03:
+
+[drvr/pars]	Added option "-keepobj[ects]" which will prevent the driver
+from deleting temporary object files after linking or disassembling.
+The object files will be written to the current directory ("-o xxx"
+applies to the output of the linker or disassembler in this case).
+
+1999/12/10:
+
+[drvr/pars] Implemented two options which modify #include searching to
+be more compatible with other command-line tools, "-gccincludes" and
+"-cwd include".  Please see "CLT_Usage_Notes.txt" under "New Features
+in this Version" for a complete description.
+
+1999/09/16:
+
+[drvr]	Updated to version 11 of the CW plugin API.  Most of the new 
+functions are not implemented (though no known tools use them anyway.)
+
+1999/08/30:
+
+[std]	Added option '-lr <path>' to the linker which complements -L<path>
+with a recursive search form (like '-ir' for '-I').
+
+[pars]	Better support for #pragma implemented options.
+
+[drvr]	Compilers or linkers may emit multiple text documents now.
+
+1999/08/16:
+
+[pars]	Added support for longer response file specifiers (currently is
+'@').  It is difficult to have an actual option like "-response-file=xxx"
+include a response file, due to the nature of the parser. 
+
+[drvr]	Added support for compilers that generate resources, and for the
+specification of resources on the command line.  Not tested.
+
+1999/07/12:
+
+[drvr]	Messages which are reported by importers now report the source
+as "Importer" instead of "Compiler".
+
+[drvr/BeOS]	  Break up long messages into several pieces.
+
+1999/07/07:
+
+[drvr]	Merge Pascal-specific changes.  
+
+1999/06/17:
+
+[drvr]	When an executable tool is used as a prelinker, it may now
+be used as a disassembler.  (Used for implementing "mwcc -S file.c"
+when the linker cannot disassemble.)
+
+[drvr]	Added support for gcc's "-H" (print out header names while
+compiling) and "-MG" assume missing files are generated.
+
+[drvr]	When doing "-MM" or "-MMD", changed to not store the system 
+paths in the first place, rather than filtering them out later.  This
+allows the driver to register arbitrary dependencies that are not 
+relative to an access path.
+
+[drvr]	Added support for plugin API callbacks CWGetSuggestedObjectFileSpec,
+CWStoreObjectData (with object spec), and CWGetStoredObjectFileSpec.
+These will fail if the tool is invoked to generate multiple outputs
+for a file and the user specified an output filename for the one that
+isn't the object file.  (Nothing uses these in current command-line
+tools yet.)
+
+1999/03/05:
+
+[drvr]	Added "--use-license-file <file>" pre-argument to provide a
+third way to find a flexLM license file (the other two are:  look in
+the executable directory and use the LM_LICENSE_FILE environment
+variable).
+
+1999/02/24:
+
+[drvr/pars] Implemented recursive include searching.  To use it, use 
+the option '-ir <path>' where <path> is the top level of a tree to 
+search.  Paths in parentheses under <path> will not be searched.
+
+Also, you may specify recursive paths in the environment variables
+MWCIncludes and MWLibraries, by placing a '+' before the path name.  By
+default, the paths are non-recursive, as before.
+
+Note:  recursive includes slow things down A LOT.  You have been warned.
+
+===========================================================================
+Bugs Fixed in This Version
+===========================================================================
+
+2000/02/16:
+
+[drvr] Modified the "-cwd include" option.  Under GCC, #include <xxxx> does
+not start from the including file.
+
+1999/11/18:
+
+[drvr]	Canonicalization fixes were backwards and didn't work on MacOS.
+
+[pars]	"-inline noauto" would turn off inlining altogether.
+
+1999/11/10:
+
+[pars]	"-verbose" and "-progress" options take effect immediately.
+
+[pars]	Do not execute mid-parsing and post-parsing actions when command
+line causes errors.  This avoids spurious messages about missing source
+when the parser aborts.
+
+[drvr/beos]  Do not send nonexistent (virtual) files as sources for 
+error messages.
+
+[drvr]	Fixed bug where invalid volume was not reported as an error.
+
+[drvr/beos]	Deal with volume references correctly.
+
+1999/11/07:
+
+[drvr]	Fixed pathname generated in messages when using 
+"#pragma fullpath_prepdump on".
+
+1999/09/17:
+
+[pars]	Fixed VC++ compatible option parsing by allowing "-" to be used
+as an option character in addition to "/".
+
+[pars]	Fixed obscure bug where CygWin32 tools would incorrectly quote
+filenames when generating command lines using the `...` syntax.  If the
+command inside `...` emitted DOS line endings (CR/LF), the CR would be
+quoted into the command line, and would cause the MW tool to fail to load
+the file.  Example:  mwcc -c `cmd /c echo file.c`
+
+[drvr/non-Mac]	Fixed some bugs related to handling of Mac resource forks on
+non-Mac hosts.
+
+1999/08/30:
+
+[pars/mac]	Fixed bug where file type and creator were parsed in the wrong
+byte order on a Mac host.
+
+1999/08/19:
+
+[drvr]  Fixed bug where target info was not reported to the compiler.
+
+[pars]	Fixed bug where a sticky option would suck up filenames following
+an argument intended to be empty, as in "-DMACRO=".  
+
+1999/08/18:
+
+[pars/win32]	Fixed bug where Win32 path names containing drive letters
+(D:\), which were masked to avoid interpreting the colon as an option 
+separator (for VC+-compatible options) were not unmasked, resulting in a 
+failure to find the correct file. 
+
+1999/08/16:
+
+[std/win32]	Fixed bug where "-stderr" option did not take effect until
+non-global options were parsed.  Errors could appear on stdout even with
+this option specified.
+
+[drvr]	Fixed bug where low memory might cause segfault when printing 
+long messages.
+
+[drvr]	Fixed bug where "-v" option, when used with a compiler that does
+not call a linker, would result in an assertion failure when retrieving
+target info.
+
+1999/07/16:
+
+[drvr]	Fix long-standing error that could occasionally cause crashes at
+the end of a compile (involving releasing licenses, due to incorrectly
+reinventing plugin contexts for each request).
+
+1999/07/12:
+
+[std]	Fixed bug where a compiler that supported "-sym fullpath" which
+was grouped with a linker that didn't support it would cause bad
+command lines when invoking the linker from the compiler using that
+option.  (Linker would get "-sym" as its version of the option.)
+
+[drvr/BeOS]	 Fixed a bug where an error reported from a precompiled
+header used as a prefix file would cause the compiler to report
+"### could not open main file ###".  (Caused by loading the "virtual"
+prefix file "(command-line defines)" at an unexpected time.)
+
+1999/07/07:
+
+[drvr]	Filename extension is correctly added when file has no extension
+to begin with.
+
+1999/06/28:
+
+[MacOS]	Driver issues error -120 (directory not found) when writing
+		precompiled headers to subdirectories.
+
+The OS layer was incorrectly creating a full path by taking a canonical
+directory name (ending in ':') and catenating a relative path (beginning
+with ':') without eliding the two colons into one.
+
+1999/06/17:
+
+[pars]	Turned off spurious error message "Nothing to do:  no source or 
+object files specified" when other errors caused the tool to abort 
+before reading the list of files.
+
+[pars]	Fixed bug where a subparsed option (like "-opt xxx,yyy") which
+generated warnings for unknown suboptions would report an error status
+to its caller nonetheless.  This caused command-line parsing to silently
+fail.
+
+[std]	Fixed "-inline" option so that one could use "-inline off,xxx".
+Before, was only turning on the basic inlining flag upon seeing "-inline"
+and not turning it on for other suboptions (so that "-inline off,on" had 
+no overall effect).
+
+[pars]	Fix optimizer option handler to treat "turning off" an 
+optimization level as setting it to zero.  (In some tools, "-opt off"
+was setting opt level 4!)
+
+[pars]	Fix oversight and allow tool glue code to add recursive paths.  
+(Was not used before, so this didn't affect anyone.)
+
+[drvr]	Fixed memory leak in "-msgstyle gcc".
+
+1999/06/04:		
+
+[drvr] [68K/PPC] File timestamps were not reported correctly.
+					
+The command-line driver told the compiler and linker that source files 
+and object files all had timestamps of 0x0, which is January 1, 1904.
+This caused the MW debugger to request for the location of every file, 
+due to the suspicious timestamps.  
+
+Fixed by supplying the timestamps as expected.  In 68K/PPC linkers,
+the object importer is able to tell the command-line driver about the
+source file's timestamp.  The original problem does not appear to 
+affect Win32 or embedded debuggers.
+
+[Win32]	An invalid directory reference sometimes triggered a "file not
+found" error instead of "directory not found."
+
+[drvr]	An error was not being reported when an object file could not
+be created in a valid directory (i.e., due to invalid permissions).
+
+[BeOS]	Merged changes from old driver used with 2.2.1 tools relating
+to BeIDE interaction.  (1) do not attempt to look up headers from
+the linker, in which case BeIDE silently fails, and (2) report 
+"messagetypeInfo" messages as warnings until the BeIDE supports them
+(it was reporting errors).
+
+[drvr]	Store temporary files before prelinking and delete them after
+postlinking, instead of doing these steps around the link stgge itself.
+This allows prelinkers and postlinkers to reference those files.
+
+1999/05/26:
+
+[drvr]	When emitting dependencies, do not put quotes around paths that
+contain spaces, but escape the spaces instead:  "spaced\ name"
+
+[drvr]	Fix bug seen in "-msgstyle gcc" where the long prefix would cause
+the lines to be wrapped to a tiny column of text.  If the prefix is too
+long, clip wrapping at 1/2 the screen width.
+
+1999/04/27:
+
+[std/pars]	Tune warning options so that "-w nocmdline" works with the
+parser as well.  Also, modify "-w off" so that other warnings could
+be specified afterwards (as in "-w off,pragmas").  Removed "-w quiet"
+and "-w none".
+
+1999/04/26:
+
+[std/pars]	Fix warning options, where "-w off" did absolutely nothing.
+
+1999/05/18:
+
+[drvr] [68K/PPC] Fix bug where use of an importer that reports an object 
+file's source filename caused that source filename to be passed to a 
+program the tool called. 
+
+1999/03/11:
+
+[drvr]	Fix broken wildcard support.
+
+[pars]	Fixed bug where use of a sticky option (like "-DSYMBOL") would
+cause the driver to ignore a source file following it during the first
+pass (the file was found in the second pass, which is what matters).
+The first pass needs to notice that files exist in order to add default
+access paths.  (This is all to avoid generating a warning when you do
+"mwcc -version" and do not have any environment variables defined.)
+
+1999/03/01:
+
+[drvr]	Fix bug where putting "-o filename" before the source file
+caused an internal error in CWParserSetFileOutputName [3].
+
+[== Historical command-line problems ==]
+
+[Since the command line driver has undergone a total overhaul, it is
+difficult to say which bugs were fixed and which simply don't apply
+anymore.]
+
+--	treatment of quotes in the command line has been fixed.  
+	Earlier x86 runtimes allowed quote marks to join arguments (such as 
+	"file name.c") but did not allow quotes to appear inside arguments 
+	(all of them were deleted!).
+
+	Now, escaping a quote with \" will put a literal quote mark (") in
+	the argument (such as in "mwcc -c file.c -DARG=\"string\"").  The
+	backslash is not treated specially otherwise.
+	
+--	compiler no longer fails with "out of memory" errors until all 
+	virtual memory has been exhausted.  This was due to a naive
+	memory manager in earlier releases.
+
+--	text output uses native line endings, and not '\r\r\n' as sometimes
+	seen in DOS.
+
+--	the disassembler is now available via the '-dis[assemble]' option.
+	Usually, the disassembler lives in the linker, but it can be
+	invoked from the compiler as well.
+
+===========================================================================
+Known Bugs in This Version
+===========================================================================
+
+===========================================================================
+Contacting Metrowerks
+===========================================================================
+
+Use the forms found in the Release Notes folder on the CD to submit:
+
+    Technical Support    cw_support@metrowerks.com
+    Report Bugs:         cw_bug@metrowerks.com
+    Suggestions:         cw_suggestion@metrowerks.com
+
+See the CodeWarrior_on_the_Nets document in the Release Notes folder for
+more contact information, including a list of Internet newsgroups,
+online services, and factory update sites.
+
+===========================================================================
+Ed Swartz
+Stephen Chong
+Metrowerks Corporation
+

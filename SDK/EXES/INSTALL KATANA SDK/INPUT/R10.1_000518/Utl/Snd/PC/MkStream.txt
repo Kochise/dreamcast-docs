@@ -1,0 +1,88 @@
+MkStream 1.80
+-------------------------------------------------------------------------------------------------
+MkStream is a utility to build stream files. 
+-------------------------------------------------------------------------------------------------
+
+A stream file can contain a number of streaming audio assets, they must be either 
+stereo or mono, at this point mixed mono and stereo streams are not supported.
+
+Streams currently must use the integral sample rates, i.e. 44100, 22050, 11025 etc as
+defined in ac.h
+
+A stream can have up to 16 tracks, a track can be either stereo or mono but they must
+all be one or the other.
+
+A track can have either 1 channel (mono) or two channels (stereo), each channel requires
+a play buffer in sound memory and will generate an increase in the size of the required 
+transfer buffer as well as increased transfer overhead at play time.
+
+If all the track files are not of the same length the shorter files will be padded out
+with silence to the size of the largest file.
+
+A stream file has a 2048 byte header. The first portion is parameters as defined in the 
+header amstrhdr.h. The remainder contains text specifications of the contents of the file
+and an optional abstract that is supplied via a text file to allow the placement of build
+or copyright info into the file.
+
+Open a stream file in your text editor and observe the header. It should tell you all
+that you will need to know about that file.
+-------------------------------------------------------------------------------------------------
+Usage: 
+
+MkStream inputFileSpec outputFileSpec [adpcm] [abstract abstractFileName] [halfPlayBufferSizeInSectors 2] [leadIn 2] [leadOut 2] [saveTemps]
+
+The input file should be a .wav format soundfile that is either 8 or 16 bit and 
+has a sample rate of 44100, 22050 or 11025 khz.
+
+The tool will build the file(s) into a .str file.
+
+If several files are given in the form *.wav these files will be built into a multi-track 
+stream file. 
+
+[adpcm]
+
+The adpcm arg will cause the tool to use Yamaha ADPCM 4:1 compression on the .str file. 
+
+[abstract abstractFileName]
+
+The abstract arg will include about the first 2000 bytes of a text file
+whose name follows the info arg into the header block. This can be used to put build date, 
+revision or copyright info into the header.
+
+When processing stereo sound files the file will be de-interleaved into two temp 
+files so it is necessary to have at least 2x the size of the input file in free 
+disk space. Further the processing computer must be equipped with memory to accomodate
+the size of the sound file for uncompressed output or 1.75x (approx) the size of the 
+soundfile for ADPCM output. If it is not the process will slow as Windows will start 
+paging to disk.
+
+[saveTemps]
+
+saveTemps will cause the temp files (raw PCM and ADPCM data) to be preserved at end run. 
+
+[halfPlayBufferSizeInSectors 2]
+
+halfPlayBufferSizeInSectors this has a default value of 1 so if it is not used a play buffer 
+of 4096 bytes is assumed, half of that being 1 sector or 2048 bytes. 
+
+Values of either 2 or 4 are recommended although 1 will work. Increasing this value 
+will allow more time for processing other tasks between refreshes of the play buffer.
+
+[leadIn 2] 
+
+LeadIn controls the length of the leadIn area, this is filled with silence, either 0x00 for normal
+16 bit sound or 0x80 for ADPCM compressed sound.
+
+This will default to a leadIn the size of the playBuffer.
+
+[leadOut 2]
+
+LeadOut controls the length of the leadOut area, this is filled with silence, either 0x00 for normal
+16 bit sound or 0x80 for ADPCM compressed sound.
+
+This will default to a leadOut the size of the playBuffer.
+
+-------------------------------------------------------------------------------------------------
+End MkStream readme
+-------------------------------------------------------------------------------------------------
+

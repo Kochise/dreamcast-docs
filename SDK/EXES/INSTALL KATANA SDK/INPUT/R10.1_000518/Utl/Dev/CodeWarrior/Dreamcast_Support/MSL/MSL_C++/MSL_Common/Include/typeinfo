@@ -1,0 +1,106 @@
+/*  Metrowerks Standard Library  */
+
+/*  $Date: 1999/01/23 00:25:42 $ 
+ *  $Revision: 1.6 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Portions Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/*
+ *	typeinfo
+ */
+ 
+#ifndef __typeinfo__
+#define __typeinfo__
+
+#include <mslconfig>
+#include <exception> 	//960828 bkoz so that __priv_throwbadcast defined in runtime
+#include <cstring>      // hh 980124 added
+
+#ifndef RC_INVOKED // hh 971230
+
+#pragma options align=native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#ifndef _MSL_NO_CPP_NAMESPACE      // hh 971206
+	namespace std {
+#endif
+
+#if __MOTO__
+#pragma define_type_info
+#endif
+
+#ifndef __GNUC__
+
+class type_info
+{
+		const char	*tname;
+		const void	*tbase;
+	
+	public:
+		// 960905 KO: This line creates a virtual table which throws off thecompiler generated
+		// RTTI code on x86.
+		#if ! __INTEL__          // hh 971209 changed to ! __INTEL__ for Be
+			virtual 	~type_info	() {};
+		#endif
+		bool operator== (const type_info& rhs) const {return bool(strcmp(tname, rhs.tname) == 0);}
+		bool operator!= (const type_info& rhs) const {return bool(strcmp(tname, rhs.tname) != 0);}
+		bool before (const type_info& rhs) const {return bool(strcmp(tname, rhs.tname) < 0);}
+		const char* name () const {return tname;}
+	
+	private:
+		type_info (const type_info&);
+		type_info& operator= (const type_info&);
+};
+
+#endif
+
+class bad_cast : public exception {
+public :
+	bad_cast() _MSL_THROW {}
+	bad_cast(const bad_cast&) _MSL_THROW {}
+	bad_cast& operator=(const bad_cast&) _MSL_THROW {return *this;}
+	virtual ~bad_cast() _MSL_THROW {}
+	virtual const char* what() const _MSL_THROW {return "bad_cast";}
+};
+
+class bad_typeid : public exception {
+public:
+	bad_typeid() _MSL_THROW {}
+	bad_typeid(const bad_typeid&) _MSL_THROW {}
+	bad_typeid& operator=(const bad_typeid&) _MSL_THROW {return *this;}
+	virtual ~bad_typeid() _MSL_THROW {}
+	virtual const char* what() const _MSL_THROW {return "bad_typeid";}
+};
+
+#ifndef _MSL_NO_CPP_NAMESPACE      // hh 971206
+	}
+#endif
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
+#pragma options align=reset
+
+#endif // RC_INVOKED
+
+#endif
+
+/* Change Record
+// mm 960609a          Commented out to avoid duplicate declaration
+// mm 960509b          Moved from mexcept.h
+// bkoz960828          changes to move exception classes back into typeinfo
+//981210 bkoz added alignment wrapper
+//961221 bkoz	line 23 added moto pragme (mmoss)
+//961229 bkoz removed bool_type and substituted bool
+//970211 bkoz added defs for bad_cast ctors, bad_typeid dtor
+// hh 971206  added namespace support
+// hh 971209 changed to ! __INTEL__ for Be.  Was dest_os != win32
+// hh 971227 upgradded bad_cast and bad_typeid
+// hh 971230 added RC_INVOKED wrapper
+// hh 990120 changed name of MSIPL flags
+*/

@@ -1,0 +1,223 @@
+/*  Metrowerks Standard Library  */
+
+/*  $Date: 1999/01/22 23:40:30 $ 
+ *  $Revision: 1.7 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/*
+ *	cmath
+ */
+ 
+#ifndef	__cmath__
+#define __cmath__
+
+#include <math.h>
+//#include <fmath>	// as 990415 MSL C header--shouldnt be here
+#include <mathf.h>	// as 990415 must rely on hitachi 
+
+
+#ifndef _INT32
+typedef int _INT32 ;
+typedef unsigned int _UINT32 ;
+#endif
+
+#ifdef __HI
+# undef __HI
+#endif
+
+#if __option(little_endian)
+# define __HI(x) (*(1+(_INT32*)&x) )
+# define __LO(x) (*(_INT32*)&x)
+#else
+# define __LO(x) (*(1+(_INT32*)&x) )
+# define __HI(x) (*(_INT32*)&x)
+#endif
+
+#define __STDC_IEC_559__ 1
+#define FLT_EVAL_METHOD  0	
+
+#define FP_NAN       1  /*   quiet NaN (signaling Nan supported on MAC but nowhere else. */
+#define FP_INFINITE  2  /*   + or - infinity      */
+#define FP_ZERO      3  /*   + or - zero          */
+#define FP_NORMAL    4  /*   all normal numbers   */
+#define FP_SUBNORMAL 5  /*   denormal numbers     */
+
+#define DECIMAL_DIG 17
+
+inline int __fpclassifyf(float x)
+{
+ switch( (*(_INT32*)&x)&0x7f800000 )
+  {
+  case 0x7f800000:
+   {
+    if((*(_INT32*)&x)&0x007fffff) return FP_NAN;
+    else return FP_INFINITE;
+    break;
+   }
+  case 0:
+   {
+    if((*(_INT32*)&x)&0x007fffff) return FP_SUBNORMAL;
+    else return FP_ZERO; 
+    break; 
+   }
+  }
+  return FP_NORMAL;
+}  
+
+/* fpclassify for doubles or integral types */
+
+inline int __fpclassifyd(double x) 
+{
+ switch(__HI(x)&0x7ff00000 )
+  {
+   case 0x7ff00000:
+   {
+    if((__HI(x)&0x000fffff) || (__LO(x)&0xffffffff)) return FP_NAN;
+    else return FP_INFINITE;
+    break;
+   }
+  case 0:
+  {
+    if((__HI(x)&0x000fffff) || (__LO(x)&0xffffffff)) return FP_SUBNORMAL;
+    else return FP_ZERO; 
+    break; 
+  }
+  
+  }
+  return FP_NORMAL;
+} 
+
+inline int __signbitf(float x) {return (int)((*(_INT32*)&x)&0x80000000);}
+inline int __signbitd(double x){return  (int)(     __HI(x)&0x80000000);}
+
+/*
+ * 7.7
+ * 
+ * Defines
+ */	
+
+#if	(FLT_EVAL_METHOD == 0)
+
+	typedef float float_t;
+	typedef double double_t;
+	
+#elif (FLT_EVAL_METHOD == 1)
+
+	typedef double float_t;
+	typedef double double_t;
+	
+#elif (FLT_EVAL_METHOD == 2)
+
+	typedef long double float_t;
+	typedef long double double_t;	
+
+#endif
+
+
+
+/*  7.7.3  Classification macros */
+
+#define fpclassify(x)  \
+	 ((sizeof(x) == sizeof(float))  ? __fpclassifyf((float)(x)) \
+     :  __fpclassifyd((double)(x)) )
+
+
+#define isnormal(x) (fpclassify(x) == FP_NORMAL)
+#define isnan(x)    (fpclassify(x) == FP_NAN)
+#define isinf(x)    (fpclassify(x) == FP_INFINITE)
+#define isfinite(x) ((fpclassify(x) > FP_INFINITE))
+
+#ifdef __cplusplus
+	extern "C" {
+#endif
+
+_MSL_DLLDATA long __float_huge[];
+_MSL_DLLDATA long __float_nan[];
+_MSL_DLLDATA long __double_huge[];
+_MSL_DLLDATA long __extended_huge[];
+
+	/*  special number macros */
+
+//#define HUGE_VAL  (*(double*)     __double_huge)
+#define INFINITY  (*(float*)      __float_huge)
+#define NAN       (*(float*)      __float_nan)
+#define HUGE_VALF (*(float*)      __float_huge)
+#define HUGE_VALL (*(long double*)__extended_huge)
+
+#ifdef __cplusplus
+}
+#endif /*  __cplusplus */
+
+#ifdef __cplusplus
+
+// prototypes
+inline long double frexpl(double x, int* y);
+long double modfl(long double x, long double* iptr);
+double hypotd(double x, double y);
+float hypotf(float x, float y);
+float hypot(float x, float y);
+long double hypotl(long double x, long double y);
+
+inline long double log10l(long double x)
+	{return log10((double_t)x);}
+inline long double floorl(long double x)
+	{return floor((double_t)x);}
+
+// definitions
+inline
+long double
+frexpl(double x, int* y)
+{
+	return frexp((double)x, y);
+}
+
+inline
+long double
+modfl(long double x, long double* iptr)
+{
+	double iptrd;
+	long double result = modf((double)x, &iptrd);
+	*iptr = iptrd;
+	return result;
+}
+
+inline
+double
+hypotd(double x, double y)
+{
+	return (sqrt (x*x + y*y));
+}
+
+inline
+float
+hypotf(float x, float y)
+{
+	return (float)hypotd(x, y);
+}
+
+inline 
+float 
+hypot(float x, float y)
+{
+	return hypotf(x, y);
+}
+
+inline
+long double
+hypotl(long double x, long double y)
+{
+	return (float)hypotd(x, y);
+}
+
+#endif /* __cmath__ */
+
+#endif /* __cmath__ */
+
+/*  Changes
+ *  990222	ad	Include the O/S specific header rather than MSL
+ *	990422	as	Complete rewrite so we can turn on fp in MSL C++ for HiC	
+ */

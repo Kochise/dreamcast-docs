@@ -1,0 +1,413 @@
+READ ME for the macro assembler/linker user		01.13,1998
+							06.03,1997
+							01.27,1997
+							09.17,1996
+							08.01,1995
+							01.23,1995
+							11.25,1994
+							09.22,1994
+							08.23,1994
+							05.16,1994
+							03.14,1994
+							02.01,1994
+							10.20,1993
+							10.06,1993
+Present assembler name	: M86K.EXE
+  Old assembler name	: M86xxxx.EXE
+Present linkage loader name	: L86K.EXE
+  Old linkage loader name	: L86xxxx.EXE
+Reserved word	: Words for operating assembler.
+		  See "RESERVED WORD" in this document.
+		   ex. ACC, NOP, RADIX, CHIP
+
+Latest version number	:	Ver. 4.0K
+Latest RWD file version	:	Ver. 4.09C
+
+
+
+
+## Environment for M86K
+M86K requires setting the environment variable as below.
+	M86KRSVDFILE	specifies our micros, register names and others.
+	CHIPNAME	specifies terget micro. (definable in the source
+			file)
+ex.	SET M86KRSVDFILE=A:\EXE\M86KRSVD.RWD
+	SET CHIPNAME=LC86xxxx
+M86KRSVD.RWD file is required with M86K. It should be mount on the direc-
+tory with the M86K.
+When M86K.EXE and the M86KRSVD.RWD is in the same directory, you need not
+set the environment variable, M86KRSVDFILE.
+
+
+
+## Main memory space
+M86K requires 256Kbytes or more on main memory.
+
+
+
+## Assemble
+M86K assembles the source file(.ASM) to the object file which has source 
+file name. The extend is '.OBJ'.
+M86K requires five parameters;
+	1st parameter	the source file name
+	2nd parameter	the object file name (default: the source file name)
+	3rd parameter	the listing file name (default: null)
+	4th parameter	the cross reference file name (default: null)
+	5th parameter	the error file name (default: null)
+
+
+
+## Error file
+You can get the error file. Its extend is '.ERR'.
+See 'Assemble'.
+
+
+
+## Error message
+You can use the TAG JUMP function.
+Use the error file.
+
+
+
+## Symbol table
+If you need the symbol table, then make the cross reference file.
+
+
+
+## Free format
+You can write down the instruction from leftmost position of the line.
+ex.	AAA:	INC ACC
+	NOP
+
+
+
+## Labels
+Labels needs the column ':' after the strings.
+ex.	LABEL_1:	inc ACC
+
+
+
+## Character data
+The character data must be use with two double quotations as below.
+ex.	DC   "ABCD"	--> 41424344
+	DC   "\""	--> 22
+	DC   "\\"	--> 5C
+
+
+
+## Symbol length
+255 characters maximum.
+
+
+
+## About END pseudo instruction
+You can neglect the END description.
+When neglecting END, all the source line is assembled.
+
+
+
+## About MACRO definition
+When the parameter of macros has the expressions, the parameter must be 
+enclosed by parenthesis () in a macro routine.
+ex.        EXAM AA-1
+             :
+     EXAM  MACRO PARA
+           INC   (PARA)
+           ENDM
+
+
+
+## Additional pseudo instructions
+CHIP			Set a terget CPU name.    ex.   CHIP LC866032
+COMMENT			Output a comment into the object file.
+WIDTH			Set the width of the listing file.
+BANK			Specify the bank number of DSEG.
+BRO,JMPO,CALLO		Optimized branch, optimized jump and optimized 
+			call       These instructions generate the appro-
+bzo,bnzo,beo,bneo	priate codes.
+dbnzo,bpco,bpo,bno	Use with lower-case letters ; bzo to bno.
+			When using the above instructions,BZO etc, with 
+			the upper-case letters, you get an 'undefined 
+			symbol' error.
+INBLOCK			Assemble based on the 4Kbyte-boundary.
+FREE			Assemble not based on the 4Kbyte-boundary.
+REMARKS			Define a comment indicator.
+			ex.   remarks "comments"
+REMARKS_OFF		Cancel the REMARKS instruction.
+FREE_ON,FREE_OFF	Assembler keywords.
+RADIX			Define the base number.
+			ex.  radix  016.D      ; based on the hexadecimal
+CHANGE			For the LC868000 series only.
+WORLD			For the LC868000 series only.
+OTHER_SIDE_SYMBOL	For the LC868000 series only.
+  ** When using CHANGE,WORLD,OTHER_SIDE_SYMBOL, see the LC868000 users
+     manual
+
+
+
+## Boundary
+M86K generates two types of the object file.
+One is generated on the 4Kbyte-boundary. The other is generated out of 
+the 4Kbyte-boundary.
+ex.	cseg	inblock		; Assemble based on the boundary.
+	cseg	free		; Assemble not based on the boundary.
+
+
+
+## About DSEG
+When using the ORG instruction in the DSEG, the attribute of segments 
+is absolute.
+
+
+
+## Strings
+M86K recognizes the upper-/lower-case letters.
+
+
+
+## For generating the external ROM table
+When generating the external ROM table, the top of the source line must 
+be defined the following pseudo instruction.
+       world external_data
+
+
+
+## New switches
+-P    Get the memory area to job on the main memory.
+      If you get the 'no more PARAMETER' error message, try to assemble 
+      with -P switch like as -P8192. Set value more than 4096.
+ex.     M86K -P8192 xxxxxx
+
+
+## Operation between the relocatable values
+M86K can operate the relocatable values each other.
+
+
+
+## Additional pseudo instruction (1)
+You can define the comment indicator except ';' with the REMARKS 
+instruction. Defined strings must be set the leftmost position of a line.
+ex.            remarks  "xxx"    ; Define the indicator
+     "xxx"     inc    acc  ; This line isnot recognized as a instruction.
+               remarks_off       ; Cancel the definition.
+
+
+
+## Additional pseudo instruction (2)
+You can define the base number with the RADIX instruction.
+Default value is decimal.
+ex.      radix  2    ; binaty
+
+
+
+## Numeric description
+Binary data      : xxxx.B,   xxxxB(decimal only)
+Decimal data     : xxxx.D
+Hexadecimal data : xxxx.H,   xxxxH
+
+
+
+## Reserved symbols or strings (reserved words)
+You cannot specify the words the same as these symbols.
+
+.IF	.LIST	.MACRO	.PRINTX	.XIF	.XLIST	.XMACRO
+@R0	@R1	@R2	@R3
+ADD	ADDC	AND	ASEG
+BANK	BE	BN	BNE	BNZ	BP	BPC	BR	BRF
+	BRO	BZ	BEO	BNO	BNEO	BNZO	BPO	BPCO
+	BZO
+CALL	CALLF	CALLO	CALLR	CHANGE	CHIP	CLR1	COMMENT	CSEG
+DB	DBNZ	DC	DEC	DIV	DS	DSEG	DW	DBNZO
+ELSE	END	ENDF	ENDIF	ENDM	EQ	EQU	EXITM	EXTERN
+	EXTERNAL	EXTERNAL_DATA
+FREE	FREE_OFF	FREE_ON	FUNCTION
+GE	GT
+HIGH
+IFB	IFBBR	IFDEF	IFDIF	IFDIFBR	IFE	IFIDN	IFIDNBR	IFNB
+	IFNBBR	IFNDEF	IFNE	INBLOCK	INC	INCLUDE	INTERNAL
+	IRP	IRPC
+JMP	JMPF	JMPO
+LAND	LD	LDC	LDX	LE	LOCAL	LOR	LOW	LT
+	LXOR
+MACRO	MOD	MOV	MUL
+NE	NOP	NOT	NOT1
+OR	ORG	OTHER_SIDE_SYMBOL
+PAGE	POP	PUBLIC	PUSH
+RADIX	REMARKS	REMARKS_OFF	REPT1	RET	RETI	ROL	ROLC
+	ROR	RORC
+SET	SET1	SHL	SHR	ST	STX	SUB	SUBC
+TITLE
+WIDTH	WORLD
+XCH	XOR
+
+
+.. Bugs of the Macro instruction are fixed.          #3.0G
+.. The LC864300,LC86F8208 available		     #4.0
+.. The LC86F3000 available			     #4.0J
+.. Bugs of OBJ file when using the MACRO instruction
+   in the INCLUDEed file are fixed.		     #4.0J
+.. M86K creates the OBJ file on network.	     #4.0K
+
+
+## Current Problems
+1. If the source file(.ASM) includes 10000 lines or more, a malfunctional evaluation file may be generated.
+2. If making 64KB-packed program in one file for LC868000, a malfunctional evaluation file is generated.
+
+
+
+
+
+READ ME for the linkage loader user
+ 
+Latest version number	:	Ver. 5.00C
+Latest LIB file version	:	Ver. 4.09
+
+
+## Link (1)
+Link after preparing  the object file(OBJ), the option file(OPT) and the 
+character generater data file(CGR).
+L86K needs the data file L86K.LIB. LC86K.LIB must be mount the directory 
+with M86K.
+When linking the LC86F8208 objects, LIB8200.OPT file is required in the
+directory which includes the L86K.exe.			#4.00A
+
+
+
+## Link (2)
+L86K links the object files(.OBJ) to the evaluation file which has the 
+first-linked file name. The extend is '.EVA'. 
+L86K requires five parameters;
+	1st parameter	the object file name
+	2nd parameter	the evaluation file name (default: the first object name)
+	3rd parameter	the library file name (default: null)
+	4th parameter	the option file name (default: eva file name)
+	5th parameter	the CGR file name (default: option file name)
+
+L86K generates the evaluation file called 'EVA file'.
+The EVA file includes the debug information and source line information.
+
+
+
+## DSEG
+The symbols in DSEG is relocatable. In case of using ORG, it becomes absolute.
+So, symbols assigned by ORG isnot affected the specified offset address 
+when linking.
+Also, symbols in DSEG is linked in order with the first parameter at link.
+
+New option switch:
+-E   Ignore duplicated addressing error in DSEG.	#2.08D
+
+
+
+## Overflow checking
+L86K doesnot check the overflows of the operand data of the instructions.
+If you want checking, use -w switch at link. Then you can get the result 
+of checking as warnings.
+ex.	L86L -w ******
+
+
+
+## Optimize
+See OPTMZ.ENG.
+Use -A switch to optimize. You can use -O,-F,-R switches with -A.
+
+
+
+## Mapping file
+L86K can generates the mapping file, its file name is the same as the 
+EVA file. And its extend is '.MAP'.
+Use -P switch at linking.
+ex.	L86K -P ******
+
+Also, L86K can generates the listing of the local symbols in the mapping 
+file.
+Use -L switch with -P switch at linking.
+ex.	L86K -P -L ******
+
+<!> You can make the mapping file even if "Jump address out of range"
+    error is occured.					#2.07
+<!> Re-newed a map file form.				#2.08
+<!> Re-newed a map file form for the LC868000 only.	#2.08A
+<!> Clear the border of linked object number.		#2.08C
+<!> The LC864600/4700/4800/4900 available		#4.04
+<!> The LC86F3000 available				#4.05
+<!> The LC864A00,LC868500 available			#5.00B
+
+
+
+## When ordering
+For ordering, you must prepare the intellec HEX formatted data of the program.
+After finishing the debug and making a complete program, use the file converter
+EVA2HEX.exe to convert the EVA file to the HEX file.
+ex.	EVA2HEX filename
+
+
+
+## External ROM table
+L86K can generates the external ROM table file for the LC868000 series 
+micros.
+See the Software manual and the LC868000 series users manual.
+ex.	L86K -B=nn ******
+	The HEX file named ******.Hnn is generated.
+	nn means the bank number of the external ROM bank.
+		01 <= nn <= FF, nn<>00
+
+
+
+## New option switch
+L86K V2.08 or later is added its option switch '-s'.
+'-s' option operates to stop the symbol-sorting when total of symbols 
+exceeds 8K symbols. If linked objects is included over 8K symbols, L86K 
+outputs message how many symbols they are included.
+
+L86K V2.08D or later is added its option switch '-E'
+'-E' ignores duplicated addressing errors in DSEG.        #2.08D
+
+
+Trouble-shooted
+.. When using symbols more than 32K, L86K v2.07C or former had displayed 
+an error. L86K v2.07E can link it.
+.. When reverse-scrolling at mixed display mode in debugging, the Emulator 
+displayed uncorrectly. L86K v2.08 provides an EVA file to display 
+correctly.
+.. When using the option /I, L86K v2.08 provides uncorrent evaluation file.
+L86K v2.08A can do it.
+.. When using pseudo instruction ORG, L86K v2.08 also provides uncorrect 
+evaluation file. L86K v2.08A can do it.
+.. L86K v2.08D generates a map file when detecting DSEG size-exceed error.
+Also, DSEG error messages renew.
+.. L86K v5.00C generates 65280-byte EVA file.
+
+
+Tips >>>
+1. When "Fatal error ; unmatched chipname" is displayed
+	The chipname of the object file is different from of the option 
+	file or of the other object files.
+	You must use the same chipname when assembling and specifying 
+	the option data.
+2. When "multiple allocation" is displayed
+	The EVA file isnot created when the address of the object file 
+	is overlapped to other files.
+	Use -P option to confirm the overlapped address.
+3. Whem "RAM address exceeds limit" is displayed
+	This message may show that no chipname is used.
+	Comfirm your operation about the chipname.
+4. When "Public symbol multiple define: <<LABEL>>" is displayed
+	One label is specified as public symbol (LABEL) in several 
+	linked-files.
+	Create the MAP file to confirm the multiple-defined symbol, 
+	and replace to the correct LABEL.
+5. Labels in DSEG
+	You cannot use labels only in the data segment(DSEG).
+		abc:			(no good)
+		def:	ds	1	(good)
+
+
+## Current Problems
+1. A malfunctional evaluation file is generated if linking 257-or-more segments.
+
+
+
+Thank you.
+
+End of lines

@@ -1,0 +1,97 @@
+IMPORTANT PROFILING INFORMATION
+-------------------------------
+
+To obtain accurate profiling results using the Codescape Profiler with the
+Shinobi/Kamui libraries, you will need to use the "Shinobi Trace Interrupt
+Subroutine Filter".
+
+Without the "Shinobi Trace Interrupt Subroutine Filter", the profiler may
+slow down Shinobi interrupt service routines long enough that they can't
+exit before another interrupt occurs.  As a result, user code will not have
+a chance to run.  The time spent in system interrupt routines is mostly
+listed under the vblank (INTERRUPT VBR+0x600).  
+
+To activate the "Shinobi Trace interrupt Subroutine Filter" follow the
+sample procedure outlined below (for QuikTst2).
+
+
+EVA TRACE PROFILER SAMPLE PROCEDURE
+-----------------------------------
+
+1. Edit the makefile for QuikTst2 and set the value of "LIST = TRUE" to
+generate a ".map" file and build the sample.
+
+2. In Codescape, load the re-built "QuikTst2.elf".  Make sure that the "Use
+Symbol Info from Hitachi Link Map" is checked in the "Load Program Dialog",
+and do not auto-run the program.
+
+3. From the "Tools" menu, select "Profiler".
+
+4. After Codescape processes the ELF, right click on the "Profiler" window
+and select "Setup".
+
+5. In the "Profiler Setup Dialog", click "EVA Trace Profiling" and select
+the profiling information you desire for each of the performance counters
+(C1 & C2) using the pop-up menus.  The default values of "Elapsed time" and
+"Instruction cache miss" are good to start with.
+
+6. In the second portion of the "Profiler Setup Dialog", check the "Enable
+Trace Interrupt Subroutine Filter" box and select "Shinobi Filter".  Hit
+"OK" to continue.
+
+7. Back in the "Profiler", right click the main window and select "Source
+Display" from the menu.
+
+8. A new source display region will appear.  Right click in this region and
+select "Goto Address" and enter the symbol "main".
+
+9. For the QuikTst2 sample, scroll to the main "while" loop and place a
+profiler start breakpoint (F5).  Profiler breakpoints can only be set within
+this source window.. they differ from standard breakpoints in that they only
+serve as markers to tell Codescape when to begin and end profiling a section
+of code.  ** It is important that you place this breakpoint some time after
+the initialization of Shinobi, so that the data which "Shinobi Trace Filter"
+depends on is present in memory. **
+
+10. Scroll to the end of the "while" loop and place a profiler end
+breakpoint (F5).
+
+11. Right click the "Profiler" window and select "Enable" (or use the round
+stop/start toolbar button).
+
+12. Press F9 to run the program.  If all has gone well, the title bar of the
+"Profiler" window (or the main window if maximized) will display the message
+"Shinobi Filter Enabled".
+
+13. Let the program run for several iterations.  It will execute very slowly
+due to the profiler sampling.
+
+14. Disable the profiler.  Codescape will take a few seconds to compile the
+data.  When finished, the results will be displayed in the right half of the
+window.  With the "Shinobi Filter" active, the data now accurately
+represents the time spent in each user routine.
+
+
+USING THE INSTRUCTION CACHE OPTIMIZER
+-------------------------------------
+
+Once you have obtained valid profiling data, you may want to use the
+"Profiler Instruction Cache Optimizer" to help identify routines that could
+be grouped or re-ordered for better instruction cache coherency.  To begin
+this process, right click the "Profiler" window and select "Optimize".  This
+will bring up an Optimizer dialog box.
+
+In the bottom portion of the window labeled "Optimization Information", you
+will notice a description of the functions which can not be adjusted,
+followed by a listing of "fixed function groups".  These fixed groupings are
+imposed by the compiler.. each represents a single object file.  To break
+these apart, you would have to move the individual function out and into a
+separate source file.
+
+From the dialog box, place a check mark next to all the routines that you
+want to analyze, then click "Optimize" to continue.  This will bring up a
+file dialog asking you where to save a "Link Order File (.lor)".  You can
+view this file in any text editor.  The quick explanation for the data in
+the ".lor" file is that it suggests how you can improve instruction cache
+coherency by changing link order based on the "Clique" start/end groupings.
+

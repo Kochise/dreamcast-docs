@@ -1,0 +1,193 @@
+
+
+Why use overlays?
+-----------------
+
+Overlays allow you to free up system memory by partitioning a large program
+into smaller chunks which are loaded sequentially.
+
+Planning for overlays
+---------------------
+
+To use overlays, you need to divide your program into multiple logical pieces
+that do not call each other (overlays) which share a common set of routines
+(the base).
+
+For example, for a game you may have the intro sequence as overlay1, 
+the menu system as overlay2, and the main game sequence as overlay3,
+and a high score display as overlay4.
+
+If your 3D library was used by all your overlays, then you would probably
+put it in the base to avoid code duplication. If it was only used by one
+overlay you would probably include it in the particular overlay.
+
+The rule to remember is that overlays can call any routines in the base
+at any time because the base is always loaded. The base can only call
+routines in a particular overlay only if the particular overlay is known
+to be loaded (you must check manually). Routines in different overlays
+cannot call each other.
+
+Actually using overlays
+-----------------------
+
+To create an overlay, here's what you do:
+
+First you need an SOA GNU toolset at least SOA-960119 or later.
+All versions of the linker before SOA-960119 have a problem
+which prevents this overlay technique from working properly.
+
+Given these files:
+
+--> file0.c:
+
+void func1(void) {}
+void func2(void) {}
+void func3(void) {}
+
+void main(void)
+
+{
+	overlay1();
+	overlay2();
+	overlay3();
+}
+
+--> file1.c:
+
+void overlay1(void)
+
+{
+	func1();
+	func2();
+	func3();
+}
+
+--> file2.c:
+
+void overlay2(void)
+
+{
+	func1();
+	func2();
+	func3();
+}
+
+--> file3.c:
+
+void overlay3(void)
+
+{
+	func1();
+	func2();
+	func3();
+}
+
+and you want:
+
+file0.c <- base module
+file1.c <- 1st overlay
+file2.c <- 2nd overlay
+file3.c <- 3rd overlay
+
+with memory map:
+
+0x1000: base module  (file0.c)
+0x2000: overlay area (file1.c file2.c file3.c)
+
+Here's how you'd link the files together:
+
+rem Overlay Demo
+rem make base.o
+gcc -c file0.c
+ld -Ttext 0x1000 -r file0.o -o base.o
+rem make overlay1.o
+gcc -c file1.c
+ld  -Ttext 0x2000 -r file1.o -o overlay1.o
+rem make overlay2.o
+gcc -c file2.c
+ld  -Ttext 0x2000 -r file2.o -o overlay2.o
+rem make overlay3.o
+gcc -c file3.c
+ld  -Ttext 0x2000 -r file3.o -o overlay3.o
+rem make base module
+ld -L<gcc lib path> -L<libc lib path> -Ttext 0x1000 -o base base.o -R overlay1.o -R overlay2.o -R overlay3.o
+rem make overlay1
+ld -Ttext 0x2000 -o overlay1 overlay1.o -R base.o
+rem make overlay2
+ld -Ttext 0x2000 -o overlay2 overlay1.o -R base.o
+rem make overlay3
+ld -Ttext 0x1000 -o overlay3 overlay1.o -R base.o
+
+"objdump --disassemble-all base" yields:
+
+base:     file format coff-sh
+
+Disassembly of section .text:
+00001000 <_func1> mov.l	r14,@-r15
+00001002 <_func1+2> mov	r15,r14
+00001004 <_func1+4> mov	r14,r15
+00001006 <_func1+6> mov.l	@r15+,r14
+00001008 <_func1+8> rts		(slot nop	)
+0000100c <_func2> mov.l	r14,@-r15
+0000100e <_func2+2> mov	r15,r14
+00001010 <_func2+4> mov	r14,r15
+00001012 <_func2+6> mov.l	@r15+,r14
+00001014 <_func2+8> rts		(slot nop	)
+00001018 <_func3> mov.l	r14,@-r15
+0000101a <_func3+2> mov	r15,r14
+0000101c <_func3+4> mov	r14,r15
+0000101e <_func3+6> mov.l	@r15+,r14
+00001020 <_func3+8> rts		(slot nop	)
+00001024 <_main> mov.l	r8,@-r15
+00001026 <_main+2> mov.l	r14,@-r15
+00001028 <_main+4> sts.l	pr,@-r15
+0000102a <_main+6> mov	r15,r14
+0000102c <_main+8> mov.l	0x104c,r8
+0000102e <_main+a> jsr	@r8	(slot nop	)
+00001032 <_main+e> mov.l	0x1050,r8
+00001034 <_main+10> jsr	@r8	(slot nop	)
+00001038 <_main+14> mov.l	0x1054,r8
+0000103a <_main+16> jsr	@r8	(slot nop	)
+0000103e <_main+1a> mov	r14,r15
+00001040 <_main+1c> lds.l	@r15+,pr
+00001042 <_main+1e> mov.l	@r15+,r14
+00001044 <_main+20> mov.l	@r15+,r8
+00001046 <_main+22> rts		(slot nop	)
+...
+0000104e <_main+2a> mov.b	r0,@r0  <- 0x2000, correct
+00001050 <_main+2c> .word 0x0000
+00001052 <_main+2e> mov.b	r0,@r0  <- 0x2000, correct
+00001054 <_main+30> .word 0x0000
+00001056 <_main+32> mov.b	r0,@r0  <- 0x2000, correct
+
+"objdump --disassemble-all overlay1" yields:
+
+overlay1:     file format coff-sh
+
+Disassembly of section .text:
+00002000 <_overlay1> mov.l	r8,@-r15
+00002002 <_overlay1+2> mov.l	r14,@-r15
+00002004 <_overlay1+4> sts.l	pr,@-r15
+00002006 <_overlay1+6> mov	r15,r14
+00002008 <_overlay1+8> mov.l	0x2028,r8
+0000200a <_overlay1+a> jsr	@r8	(slot nop	)
+0000200e <_overlay1+e> mov.l	0x202c,r8
+00002010 <_overlay1+10> jsr	@r8	(slot nop	)
+00002014 <_overlay1+14> mov.l	0x2030,r8
+00002016 <_overlay1+16> jsr	@r8	(slot nop	)
+0000201a <_overlay1+1a> mov	r14,r15
+0000201c <_overlay1+1c> lds.l	@r15+,pr
+0000201e <_overlay1+1e> mov.l	@r15+,r14
+00002020 <_overlay1+20> mov.l	@r15+,r8
+00002022 <_overlay1+22> rts		(slot nop	)
+...
+0000202a <_overlay1+2a> mov.l	r0,@(0,r0)  <- 0x1000, correct
+0000202c <_overlay1+2c> .word 0x0000
+0000202e <_overlay1+2e> mov.l	r0,@(48,r0) <- 0x100c, correct
+00002030 <_overlay1+30> .word 0x0000
+00002032 <_overlay1+32> mov.l	r1,@(32,r0) <- 0x1018, correct
+Disassembly of section .tors:
+Disassembly of section .data:
+Disassembly of section .stack:
+
+

@@ -1,0 +1,710 @@
+/*  Metrowerks Standard Library  Version 2.4  1998 March 10  */
+
+/*  $Date: 1999/03/24 17:49:02 $ 
+ *  $Revision: 1.8 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Portions Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/**
+ **  memory
+ **
+ **  Lib++  : The Modena C++ Standard Library,
+ **           Version 2.4, October 1997
+ **
+ **  Copyright (c) 1995-1997 Modena Software Inc.
+ **/
+
+#ifndef _MEMORY        // hh 971222 made include guards standard
+#define _MEMORY
+
+#include <mcompile.h>
+
+#include <cstddef>    // hh 971220 fixed MOD_C_INCLUDE
+#include <cstdio>     // hh 971220 fixed MOD_C_INCLUDE
+#include <cstdlib>    // hh 971220 fixed MOD_C_INCLUDE
+#include <cctype>     // hh 971220 fixed MOD_C_INCLUDE
+#include <cstring>    // hh 971220 fixed MOD_C_INCLUDE
+
+#include <iterator>   // hh 971220 fixed MOD_INCLUDE
+#include <utility>    // hh 971220 fixed MOD_INCLUDE
+#include <new>        // hh 971220 fixed MOD_INCLUDE
+#include <new_mem.h>  // hh 971220 fixed MOD_INCLUDE
+
+// hh 980106 <memory> can not throw a stdexecpt because it can not process strings.
+//#ifdef MSIPL_ANSI_HEADER
+//#include <stdexcept>  // hh 971220 fixed MOD_INCLUDE
+//#else
+//#include <mexcept.h>  // hh 971220 fixed MOD_INCLUDE
+//#endif
+
+#ifndef RC_INVOKED // hh 971230
+
+#pragma options align=native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#ifdef MSIPL_USING_NAMESPACE
+	namespace std {
+#endif
+
+template <class T1, class T2>
+inline void construct (T1* p, const T2& value)
+{ new (p) T1 (value); }
+
+template <class T>
+inline void destroy (T* pointer)
+{ pointer->~T (); }
+
+template <class ForwardIterator>
+inline
+void
+__destroy(ForwardIterator first, ForwardIterator last, forward_iterator_tag)
+{ 
+     for(; first != last; ++first) 
+		destroy(&*first);
+}
+
+template <class RandomAccessIterator>
+inline
+void
+__destroy(RandomAccessIterator first, RandomAccessIterator last, random_access_iterator_tag)
+{ 
+	for(; first < last; ++first) 
+		destroy(&*first);
+}
+
+// hh 990315
+template <class ForwardIterator>
+inline
+void
+destroy(ForwardIterator first, ForwardIterator last)
+{
+	__destroy(first, last, iterator_traits<ForwardIterator>::iterator_category());
+}
+
+// hh 980522  Rewrote get/return_temporary_buffer because of concerns about
+//            multi-threading.
+
+template <class T>
+pair<T*, ptrdiff_t>
+get_temporary_buffer(ptrdiff_t n)
+{
+	pair<T*, ptrdiff_t> result(0, 0);
+	while (n > 0)
+	{
+		result.first = (T*)new(nothrow) char [sizeof(T)*n];
+		if (result.first != 0)
+		{
+			result.second = n;
+			break;
+		}
+		else
+			n /= 2;
+	}
+	return result;
+}
+
+template <class T>
+inline
+void
+return_temporary_buffer(T* p)
+{
+	delete [] (char*)p;  // hh 980730 added (char*) cast
+}
+
+// hh 980601  Added non-standard class.  This facilitates use of
+//            get_temporary_buffer in a exception-safe manner.
+//            Used in <algorithm>
+template <class T>
+class _TempVec
+{
+public:
+	_TempVec(ptrdiff_t len, const T& value);
+	~_TempVec();
+	T* begin();
+	const T* begin() const;
+	T* end();
+	const T* end() const;
+	ptrdiff_t size() const;
+private:
+	ptrdiff_t len_; 
+	T* start_;
+
+	_TempVec(const _TempVec&);             // Not defined
+	_TempVec& operator=(const _TempVec&);  // Not defined
+};
+
+template <class T>
+_TempVec<T>::_TempVec(ptrdiff_t len, const T& value)
+{
+	pair<T*, ptrdiff_t> buf = get_temporary_buffer<T>(len);
+	start_ = buf.first;
+	len_ = buf.second;
+	if (len_ > 0)
+	{
+		MSIPL_TRY
+		{
+			uninitialized_fill_n(start_, len_, value);
+		}
+		#ifdef MSIPL_EXCEPT
+		MSIPL_CATCH
+		{
+			return_temporary_buffer(start_);
+			throw;
+		}
+		#endif
+	}
+}
+
+template <class T>
+_TempVec<T>::~_TempVec()
+{
+	destroy(start_, start_ + len_);
+	return_temporary_buffer(start_);
+}
+
+template <class T>
+inline
+T*
+_TempVec<T>::begin()
+{
+	return start_;
+}
+
+template <class T>
+inline
+const T*
+_TempVec<T>::begin() const
+{
+	return start_;
+}
+
+template <class T>
+inline
+T*
+_TempVec<T>::end()
+{
+	return start_ + len_;
+}
+
+template <class T>
+inline
+const T*
+_TempVec<T>::end() const
+{
+	return start_ + len_;
+}
+
+template <class T>
+inline
+ptrdiff_t
+_TempVec<T>::size() const
+{
+	return len_;
+}
+
+ /*
+#ifndef MSIPL_STL_BUFFER_SIZE
+#define MSIPL_STL_BUFFER_SIZE 16384 // 16k
+#endif
+
+#ifndef _No_Floating_Point
+extern double __stl_temp_buffer[(MSIPL_STL_BUFFER_SIZE + 
+                               sizeof(double) - 1)/sizeof(double)];
+#else
+	extern long __stl_temp_buffer[(MSIPL_STL_BUFFER_SIZE + 
+                               sizeof(long) - 1)/sizeof(long)];
+#endif
+
+
+template <class T>
+//inline  // hh 980124
+pair<T*, ptrdiff_t> 
+get_temporary_buffer (ptrdiff_t n, T*)
+{
+     while (n > MSIPL_STL_BUFFER_SIZE / sizeof (T)) {
+          T* tmp = (T*) (::operator new ((size_t) (n * sizeof (T))));
+          if (tmp)
+               return pair<T*, ptrdiff_t> (tmp, n);
+          n = n / 2;
+     }
+     return pair<T*, ptrdiff_t>
+               ((T*)(void *)__stl_temp_buffer, 
+               (ptrdiff_t) (MSIPL_STL_BUFFER_SIZE/sizeof (T)));
+}
+
+template <class T>
+inline void return_temporary_buffer (T* p)
+{ if ((void*) (p) != __stl_temp_buffer) delete (p); }
+*/
+
+template <class InputIterator, class ForwardIterator>
+//inline  // hh 980124
+ForwardIterator
+uninitialized_copy (InputIterator first, InputIterator last,
+                         ForwardIterator result)
+{ 
+    ForwardIterator next = result;
+    MSIPL_TRY
+     {
+          for(; first != last; ++first, ++next) 
+               new (static_cast<void *>(&*next)) typename iterator_traits<ForwardIterator>::value_type(*first);
+     }
+	#ifdef MSIPL_EXCEPT // hh 980902 added
+     MSIPL_CATCH
+     {
+          destroy(result, next);
+          throw;
+     }
+	#endif
+     return next; 
+}
+
+null_template inline char*
+uninitialized_copy (char* first, char* last, char* result)
+{  memcpy (result, first, (unsigned long)(last - first)); return result + (last - first); }
+
+#ifdef MSIPL_WCHAR
+null_template inline wchar*
+uninitialized_copy (wchar* first, wchar* last, wchar* result)
+{  wmemcpy (result, first, last - first); return result + (last - first); }
+#endif
+
+template <class ForwardIterator, class T>
+//inline  // hh 980124
+void
+uninitialized_fill (ForwardIterator first, ForwardIterator last, const T& x)
+{ 
+     ForwardIterator next = first;
+     MSIPL_TRY
+     {
+          for (; next != last; ++next)
+               new (static_cast<void *>(&*next)) typename iterator_traits<ForwardIterator>::value_type(x);
+     }
+	#ifdef MSIPL_EXCEPT // hh 980902 added
+     MSIPL_CATCH
+     {
+          destroy(first, next);
+          throw;
+     }
+	#endif
+}
+
+null_template inline void
+uninitialized_fill (char* first, char* last, const char& x)
+{ memset(first, x, (unsigned long)(last - first)); }
+
+#ifdef MSIPL_WCHAR
+null_template inline void
+uninitialized_fill (wchar* first, wchar* last, const wchar& x)
+{ wmemset(first, x, last - first); }
+#endif
+
+template <class ForwardIterator, class Size, class T>
+//inline  // hh 980124
+void
+uninitialized_fill_n (ForwardIterator first, Size n, const T& x)
+{ 
+     ForwardIterator next = first;
+     MSIPL_TRY
+     {
+          for(; n > 0; --n, ++next)
+               new( static_cast<void *>(&*next)) typename iterator_traits<ForwardIterator>::value_type(x);
+     }
+	#ifdef MSIPL_EXCEPT // hh 980902 added
+     MSIPL_CATCH
+     {
+          destroy (first, next);
+          throw;
+     }
+	#endif
+}
+ 
+null_template inline void
+uninitialized_fill_n (char* first, unsigned int n, const char& x)
+{ memset(first, x, n); }
+ 
+null_template inline void
+uninitialized_fill_n (char* first, int n, const char& x)
+{ memset(first, x, (unsigned long)n); }
+ 
+#ifdef MSIPL_WCHAR
+null_template inline void
+uninitialized_fill_n (wchar* first, unsigned int n, const wchar& x)
+{ wmemset(first, x, n); }
+
+null_template inline void
+uninitialized_fill_n (wchar* first, int n, const wchar& x)
+{ wmemset(first, x, n); }
+#endif
+ 
+template <class T> class simple_allocator; // primary template declaration
+
+null_template
+class simple_allocator<void> {
+public:
+     typedef size_t           size_type;
+     typedef ptrdiff_t        difference_type;
+     typedef void*            pointer;
+     typedef const void*      const_pointer;
+     typedef void             value_type;
+
+#ifdef MSIPL_MEMBER_TEMPLATE
+     template <class U>
+     struct rebind { 
+          typedef simple_allocator<U>  other;
+     };
+#endif
+};
+
+template <class T>
+class simple_allocator {
+
+public:
+     typedef size_t                        size_type;
+     typedef ptrdiff_t                     difference_type;
+     typedef T*                            pointer;
+     typedef const T*                      const_pointer;
+     typedef T&                            reference;
+     typedef const T&                      const_reference;
+     typedef T                             value_type;
+
+#ifdef MSIPL_MEMBER_TEMPLATE
+     template <class U>
+     struct rebind {
+          typedef simple_allocator<U>  other; 
+     };
+#endif
+
+     pointer allocate (size_type n, 
+                       typename simple_allocator<void>::const_pointer hint = 0)
+     {  
+          hint;   // hh 971227 silence unused warning
+
+          T* tmp = (T*)(::operator new ((size_t)(n*sizeof (T))));
+          if (tmp == 0)
+               THROW_BAD_ALLOC;
+          return tmp; 
+     }
+
+     void deallocate (pointer p, size_type)    // hh 971227 removed unused argument
+     { 
+          ::operator delete (p); 
+     }
+
+     pointer address (reference x) const
+     { 
+          return (pointer)&x; 
+     }
+    
+     const_pointer address (const_reference x) const
+     { 
+          return (const_pointer)&x; 
+     }
+
+     size_type max_size () const MSIPL_THROW; // hh 980515 uninlined
+
+// hh 980106 gutted construct and destroy
+//           Reason:  In order to throw a stdexcept, you must be able to process
+//           a string.  However <string> depends on <memory> because it has an
+//           allocator.  Therefore <memory> can not depend on <string>.  Therefore
+//           we can not throw a stdexcept from <memory>.  The standard says nothing
+//           about whether or not, the null pointer check is done.
+     void construct (pointer p, const T& val)
+     { 
+//          if (p != NULL)
+               new ((void*)p) T(val); 
+//          else
+//               MSIPL_THROW_ME(invalid_argument, "constructing null pointer.\n")
+     }
+
+     void destroy (pointer p) 
+     { 
+//          if (p != NULL)
+               ((T*)p)->~T(); 
+//          else
+//               MSIPL_THROW_ME(invalid_argument, "destroying null pointer.\n")
+     }
+
+     simple_allocator () MSIPL_THROW {}
+
+#ifdef MSIPL_MEMBER_TEMPLATE
+     template<class U>
+     simple_allocator (const simple_allocator<U>&) MSIPL_THROW {}
+#endif
+     simple_allocator (const simple_allocator&) MSIPL_THROW {}
+
+     ~simple_allocator () MSIPL_THROW {}
+};
+
+template <class T>
+inline
+typename simple_allocator<T>::size_type
+simple_allocator<T>::max_size () const MSIPL_THROW
+{ 
+	return max (size_type (1), size_type (size_type (-1)/sizeof (T))); 
+}
+
+
+template <class T1, class T2>
+inline bool
+operator== (const allocator<T1>& , const allocator<T2>&) MSIPL_THROW
+{ 
+     return true; 
+}
+ 
+template <class T1, class T2>
+inline bool
+operator!= (const allocator<T1>& , const allocator<T2>&) MSIPL_THROW
+{ 
+     return false; 
+}
+
+// Warning, non-standard
+// Credit:  Nathan C. Myers
+
+template <class _Base, class _Member>
+struct _EmptyMemberOpt
+	: public _Base
+{
+	_EmptyMemberOpt();
+	_EmptyMemberOpt(_Base const& __b);
+	_EmptyMemberOpt(_Base const& __b, _Member const& __mem);
+
+	_Member m_;
+};
+
+template <class _Base, class _Member>
+inline
+_EmptyMemberOpt<_Base, _Member>::_EmptyMemberOpt() 
+	: _Base(_Base()),
+	  m_(_Member())
+{
+}
+
+template <class _Base, class _Member>
+inline
+_EmptyMemberOpt<_Base, _Member>::_EmptyMemberOpt(_Base const& __b) 
+	: _Base(__b),
+	  m_(_Member())
+{
+}
+
+template <class _Base, class _Member>
+inline
+_EmptyMemberOpt<_Base, _Member>::_EmptyMemberOpt(_Base const& __b, _Member const& __mem) 
+	: _Base(__b),
+	  m_(__mem)
+{
+}
+
+template <class OutputIterator, class T>
+class raw_storage_iterator 
+     : public iterator<output_iterator_tag, void, void, void, void> {
+protected:
+     OutputIterator iter;
+public:
+     explicit raw_storage_iterator (OutputIterator x) : iter (x) {}
+
+     raw_storage_iterator<OutputIterator, T>& operator*() { return *this; }
+
+     raw_storage_iterator<OutputIterator, T>& operator= (const T& element) 
+     { 
+          construct (iter, element); 
+          return *this; 
+     }
+
+     raw_storage_iterator<OutputIterator, T>& operator++ ()
+     { 
+          ++iter; 
+          return *this; 
+     }
+
+     raw_storage_iterator<OutputIterator, T> operator++ (int)
+     {   
+          raw_storage_iterator<OutputIterator, T> tmp = *this;
+          ++iter; 
+          return tmp; 
+     }
+};
+
+
+// hh 980103 Nov. '97 version of auto_ptr added
+// hh 980805 member template operators not supported yet.
+//           modified to pre-member template functionality
+template<class X> class auto_ptr {
+//	#ifdef MSIPL_MEMBER_TEMPLATE
+//		template <class Y>
+//		struct auto_ptr_ref {
+//			auto_ptr<Y>& p_;
+//			auto_ptr_ref(const auto_ptr<Y>& a) : p_(const_cast<auto_ptr<Y>&>(a)) {}
+//		};
+//	#else
+		struct auto_ptr_ref {
+			auto_ptr& p_;
+			auto_ptr_ref(const auto_ptr& a) : p_(const_cast<auto_ptr&>(a)) {}
+		};
+//	#endif
+public:
+	typedef X element_type;
+	// _lib.auto.ptr.cons_ construct/copy/destroy:
+	explicit auto_ptr(X* p = 0) MSIPL_THROW : ptr_(p) {}
+	auto_ptr(auto_ptr& a) MSIPL_THROW : ptr_(a.release()) {}
+//	#ifdef MSIPL_MEMBER_TEMPLATE
+//		template<class Y>
+//		auto_ptr(auto_ptr<Y>& a) MSIPL_THROW : ptr_(a.release()) {}
+//	#endif
+	auto_ptr& operator=(auto_ptr& a) MSIPL_THROW {reset(a.release()); return *this;}
+//	#ifdef MSIPL_MEMBER_TEMPLATE
+//		template<class Y>
+//		auto_ptr& operator=(auto_ptr<Y>& a) MSIPL_THROW {reset(a.release()); return *this;}
+//	#endif
+	~auto_ptr() MSIPL_THROW {delete get();}
+	// _lib.auto.ptr.members_ members:
+	X& operator*() const MSIPL_THROW {return *get();}
+	X* operator->() const MSIPL_THROW {return get();}
+	X* get() const MSIPL_THROW {return ptr_;}
+	X* release() MSIPL_THROW {X* result = get(); ptr_ = 0; return result;}
+	void reset(X* p = 0) MSIPL_THROW {if (get() != p) {delete get(); ptr_ = p;}}
+
+	// _lib.auto.ptr.conv_ converions:
+//	#ifdef MSIPL_MEMBER_TEMPLATE
+//		template<class Y>
+//		operator auto_ptr_ref<Y>() MSIPL_THROW {return *this;}
+//		auto_ptr(auto_ptr_ref<X> r) MSIPL_THROW : ptr_(r.p_.release()) {}
+//	#else
+		operator auto_ptr_ref() MSIPL_THROW {return *this;}
+		auto_ptr(auto_ptr_ref r) MSIPL_THROW : ptr_(r.p_.release()) {}
+//	#endif
+
+	// hh 980808 Added this non-standard method to allow auto_ptr = const auto_ptr
+	auto_ptr& operator=(auto_ptr_ref r) MSIPL_THROW {reset(r.p_.release()); return *this;}
+
+//	#ifdef MSIPL_MEMBER_TEMPLATE
+//		template<class Y>
+//		operator auto_ptr<Y>() MSIPL_THROW {return auto_ptr<Y>(release());}
+//	#endif
+protected:
+private:
+	X* ptr_;
+};
+
+/*
+// hh 980103 Dec. '96 version of auto_ptr fixed
+
+template <class X>
+class auto_ptr {
+public :
+     typedef X   element_type;
+     explicit auto_ptr (X* p = 0) MSIPL_THROW : owns(p!=0), ptr_(p) {}
+
+#ifdef MSIPL_MEMBER_TEMPLATE
+     template <class Y> auto_ptr (const auto_ptr<Y>& a) MSIPL_THROW
+     {      
+          owns = a.owns; 
+          ptr_ = (X*)a.release (); 
+     }
+
+	// hh 980923 rewrote op=
+     template <class Y> auto_ptr& operator=(const auto_ptr<Y>& a) MSIPL_THROW
+     {   
+		if (this == &a)
+			return *this;
+		if (ptr_ == a.ptr_)
+		{
+			owns  = owns || a.owns;
+			ptr_ = a.release();
+		}
+		else
+		{
+			if (owns)
+				delete ptr_;
+			owns = a.owns;
+			ptr_ = a.release();
+          }
+          return *this; 
+     }
+#endif
+
+     auto_ptr (const auto_ptr& a) MSIPL_THROW 
+     { 
+          owns = a.owns;
+          ptr_ = a.release();
+     }
+	// hh 980923 rewrote op=
+     auto_ptr& operator=(const auto_ptr& a) MSIPL_THROW
+     {
+		if (this == &a)
+			return *this;
+		if (ptr_ == a.ptr_)
+		{
+			owns  = owns || a.owns;
+			ptr_ = a.release();
+		}
+		else
+		{
+               if (owns) 
+                    delete ptr_;
+               owns = a.owns;
+               ptr_ = a.release();
+          }
+          return *this;
+     }
+
+     ~auto_ptr() { if (owns) delete ptr_;  owns = false; }
+
+     X& operator* () const MSIPL_THROW { return *get (); }
+
+     X* operator-> () const MSIPL_THROW { return get (); }
+
+     X* get () const MSIPL_THROW { return ptr_; }
+
+     X* release() const MSIPL_THROW
+     { 
+          owns = false; 
+          return ptr_; 
+     }
+protected :
+     mutable bool owns;
+     X* ptr_;
+};
+*/
+
+#ifdef MSIPL_USING_NAMESPACE
+	} // namespace std
+#endif
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
+#pragma options align=reset
+
+#endif // RC_INVOKED
+
+#endif /* MSIPL_DEFMEMORY_H */
+
+// hh 971220 fixed MOD_INCLUDE and MOD_C_INCLUDE
+// hh 971222 made include guards standard
+// hh 971222 added alignment wrapper
+// hh 971227 silence unused warning
+// hh 971227 removed unused argument from deallocate
+// hh 971230 added RC_INVOKED wrapper
+// hh 980103 fixed Dec. '96 version of auto_ptr
+// hh 980103 added Nov. '97 version of auto_ptr
+// hh 980106 removed #include <stdexcept>
+//           <memory> can not throw a stdexecpt because it can not process strings.
+// hh 980106 removed null pointer checks from allocate::construct and destroy
+// hh 980522  Rewrote get/return_temporary_buffer because of concerns about
+//            multi-threading.
+// hh 980730 added (char*) cast to return_temporary_buffer
+// hh 980805 member template operators not supported yet.
+//           modified auto_ptr '97 to pre-member template functionality
+// hh 980902 #ifdef'd out exception code when ndef MSIPL_EXCEPT
+// hh 980923 fixed bug in the '96 auto_ptr::op=
+// hh 981220 Added typename to appropriate return types
+// hh 990315 Split destroy(first, last) into two methods to help compiler optimize
+//           away empty loops.

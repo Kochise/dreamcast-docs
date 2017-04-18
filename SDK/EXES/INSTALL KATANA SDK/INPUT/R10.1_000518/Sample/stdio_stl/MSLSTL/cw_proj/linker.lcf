@@ -1,0 +1,323 @@
+KEEP_SECTION {IP, DSGLH, DSGLE, DSG_INIT_, DSG_END_, PSGSFD01 }
+
+MEMORY {
+	.code_sg_ip		(RWX):  ORIGIN = 0x8C008000, 		 	 	LENGTH = 0
+	.data_sg_lh		(RW):   ORIGIN = 0x8C010000, 		 	 	LENGTH = 0
+	.code_user      (RWX):  ORIGIN = AFTER(.data_sg_lh), 	 	LENGTH = 0
+	.sinit          (RWX):  ORIGIN = AFTER(.code_user),  	 	LENGTH = 0
+	.const_user     (RW):  	ORIGIN = AFTER(.sinit),    			LENGTH = 0
+	.vtables 		(R) : 	ORIGIN = AFTER(.const_user),	 	LENGTH = 0
+	.exception      (R):    ORIGIN = AFTER(.vtables),  			LENGTH = 0
+	.data_user      (RW):  	ORIGIN = AFTER(.exception),    		LENGTH = 0
+	.code_sg        (RWX):  ORIGIN = AFTER(.data_user),   		LENGTH = 0
+	.const_sg       (RW): 	ORIGIN = AFTER(.code_sg),      		LENGTH = 0
+	.data_sg        (RW):  	ORIGIN = AFTER(.const_sg),     		LENGTH = 0
+	.data_sg_global (RW):	ORIGIN = AFTER(.data_sg),			LENGTH = 0
+	.code_sg_sofdec (R):    ORIGIN = AFTER(.data_sg_global),   	LENGTH = 0
+	.bss_user		(RW):  	ORIGIN = AFTER(.code_sg_sofdec), 	LENGTH = 0
+	.bss_user2		(RW):  	ORIGIN = AFTER(.bss_user), 			LENGTH = 0
+	.bss_sg			(RW):  	ORIGIN = AFTER(.bss_user2),      	LENGTH = 0
+}
+
+SECTIONS {
+	
+	..code_sg_ip :
+	{
+		*	(IP)
+		
+		. = ALIGN(0x04);
+	} > .code_sg_ip
+	
+	..data_sg_lh :
+	{
+		ALIGNALL(0x08);
+		__START_DSGLH	= .;
+		*	(DSGLH) 
+		__END_DSGLH		= .;
+		
+		ALIGNALL(0x08);
+		__START_DSGLE	= .;
+		*	(DSGLE)
+		__END_DSGLE 	= .;
+		
+		. = ALIGN(0x04);
+	} > .data_sg_lh
+	
+	..code_user :
+	{
+		*	(.text)
+		*	(P)
+		
+		.= ALIGN(0x04);
+	} > .code_user
+	
+	..sinit :
+	{
+		. = ALIGN (8);
+		___sinit__ = .;
+		STATICINIT
+		
+		. = ALIGN(0x04);
+	} > .sinit
+	
+	..const_user :
+	{
+		ALIGNALL(0x08);
+		*	(.rodata)
+		. = ALIGN (0x08);
+		*	(C)
+		ALIGNALL(0x20);
+		*	(C32)
+		
+		. = ALIGN(0x04);
+	} >.const_user
+		
+	..vtables :
+	{
+		. = ALIGN(8);
+		*(.vtables)
+		
+		. = ALIGN(0x04);
+	} > .vtables
+
+	..exception :
+	{
+		. = ALIGN(8);
+		__exception_table_start__ = .;
+		EXCEPTION			# Only needed in C++
+		
+		__exception_table_end__ = .;
+
+		. = ALIGN(0x04);
+		*	(.exception)
+		. = ALIGN(0x04);
+		*	(.exceptlist)
+		
+		. = ALIGN(0x04);
+	} > .exception
+	
+	..data_user :
+	{
+		ALIGNALL(0x08);
+		__START_D		= .;
+		*	(.data)
+		ALIGNALL(0x08);
+		*	(D)
+		__END_D 		= .;
+		
+		ALIGNALL(0x20);
+		__START_D32		= .;
+		*	(D32)
+		__END_D 		= .;
+		
+		. = ALIGN(8);
+		__START_R		= .;
+		__END_R			= .;
+		__START_R32		= .;
+		__END_R32		= .;
+		
+		. = ALIGN(0x04);
+	} > .data_user
+	
+	..code_sg :
+	{
+		*	(PSG)
+		
+		. = ALIGN(0x04);
+	} > .code_sg
+	
+	..const_sg :
+	{	
+		ALIGNALL(0x08);
+		*	(CSG)
+		ALIGNALL(0x20);
+		*	(CSG32)
+		
+		. = ALIGN(0x04);
+	} > .const_sg
+	
+	..data_sg :
+	{
+		ALIGNALL(0x08);
+		__START_DSG		= .;
+		*	(DSG)
+		__END_DSG		= .;
+		
+		ALIGNALL(0x20);
+		__START_DSG32	= .;
+		*	(DSG32)
+		__END_DSG32		= .;
+
+		__START_RSG		= .;
+		__END_RSG		= .;
+		__START_RSG32	= .;
+		__END_RSG32		= .;
+		
+		. = ALIGN(0x04);
+	} > .data_sg
+	
+	..data_sg_global :
+	{
+		ALIGNALL(0x8);
+		__START_DSG_INIT_       = .;
+		*(DSG_INIT_)
+		__END_DSG_INIT_         = .;
+	
+		ALIGNALL(0x8);
+		__START_DSG_END_        = .;
+		*(DSG_END_)
+		__END_DSG_END_          = .;
+		
+		. = ALIGN(0x04);
+	} > .data_sg_global 
+
+
+
+	..code_sg_sofdec :
+	{
+	#	ALIGNALL(0x8)
+		__START_PSGSFD00_LCF	= .;
+		*	(PSGSFD00)
+		__END_PSGSFD00_LCF		= .;
+		
+	#	ALIGNALL(0x8)
+		__START_PSGSFD01_LCF	= .;
+		*	(PSGSFD01)
+		__END_PSGSFD01_LCF		= .;
+		
+	#	ALIGNALL(0x8)
+		__START_PSGSFD02_LCF	= .;
+		*	(PSGSFD02)
+		__END_PSGSFD02_LCF		= .;
+
+	#	ALIGNALL(0x8)
+		__START_PSGSFD03_LCF	= .;
+		*	(PSGSFD03)
+		__END_PSGSFD03_LCF		= .;
+
+	#	ALIGNALL(0x8)
+		__START_PSGSFD04_LCF	= .;
+		*	(PSGSFD04)
+		__END_PSGSFD04_LCF	= .;
+
+	#	ALIGNALL(0x8)
+		__START_PSGSFD05_LCF	= .;
+		*	(PSGSFD05)
+		__END_PSGSFD05_LCF	= .;
+
+	#	ALIGNALL(0x8)
+		__START_PSGSFD06_LCF	= .;
+		*	(PSGSFD06)
+		__END_PSGSFD06_LCF	= .;
+
+	#	ALIGNALL(0x8)
+		__START_PSGSFD07_LCF	= .;
+		*	(PSGSFD07)
+		__END_PSGSFD07_LCF	= .;
+
+	#	ALIGNALL(0x8)
+		__START_PSGSFD08_LCF	= .;
+		*	(PSGSFD08)
+		__END_PSGSFD08_LCF	= .;
+
+	#	ALIGNALL(0x8)
+		__START_PSGSFD09_LCF	= .;
+		*	(PSGSFD09)
+		__END_PSGSFD09_LCF	= .;
+
+	#	ALIGNALL(0x8)
+		__START_PSGSFD10_LCF	= .;
+		*	(PSGSFD10)
+		__END_PSGSFD10_LCF	= .;
+
+	#	ALIGNALL(0x8)	
+		__START_PSGSFD11_LCF	= .;
+		*	(PSGSFD11)
+		__END_PSGSFD11_LCF	= .;
+
+	#	ALIGNALL(0x8)
+		__START_PSGSFD12_LCF	= .;
+		*	(PSGSFD12)
+		__END_PSGSFD12_LCF	= .;
+
+	#	ALIGNALL(0x8)
+		__START_PSGSFD13_LCF	= .;
+		*	(PSGSFD13)
+		__END_PSGSFD13_LCF	= .;
+
+	#	ALIGNALL(0x8)
+		__START_PSGSFD14_LCF	= .;
+		*	(PSGSFD14)
+		__END_PSGSFD14_LCF	= .;
+
+	#	ALIGNALL(0x8)
+		__START_PSGSFD15_LCF	= .;
+		*	(PSGSFD15)
+		__END_PSGSFD15_LCF	= .;
+
+		__SIZE_PSGSFD00_LCF	= __END_PSGSFD00_LCF - __START_PSGSFD00_LCF;
+		__SIZE_PSGSFD01_LCF	= __END_PSGSFD01_LCF - __START_PSGSFD01_LCF;
+		__SIZE_PSGSFD02_LCF	= __END_PSGSFD02_LCF - __START_PSGSFD02_LCF;
+		__SIZE_PSGSFD03_LCF	= __END_PSGSFD03_LCF - __START_PSGSFD03_LCF;
+		__SIZE_PSGSFD04_LCF	= __END_PSGSFD04_LCF - __START_PSGSFD04_LCF;
+		__SIZE_PSGSFD05_LCF	= __END_PSGSFD05_LCF - __START_PSGSFD05_LCF;
+		__SIZE_PSGSFD06_LCF	= __END_PSGSFD06_LCF - __START_PSGSFD06_LCF;
+		__SIZE_PSGSFD07_LCF	= __END_PSGSFD07_LCF - __START_PSGSFD07_LCF;
+		__SIZE_PSGSFD08_LCF	= __END_PSGSFD08_LCF - __START_PSGSFD08_LCF;
+		__SIZE_PSGSFD09_LCF	= __END_PSGSFD09_LCF - __START_PSGSFD09_LCF;
+		__SIZE_PSGSFD10_LCF	= __END_PSGSFD10_LCF - __START_PSGSFD10_LCF;
+		__SIZE_PSGSFD11_LCF	= __END_PSGSFD11_LCF - __START_PSGSFD11_LCF;
+		__SIZE_PSGSFD12_LCF	= __END_PSGSFD12_LCF - __START_PSGSFD12_LCF;
+		__SIZE_PSGSFD13_LCF	= __END_PSGSFD13_LCF - __START_PSGSFD13_LCF;
+		__SIZE_PSGSFD14_LCF	= __END_PSGSFD14_LCF - __START_PSGSFD14_LCF;
+		__SIZE_PSGSFD15_LCF	= __END_PSGSFD15_LCF - __START_PSGSFD15_LCF;
+		
+		. = ALIGN(0x04);
+	} > .code_sg_sofdec
+
+	..bss_user :
+	{
+		ALIGNALL(0x08);
+		__START_B 		= .;
+		
+		__sbss = .;
+		*	(.bss)
+		__ebss = .;
+		
+	} > .bss_user
+	
+	..bss_user2 :
+	{
+		ALIGNALL(0x08);	
+		*	(B)
+		__END_B			= .;
+
+		ALIGNALL(0x20);
+		__START_B32		= .;
+		*	(B32)
+		__END_B32		= .;		
+		
+		. = ALIGN(0x04);	
+	} > .bss_user2
+	
+	..bss_sg :
+	{
+		ALIGNALL(0x08);
+		__START_BSG		= .;
+		*	(BSG)
+		__END_BSG		= .;
+
+		ALIGNALL(0x20);
+		__START_BSG32	= .; 
+		*	(BSG32)
+		__END_BSG32		= .;
+		
+		. = ALIGN(0x04);
+		
+	} >.bss_sg
+	
+	__stack_end = .;
+   	__stack_begin = __stack_end + 0x00002000; #8K of stack space
+    __stack_begin = (__stack_begin + 7) & ~7;
+}
+

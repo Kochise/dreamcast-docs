@@ -1,0 +1,943 @@
+========================================================================
+Metrowerks Command-Line Tools Usage Notes
+========================================================================
+
+Date:    December 9, 1999
+Authors: Ed Swartz, Stephen Chong
+
+========================================================================
+Usage and Configuration
+========================================================================
+
+[This section is generically targeted toward Win32 and Un*x hosted 
+command line tools.  The MPW-hosted and MacOS-targeting tools operate
+a bit differently due to historical precedents and OS limitations,
+namely regarding calling the linker from the compiler.  See the 
+"CLT_Mac_MPW_Notes.txt" file for information specific to those tools.]
+
+Command-line tools come in sets, typically named mwcc<ARCH>, mwld<ARCH>,
+and mwasm<ARCH>.  <ARCH> is a processor name such as 'x86', 'ppc', 'mips', 
+etc.  In tools whose host is the same as the target, the <ARCH> may be 
+left off (as for Windows).  In this document, 'mwcc'/'mwld'/'mwasm' are 
+used as generic names for 'mw??<ARCH>'.
+
+mwcc is the C/C++ compiler.  Its default mode of operation is to compile 
+files passed on the command line and invoke the linker, mwld.
+C/C++ source files are compiled by the compiler, and their objects are
+passed to the linker.  Other object files or libraries on the command line
+are verified for compatibility and their names are passed to the linker.
+
+Since the name of the linker is hardcoded in the compiler, it is not 
+recommended to change the names of the tools.  The command-line driver,
+however, has some flexibility if you rename the compiler and linker -- it 
+will replace 'cc' in the compiler's name with 'ld' and try to use that 
+filename for the linker (so you could rename the tools to 'cc' and
+'ld' if you wish).  The two tools' names must match otherwise.
+
+Also, there is the more straightforward '-linkername xxxx' option.
+
+mwasm is the target assembler.  This tool compiles assembly files into
+object files.  It does not invoke the linker.  (Note:  the mwcc tool does 
+not call the assembler.)
+
+mwld is the linker.  This tool generates an application by default,
+unless an option such as '-shared' or '-library' is passed.  Also,
+the linker functions as a disassembler if you pass the '-disassemble'
+or '-S' options (the compiler also has these options, but calls the
+linker to disassemble).
+
+General usage information for the command-line tools can be found in
+the '-help' option.  'mwcc -help' will list all the compiler options.
+'mwcc -help usage' lists information about the help itself.
+
+
+Calling the Linker from the Compiler
+====================================
+
+The C/C++ compiler will invoke the linker by default, taking source
+files, compiling them, and then passing the object files to the 
+linker.  The option "-c" is commonly used to tell the compiler not 
+to call the linker, leaving the object files behind.
+
+Other notable options that prevent the link stage are "-E" 
+(preprocess) and "-M" and variants (generate dependency map).  The 
+"Preprocessing, Precompiling, and Input File Control Options" section 
+of a "mwcc -help" listing contains other options that may affect the 
+triggering of the link stage.
+
+If you use the compiler to invoke the linker, it is important to
+understand how options are passed to the linker.  Command-line tools
+are based off their IDE plugin counterparts.  The main difference in
+usage (other than the obvious GUI vs. text mode) involves the
+persistence of pref panels.  Under the IDE, the same pref panels (such
+as linker settings, project settings, etc) are available to both the
+plugin compiler and linker, since the project that contains the
+preferences is open for both plugins.
+
+However, for command-line tools, preferences are assembled from scratch
+according to the options given on the command line.  If the compiler
+calls the linker, it's necessary that both tools have the same
+preferences.  This problem has been handled for the most part.
+
+First, the compiler and linker share the same defaults for common
+options.  (Use 'mwcc -help' to see the defaults, indicated by 
+"; default" or "; default is xxxxx" at the end of the help.)  
+Some options do not indicate defaults because they do not represent
+states but actions (such as adding an include path, printing 
+help, etc).  
+
+Second, the compiler passes all relevant options to the linker if
+it calls the linker.  Use of "-progress" will show, among other 
+things, the command line passed to the linker.  
+
+Note: If you are using a build system where the compiler and linker
+are called separately, the previous information does not apply.  You
+must pass all relevant options to both the compiler and linker.  If
+you don't, the linker may indicate that "the project settings for
+{endianness, floating point, etc} do not match those of file xxxxx.o"
+if you do not pass "-big/-little" or "-fp xxxx" to both the compiler
+and linker.  The "project" in this case is the temporary list of files
+and preferences set up during the lifetime of the command-line tool.
+
+If you want to verify that options passed to the linker set up the 
+same preference context as in the compiler, use "mwcc -help tool=both"
+to verify that all the options listed are specified (if at all)
+to both tools.
+
+Note that the disassembly options (-dis, -S) will also execute the 
+linker if used with the compiler, so the above guidelines about linker
+options also apply in this case.  However, the link stage itself is not
+invoked (i.e., no application or library is created).
+
+
+Environment Variables
+=====================
+
+To use the command-line tools, several environment variables must be
+changed or defined.  This may be done in autoexec.bat in Windows 95/98,
+in the Environment tab under the System control panel in Windows NT,
+or in a startup script (such as .bash_profile) in Un*x.  In the 
+following, "[CWFolder]" refers to the path where CodeWarrior was installed.
+
+Note that in Windows, it is not necessary to include quote marks when 
+defining environment variables that include spaces.  Windows will not
+strip out the quotes; and leaving them in leads to "unknown directory" 
+warnings in the command-line tool.  Use the following syntax in Windows 
+if defining variables in batch files or at the command line:
+
+     set CWFolder=C:\Program Files\Metrowerks\CodeWarrior Pro 5
+
+
+License Manager Setup
+=====================
+
+CodeWarrior plugins and command-line tools are licensed.  This requires 
+two things to be accessible at runtime -- the flexLM license manager DLL 
+"lmgr326b.dll" (Windows only) and the flexLM license information file 
+"license.dat".  Most likely, the installer has set up both of these
+files for you and you can skip this section.
+
+In Windows, if you see a dialog box appear that says the run-time
+library lmgr326b.dll is missing, it is sufficient to add an entry to 
+the PATH variable that points to the CodeWarrior installation 
+subdirectory 'Bin', or, to copy the lmgr326b.dll file into the same 
+directory as the command-line executables.
+
+To find the license information file, flexLM first looks in the same
+directory as the running executable (mwcc/mwld/mwasm) and alternately
+looks at the path in the LM_LICENSE_FILE environment variable.
+Additionally, you may specify as the first argument to the tool the
+option "--use-license-file=<path>".  Or, you may copy the license.dat
+file from the CodeWarrior installation directory into the command-line
+tools directory.
+
+
+System Include / Library Variables
+==================================
+
+Several environment variables are used at runtime to search for system
+include paths and libraries which can shorten command lines for many
+tasks.  All of the variables mentioned below are lists which are
+separated by semicolons (';') in Windows, commas (',') in MacOS, and 
+colons (':') in Un*x systems.  In addition, the target operating 
+system's separators may be used, if used exclusively of the others.
+
+Generally, these environment variables may exist in two forms, one specific
+to the tool you're using, and one generic to all CW tools.  The tool-specific 
+form has a longer name to distinguish it from other tools.  For example, the 
+C/C++ system include list (see below) has a Win-x86 specific name 
+"MWCWinx86Includes" and a generic name "MWCIncludes".  The tool-specific
+string is called <OS><ARCH> below.  Note that for some embedded systems,
+<OS> is blank.
+
+The reason two forms of the variables are available is to facilitate multi-
+target compiling and linking.  If you are only using one flavor of
+CodeWarrior tools, defining the generic variables is sufficient.  Note
+that the warning message printed when neither of the variables is found
+refers to the generic form.
+
+In all cases, the tool-specific variable overrides the generic variable
+if both are found.
+
+C/C++ Compiler
+--------------
+
+For the C/C++ compiler, unless '-nostdinc' or '-nodefaults' is given,
+an environment variable 'MWC<OS><ARCH>Includes' or 'MWCIncludes' is searched
+for a list of paths to add to the end of the user-specified system 
+#include path list.  For example, in this setup:
+
+	set MWCIncludes=<dir1>;<dir2>
+	mwcc -c file.c -I<somedir> -I- -I<anotherdir>
+	
+the access paths are:
+
+	User paths:
+		<somedir>
+	System paths:
+		<anotherdir>
+		<dir1>
+		<dir2>
+
+Since user paths are searched before system paths, custom versions of
+commonly named headers like "types.h" will be found instead of the
+system ones.
+
+Assembler
+---------
+
+In the assembler, unless '-nostdinc' or '-nodefaults' is specified,
+the variable 'MWAsm<OS><ARCH>Includes' or 'MWAsmIncludes' is searched and
+used in a similar fashion as for the C/C++ compiler, except that no warning 
+is generated if neither variable exists, since assembly files are unlikely 
+to need system access paths.
+
+Linker
+------
+
+In the linker, two sets of variables are used if '-nostdlib', '-nodefaults',
+'-library', or '-disassemble' is not specified (for non-MacOS targets)
+or if "-defaults" or "-stdlib" is specified (for MacOS targets).
+
+First, 'MW<OS><ARCH>Libraries' or 'MWLibraries' is searched for a list
+of access  paths for finding system libraries, which again are added
+to the end of  the access path list specified on the command line.
+
+Second, 'MW<OS><ARCH>LibraryFiles' or 'MWLibraryFiles' is searched for
+a list of library filenames to be added to the end of the link order
+specified on the command line.
+
+The access paths and library filenames are used together to allow a compact
+representation of the sometimes voluminous number of libraries required to
+link.  For instance:
+
+	MWLibraries = [CWFolder]\Win32-x86 Support\Libraries\Runtime;
+					[CWFolder]\Win32-x86 Support\Libraries\Win32 SDK;
+					[CWFolder]\MSL\Lib\...;[CWFolder]\...
+	MWLibraryFiles = gdi32.lib;user32.lib;kernel32.lib;ansicx86.lib;mwcrtl.lib
+
+	mwld file.obj -Lreplacements
+
+will search for:
+
+	replacements\gdi32.lib										[not found]
+	[CWFolder]\Win32-x86 Support\Libraries\Runtime\gdi32.lib	[not found]
+	[CWFolder]\Win32-x86 Support\Libraries\Win32 SDK\gdi32.lib 	[found]
+	...
+	replacements\ansicx86.lib									[not found]
+	[CWFolder]\Win32-x86 Support\Libraries\Runtime\ansicx86.lib [not found]
+	[CWFolder]\Win32-x86 Support\Libraries\Win32 SDK\ansicx86.lib [not found]
+	[CWFolder]\MSL\Lib\ansicx86.lib								[found]
+	...
+	replacements\mwcrtl.lib										[found]
+	
+The linker will search all access paths, including those on the command-line,
+for the files in MWLibraryFiles, so you may override the system libraries
+or paths as needed.
+
+========================================================================
+Frequently Asked Questions
+========================================================================
+
+"How do I make '#include <myfile.h>' work?"
+
+    [Update on 1999/12/09: see below!]
+
+	You need to add a system access path.  The brackets "<xxx>" indicate
+	that only system paths should be searched.  The "-Ipath" option
+	will only add user access paths, until you use the "-I-" option,
+	which changes "-Ipath" into adding system access paths:
+	
+	mwcc -c file.c -I<user path> -I<user path> -I- -I<system path> ...
+	
+	Note that "-I-" implicitly invokes "-cwd explicit", which means
+	the current directory or the source directory are no longer searched
+	for headers.  You might have to add "-I." to get those headers.
+	
+"The linker says the object files [or libraries] 
+do not match the project settings.  What gives?"
+
+	Did you do something like this?
+	
+		mwcc -c file.c -big -fp soft -proc 123
+		mwld -o app file.o 
+
+	If so, that is the source of the problem.  You probably need to 
+	pass "-big -fp soft -proc 123" to the linker as well.  The linker
+	does not guess settings from the object files.  
+
+	This is an artifact of the command-line tools being derived
+	from their plugin counterparts.  Both a compiler and linker plugin
+	share the same pref panel settings implicitly in a project.  
+	For the command-line versions, the linker must explicitly be 
+	given the same settings as the compiler.
+
+	Execute	"mwcc -help tool=both" to see what options are shared
+	(and should be set the same) between the compiler and linker.
+
+"How do I debug programs built with
+command-line tools?"
+
+	Generally, there is an option "-sym xxx" for the compiler and the
+	linker, or "-g", which is a synonym for maximum symbolics.  You
+	need to use the option both with the compiler (to store debugging
+	information in object files) and with the linker (to copy the
+	debugging information into the output file).  The "-sym xxx" or 
+	"-g" option in the compiler corresponds to clicking the "debug" 
+	column for a file in an IDE project.
+	
+	You should then be able to drag the output application onto the 
+	CodeWarrior IDE icon to launch the integrated debugger.  
+
+"I have a project I want to build with the
+command-line tools.  How do I go about doing this?"
+
+	Unfortunately, there is no automatic way to do this yet.  You
+	should have a basic knowledge of batch files and/or Makefiles,
+	first of all (else, why are you using command-line tools? ;).
+	After that, the basic steps are... (and this is a general 
+	outline, not a tutorial on using 'make'):
+	
+	1)  Understand the basic project structure.  If the project
+	includes several subprojects, it is best to tackle each one 
+	individually, and link them together afterwards.  
+	
+	For multiple subtargets and Makefiles, you can set up one 
+	Makefile and select a group of settings upon building by passing
+	a command-line argument to "make":
+	
+		# call with "make TARG=ppc" or "make TARG=x86"
+		#
+		all: program.$(TARG)
+		
+		LD_OPTIONS_x86 = ...
+		LIBS_x86 = ansicx86.lib gdi32.lib ...
+		LD_OPTIONS_ppc = ...
+		LIBS_ppc = MSLRuntimePPC.Lib PPCToolLibs.o ...
+		
+		program.$(TARG): 
+			mwld$(TARG) -o $@ objects.$(TARG)\*.o \
+				$(LD_OPTIONS_$(TARG)) $(LIBS_$(TARG))
+			
+	2)  Set up variables to refer to your CodeWarrior installation
+	directory and to the top directory of your project.  This makes
+	it easier to modify build scripts to build from different 
+	directories or machines:
+	
+		set MWHome=...
+		set Top=...
+		
+		... $(Top)/file1.c $(Top)/dir/file2.c ...
+		... $(MWHome)/MSL/... $(MWHome)/Tools/Command-Line-Tools/mwcc.exe ...
+	
+	2)  Get the list of files.  For this, it's best to look at the
+	"Link Order" pane of the project, so you know at a glance what
+	files apply to the current target, and in what order they should
+	be linked.  If you put linker command files or export files in
+	the project, you can put them on the command line too.
+
+		FILES=$(Top)/file1.c $(Top)/dir/file2.c $(TOP)/command.lcf
+		
+	3)	Get the list of access paths.  Look at the "Access Paths" panel
+	and specify an "-Ipath" option for each one.  For recursive access
+	paths (where there is a folder icon in the second column), use the 
+	"-ir" option.  List user paths first, then use "-I-", then list 
+	system paths.  If your path names include spaces, you must quote the 
+	path.  Don't quote the space that separate "-ir" from the path, 
+	though.
+
+		INCLUDES=-I$(Top) -ir "$(Top)/..." -I- -ir $(MWHome)/MSL/... "-I..."
+
+	4)	Figure out what options to use.  Look at each preference panel
+	(at least C/C++ Language, C/C++ Warnings, Global Optimizations, and
+	??? Processor for mwcc; ??? Assembler for mwasm; and ??? Target and
+	??? Linker for mwld) and compare the settings in the panels with
+	options listed in the command-line help.  In the command-line tools,
+	groups of options usually correspond directly to pref panels.
+	
+	All tools contain a set of defaults which are the same for the
+	compiler and linker, so it is not necessary to supply every possible
+	option to both tools -- only those that change the defaults.  
+	Furthermore, some options only apply to the compiler, and won't
+	be recognized by the linker.  See the help text ("mwcc -help", 
+	"mwld -help") for details about defaults.  For options that have
+	multiple states, usually "; default" or "; default is xxx" will
+	tell you which is default.  Other options do not list defaults
+	because they represent an action, or can only be turned on (such 
+	as adding an include path or enabling debugging information).
+	
+		C_OPTIONS = -opt all -warnings off, unused, pedantic -align 4
+		L_OPTIONS = -application -stacksize 65536 -heapsize 1048576
+		OPTIONS = -sym on -big -proc 505 
+		
+	5)	Call the tools.  You can paste together all the filenames,
+	access path options, and settings options together in any order
+	and call the compiler and linker with them.  It is beneficial
+	to compile as many files as possible on one command line, since
+	include headers are cached, and the overhead time of handling
+	"-ir" options is lower.
+	
+	It's best to call the compiler and linker separately for large
+	projects, since the object files generated by the compiler remain
+	on disk for the linker to use later.  If you invoke the linker
+	through the compiler, however, the object files will be deleted,
+	being considered temporary.
+	
+	You can send object files to a directory with "-o <directory>".
+	
+		mwcc -c $(FILES) $(INCLUDES) $(C_OPTIONS) $(OPTIONS) -o objects/
+	
+	For the linker, you can usually pass linker command files on the
+	command line like any other file.  In some cases, however, there
+	is a particular option to specify use of a command file (where
+	in the GUI tools you see, for instance, a checkbox for "use 
+	command file" or a pref panel setting for "command file").
+
+		mwld $(L_OPTIONS) $(OPTIONS) objects\*.o command.lcf -o target
+
+========================================================================
+New Features in this Version
+========================================================================
+
+1999/12/09:
+
+Implemented two options which modify #include searching to be more
+compatible with other command-line tools.  The first modifies the
+default behavior of "-I" and "-I-", where "-Ipath" and "-ir path" add
+an access path to the user list before "-I-", and to the system list
+afterwards.  When the "-gccincludes" option is specified, "-Ipath" and
+"-ir path" add access paths only to the system list; but when "-I-" is
+specified, all previous "-I" and "-ir" paths are moved into the user
+list.
+
+The new behavior allows sloppy programs like this:
+
+	#include <stdio.h>
+	#include <config.h>
+	#include "options.h"
+	.
+	.
+	.
+
+where "config.h" is a user file in "./inc/" and "options.h" is in ".",
+to build with:
+
+    mwcc -gccincludes -c file.c -Iinc
+
+Previously, you had to specify:
+
+    mwcc -c file.c -I. -I- -Iinc
+
+so that "inc/" would be added to the system list, where "#include
+<...>" would find it.  "-I." was needed to find "options.h" in the
+same directory as "file.c", since "-I-" implies "-cwd explicit" which
+causes the driver to search only the directories listed in "-Ipath"
+or "-ir path" options.  (This aspect of "-I-" is unchanged; it has
+always been compatible with GCC.)
+
+The second option that has been added is a choice under "-cwd" which
+is "-cwd include".  This tells the command-line driver to search in
+the directory of the including file before looking in the system access
+paths, when processing a user include ('#include "...."', not 
+'#include <...>').  System includes are processed as before, by 
+searching the access paths in order.
+
+When header files are usually located in the same directory as
+the source or header files that reference them, this allows you to
+avoid adding "-I" include paths for each one of those directories,
+and also avoids problems when multiple files with the same name
+exist in the set of directories.
+
+"-cwd" affects the initial lookup performed when searching for an
+"#include" file *before* looking in any user access paths.  To summarize,
+"-cwd proj" searches in the current working directory at the time you
+invoked the tool.  "-cwd source" searches in the directory of the
+source file being compiled.  "-cwd explicit" prevents any initial
+lookup, only searching the access paths.  And, as described above,
+"-cwd include" searches the directory of the file that contains the
+user "#include".
+
+As a review of the various searching styles available, here is an
+example in which multiple files with the same name exist:
+
+<dir>/src/mainfile.c:
+---------------------
+#include "../inc/hdr.h"
+
+<dir>/src/alt.h:
+----------------
+#warning "header in src/"
+
+<dir>/inc/hdr.h:
+----------------
+#warning "header in inc/"
+#include "alt.h"
+
+<dir>/inc/alt.h:
+----------------
+#warning "header in inc/"
+
+The question here is, which version of "alt.h" will be picked up from
+"hdr.h"?
+
+<CWD=dir>	mwcc -c src/mainfile.c -cwd source
+
+	will find "<dir>/inc/hdr.h" (since "src/" + "../inc/hdr.h" can be 
+	found), and will find "<dir>/src/alt.h" because it is in the source
+	directory ("<dir>/src/").
+
+<CWD=dir>	mwcc -c src/mainfile.c -cwd proj
+
+	will not find "hdr.h" since it does not exist relative to "<dir>".
+	
+<CWD=dir>	mwcc -c src/mainfile.c -cwd proj -Isrc
+	
+	Here, we add "-Isrc" to allow "<dir>/src/" + "../inc/hdr.h" to find 
+	"<dir>/inc/hdr.h".  "alt.h" will be found in "<dir>/src/alt.h" via
+	the include path as well.
+
+<CWD=dir>	mwcc -c src/mainfile.c -cwd include
+
+	will find "<dir>/inc/header.h", since that is the pathname
+	generated by appending the given filename to the directory of
+	"mainfile.c".  "<dir>/inc/alt.h" will be found since it is in the
+	same directory as its including file, "<dir>/inc/header.h".  No
+	"-I" option needs to be passed to find any of the files, and
+	headers in the same directory as their callers are chosen.  (Even
+	if "-Isrc" were added, no headers would be selected from that
+	directory unless they do not exist in "<dir>/inc".)  This is the
+	functionality that people have enjoyed in other tools.
+
+
+1999/08/20:
+
+Extended Output Options
+=======================
+
+The command-line tools have improved output capabilities.  Preprocessor,
+disassembly, and dependency information can now be written to files
+instead of stdout.  In some cases, options that select these outputs
+indicate whether the output goes to stdout or a file.  For instance,
+'-E' preprocesses to stdout, and '-P' preprocesses to a file; '-dis'
+disassembles to stdout, and '-S' disassembles to a file.
+
+Inverse options do not exist for all cases; usually options exist where other 
+vendors have set precedents.  For example, '-M' lists dependencies to stdout,
+but '-MD' lists dependencies to a file as well as generating object code.
+
+The "-o" option can be used to redirect outputs.  (It is not only used with
+object files!)  For example, these two command lines are equivalent:
+
+	mwcc -P file.c					(preprocess to file)
+	mwcc -E file.c -o file.i		(redirect output to file)
+
+'-o' can be used, for example, to send dependencies to a file without 
+using '-MD' (which generates object code as well):
+
+	mwcc -M file.c -o Makefile.dep
+
+In this example, the dependency lines are sent to the file "Makefile.dep".  
+In the dependency rule, the target for "file.c" is derived from the
+default for the target (see below):
+
+	file.o: file.c \
+		...
+
+You may specify an alternate target output path by placing "-o" before 
+the source file:
+
+    mwcc -o outdir/file.obj file.c -M -o Makefile
+-->   
+    outdir/file.obj: file.c \
+    	...
+
+(The final "-o Makefile" must come after "-M" or you will get an error
+for apparently supplying two output names for "file.c".)
+
+
+Usage note about "-S" / "-disassemble + -o"
+-------------------------------------------
+
+Note that using '-o' is not always equivalent to using an option that sends
+output to a file.  A notable case is '-S' and '-disassemble ... -o'.  When
+disassembling from a compiler, the linker is always invoked, since it
+contains the disassembler.  
+
+Since the compiler passes arguments to the linker, the linker
+can use '-S' appropriately to write the disassembly to a file.
+However, when using a compiler with '-disassemble ... -o', the linker
+gets '-disassemble' but not '-o', since that is used to name the
+application or library, so the compiler compensates by piping the
+linker's stdout directly to the output file.  So, if you're viewing
+diagnostics with '-v', the linker's diagnostics will go into the
+disassembly file, not stdout.
+
+
+Output File Naming
+==================
+
+The default name for an output file is generated from the source file
+according to several rules:
+
+First, files are placed in the output directory unless their names
+reference a path.  The output directory is the current working directory, 
+unless "-o" is used to specify a directory.  Only one output directory
+may be specified.
+
+Second, if a filename is specified with "-o", the file is placed in the 
+output directory with the given name.  If a relative or absolute path is 
+specified, that exact path is used for the output file.
+
+Third, if no filename is given for an output file, it is placed in the
+output directory with a name generated according to an extension transform.
+An "extension transform" is a string containing the extension where, if 
+the first character is '.', the rest of the string is appended to the source 
+file's name, else, the string replaces the source file's extension.  
+(The -ext option uses this format.)
+
+Each tool has default extension transforms for object files, disassembly 
+text, dependency information, preprocessed text, precompiled headers, and 
+browser data.  For Windows targets, these are usually "obj", "asm", "dep", 
+"inc", "mch", and ".b"; for other non-Mac targets, these are "o", "s", "d", 
+"i", "mch", and ".b").  
+
+As an example, on a Windows host:
+
+	mwcc -c file.c			--> generates file.obj
+	mwcc -S file.c			--> generates file.asm
+	mwcc -c file.pch		--> generates file.mch (sans #pragma precompile_target)
+	mwcc -browse -c file.c	--> generates file.obj and file.obj.b
+
+	mwcc -c file.c -o out/			--> generates out/file.obj
+	mwcc -c file.c -o out/x.o		--> generates out/x.o
+	mwcc -c file.c -o out/ -o bat	--> generates out/bat
+
+mwcc and mwasm allow compiles of multiple source files.  If the link
+stage is not invoked (i.e., "-c" or a similar option is used; see
+above), you can specify outputs for more than one of the files.  You
+may either supply a single "-o <directory>" option to put outputs in
+<directory> (each with a filename derived from the default extension
+transform) or name some or all of the output files with "-o
+<filepath>".
+
+You may not specify multiple output directories, though you may supply
+relative paths for <filepath>:
+
+    mwcc -c file1.c -o /tmp file2.c -o ../file2.test.o
+
+
+Temporary Files
+===============
+
+When the compiler invokes the linker (e.g., '-c' is not present),
+intermediate object files are saved to temporary files.  These files 
+have the expected filename but are stored in a temporary directory
+read from the environment variable TMP, TEMP, or TMPDIR.  If none
+of these exist, the files are written to the current directory.  
+
+Temporary files are deleted after successful invocation of the linker.
+
+
+Response files
+==============
+
+This command-line driver includes support for response files, which are used 
+to insert command-line arguments from a file.  In the command-line, use the
+syntax:
+
+	@file
+	
+to read arguments from '@file' into the corresponding position in the command
+line.  (If a file legitimately begins with '@', use '\@...' to avoid 
+looking for a response file.)
+
+The response file is parsed such that arguments are separated by whitespace
+except where surrounded by quote marks.  Whitespace followed by a pound 
+character ('#') is used to indicate the rest of the line is a comment.
+(Use '\#' in a response file if an argument actually starts with '#'.)
+
+Response files cannot be nested recursively.  
+
+
+Message formats
+===============
+
+The "-msgstyle" option can be used to alter the style that command-line
+tools use to emit messages.  This example file will be used:
+
+	#warning "warning"
+	#pragma message("message")
+	#error "error"
+
+"-msgstyle mpw" is the style used in the original MPW tools and
+pre-Pro5 versions of Windows command-line tools, and is still the
+default in MacOS-hosted, MacOS-targeting tools.  This style is
+extremely verbose, emitting many decorative lines to separate
+filenames, message text, and source line text.  The "File" line in the
+following messages is useful since it can be selected in MPW and
+executed to bring up the offending file at the proper position for
+editing.
+
+	### mwcc Usage Warning:
+	#   Environment variable 'MWCIncludes' not found
+	### mwcc Compiler Warning:
+	#        #warning "warning"
+	#               ^
+	#   preprocessor #warning directive
+	#----------------------------------------------------------
+	    File "C:\source\tmp\message.c"; Line 2
+	#----------------------------------------------------------
+	### mwcc Compiler Note:
+	#   message
+	### mwcc Compiler Error:
+	#        #error "error"
+	#             ^
+	#   preprocessor #error directive
+	#----------------------------------------------------------
+	    File "C:\source\tmp\message.c"; Line 4
+	#----------------------------------------------------------
+
+"-msgstyle std" is the "standard" CW message style, which is less verbose,
+but still contains all the elements of a message.  The filenames given are 
+relative to the current working directory, and the name of the file is 
+emitted only the source of the error changes (either the main source file 
+or the header file):
+
+	### mwcc Usage Warning:
+	#   Environment variable 'MWCIncludes' not found
+	### mwcc Compiler:
+	#    File: message.c
+	# ------------------
+	#       2:  #warning "warning"
+	# Warning:         ^
+	#   preprocessor #warning directive
+	### mwcc Compiler Note:
+	#   message
+	### mwcc Compiler:
+	#       4:  #error "error"
+	#   Error:       ^
+	#   preprocessor #error directive
+
+"-msgstyle ide" is a message style which resembles the output seen 
+in the "Errors & Warnings" window in the CW IDE.  For brevity's sake,
+there are no arrows pointing to the offending token.
+
+	 Warning : Environment variable 'MWCIncludes' not found
+	 Warning : preprocessor #warning directive
+	message.c line 2         #warning "warning"
+	    Note : message
+	   Error : preprocessor #error directive
+	message.c line 4         #error "error"
+
+"-msgstyle gcc" is a GCC-like message style, where the source line is
+omitted, and the entire message is printed on one line, if possible.
+(Messages that contain embedded newlines will still be emitted as such.)
+
+	mwcc: Environment variable 'MWCIncludes' not found
+	message.c:2: warning: preprocessor #warning directive
+	mwcc: message
+	message.c:4: preprocessor #error directive
+
+"-msgstyle parseable" is a machine-readable message style, where each
+part of a message is emitted with well-known separators:
+
+	nmwcc|Usage|Warning
+	 Environment variable 'MWCIncludes' not found
+	nmwcc|Compiler|Warning
+	(C:\source\tmp\message.c|2|8|1|9|1)
+	= #warning "warning"
+	 preprocessor #warning directive
+	nmwcc|Compiler|Note
+	 message
+	nmwcc|Compiler|Error
+	(C:\source\tmp\message.c|4|6|1|55|1)
+	= #error "error"
+	 preprocessor #error directive
+
+The format of the message is:
+
+	 <program name> '|' <message source> '|' <message type> '\n'
+			  ['(' <source file> '|' <line number> '|' 
+			  <selection offset in source line> '|' <selection length> '|'
+			  <token offset in file> '|' <token length> ')' '\n' 
+			   '=' <one source line> '\n' ]
+	'>' <full text of message, each line beginning with '>'> '\n'
+
+<message source> is one of "Driver", "Usage", "Compiler", or "Linker".
+<message type> is one of "Note", "Warning", "Error", "Alert", or
+"Status".  The bracketed section is optional and is only included if
+the message refers to source text.  Therein, the <source file> is a
+full path, and all offsets and lengths are measured in characters.
+The selection offsets refer to the source text following the '=' sign;
+so zero is the first character after the '=', etc.
+	
+The message "Errors caused tool to abort" will still be printed with
+this message style.  It can be detected by the blank line preceding
+it.
+
+Message counting
+================
+
+The "-maxerrors" and "-maxwarnings" options control message output by
+limiting the number of errors or warnings emitted, but it is
+not an absolute count of messages.  The errors and warnings emitted by 
+the command-line driver and parser are counted separately from those
+emitted by the plugins (compiler or linker).  This has been done since
+warnings generated by the command-line driver and parser are probably
+important enough to warrant changing your command lines to resolve.
+
+Note that the "-nofail" option alters the behavior of the message
+counting.  When using "-nofail", the error and warning count is reset
+for each file compiled.  This is because "-nofail" implies an
+aggressive attempt to build everything on the command-line; the total
+number of errors printed (not exceeding "-maxerrors" per file) should
+not be expected to abort the build.
+
+
+Recursive Include Searching
+===========================
+
+The ability of the command line tools to recursively search access paths
+has often been requested, and has been added in this release.  The format 
+of the recursive include option is:
+
+	-ir <path>	 (in compilers)
+	-lr <path>	 (in linkers)
+	
+This is equivalent to supplying a depth-first search of the subdirectories
+under <path>, excluding those whose leaf names are enclosed in parentheses 
+(such as '\CodeWarrior\(Helper Apps)'):
+
+	-i <path> -i <path>/<subdir1> -i <path>/<subdir1>/... -i <path>/<subdir2> ...
+
+In addition, the standard environment variables can use recursive includes.
+Prepend a plus sign ('+') to any path you want recursively searched.  This
+example adds all the subdirectories of the MSL tree and one directory
+containing special headers:
+
+	set MWCIncludes=+c:\codewarrior\MSL;c:\myheaders\special
+
+Caveats
+-------
+
+In the current implementation, and likely any others in the future, 
+recursive include searching will SLOW DOWN all of your compiles 
+(usually by a factor of two or more), especially if you do not 
+judiciously select the paths to search.  The reason is, searching
+a directory tree involves massive operating system and I/O overhead
+that would not normally be incurred.
+
+The overhead imposed by recursive include searching is twofold:  first,
+finding out what subdirectories exist when you initially supply the
+'-ir' option, and secondly, looking for a file in each of those directories
+every time an '#include' is searched.
+
+If you must use recursive includes, please use the maximum reasonable
+number of '-ir' options, and take advantage of mwcc's ability 
+to compile multiple source files, to lessen the I/O overhead of
+processing the '-ir' options.
+
+	
+Standard Output and Error Handles (Windows only)
+================================================
+
+It has long been a C standard to use stdout for ordinary output and stderr 
+for error printing, but it has also long been a DOS standard to disallow
+redirection of stderr from command.com (as in "program >out 2>err").  
+
+To remedy this, all output goes by default to stdout.  This will remain
+the case until all the incarnations of Windows support stderr redirection.
+								   
+To send error output to stderr (under NT, perhaps), use '-stderr'.
+This is the default behavior on other hosts.
+
+
+File Mappings
+=============
+
+Command-line tools are created directly from the IDE plugins, and the 
+command-line driver identifies files much as the IDE does, through file 
+mappings.  A file mapping maps a file's extension or a type to a 
+particular compiler or linker, and indicates whether such a file is 
+source and/or can be precompiled (currently, the command-line driver 
+does not care about resource files or documents).  
+
+The file's type is traditionally the Macintosh file type, but in the 
+command-line driver, the "magic word" of a file is used to determine
+its type.  When creating a file, the Mac file type is mapped into
+various file attribute settings (such as the executable bit in Unix
+or the MIME type in BeOS).
+
+File mappings are compiled into the tool and cannot be changed, but 
+this should not pose many problems.  An advantage of the command-line 
+compiler is that it can assume a file is source if no file mappings exist
+(the IDE cannot do this, I assume, due to the fact that it must support 
+multiple targets).  
+
+You will see this warning when a file doesn't have a mapping:
+
+	### nmwcc Driver Warning:
+	#   No file mapping matches 'dummy.txt' (unrecognized file contents or
+	#   filename extension); treating as source text
+
+	(... a slew of compiler errors... ;)
+	
+Note, though, that for the MW C/C++ compiler, all source files *except*
+those ending in ".c", ".h", or ".pch" are considered C++ source, unless
+you use '-dialect c'.
+
+The linker follows similar rules.  It must recognize every file on
+the command line or else a warning is issued.  These warnings should be 
+heeded!  "Source text" to a linker means practically nothing.  As in the 
+IDE, the linker is free to ignore files it does not recognize.  So, except 
+for the command-line warning, it is likely that these "source text" files 
+will be ignored altogether.
+
+Linkers usually detect special linker command files (such as lists of
+exports, segment mappings, code ordering files, or actual command
+files in MW ELF linkers) by their filename extension.  Often an option
+will be provided to add such a file to the link order which verifies
+its filename for its particular use (e.g., '-@export <file>.exp',
+which prints a warning if the file's extension is not '.exp').  If
+there is no such option, add the file's name to the list of files on
+the command line.  The warning above will indicate whether the linker
+is likely to ignore the file.
+
+========================================================================
+Contacting Metrowerks
+========================================================================
+
+Use the forms found in the Release Notes folder on the CD to submit:
+
+    Technical Support    cw_support@metrowerks.com
+    Report Bugs:         cw_bug@metrowerks.com
+    Suggestions:         cw_suggestion@metrowerks.com
+
+See the CodeWarrior_on_the_Nets document in the Release Notes folder for
+more contact information, including a list of Internet newsgroups,
+online services, and factory update sites.
+
+========================================================================
+Ed Swartz, Stephen Chong
+Command-Line Tools Engineers
+Metrowerks Corporation

@@ -1,0 +1,3988 @@
+/*  Metrowerks Standard Library  Version 4.0  1998 August 10  */
+
+/*  $Date: 1999/03/08 19:03:43 $ 
+ *  $Revision: 1.10 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Portions Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/**
+ **  vector
+ **/
+
+#ifndef _VECTOR
+#define _VECTOR
+
+#include <mslconfig>
+
+#include <climits>
+#include <algorithm>
+#include <iterator>
+#include <limits>
+#include <memory>
+#include <new>
+#include <stdexcept>
+#include <string>
+
+#ifndef RC_INVOKED
+
+#pragma options align=native
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import on
+#endif
+
+#ifndef _MSL_NO_CPP_NAMESPACE
+	namespace std {
+#endif
+
+template <class T, class Allocator = allocator<T> >
+class vector
+{
+	#ifndef _MSL_NO_MEMBER_TEMPLATE
+		template <bool b> struct chooser {};
+	#endif
+public:
+	// types:
+	typedef typename Allocator::reference         reference;
+	typedef typename Allocator::const_reference   const_reference;
+	typedef typename Allocator::pointer           iterator;
+	typedef typename Allocator::const_pointer     const_iterator;
+	typedef typename Allocator::size_type         size_type;
+	typedef typename Allocator::difference_type   difference_type;
+	typedef T                                     value_type;
+	typedef Allocator                             allocator_type;
+	typedef typename Allocator::pointer           pointer;
+	typedef typename Allocator::const_pointer     const_pointer;
+	typedef _STD::reverse_iterator<iterator>       reverse_iterator;
+	typedef _STD::reverse_iterator<const_iterator> const_reverse_iterator;
+	// _lib.vector.cons_ construct/copy/destroy:
+	explicit vector(const Allocator& = Allocator());
+	explicit vector(size_type n, const T& value = T(), const Allocator& = Allocator());
+	#ifndef _MSL_NO_MEMBER_TEMPLATE
+		template <class InputIterator>
+			inline
+			vector(InputIterator first, InputIterator last, const Allocator& a = Allocator())
+				: alloc_(a),
+				  size_(0),
+				  data_(0)
+			{
+				choose_init(first, last, chooser<numeric_limits<InputIterator>::is_integer>());
+			}
+	#else
+			vector(const_iterator first, const_iterator last, const Allocator& = Allocator());
+	#endif
+	vector(const vector<T,Allocator>& x);
+	~vector();
+	vector<T,Allocator>& operator=(const vector<T,Allocator>& x);
+	#ifndef _MSL_NO_MEMBER_TEMPLATE
+		template <class InputIterator>
+			inline
+			void assign(InputIterator first, InputIterator last)
+			{
+				choose_assign(first, last, chooser<numeric_limits<InputIterator>::is_integer>());
+			}
+	#else
+		void assign(const_iterator first, const_iterator last);
+	#endif
+	void assign(size_type n, const T& u);
+	allocator_type get_allocator() const;
+	// iterators:
+	iterator               begin();
+	const_iterator         begin() const;
+	iterator               end();
+	const_iterator         end() const;
+	reverse_iterator       rbegin();
+	const_reverse_iterator rbegin() const;
+	reverse_iterator       rend();
+	const_reverse_iterator rend() const;
+	// _lib.vector.capacity_ capacity:
+	size_type size() const;
+	size_type max_size() const;
+	void      resize(size_type sz, T c = T());
+	size_type capacity() const;
+	bool      empty() const;
+	void      reserve(size_type n);
+
+	// element access:
+	reference       operator[](size_type n);
+	const_reference operator[](size_type n) const;
+	const_reference at(size_type n) const;
+	reference       at(size_type n);
+	reference       front();
+	const_reference front() const;
+	reference       back();
+	const_reference back() const;
+	// _lib.vector.modifiers_ modifiers:
+	void push_back(const T& x);
+	void pop_back();
+	iterator insert(iterator position, const T& x);
+	void     insert(iterator position, size_type n, const T& x);
+	#ifndef _MSL_NO_MEMBER_TEMPLATE
+		template <class InputIterator>
+			inline
+			void insert(iterator position, InputIterator first, InputIterator last)
+			{
+				choose_insert(position, first, last, chooser<numeric_limits<InputIterator>::is_integer>());
+			}
+	#else
+		void insert(iterator position, const_iterator first, const_iterator last);
+	#endif
+	iterator erase(iterator position);
+	iterator erase(iterator first, iterator last);
+	void     swap(vector<T,Allocator>&);
+	void     clear();
+private:
+	_EmptyMemberOpt<Allocator, size_type> alloc_;  // m_ is capacity
+	size_type size_;
+	pointer data_;
+
+	#ifndef _MSL_NO_MEMBER_TEMPLATE
+		template <class InputIterator>
+			inline
+			void
+			choose_init(InputIterator first, InputIterator last, chooser<true>)
+			{
+				init(static_cast<size_type>(first), static_cast<value_type>(last));
+			}
+
+		template <class InputIterator>
+			inline
+			void
+			choose_init(InputIterator first, InputIterator last, chooser<false>)
+			{
+				init(first, last, iterator_traits<InputIterator>::iterator_category());
+			}
+
+		template <class InputIterator>
+			void
+			init(InputIterator first, InputIterator last, input_iterator_tag)
+			{
+				#ifndef _MSL_NO_EXCEPTIONS
+				try
+				{
+				#endif
+					for (; first != last; ++first)
+						push_back(*first);
+				#ifndef _MSL_NO_EXCEPTIONS
+				}
+				catch (...)
+				{
+					tear_down();
+					throw;
+				}
+				#endif
+			}
+
+		template <class ForwardIterator>
+			void
+			init(ForwardIterator first, ForwardIterator last, forward_iterator_tag)
+			{
+				size_ = alloc_.m_ = (size_type)distance(first, last);
+				if (size_ > max_size())
+					#ifndef _MSL_NO_EXCEPTIONS
+						throw length_error("vector::construction length error");
+					#else
+					{
+						fprintf(stderr, "vector::construction length error\n");
+						abort();
+					}
+					#endif
+				if (alloc_.m_ > 0)
+				{
+					data_ = alloc_.allocate(alloc_.m_);
+					#ifndef _MSL_NO_EXCEPTIONS
+					try
+					{
+					#endif
+						uninitialized_copy(first, last, data_);
+					#ifndef _MSL_NO_EXCEPTIONS
+					}
+					catch (...)
+					{
+						alloc_.deallocate(data_, alloc_.m_);
+						throw;
+					}
+					#endif
+				}
+			}
+
+		template <class InputIterator>
+			inline
+			void
+			choose_assign(InputIterator first, InputIterator last, chooser<true>)
+			{
+				assign(static_cast<size_type>(first), static_cast<value_type>(last));
+			}
+
+		template <class InputIterator>
+			inline
+			void
+			choose_assign(InputIterator first, InputIterator last, chooser<false>)
+			{
+				do_assign(first, last, iterator_traits<InputIterator>::iterator_category());
+			}
+
+		template <class InputIterator>
+			void
+			do_assign(InputIterator first, InputIterator last, input_iterator_tag)
+			{
+				vector temp(first, last, get_allocator());
+				const vector& tempr = temp;
+				do_assign(tempr.begin(), tempr.end(), random_access_iterator_tag());
+			}
+
+		template <class ForwardIterator>
+			void
+			do_assign(ForwardIterator first, ForwardIterator last, forward_iterator_tag)
+			{
+				size_type n = (size_type)distance(first, last);
+				if (n > max_size())
+					#ifndef _MSL_NO_EXCEPTIONS
+						throw length_error("vector::assign length error");
+					#else
+					{
+						fprintf(stderr, "vector::assign length error\n");
+						abort();
+					}
+					#endif
+				if (n <= capacity())
+				{
+					size_type n1 = min(n, size_);
+					iterator i = begin();
+					iterator e = i + n1;
+					for (; i < e; ++i, ++first)
+						*i = *first;
+					if (n < size_)
+						destroy(i, end());
+					else if (size_ < n)
+						uninitialized_copy(first, last, i);
+					size_ = n;
+				}
+				else
+				{
+					pointer olddata = data_;
+					data_ = alloc_.allocate(n);
+					#ifndef _MSL_NO_EXCEPTIONS
+					try
+					{
+					#endif
+						uninitialized_copy(first, last, data_);
+						if (olddata != 0)
+						{
+							destroy(olddata, olddata + size_);
+							alloc_.deallocate(olddata, alloc_.m_);
+						}
+						size_ = alloc_.m_ = n;
+					#ifndef _MSL_NO_EXCEPTIONS
+					}
+					catch (...)
+					{
+						alloc_.deallocate(data_, n);
+						data_ = olddata;
+						throw;
+					}
+					#endif
+				}
+			}
+
+		template <class InputIterator>
+			inline
+			void
+			choose_insert(iterator position, InputIterator first, InputIterator last,
+				chooser<true>)
+			{
+				insert(position, static_cast<size_type>(first), static_cast<value_type>(last));
+			}
+
+		template <class InputIterator>
+			inline
+			void
+			choose_insert(iterator position, InputIterator first, InputIterator last,
+				chooser<false>)
+			{
+				do_insert(position, first, last, iterator_traits<InputIterator>::iterator_category());
+			}
+
+		template <class InputIterator>
+			void
+			do_insert(iterator position, InputIterator first, InputIterator last,
+				input_iterator_tag)
+			{
+				vector temp(first, last, get_allocator());
+				const vector& tempr = temp;
+				do_insert(position, tempr.begin(), tempr.end(), random_access_iterator_tag());
+			}
+
+		template <class ForwardIterator>
+			void
+			do_insert(iterator position, ForwardIterator first, ForwardIterator last,
+				forward_iterator_tag)
+			{
+				size_type n = (size_type)distance(first, last);
+				if (n == 0)
+					return;
+				size_type ms = max_size();
+				if (n > ms || size_ > ms - n)
+					#ifndef _MSL_NO_EXCEPTIONS
+						throw length_error("vector::insert length error");
+					#else
+					{
+						fprintf(stderr, "vector::insert length error\n");
+						abort();
+					}
+					#endif
+				if (size_ + n <= capacity())
+				{
+					size_type n1 = size_type(end() - position);
+					if (n1 > 0)
+					{
+						size_type n2 = min(n, n1);
+						size_type n3 = n > n1 ? n - n1 : 0;
+						uninitialized_copy(data_ + size_ - n2, data_ + size_, data_ + size_ + n3);
+						#ifndef _MSL_NO_EXCEPTIONS
+						try
+						{
+						#endif
+							if (n < n1)
+								copy_backward(position, data_ + size_ - n2,  data_ + size_);
+							iterator e = position + n2;
+							for (; position < e; ++position, ++first)
+								*position = *first;
+							uninitialized_copy(first, last, position);
+						#ifndef _MSL_NO_EXCEPTIONS
+						}
+						catch (...)
+						{
+							destroy(data_ + size_ + n3, data_ + size_ + n);
+							throw;
+						}
+						#endif
+					}
+					else
+						uninitialized_copy(first, last, position);
+					size_ += n;
+				}
+				else
+				{
+					pointer olddata = data_;
+					size_type newsize = size_ + n;
+					size_type newcap = alloc_.m_;
+					size_type pos = size_type(position - data_);
+					if (newcap == 0)
+						newcap = 1;
+					while (newsize > newcap)
+						newcap *= 2;
+					data_ = alloc_.allocate(newcap);
+					size_type done = 0;
+					#ifndef _MSL_NO_EXCEPTIONS
+					try
+					{
+					#endif
+						if (pos > 0)
+						{
+							uninitialized_copy(olddata, olddata + pos, data_);
+							done = pos;
+						}
+						uninitialized_copy(first, last, data_ + pos);
+						done += n;
+						if (pos < size_)
+							uninitialized_copy(olddata + pos, olddata + size_, data_ + pos + n);
+						if (olddata != 0)
+						{
+							destroy(olddata, olddata + size_);
+							alloc_.deallocate(olddata, alloc_.m_);
+						}
+						size_ = newsize;
+						alloc_.m_ = newcap;
+					#ifndef _MSL_NO_EXCEPTIONS
+					}
+					catch (...)
+					{
+						destroy(data_, data_ + done);
+						alloc_.deallocate(data_, newcap);
+						data_ = olddata;
+						throw;
+					}
+					#endif
+				}
+			}
+
+	#endif
+
+	void init(size_type n, const T& value);
+	void tear_down();
+};
+
+template <class T, class Allocator>
+bool
+operator==(const vector<T,Allocator>& x, const vector<T,Allocator>& y);
+
+template <class T, class Allocator>
+bool
+operator!=(const vector<T,Allocator>& x, const vector<T,Allocator>& y);
+
+template <class T, class Allocator>
+bool
+operator< (const vector<T,Allocator>& x, const vector<T,Allocator>& y);
+
+template <class T, class Allocator>
+bool
+operator> (const vector<T,Allocator>& x, const vector<T,Allocator>& y);
+
+template <class T, class Allocator>
+bool
+operator>=(const vector<T,Allocator>& x, const vector<T,Allocator>& y);
+
+template <class T, class Allocator>
+bool
+operator<=(const vector<T,Allocator>& x, const vector<T,Allocator>& y);
+
+// specialized algorithms:
+template <class T, class Allocator>
+void
+swap(vector<T,Allocator>& x, vector<T,Allocator>& y);
+
+// Implementation
+
+template <class T, class Allocator>
+inline
+vector<T, Allocator>::vector(const Allocator& a)
+	: alloc_(a),
+	  size_(0),
+	  data_(0)
+{
+}
+
+template <class T, class Allocator>
+inline
+vector<T, Allocator>::vector(size_type n, const T& value, const Allocator& a)
+	: alloc_(a),
+	  size_(0),
+	  data_(0)
+{
+	init(n, value);
+}	  
+
+template <class T, class Allocator>
+vector<T, Allocator>::vector(const vector<T,Allocator>& x)
+	: alloc_(x.alloc_, x.size_),
+	  size_(x.size_),
+	  data_(0)
+{
+	if (alloc_.m_ > 0)
+	{
+		data_ = alloc_.allocate(alloc_.m_);
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			uninitialized_copy(x.data_, x.data_ + x.size_, data_);
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			alloc_.deallocate(data_, alloc_.m_);
+			throw;
+		}
+		#endif
+	}
+}
+
+#ifdef _MSL_NO_MEMBER_TEMPLATE
+
+	template <class T, class Allocator>
+	vector<T, Allocator>::vector(const_iterator first, const_iterator last, const Allocator& a)
+		: alloc_(a, size_type(last - first)),
+		  size_(alloc_.m_),
+		  data_(0)
+	{
+		if (alloc_.m_ > max_size())
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::construction length error");
+			#else
+			{
+				fprintf(stderr, "vector::construction length error\n");
+				abort();
+			}
+			#endif
+		if (alloc_.m_ > 0)
+		{
+			data_ = alloc_.allocate(alloc_.m_);
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				uninitialized_copy(first, last, data_);
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				alloc_.deallocate(data_, alloc_.m_);
+				throw;
+			}
+			#endif
+		}
+	}
+
+#endif
+
+template <class T, class Allocator>
+void
+vector<T, Allocator>::init(size_type n, const T& value)
+{
+	if (n > max_size())
+		#ifndef _MSL_NO_EXCEPTIONS
+			throw length_error("vector::construction length error");
+		#else
+		{
+			fprintf(stderr, "vector::construction length error\n");
+			abort();
+		}
+		#endif
+	if (n > 0)
+	{
+		size_ = alloc_.m_ = n;
+		data_ = alloc_.allocate(n);
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			uninitialized_fill_n(data_, size_, value);
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			alloc_.deallocate(data_, n);
+			throw;
+		}
+		#endif
+	}
+}
+
+template <class T, class Allocator>
+inline
+vector<T, Allocator>::~vector()
+{
+	tear_down();
+}
+
+template <class T, class Allocator>
+void
+vector<T, Allocator>::tear_down()
+{
+	if (data_ != 0)
+	{
+		destroy(data_, data_ + size_);
+		alloc_.deallocate(data_, alloc_.m_);
+	}
+}
+
+template <class T, class Allocator>
+vector<T, Allocator>& 
+vector<T, Allocator>::operator=(const vector<T,Allocator>& x)
+{
+	if (this != &x)
+		assign(x.begin(), x.end());
+	return *this;
+}
+
+#ifdef _MSL_NO_MEMBER_TEMPLATE
+
+	template <class T, class Allocator>
+	void
+	vector<T, Allocator>::assign(const_iterator first, const_iterator last)
+	{
+		size_type n = (size_type)distance(first, last);
+		if (n > max_size())
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::assign length error");
+			#else
+			{
+				fprintf(stderr, "vector::assign length error\n");
+				abort();
+			}
+			#endif
+		if (n <= capacity())
+		{
+			size_type n1 = min(n, size_);
+			iterator i = begin();
+			iterator e = i + n1;
+			for (; i < e; ++i, ++first)
+				*i = *first;
+			if (n < size_)
+				destroy(i, end());
+			else if (size_ < n)
+				uninitialized_copy(first, last, i);
+			size_ = n;
+		}
+		else
+		{
+			pointer olddata = data_;
+			data_ = alloc_.allocate(n);
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				uninitialized_copy(first, last, data_);
+				if (olddata != 0)
+				{
+					destroy(olddata, olddata + size_);
+					alloc_.deallocate(olddata, alloc_.m_);
+				}
+				size_ = alloc_.m_ = n;
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				alloc_.deallocate(data_, n);
+				data_ = olddata;
+				throw;
+			}
+			#endif
+		}
+	}
+
+#endif
+
+template <class T, class Allocator>
+void
+vector<T, Allocator>::assign(size_type n, const T& u)
+{
+	if (n > max_size())
+		#ifndef _MSL_NO_EXCEPTIONS
+			throw length_error("vector::assign length error");
+		#else
+		{
+			fprintf(stderr, "vector::assign length error\n");
+			abort();
+		}
+		#endif
+	if (n <= capacity())
+	{
+		size_type n1 = min(n, size_);
+		iterator i = begin();
+		iterator e = i + n1;
+		for (; i < e; ++i)
+			*i = u;
+		if (n < size_)
+			destroy(i, end());
+		else if (size_ < n)
+			uninitialized_fill(i, begin() + n, u);
+		size_ = n;
+	}
+	else
+	{
+		pointer olddata = data_;
+		data_ = alloc_.allocate(n);
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			uninitialized_fill_n(data_, n, u);
+			if (olddata != 0)
+			{
+				destroy(olddata, olddata + size_);
+				alloc_.deallocate(olddata, alloc_.m_);
+			}
+			size_ = alloc_.m_ = n;
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			alloc_.deallocate(data_, n);
+			data_ = olddata;
+			throw;
+		}
+		#endif
+	}
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::allocator_type
+vector<T, Allocator>::get_allocator() const
+{
+	return alloc_;
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::iterator
+vector<T, Allocator>::begin()
+{
+	return data_;
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::const_iterator
+vector<T, Allocator>::begin() const
+{
+	return data_;
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::iterator
+vector<T, Allocator>::end()
+{
+	return data_ + size_;
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::const_iterator
+vector<T, Allocator>::end() const
+{
+	return data_ + size_;
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::reverse_iterator
+vector<T, Allocator>::rbegin()
+{
+	return reverse_iterator(end());
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::const_reverse_iterator
+vector<T, Allocator>::rbegin() const
+{
+	return const_reverse_iterator(end());
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::reverse_iterator
+vector<T, Allocator>::rend()
+{
+	return reverse_iterator(begin());
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::const_reverse_iterator
+vector<T, Allocator>::rend() const
+{
+	return const_reverse_iterator(begin());
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::size_type
+vector<T, Allocator>::size() const
+{
+	return size_;
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::size_type
+vector<T, Allocator>::max_size() const
+{
+	return alloc_.max_size();
+}
+
+template <class T, class Allocator>
+void
+vector<T, Allocator>::resize(size_type sz, T c)
+{
+	if (sz > size())
+		insert(end(), sz-size(), c);
+	else if (sz < size())
+		erase(begin() + sz, end());
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::size_type
+vector<T, Allocator>::capacity() const
+{
+	return alloc_.m_;
+}
+
+template <class T, class Allocator>
+inline
+bool
+vector<T, Allocator>::empty() const
+{
+	return bool(size_ == 0);
+}
+
+template <class T, class Allocator>
+void
+vector<T, Allocator>::reserve(size_type n)
+{
+	if (n > max_size())
+		#ifndef _MSL_NO_EXCEPTIONS
+			throw length_error("vector::reserve length error");
+		#else
+		{
+			fprintf(stderr, "vector::reserve length error\n");
+			abort();
+		}
+		#endif
+	if (n > capacity())
+	{
+		pointer olddata = data_;
+		data_ = alloc_.allocate(n);
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			if (olddata != 0)
+			{
+				uninitialized_copy(olddata, olddata + size_, data_);
+				destroy(olddata, olddata + size_);
+				alloc_.deallocate(olddata, alloc_.m_);
+			}
+			alloc_.m_ = n;
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			alloc_.deallocate(data_, n);
+			data_ = olddata;
+			throw;
+		}
+		#endif
+	}
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::reference
+vector<T, Allocator>::operator[](size_type n)
+{
+	return *(data_ + n);
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::const_reference
+vector<T, Allocator>::operator[](size_type n) const
+{
+	return *(data_ + n);
+}
+
+template <class T, class Allocator>
+typename vector<T, Allocator>::const_reference
+vector<T, Allocator>::at(size_type n) const
+{
+	if (n >= size_)
+		#ifndef _MSL_NO_EXCEPTIONS
+			throw out_of_range("vector::at index out of range");
+		#else
+		{
+			fprintf(stderr, "vector::at index out of range");
+			abort();
+		}
+		#endif
+	return *(data_ + n);
+}
+
+template <class T, class Allocator>
+typename vector<T, Allocator>::reference
+vector<T, Allocator>::at(size_type n)
+{
+	if (n >= size_)
+		#ifndef _MSL_NO_EXCEPTIONS
+			throw out_of_range("vector::at index out of range");
+		#else
+		{
+			fprintf(stderr, "vector::at index out of range");
+			abort();
+		}
+		#endif
+	return *(data_ + n);
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::reference
+vector<T, Allocator>::front()
+{
+	return *data_;
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::const_reference
+vector<T, Allocator>::front() const
+{
+	return *data_;
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::reference
+vector<T, Allocator>::back()
+{
+	return *(data_ + size_ - 1);
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::const_reference
+vector<T, Allocator>::back() const
+{
+	return *(data_ + size_ - 1);
+}
+
+// hh 990217 Specialized push_back (used to call insert)
+template <class T, class Allocator>
+void
+vector<T, Allocator>::push_back(const T& x)
+{
+	size_type ms = max_size();
+	if (size_ > ms - 1)
+		#ifndef _MSL_NO_EXCEPTIONS
+			throw length_error("vector::push_back length error");
+		#else
+		{
+			fprintf(stderr, "vector::push_back length error\n");
+			abort();
+		}
+		#endif
+	if (size_ < capacity())
+	{
+		new (data_ + size_) T(x);
+		++size_;
+	}
+	else
+	{
+		pointer olddata = data_;
+		size_type newcap = alloc_.m_;
+		if (newcap == 0)
+			newcap = 1;
+		else
+			newcap *= 2;
+		data_ = alloc_.allocate(newcap);
+		size_type done = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			uninitialized_copy(olddata, olddata + size_, data_);
+			done = size_;
+			new (data_ + size_) T(x);
+			if (olddata != 0)
+			{
+				destroy(olddata, olddata + size_);
+				alloc_.deallocate(olddata, alloc_.m_);
+			}
+			++size_;
+			alloc_.m_ = newcap;
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			destroy(data_, data_ + done);
+			alloc_.deallocate(data_, newcap);
+			data_ = olddata;
+			throw;
+		}
+		#endif
+	}
+}
+
+template <class T, class Allocator>
+void
+vector<T, Allocator>::pop_back()
+{	
+	alloc_.destroy(&*(end() - 1));
+	--size_;
+}
+
+template <class T, class Allocator>
+inline
+typename vector<T, Allocator>::iterator
+vector<T, Allocator>::insert(iterator position, const T& x)
+{
+	size_type pos = size_type(position - data_);
+	insert(position, 1, x);
+	return data_ + pos;
+}
+
+template <class T, class Allocator>
+void
+vector<T, Allocator>::insert(iterator position, size_type n, const T& x)
+{
+	if (n == 0)
+		return;
+	size_type ms = max_size();
+	if (n > ms || size_ > ms - n)
+		#ifndef _MSL_NO_EXCEPTIONS
+			throw length_error("vector::insert length error");
+		#else
+		{
+			fprintf(stderr, "vector::insert length error\n");
+			abort();
+		}
+		#endif
+	if (size_ + n <= capacity())
+	{
+		size_type n1 = size_type(end() - position);
+		if (n1 > 0)
+		{
+			size_type n2 = min(n, n1);
+			size_type n3 = n > n1 ? n - n1 : 0;
+			uninitialized_copy(data_ + size_ - n2, data_ + size_, data_ + size_ + n3);
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				if (n < n1)
+					copy_backward(position, data_ + size_ - n2,  data_ + size_);
+				iterator e = position + n2;
+				for (; position < e; ++position)
+					*position = x;
+				uninitialized_fill(position, position + n3, x);
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				destroy(data_ + size_ + n3, data_ + size_ + n);
+				throw;
+			}
+			#endif
+		}
+		else
+			uninitialized_fill_n(position, n, x);
+		size_ += n;
+	}
+	else
+	{
+		pointer olddata = data_;
+		size_type newsize = size_ + n;
+		size_type newcap = alloc_.m_;
+		size_type pos = size_type(position - data_);
+		if (newcap == 0)
+			newcap = 1;
+		while (newsize > newcap)
+			newcap *= 2;
+		data_ = alloc_.allocate(newcap);
+		size_type done = 0;
+		#ifndef _MSL_NO_EXCEPTIONS
+		try
+		{
+		#endif
+			if (pos > 0)
+			{
+				uninitialized_copy(olddata, olddata + pos, data_);
+				done = pos;
+			}
+			uninitialized_fill_n(data_ + pos, n, x);
+			done += n;
+			if (pos < size_)
+				uninitialized_copy(olddata + pos, olddata + size_, data_ + pos + n);
+			if (olddata != 0)
+			{
+				destroy(olddata, olddata + size_);
+				alloc_.deallocate(olddata, alloc_.m_);
+			}
+			size_ = newsize;
+			alloc_.m_ = newcap;
+		#ifndef _MSL_NO_EXCEPTIONS
+		}
+		catch (...)
+		{
+			destroy(data_, data_ + done);
+			alloc_.deallocate(data_, newcap);
+			data_ = olddata;
+			throw;
+		}
+		#endif
+	}
+}
+
+#ifdef _MSL_NO_MEMBER_TEMPLATE
+
+	template <class T, class Allocator>
+	void
+	vector<T, Allocator>::insert(iterator position, const_iterator first, const_iterator last)
+	{
+		size_type n = (size_type)distance(first, last);
+		if (n == 0)
+			return;
+		size_type ms = max_size();
+		if (n > ms || size_ > ms - n)
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::insert length error");
+			#else
+			{
+				fprintf(stderr, "vector::insert length error\n");
+				abort();
+			}
+			#endif
+		if (size_ + n <= capacity())
+		{
+			size_type n1 = size_type(end() - position);
+			if (n1 > 0)
+			{
+				size_type n2 = min(n, n1);
+				size_type n3 = n > n1 ? n - n1 : 0;
+				uninitialized_copy(data_ + size_ - n2, data_ + size_, data_ + size_ + n3);
+				#ifndef _MSL_NO_EXCEPTIONS
+				try
+				{
+				#endif
+					if (n < n1)
+						copy_backward(position, data_ + size_ - n2,  data_ + size_);
+					iterator e = position + n2;
+					for (; position < e; ++position, ++first)
+						*position = *first;
+					uninitialized_copy(first, last, position);
+				#ifndef _MSL_NO_EXCEPTIONS
+				}
+				catch (...)
+				{
+					destroy(data_ + size_ + n3, data_ + size_ + n);
+					throw;
+				}
+				#endif
+			}
+			else
+				uninitialized_copy(first, last, position);
+			size_ += n;
+		}
+		else
+		{
+			pointer olddata = data_;
+			size_type newsize = size_ + n;
+			size_type newcap = alloc_.m_;
+			size_type pos = size_type(position - data_);
+			if (newcap == 0)
+				newcap = 1;
+			while (newsize > newcap)
+				newcap *= 2;
+			data_ = alloc_.allocate(newcap);
+			size_type done = 0;
+			#ifndef _MSL_NO_EXCEPTIONS
+			try
+			{
+			#endif
+				if (pos > 0)
+				{
+					uninitialized_copy(olddata, olddata + pos, data_);
+					done = pos;
+				}
+				uninitialized_copy(first, last, data_ + pos);
+				done += n;
+				if (pos < size_)
+					uninitialized_copy(olddata + pos, olddata + size_, data_ + pos + n);
+				if (olddata != 0)
+				{
+					destroy(olddata, olddata + size_);
+					alloc_.deallocate(olddata, alloc_.m_);
+				}
+				size_ = newsize;
+				alloc_.m_ = newcap;
+			#ifndef _MSL_NO_EXCEPTIONS
+			}
+			catch (...)
+			{
+				destroy(data_, data_ + done);
+				alloc_.deallocate(data_, newcap);
+				data_ = olddata;
+				throw;
+			}
+			#endif
+		}
+	}
+
+#endif
+
+template <class T, class Allocator>
+typename vector<T, Allocator>::iterator
+vector<T, Allocator>::erase(iterator position)
+{
+	size_type n = size_type(end() - position - 1);
+	if (n > 0)
+		copy(position + 1, end(), position);
+	--size_;
+	destroy(end());
+	return position;
+}
+
+template <class T, class Allocator>
+typename vector<T, Allocator>::iterator
+vector<T, Allocator>::erase(iterator first, iterator last)
+{
+	if (first == last)
+		return first;
+	size_type n = size_type(end() - last);
+	if (n > 0)
+		copy(last, end(), first);
+	destroy(first + n, end());
+	size_ -= size_type(last - first);
+	return first;
+}
+
+template <class T, class Allocator>
+void
+vector<T, Allocator>::swap(vector<T,Allocator>& x)
+{
+	if (this != &x)
+	{
+		_STD::swap(alloc_, x.alloc_);
+		_STD::swap(size_, x.size_);
+		_STD::swap(data_, x.data_);
+	}
+}
+
+template <class T, class Allocator>
+void
+vector<T, Allocator>::clear()
+{
+	destroy(begin(), end());
+	size_ = 0;
+}
+
+template <class T, class Allocator>
+inline
+bool
+operator==(const vector<T,Allocator>& x, const vector<T,Allocator>& y)
+{
+	return bool(x.size() == y.size() && equal(x.begin(), x.end(), y.begin()));
+}
+
+template <class T, class Allocator>
+inline
+bool
+operator!=(const vector<T,Allocator>& x, const vector<T,Allocator>& y)
+{
+	return bool(!(x == y));
+}
+
+template <class T, class Allocator>
+inline
+bool
+operator< (const vector<T,Allocator>& x, const vector<T,Allocator>& y)
+{
+	return bool(lexicographical_compare(x.begin(), x.end(), y.begin(), y.end()));
+}
+
+template <class T, class Allocator>
+inline
+bool
+operator> (const vector<T,Allocator>& x, const vector<T,Allocator>& y)
+{
+	return bool(y < x);
+}
+
+template <class T, class Allocator>
+inline
+bool
+operator>=(const vector<T,Allocator>& x, const vector<T,Allocator>& y)
+{
+	return bool(!(x < y));
+}
+
+template <class T, class Allocator>
+inline
+bool
+operator<=(const vector<T,Allocator>& x, const vector<T,Allocator>& y)
+{
+	return bool(!(y < x));
+}
+
+template <class T, class Allocator>
+inline
+void
+swap(vector<T,Allocator>& x, vector<T,Allocator>& y)
+{
+	x.swap(y);
+}
+
+#if !defined(_MSL_NO_PARTIAL_SPECIALIZATION) && !defined(_MSL_NO_MEMBER_TEMPLATE) && !defined(_Inhibit_Container_Optimization)
+
+	// Specialize for T* to save on code bloat
+
+	// void*
+
+	template <class Allocator>
+	class vector<void*, Allocator>
+	{
+		template <bool b> struct chooser {};
+	public:
+		// types:
+		typedef typename Allocator::reference         reference;
+		typedef typename Allocator::const_reference   const_reference;
+		typedef typename Allocator::pointer           iterator;
+		typedef typename Allocator::const_pointer     const_iterator;
+		typedef typename Allocator::size_type         size_type;
+		typedef typename Allocator::difference_type   difference_type;
+		typedef void*                                 value_type;
+		typedef Allocator                             allocator_type;
+		typedef typename Allocator::pointer           pointer;
+		typedef typename Allocator::const_pointer     const_pointer;
+		typedef _STD::reverse_iterator<iterator>       reverse_iterator;
+		typedef _STD::reverse_iterator<const_iterator> const_reverse_iterator;
+		// _lib.vector.cons_ construct/copy/destroy:
+		explicit vector(const Allocator& = Allocator());
+		explicit vector(size_type n, const value_type& value = 0, const Allocator& = Allocator());
+		template <class InputIterator>
+			inline
+			vector(InputIterator first, InputIterator last, const Allocator& a = Allocator())
+				: alloc_(a),
+				  size_(0),
+				  data_(0)
+			{
+				choose_init(first, last, chooser<numeric_limits<InputIterator>::is_integer>());
+			}
+		vector(const vector& x);
+		~vector();
+		vector& operator=(const vector& x);
+		template <class InputIterator>
+			inline
+			void assign(InputIterator first, InputIterator last)
+			{
+				choose_assign(first, last, chooser<numeric_limits<InputIterator>::is_integer>());
+			}
+		void assign(size_type n, const value_type& u);
+		allocator_type get_allocator() const;
+		// iterators:
+		iterator               begin();
+		const_iterator         begin() const;
+		iterator               end();
+		const_iterator         end() const;
+		reverse_iterator       rbegin();
+		const_reverse_iterator rbegin() const;
+		reverse_iterator       rend();
+		const_reverse_iterator rend() const;
+		// _lib.vector.capacity_ capacity:
+		size_type size() const;
+		size_type max_size() const;
+		void      resize(size_type sz, value_type c = 0);
+		size_type capacity() const;
+		bool      empty() const;
+		void      reserve(size_type n);
+
+		// element access:
+		reference       operator[](size_type n);
+		const_reference operator[](size_type n) const;
+		const_reference at(size_type n) const;
+		reference       at(size_type n);
+		reference       front();
+		const_reference front() const;
+		reference       back();
+		const_reference back() const;
+		// _lib.vector.modifiers_ modifiers:
+		void push_back(const value_type& x);
+		void pop_back();
+		iterator insert(iterator position, const value_type& x);
+		void     insert(iterator position, size_type n, const value_type& x);
+		template <class InputIterator>
+			inline
+			void insert(iterator position, InputIterator first, InputIterator last)
+			{
+				choose_insert(position, first, last, chooser<numeric_limits<InputIterator>::is_integer>());
+			}
+		iterator erase(iterator position);
+		iterator erase(iterator first, iterator last);
+		void     swap(vector&);
+		void     clear();
+	private:
+		_EmptyMemberOpt<Allocator, size_type> alloc_;  // m_ is capacity
+		size_type size_;
+		pointer data_;
+
+		template <class InputIterator>
+			inline
+			void
+			choose_init(InputIterator first, InputIterator last, chooser<true>)
+			{
+				init(static_cast<size_type>(first), reinterpret_cast<value_type>(last));  // hh 981208
+			}
+
+		template <class InputIterator>
+			inline
+			void
+			choose_init(InputIterator first, InputIterator last, chooser<false>)
+			{
+				init(first, last, iterator_traits<InputIterator>::iterator_category());
+			}
+
+		template <class InputIterator>
+			void
+			init(InputIterator first, InputIterator last, input_iterator_tag)
+			{
+				#ifndef _MSL_NO_EXCEPTIONS
+				try
+				{
+				#endif
+					for (; first != last; ++first)
+						push_back(*first);
+				#ifndef _MSL_NO_EXCEPTIONS
+				}
+				catch (...)
+				{
+					tear_down();
+					throw;
+				}
+				#endif
+			}
+
+		template <class ForwardIterator>
+			void
+			init(ForwardIterator first, ForwardIterator last, forward_iterator_tag)
+			{
+				if (size_ > max_size())
+					#ifndef _MSL_NO_EXCEPTIONS
+						throw length_error("vector::construction length error");
+					#else
+					{
+						fprintf(stderr, "vector::construction length error\n");
+						abort();
+					}
+					#endif
+				size_ = alloc_.m_ = (size_type)distance(first, last);
+				if (alloc_.m_ > 0)
+				{
+					data_ = alloc_.allocate(alloc_.m_);
+					copy(first, last, data_);
+				}
+			}
+
+		template <class InputIterator>
+			inline
+			void
+			choose_assign(InputIterator first, InputIterator last, chooser<true>)
+			{
+				assign(static_cast<size_type>(first), reinterpret_cast<value_type>(last));  // hh 981221
+			}
+
+		template <class InputIterator>
+			inline
+			void
+			choose_assign(InputIterator first, InputIterator last, chooser<false>)
+			{
+				do_assign(first, last, iterator_traits<InputIterator>::iterator_category());
+			}
+
+		template <class InputIterator>
+			void
+			do_assign(InputIterator first, InputIterator last, input_iterator_tag)
+			{
+				vector temp(first, last, get_allocator());
+				const vector& tempr = temp;
+				do_assign(tempr.begin(), tempr.end(), random_access_iterator_tag());
+			}
+
+		template <class ForwardIterator>
+			void
+			do_assign(ForwardIterator first, ForwardIterator last, forward_iterator_tag)
+			{
+				size_type n = (size_type)distance(first, last);
+				if (n > max_size())
+					#ifndef _MSL_NO_EXCEPTIONS
+						throw length_error("vector::assign length error");
+					#else
+					{
+						fprintf(stderr, "vector::assign length error\n");
+						abort();
+					}
+					#endif
+				if (n <= capacity())
+				{
+					copy(first, last, data_);
+					size_ = n;
+				}
+				else
+				{
+					pointer olddata = data_;
+					data_ = alloc_.allocate(n);
+					copy(first, last, data_);
+					if (olddata != 0)
+						alloc_.deallocate(olddata, alloc_.m_);
+					size_ = alloc_.m_ = n;
+				}
+			}
+
+		template <class InputIterator>
+			inline
+			void
+			choose_insert(iterator position, InputIterator first, InputIterator last,
+				chooser<true>)
+			{
+				insert(position, static_cast<size_type>(first), reinterpret_cast<value_type>(last));  // hh 981221
+			}
+
+		template <class InputIterator>
+			inline
+			void
+			choose_insert(iterator position, InputIterator first, InputIterator last,
+				chooser<false>)
+			{
+				do_insert(position, first, last, iterator_traits<InputIterator>::iterator_category());
+			}
+
+		template <class InputIterator>
+			void
+			do_insert(iterator position, InputIterator first, InputIterator last,
+				input_iterator_tag)
+			{
+				vector temp(first, last, get_allocator());
+				const vector& tempr = temp;
+				do_insert(position, tempr.begin(), tempr.end(), random_access_iterator_tag());
+			}
+
+		template <class ForwardIterator>
+			void
+			do_insert(iterator position, ForwardIterator first, ForwardIterator last,
+				forward_iterator_tag)
+			{
+				size_type n = (size_type)distance(first, last);
+				if (n == 0)
+					return;
+				size_type ms = max_size();
+				if (n > ms || size_ > ms - n)
+					#ifndef _MSL_NO_EXCEPTIONS
+						throw length_error("vector::insert length error");
+					#else
+					{
+						fprintf(stderr, "vector::insert length error\n");
+						abort();
+					}
+					#endif
+				if (size_ + n <= capacity())
+				{
+					size_type n1 = size_type(end() - position);
+					if (n1 > 0)
+						copy_backward(position, data_ + size_,  data_ + size_ + n);
+					copy(first, last, position);
+					size_ += n;
+				}
+				else
+				{
+					pointer olddata = data_;
+					size_type newsize = size_ + n;
+					size_type newcap = alloc_.m_;
+					size_type pos = size_type(position - data_);
+					if (newcap == 0)
+						newcap = 1;
+					while (newsize > newcap)
+						newcap *= 2;
+					data_ = alloc_.allocate(newcap);
+					if (pos > 0)
+						copy(olddata, olddata + pos, data_);
+					copy(first, last, data_ + pos);
+					if (pos < size_)
+						copy(olddata + pos, olddata + size_, data_ + pos + n);
+					if (olddata != 0)
+						alloc_.deallocate(olddata, alloc_.m_);
+					size_ = newsize;
+					alloc_.m_ = newcap;
+				}
+			}
+
+		void init(size_type n, const value_type& value);
+		void tear_down();
+	};
+
+	// Implementation vector<void*>
+
+	template <class Allocator>
+	inline
+	vector<void*, Allocator>::vector(const Allocator& a)
+		: alloc_(a),
+		  size_(0),
+		  data_(0)
+	{
+	}
+
+	template <class Allocator>
+	inline
+	vector<void*, Allocator>::vector(size_type n, const value_type& value, const Allocator& a)
+		: alloc_(a),
+		  size_(0),
+		  data_(0)
+	{
+		init(n, value);
+	}	  
+
+	template <class Allocator>
+	vector<void*, Allocator>::vector(const vector& x)
+		: alloc_(x.alloc_, x.size_),
+		  size_(x.size_),
+		  data_(0)
+	{
+		if (alloc_.m_ > 0)
+		{
+			data_ = alloc_.allocate(alloc_.m_);
+			copy(x.begin(), x.end(), data_);
+		}
+	}
+
+	template <class Allocator>
+	void
+	vector<void*, Allocator>::init(size_type n, const value_type& value)
+	{
+		if (n > max_size())
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::construction length error");
+			#else
+			{
+				fprintf(stderr, "vector::construction length error\n");
+				abort();
+			}
+			#endif
+		if (n > 0)
+		{
+			size_ = alloc_.m_ = n;
+			data_ = alloc_.allocate(n);
+			fill_n(data_, n, value);
+		}
+	}
+
+	template <class Allocator>
+	inline
+	vector<void*, Allocator>::~vector()
+	{
+		tear_down();
+	}
+
+	template <class Allocator>
+	inline
+	void
+	vector<void*, Allocator>::tear_down()
+	{
+		if (data_ != 0)
+			alloc_.deallocate(data_, alloc_.m_);
+	}
+
+	template <class Allocator>
+	vector<void*, Allocator>&
+	vector<void*, Allocator>::operator=(const vector& x)
+	{
+		if (this != &x)
+			assign(x.begin(), x.end());
+		return *this;
+	}
+
+	template <class Allocator>
+	void
+	vector<void*, Allocator>::assign(size_type n, const value_type& u)
+	{
+		if (n > max_size())
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::assign length error");
+			#else
+			{
+				fprintf(stderr, "vector::assign length error\n");
+				abort();
+			}
+			#endif
+		if (n <= capacity())
+		{
+			fill_n(data_, n, u);
+			size_ = n;
+		}
+		else
+		{
+			pointer olddata = data_;
+			data_ = alloc_.allocate(n);
+			fill_n(data_, n, u);
+			if (olddata != 0)
+				alloc_.deallocate(olddata, alloc_.m_);
+			size_ = alloc_.m_ = n;
+		}
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::allocator_type
+	vector<void*, Allocator>::get_allocator() const
+	{
+		return alloc_;
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::iterator
+	vector<void*, Allocator>::begin()
+	{
+		return data_;
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::const_iterator
+	vector<void*, Allocator>::begin() const
+	{
+		return data_;
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::iterator
+	vector<void*, Allocator>::end()
+	{
+		return data_ + size_;
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::const_iterator
+	vector<void*, Allocator>::end() const
+	{
+		return data_ + size_;
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::reverse_iterator
+	vector<void*, Allocator>::rbegin()
+	{
+		return reverse_iterator(end());
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::const_reverse_iterator
+	vector<void*, Allocator>::rbegin() const
+	{
+		return const_reverse_iterator(end());
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::reverse_iterator
+	vector<void*, Allocator>::rend()
+	{
+		return reverse_iterator(begin());
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::const_reverse_iterator
+	vector<void*, Allocator>::rend() const
+	{
+		return const_reverse_iterator(begin());
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::size_type
+	vector<void*, Allocator>::size() const
+	{
+		return size_;
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::size_type
+	vector<void*, Allocator>::max_size() const
+	{
+		return alloc_.max_size();
+	}
+
+	template <class Allocator>
+	void
+	vector<void*, Allocator>::resize(size_type sz, value_type c)
+	{
+		if (sz > size())
+			insert(end(), sz-size(), c);
+		else if (sz < size())
+			erase(begin() + sz, end());
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::size_type
+	vector<void*, Allocator>::capacity() const
+	{
+		return alloc_.m_;
+	}
+
+	template <class Allocator>
+	inline
+	bool
+	vector<void*, Allocator>::empty() const
+	{
+		return bool(size_ == 0);
+	}
+
+	template <class Allocator>
+	void
+	vector<void*, Allocator>::reserve(size_type n)
+	{
+		if (n > max_size())
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::reserve length error");
+			#else
+			{
+				fprintf(stderr, "vector::reserve length error\n");
+				abort();
+			}
+			#endif
+		if (n > capacity())
+		{
+			pointer olddata = data_;
+			data_ = alloc_.allocate(n);
+			if (olddata != 0)
+			{
+				copy(olddata, olddata + size_, data_);
+				alloc_.deallocate(olddata, alloc_.m_);
+			}
+			alloc_.m_ = n;
+		}
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::reference
+	vector<void*, Allocator>::operator[](size_type n)
+	{
+		return *(data_ + n);
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::const_reference
+	vector<void*, Allocator>::operator[](size_type n) const
+	{
+		return *(data_ + n);
+	}
+
+	template <class Allocator>
+	typename vector<void*, Allocator>::const_reference
+	vector<void*, Allocator>::at(size_type n) const
+	{
+		if (n >= size_)
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw out_of_range("vector::at index out of range");
+			#else
+			{
+				fprintf(stderr, "vector::at index out of range");
+				abort();
+			}
+			#endif
+		return *(data_ + n);
+	}
+
+	template <class Allocator>
+	typename vector<void*, Allocator>::reference
+	vector<void*, Allocator>::at(size_type n)
+	{
+		if (n >= size_)
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw out_of_range("vector::at index out of range");
+			#else
+			{
+				fprintf(stderr, "vector::at index out of range");
+				abort();
+			}
+			#endif
+		return *(data_ + n);
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::reference
+	vector<void*, Allocator>::front()
+	{
+		return *data_;
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::const_reference
+	vector<void*, Allocator>::front() const
+	{
+		return *data_;
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::reference
+	vector<void*, Allocator>::back()
+	{
+		return *(data_ + size_ - 1);
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::const_reference
+	vector<void*, Allocator>::back() const
+	{
+		return *(data_ + size_ - 1);
+	}
+
+	template <class Allocator>
+	inline
+	void
+	vector<void*, Allocator>::push_back(const value_type& x)
+	{
+		size_type ms = max_size();
+		if (size_ > ms - 1)
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::insert length error");
+			#else
+			{
+				fprintf(stderr, "vector::insert length error\n");
+				abort();
+			}
+			#endif
+		if (size_ < capacity())
+		{
+			size_type n1 = 0;
+			data_[size_++] = x;
+		}
+		else
+		{
+			pointer olddata = data_;
+			size_type newcap = alloc_.m_;
+			if (newcap == 0)
+				newcap = 1;
+			else
+				newcap *= 2;
+			data_ = alloc_.allocate(newcap);
+			if (size_ > 0)
+				copy(olddata, olddata + size_, data_);
+			data_[size_] = x;
+			if (olddata != 0)
+				alloc_.deallocate(olddata, alloc_.m_);
+			++size_;
+			alloc_.m_ = newcap;
+		}
+	}
+
+	template <class Allocator>
+	inline
+	void
+	vector<void*, Allocator>::pop_back()
+	{
+		--size_;
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<void*, Allocator>::iterator
+	vector<void*, Allocator>::insert(iterator position, const value_type& x)
+	{
+		size_type pos = size_type(position - data_);
+		insert(position, 1, x);
+		return data_ + pos;
+	}
+
+	template <class Allocator>
+	void
+	vector<void*, Allocator>::insert(iterator position, size_type n, const value_type& x)
+	{
+		if (n == 0)
+			return;
+		size_type ms = max_size();
+		if (n > ms || size_ > ms - n)
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::insert length error");
+			#else
+			{
+				fprintf(stderr, "vector::insert length error\n");
+				abort();
+			}
+			#endif
+		if (size_ + n <= capacity())
+		{
+			size_type n1 = size_type(end() - position);
+			if (n1 > 0)
+				copy_backward(position, data_ + size_,  data_ + size_ + n);
+			for (size_type i = 0; i < n; ++i, ++position)
+				*position = x;
+			size_ += n;
+		}
+		else
+		{
+			pointer olddata = data_;
+			size_type newsize = size_ + n;
+			size_type newcap = alloc_.m_;
+			size_type pos = size_type(position - data_);
+			if (newcap == 0)
+				newcap = 1;
+			while (newsize > newcap)
+				newcap *= 2;
+			data_ = alloc_.allocate(newcap);
+			if (pos > 0)
+				copy(olddata, olddata + pos, data_);
+			for (size_type i = 0; i < n; ++i)
+				data_[pos + i] = x;
+			if (pos < size_)
+				copy(olddata + pos, olddata + size_, data_ + pos + n);
+			if (olddata != 0)
+				alloc_.deallocate(olddata, alloc_.m_);
+			size_ = newsize;
+			alloc_.m_ = newcap;
+		}
+	}
+
+	template <class Allocator>
+	typename vector<void*, Allocator>::iterator
+	vector<void*, Allocator>::erase(iterator position)
+	{
+		size_type n = size_type(end() - position - 1);
+		if (n > 0)
+			copy(position + 1, end(), position);
+		--size_;
+		return position;
+	}
+
+	template <class Allocator>
+	typename vector<void*, Allocator>::iterator
+	vector<void*, Allocator>::erase(iterator first, iterator last)
+	{
+		if (first == last)
+			return first;
+		size_type n = size_type(end() - last);
+		if (n > 0)
+			copy(last, end(), first);
+		size_ -= size_type(last - first);
+		return first;
+	}
+
+	template <class Allocator>
+	void
+	vector<void*, Allocator>::swap(vector& x)
+	{
+		if (this != &x)
+		{
+			_STD::swap(alloc_, x.alloc_);
+			_STD::swap(size_, x.size_);
+			_STD::swap(data_, x.data_);
+		}
+	}
+
+	template <class Allocator>
+	inline
+	void
+	vector<void*, Allocator>::clear()
+	{
+		size_ = 0;
+	}
+
+	template <class Allocator>
+	inline
+	bool
+	operator==(const vector<void*, Allocator>& x, const vector<void*, Allocator>& y)
+	{
+		return bool(x.size() == y.size() && equal(x.begin(), x.end(), y.begin()));
+	}
+
+	template <class Allocator>
+	inline
+	bool
+	operator!=(const vector<void*, Allocator>& x, const vector<void*, Allocator>& y)
+	{
+		return bool(!(x == y));
+	}
+
+	template <class Allocator>
+	inline
+	bool
+	operator< (const vector<void*,Allocator>& x, const vector<void*,Allocator>& y)
+	{
+		return bool(lexicographical_compare(x.begin(), x.end(), y.begin(), y.end()));
+	}
+
+	template <class Allocator>
+	inline
+	bool
+	operator> (const vector<void*,Allocator>& x, const vector<void*,Allocator>& y)
+	{
+		return bool(y < x);
+	}
+
+	template <class Allocator>
+	inline
+	bool
+	operator>=(const vector<void*,Allocator>& x, const vector<void*,Allocator>& y)
+	{
+		return bool(!(x < y));
+	}
+
+	template <class Allocator>
+	inline
+	bool
+	operator<=(const vector<void*,Allocator>& x, const vector<void*,Allocator>& y)
+	{
+		return bool(!(y < x));
+	}
+
+	template <class Allocator>
+	inline
+	void
+	swap(vector<void*,Allocator>& x, vector<void*,Allocator>& y)
+	{
+		x.swap(y);
+	}
+
+	// T*
+
+	template <class T, class Allocator>
+	class vector<T*, Allocator>
+		: private vector<void*, Allocator::rebind<void*>::other>
+	{
+		typedef vector<void*, Allocator::rebind<void*>::other> base;
+		typedef base::allocator_type base_allocator;
+	public:
+		// types:
+		typedef typename Allocator::reference         reference;
+		typedef typename Allocator::const_reference   const_reference;
+		typedef typename Allocator::pointer           iterator;
+		typedef typename Allocator::const_pointer     const_iterator;
+		typedef typename Allocator::size_type         size_type;
+		typedef typename Allocator::difference_type   difference_type;
+		typedef T*                                    value_type;
+		typedef Allocator                             allocator_type;
+		typedef typename Allocator::pointer           pointer;
+		typedef typename Allocator::const_pointer     const_pointer;
+		typedef _STD::reverse_iterator<iterator>       reverse_iterator;
+		typedef _STD::reverse_iterator<const_iterator> const_reverse_iterator;
+		// _lib.vector.cons_ construct/copy/destroy:
+		explicit vector(const Allocator& = Allocator());
+		explicit vector(size_type n, const value_type& value = 0, const Allocator& = Allocator());
+		template <class InputIterator>
+			inline
+			vector(InputIterator first, InputIterator last, const Allocator& a = Allocator())
+				: base(first, last, base_allocator(a))
+			{
+			}
+		template <class InputIterator>
+			inline
+			void assign(InputIterator first, InputIterator last)
+			{
+				base::assign(first, last);
+			}
+		void assign(size_type n, const value_type& u);
+		allocator_type get_allocator() const;
+		// iterators:
+		iterator               begin();
+		const_iterator         begin() const;
+		iterator               end();
+		const_iterator         end() const;
+		reverse_iterator       rbegin();
+		const_reverse_iterator rbegin() const;
+		reverse_iterator       rend();
+		const_reverse_iterator rend() const;
+		// _lib.vector.capacity_ capacity:
+		size_type size() const;
+		size_type max_size() const;
+		void      resize(size_type sz, value_type c = 0);
+		size_type capacity() const;
+		bool      empty() const;
+		void      reserve(size_type n);
+
+		// element access:
+		reference       operator[](size_type n);
+		const_reference operator[](size_type n) const;
+		const_reference at(size_type n) const;
+		reference       at(size_type n);
+		reference       front();
+		const_reference front() const;
+		reference       back();
+		const_reference back() const;
+		// _lib.vector.modifiers_ modifiers:
+		void push_back(const value_type& x);
+		void pop_back();
+		iterator insert(iterator position, const value_type& x);
+		void     insert(iterator position, size_type n, const value_type& x);
+		template <class InputIterator>
+			inline
+			void insert(iterator position, InputIterator first, InputIterator last)
+			{
+				base::insert(position, first, last);
+			}
+		iterator erase(iterator position);
+		iterator erase(iterator first, iterator last);
+		void     swap(vector&);
+		void     clear();
+	};
+
+	template <class T, class Allocator>
+	inline
+	vector<T*, Allocator>::vector(const Allocator& a)
+		: base(base_allocator(a))
+	{
+	}
+
+	template <class T, class Allocator>
+	inline
+	vector<T*, Allocator>::vector(size_type n, const value_type& value, const Allocator& a)
+		: base(n, value, base_allocator(a))
+	{
+	}
+
+	template <class T, class Allocator>
+	inline
+	void
+	vector<T*, Allocator>::assign(size_type n, const value_type& u)
+	{
+		base::assign(n, u);
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::allocator_type
+	vector<T*, Allocator>::get_allocator() const
+	{
+		return base::get_allocator();
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::iterator
+	vector<T*, Allocator>::begin()
+	{
+		return iterator(base::begin());
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::const_iterator
+	vector<T*, Allocator>::begin() const
+	{
+		return const_iterator(base::begin());
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::iterator
+	vector<T*, Allocator>::end()
+	{
+		return iterator(base::end());
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::const_iterator
+	vector<T*, Allocator>::end() const
+	{
+		return const_iterator(base::end());
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::reverse_iterator
+	vector<T*, Allocator>::rbegin()
+	{
+		return reverse_iterator(end());
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::const_reverse_iterator
+	vector<T*, Allocator>::rbegin() const
+	{
+		return const_reverse_iterator(end());
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::reverse_iterator
+	vector<T*, Allocator>::rend()
+	{
+		return reverse_iterator(begin());
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::const_reverse_iterator
+	vector<T*, Allocator>::rend() const
+	{
+		return const_reverse_iterator(begin());
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::size_type
+	vector<T*, Allocator>::size() const
+	{
+		return base::size();
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::size_type
+	vector<T*, Allocator>::max_size() const
+	{
+		return base::max_size();
+	}
+
+	template <class T, class Allocator>
+	inline
+	void
+	vector<T*, Allocator>::resize(size_type sz, value_type c)
+	{
+		base::resize(sz, c);
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::size_type
+	vector<T*, Allocator>::capacity() const
+	{
+		return base::capacity();
+	}
+
+	template <class T, class Allocator>
+	inline
+	bool
+	vector<T*, Allocator>::empty() const
+	{
+		return bool(base::empty());
+	}
+
+	template <class T, class Allocator>
+	inline
+	void
+	vector<T*, Allocator>::reserve(size_type n)
+	{
+		base::reserve(n);
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::reference
+	vector<T*, Allocator>::operator[](size_type n)
+	{
+		return reference(base::operator[](n));
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::const_reference
+	vector<T*, Allocator>::operator[](size_type n) const
+	{
+		return const_reference(base::operator[](n));
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::const_reference
+	vector<T*, Allocator>::at(size_type n) const
+	{
+		return const_reference(base::at(n));
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::reference
+	vector<T*, Allocator>::at(size_type n)
+	{
+		return reference(base::at(n));
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::reference
+	vector<T*, Allocator>::front()
+	{
+		return reference(base::front());
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::const_reference
+	vector<T*, Allocator>::front() const
+	{
+		return const_reference(base::front());
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::reference
+	vector<T*, Allocator>::back()
+	{
+		return reference(base::back());
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::const_reference
+	vector<T*, Allocator>::back() const
+	{
+		return const_reference(base::back());
+	}
+
+	template <class T, class Allocator>
+	inline
+	void
+	vector<T*, Allocator>::push_back(const value_type& x)
+	{
+		base::push_back(x);
+	}
+
+	template <class T, class Allocator>
+	inline
+	void
+	vector<T*, Allocator>::pop_back()
+	{
+		base::pop_back();
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::iterator
+	vector<T*, Allocator>::insert(iterator position, const value_type& x)
+	{
+		return iterator(base::insert(position, x));
+	}
+
+	template <class T, class Allocator>
+	inline
+	void
+	vector<T*, Allocator>::insert(iterator position, size_type n, const value_type& x)
+	{
+		base::insert(position, n, x);
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::iterator
+	vector<T*, Allocator>::erase(iterator position)
+	{
+		return iterator(base::erase(position));
+	}
+
+	template <class T, class Allocator>
+	inline
+	typename vector<T*, Allocator>::iterator
+	vector<T*, Allocator>::erase(iterator first, iterator last)
+	{
+		return iterator(base::erase(first, last));
+	}
+
+	template <class T, class Allocator>
+	inline
+	void
+	vector<T*, Allocator>::swap(vector& rhs)
+	{
+		base::swap((base&)rhs);
+	}
+
+	template <class T, class Allocator>
+	inline
+	void
+	vector<T*, Allocator>::clear()
+	{
+		base::clear();
+	}
+
+	template <class T, class Allocator>
+	inline
+	bool
+	operator==(const vector<T*, Allocator>& x, const vector<T*, Allocator>& y)
+	{
+		return bool(x.size() == y.size() && equal(x.begin(), x.end(), y.begin()));
+	}
+
+	template <class T, class Allocator>
+	inline
+	bool
+	operator!=(const vector<T*, Allocator>& x, const vector<T*, Allocator>& y)
+	{
+		return bool(!(x == y));
+	}
+
+	template <class T, class Allocator>
+	inline
+	bool
+	operator< (const vector<T*,Allocator>& x, const vector<T*,Allocator>& y)
+	{
+		return bool(lexicographical_compare(x.begin(), x.end(), y.begin(), y.end()));
+	}
+
+	template <class T, class Allocator>
+	inline
+	bool
+	operator> (const vector<T*,Allocator>& x, const vector<T*,Allocator>& y)
+	{
+		return bool(y < x);
+	}
+
+	template <class T, class Allocator>
+	inline
+	bool
+	operator>=(const vector<T*,Allocator>& x, const vector<T*,Allocator>& y)
+	{
+		return bool(!(x < y));
+	}
+
+	template <class T, class Allocator>
+	inline
+	bool
+	operator<=(const vector<T*,Allocator>& x, const vector<T*,Allocator>& y)
+	{
+		return bool(!(y < x));
+	}
+
+	template <class T, class Allocator>
+	inline
+	void
+	swap(vector<T*,Allocator>& x, vector<T*,Allocator>& y)
+	{
+		x.swap(y);
+	}
+
+#endif // !defined(_MSL_NO_PARTIAL_SPECIALIZATION) && !defined(_MSL_NO_MEMBER_TEMPLATE) && !defined(_Inhibit_Container_Optimization)
+
+#ifndef _MSL_NO_PARTIAL_SPECIALIZATION
+#ifndef __GNUC__
+	// vector<bool>
+
+	template <class Allocator>
+	class vector<bool, Allocator>
+	{
+		#ifndef _MSL_NO_MEMBER_TEMPLATE
+			template <bool b> struct chooser {};
+		#endif
+		typedef _MSL_REBIND (unsigned long)            internal_allocator; // must be unsigned
+		typedef internal_allocator::value_type        ia_value_type;  // -1 must set all bits on
+public:
+     class reference;
+     class iterator;
+     class const_iterator;
+          friend class reference;
+		friend class iterator;
+		friend class const_iterator;
+		// types:
+		typedef bool                                  const_reference;
+		typedef typename internal_allocator::size_type size_type;
+		typedef typename internal_allocator::difference_type difference_type;
+		typedef bool                                  value_type;
+		typedef Allocator                             allocator_type;
+		typedef typename internal_allocator::pointer  pointer;
+		typedef typename internal_allocator::const_pointer const_pointer;
+		typedef _STD::reverse_iterator<iterator>       reverse_iterator;
+		typedef _STD::reverse_iterator<const_iterator> const_reverse_iterator;
+		// bit reference:
+		class reference
+		{
+		public:
+			operator bool() const {return bool(vec_.test_bit(pos_));}
+			reference& operator=(const bool x) {vec_.set(pos_, x); return *this;}
+			reference& operator=(const reference& x) {vec_.set(pos_, x); return *this;}
+			void flip() {vec_.flip(pos_);}
+		private:
+			vector& vec_;
+			size_type pos_;
+
+			reference(vector& vec, size_type pos)
+				: vec_(vec),
+				  pos_(pos)
+			{}
+
+			friend class vector;
+			friend class iterator;
+			friend class const_iterator;
+		};
+		
+		// bit iterator:
+		class iterator
+			: public _STD::iterator<random_access_iterator_tag, bool,
+				difference_type, bool*, vector::reference>
+		{
+		public:
+			iterator() {}
+			vector::reference operator * () const {return vector::reference(*vec_, pos_);}
+			iterator& operator ++ () {++pos_; return *this;}
+			iterator operator ++ (int) {iterator tmp(*this); ++pos_; return tmp;}
+			iterator& operator -- () {--pos_; return *this;}
+			iterator operator -- (int) {iterator tmp(*this); --pos_; return tmp;}
+			iterator& operator += (difference_type n) {pos_ += n; return *this;}
+			iterator operator + (difference_type n) const {return iterator(*this) += n;}
+			iterator& operator -= (difference_type n) {pos_ -= n; return *this;}
+			iterator operator - (difference_type n) const {return iterator(*this) -= n;}
+			difference_type operator - (const iterator& rhs) const {return difference_type(pos_ - rhs.pos_);}
+			vector::reference operator [] (size_type i) const {return vector::reference(*vec_, pos_ + i);}
+			bool operator ==(const iterator& rhs) const {return bool(pos_ == rhs.pos_);}
+			bool operator !=(const iterator& rhs) const {return bool(pos_ != rhs.pos_);}
+			bool operator < (const iterator& rhs) const {return bool(pos_ <  rhs.pos_);}
+			bool operator <=(const iterator& rhs) const {return bool(pos_ <= rhs.pos_);}
+			bool operator > (const iterator& rhs) const {return bool(pos_ >  rhs.pos_);}
+			bool operator >=(const iterator& rhs) const {return bool(pos_ >= rhs.pos_);}
+			friend iterator operator + (difference_type n, const iterator& rhs)
+				{return iterator(rhs) += n;}
+		private:
+			vector* vec_;
+			size_type pos_;
+
+			iterator(vector* vec, size_type pos)
+				: vec_(vec),
+				  pos_(pos)
+			{}
+
+			friend class vector;
+			friend class vector::const_iterator;
+		};
+		
+		// bit iterator:
+		class const_iterator
+			: public _STD::iterator<random_access_iterator_tag, bool,
+				difference_type, const bool*, bool>
+		{
+		public:
+			const_iterator() {}
+			const_iterator(const vector::iterator& rhs) : vec_(rhs.vec_), pos_(rhs.pos_) {}
+			const_reference operator * () const {return vector::reference(*(vector*)vec_, pos_);}
+			const_iterator& operator ++ () {++pos_; return *this;}
+			const_iterator operator ++ (int) {const_iterator tmp(*this); ++pos_; return tmp;}
+			const_iterator& operator -- () {--pos_; return *this;}
+			const_iterator operator -- (int) {const_iterator tmp(*this); --pos_; return tmp;}
+			const_iterator& operator += (difference_type n) {pos_ += n; return *this;}
+			const_iterator operator + (difference_type n) const {return const_iterator(*this) += n;}
+			const_iterator& operator -= (difference_type n) {pos_ -= n; return *this;}
+			const_iterator operator - (difference_type n) const {return const_iterator(*this) -= n;}
+			difference_type operator - (const const_iterator& rhs) const {return difference_type(pos_ - rhs.pos_);}
+			const_reference operator [] (size_type i) const {return vector::reference(*(vector*)vec_, pos_ + i);}
+			bool operator ==(const const_iterator& rhs) const {return bool(pos_ == rhs.pos_);}
+			bool operator !=(const const_iterator& rhs) const {return bool(pos_ != rhs.pos_);}
+			bool operator < (const const_iterator& rhs) const {return bool(pos_ <  rhs.pos_);}
+			bool operator <=(const const_iterator& rhs) const {return bool(pos_ <= rhs.pos_);}
+			bool operator > (const const_iterator& rhs) const {return bool(pos_ >  rhs.pos_);}
+			bool operator >=(const const_iterator& rhs) const {return bool(pos_ >= rhs.pos_);}
+			friend const_iterator operator + (difference_type n, const const_iterator& rhs)
+				{return const_iterator(rhs) += n;}
+		private:
+			const vector* vec_;
+			size_type pos_;
+
+			const_iterator(const vector* vec, size_type pos)
+				: vec_(vec),
+				  pos_(pos)
+			{}
+
+			friend class vector;
+		};
+		
+		// construct/copy/destroy:
+		explicit vector(const Allocator& = Allocator());
+		explicit vector(size_type n, const bool& value = bool(), const Allocator& a = Allocator());
+		#ifndef _MSL_NO_MEMBER_TEMPLATE
+			template <class InputIterator>
+				inline
+				vector(InputIterator first, InputIterator last, const Allocator& a = Allocator())
+				#ifndef _MSL_NO_MEMBER_TEMPLATE
+					: alloc_(internal_allocator(a)),
+				#else
+					:
+				#endif
+					  size_(0),
+					  data_(0)
+				{
+					choose_init(first, last, chooser<numeric_limits<InputIterator>::is_integer>());
+				}
+		#else
+			vector(const_iterator first, const_iterator last, const Allocator& a = Allocator());
+		#endif
+		vector(const vector& x);
+		~vector();
+		vector& operator=(const vector& x);
+		#ifndef _MSL_NO_MEMBER_TEMPLATE
+			template <class InputIterator>
+				inline
+				void assign(InputIterator first, InputIterator last)
+				{
+					choose_assign(first, last, chooser<numeric_limits<InputIterator>::is_integer>());
+				}
+		#else
+			void assign(const_iterator first, const_iterator last);
+		#endif
+		void assign(size_type n, const bool& t);
+		allocator_type get_allocator() const;
+		// iterators:
+		iterator               begin();
+		const_iterator         begin() const;
+		iterator               end();
+		const_iterator         end() const;
+		reverse_iterator       rbegin();
+		const_reverse_iterator rbegin() const;
+		reverse_iterator       rend();
+		const_reverse_iterator rend() const;
+		// capacity:
+		size_type size() const;
+		size_type max_size() const;
+		void      resize(size_type sz, bool c = false);
+		size_type capacity() const;
+		bool      empty() const;
+		void      reserve(size_type n);
+		// element access:
+		reference       operator[](size_type n);
+		const_reference operator[](size_type n) const;
+		const_reference at(size_type n) const;
+		reference       at(size_type n);
+		reference       front();
+		const_reference front() const;
+		reference       back();
+		const_reference back() const;
+		// modifiers:
+		void push_back(const bool& x);
+		void pop_back();
+		iterator insert(iterator position, const bool& x);
+		void     insert (iterator position, size_type n, const bool& x);
+		#ifndef _MSL_NO_MEMBER_TEMPLATE
+			template <class InputIterator>
+				inline
+				void insert(iterator position, InputIterator first, InputIterator last)
+				{
+					choose_insert(position, first, last, chooser<numeric_limits<InputIterator>::is_integer>());
+				}
+		#else
+			void insert(iterator position, const_iterator first, const_iterator last);
+		#endif
+		iterator erase(iterator position);
+		iterator erase(iterator first, iterator last);
+		void swap(vector&);
+		static void swap(reference x, reference y);
+		void flip();                // flips all bits
+		void clear();
+	private:
+		_EmptyMemberOpt<internal_allocator, size_type> alloc_;  // m_ is capacity
+		size_type size_;
+		pointer data_;
+		static const size_type num_bits_word = CHAR_BIT * sizeof(ia_value_type);
+
+		#ifndef _MSL_NO_MEMBER_TEMPLATE
+
+			template <class InputIterator>
+				inline
+				void
+				choose_init(InputIterator first, InputIterator last, chooser<true>)
+				{
+					init(static_cast<size_type>(first), static_cast<value_type>(last));
+				}
+
+			template <class InputIterator>
+				inline
+				void
+				choose_init(InputIterator first, InputIterator last, chooser<false>)
+				{
+					init(first, last, iterator_traits<InputIterator>::iterator_category());
+				}
+
+			template <class InputIterator>
+				void
+				init(InputIterator first, InputIterator last, input_iterator_tag)
+				{
+					#ifndef _MSL_NO_EXCEPTIONS
+					try
+					{
+					#endif
+						for (; first != last; ++first)
+							push_back(*first);
+					#ifndef _MSL_NO_EXCEPTIONS
+					}
+					catch (...)
+					{
+						tear_down();
+						throw;
+					}
+					#endif
+				}
+			
+			// hh 990222 Removed init(ForwardIterator, ForwardIterator, forward_iterator_tag)
+
+			template <class InputIterator>
+				inline
+				void
+				choose_assign(InputIterator first, InputIterator last, chooser<true>)
+				{
+					assign(static_cast<size_type>(first), static_cast<value_type>(last));
+				}
+
+			template <class InputIterator>
+				inline
+				void
+				choose_assign(InputIterator first, InputIterator last, chooser<false>)
+				{
+					do_assign(first, last, iterator_traits<InputIterator>::iterator_category());
+				}
+
+			template <class InputIterator>
+				void
+				do_assign(InputIterator first, InputIterator last, input_iterator_tag)
+				{
+					vector temp(first, last, get_allocator());
+					const vector& tempr = temp;
+					do_assign(tempr.begin(), tempr.end(), random_access_iterator_tag());
+				}
+
+			template <class ForwardIterator>
+				void
+				do_assign(ForwardIterator first, ForwardIterator last, forward_iterator_tag)
+				{
+					size_type n = (size_type)distance(first, last);
+					if (n > max_size())
+						#ifndef _MSL_NO_EXCEPTIONS
+							throw length_error("vector::assign length error");
+						#else
+						{
+							fprintf(stderr, "vector::assign length error\n");
+							abort();
+						}
+						#endif
+					if (n <= capacity())
+					{
+						size_ = 0;
+						for (size_type i = 0; i < n; ++i, ++first)
+							push_back(*first);
+					}
+					else
+					{
+						pointer olddata = data_;
+						size_type newcap = recommend(n);
+						size_type nw = num_words(newcap);
+						data_ = alloc_.allocate(nw);
+						if (olddata != 0)
+							alloc_.deallocate(olddata, num_words(alloc_.m_));
+						size_ = 0;
+						alloc_.m_ = newcap;
+						for (size_type i = 0; i < n; ++i, ++first)
+							push_back(*first);
+					}
+				}
+
+			template <class InputIterator>
+				inline
+				void
+				choose_insert(iterator position, InputIterator first, InputIterator last,
+					chooser<true>)
+				{
+					insert(position, static_cast<size_type>(first), static_cast<value_type>(last));
+				}
+
+			template <class InputIterator>
+				inline
+				void
+				choose_insert(iterator position, InputIterator first, InputIterator last,
+					chooser<false>)
+				{
+					do_insert(position, first, last, iterator_traits<InputIterator>::iterator_category());
+				}
+
+			template <class InputIterator>
+				void
+				do_insert(iterator position, InputIterator first, InputIterator last,
+					input_iterator_tag)
+				{
+					vector temp(first, last, get_allocator());
+					const vector& tempr = temp;
+					do_insert(position, tempr.begin(), tempr.end(), random_access_iterator_tag());
+				}
+
+			template <class ForwardIterator>
+				void
+				do_insert(iterator position, ForwardIterator first, ForwardIterator last,
+					forward_iterator_tag)
+				{
+					size_type n = (size_type)distance(first, last);
+					if (n == 0)
+						return;
+					size_type ms = max_size();
+					if (n > ms || size_ > ms - n)
+						#ifndef _MSL_NO_EXCEPTIONS
+							throw length_error("vector::insert length error");
+						#else
+						{
+							fprintf(stderr, "vector::insert length error\n");
+							abort();
+						}
+						#endif
+					if (size_ + n > capacity())
+					{
+						size_type newsize = size_ + n;
+						size_type newcap = alloc_.m_;
+						if (newcap == 0)
+							newcap = 1;
+						while (newsize > newcap)
+							newcap *= 2;
+						pointer olddata = data_;
+						data_ = alloc_.allocate(num_words(newcap));
+						if (olddata != 0)
+						{
+							size_type nw = num_words(alloc_.m_);
+							copy(olddata, olddata + nw, data_);
+							alloc_.deallocate(olddata, nw);
+						}
+						alloc_.m_ = newcap;
+					}
+					size_type n1 = size_type(end() - position);
+					if (n1 > 0)
+						shift_out(position, n);
+					copy(first, last, position);
+					size_ += n;
+				}
+
+		#endif
+
+		void init(size_type n, const bool& value);
+		void init(iterator first, iterator last, random_access_iterator_tag);
+		void init(const_iterator first, const_iterator last, random_access_iterator_tag);
+		void tear_down();
+		void do_assign(iterator first, iterator last, random_access_iterator_tag);
+		void do_assign(const_iterator first, const_iterator last, random_access_iterator_tag);
+		void do_insert(iterator position, iterator first, iterator last, random_access_iterator_tag);
+		void do_insert(iterator position, const_iterator first, const_iterator last, random_access_iterator_tag);
+		bool test_bit(size_type pos);
+		void set(size_type pos, bool x);
+		void set(size_type pos, size_type n, bool x);
+		void flip(size_type pos);
+		void copy_bits(const_pointer frmdata, size_type first, size_type last, size_type to);
+		void shift_out(iterator pos, size_type n);
+		void shift_in(iterator pos, size_type n);
+		void trim() const;
+		static size_type num_words(size_type capacity);  // capacity must be > 0
+		static size_type recommend(size_type capacity);
+
+		friend bool operator== <Allocator>(const vector& x, const vector& y);
+	};
+
+	template <class Allocator>
+	bool
+	operator==(const vector<bool,Allocator>& x, const vector<bool,Allocator>& y);
+
+	template <class Allocator>
+	bool
+	operator< (const vector<bool,Allocator>& x, const vector<bool,Allocator>& y);
+
+	template <class Allocator>
+	bool
+	operator!=(const vector<bool,Allocator>& x, const vector<bool,Allocator>& y);
+
+	template <class Allocator>
+	bool
+	operator> (const vector<bool,Allocator>& x, const vector<bool,Allocator>& y);
+
+	template <class Allocator>
+	bool
+	operator>=(const vector<bool,Allocator>& x, const vector<bool,Allocator>& y);
+
+	template <class Allocator>
+	bool
+	operator<=(const vector<bool,Allocator>& x, const vector<bool,Allocator>& y);
+
+	// specialized algorithms:
+	template <class Allocator>
+	void
+	swap(vector<bool,Allocator>& x, vector<bool,Allocator>& y);
+
+	// Implementation vector<bool>
+
+	template <class Allocator>
+	inline
+	vector<bool, Allocator>::vector(const Allocator& a)
+	#ifndef _MSL_NO_MEMBER_TEMPLATE
+		: alloc_(internal_allocator(a)),
+	#else
+		:
+	#endif
+		  size_(0),
+		  data_(0)
+	{
+	}
+
+	template <class Allocator>
+	inline
+	vector<bool, Allocator>::vector(size_type n, const bool& value, const Allocator& a)
+	#ifndef _MSL_NO_MEMBER_TEMPLATE
+		: alloc_(internal_allocator(a)),
+	#else
+		:
+	#endif
+		  size_(0),
+		  data_(0)
+	{
+		init(n, value);
+	}	  
+
+	#ifdef _MSL_NO_MEMBER_TEMPLATE
+
+		template <class Allocator>
+		inline
+		vector<bool, Allocator>::vector(const_iterator first, const_iterator last, const Allocator& a)
+		#ifndef _MSL_NO_MEMBER_TEMPLATE
+			: alloc_(internal_allocator(a), size_type(last - first)),
+		#else
+			: alloc_(internal_allocator(), size_type(last - first)),
+		#endif
+			  size_(alloc_.m_),
+			  data_(0)
+		{
+			init(first, last, random_access_iterator_tag());
+		}
+
+	#endif
+
+	template <class Allocator>
+	vector<bool, Allocator>::vector(const vector& x)
+	#ifndef _MSL_NO_MEMBER_TEMPLATE
+		: alloc_(internal_allocator(x.alloc_), x.size_),
+	#else
+		: alloc_(internal_allocator(), x.size_),
+	#endif
+		  size_(x.size_),
+		  data_(0)
+	{
+		if (alloc_.m_ > 0)
+		{
+			alloc_.m_ = recommend(alloc_.m_);
+			size_type nw = num_words(alloc_.m_);
+			data_ = alloc_.allocate(nw);
+			copy(x.data_, x.data_ + nw, data_);
+		}
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::init(size_type n, const bool& value)
+	{
+		if (n > max_size())
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::construction length error");
+			#else
+			{
+				fprintf(stderr, "vector::construction length error\n");
+				abort();
+			}
+			#endif
+		if (n > 0)
+		{
+			size_ = n;
+			alloc_.m_ = recommend(n);
+			size_type nw = num_words(alloc_.m_);
+			data_ = alloc_.allocate(nw);
+			ia_value_type v = value ? ia_value_type(-1) : ia_value_type(0);
+			for (size_type i = 0; i < nw; ++i)
+				data_[i] = v;
+		}
+	}
+
+	template <class Allocator>
+	inline
+	void
+	vector<bool, Allocator>::init(iterator first, iterator last, random_access_iterator_tag)
+	{
+		init(const_iterator(first), const_iterator(last), random_access_iterator_tag());
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::init(const_iterator first, const_iterator last, random_access_iterator_tag)
+	{
+		size_type n = size_type(last - first);
+		if (n > max_size())
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::construction length error");
+			#else
+			{
+				fprintf(stderr, "vector::construction length error\n");
+				abort();
+			}
+			#endif
+		if (n > 0)
+		{
+			alloc_.m_ = recommend(n);
+			data_ = alloc_.allocate(num_words(alloc_.m_));
+			copy_bits(first.vec_->data_, first.pos_, last.pos_, 0);
+			size_ = n;
+		}
+	}
+
+	template <class Allocator>
+	inline
+	vector<bool, Allocator>::~vector()
+	{
+		tear_down();
+	}
+
+	template <class Allocator>
+	inline
+	void
+	vector<bool, Allocator>::tear_down()
+	{
+		if (data_ != 0)
+			alloc_.deallocate(data_, num_words(alloc_.m_));
+	}
+
+	template <class Allocator>
+	vector<bool, Allocator>&
+	vector<bool, Allocator>::operator=(const vector& x)
+	{
+		if (this != &x)
+		{
+			if (capacity() < x.size())
+			{
+				pointer olddata = data_;
+				size_type newcap = recommend(x.size());
+				size_type nw = num_words(newcap);
+				data_ = alloc_.allocate(nw);
+				if (olddata != 0)
+					alloc_.deallocate(olddata, num_words(alloc_.m_));
+				alloc_.m_ = newcap;
+			}
+			size_ = x.size();
+			if (x.size() > 0)
+			{
+				size_type nw = num_words(x.size());
+				for (size_type i = 0; i < nw; ++i)
+					data_[i] = x.data_[i];
+			}
+		}
+		return *this;
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::assign(size_type n, const value_type& u)
+	{
+		if (n > max_size())
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::assign length error");
+			#else
+			{
+				fprintf(stderr, "vector::assign length error\n");
+				abort();
+			}
+			#endif
+		if (n > capacity())
+		{
+			pointer olddata = data_;
+			size_type newcap = recommend(n);
+			size_type nw = num_words(newcap);
+			data_ = alloc_.allocate(nw);
+			if (olddata != 0)
+				alloc_.deallocate(olddata, num_words(alloc_.m_));
+			alloc_.m_ = newcap;
+		}
+		size_ = n;
+		if (n > 0)
+		{
+			n = num_words(n);
+			ia_value_type v = u ? ia_value_type(-1) : ia_value_type(0);
+			for (size_type i = 0; i < n; ++i)
+				data_[i] = v;
+		}
+	}
+
+	#ifdef _MSL_NO_MEMBER_TEMPLATE
+
+		template <class Allocator>
+		inline
+		void
+		vector<bool, Allocator>::assign(const_iterator first, const_iterator last)
+		{
+			do_assign(first, last, random_access_iterator_tag());
+		}
+
+	#endif
+
+	template <class Allocator>
+	inline
+	void
+	vector<bool, Allocator>::do_assign(iterator first, iterator last, random_access_iterator_tag)
+	{
+		do_assign(const_iterator(first), const_iterator(last), random_access_iterator_tag());
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::do_assign(const_iterator first, const_iterator last, random_access_iterator_tag)
+	{
+		size_type n = (size_type)(last - first);
+		if (n > max_size())
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::assign length error");
+			#else
+			{
+				fprintf(stderr, "vector::assign length error\n");
+				abort();
+			}
+			#endif
+		if (n > capacity())
+		{
+			pointer olddata = data_;
+			size_type newcap = recommend(n);
+			size_type nw = num_words(newcap);
+			data_ = alloc_.allocate(nw);
+			if (olddata != 0)
+				alloc_.deallocate(olddata, num_words(alloc_.m_));
+			alloc_.m_ = newcap;
+		}
+		size_ = n;
+		if (n > 0)
+			copy_bits(first.vec_->data_, first.pos_, last.pos_, 0);
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::allocator_type
+	vector<bool, Allocator>::get_allocator() const
+	{
+		#ifndef _MSL_NO_MEMBER_TEMPLATE
+			return allocator_type(alloc_);
+		#else
+			return allocator_type();
+		#endif
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::iterator
+	vector<bool, Allocator>::begin()
+	{
+		return iterator(this, 0);
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::const_iterator
+	vector<bool, Allocator>::begin() const
+	{
+		return const_iterator(this, 0);
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::iterator
+	vector<bool, Allocator>::end()
+	{
+		return iterator(this, size_);
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::const_iterator
+	vector<bool, Allocator>::end() const
+	{
+		return const_iterator(this, size_);
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::reverse_iterator
+	vector<bool, Allocator>::rbegin()
+	{
+		return reverse_iterator(end());
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::const_reverse_iterator
+	vector<bool, Allocator>::rbegin() const
+	{
+		return const_reverse_iterator(end());
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::reverse_iterator
+	vector<bool, Allocator>::rend()
+	{
+		return reverse_iterator(begin());
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::const_reverse_iterator
+	vector<bool, Allocator>::rend() const
+	{
+		return const_reverse_iterator(begin());
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::size_type
+	vector<bool, Allocator>::size() const
+	{
+		return size_;
+	}
+
+	template <class Allocator>
+	typename vector<bool, Allocator>::size_type
+	vector<bool, Allocator>::max_size() const
+	{
+		size_type ms = alloc_.max_size();
+		size_type mx = numeric_limits<size_type>::max();
+		if (ms > mx / num_bits_word)
+			return mx;
+		return ms * num_bits_word;
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::resize(size_type sz, value_type c)
+	{
+		if (sz > size())
+			insert(end(), sz-size(), c);
+		else if (sz < size())
+			erase(begin() + difference_type(sz), end());
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::size_type
+	vector<bool, Allocator>::capacity() const
+	{
+		return alloc_.m_;
+	}
+
+	template <class Allocator>
+	inline
+	bool
+	vector<bool, Allocator>::empty() const
+	{
+		return size_ == 0;
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::reserve(size_type n)
+	{
+		if (n > max_size())
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::reserve length error");
+			#else
+			{
+				fprintf(stderr, "vector::reserve length error\n");
+				abort();
+			}
+			#endif
+		if (n > capacity())
+		{
+			pointer olddata = data_;
+			size_type newcap = recommend(n);
+			size_type nw = num_words(newcap);
+			data_ = alloc_.allocate(nw);
+			if (olddata != 0)
+			{
+				nw = num_words(alloc_.m_);
+				for (size_type i = 0; i < nw; ++i)
+					data_[i] = olddata[i];
+				alloc_.deallocate(olddata, num_words(alloc_.m_));
+			}
+			alloc_.m_ = newcap;
+		}
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::reference
+	vector<bool, Allocator>::operator[](size_type n)
+	{
+		return reference(*this, n);
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::const_reference
+	vector<bool, Allocator>::operator[](size_type n) const
+	{
+		return reference(*(vector*)this, n);
+	}
+
+	template <class Allocator>
+	typename vector<bool, Allocator>::const_reference
+	vector<bool, Allocator>::at(size_type n) const
+	{
+		if (n >= size_)
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw out_of_range("vector::at index out of range");
+			#else
+			{
+				fprintf(stderr, "vector::at index out of range");
+				abort();
+			}
+			#endif
+		return reference(*(vector*)this, n);
+	}
+
+	template <class Allocator>
+	typename vector<bool, Allocator>::reference
+	vector<bool, Allocator>::at(size_type n)
+	{
+		if (n >= size_)
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw out_of_range("vector::at index out of range");
+			#else
+			{
+				fprintf(stderr, "vector::at index out of range");
+				abort();
+			}
+			#endif
+		return reference(*this, n);
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::reference
+	vector<bool, Allocator>::front()
+	{
+		return reference(*this, 0);
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::const_reference
+	vector<bool, Allocator>::front() const
+	{
+		return reference(*(vector*)this, 0);
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::reference
+	vector<bool, Allocator>::back()
+	{
+		return reference(*this, size_ - 1);
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::const_reference
+	vector<bool, Allocator>::back() const
+	{
+		return reference(*(vector*)this, size_ - 1);
+	}
+
+	template <class Allocator>
+	inline
+	void
+	vector<bool, Allocator>::push_back(const value_type& x)
+	{
+		insert(end(), x);
+	}
+
+	template <class Allocator>
+	inline
+	void
+	vector<bool, Allocator>::pop_back()
+	{	
+		erase(end() - 1);
+	}
+
+	template <class Allocator>
+	typename vector<bool, Allocator>::iterator
+	vector<bool, Allocator>::insert(iterator position, const value_type& x)
+	{
+		difference_type pos = position - begin();
+		insert(position, 1, x);
+		return begin() + pos;
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::insert(iterator position, size_type n, const value_type& x)
+	{
+		if (n == 0)
+			return;
+		size_type ms = max_size();
+		if (n > ms || size_ > ms - n)
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::insert length error");
+			#else
+			{
+				fprintf(stderr, "vector::insert length error\n");
+				abort();
+			}
+			#endif
+		if (size_ + n <= capacity())
+		{
+			size_type n1 = size_type(end() - position);
+			if (n1 > 0)
+				shift_out(position, n);
+			set(size_type(position - begin()), n, x);
+			size_ += n;
+		}
+		else
+		{
+			pointer olddata = data_;
+			size_type newsize = size_ + n;
+			size_type newcap = alloc_.m_;
+			size_type pos = size_type(position - begin());
+			if (newcap == 0)
+				newcap = recommend(1);
+			while (newsize > newcap)
+				newcap *= 2;
+			size_type nw = num_words(newcap);
+			data_ = alloc_.allocate(nw);
+			if (pos > 0)
+				copy_bits(olddata, 0, pos, 0);
+			set(pos, n, x);
+			if (pos < size_)
+				copy_bits(olddata, pos, size_, pos + n);
+			if (olddata != 0)
+				alloc_.deallocate(olddata, num_words(alloc_.m_));
+			size_ = newsize;
+			alloc_.m_ = newcap;
+		}
+	}
+
+	#ifdef _MSL_NO_MEMBER_TEMPLATE
+
+		template <class Allocator>
+		inline
+		void
+		vector<bool, Allocator>::insert(iterator position, const_iterator first, const_iterator last)
+		{
+			do_insert(position, first, last, random_access_iterator_tag());
+		}
+
+	#endif
+
+	template <class Allocator>
+	inline
+	void
+	vector<bool, Allocator>::do_insert(iterator position, iterator first, iterator last,
+		random_access_iterator_tag)
+	{
+		do_insert(position, const_iterator(first), const_iterator(last), random_access_iterator_tag());
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::do_insert(iterator position, const_iterator first,
+		const_iterator last, random_access_iterator_tag)
+	{
+		size_type n = size_type(last - first);
+		if (n == 0)
+			return;
+		size_type ms = max_size();
+		if (n > ms || size_ > ms - n)
+			#ifndef _MSL_NO_EXCEPTIONS
+				throw length_error("vector::insert length error");
+			#else
+			{
+				fprintf(stderr, "vector::insert length error\n");
+				abort();
+			}
+			#endif
+		if (size_ + n <= capacity())
+		{
+			size_type n1 = size_type(end() - position);
+			if (n1 > 0)
+				shift_out(position, n);
+			copy_bits(first.vec_->data_, first.pos_, last.pos_, position.pos_);
+			size_ += n;
+		}
+		else
+		{
+			pointer olddata = data_;
+			size_type newsize = size_ + n;
+			size_type newcap = alloc_.m_;
+			size_type pos = size_type(position - begin());
+			if (newcap == 0)
+				newcap = recommend(1);
+			while (newsize > newcap)
+				newcap *= 2;
+			size_type nw = num_words(newcap);
+			data_ = alloc_.allocate(nw);
+			if (pos > 0)
+				copy_bits(olddata, 0, pos, 0);
+			copy_bits(first.vec_->data_, first.pos_, last.pos_, position.pos_);
+			if (pos < size_)
+				copy_bits(olddata, pos, size_, pos + n);
+			if (olddata != 0)
+				alloc_.deallocate(olddata, num_words(alloc_.m_));
+			size_ = newsize;
+			alloc_.m_ = newcap;
+		}
+	}
+
+	template <class Allocator>
+	typename vector<bool, Allocator>::iterator
+	vector<bool, Allocator>::erase(iterator position)
+	{
+		size_type n = size_type(end() - position - 1);
+		if (n > 0)
+			shift_in(position + 1, 1);
+		--size_;
+		return position;
+	}
+
+	template <class Allocator>
+	typename vector<bool, Allocator>::iterator
+	vector<bool, Allocator>::erase(iterator first, iterator last)
+	{
+		if (first == last)
+			return first;
+		size_type n = size_type(end() - last);
+		size_type len = size_type(last - first);
+		if (n > 0)
+			shift_in(last, len);
+		size_ -= len;
+		return first;
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::swap(vector& x)
+	{
+		if (this != &x)
+		{
+			_STD::swap(alloc_, x.alloc_);
+			_STD::swap(size_, x.size_);
+			_STD::swap(data_, x.data_);
+		}
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::swap(reference x, reference y)
+	{
+		ia_value_type bitmaskx = ia_value_type(1) << x.pos_ % num_bits_word;
+		ia_value_type& xref = x.vec_.data_[x.pos_ / num_bits_word];
+		bool bx = bool(xref & bitmaskx);
+		ia_value_type bitmasky = ia_value_type(1) << y.pos_ % num_bits_word;
+		ia_value_type& yref = y.vec_.data_[y.pos_ / num_bits_word];
+		bool by = bool(yref & bitmasky);
+		if (bx ^ by)
+		{
+			if (by)
+			{
+				xref |= bitmaskx;
+				yref &= ~bitmasky;
+			}
+			else
+			{
+				xref &= ~bitmaskx;
+				yref |= bitmasky;
+			}
+		}
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::flip()
+	{
+		size_type nw = num_words(size_);
+		for (size_type i = 0; i < nw; ++i)
+			data_[i] = ~data_[i];
+	}
+
+	template <class Allocator>
+	inline
+	void
+	vector<bool, Allocator>::clear()
+	{
+		size_ = 0;
+	}
+
+	template <class Allocator>
+	bool
+	vector<bool, Allocator>::test_bit(size_type pos)
+	{
+		size_type word = pos / num_bits_word;
+		ia_value_type bitmask = (ia_value_type)1 << pos % num_bits_word;
+		return bool(data_[word] & bitmask);
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::set(size_type pos, bool x)
+	{
+		size_type word = pos / num_bits_word;
+		ia_value_type bitmask = (ia_value_type)1 << pos % num_bits_word;
+		if (x)
+			data_[word] |= bitmask;
+		else
+			data_[word] &= ~bitmask;
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::set(size_type pos, size_type n, bool x)
+	{
+		size_type w1 = pos / num_bits_word;
+		size_type w2 = (pos + n - 1) / num_bits_word;
+		ia_value_type bitmask1 = ia_value_type(-1) << pos % num_bits_word;
+		ia_value_type bitmask2 = ia_value_type(-1);
+		ia_value_type tmp = num_bits_word - (pos + n) % num_bits_word;
+		if (tmp < num_bits_word)
+			bitmask2 >>= tmp;
+		if (w1 == w2)
+		{
+			bitmask1 &= bitmask2;
+			if (x)
+				data_[w1] |= bitmask1;
+			else
+				data_[w1] &= ~bitmask1;
+		}
+		else
+		{
+			if (x)
+			{
+				data_[w1] |= bitmask1;
+				for (size_type i = w1 + 1; i < w2; ++i)
+					data_[i] = ia_value_type(-1);
+				data_[w2] |= bitmask2;
+			}
+			else
+			{
+				data_[w1] &= ~bitmask1;
+				for (size_type i = w1 + 1; i < w2; ++i)
+					data_[i] = ia_value_type(0);
+				data_[w2] &= ~bitmask2;
+			}
+		}
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::flip(size_type pos)
+	{
+		size_type word = pos / num_bits_word;
+		ia_value_type bitmask = (ia_value_type)1 << pos % num_bits_word;
+		ia_value_type& bits = data_[word];
+		if (bits & bitmask)
+			bits &= ~bitmask;
+		else
+			bits |= bitmask;
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::copy_bits(const_pointer frmdata, size_type first, size_type last,
+		size_type to)
+	{
+		while (first != last)
+		{
+			size_type len = last - first;
+			size_type o1 = first % num_bits_word;
+			size_type o2 = to    % num_bits_word;
+			size_type tmp = num_bits_word - o1;
+			if (len > tmp)
+				len = tmp;
+			tmp = num_bits_word - o2;
+			if (len > tmp)
+				len = tmp;
+			ia_value_type lmask = ia_value_type(-1) << o1;
+			ia_value_type rmask = ia_value_type(-1);
+			tmp = (num_bits_word - (first + len) % num_bits_word);
+			if (tmp < num_bits_word)
+				rmask >>= tmp;
+			ia_value_type mask = lmask & rmask;
+			ia_value_type bits = frmdata[first / num_bits_word] & mask;
+			if (o1 < o2)
+			{
+				bits <<= (o2 - o1);
+				mask <<= (o2 - o1);
+			}
+			else if (o2 < o1)
+			{
+				bits >>= (o1 - o2);
+				mask >>= (o1 - o2);
+			}
+			ia_value_type& target = data_[to / num_bits_word];
+			target &= ~mask;
+			target |= bits;
+			first += len;
+			to += len;
+		}
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::shift_out(iterator pos, size_type n)
+	{
+		size_type floor = pos.pos_ / num_bits_word;
+		ia_value_type floormask = ia_value_type(-1) << pos.pos_ % num_bits_word;
+		size_type offset = n / num_bits_word;
+		size_type nwords = num_words(size_ + n);
+		size_type e = floor + offset;
+		if (offset > 0)
+		{
+			for (size_type i = nwords - 1; i >= e; --i)
+				data_[i] = data_[i-offset];
+		}
+		ia_value_type rshift = num_bits_word - n % num_bits_word;
+		ia_value_type lshift = n % num_bits_word;
+		for (size_type i = nwords - 1; i > e; --i)
+		{
+			data_[i] <<= lshift;
+			data_[i] |= data_[i-1] >> rshift;
+		}
+		if (offset > 0 || floormask == ia_value_type(-1))
+			data_[e] <<= lshift;
+		else
+		{
+			ia_value_type tmp = data_[e];
+			data_[e] <<= lshift;
+			data_[e] &= floormask;
+			data_[e] |= ~floormask & tmp;
+		}
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::shift_in(iterator pos, size_type n)
+	{
+		size_type floor = (pos.pos_ - n) / num_bits_word;
+		ia_value_type floormask = ia_value_type(-1) << (pos.pos_ - n) % num_bits_word;
+		size_type offset = n / num_bits_word;
+		size_type nwords = num_words(size_);
+		size_type e = nwords - offset;
+		if (offset > 0)
+		{
+			if (floormask == ia_value_type(-1))
+				data_[floor] = data_[floor+offset];
+			else
+			{
+				ia_value_type tmp = data_[floor];
+				data_[floor] = data_[floor+offset];
+				data_[floor] &= floormask;
+				data_[floor] |= ~floormask & tmp;
+			}
+			for (size_type i = floor + 1; i < e; ++i)
+				data_[i] = data_[i+offset];
+		}
+		ia_value_type rshift = n % num_bits_word;
+		ia_value_type lshift = num_bits_word - n % num_bits_word;
+		if (floormask == ia_value_type(-1))
+		{
+			data_[floor] >>= rshift;
+			if (floor < nwords - 1)
+				data_[floor] |= data_[floor + 1] << lshift;
+		}
+		else
+		{
+			ia_value_type tmp = data_[floor];
+			data_[floor] >>= rshift;
+			if (floor < nwords - 1)
+				data_[floor] |= data_[floor + 1] << lshift;
+			data_[floor] &= floormask;
+			data_[floor] |= ~floormask & tmp;
+		}
+		for (size_type i = floor + 1; i < nwords - 1; ++i)
+		{
+			data_[i] >>= rshift;
+			data_[i] |= data_[i+1] << lshift;
+		}
+		if (floor != nwords - 1)
+		{
+			if (floormask == ia_value_type(-1))
+				data_[nwords - 1] >>= rshift;
+			else
+			{
+				ia_value_type tmp = data_[nwords - 1];
+				data_[nwords - 1] >>= rshift;
+				data_[nwords - 1] &= floormask;
+				data_[nwords - 1] |= ~floormask & tmp;
+			}
+		}
+	}
+
+	template <class Allocator>
+	void
+	vector<bool, Allocator>::trim() const
+	{
+		size_type n = alloc_.m_ - size_;
+		if (n > 0)
+			((vector*)this)->set(size_, n, false);
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::size_type
+	vector<bool, Allocator>::num_words(size_type capacity)
+	{
+		return (capacity - 1) / num_bits_word + 1;
+	}
+
+	template <class Allocator>
+	inline
+	typename vector<bool, Allocator>::size_type
+	vector<bool, Allocator>::recommend(size_type capacity)
+	{
+		return capacity + num_bits_word - ((capacity - 1) % num_bits_word + 1);
+	}
+
+	template <class Allocator>
+	bool
+	operator==(const vector<bool, Allocator>& x, const vector<bool, Allocator>& y)
+	{
+		if (x.size() != y.size())
+			return false;
+		if (x.size() == 0)
+			return true;
+		x.trim();
+		y.trim();
+		return equal(x.data_, x.data_ + vector<bool, Allocator>::num_words(x.size_), y.data_);
+	}
+
+	template <class Allocator>
+	inline
+	bool
+	operator!=(const vector<bool, Allocator>& x, const vector<bool, Allocator>& y)
+	{
+		return bool(!(x == y));
+	}
+
+	template <class Allocator>
+	inline
+	bool
+	operator< (const vector<bool,Allocator>& x, const vector<bool,Allocator>& y)
+	{
+		return lexicographical_compare(x.begin(), x.end(), y.begin(), y.end());
+	}
+
+	template <class Allocator>
+	inline
+	bool
+	operator> (const vector<bool,Allocator>& x, const vector<bool,Allocator>& y)
+	{
+		return bool(y < x);
+	}
+
+	template <class Allocator>
+	inline
+	bool
+	operator>=(const vector<bool,Allocator>& x, const vector<bool,Allocator>& y)
+	{
+		return bool(!(x < y));
+	}
+
+	template <class Allocator>
+	inline
+	bool
+	operator<=(const vector<bool,Allocator>& x, const vector<bool,Allocator>& y)
+	{
+		return bool(!(y < x));
+	}
+
+	template <class Allocator>
+	inline
+	void
+	swap(vector<bool,Allocator>& x, vector<bool,Allocator>& y)
+	{
+		x.swap(y);
+	}
+
+#endif // !__GNUC__
+#endif // _MSL_NO_PARTIAL_SPECIALIZATION
+
+#ifndef _MSL_NO_CPP_NAMESPACE
+	} // namespace std 
+#endif
+
+#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
+	#pragma import reset
+#endif
+#pragma options align=reset
+
+#endif // RC_INVOKED
+
+#endif // _VECTOR
+
+// hh 981005 rewrote
+// hh 981208 changed static_cast to reinterpret_cast on the value_type (pointer specialization only)
+// hh 981220 Added typename to appropriate return types
+// hh 981220 Modifed some method signitures to simplified syntax
+// hh 981221 changed static_cast to reinterpret_cast on the value_type (pointer specialization only)
+// hh 990120 changed name of MSIPL flags
+// hh 990217 Specialized push_back (used to call insert)
+// hh 990222 Removed init(ForwardIterator, ForwardIterator, forward_iterator_tag) from vector<bool>.
+//           It was both incorrect and unnecessary.

@@ -1,0 +1,121 @@
+/*  Metrowerks Standard Library  */
+
+/*  $Date: 1999/04/19 16:02:21 $ 
+ *  $Revision: 1.7 $ 
+ *  $NoKeywords: $ 
+ *
+ *		Portions Copyright © 1995-1999 Metrowerks, Inc.
+ *		All rights reserved.
+ */
+
+/**
+ **  mslconfig
+ **/
+
+#ifndef _MSLCONFIG
+#define _MSLCONFIG
+
+// #include if using MSL C
+//#include <mslGlobals.h>	// SH for Dreamcast uses HiC
+
+//
+#ifdef __MWERKS__
+	#define __MSL_CPP__ 0x5008   //  MSL C++ version identifier
+
+//	#define _MSL_USING_NAMESPACE  // already defined in <mslGlobals.h>
+
+	#ifndef _MSL_USING_NAMESPACE
+		#define _MSL_NO_CPP_NAMESPACE
+	#endif
+	#if !__option(exceptions)
+		#define _MSL_NO_EXCEPTIONS
+	#endif
+	#if __PPC_EABI__
+		#pragma exceptions on
+	#endif
+//	#define _MSL_NO_THROW_SPECS
+	#if !__option(bool)
+		#define _MSL_NO_BOOL
+	#else
+		#ifndef TYPE_BOOL
+			#define TYPE_BOOL 1
+		#endif
+	#endif
+	#if !__option(wchar_type)
+		#define _MSL_NO_WCHART
+	#endif
+
+//	#define __MSL_LONGLONG_SUPPORT__	// SH has no long long support
+//	#define _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+
+	// _Inhibit_Container_Optimization, if uncommented will disable pointer
+	// specializations in the containers.  This may make debugging easier.
+//	#define _Inhibit_Container_Optimization
+
+	// _Inhibit_Optimize_RB_bit is a space optimization that compacts the red/black
+	// flag with the parent pointer in each node.  By uncommenting this
+	// define, the optimization is turned off, and the red/black flag will
+	// be stored as an enum in each node.
+//	#define _Inhibit_Optimize_RB_bit
+
+//	#define _MSL_NO_PARTIAL_SPECIALIZATION
+	#if __option(ARM_conform)
+		#define _MSL_NO_MEMBER_TEMPLATE
+	#endif
+	#if __dest_os == __win32_os
+		#define NOMINMAX
+	#endif
+	#if (defined __QNXC__) || (defined _Hitachi_C_)	// as 990421
+		#ifndef _MSL_NO_CPP_NAMESPACE	// as 990421
+			#define _STD ::std
+		#else
+			#define _STD
+		#endif
+		#define _MSL_CX_LIMITED_RANGE
+	#endif
+	#define _MSL_NO_MESSAGE_FACET
+//	#define _No_Floating_Point
+#endif
+
+#ifdef __GNUC__
+
+	#define _MSL_NO_CPP_NAMESPACE
+	#define __QNXC__
+	#define _MSL_NO_EXPLICIT_FUNC_TEMPLATE_ARG
+	#define _MSL_CX_LIMITED_RANGE
+	#define _MSL_NO_MEMBER_TEMPLATE
+	#ifndef _MSL_NO_CPP_NAMESPACE
+		#define _STD ::std
+	#else
+		#define _STD
+	#endif
+
+#endif
+
+//-----------------------------------------------------------------
+
+#ifdef _MSL_NO_BOOL
+	#ifndef bool
+		typedef char bool;
+	#endif
+	#ifndef true
+		#define false char(0)
+		#define true char(1)
+	#endif
+#endif /*_MSL_NO_BOOL_ */
+
+#ifdef _MSL_NO_THROW_SPECS
+	#define _MSL_THROW
+#else
+	#define _MSL_THROW throw()
+#endif
+
+#ifndef _MSL_NO_MEMBER_TEMPLATE
+#  define _MSL_REBIND(type) typename Allocator::rebind<type>::other
+#else
+#  define _MSL_REBIND(type) allocator<type>
+#endif
+
+#endif // _MSLCONFIG
+
+// hh 990120 Created

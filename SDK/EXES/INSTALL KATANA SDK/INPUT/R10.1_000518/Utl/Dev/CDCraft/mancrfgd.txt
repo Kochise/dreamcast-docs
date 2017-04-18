@@ -1,0 +1,1817 @@
+/**************************************************************************
+ *
+ *Software for CD creation, "CRI CD CRAFT"
+ *
+ *Copyright (c) 1998, 1999 CRI
+ *
+ *Document type :CRI CD CRAFT manual
+ *File name     :mancrfgd.txt
+ *Version       :12th version
+ *Creation date :1999-06-14
+ *Author        :M.S., T.K.
+ *
+ *------------------------------------------------------------------------*
+ *History of changes
+ *  [Ver.2.00]
+ *  1st version   1998-02-13  newly created
+ *
+ *  [Ver.2.02]
+ *  2nd version   1998-02-20  Manual structure changed. 
+ *
+ *  [Ver.2.03]
+ *  3rd version   1998-03-02  (a) "Handling GD-R" added.
+ *                            (b) Description of sub-command "tck" added.
+ *  4th version   1998-03-13  Description about SGI version added.
+ *
+ *  [Ver.2.10]
+ *  5th version   1998-03-20  Modified for Ver.2010 release
+ *
+ *  [Ver.2.11]
+ *  6th version   1998-03-23  Supplementary information added.
+ *
+ *  [Ver.2.20]
+ *  7th version   1998-05-01  Error code list added.
+ *
+ *  [Ver.2.22]
+ *  8th version   1998-06-20  "Precautions for CD creation" added.
+ *
+ *  [Ver.2.26]
+ *  9th version   1998-09-25  Error code list changed.
+ *  10th version  1998-10-06  (a) "9.1 Precautions for creating self-starting 
+ *                                disk" added
+ *                            (b) "9.2 CD-DA track creation" added
+ *
+ *  [Ver. 2.27]
+ *  11th version  1998-11-20  (a) "Precautions for creating self-starting disk" 
+ *                                revised
+ *                            (b) "Copyright file definition" added
+ *                            (c) "General file definition" added
+ *                            (d) "CD-DA track creation" revised
+ *                            (e) Build setting parameter "nalfrf" added
+ *                            (f) Error messages revised
+ *                            (g) Warning messages added
+ *
+ *  [Ver. 2.30]
+ *  12th version  1999-06-14  (a) Subcommand "info" added
+ *                            (b) Write setting parameter"mltw" added
+ *                            (c) "Precautions for creating self-starting disk" revised
+ *                            (d) "10. Multi-write function" added
+ *                            (e) Description for SGI version deleted
+ *
+ **************************************************************************/
+
+
+
+
+/*------------------------------------------------------------------------*/
+
+Intruduction
+
+This manual describes functions and operation of CD creating software 
+"CRI CD CRAFT (Ver.2.00)".  CRI CD CRAFT is referred to "CD CRAFT" in this manual.
+
+
+Table of contents
+
+1.Overview
+  1.1 CRI CD CRAFT
+  1.2 Characteristics
+  1.3 List of functions
+  1.4 Definition of terms
+2.Operating environment
+3.File
+  3.1 Input/output file
+  3.2 Image file
+    3.2.1 Types of Image file
+    3.2.2 Extent placement
+4.Setup
+  4.1 Setup
+  4.2 Handling GD-R
+  4.3 System setup
+  4.4 Remarks concerning operating environment
+5.Starting procedures
+6.Subcommand
+  6.1 Specification of subcommand
+  6.2 Subcommand specifications
+    6.2.1 Disk editing
+    6.2.2 Disk build
+    6.2.3 Disk writing
+    6.2.4 CD tool
+    6.2.5 Setting operating environment
+7.Procedures for CD creation
+  7.1 Master disk creation
+  7.2 Image file creation
+  7.3 Writing a master disk
+8. CD creation procedure for console version
+9. Precautions for CD creation
+  9.1 Precautions for creating self-starting disk
+  9.2 Copyright file definition
+  9.3 General file definition
+  9.4 CD-DA track creation
+    9.4.1 CD-DA data
+    9.4.2 Index
+10. Multi-Write Function
+ 10.1 Multi-write operating environment
+ 10.2 Multi-write procedures
+
+Appendix A. Transition from existing CD tools
+Appendix B. Messages
+  B.1 Error messages
+  B.2 Warning messages
+
+/*------------------------------------------------------------------------*/
+
+1.Overview
+1.1 About CRI CD CRAFT
+"CRI CD CRAFT" is CD tool which is provided with writing function for 
+the disk dedicated to Sega's "KATANA".
+
+
+1.2 Characteristics
+(1) Continuity/compatibility with the conventional CD tools
+(2) Disk structure editing based on script
+(3) Corresponding to on-the-fly writing
+(4) File placement on disk can be specified.
+(5) CD creation integrating environment is provided.
+(6) Programs for both console and GUI versions are provided.
+(7) Multi-write function, writing multiple GD-R discs simultaneously, is supported.
+
+
+1.3 List of functions
+                       Table1.1 List of Functions
+ +-----------------------+---------------------------------------------------+
+ |      Function         |                   Description                     |
+ +-----------------------+---------------------------------------------------+
+ |Master disk creation   |A set of task covering image creation through      |
+ |                       |disk writing is performed to create a master disk. |
+ +-----------------------+---------------------------------------------------+
+ |Image file creation    |Image file is created from CD script.              |
+ |                       |                                                   |
+ +-----------------------+---------------------------------------------------+
+ |Master disk writing    |The image file is specified as master disk to      |
+ |                       |write.                                             |
+ +-----------------------+---------------------------------------------------+
+
+
+1.4 Definition of terms
+Basic terms used in this manual are defined as follows;
+
+                        Table1.2 Definition of Terms
+ +---------------------+-----------------------------------------------------+
+ |       Terms         |                 Description                         |
+ +---------------------+-----------------------------------------------------+
+ |Subcommand           |Command for CD CRAFT.                                |
+ |                     |Subcommands are specified as optional commands in    |
+ |                     |console version.                                     |
+ +---------------------+-----------------------------------------------------+
+ |Subcommand file      |File which describes subcommand group.               |
+ |                     |Subcommands described in file are processed in the   |
+ |                     |same manner as those specified in optional commands. |
+ +---------------------+-----------------------------------------------------+
+ |CD script            |Script which specifies file and track placements     |
+ |                     |on disk to be created.                               |
+ +---------------------+-----------------------------------------------------+
+ |Disk image           |Image file which stores all the original contents    |
+ |                     |of disk to be created.                               |
+ +---------------------+-----------------------------------------------------+
+ |Disk image format    |CD CRAFT includes "full image" format with all data  |
+ |                     |sectors and "compact image" without redundant data.  |
+ +---------------------+-----------------------------------------------------+
+ |On-the fly file      |Image file for on-the-fly writing.                   |
+ |                     |                                                     |
+ +---------------------+-----------------------------------------------------+
+ |Image                |Image in this manual includes disk image as well as  |
+ |                     |on-the-fly writing information.                      |
+ +---------------------+-----------------------------------------------------+
+ |Extent               |Continuous deta sector string on disk.               |
+ |                     |Extent is referred to the whole date sector area     |
+ |                     |in this manual.                                      |
+ +---------------------+-----------------------------------------------------+
+ |Build                |Image creating work is referred to as 'build'.       |
+ |                     |                                                     |
+ +---------------------+-----------------------------------------------------+
+ |Disk                 |Disk without any reference means GD-R disk in this   |
+ |                     |manual.                                              |
+ +---------------------+-----------------------------------------------------+
+ |Master disk          |Disk used for mastering work.                        |
+ |                     |It is created in disk at once writing mode of        |
+ |                     |GD-Writer drive.  Additional writing is not accepted.|
+ +---------------------+-----------------------------------------------------+
+ |Disk format          |Disk format represents format such as CD-ROM.        |
+ |                     |                                                     |
+ +---------------------+-----------------------------------------------------+
+ |Writing format       |Writing format refers to either disk at once         |
+ |                     |writing or track at once writing.                    |
+ +---------------------+-----------------------------------------------------+
+ |Writing method       |Writing method refers to either disk image method    |
+ |                     |or on-the-fly method.                                |
+ +---------------------+-----------------------------------------------------+
+ |Writing mode         |Writing mode refers to either normal writing or      |
+ |                     |test writing.                                        |
+ +---------------------+-----------------------------------------------------+
+ |On-the-fly writing   |In this method data are directly read from file      |
+ |                     |source to be written on disk without creating disk   |
+ |                     |image.                                               |
+ +---------------------+-----------------------------------------------------+
+ |XBLD                 |Disk builder for creating Sega Saturn CD.            |
+ |                     |                                                     |
+ +---------------------+-----------------------------------------------------+
+ |ADDCDW               |CD-R disk writing software for creating Sega Saturn  |
+ |                     |CD.                                                  |
+ |                     |Multiple additional writing on CD-R disk             |
+ |                     |is acceptable.                                       |
+ +---------------------+-----------------------------------------------------+
+
+
+2. Operating environment
+
+                   Table 2.1 Operating environment 
+ +-----------------------------------------------------------------------+
+ |Hardware                                                               |
+ | +---------------+-----------------------------------------------------+
+ | |PC             |IBM PC compatible machine  Pentium 133MHz or more    |
+ | |               |recommended                                          |
+ | +---------------+-----------------------------------------------------+
+ | |Memory         |32 MB or more                                        |
+ | +---------------+-----------------------------------------------------+
+ | |Hard disk      |1 GB or more (size for disk image file)              |
+ | +---------------+-----------------------------------------------------+
+ | |GD-Writer      |SEGA GD-Writer HKT-04 (Farmware: Ver.0.47 or upper)  |
+ | +---------------+-----------------------------------------------------+
+ | |SCSI card      |ADAPTEC made SCSI card (*1)                          |
+ +-+---------------+-----------------------------------------------------+
+ |Software         |                                                     |
+ | +---------------+-----------------------------------------------------+
+ | |OS             |Windows 95 / Windows NT                              |
+ | +---------------+-----------------------------------------------------+
+ | |DLL            |wnaspi32.dll : ASPI manager (*2)                     |
+ | |               +-----------------------------------------------------+
+ | |               |msvcrt.dll   : Microsoft Visual C++ Ver.4.2 attached |
+ | |               |               DLL                                   |
+ | |               |mfc42.dll    : same as above                         |
+ +-+---------------+-----------------------------------------------------+
+  (*1) PCI bus master type SCSI card is recommended. (AHA-2940 series, etc.)
+  (*2) Please use the newest ASPI manager.
+       (Currently, i.e., July 1998, this means Ver. 4.57. Download the manager 
+       from the Adaptec Inc. Web site)
+
+ (remarks)
+ Refer to "10. Multi-write function" for multi-write operating environment.
+
+3. File
+3.1 Input/output file
+CD CRAFT uses files as shown in Table 3.1.
+
+                   Table 3.1  CD CRAFT input/output file
+ +---------------------+-----------------------------------------------------+
+ |       Type          |                 Description                         |
+ +---------------------+-----------------------------------------------------+
+ |CD script file       |File which describes CD scripts specifying placement |
+ |(SCR file)           |of programs and data on disk.                        |
+ |                     |CD scripts are in conformity with CD script syntax   |
+ |                     |for KATANA.                                          |
+ +---------------------+-----------------------------------------------------+
+ |Image file           |File containing track information and image which    |
+ |(CIM file)           |are required to create disk.                         |
+ |                     |                                                     |
+ |                     |                                                     |
+ +---------------------+-----------------------------------------------------+
+
+
+3.2 Image file
+3.2.1 Types of image file
+CD CRAFT has three types of image file corresponding to writing methods.
+
+                       Table 3.2  CD CRAFT image files
+ +---------------------------+-----------------------------------------------+
+ |   Type of image file      |        description (upper section)/           |
+ |                           |        characteristics (lower section)        |
+ +---------------------------+-----------------------------------------------+
+ |Disk image writing         |                                               |
+ | +-------------------------+-----------------------------------------------+
+ | |Full image format        |Image file containing all data sectors.        |
+ | |                         |(Conventional disk image is referred)          |
+ | |                         +-----------------------------------------------+
+ | |                         |Untouched disk image requires a very large     |
+ | |                         |size of file.                                  |
+ | |                         |This format ensures the stablest writing.      |
+ | +-------------------------+-----------------------------------------------+
+ | |Compact image format     |Image file with redundant portions, such as    |
+ | |                         |gaps, removed. Format specific to CD CRAFT.    |
+ | |                         +-----------------------------------------------+
+ | |                         |This format has both characteristics of full   |
+ | |                         |image and on-the-fly formats.                  |
+ | |                         |                                               |
+ +-+-------------------------+-----------------------------------------------+
+ |On-the-fly writing         |Image file for on-the-fly writing.             |
+ |                           |                                               |
+ |                           +-----------------------------------------------+
+ |                           |Size of this file is the smallest.             |
+ |                           |The load during writing is slightly higher     |
+ |                           |than with other writing methods.               |
+ +---------------------------+-----------------------------------------------+
+
+
+3.2.2 Specification of extent placement
+For GD-ROM drive, disk periphery enables rapid access.
+CD CRAFT can construct disk layout responding to access speed by its file 
+placement function.
+The following script command controls file placement on disk.
+
+    ExtentLocation : specifying location of the whole data area
+                     (location on inner and outer circumferences of disk)
+    Location       : specifying location of file unit
+                     (specifying location priority)
+
+When extent location is set to periphery, programs and/or data are located 
+on disk periphery.  If extent area is too small, dummy sector is used to hold data.  
+You should know that data are written in every memory area of GD-R disk.
+
+<Remark>
+Default for image creation are set as follows;
+  File format     : disk imageÅ|compact image format
+  Extent location : locating file on disk periphery
+
+
+4. Setup
+4.1 Setup
+This section shows CD CRAFT setup procedures.
+Refer to SCSI card manual for SCSI card setup and installation of ASPI manager.
+
+(1) Setup of console version
+  (a) Copy DLL file "msvcrt.dll" to Windows system directory (\windows\system).
+  (b) Copy console version program "crfgdc.exe" to installed directory.
+
+(2) Setup of GUI version
+  (a) Copy DLL file "msvcrt.dll""mfc42.dll to Windows system directory (\windows\
+      system).
+  (b) Copy GUI version program "crfgd.exe" and help file "crfgd.hlp""crfgd.cnt" 
+      to installed directory.
+    * Creating short cut for "crfgd.exe" is recommended.
+
+4.2 Handling GD-R
+GD-R disk writing performs subtle processing technique.
+Exercise utmost care when handling drives and media.
+
+(1) Drive installation
+  Install drive on the stable surface which is not affected by vibration.
+  Do not put harddisk, etc. on GD Writer drive enclosure.
+
+(2) Handling disk
+  In writing GD-R disk, use a blower to blow away dust on media.
+
+
+4.3 System Set Up 
+It is needed to set up system for Windows in order to operate GD Writer drive properly. 
+System is set up through "system" on "control panel".
+Setting contents vary depending on how the GD Writer is recognized by the system.
+
+(1) If the GD Writer is recognized as an unknown device:
+  Device type of GD-R drive is 'WORM', which is normally recognized as "unknown 
+  device" by system. In this case, there are no settings to be made in 
+  particular.
+
+(2) If the GD Writer is recognized as CD-ROM:
+  If device type conversion driver, attached to a commercial CD-R writing 
+  software, is embedded, device type changes to "CD-ROM" to be recognized as 
+  CD-ROM in system.
+  (Using Explorer, confirm that a new CD-ROM has been registered.)
+  In this event, the following system set up is required.
+
+• "automatic insertion"
+Windows always checks disk insertion into CD-ROM drive.
+Operation of this function may cause writing failure on disk.
+This failure can be controlled by CD-ROM device property "automatic insertion".  
+Set this function OFF.
+
+• "disconnect"
+When carrying out processing which takes an appreciable time, temporarily disconnect 
+from the SCSI bus, allowing it to be used by other devices. When the command completes, 
+reconnect to the bus. This function improves through put of bus as a whole.
+The default value for this setting is "ON." You must not change this setting to ensure 
+device's proper operation.
+
+<Set Up Procedures>
+(1) Select "system" on "control panel".
+(2) Select "device manager" tab.
+(3) Select the connecting GD-Writer from "CD-ROM" list.
+(4) Select "property" tab to set "option", as shown below.
+    "automatic insertion" : OFF     ;Change setting.
+    "disconnect"          : ON      ;Check ON.
+(5) Start up the system again to activate the setting.
+  * Turn power switches of the main unit and the GD-Writer off, then on again.
+
+
+4.4 Notes on Operating Environment
+As GD-R disk writing requires intricate processing technique, it's necessary 
+to keep the instruments from vibration to implement system performance.
+Because the system environment has been substantially altered, it is recommended 
+to check that the system performance is fully satisfactory by conducting a test 
+writing when CD CRAFT is used for the first time.
+If an error occurs during writing, take the following preventive steps.
+
+(1) Confirm the settings "automatic insertion = OFF" and "disconnect = ON".
+(2) You must not connect to network system. (Especially NetWare's load is high.) 
+(3) Work in MS-DOS full-screen mode.
+(4) Stop other applications.
+(5) Stop the program operating in the background.
+    (screen saver, system agent, etc).
+(6) Set Power Management to OFF.
+(7) Improve hard disk fragmentation. (Execution of de-fragmentation) 
+(8) Connect GD-Writer only, disconnecting as many SCSI instruments as possible.
+(9) Check the length of the SCSI cable. (Max. length of cable is 6 m in the case 
+    of the SCSI-2 standard.)
+(10) Pay attention to the SCSI ID setting and condition of terminator connection.
+(11) Uninstall other CD-R writing software.
+     If multiple CD-R writing softwares are installed, system operation will be 
+     unstable.
+(12) Check that the SCSI card resources (IRQ, DMA, etc.) are not conflicting 
+     with other devices.
+
+
+5. Start Up Procedures
+Run the following program.  For console version, type a program name from command 
+lines displayed on MS-DOS prompt screen.
+
+    Table 5.1  Execution file
+     +-------------+-------------+
+     |console      |crfgdc.exe   |
+     |version      |             |
+     +-------------+-------------+
+     |GUI version  |crfgd.exe    |
+     +-------------+-------------+
+
+
+6. Subcommands
+This section describes subcommands which specify process description and operating conditions.
+
+
+6.1 Specification of subcommand
+There are two ways to specify subcommand; command line specification and subcommand 
+file specification.
+
+(1) Command line specification
+  Subcommand is directly specified from command lines.  Commands are 
+  interpreted in order from the first.
+
+    crfgdc -subcommand 1=argument 1, argument 2 - subcommand 2=argument 1, 
+    argument 2,...
+
+(2) Subcommand file specification
+  Subcommand is specified by subcommand file instead of command lines.
+
+    crfgdc -sub= subcommand file name
+
+<Remarks>
+Subcommand can be specified by either program of console version or GUI version.
+
+
+6.2  Subcommand Specifications
+Subcommand input format is shown below.
+
+[Format]    Å|Keyword=parameter,...
+[Input]     Keyword    : Subcommand keywords
+            parameter  : user specified parameter
+[Remarks]   [ ]   : abbreviated
+            { |}  : select either one
+
+                         Table 6.1 Subcommand List
+ +---------------------------------------------+-----------------+-------+
+ |                 function                    | Subcommand      |number |
+ +---------------------------------------------+-----------------+-------+
+ |Disk editing                                                   | 1.0   |
+ | +-------------------------------------------+-----------------+-------+
+ | |Master disk creation                       |  mcd            | 1.1   |
+ +-+-------------------------------------------+-----------------+-------+
+ |Disk build                                                     | 2.0   |
+ | +-------------------------------------------+-----------------+-------+
+ | |Disk build                                 |  bld            | 2.1   |
+ | +-------------------------------------------+-----------------+-------+
+ +-+-------------------------------------------+-----------------+-------+
+ |GD-R disk writing                                              | 3.0   |
+ | +-------------------------------------------+-----------------+-------+
+ | |Master disk writing                        |  wm             | 3.1   |
+ | +-------------------------------------------+-----------------+-------+
+ | |Writing set                                |  wenv           | 3.2   |
+ +-+-------------------------------------------+-----------------+-------+
+ |CD tool                                                        | 4.0   |
+ | +-------------------------------------------+-----------------+-------+
+ | |TOC seet output                            |  tck            | 4.1   |
+ | +-------------------------------------------+-----------------+-------+
+ | |Image file information output              |  info           | 4.2   |
+ +-+-------------------------------------------+-----------------+-------+
+ |Operating environment set                                      | 5.0   |
+ | +-------------------------------------------+-----------------+-------+
+ | |Work directory specification               |  work           | 5.1   |
+ | +-------------------------------------------+-----------------+-------+
+ | |Home directory specification               |  home           | 5.2   |
+ | +-------------------------------------------+-----------------+-------+
+ | |Display language specification             |  lang           | 5.3   |
+ | +-------------------------------------------+-----------------+-------+
+ | |Drive specification                        |  id             | 5.4   |
+ | +-------------------------------------------+-----------------+-------+
+ | |Number of disk created specification       |  num            | 5.5   |
+ | +-------------------------------------------+-----------------+-------+
+ | |Memory area specification                  |  rar            | 5.6   |
+ | +-------------------------------------------+-----------------+-------+
+ | |Subcommand file specification              |  sub            | 5.7   |
+ | +-------------------------------------------+-----------------+-------+
+ | |Subcommand help display                    |  help           | 5.8   |
+ +-+-------------------------------------------+-----------------+-------+
+
+
+6.2.1 Disk editing
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Subcommand                   |Keyword        |No     |
+ +-----------------+-----------------------------+---------------+-------+
+ |Subcommand       |master disk creation         |mcd            |1.1    |
+ |specifications   |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+[Format]    mcd=scrfile [,cdwmet]
+[Input]     scrfile  : CD script file pass name (extention removable) 
+            cdwmet   : GD-R disk writing method
+                         dsk = disk image method
+                         otf = on-the-fly method
+[Function]  Master disk is created.
+            A sequence of work from image file creation to GD-R disk writing is performed.
+[Remarks]
+      (a) When writing method is omitted, disk is created by disk image method.
+
+
+6.2.2 Disk build
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Subcommand                   |Keyword        |No     |
+ +-----------------+-----------------------------+---------------+-------+
+ |Subcommand       |disk build                   |bld            |2.1    |
+ |specifications   |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+[Format]    bld=scrfile [,cdwmet]
+[Input]     scrfile  : CD script file pass name (extention removable) 
+            cdwmet   : GD-R disk writing method
+                         dsk = disk image method
+                         otf = on-the-fly method
+[Function]  Image file is created according to writing method.
+[Remarks]
+      (a) When writing method is omitted, disk is created by disk image method.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Subcommand                   |Keyword        |No     |
+ +-----------------+-----------------------------+---------------+-------+
+ |Subcommand       |build settings               |benv           |2.2    |
+ |specifications   |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+[Format]    benv=[i%d][,d%d][,c%d][,s%d][,dsda][,imf%d][,extloc%d][,nalfrf]
+[Input]     i      : maximum ISO file
+            d      : maximum file source
+            c      : size of character string area
+            s      : maximum sector table area
+            dsda   : single density area dummy track creation
+            imf    : disk image format
+            extloc : extent location
+            nalfrf : no self-location of first read file
+
+            %d     : specified number (decimal number) 
+
+[Function]  Operating environment is set to create image file.
+            Table 6.1 shows the range of parameters requiring specified numbers.
+
+(1) i
+  Maximum number of ISO files (files put on GD to be created) is setl
+
+(2) d
+  Maximum number of source (original files for ISO files) is set.
+
+(3) c
+  Size of the character string area which stores character strings used for 
+  CD script files is set.  ISO file names, directory names, file source names,
+  macro definitions, and script command arguments are stored in the character
+  string area.
+
+(4) dsda
+  When accessing the high density area, the single density area should also be
+  written.  In order to debug a program in the high density area, dummy track 
+  is crated in the single density area (track 1:MODE1, track 2:CDDA). Image
+  file is composed of the single density area consisting of dummy track and 
+  the high density area specified by CD scripts.
+  This parameter is only valid for the console version.
+
+(5) imf
+     +-----------+-------------------------------------+
+     | imf0      |compact image format (default)       |
+     +-----------+-------------------------------------+
+     | imf1      |full image format                    |
+     +-----------+-------------------------------------+
+  File format of disk image is specified.
+  Disk image file has "full image format" which includes all sector data and 
+  "compact image format" whose file does not include redundancy such as gap 
+  area.  File size of compact image format is smaller than that of full image
+  format.
+
+(6) extloc
+     +-----------+-------------------------------------+
+     | extloc0   |located on disk prephery (default)   |
+     +-----------+-------------------------------------+
+     | extloc1   |located on the internal              |
+     |           |circumference of disk                |
+     +-----------+-------------------------------------+
+  Extent location on disk is specified.  This parameter is active only for the
+  high dencity area(extent: continuous data sector string on disk).
+  When locating extent on disk peripheral (extloc0), block managing 
+  the wholedisk such as PVD area is first located.  Then dummy sector is 
+  inserted to locate the following CD-DA track/data track on disk peripheral.
+  When locating extent on the internal circumference of disk (extloc1), files
+  are located as specified by CD script.  In this case, dummy sector is not in
+  serted.
+
+(7) nalfrf
+  In the case of peripheral location, the first read file is automatically
+  located in the outermost track of the disk regardless of the description in
+  the script.
+  When this parameter is specified, the self-locating function of the first
+  read file is disabled.
+  In the case of location on the internal circumference of the disk, the
+  self-locating function of the first read file does not work.
+
+            Table 6.1 Range of Specified Numbers
+     +-----+---------------------------+---------------+-------------------+
+     |     |                           |Setting range  |Abbreviated value  |
+     +-----+---------------------------+---------------+-------------------+
+     |i    |maximum ISO file           |512Å`          |             10240 |
+     +-----+---------------------------+---------------+-------------------+
+     |d    |maximum file source        |512Å`          |             10240 |
+     +-----+---------------------------+---------------+-------------------+
+     |c    |size of character string   |16384Å`        |             52428 |
+     |     |area                       |               |                   |
+     +-----+---------------------------+---------------+-------------------+
+
+
+6.2.3 Disk writing
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Subcommand                   |Keyword        |No     |
+ +-----------------+-----------------------------+---------------+-------+
+ |Subcommand       |master disk writing          |wm             |3.1    |
+ |specifications   |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+[Format]    wm=imgfile [,cdwmet]
+[Input]     imgfile  : image file pass name(extention removable)
+            cdwmet   : disk writing method
+                         dsk = disk image method
+                         otf = on-the-fly method
+[Function]  Image file is written on disk to create master disk.
+[Remarks]
+      (a) Disk writing method is can be omitted.
+      (b) Image file tells which memory area of GD(single density area/high 
+          density area) should be written.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Subcommand                   |Keyword        |No     |
+ +-----------------+-----------------------------+---------------+-------+
+ |Subcommand       |write format                 |wenv           |3.2    |
+ |specifications   |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+[Format]    wenv=[test][,testgo][,rmv%d][,dsda][.noej][,mltw]
+[Input]     test   : Ask for confirmation after test completes.
+            testgo : Continue writing after test.
+            rmv    : Specify deleting image file.
+            dsda   : Writing dummy track in single-density area
+            noej   : Disk is not ejected automatically after writing is completed.
+            mltw   :Set multi-write mode
+            
+            %d     : parameter (decimal)
+[Function]  Sets the operating environment for when the image file is written to disk.
+
+(1) test
+  If the test mode write completes successfully, ask for confirmation before 
+  continuing with the actual write processing.
+  * It is not possible to specify test and testgo simultaneously.
+
+(2) testgo
+  If the test mode write completes successfully, continue with the actual write 
+  processing without asking for confirmation.
+  * It is not possible to specify test and testgo simultaneously.
+
+(3) rmv
+  Delete the image file after the writing to disk completes.
+  The parameter value determines the type of image file deleted, and in the 
+  current version only CIM files are supported. The value must therefore always
+  be 1.
+
+(4) dsda
+  Writes the minimum data as a dummy track in the single-density area.
+  The image file specified by the wm subcommand is written in the high-density 
+  area. This parameter can be used to skip preparation of a script and data 
+  for the single-density area when you only wish to debug a program in the 
+  high-density area.
+  * This parameter is only valid for the console version.
+
+(5) noej
+  Ensures that the disk is not ejected automatically after writing is completed.
+  * Under the default setting, the disk is ejected automatically after writing 
+    is completed.
+
+(6) mltw
+  Sets to multi-write mode.  It can control GD-Writer under the condition that 
+  the GD-Writer power is on and a GD-R disk is set.  This function is valid 
+  only on console version.
+  
+
+6.2.4 CD tools
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Subcommand                   |Keyword        |No     |
+ +-----------------+-----------------------------+---------------+-------+
+ |Subcommand       |TOC information output       |tck            |4.1    |
+ |specifications   |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+[Format]    tck=imgfile
+[Input]     imgfile  : path name of image file (file extension may be omitted)
+[Function]  Outputs TOC information.
+            TOC informaiton is output from both the single-density area and the 
+            high-density area.
+            If this violates the disk format rules, a warning message appears.
+
+Example: TOC information for the single-density area is shown as an example.
+
+[Single Density Area]
+   OFFSET : CONTROL   TNO/X   FORM     TIME      DUMP(HEX)
+    0000H : DATA  --- LeadIn  MODE1    00:00:00  41 00 00 02 00 00 00 00
+    0008H : DATA  --- 01/00   MODE1    00:00:00  41 01 00 02 00 00 00 00
+    0010H : DATA  --- 01/01   MODE1    00:02:00  41 01 01 02 00 00 02 00
+    0018H : AUDIO -2- LeadOut MODE1    00:22:52  01 AA 01 02 00 00 22 52
+                  |||                             |  |  |  |  |  |  |  |
+                  |||                             |  |  |  |  | MM:SS:FF
+                  ||+-- e: Emphasis flag          |  |  |  |  +--ZERO
+                  |+-- 2: 2ch / 4: 4ch            |  |  |  +--FORM
+                  +-- c: digital Copy permitted   |  |  +--X
+                                                  |  +--TNO
+                                                  +--CONTROL/ADR
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Subcommand                   |Keyword        |No     |
+ +-----------------+-----------------------------+---------------+-------+
+ |Subcommand       |image file information output|info           |4.2    |
+ |specifications   |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+[Format]    info=imgfile
+[Input]     imgfile    : path name of image file (file extension may be omitted)
+[Function]  Outputs image file information.
+             It can see and confirm information such as number of tracks or size for each
+             record area, or an image file style.
+
+
+6.2.5 Setting operating environment
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Subcommand                   |Keyword        |No     |
+ +-----------------+-----------------------------+---------------+-------+
+ |Subcommand       |set working directory        |work           |5.1    |
+ |specifications   |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+[Format]    work=dosdir
+[Input]     dosdir    : working directory
+[Function]  Specifies directory in which work files are created.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Subcommand                   |Keyword        |No     |
+ +-----------------+-----------------------------+---------------+-------+
+ |Subcommand       |set home directory           |home           |5.2    |
+ |specifications   |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+[Format]    home=dosdir
+[Input]     dosdir    : home directory
+[Function]  Specifies home directory (current directory when CD CRAFT is 
+            started).
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Subcommand                   |Keyword        |No     |
+ +-----------------+-----------------------------+---------------+-------+
+ |Subcommand       |specify display language     |lang           |5.3    |
+ |specifications   |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+[Format]    lang=ltyp
+[Input]     ltyp   : display language for messages
+                       e = English
+                       j = Japanese
+[Function]  Specifies the display language for messages.
+[Remarks]
+      (a) If omitted, the display language is automatically obtained from the 
+          console language setting.
+      (b) This function is only valid for the console version.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Subcommand                   |Keyword        |No     |
+ +-----------------+-----------------------------+---------------+-------+
+ |Subcommand       |specify drive                |id             |5.4    |
+ |specifications   |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+[Format]    id=[hid:]tid
+[Input]     hid    : host adapter number (0 to n-1) 
+            tid    : SCSI ID of GD-Writer (0 to 7)
+[Function]  Specifies the number of the host adapter connected to the 
+            GD-Writer and the SCSI ID of the GD-Writer.
+[Remarks]
+      (a) If omitted, the GD-Writer is found automatically.
+      (b) If the host adapter number is omitted, the default value is 0.
+
+ +-----------------+---------------------------+---------------+-------+
+ |Title            |Subcommand                 |Keyword        |No     |
+ +-----------------+---------------------------+---------------+-------+
+ |Subcommand       |specify number of disk     |num            |5.5    |
+ |specifications   |copies created             |               |       |
+ +-----------------+---------------------------+---------------+-------+
+[Format]    num=n
+[Input]     n      : number of copies
+[Function]  Specifies the number of copies of the GD disk created.
+[Remarks]
+      (a) The default value is 1.
+
+ +-----------------+---------------------------+---------------+-------+
+ |Title            |Subcommand                 |Keyword        |No     |
+ +-----------------+---------------------------+---------------+-------+
+ |Subcommand       |specify recording area     |rar            |5.6    |
+ |specifications   |                           |               |       |
+ +-----------------+---------------------------+---------------+-------+
+[Format]    rar=area
+[Input]     area  : recording area 
+                      sda = single-density area 
+                      hda = high-density area
+                      all = both single-density and high-density areas
+[Function]  Specifies whether to build either of the GD recording areas 
+            (single-density area or high-density area), or to write to either of 
+            the areas of the GD-R disk.
+[Remarks]
+      (a) In a build, regardless of the CD script, only the area specified here 
+          is written.
+      (b) During writing, of the areas in the image file, only the specified 
+          area is written to the GD-R disk.
+      (c) The default setting is "all".
+      (d) Specify recording area is the function which is only valid for the 
+          console version.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Subcommand                   |Keyword        |No     |
+ +-----------------+-----------------------------+---------------+-------+
+ |Subcommand       |specify subcommand file      |sub            |5.7    |
+ |specifications   |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+[Format]    sub=subfile
+[Input]     subfile : subcommand file name
+[Function]  Specifies subcommand file.
+[Remarks]
+      (a) If command options and a subcommand file are specified at the same 
+          time, the command option settings take precedence.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Subcommand                   |Keyword        |No     |
+ +-----------------+-----------------------------+---------------+-------+
+ |Subcommand       |subcommand help display      |help           |5.8    |
+ |specifications   |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+[Format]    help=subcommand
+[Input]     subcommand : subcommand
+[Function]  Displays help information for the specified subcommand.
+[Remarks]
+      (a) This function is only valid for the console version.
+
+
+7. Procedures for CD creation
+CD CRAFT provides four different modes for the job of creating a CD.
+The CD creation mode determines the operations to be carried out by the used 
+and the sequence of operations.
+The basic CD creation sequence is as follows.
+
+    Start
+      |
+      V
+Create and edit CD script:  Create and edit CD script
+      |
+      V
+Set CR creation mode     :  Select required function
+      |
+      V
+Determine build settings :  Make settings relating to building the image file
+      |
+      V
+Determine write settings :  Make settings relating to writing to disk
+      |
+      V
+Begin CD creation        :  Start program
+      |                    (Following settings, create image file and write to 
+      |                    disk)
+      V
+     End
+
+
+7.1 Master disk creation
+(1) Editing CD script
+  If the script file already exists, select it in the Open dialog box.
+  To create a new script file, select CD Script in the New dialog box.
+  You can now edit the script file you have opened.
+
+(2) Selecting the CD creation mode
+  In the CD Creation Mode dialog box, select Create Master Disk.
+
+(3) Build settings
+  Make the build settings in the Build Settings dialog box.
+    • Write format     :Select disk image or on-the-fly
+    • Build conditions :Set conditions (maximum number of files, etc.) for build
+
+(4) Write settings
+  Make the write settings in the Write Settings dialog box.
+    • Write conditions :Specify test writing and writing speed
+
+(5) Start CD creation operation
+  In the Create CD menu, select Start, to start the CD creation.
+
+
+7.2 Image file creation
+(1) Editing CD script
+  If the script file already exists, select it in the Open dialog box.
+  To create a new script file, select CD Script in the New dialog box.
+  You can now edit the script file you have opened.
+
+(2) Selecting the CD creation mode
+  In the CD Creation Mode dialog box, select Create Image File.
+
+(3) Build settings
+  Make the build settings in the Build Settings dialog box.
+    • Write format     :Select disk image or on-the-fly
+    • Build conditions :Set conditions (maximum number of files, etc.) for build
+
+(4) Start CD creation operation
+  In the Create CD menu, select Start, to start the CD creation.
+
+
+7.3 Writing a master disk
+(1) Specifying CD script file
+  In the Open dialog box, select the CD script file or image file directly.
+
+(2) Selecting the CD creation mode
+  In the CD Creation Mode dialog box, select Write Master Disk.
+
+(3) Write settings
+  Make the write settings in the Write Settings dialog box.
+    • Write conditions :Specify test writing or not
+    • Image file       :Select the image file used
+
+(4) Start CD creation operation
+  In the Create CD menu, select Start, to start the CD creation.
+
+
+8. CD creation procedure for console version
+In the console version, the CD creation mode selection, build settings and 
+write settings are specified by subcommands.
+
+(1) Creating a master disk
+  Use the mcd subcommand.
+  Example: crfgdc -mcd=sample.scr              :script file is sample.scr
+
+(2) Creating an image file
+  Use the bld subcommand.
+  Example: crfgdc -bld=sample.scr              :script file is sample.scr
+
+(3) Writing a master disk
+  Use the wm subcommand.
+  Example: crfgdc -wm=sample.cim               :image file is sample.cim
+
+(4) Writing settings
+  Use the wenv subcommand.
+  Example: crfgdc -wm=sample.cim -wenv=test    :image file is sample.cim
+                                              Continue after test to perform 
+                                              writing.
+
+
+9. Precautions for CD creation
+9.1 Precautions for creating self-starting disk
+When creating a self-starting disk in the device, all the following items must 
+be satisfied.
+
+  (a) A special IP must be located in each system area for single-density and 
+      high-density use.
+    For the time being, if you want to try creating a self-starting test disk, 
+    use the following all-purpose IPs provided in Dreamcast SDK.
+
+      ip0000.bin: IP for single-density
+      ip.bin:     IP for high-density
+
+    In these IPs, the first read file is named as "1st_read.bin".
+
+  (b) The first read file should be located at the outermost track of the 
+    high-density area. The last track must therefore be a Mode1 track.
+    Please refer to the sample script "gdsample.scr" provided with this tool.
+    (From CD CRAFT Ver. 2.27, a function for self-locating the first read file 
+    in the outermost track is provided.)
+
+  (c) The leading character of the name of the first read file must be a numeral 
+     (0 to 9), and the filename must conform to the 8.3 name format.  Also, when listing 
+     files in alphabetical order, only "0gdtex.pvr" (texture for disk label)can be 
+     existed as a preceding file.
+
+<Note>
+The above items are the minimum required items when creating a disk capable of 
+self-starting. This is no guarantee that this can be the master release.
+Do not fail to check the following items when the master is delivered.
+
+  (a) Items specified in the IP
+  • Product code
+  • Application maker ID
+  • Corresponding area code, ... etc.
+
+  (b) The following PVD definition contents and compatibility with the actual 
+      file
+    Identification data and actual file should be defined for the disk's 
+    single-density area.
+  • Copyright file identification data
+  • Abstract file identification data
+  • Bibliographic file identification data
+
+
+9.2 Copyright file definition
+In the root directory of the single-density area of the GD-ROM, define the copyright file, 
+abstract file and bibliographic file using the specified 
+filenames.
+
+ +---------------+-------------+---------------------------------------------+
+ |    File       |  Filename   |               Description                   |
+ +---------------+-------------+---------------------------------------------+
+ |Copyright file |COPYRIGH.TXT |Describes the copyright information.         |
+ |               |             |When specifying the copyright file using the |
+ |               |             |script, use the CopyrightFileIdentifier      |
+ |               |             |command.                                     |
+ +---------------+-------------+---------------------------------------------+
+ |Abstract file  |ABSTRACT.TXT |Gives and abstract of the application.       |
+ |               |             |When specifying the abstract file using the  |
+ |               |             |script, use the AbstractFileIdentifier       |
+ |               |             |command.                                     |
+ +---------------+-------------+---------------------------------------------+
+ |Bibliographic  |BIBLIOGR.TXT |Describes reference document information.    |
+ |file           |             |When specifying the bibliographic file using |
+ |               |             |the script, use the                          |
+ |               |             |BibliographicFileIdentifier command.         |
+ +---------------+-------------+---------------------------------------------+
+
+
+9.3 General file definition
+(1) Filename rules
+  The names of files defined on the GD-ROM should conform to the "ISO9660 
+  Level 2" protocol.
+
+  (a) The filename may consist of up to 30 characters. (Period not included.)
+  (b) The directory name may consist of up to 31 characters.
+  (c) D letters (upper case Roman letters, numerals, underbar) can be used for 
+     the names.
+
+  * ISO9660 Level 2 is set as default for CD CRAFT.
+    This can be changed by using the script command "FileNameType".
+
+(2) Distinguishing the first read file
+  Because it is necessary to distinguish between general files and the first 
+  read file, further conditions have been attached to the naming of filenames 
+  for general files.
+
+  (a) Filenames and directory names must start with a Roman letter.
+
+  If this condition is not met, the disk will not be able to start.
+
+
+9.4 CD-DA track creation
+9.4.1 CD-DA data
+(1) CD-DA data format
+  The CD-DA data to be registered on the CD-DA track should be quantized 16-bit 
+  stereo type PCM data with a sampling frequency of 44.1 KHz.
+  The data should be arranged in the Intel format (little endian) as shown in 
+  the following figure.
+
+    D7  D0 D15  D8
+     +-----+-----+
+     |LSB  |MSB  |
+     +-----+-----+
+     |      Å^
+     +-----+-----+-----+-----+-----------+-----+-----+
+     | L1  | R1  | L2  | R2  |ÅEÅEÅEÅEÅE | Ln  | Rn  |
+     +-----+-----+-----+-----+-----------+-----+-----+
+
+(2) Special processing of silent data
+  Due to restrictions on reading of CD-DA track data from the GD-ROM drive, 
+  problems can arise if silence continues at the beginning of the CD-DA track.
+  To cope with this problem, the CD CRAFT checks whether the beginning of the 
+  CD-DA track consists of silence (0x0000). If there is silence at beginning, 
+  it is replaced by absolute lowest volume data (0xFFFF).
+
+
+9.4.2 Index
+KATANA does not support playback of the CD-DA track index.
+This means that the index number cannot be set at 2 or higher.
+Therefore, an error is generated if multiple file sources are specified by the CD-DA track.
+
+
+10.  Multi-Write Function
+CD CRAFT console version supports multi-write function, which can write multiple GD-Rs 
+simultaneously.  With this function, actual writing time can be eliminated.
+
+10.1  Multi-write operating environment
+(1) Hardware
+  To ensure a stable write, a machine with high spec is preferrable.  Also, the following 
+  conditions must be met:
+  (a) GD Writer
+  • Up to 2 GD Writers can be connected to 1 SCSI card.  Therefore, using 2 peices of 
+  SCSI card makes it possible to write 4 GD-Rs simultaneously at most.
+  (it may depend on working environment or conditions)
+  • The firmware version of the writers must be the same.
+  (b) SCSI Card
+  • Adaptec SCSI card AHA-2940 series only
+  (AHA-2940/AHA-2940U/AHA-2940AU/AHA-2940UW)
+  • SCSI card should be identical if 2 peices are used
+  (c) Hard Disk Drive
+  • Use of IDE hard disk is recommended. (to reduce SCSI bus load)
+
+(2) System Settings
+  Reconfirm that "auto insert =OFF" and "disconnect =ON"
+
+10.2  Multi-write procedures
+(1) Program execution condition
+  The following conditions must be fulfilled upon execution:
+   (a) MS-DOS full screen mode
+   (b) Not to connect to network
+   (c) Not to run any background jobs such as a screen saver
+(2) Select of GD-Writer
+  It controls GD-Writers if the power is on and GD-R is set.
+(3) Command format
+  ex.  crfgdc -mcd=sample.scr -wenv=mltw
+  (create an image file and perform multi-write)
+(4) Others
+    (a) Writing in disc image style is recommended
+    (b) If an error occurs, it stops processing only for the applied drive.
+    Rest of the drives keep processing.
+
+
+Appendix A. Transition from existing CD tools
+A.1 Comparison with operations under CD CRAFT
+The following table shows a comparison of the operations under CD CRAFT for each 
+CD creation mode with the existing CD tools (XBLD and ADDCDW).
+
+                     Table A.1  Operation comparison
+ +-----------------------+-----------------------+---------------------------+
+ |  CD creation mode     |    Under CD CRAFT     | Under existing CD tools   |
+ +-----------------------+-----------------------+---------------------------+
+ |Creating master disk   |crfgdc -mcd=sample.scr |xbld sample.scr            |
+ |                       |                       |addcdw -master=sample.dsk  |
+ +-----------------------+-----------------------+---------------------------+
+ |Creating image file    |crfgdc -bld=sample.scr |xbld sample.scr            |
+ |                       |                       |                           |
+ +-----------------------+-----------------------+---------------------------+
+ |Writing master disk    |crfgdc -wm=sample.cim  |addcdw -master=sample.dsk  |
+ |                       |                       |                           |
+ +-----------------------+-----------------------+---------------------------+
+
+                           Creating master disk
+      |------------------------------------------------------------Å® |
+      |                                                               |
+      |                                                               |
+      |         Image creation            Writing master disk         |
+      |----------------------------Å® |----------------------------Å® |
+ ÅQÅQÅQÅQ       +---------+      ÅQÅQÅQÅQ       +---------+      ÅQÅQÅQÅQ
+(  SCR   ) --Å® |  XBLD   |--Å® (  DSK   ) --Å® | ADDCDW  |--Å® (  CD-R  )
+ ÅPÅPÅPÅP       +---------+      ÅPÅPÅPÅP       +---------+      ÅPÅPÅPÅP
+    SCR: CD script file
+    DSK: image file
+                      Fig. A.1  Relation among CD creation modes
+
+
+Appendix B. Messages
+B.1 Error messages
+CD CRAFT error messages are shown in Table B.1.
+
+                         Table B.1 Error message list
+ +---------------------------------------------------------------------------+
+ |f010 : CD creation mode not specified                                      |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Only the subcommand of the environment setting is specified.     |
+ | |       |None of the subcommands mcd, bld, or wm is specified.            |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Specify one of the above subcommands.                            |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |f020 : Sub-command file not found                                          |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Specified subcommand file does not exist.                        |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Specify correct subcommand file.                                 |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |f021 : Incorrect Sub-command                                               |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |There is an error in the description of the specified            |
+ | |       |sub-command.                                                     |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Specify correct subcommand.                                      |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |f022 : Incorrect Sub-command parameter                                     |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |A bad parameter value was specified for the specified            |
+ | |       |sub-command.                                                     |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Specify correct parameter value.                                 |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |f040 : Drive is not connected                                              |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |GD-Writer is not connected to SCSI.                              |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Connect and confirm that the ID is not redundant.                |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |f810 : Not enough memory                                                   |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Cannot execute due to insufficient memory.                       |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Close other applications.                                        |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |f820 : Cannot open file %s                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Cannot open a file.                                              |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Make sure that the file indicated by %s exists, and check        |
+ | |       |the path name specification.                                     |
+ +-+-------+-----------------------------------------------------------------+
+ |f821 : Cannot create file %s                                               |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Cannot create a file.                                            |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Check whether the file indicated by %s is write protected.       |
+ | |       |Check whether normal writing and reading are possible in the     |
+ | |       |work directory.                                                  |
+ +-+-------+-----------------------------------------------------------------+
+ |f822 : Read Error occurred %s                                              |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |An error occurred while reading a file.                          |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Check whether there is a problem with the file indicated         |
+ | |       |by %s.                                                           |
+ +-+-------+-----------------------------------------------------------------+
+ |f823 : Write Error occurred %s                                             |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |An error occurred while writing to a file.                       |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Check whether there is a problem with the hard disk.             |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |f825 : Freespace of HDD is not enough                                      |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |There is insufficient free space on the hard disk.               |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Increase the amount of free space on the hard disk.              |
+ | |       |Build in compact format and in on-the-fly format.                |
+ +-+-------+-----------------------------------------------------------------+
+ |f827 : Illegal imagefile %s                                                |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The image file contains an error.                                |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Re-build the image file.                                         |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |f828 : Work-directory %s is not available                                  |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Cannot use the specified work directory.                         |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Specify the correct work directory.                              |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |f830 : The job is terminated by force                                      |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The drive stopped responding in the middle of an operation.      |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Set up the system as described in section 4.3 in this manual.    |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |f840 : Filename is not specified                                           |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |No file name was specified.                                      |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Specify the correct file name.                                   |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |f841 : Directory name is not specified                                     |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |No directory name was specified.                                 |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Specify the correct directory name.                              |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa00 : Script file %s is not found                                         |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Cannot find the specified script file.                           |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Make sure that the script file exists, and check the path name.  |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa01 : Cannot allocate memory for ISO file info                            |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |There is not enough space available to store the ISO file        |
+ | |       |(a file that is stored on the CD that is to be created)          |
+ | |       |information.                                                     |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Increase the maximum number of ISO files.                        |
+ | |       |Console version: Make the setting using the build environment    |
+ | |       |                 parameter. (-benv=i%d)                          |
+ | |       |GUI version: Make the setting using the "Number of ISO files"    |
+ | |       |             within the "Build Conditions" page of the "Build    |
+ | |       |             Settings" dialog.                                   |
+ +-+-------+-----------------------------------------------------------------+
+ |fa02 : Cannot allocate memory for source file info                         |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |There is not enough space available to store the source file     |
+ | |       |(the file that is the source of the ISO file) information.       |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Increase the maximum number of source files.                     |
+ | |       |Console version: Make the setting using the build environment    |
+ | |       |                 parameter. (-benv=i%d)                          |
+ | |       |GUI version: Make the setting using the "Number of source files" |
+ | |       |             within the "Build Conditions" page of the "Build    |
+ | |       |             Settings" dialog.                                   |
+ +-+-------+-----------------------------------------------------------------+
+ |fa04 : Cannot allocate memory for character string                         |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |There is not enough space available to store the character       |
+ | |       |strings that are used in the script file.                        |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Increase the size of the character string area.                  |
+ | |       |Console version: Make the setting using the build environment    |
+ | |       |                 parameter.(-benv=c%d)                           |
+ | |       |GUI version: Make the setting using the "Character string area   |
+ | |       |             size" within the "Build Conditions" page of the     |
+ | |       |             "Build Settings" dialog.                            |
+ +-+-------+-----------------------------------------------------------------+
+ |fa10 : Script Syntax Error                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |An undefined script keyword was used. Or the keyword usage is    |
+ | |       |incorrect.                                                       |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Check the script syntax and revise the script file.              |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa14 : Macro is not defined                                                |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |An undefined constant macro constant macro was referenced in     |
+ | |       |the script.                                                      |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Check the definitions in the Define command.                     |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa20 : This command cannot be defined in this block                        |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The script command was specified in the wrong location.          |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Check the location where the command is specified.               |
+ | |       |Also confirm that the definition blocks for previously defined   |
+ | |       |directories, files, etc., are described correctly.               |
+ +-+-------+-----------------------------------------------------------------+
+ |fa32 : Illegal location of system area                                     |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Initial program is exceeding 32 KB.                              |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Revise the initial program so that it is kept at or below 32 KB. |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa34 : PVD is not defined                                                  |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The Volume - EndVolume descriptors are not in the script. Or,    |
+ | |       |the PrimaryVolume - EndPrimaryVolume descriptors are not in the  |
+ | |       |script.                                                          |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Describe the volume descriptor information in the script.        |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa35 : System area of high density area is not defined                     |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The system area in the high-density area is not described        |
+ | |       |in the script.                                                   |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Describe the system area definitions in the script.              |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa41 : Too many tracks                                                     |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |A number of tracks exceeding the number of tracks defined for    |
+ | |       |the GD-ROM format have been defined.                             |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Single-density area must contain 2 tracks (MODE1 + CD-DA).       |
+ | |       |High-density area must be within 97 tracks.                      |
+ +-+-------+-----------------------------------------------------------------+
+ |fa42 : Illegal track mode                                                  |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |A track other than MODE1 or CD-DA has been defined.              |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Define the track as MODE1 or CD-DA.                              |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa45 : CD-DA track is not defined                                          |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |CDDA track is not defined in single-density area.                |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |The second track in the single-density area must be defined as   |
+ | |       |the CD-DA track.                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa50 : Directory name is not correct                                       |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The specified directory name violates the file naming rule.      |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Specify a directory name based on the file naming rule.          |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa51 : This directory is already defined                                   |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |A direction with the same name already exists.                   |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Change the name.                                                 |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa52 : Too deep directory level                                            |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Including the root directory, the directory hierarchy is defined |
+ | |       |as more than 9 levels.                                           |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |The directory hierarchy should consist of 8 or fewer levels.     |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa60 : File name is not correct                                            |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The specified file name violates the file naming rule.           |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Specify a name based on the file naming rule.                    |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa61 : This file is already defined                                        |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |A file with the same name already exists.                        |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Change the name.                                                 |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa63 : FileSource can be defined once in a File block                      |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Redundant FileSource - EndFileSource descriptors within File -   |
+ | |       |EndFile.                                                         |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |There should only be one FileSource - EndFileSource descriptor.  |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa70 : Illegal parameter                                                   |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Parameter value of script command is wrong.                      |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Check the script syntax specifications and specify the correct   |
+ | |       |value.                                                           |
+ +-+-------+-----------------------------------------------------------------+
+ |fa74 : Illegal Time                                                        |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The layout position time specifications for the                  |
+ | |       |ExtentLocationBeginTime, ExtentLocationEndTime, BeginTimeS,      |
+ | |       |EndTimeS are wrong.                                              |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Specify the correct layout positions.                            |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa75 : Illegal Date or Time                                                |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The date and time specifications for RecordingDate,              |
+ | |       |VolumeCreationDate, VolumeModificationDate,                      |
+ | |       |VolumeExpirationDate, VolumeEffectiveDate are wrong.             |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Specify the correct date and time.                               |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fa78 : Illegal Character                                                   |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Characters that cannot be used were specified in the volume      |
+ | |       |descriptor information specification.                            |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Use the correct character code based on the GD-ROM format        |
+ | |       |specifications.                                                  |
+ +-+-------+-----------------------------------------------------------------+
+ |faa1 : Contents of disc is not defined                                     |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |RecordArea - EndRecordArea descriptors are not in the script.    |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Describe the disk contents in the script.                        |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fab0 : Data size to write in the disk is too big.                          |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The data size of image file exceeds GD-R size.                   |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy | Reduce the number of files defined in the script.               |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fd42 : Cannot write in this recordarea                                     |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The specified disk area has already been recorded.               |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Replace with a new disk.                                         |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fd43 : Filesource for on-the-fly writing does not exist                    |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The source file described in the image file for on-the-fly       |
+ | |       |writing does not exist.                                          |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Re-build the image file.                                         |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fd44 : Cannot create toc sheet                                             |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The specified image file does not exist.                         |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Specify the correct image file name.                             |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fd45 : Filesource for on-the-fly writing is renewed                        |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The source file described in the image file has been updated.    |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Re-build the image file.                                         |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fe04 : Drive is not ready                                                  |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |During writing: Data transfer did not work and writing error     |
+ | |       |                occurred.                                        |
+ | |       |At other times: Drive is not ready.                              |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |During writing: Check the operating environment.                 |
+ | |       |                (See Section 4.4 of this manual.)                |
+ | |       |At other times: Check whether the disk is placed correctly.      |
+ +-+-------+-----------------------------------------------------------------+
+ |fe09 : Tracking Error occurred                                             |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |A tracking error occurred in the drive.                          |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Set up the drive in a stable location with no vibrations.        |
+ | |       |Confirm that the pickup is not damaged.                          |
+ +-+-------+-----------------------------------------------------------------+
+ |fe0c : Write Error occurred                                                |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |During writing: Data transfer did not work and writing error     |
+ | |       |                occurred.                                        |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |During writing: Check operating environment.                     |
+ | |       |                (See section 4.5 in this manual.)                |
+ +-+-------+-----------------------------------------------------------------+
+ |fe29 : Illegal Reset occurred                                              |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |A reset command was issued to the SCSI device.                   |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Perform the system settings as outlined in Section 4.3  in this  |
+ | |       |manual.                                                          |
+ +-+-------+-----------------------------------------------------------------+
+ |fe33 : Disc is dusty                                                       |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The disk or pickup is dirty.                                     |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Clean the disk or pickup.                                        |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fe3a : Disc is not set                                                     |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |A disk is not placed in the GD-Writer.                           |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Check whether the disk is placed correctly.                      |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fe53,: Medium load or eject failed                                         |
+ |fe83 :                                                                     |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Disk loading or ejection failed.                                 |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Confirm that the disk loading mechanism functioning properly.    |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fead : Forwarding Speed is too slow                                        |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Data transfer did not work and writing error occurred.           |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Check the operating environment. (See Section 4.4 of this        |
+ | |       |manual.)                                                         |
+ +-+-------+-----------------------------------------------------------------+
+ |fec0 : Target is busy                                                      |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |A problem developed in the operation of the system and           |
+ | |       |the target no longer responds.                                   |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Check the operating environment. (Refer to section 4.4           |
+ | |       |in this manual.)                                                 |
+ | |       |Turn the system power off and then restart the system.           |
+ +-+-------+-----------------------------------------------------------------+
+ |ff02 : Not enough memory                                                   |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |There is not enough memory to execute the desired operation.     |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Close other applications.                                        |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |ff04 : The version of ASPI Manager is old                                  |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |An old version of the ASPI manager is in use.                    |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Upgrade to a new version.                                        |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |ff05 : ASPI Manager is not found                                           |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Could not find the ASPI manager.                                 |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Refer to the manual provided with the SCSI card and set          |
+ | |       |up the card again.                                               |
+ +-+-------+-----------------------------------------------------------------+
+ |ff12 : There is no drive made ready to write the disc.                     |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |No GD-Writer is ready (when multi-write is on).                  |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Check the GD-Writer connection, or set GD-R disc to the writer.  |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |ff40 : Not enough memory                                                   |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |There is not enough memory to execute the desired operation.     |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Close other applications.                                        |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |ff60 : Too many targets                                                    |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Too many drives are being used.                                  |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Reduce the number of drives.                                     |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |ff80 : Host adapter is not found                                           |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The host adapter that is to be used cannot be found.             |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Install the host adapter.                                        |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |ffa2 : Target is busy                                                      |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |A problem developed in the operation of the system               |
+ | |       |and the target no longer responds.                               |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Check the operating environment. (Refer to section 4.4 in        |
+ | |       |this manual.) Turn the system power off and then restart         |
+ | |       |the system.                                                      |
+ +-+-------+-----------------------------------------------------------------+
+  (*1) If the error code is feXX, the code is shown as the error state of SCSI device 
+       with the error message.
+
+
+B.2 Warning messages
+CD CRAFT warning messages are shown in Table B. 2
+
+<Note>
+Because the disk should be self-starting, be sure to take remedial action if warning 
+messages concerning the first read file are displayed.
+
+                       Table B.2 Warning messages list
+ +---------------------------------------------------------------------------+
+ |fb01 : Track length is adjusted to 4 seconds                               |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Because the track size is not fully 4 seconds, CD CRAFT has      |
+ | |       |compensated for the lacking part.                                |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |No problem.                                                      |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fb02 : HDA length is adjusted to 30 minutes                                |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |Because the high-density area size is not fully 30 minutes,      |
+ | |       |CD CRAFT has compensated for the lacking part.                   |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |No problem.                                                      |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fb20 : Copyright file is not defined                                       |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The copyright file has not been defined.                         |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Define the copyright file entity in the root directory of the    |
+ | |       |single-density area.                                             |
+ +-+-------+-----------------------------------------------------------------+
+ |fb21 : Abstract file is not defined                                        |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The abstract file has not been defined.                          |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Define the abstract file entity in the root directory of the     |
+ | |       |single-density area.                                             |
+ +-+-------+-----------------------------------------------------------------+
+ |fb22 : Bibliographic file is not defined                                   |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The bibliographic file has not been defined.                     |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Define the bibliographic file entity in the root directory of    |
+ | |       |the single-density area.                                         |
+ +-+-------+-----------------------------------------------------------------+
+ |fb23 : DataPreparerIdentifier command is not available                     |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The DataPreparerIdentifier command has been used in the script.  |
+ | |       |(The data preparer identification data field is reserved for     |
+ | |       |storing CD tool information.)                                    |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Do not use the DataPreparerIdentifier command.                   |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fb30 : The first-read file is not on the most outside edge of the disc     |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The first read file is not located in the outmost track.         |
+ | |       |Or it is located beyond the defined periphery.                   |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Build so that the image file is located in the outermost track.  |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fb31 : The first-read file is not in the last trac of the disc             |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The first read file is not defined in the last track.            |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Define the first read file in the last track.                    |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fb32 : The first-read file is not defined                                  |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The first read file is not defined.                              |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Define the first read file in the root directory of the          |
+ | |       |high-density area using the specified filename.                  |
+ +-+-------+-----------------------------------------------------------------+
+ |fb33 : The first-read file name is not correct                             |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The filename of the first read file is not correct.              |
+ | |       |The first character must be a numeral (0 to 9), and the filename |
+ | |       |must conform to the 8.3 name format.                             |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |System ID should be created again.                               |
+ | |       |Revise the script.                                               |
+ +-+-------+-----------------------------------------------------------------+
+ |fb34 : The first-read file name is not defined in the System ID            |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |The first read file is not defined in the System ID.             |
+ | |       |                                                                 |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Define the filename of the first read file.                      |
+ | |       |                                                                 |
+ +-+-------+-----------------------------------------------------------------+
+ |fb35 : Some files precede the first-read file in directory order           |
+ | +-------+-----------------------------------------------------------------+
+ | |Reason |In addition to the first read file, another file or directory    |
+ | |       |whose filename starts with a numeral has been defined.           |
+ | +-------+-----------------------------------------------------------------+
+ | |Remedy |Start the filename with a Roman letter except in the case of the |
+ | |       |first read file.                                                 |
+ | |       |For details on the first read file conditions, refer to the IP   |
+ | |       |related documentation provided with Dreamcast_SDK.               |
+ +-+-------+-----------------------------------------------------------------+
+
+/*--< end of file >---------------------------------------------------------*/

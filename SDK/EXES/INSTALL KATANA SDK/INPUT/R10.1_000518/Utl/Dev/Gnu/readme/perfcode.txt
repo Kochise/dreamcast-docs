@@ -1,0 +1,90 @@
+
+Performance programming strategies
+by Toshiyasu Morita
+Created: 10/8/98 @ 6:48 pm
+--------------------------
+
+1) Avoid large register offsets
+
+The SH4 instruction word is only 16-bits wide, so Hitachi has made some
+tradeoffs to shrink the size of each instruction. In particular, register
+offset addressing for integers has only a 4-bit scaled displacement, and
+register offset addressing for floating point has no bits of displacement.
+To access data at offsets larger than can be encoded in an instruction word,
+gcc must generate some pointer arithmetic. This generates one or two extra
+instructions, and may use another register.  Thus, you should avoid
+large register offsets.
+
+There are three basic places where large register offsets can be generated:
+stack frames, class variable references and struct references.
+
+    a) Avoid large complex functions
+
+       o If you have have large complex functions, then gcc will probably
+         need to spill registers. Spill areas for functions are
+         at the top of the stack frame, which are awkward to access.
+
+    a) Avoid deep stack frames
+
+       o Resist the temptation to use lots of local variables.
+
+         If you need a lot of local variables, it may be
+         better to split some of the functionality into a separate
+         subfunction.
+
+       o Place longs at the bottom of your stack frame, then everything else.
+
+         GCC can use the @(disp,Rn) addressing mode for 32-bit integers,
+         but doesn't for everything else; therefore it's advantageous to place
+         32-bit ints near your frame pointer.
+
+       o If you have a critical loop which uses lots of locals,
+         then you may want to break it out into a separate function
+         to insure that its local variables are close to the frame 
+         pointer.
+
+   c) Order your structs 
+
+      o Reorder your structs so that int fields are first, then everything else.
+
+   d) When using large structs, try put related fields in nested structs
+  
+      o By nesting structs, you can manually create a pointer to the
+        nested struct and access the fields relative to the nested struct
+        pointer. Although this is slower for a single access due to the
+        initial pointer arithmetic, it will be much faster when referencing
+        multiple fields in the nested struct.
+
+   d) Order structs so floating point fields are referenced sequentially
+
+      o GCC can use the read-post-increment addressing mode when reading
+        sequential floating point fields which is very fast.
+
+   e) Use structs to reference hardware registers
+
+2) Instruction scheduling
+  
+   This section is primarily of interest to assembly language programmers,
+   as gcc takes care of this when programming in C.
+
+   a) Load/store scheduling
+   b) Execution unit scheduling
+
+3) Optimizing cache usage
+   a) pref
+   b) ocbi/ocbp/ocbwb
+   c) store queue
+
+4) SH4 special instructions
+   a) ftrv
+   b) fipr
+   c) fmov.d
+
+SH4 peripheral features
+----------------------
+3) SH4 on-chip peripherals
+   a) DMA unit
+
+GCC compilation options
+-----------------------
+

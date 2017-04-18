@@ -1,0 +1,286 @@
+New script commands:
+
+	ConfigureTraceHistory( numeric Settings, boolean Enable )
+	
+	This command configures the SH4's trace history function. The Settings are
+	bit flags that determine which events are saved in the Trace history.
+ 	Valid settings are:-
+
+		8 - Log exceptions, interrupts, and rte
+		4 - Log subroutines, bsr, bsrf, jsr, rts
+		2 - Log branches, bf, bt, bf/s, bt/s, bra, braf, jmp
+
+		These can be combined together to log any combination of the above. 
+	Any other values passed to ConfigureTraceHistory will be flagged as an 	error.
+
+	If Enable is true logging of Trace History will be enabled and set to
+	the value in settings, any outstanding history that has not yet been read
+	will be flushed.
+
+	If Enable is false, Trace History will be disabled
+
+	e.g.
+	
+	TH_LOGEXCEPT	=	8;
+	TH_LOGSUB	=	4;
+	TH_LOGBRANCH	=	2;
+
+	ConfigureTraceHistory( TH_LOGSUB | TH_LOGBRANCH, true );
+	// Enable trace history logging subroutines and branches
+
+	DisplayTraceHistory()
+
+	This displays the current history in the scripts window in the following
+	format.
+		
+		  Source   Destination
+		0x0c010356 0x0c0103aa        rts        
+		0x0c0101e6 0x0c010350        rts        
+		0x0c0100e6 0x0c010128        bra        $0c010128
+		0x0c01034c 0x0c010028        bsr        BigTest
+		0x0c0103a6 0x0c010334        bsr        struct_test
+		0x0c010280 0x0c0103a0        rts        
+		0x0c01039c 0x0c010214        bsr        BitFieldTest
+ 
+	The source field shows the address of the instruction that caused the trace event,
+	the destination is the address of the pc after execution, the next field shows the
+	instruction that caused the event. Double clicking on the any of the lines in the
+	history will cause any source and/or disassembly  windows to go that address.
+
+	Notes:-
+		The Trace History functions are not available whilst profiling (the
+	profiler uses the same resources). Configuration information is lost after
+ 	a reset and Trace History will need to be reconfigured.
+
+	e.g. 
+
+	DisplayTraceHistory();	//	Display current history in script tab.
+
+	ClearDisplay()
+
+		Clears the script output window.
+	
+	e.g.
+
+	ClearDisplay();		//	Clear the script tab
+
+	CreateBreakpoint( Type, Address )
+
+	Creates a breakpoint of the given type at the address. Returns a breakpoint identifier
+	on success otherwise 0. The breakpoint identifier will be used in subsequent operations
+	on the breakpoint.
+
+	Possible types are:-
+
+	0	=	Create a code breakpoint
+	1	=	Create a watch breakpoint
+	2	=	Create a simulator start breakpoint
+	3	=	Create a profiler start breakpoint
+	4	=	Create a profiler stop breakpoint
+
+	e.g.
+	BPTYPE_CODE		=	0;
+	BPTYPE_WATCH		=	1;
+	BPTYPE_SIMSTART 	=	2;
+	BPTYPE_PROFILERSTART	=	3;
+	BPTYPE_PROFILERSTOP	=	4;
+	breakID	= CreateBreakpoint( BPTYPE_PROFILERSTART, "main" );
+	if( breakID != 0 )
+	{
+		//	Breakpoint successfully created
+	}
+
+	EnableBreakpoint( identifier, boolean enable )
+
+	Enables/disables the breakpoint specified by the identifier according to the enable flag.
+	identifier is the breakpoint identifier 
+	e.g
+	EnableBreakpoint( breakID, false );		//	Enable the breakpoint
+	EnableBreakpoint( breakID, true );		//	Disable the breakpoint
+
+	SetBreakpointActions( identifier, numeric action, boolean enable )
+
+	Enables/disables various actions according to the enable flag. 
+	identifier is the breakpoint identifier.
+	Possible actions are:-
+	0	=	Halt, breakpoint halts when hit
+	1	=	One shot, breakpoint is removed after being hit.
+	2	=	Prompt, displays a message box prompt when hit
+	3	=	Beep, beeps when hit
+		
+	e.g.
+
+	BPACTION_HALT		=	0; 
+	BPACTION_ONESHOT	=	1; 
+	BPACTION_PROMPT		=	2;
+	BPACTION_BEEP		=	3;
+
+	SetBreakpointAction( breakID, BPACTION_HALT, true );
+	// BP halts when hit 
+	SetBreakpointAction( breakID, BPACTION_ONESHOT, true );
+	//	BP destroys itself when hit 
+	SetBreakpointAction( breakID, BPACTION_PROMPT, false );
+	//	BP does not display a prompt
+	SetBreakpointAction( breakID, BPACTION_BEEP, true );
+	//	BP causes a beep when hit
+		
+	SetBreakpointLog( breakpoint identifier, string expression, boolean logType )
+	
+	Sets a log expression for the breakpoint specified by the identifier
+	identifier is the breakpoint identifier.
+	Expression is the log expression.
+	logType specifies when to log, false - log always, true - log when conditions match.
+
+	e.g.
+	SetBreakpointLog( breakID, "Breakpoint hit", true );
+	//	Sends 'Breakpoint hit' to the log tab when conditions match
+	
+
+	SetBreakpointScript( identifer,
+				 string script path,
+				 numeric script type,
+				 string script arguments,
+				 boolean prompt )
+
+	Attaches a script to a breakpoint.
+	identifier is the breakpoint identifier.
+	script path is the file path for the script
+	script type 0 = JScript 
+	   "    "   1 = VBScript
+	script arguments is a string holding the scripts arguments (if any )
+	prompt specifies whether the user will be prompted for arguments when the breakpoint triggers
+	
+	e.g.
+
+	BPSCRIPTTYPE_JSCRIPT	=	0;
+	BPSCRIPTTYPE_VBSCRIPT	=	1;
+
+	SetBreakpointScript( breakID, "c:\\test.js", BPSCRIPTTYPE_JSCRIPT, 
+				"argument1 argument2 argument3", false );
+
+	Runs the JSCRIPT script c:\test.js and passes the arguments argument1, 	argument2, argument3 
+	when the breakpoint is hit.
+
+	SetBreakpointScript( breakID, "c:\\test.js", BPSCRIPTTYPE_JSCRIPT, "", true );
+
+	Runs the JSCRIPT script c:\test.js and prompts the user for arguments when the breakpoint is hit.
+
+
+
+
+	SetBreakpointCondition( identifier, 
+				string expression,
+				numeric expression type,
+				numeric trigger count,
+				boolean incOnTrue,
+				boolean breakWhen )
+
+	Sets the conditional expression for the breakpoint.
+	identifier is the breakpoint identifier.
+	expression is a string representing the condition
+	expression type = 0 is C, non-zero is assembly
+	trigger count specifies number of hits before bp actions performed
+	incOnTrue - false = increment trigger count always, true  - increment trigger when condition true
+	breakWhen - false = break when trigger reaches 0 or condition is true, true break when trigger reaches zero and the condition is true.
+
+	e.g.
+
+	BPEXPR_TYPE_C		=	0;
+	BPEXPR_TYPE_ASSEMBLY	=	1;
+
+	SetBreakpointCondition( breakID, "i != 0", BPEXPR_TYPE_C, 5, true, true );
+
+	The breakpoint will trigger after being hit 5 times when i != 0.
+
+
+	
+	BOOL SetWatchBreakpointParameters( identifier,
+					Boolean incDataCondition,
+					string dataCondition,
+					numeric expressionType,
+					numeric accessSize,
+					numeric accessType ) 
+
+	Sets the parameters for a watch breakpoint
+
+	identifier is the breakpoint identifier
+	incDataCondition specifies inclusion of a data condition
+	dataCondition specifies the data condition
+	expressionType specifies the type of the above expression
+	accessSize specifies the size of the access (e.g. byte, word, long etc.)
+	accessType specifies type of access ( read, write, or both )
+
+	Possible access sizes are:-
+
+	0	-	Any size
+	1	-	Byte
+	2	-	Word
+	4	-	Long
+	8	-	Quad Word
+
+	Possible access types are:-
+
+	1	-	Read
+	2	-	Write
+	3	-	Read or Write
+
+	e.g.
+
+	BPACCESSSIZE_ANY	=	0;
+	BPACCESSSIZE_BYTE	=	1;
+	BPACCESSSIZE_WORD	=	2;
+	BPACCESSSIZE_LONG	=	4;
+	BPACCESSSIZE_QUAD	=	8;
+
+	BPACCESSTYPE_R	=	1;
+	BPACCESSTYPE_W	=	2;
+	BPACCESSTYPE_RW	=	3;
+
+	breakID	= CreateBreakpoint( BPTYPE_WATCH, "data" );
+	SetWatchBreakpointParameters( breakID, true, "5", BPEXPR_TYPE_C, BPACCESSSIZE_BYTE, BPACCESSTYPE_WRITE );
+	
+	The breakpoint will trigger when a value of 5 is written to address data.
+
+	SetBreakpointLocationMask( breakID, maskSelect )
+
+	Selects a location mask for the breakpoint.
+	Valid masks are:-
+
+	1	-	No bits masked
+	2	-	lower 10 bits 
+	3	-	lower 12 bits
+	4	-	lower 16 bits
+	5	-	lower 20 bits
+	6	-	All bits
+
+	e.g.
+
+	BPMASK_NONE	=	1;	// no bits masked
+	BPMASK_LOW10	=	2;	// lower 10 bits are masked
+	BPMASK_LOW12	=	3;	// lower 12 bits are masked
+	BPMASK_LOW16	=	4;	// lower 16 bits are masked
+	BPMASK_LOW20	=	5;	// lower 20 bits are masked
+	BPMASK_ALL	=	6;	// all bits are masked
+
+	SetBreakpointLocationMask( breakID, BPMASK_LOW10 );
+
+	Any access to the 1K block of memory the breakpoint is in will cause it to trigger.
+
+	SetBreakpointDataMask( identifier, mask )
+
+	Sets the data mask for a watch breakpoint
+
+	SetBreakpointDataMask( breakID, "0xff" );
+
+
+	WriteMessage( string Message )
+
+	This is a replacement function for the Write function. Certain scripting engines have
+	reserved the use of Write and this prevents CodeScape's Write function from working.
+	WriteMessage is totally equivalent to Write and	should be used anywhere Write has
+	previously been used. 
+
+	e.g.
+	WriteMessage( "Hello World." );
+
+

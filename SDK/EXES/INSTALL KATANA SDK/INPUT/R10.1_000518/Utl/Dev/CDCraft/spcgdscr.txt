@@ -1,0 +1,1596 @@
+/**************************************************************************
+ *
+ *  External specifications for "KATANA CD script syntax"
+ *
+ *  Copyright (c) 1998 CRI
+ *
+ *  Document type    :CRI CD CRAFT MANUAL
+ *  File name        :spcgdscr.txt
+ *  Version          :Version 9
+ *  Date of creation :1998-11-13
+ *
+ *------------------------------------------------------------------------*
+ * [Revision history] 
+ *  [Ver.2.00]
+ *  1st edition      1998-02-13  New document
+ *
+ *  [Ver.2.10]
+ *  2nd edition      1998-03-20  Functions added for extent arrangement.
+ *
+ *  [Ver.2.11]
+ *  3rd edition      1998-03-23  Explanation added for extent arrangement.
+ *
+ *  [Ver.2.20]
+ *  4th edition      1998-05-01  Explanation added.
+ *  5th edition      1998-06-12  Precautions added for "SystemArea".
+ *
+ *  [Ver.2.22]
+ *  6th edition      1998-06-20  Specification changes and restrictions
+ *                               added for arrangement specifications.
+ *
+ *  [Ver.2.24]
+ *  7th edition      1998-07-06  Disc structure chart changed and Empty
+ *                               command specifications enhanced.
+ *
+ *  [Ver.2.26]
+ *  8th edition      1998-10-06  Changed script description example
+ *                               (to accommodate auto-start conditions).
+ *
+ *  [Ver.2.27]
+ *  9th edition      1998-11-13  (a) Description of setting conditions for the 
+ *                                   copyright file
+ *                               (b) Invalidation of the DataPreparerIdentifier 
+ *                                   command
+ *                               (c) Notes on the first read file added
+ **************************************************************************/
+
+
+
+
+/*------------------------------------------------------------------------*/
+
+
+Contents
+1. Introduction
+  1.1 Basic Items
+  1.2 Definition of Terms
+
+2. Script Overview
+  2.1 Disc Organization
+  2.2 Defining Disc Organization with a Script
+  2.3 Defining a Logical File Organization with a Script
+  2.4 Script Syntax Rules
+  2.5 Example Scripts
+  2.6 File Naming Rules
+  2.7 Concerning specification of a single recording date and time for all 
+      files and directories
+  2.8 Layout Optimization
+    2.8.1 Extent Layout
+    2.8.2 File Layout Precedence
+    2.8.3 First Read File
+
+3. Command Reference
+  3.1 Table of Commands
+  3.2 Command Specification
+    3.2.1 Pseudoinstructions
+    3.2.2 Definition of Disc Organization
+    3.2.3 Definition of Track Organization
+    3.2.4 Definition of Logical File Organization
+    3.2.5 Definition of Directory Record Information
+    3.2.6 Definition of File Attributes
+    3.2.7 Definition of File Source Attributes
+    3.2.8 Definition of Volume
+    3.2.9 Definition of Volume Descriptor Information
+    3.2.10 Data Layout Control
+
+Appendix A Differences from CD script Specification for Saturn
+  A.1 Newly Added Commands
+  A.2 Commands with Changed Specifications
+  A.3 Deleted Commands
+  A.4 Compatibility with Saturn CD script
+  A.5 Pauses and Gaps
+  A.6 Lead-in and Lead-out
+  A.7 Sessions
+
+Appendix B Character Code Table
+
+-----------------------------------------------------------
+
+
+1. Introduction
+This document describes the external specification of the KATANA CD script syntax.
+This script complies with the following standards. For details of the content of the description, refer to the standards.
+  • Physical format ... CD standards (Red Book and Yellow Book)
+  • Logical format  ... ISO 9660
+
+
+1.1 Basic Items
+(1) Script
+  A script is a collection of the command lines that can be specified to express 
+  the disc structure.
+  A script file is a text format file that contains the description of the 
+  script.
+
+(2) Command line format
+• A command line consists of a keyword followed by zero or more parameters.
+• Keywords and parameters must be separated by at least one white space 
+  character (tab or space).
+• Keywords and parameters are not case-dependent.
+• Only one command can be written on a single line. A command also cannot be 
+  split over several lines.
+
+    +-------------------------------------------------------------+
+    |Keyword parameter_1 parameter_2 ...                          |
+    +-------------------------------------------------------------+
+
+(3) Comments
+  From a semicolon (;) to the end of the line is treated as a comment.
+  However, to make the distinction from the semicolon preceding the version 
+  number of an ISO file name, there must be at least one immediately preceding 
+  white space character. (Excluding a semicolon at the beginning of a line)
+  Example
+      File   SAMPLE;1   ... "1" is treated as version number.
+      File   SAMPLE ;1  ... "1" is treated as comment.
+
+(4) Word separation
+  A character string enclosed in double quotation marks ("") is regarded as one 
+  continuous word.
+  Examples
+      SystemIdentifier "KATANA GD" ... Regarded as one word (KATANA GD) including
+                                       the blank space.
+      SystemIdentifier KATANA GD   ... KATANA and GD separate by a blank space 
+                                       are regarded as two words.
+
+
+1.2 Definition of Terms
+Table 1.1 shows a list of terms used in this document.
+
+Table 1.1 Definition of terms
+ +-------------------------+-------------------------------------------------+
+ | Term                    | Meaning                                         |
+ +------------------------ +------------------------------------------------ +
+ |Single-density area      |The area on the inside of the disc, recorded     |
+ |                         |with the same density as a conventional CD.      |
+ |                         |Can be accessed by an ordinary CD drive.         |
+ +------------------------ +------------------------------------------------ +
+ |High-density area        |The area on the outside of the disc, recorded    |
+ |                         |at high density.                                 |
+ |                         |Can only be accessed by a special-purpose GD     |
+ |                         |drive.                                           |
+ +------------------------ +------------------------------------------------ +
+ |Recording area           |In this document this refers collectively to the |
+ |                         |single-density and high-density recording areas  |
+ |                         |on the GD.                                       |
+ +------------------------ +------------------------------------------------ +
+ |Data track               |Track on which programs or data (CD-ROM) are     |
+ |                         |recorded.                                        |
+ +------------------------ +------------------------------------------------ +
+ |Audio track              |Track on which audio data (CD-DA) are recorded.  |
+ +------------------------ +------------------------------------------------ +
+ |ISO file                 |A file in an ISO 9660 disc image                 |
+ +------------------------ +------------------------------------------------ +
+ |File source              |File forming the input for the ISO file          |
+ +------------------------ +------------------------------------------------ +
+ |File attributes          |Attributes of a file in a disc image             |
+ +------------------------ +------------------------------------------------ +
+ |Source attributes        |Attributes of a file source                      |
+ +------------------------ +------------------------------------------------ +
+ |Directory attributes     |Attributes of a file or directory written        |
+ |                         |in a directory record.                           |
+ +------------------------ +------------------------------------------------ +
+ |Null data                |Data consisting of binary zeros (00H)            |
+ +------------------------ +------------------------------------------------ +
+ |Empty sector             |A sector for which the user area contains null   |
+ |                         |data.                                            |
+ +------------------------ +------------------------------------------------ +
+ |Volume descriptor track  |First track defined in the recording area        |
+ |                         |In addition to the normal body of a file,        |
+ |                         |the volume descriptor, path table, directory     |
+ |                         |record, etc., the information which shows        |
+ |                         |the file logical structure are recorded.         |
+ +------------------------ +------------------------------------------------ +
+ |Date and time            |In DD/MM/YYYY hh:mm:ss:cc:gg format              |
+ |                         |  DD/MM/YYYY      day/month/year                 |
+ |                         |  hh:mm:ss:cc:gg hours:minutes:seconds:          |
+ |                         |  centiseconds:time_zone                         |
+ |                         |time_zone is the offset from GMT in 15 minute    |
+ |                         |units (e.g. the value for Japan standard time    |
+ |                         |is 36.)                                          |
+ +------------------------ +------------------------------------------------ +
+ |Relative time            |Indicates the file position.                     |
+ |                         |The position from the start of a session can be  |
+ |                         |indicated in FAD or time format.                 |
+ |                         |  Sector number     FAD format                   |
+ |                         |  mm:ss:ff          time format (minutes,        |
+ |                         |                    seconds, and frames)         |
+ +------------------------ +------------------------------------------------ +
+ |A-characters             |Character set defined by ISO 9660.               |
+ |                         |Space, capital letters A-Z, numeric digits,      |
+ |                         |underscore (_), and special characters           |
+ |                         |!"%&'()*+,-./:;<=>?                              |
+ +------------------------ +------------------------------------------------ +
+ |D-characters             |Character set defined by ISO 9660.               |
+ |                         |Space, capital letters A-Z, numeric digits,      |
+ |                         |and underscore (_)                               |
+ +-------------------------+-------------------------------------------------+
+
+
+2. Script Overview
+2.1 Disc Organization
+A GD consists of two areas: a single-density area and a high-density area.
+The logical structures of the areas are independent but the track numbering is consecutive.
+Two types of sector data formats, MODE1 and CD-DA, are supported. CD-ROM XA format using MODE2 is not supported.
+
+In the single-density area, two tracks can be arranged: The Data track (MODE1) at the beginning (TN0=01) followed by (TN0=02) and an Audio track (CD-DA).
+More tracks, or other data formats, cannot be arranged.
+
+In the high-density area, the Data track (MODE1) is arranged at the beginning (TN0=03). Following this, multiple Audio tracks (CD-DA) can be arranged.
+If required, a Data track (MODE1) can also be arranged at the end.
+
+Up to 99 tracks can be arranged in the combined single-density and high-density areas.
+
+More than 30 minutes (40:00:00) are always written to the high-density area.
+If there is not enough data to meet this condition, empty sectors are inserted to adjust the size.
+
+Fig. 2.1 shows the organization of a disc.
+
+     +<-single-density area -> +   +<---------  high-density area -----------> +
+
+     |   |         |           |   | |   |         |         |   |         |   |
+ TNO |   |<- 01 -> | <- 02 ->  |   | |   |<- 03 -> |<- 04 -> |•• |<- nn -> |   |
+     |   |         |           |   | |   |         |         |   |         |   |
+MODE |   |  Data   |  Audio    |   | |   |  Data   | Audio   |•• | Data    |   |
+     |   | (MODE1) | (CD-DA)   |   | |   | (MODE1) |(CD-DA)  |   |(MODE1)  |   |
+     |   |         |           |   | |   |         |         |   |         |   |
+     |   | |     | | |       | |   | |   | |     | | |       |   | |       |   |
+     +-- + +---- + + +------ + +-- + +-- + +---- + + +------ +•• + +---- + +-- +
+      Å™ Å™      Å™ Å™      Å™Å™    Å™  Å™     Å™ Å™             Å™    Å™ Å™ 
+       | Pause    |Pause     | |     | Pause    |Pause         PreGap   |  |
+       |     PostGap   PostGap |     |         PostGap             PostGap |
+      LeadIn0             LeadOut0  LeadIn1                         LeadOut1
+
+      Fig. 2.1 Disc organization
+
+
+2.2 Defining Disc Organization with a Script
+Fig. 2.2 shows disc organization and script support.
+
+    Gd                          -----------------------+
+        RecordArea SINGLE       -------------+         |
+            SystemArea                       |         |
+            Track  MODE1        -+           |         |
+               :                 |track      |single-  |
+            EndTrack            -+           |density  |
+            Track  CDDA         -+           |area     |
+               :                 |track      |         |
+            EndTrack            -+           |         |
+        EndRecordArea           -------------+         |GD image
+        RecordArea HIGH         -------------+         |
+            SystemArea                       |         |
+            Track  MODE1        -+           |         |
+               :                 |track      |high-    |
+            EndTrack            -+           |density  |
+            Track  CDDA         -+           |area     |
+               :                 |track      |         |
+            EndTrack            -+           |         |
+        EndRecordArea           -------------+         |
+   EndGd                        -----------------------+
+
+      Fig. 2.2 Disc organization and script support
+
+
+2.3 Defining a Logical File Organization with a Script
+Fig. 2.3 shows logical file organization and script support.
+
+    Directory hierarchy
+    Å´
+    1      2         3
+    \---+--DIR1---+--SUBDIR---+--FILE1
+        |         |           +--FILE2
+        :          :            : 
+        :          :            : 
+
+    Track   MODE1
+        Directory   DIR1
+            Directory   SUBDIR1
+                File    FILE1
+                    FileSource  SRCFILE1
+                    EndFileSource
+                EndFile
+                File    FILE2
+                    FileSource  SRCFILE2
+                    EndFileSource
+                EndFile
+                     : 
+            EndDirectory
+               : 
+        EndDirectory
+    EndTrack
+
+    Fig. 2.3 Logical file organization and script support
+
+
+2.4 Script Syntax Rules
+The syntax is shown figuratively below.
+An item in a box is a non-terminal; keywords are shown in parenthesis.
+ 
+(1) GD image 
+
+        +---------------+    +---------------+   +-------------+
+ (Gd)-> +disk           +--> +single-density +-> +high-density +-->(EndGd)
+       Åbattributes    Åb   Åbarea          Åb  Åbarea        Åb
+        +---------------+    +---------------+   +-------------+
+ 
+(2) Disk attributes
+
+  ->---+(FileNameType)->---+->
+       |                   |
+       +(RecordingDate) ->-+
+ 
+(3) Single-/high-density area
+
+                   +-----------------+   +-----------+
+  ->(RecordArea)-> +recording        +-> + track set +->(EndRecordArea)->
+                   |area attributes  |   +-----------+
+                   +-----------------+ 
+
+(4) Recording area attributes
+
+  ->---+(ExtentLocation)->-----------+->
+       |                             |
+       +(ExtentLocationBeginTime) -> +
+       |                             |
+       +(ExtentLocationEndTime) ->-- +
+       |                             |
+       +(FileNameType)->------------ +
+       |                             |
+       +(RecordingDate) ->-----------+
+
+(5) Track set
+  For single-density area
+                   +---------+   +-------------+
+  ->(SystemArea)-> + track   +-> + CDDA track  +->
+                   +---------+   +-------------+
+
+  For high-density area
+                               +-----------------+ +-------------+
+                   +---------+Å´ +-------------+ | | +---------+ Å´
+  ->(SystemArea)-> + track   +-+ +CDDA track   +-+-+ + track   +-+->
+                   +---------+   +-------------+     +---------+
+
+(6) Track
+                            +-------------------+
+              +-----------+ | +---------------+Å´
+  ->(Track)-> +  volume   +-+ + directory set +-+->(Empty)->(EndTrack)->
+              +-----------+   +---------------+
+
+(7) CDDA track
+
+                +---------------+
+  ->(Track)->-+ + file source   +-+->(EndTrack)->
+              Å™ +---------------+ |
+              +-------------------+
+
+(8) volume (only defined for the first track in each area)
+
+               +---------------------------+
+  ->(Volume)-> +primary volume  descriptor +->(EndVolume)->
+               +---------------------------+
+
+(9) Primary volume descriptor
+
+                      +---------------------------+
+                     Å´ +-----------------------+ |
+  ->(PrimaryVolume)->-+ +volume descriptor data +-+->(EndPrimaryVolume)->
+                        +-----------------------+
+
+(10) Volume descriptor data
+
+  ->---+->(SystemIdentifier)->-----------------+--->
+       +->(VolumeIdentifier)->---------------- +
+       +->(VolumeSetIdentifier) ->------------ +
+       +->(PublisherIdentifier) ->------------ +
+       +->(DataPreparerIdentifier)->---------- +
+       +->(ApplicationIdentifier) ->---------- +
+       +->(CopyrightFileIdentifier) ->-------- +
+       +->(AbstractFileIdentifier)->---------- +
+       +->(BibliographicFileIdentifier) ->---- +
+       +->(VolumeCreationDate)->-------------- +
+       +->(VolumeModificationDate)->---------- +
+       +->(VolumeExpirationDate)->------------ +
+       +->(VolumeEffectiveDate) ->------------ +
+
+(11) Directory set
+
+                  +---------------+
+                  | +-----------+Å´ +-----------+
+  ->-+(Directory)-+ +directory  +-+ +directory  +(EndDirectory) ---+
+     |              |attributes |   |   set     |                  |
+     |              +-----------+   +-----------+    +-------------+
+     |                                               |
+     |   +-------------------+                       |   +---------------+
+     |   | +---------------+ Å´  +-------+          Å´   | +-----------+ Å´
+     +---+ +directory set  +-+-+ + file  +-+---------+---+ +directory  +-+->
+           +---------------+  Å™ +-------+ |              |  set      |
+                               +-----------+               +-----------+
+
+(12) Directory attributes 
+
+  ->---+(RecordingDate)->---+->
+       |                    |
+       +(MinLength)->-------+
+
+(13) File
+
+             +---------------------+
+             | +-----------------+ Å´  +-------------+
+  ->(File)->-+ +file attributes  +-+-+ +file source  +-+->(EndFile)->
+               +-----------------+  Å™ +-------------+ |
+                                     +-----------------+
+
+(14) File source 
+
+                       +---------------------------+
+                       | +-----------------------+ Å´
+  ->---+(FileSource)->-+ +file source attributes +-+->(EndFileSource)->-+->
+       |                 +-----------------------+                      |
+       +(Empty)->-------------------------------------------------------+
+
+(15) File attributes                  (16) file source attributes 
+
+  ->---+(RecordingDate)->---+->         ->----(Offset)----->
+       +(MinLength)->------ +
+       +(BeginTimeS) ->---- +
+       +(EndTimeS) ->------ +
+       +(Location) ->-------+
+
+
+2.5 Example Scripts
+The following is an example script.
+
+    Gd  sample.cim
+        RecordArea  SINGLE                      ; start definition of single-
+                                                  density area
+            SystemArea  "ip_sda.bin"            ; define system area
+
+            Track   MODE1                       ; define data track
+                Volume                          ; define volume
+                    PrimaryVolume
+                        VolumeIdentifier    "VOL_SDA"
+                    EndPrimary
+                EndVolume
+
+                File    FILE1.DAT
+                    FileSource  "file1.dat"
+                    EndFileSource
+                EndFile
+            EndTrack
+
+            Track   CDDA                        ; define audio track
+                FileSource  "audio1.dat"
+                EndFileSource
+            EndTrack
+        EndRecordArea
+
+        RecordArea  HIGH                        ; start definition of 
+                                                  high-density area
+            SystemArea  "ip_hda.bin"            ; define system area
+
+            Track   MODE1                       ; define data track
+                Volume                          ; define volume
+                    PrimaryVolume
+                        VolumeIdentifier    "VOL_HDA"
+                    EndPrimary
+                EndVolume
+
+            EndTrack
+
+            Track   CDDA                        ; define audio track
+                FileSource  "audio2.dat"
+                EndFileSource
+            EndTrack
+            
+            Track   CDDA                        ; define audio track
+                FileSource  "audio3.dat"
+                EndFileSource
+            EndTrack
+
+            Track   MODE1                       ; define data track
+                File    FILE2.DAT
+                    FileSource  "file2.dat"
+                    EndFileSource
+                EndFile
+                File    1ST_READ.BIN
+                    FileSource  "file2.dat"
+                    EndFileSource
+                EndFile
+            EndTrack
+        EndRecordArea
+    EndGd
+
+
+2.6 File Naming Rules
+Table 5.1 shows the rules for file naming and directory naming applicable to ISO file names. The file naming rule is specified by the FileNameType command.
+
+* The default is ISO9660 level 2.
+
+Table 3.1 File naming rules
+   +-----------------+-------------------------------+-------------+
+   |File naming rule |Restrictions on number         |Character    |
+   |                 |of characters                  |type         |
+   +---------------- +------------------------------ +------------ +
+   |ISO9660 level 1  |File name: 8.3 characters      |D characters |
+   |                 |Directory name: 8 characters   |             |
+   +---------------- +------------------------------ +------------ +
+   |ISO9660 level 2  |File name: 30 characters       |D characters |
+   |                 |Directory name: 31 characters  |             |
+   +---------------- +------------------------------ +------------ +
+   |DOS              |File name: 8.3 characters      |Shift JIS    |
+   |                 |Directory name: 8.3 characters |             |
+   +-----------------+-------------------------------+-------------+
+
+
+2.7 Concerning specification of a single recording date and time for all files 
+    and directories
+Using the RecordingDate command, it is possible to specify a single recording date and time for all files and directories on the disc.
+
+(1) Effective range according to defined location
+  (a) When specified as part of the definition of disc attributes, the 
+      specification is effective within the single-density area and the 
+      high-density area.
+  (b) When specified as part of the definition of recording area attributes, 
+      the specification is effective within each of the recording areas where 
+      it is specified.
+  (c) When specified as part of the definition of directory attributes, 
+      the specification is effective only for the directory in which it is 
+      specified.
+  (d) When specified as part of the definition of file attributes, it is 
+      effective only for the file in which it is specified.
+
+(2) Priority of specifications
+  The order of priority of the above specifications is (d) > (c) > (b) > (a).
+
+
+2.8 Layout Optimization
+A GD-ROM drive provides the highest access rate on the outside of the disc.
+Using the following script commands, you can determine the layout of tracks on the disc.
+
+
+2.8.1 Extent Layout
+A layout specification (layout on the inside and outside of the disc) is given for the whole data area.
+Only effective when specified in the high-density area.
+In the single-density area, it is always placed on the inside of the disc.
+
+(1) Command name
+  (a) ExtentLocation
+  (b) ExtentLocationBeginTime
+  (c) ExtentLocationEndTime
+
+(2) Default
+  The files are laid out on the outside of the disc. (High-density area only)
+
+
+2.8.2 File Layout Precedence
+Layout specifications are given on a file-by-file basis (layout precedence specifications).
+By making an individual Location specification for a file, the file can be arranged toward the outside of the disc in relation to other files.
+When no location specification is given, the default is 0.
+
+(1) Command
+  (a) Location
+
+(2) Functions
+  (a) Large files are arranged toward the outside of the disc in the order of 
+      file priority.
+  (b) When the same level is specified for multiple files, the layout is in the 
+      order of appearance in the script (later arranged files are arranged 
+      toward the outside of the disc).
+  (c) Location specifications are only valid within a single track.
+
+
+2.8.3 First read file
+In order to create a self-starting disk, the first read file must be located in the outermost track.
+From CD CRAFT Ver. 2.27, a function is provided that automatically locates the first read file in the outermost track of the disk regardless of the description in the script in the case of peripheral location.
+(In the default setting, this function is effective. It is also possible to nullify the function. In the case of location on the internal circumference of the disk, this function does not work.)
+
+
+3. Command Reference
+3.1 Table of Commands
+
+Table 3.1 Commands
+   +-----------------------------------+---------------------------+-------+
+   |             Command               |         Keyword           |Number |
+   +-----------------------------------+-------------------------- +------ +
+   |Pseudoinstructions                                             |1.0    |
+   | +---------------------------------+-------------------------- +------ +
+   | |Define macro replacement         |Define                     |1.1    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |Include file                     |Include                    |1.2    |
+   +-+---------------------------------+-------------------------- +------ +
+   |Disc organization definitions                                  |2.0    |
+   | +---------------------------------+-------------------------- +------ +
+   | |Start GD definition              |Gd                         |2.1    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |End GD definition                |EndGd                      |2.2    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |Start recording area definition  |RecordArea                 |2.3    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |End recording area definition    |EndRecordArea              |2.4    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |System area definition           |SystemArea                 |2.5    |
+   +-+---------------------------------+-------------------------- +------ +
+   |Track organization definitions                                 |3.0    |
+   | +---------------------------------+-------------------------- +------ +
+   | |Start track definition           |Track                      |3.1    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |End track definition             |EndTrack                   |3.2    |
+   +-+---------------------------------+-------------------------- +------ +
+   |Logical file organization definitions                          |4.0    |
+   | +---------------------------------+-------------------------- +------ +
+   | |Start directory definition       |Directory                  |4.1    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |End directory definition         |EndDirectory               |4.2    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |Start file definition            |File                       |4.3    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |End file definition              |EndFile                    |4.4    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |Start file source definition     |FileSource                 |4.5    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |End file source definition       |EndFileSource              |4.6    |
+   +-+---------------------------------+-------------------------- +------ +
+   |Directory record data definitions                              |5.0    |
+   | +---------------------------------+-------------------------- +------ +
+   | |Define file minimum size         |MinLength                  |5.1    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |Define file recording date/time  |RecordingDate              |5.2    |
+   +-+---------------------------------+-------------------------- +------ +
+   |File attribute definitions                                     |6.0    |
+   | +---------------------------------+-------------------------- +------ +
+   | |Specify disc layout precedence   |Location                   |6.1    |
+   +-+---------------------------------+-------------------------- +------ +
+   |File source attribute definitions                              |7.0    |
+   | +-----------------------------------+------------------------ +------ +
+   | |Specify file source partial input  |Offset                   |7.1    |
+   +-+-----------------------------------+------------------------ +------ +
+   |Volume definitions                                             |8.0    |
+   | +---------------------------------+-------------------------- +------ +
+   | |Start volume definition          |Volume                     |8.1    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |End volume definition            |EndVolume                  |8.2    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |Start primary volume descriptor  |PrimaryVolume              |8.3    |
+   | +-------------------------------- +-------------------------- +------ +
+   | |End primary volume descriptor    |EndPrimaryVolume           |8.4    |
+   +-+---------------------------------+-------------------------- +------ +
+   |Volume descriptor data definitions                             |9.0    |
+   | +-------------------------------+---------------------------- +------ +
+   | |System identifier              |SystemIdentifier             |9.1    |
+   | +------------------------------ +---------------------------- +------ +
+   | |Volume identifier              |VolumeIdentifier             |9.2    |
+   | +------------------------------ +---------------------------- +------ +
+   | |Volume set identifier          |VolumeSetIdentifier          |9.3    |
+   | +------------------------------ +---------------------------- +------ +
+   | |Publisher identifier           |PublisherIdentifier          |9.4    |
+   | +------------------------------ +---------------------------- +------ +
+   | |Data preparer identifier       |DataPreparerIdentifier       |9.5    |
+   | +------------------------------ +---------------------------- +------ +
+   | |Application identifier         |ApplicationIdentifier        |9.6    |
+   | +------------------------------ +---------------------------- +------ +
+   | |Copyright file identifier      |CopyrightFileIdentifier      |9.7    |
+   | +------------------------------ +---------------------------- +------ +
+   | |Abstract file identifier       |AbstractFileIdentifier       |9.8    |
+   | +------------------------------ +---------------------------- +------ +
+   | |Bibliographic file identifier  |BibliographicFileIdentifier  |9.9    |
+   | +------------------------------ +---------------------------- +------ +
+   | |Volume creation date/time      |VolumeCreationDate           |9.10   |
+   | +------------------------------ +---------------------------- +------ +
+   | |Volume modification date/time  |VolumeModificationDate       |9.11   |
+   | +------------------------------ +---------------------------- +------ +
+   | |Volume expiration date/time    |VolumeExpirationDate         |9.12   |
+   | +------------------------------ +---------------------------- +------ +
+   | |Volume effective date/time     |VolumeEffectiveDate          |9.13   |
+   +-+-------------------------------+---------------------------- +------ +
+   |Data layout control                                            |10.1   |
+   | +---------------------------------+-------------------------- +------ +
+   | |Extent layout control            |ExtentLocation             |10.2   |
+   | +-------------------------------- +-------------------------- +------ +
+   | |Extent layout start time         |ExtentLocationBeginTime    |10.3   |
+   | +-------------------------------- +-------------------------- +------ +
+   | |Extent layout end time           |ExtentLocationEndTime      |10.4   |
+   | +-------------------------------- +-------------------------- +------ +
+   | |File layout start relative time  |BeginTimeS                 |10.5   |
+   | +-------------------------------- +-------------------------- +------ +
+   | |File layout end relative time    |EndTimeS                   |10.6   |
+   | +-------------------------------- +-------------------------- +------ +
+   | |Insert dummy sector              |Empty                      |10.7   |
+   +-+---------------------------------+-------------------------- +------ +
+   |File naming rule specification                                 |11.0   |
+   | +---------------------------------+-------------------------- +------ +
+   | |File naming rule specification   |FileNameType               |11.1   |
+   +-+---------------------------------+---------------------------+-------+
+
+
+3.2 Command Specification
+3.2.1 Pseudoinstructions
+The following pseudoinstructions can be used to control the parsing operation.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |Define macro replacement     |Define         |1.1    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     Define  name  string
+Parameters: name   :"define" name
+            string :replacement string
+Function:   Defines a name for macro replacement by the string.
+Remarks:    To use a "define" name in a script it must be enclosed 
+            in square brackets, as in the following example.
+
+Example:
+    Define  DIRSMP  sampleÅ™
+     :
+    FileSource  [DIRSMP]srcfile.dat    ... *1
+     :
+
+    *1 This is equivalent to the command "FileSource  sampleÅ™srcfile.dat".
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |Include file                 |Include        |1.2    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     Include  filename
+Parameters: filename  :name of scriptfile to be included
+Function:   Includes the file filename.
+Remarks:    Other extensions than ".scr" can also be used.
+Example:
+    Track   MODE1
+        Include    sample.scr    ... *1
+    EndTrack
+     :
+
+    *1  The contents of script file sample.scr are included in the parsing.
+
+
+3.2.2 Definition of Disc Organization
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |Start GD definition          |Gd             |2.1    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     Gd  imgfile
+Parameters: imgfile  :image file name
+Function:   Starts GD definition.
+Remarks:    • The extension of the image file name becomes as specified, 
+              but normally please specify the extension ".cim".
+            • If the image file name specification is omitted, the name 
+              is set as the script file name with the extension ".cim".
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |End GD definition            |EndGd          |2.2    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     EndGd
+Parameters: None
+Function:   Ends GD definition.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |Start recording area         |RecordArea     |2.3    |
+ |specification    |definition                   |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     RecordArea  areatype
+Parameters: areatype recording area
+Function:   Starts single-/high-density area definition.
+
+(1) Recording area
+         +-------+---------------------+
+         |Value  |       Meaning       |
+         +------ +-------------------- +
+         |SINGLE |single-density area  |
+         |HIGH   |high-density area    |
+         +-------+---------------------+
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |End recording area           |EndRecordArea  |2.4    |
+ |specification    |definition                   |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     EndRecordArea
+Parameters: None
+Function:   Ends single-/high-density area definition.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |System area definition       |SystemArea     |2.5    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     SystemArea  filename
+Parameters: filename   :data file for system area
+Function:   Writes the contents of the specified file to the system area.
+Remarks:    For the amount by which the specified file is short of 16 sectors 
+            (32768 bytes), null data is output. If the file exceeds 16 sectors, 
+            an error results.
+Note:       The system area must be defined for both the single-density area 
+            and the high-density area.
+            If the correct data are not written to the system area, they cannot 
+            be read by the GD-ROM drive.
+
+
+3.2.3 Definition of Track Organization
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |Start track definition       |Track          |3.1    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     Track trktype
+Parameters: trktype  :track type
+Function:   Starts track definition.
+Remarks:    In both the single-density area and high-density area, 
+            the first track must be of type MODE1.
+
+(1) Track type
+         +-------+-----------------+
+         |Value  |  Meaning        |
+         +------ +---------------- +
+         |MODE1  |Mode 1 track     |
+         |CDDA   |CD-DA            |
+         +-------+-----------------+
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |End track definition         |EndTrack       |3.2    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     EndTrack
+Parameters: None
+Function:   Ends track definition.
+
+
+3.2.4 Definition of Logical File Organization
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |Start directory definition   |Directory      |4.1    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     Directory  dirname
+Parameters: dirname  :directory name
+            The length of the file name and the usable character types are 
+            restricted in accordance with the file naming rules.
+Function:   Starts a directory definition.
+Remarks:    In the ISO 9660 standard, the maximum directory depth is 
+            level 8, where the root directory is at level 1.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |End directory definition     |EndDirectory   |4.2    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     EndDirectory
+Parameters: None
+Function:   Ends directory definition.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |Start file definition        |File           |4.3    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     File  isofile
+Parameters: isofile  :file name on disc 
+            The length of the file name and the usable character types are 
+            restricted in accordance with the file naming rules.
+Function:   Starts file definition.
+Remarks:  • The file name format is "file_name.extension;version_number". 
+            If the part after the semicolon is omitted, the default version 
+            number is appended as ";1".
+            The version number is not normally required.
+          • If the version number is explicitly entered as ";0" this is 
+            omitted, and a file name without a version number is created.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |End file definition          |EndFile        |4.4    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     EndFile
+Parameters: None
+Function:   Ends file definition.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |Start file source definition |FileSource     |4.5    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     FileSource  srcfile
+Parameters: srcfile  :file name for file definition input
+Function:   Specifies the file name for file definition input.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |End file source definition   |EndFileSource  |4.6    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     EndFileSource
+Parameters: None
+Function:   Ends file source definition.
+
+
+3.2.5 Definition of Directory Record Information
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |Define file minimum size     |MinLength      |5.1    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     MinLength  len
+Parameters: len  :number of sectors (for a file)
+                 :number of bytes (for a directory)
+Function:   Regardless of the actual size of the file or directory, 
+            the specified area is allocated on the disc.
+            This means that even if the file size is increased, as long as 
+            it does not exceed the specified size, the disc layout is not 
+            affected.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |Define file recording        |RecordingDate  |5.2    |
+ |specification    |date/time                    |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     RecordingDate  date  time
+Parameters: date  :recording date [DD/MM/YYYY]
+            time  :recording time [hh:mm:ss:cc:gg]
+Function:   Specifies the date and time the file was recorded.
+Remarks:  • The date and time are in the following format.
+            The 1/100-second value is ignored.
+            DD/MM/YYYY      :day/month/year
+            hh:mm:ss:cc:gg  :hours:minutes:seconds:centiseconds:time_zone*
+          * time_zone is the offset from GMT in 15 minute units 
+            (e.g. the value for Japan standard time is 36.)
+          • It is possible to set a single recording date and time 
+            for all files and directories on the disc.
+            When specified at the beginning of the GD definition block 
+            (immediately before the recording area definition), the setting 
+            applies to all files and directories.
+          * If an individual recording date is specified, it takes precedence.
+
+
+3.2.6 Definition of File Attributes
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |Specify disc layout          |Location       |6.1    |
+ |specification    |precedence                   |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     Location  level
+Parameters: level  :order of precedence for file layout (integer from 0 to 32767)
+Function:   Specifies file layout precedence. Files with larger values of 
+            level, are placed on the outside of the disc.
+          * This precedence only takes effect within a single track.
+
+
+3.2.7 Definition of File Source Attributes
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |Specify file source partial  |Offset         |7.1    |
+ |specification    |input                        |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     Offset  ofs  length
+Parameters: ofs    :start position for reading file source (byte units)
+            length :length of file source to be read (byte units)
+Function:   Reads file source from the position ofs for length bytes.
+
+
+3.2.8 Definition of Volume
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |Start volume definition      |Volume         |8.1    |
+ |specification    |format                       |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     Volume
+Parameters: None
+Function:   Starts definition of volume descriptor set.
+Remarks:    In the Saturn CD script specification, it was necessary to 
+            specify the data format and PVD file name in the parameters, 
+            but in the new specification the parameters are not required. 
+            If specified they are ignored.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |End volume definition        |EndVolume      |8.2    |
+ |specification    |                             |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     EndVolume
+Parameters: None
+Function:   Ends the definition of a volume descriptor set.
+
+ +-----------------+-----------------------------+---------------+-------+
+ |Title            |Command                      |Keyword        |No     |
+ +---------------- +---------------------------- +-------------- +------ +
+ |Command          |Start primary volume         |PrimaryVolume  |8.3    |
+ |specification    |descriptor                   |               |       |
+ +-----------------+-----------------------------+---------------+-------+
+Format:     PrimaryVolume
+Parameters: None
+Function:   Starts the definition of a primary volume descriptor.
+Remarks:    In the Saturn CD script specification, it was necessary to specify 
+            the layout position, but in the new specification the parameter is 
+            not required. If specified it is ignored.
+            Note that the layout position is immediately after the system area.
+
+ +-----------------+---------------------------+-----------------+-------+
+ |Title            |Command                    |Keyword          |No     |
+ +---------------- +-------------------------- +---------------- +------ +
+ |Command          |End primary volume         |EndPrimaryVolume |8.4    |
+ |specification    |descriptor                 |                 |       |
+ +-----------------+---------------------------+-----------------+-------+
+Format:     EndPrimaryVolume
+Parameters: None
+Function:   Ends the definition of a primary volume descriptor.
+
+
+3.2.9 Definition of Volume Descriptor Information
+
+ +-----------------+---------------------------+-----------------+-------+
+ |Title            |Command                    |Keyword          |No     |
+ +---------------- +-------------------------- +---------------- +------ +
+ |Command          |System identifier          |SystemIdentifier |9.1    |
+ |specification    |                           |                 |       |
+ +-----------------+---------------------------+-----------------+-------+
+Format:     SystemIdentifier  ident
+Parameters: ident  :System identifier character string
+            This is a maximum of 32 A-characters.
+Function:   Writes the specified character string as the system identifier.
+
+ +-----------------+---------------------------+-----------------+-------+
+ |Title            |Command                    |Keyword          |No     |
+ +---------------- +-------------------------- +---------------- +------ +
+ |Command          |Volume identifier          |VolumeIdentifier |9.2    |
+ |specification    |                           |                 |       |
+ +-----------------+---------------------------+-----------------+-------+
+Format:     VolumeIdentifier  ident
+Parameters: ident  :Volume identifier character string 
+            This is a maximum of 32 D-characters.
+Function:   Writes the specified character string as the volume identifier.
+
+ +-----------------+-----------------------+---------------------+-------+
+ |Title            |Command                |Keyword              |No     |
+ +---------------- +---------------------- +-------------------- +------ +
+ |Command          |Volume set identifier  |VolumeSetIdentifier  |9.3    |
+ |specification    |                       |                     |       |
+ +-----------------+-----------------------+---------------------+-------+
+Format:     VolumeSetIdentifier  ident
+Parameters: ident  :Volume set identifier character string 
+            This is a maximum of 128 D-characters.
+Function:   Writes the specified character string as the volume set identifier.
+
+ +-----------------+-----------------------+---------------------+-------+
+ |Title            |Command                |Keyword              |No     |
+ +---------------- +---------------------- +-------------------- +------ +
+ |Command          |Publisher identifier   |PublisherIdentifier  |9.4    |
+ |specification    |                       |                     |       |
+ +-----------------+-----------------------+---------------------+-------+
+Format:     PublisherIdentifier  ident
+Parameters: ident  :Publisher identifier character string 
+            This is a maximum of 128 A-characters.
+Function:   Writes the specified character string as the publisher identifier.
+
+ +-----------------+---------------------+-----------------------+-------+
+ |Title            |Command              |Keyword                |No     |
+ +---------------- +-------------------- +---------------------- +------ +
+ |Command          |Data preparer        |DataPreparerIdentifier |9.5    |
+ |specification    |identifier           |                       |       |
+ +-----------------+---------------------+-----------------------+-------+
+Format:     DataPreparerIdentifier  ident
+Parameters: ident  :Data preparer identifier character string 
+            This is a maximum of 128 A-characters.
+Function:   Writes the specified character string as the data preparer
+            identifier.
+Remarks:    Due to changes in the GD-ROM format specifications, the data 
+            preparer identifier field has been reserved as an area for storing 
+            CD tool information (tool name + version number).
+            Setting of values using this command is therefore prohibited.
+            (From CD CRAFT Ver. 2.27, this command is invalid.)
+
+ +-----------------+---------------------+-----------------------+-------+
+ |Title            |Command              |Keyword                |No     |
+ +---------------- +-------------------- +---------------------- +------ +
+ |Command          |Application          |ApplicationIdentifier  |9.6    |
+ |specification    |identifier           |                       |       |
+ +-----------------+---------------------+-----------------------+-------+
+Format:     ApplicationIdentifier  ident
+Parameters: ident  :Application identifier character string 
+            This is a maximum of 128 A-characters.
+Function:   Writes the specified character string as the application identifier.
+
+ +-----------------+-------------------+-------------------------+-------+
+ |Title            |Command            |Keyword                  |No     |
+ +---------------- +------------------ +------------------------ +------ +
+ |Command          |Copyright file     |CopyrightFileIdentifier  |9.7    |
+ |specification    |identifier         |                         |       |
+ +-----------------+-------------------+-------------------------+-------+
+Format:     CopyrightFileIdentifier  filename
+Parameters: filename  :Copyright file name 
+            This is a maximum of 37 D-characters.
+Function:   Writes the specified file name as the copyright file identifier.
+Remarks:    If the copyright file is undefined, nothing is set in the concerned 
+            PVD field.
+
+ +-----------------+---------------------+-----------------------+-------+
+ |Title            |Command              |Keyword                |No     |
+ +---------------- +-------------------- +---------------------- +------ +
+ |Command          |Abstract file        |AbstractFileIdentifier |9.8    |
+ |specification    |identifier           |                       |       |
+ +-----------------+---------------------+-----------------------+-------+
+Format:     AbstractFileIdentifier  filename
+Parameters: filename  :Abstract file name 
+            This is a maximum of 37 D-characters.
+Function:   Writes the specified file name as the abstract file identifier.
+Remarks:    If the abstract file is undefined, nothing is set in the concerned 
+            PVD field.
+
+ +---------------+-----------------+-----------------------------+-------+
+ |Title          |Command          |Keyword                      |No     |
+ +-------------- +---------------- +---------------------------- +------ +
+ |Command        |Bibliographic    |BibliographicFileIdentifier  |9.9    |
+ |specification  |file identifier  |                             |       |
+ +---------------+-----------------+-----------------------------+-------+
+Format:     BibliographicFileIdentifier  filename
+Parameters: filename  :Bibliographic file name 
+            This is a maximum of 37 D-characters.
+Function:   Writes the specified file name as bibliographic file identifier.
+Remarks:    If the bibliographic file is undefined, nothing is set in the 
+            concerned PVD field.
+
+ +-----------------+-------------------------+-------------------+-------+
+ |Title            |Command                  |Keyword            |No     |
+ +---------------- +------------------------ +------------------ +------ +
+ |Command          |Volume creation          |VolumeCreationDate |9.10   |
+ |specification    |date/time                |                   |       |
+ +-----------------+-------------------------+-------------------+-------+
+Format:     VolumeCreationDate  date time
+Parameters: date  :Creation date (DD/MM/YYYY)
+            time  :Creation time (hh:mm:ss:cc:gg)
+Function:   Sets the volume creation date and time.
+Remarks:    The date and time are in the following formats.
+            DD/MM/YYYY          day/month/year
+            hh:mm:ss:cc:gg      hours:minutes:seconds:centiseconds:time_zone* 
+          * time_zone is the offset from GMT in 15 minute units (e.g. the value 
+            for Japan standard time is 36.)
+
+ +-----------------+---------------------+-----------------------+-------+
+ |Title            |Command              |Keyword                |No     |
+ +---------------- +-------------------- +---------------------- +------ +
+ |Command          |Volume modification  |VolumeModificationDate |9.11   |
+ |specification    |date/time            |                       |       |
+ +-----------------+---------------------+-----------------------+-------+
+Format:     VolumeModificationDate  date time
+Parameters: date   :Modification date (DD/MM/YYYY)
+            time   :Modification time (hh:mm:ss:cc:gg)
+Function:   Sets the volume modification date and time.
+
+ +-----------------+---------------------+-----------------------+-------+
+ |Title            |Command              |Keyword                |No     |
+ +---------------- +-------------------- +---------------------- +------ +
+ |Command          |Volume expiration    |VolumeExpirationDate   |9.12   |
+ |specification    |date/time            |                       |       |
+ +-----------------+---------------------+-----------------------+-------+
+Format:     VolumeExpirationDate  date time
+Parameters: date   :Expiration date (DD/MM/YYYY)
+            time   :Expiration time (hh:mm:ss:cc:gg)
+Function:   Sets the volume expiration date and time.
+
+ +-----------------+-----------------------+---------------------+-------+
+ |Title            |Command                |Keyword              |No     |
+ +---------------- +---------------------- +-------------------- +------ +
+ |Command          |Volume effective       |VolumeEffectiveDate  |9.13   |
+ |specification    |date/time              |                     |       |
+ +-----------------+-----------------------+---------------------+-------+
+Format:     VolumeEffectiveDate   date time
+Parameters: date   :Effective date (DD/MM/YYYY)
+            time   :Effective time (hh:mm:ss:cc:gg)
+Function:   Sets the volume effective date and time.
+
+
+3.2.10 Data Layout Control
+ +-----------------+-----------------------+---------------------+-------+
+ |Title            |Command                |Keyword              |No     |
+ +---------------- +---------------------- +-------------------- +------ +
+ |Command          |Extent layout control  |ExtentLocation       |10.1   |
+ |specification    |                       |                     |       |
+ +-----------------+-----------------------+---------------------+-------+
+Format:     ExtentLocation   side
+Parameters: side   :Layout position
+Function:   Specifies whether the extent is to be arranged on the inside or 
+            outside of the disc.
+            Only valid for the high-density area.
+Note:       • The specification is ignored if it is specified for the 
+              single-density area.
+            • If INNER is specified, the size is automatically adjusted 
+              if the lead-out location is short of 40:00:00.
+            • In the high-density area, if BeginTimeS, EndTimeS should be 
+              used, it is necessary to define them as INNER.
+
+(1) Layout position
+     +-------+-----------------------------------------+
+     |Value  |   Meaning                               |
+     +------ +---------------------------------------- +
+     |INNER  |Place on the inside of the disc.         |
+     |OUTER  |Place on the outside of the disc.        |
+     +-------+-----------------------------------------+
+   * The default setting is OUTER.
+
+ +-----------------+-------------------+-------------------------+-------+
+ |Title            |Command            |Keyword                  |No     |
+ +---------------- +------------------ +------------------------ +------ +
+ |Command          |Extent layout      |ExtentLocationBeginTime  |10.2   |
+ |specification    |start time         |                         |       |
+ +-----------------+-------------------+-------------------------+-------+
+Format:     ExtentLocationBeginTime   atime
+Parameters: atime    :Layout:time  mm:ss:ff
+Function:   Specifies the extent layout start ATIME value.
+            Data layout starts from the specified location.
+Note:       If high-density area lead-out location is short of 40:00:00, 
+            the size is automatically adjusted.
+
+ +-----------------+-------------------+-------------------------+-------+
+ |Title            |Command            |Keyword                  |No     |
+ +---------------- +------------------ +------------------------ +------ +
+ |Command          |Extent layout      |ExtentLocationEndTime    |10.3   |
+ |specification    |end time           |                         |       |
+ +-----------------+-------------------+-------------------------+-------+
+Format:     ExtentLocationEndTime   atime
+Parameters: atime    :Layout:time  mm:ss:ff
+Function:   Specifies the extent layout end ATIME value.
+            The final data layout ends at the specified location.
+
+ +-----------------+---------------------+-----------------------+-------+
+ |Title            |Command              |Keyword                |No     |
+ +---------------- +-------------------- +---------------------- +------ +
+ |Command          |File layout start    |BeginTimeS             |10.4   |
+ |specification    |relative time        |                       |       |
+ +-----------------+---------------------+-----------------------+-------+
+Format:     BeginTimeS   time
+Parameters: time     :Layout start relative time   mm:ss:ff
+Function:   Specifies the relative time of the file layout start from the 
+            session head.
+Note:       When used in the high-density area, it is necessary to also 
+            specify "ExtentLocation INNER".
+            Also, this command cannot be used together with the following 
+            commands.
+            • ExtentLocationBeginTime
+            • ExtentLocationEndTime
+            • Location
+
+ +-----------------+---------------------+-----------------------+-------+
+ |Title            |Command              |Keyword                |No     |
+ +---------------- +-------------------- +---------------------- +------ +
+ |Command          |File layout end      |EndTimeS               |10.5   |
+ |specification    |relative time        |                       |       |
+ +-----------------+---------------------+-----------------------+-------+
+Format:     EndTimeS   time
+Parameters: time     :Layout end relative time   mm:ss:ff
+Function:   Specifies the relative time of the file layout end from the 
+            session head.
+Note:       When used in the high-density area, it is necessary to also 
+            specify "ExtentLocation INNER".
+            Also, this command cannot be used together with the following 
+            commands.
+            • ExtentLocationBeginTime
+            • ExtentLocationEndTime
+            • Location
+
+ +-----------------+---------------------+-----------------------+-------+
+ |Title            |Command              |Keyword                |No     |
+ +---------------- +-------------------- +---------------------- +------ +
+ |Command          |Insert dummy sector  |Empty                  |10.6   |
+ |specification    |                     |                       |       |
+ +-----------------+---------------------+-----------------------+-------+
+Format:     Empty   sctnum
+Parameters: sctnum   :Number of sectors
+Function:   Inserts a dummy sector (or sectors) between files.
+Remarks:    In the file definition block, dummy sectors can be specified 
+            instead of the FileSource definition. In this case, a dummy 
+            sector is written instead.
+
+
+3.2.11 File naming rule specification
+ +-----------------+---------------------+-----------------------+-------+
+ |Title            |Command              |Keyword                |No     |
+ +---------------- +-------------------- +---------------------- +------ +
+ |Command          |File naming rule     |FileNameType           |11.1   |
+ |specification    |specification        |                       |       |
+ +-----------------+---------------------+-----------------------+-------+
+Format:     FileNameType   type
+Parameters: type   :File naming rule type
+Function:   Specifies the file naming rule.
+Remarks:    Restrictions on the length of file and directory names and 
+            character types vary with the file naming rule.
+
+(1)File naming rule types
+         +-----------+-----------------+
+         |  Value    |File naming rule |
+         +---------- +---------------- +
+         |ISO9660L1  |ISO9660 level 1  |
+         +---------- +---------------- +
+         |ISO9660L2  |ISO9660 level 2  |
+         +---------- +---------------- +
+         |DOS        |DOS              |
+         +-----------+-----------------+
+       * The default file naming rule is as when ISO9660L2 is specified.
+
+Appendix A Differences from CD script Specification for Saturn
+
+The CD script syntax for KATANA use explained in this document is largely 
+compatible with the CD script for Saturn use. However, there are some commands 
+with changed specifications, some deletions, and some newly added commands.
+The following lists the differences from Saturn CD script.
+
+
+A.1 Newly Added Commands
+The newly added commands are listed in Table A.1.
+
+                  Table A.1 Newly added commands
+   +---------------------------------+-------------------------+
+   |         Command                 |        Keyword          |
+   +-------------------------------- +------------------------ +
+   |Start GD definition              |Gd                       |
+   |End GD definition                |EndGd                    |
+   |Start recording area definition  |RecordArea               |
+   |End recording area definition    |EndRecordArea            |
+   |Specify file name rules          |FileNameType             |
+   |Specify disc layout precedence   |Location                 |
+   |Extent layout control            |ExtentLocation           |
+   |Extent layout start time         |ExtentLocationBeginTime  |
+   |Extent layout end time           |ExtentLocationEndTime    |
+   +---------------------------------+-------------------------+
+
+
+A.2 Commands with Changed Specifications
+The commands with changed specifications are listed in Table A.2.
+
+                 Table A.2 Commands with changed specifications
+   +-------------------------+---------------+-------------------------------+
+   |    Command              |    Keyword    |            Change             |
+   +------------------------ +-------------- +------------------------------ +
+   |Start volume definition  |Volume         |Parameters no longer required  |
+   +------------------------ +-------------- +------------------------------ +
+   |Start primary volume     |PrimaryVolume  |Parameter no longer required   |
+   |descriptor               |               |                               |
+   +------------------------ +-------------- +------------------------------ +
+   |Define file recording    |RecordingDate  |Function extended              |
+   |date/time                |               |                               |
+   +------------------------ +-------------- +------------------------------ +
+   |Insert dummy sector      |Empty          |Function extended              |
+   +-------------------------+---------------+-------------------------------+
+
+
+A.3 Deleted Commands
+Commands have been deleted for functions not used with GD or which users do not have to be concerned with. If any of these commands are specified, they are ignored.
+The following are the principal functions to which the deleted commands relate.
+  (a) Those relating to mode2 tracks
+  (b) Pause and gap specifications
+  (c) Those relating to supplementary volume and boot record definitions
+  (d) Those relating to lead-in and lead-out definitions
+The deleted commands are listed in Table A.3.
+
+                        Table A.3 Deleted commands
+   +-----------------------------------------+-------------------------+
+   |               Command                   |         Keyword         |
+   +-----------------------------------------+------------------------ +
+   |Disc                                                               |
+   | +---------------------------------------+------------------------ +
+   | |Specify catalog number                 |CatalogNo                |
+   | |Start disc definition                  |Disc                     |
+   | |End disc definition                    |EndDisc                  |
+   | |Start lead-in area definition          |LeadIn                   |
+   | |End lead-in area definition            |EndLeadIn                |
+   | |Start lead-out area definition         |LeadOut                  |
+   | |End lead-out area definition           |EndLeadOut               |
+   | |Start session definition               |Session                  |
+   | |End session definition                 |EndSession               |
+   +-+---------------------------------------+------------------------ +
+   |Track                                                              |
+   | +---------------------------------------+------------------------ +
+   | |Start extent definition                |Extent                   |
+   | |End extent definition                  |EndExtent                |
+   +-+---------------------------------------+------------------------ +
+   |Volume descriptor                                                  |
+   | +---------------------------------------+------------------------ +
+   | |Start boot record                      |BootRecord               |
+   | |End boot record                        |EndBootRecord            |
+   | |Start supplementary volume descriptor  |SupplementaryVolume      |
+   | |End supplementary volume descriptor    |EndSupplementaryVolume   |
+   +-+---------------------------------------+------------------------ +
+   |Volume descriptor information                                      |
+   | +---------------------------------------+------------------------ +
+   | |Specify file for application area      |ApplicationUse           |
+   | |Boot system identifier                 |BootIdentifier           |
+   | |Boot identifier                        |BootSystemIdentifier     |
+   | |Specify kanji code                     |EscapeSequences          |
+   | |Logical block size                     |LogicalBlockSize         |
+   | |Specify optional L path table output   |OptionalLPath            |
+   | |Specify optional M path table output   |OptionalMPath            |
+   +-+---------------------------------------+------------------------ +
+   |File attributes                                                    |
+   | +---------------------------------------+------------------------ +
+   | |Define file hidden attributes          |Attributes               |
+   | |Define start position within extent    |BeginTimeE               |
+   | |Define end position within extent      |EndTimeE                 |
+   | |Define start position within disc      |BeginTimeS               |
+   | |Define end position within disc        |EndTimeS                 |
+   | |Start channel definition               |Channel                  |
+   | |End channel definition                 |EndChannel               |
+   | |Define EOR bit position within file    |Eors                     |
+   | |Specify file number                    |FileNo                   |
+   | |Specify packing                        |Pack                     |
+   | |Define same names within supplementary |SameName                 |
+   | |                     volume descriptor |                         |
+   | |Specify sector rate                    |SectorRate               |
+   | |Define execution permission attributes |SysExecuteAttributes     |
+   | |                           (CD-ROM XA) |                         |
+   | |Define owner ID (CD-ROM XA)            |SysOwnerID               |
+   | |Define read permission attributes      |SysReadAttributes        |
+   | |                           (CD-ROM XA) |                         |
+   | |Define trigger bit position            |Trigger                  |
+   | |                           within disc |                         |
+   +-+---------------------------------------+------------------------ +
+   |File source attributes                                             |
+   | +---------------------------------------+------------------------ +
+   | |Speficy file source last sector EOR    |AutoEOR                  |
+   | |Specify start position of file         |BeginTimeF               |
+   | |                         source layout |                         |
+   | |Specify end position of file           |EndTimeF                 |
+   | |                         source layout |                         |
+   | |Specify bit rate                       |BitRate                  |
+   | |Specify coding information             |CodingInformation        |
+   | |Specify mode 2 form                    |DataType                 |
+   | |Specify gap size                       |GapSize                  |
+   | |Specify null output to MPEG stream     |MpegFlush                |
+   | |Start ISO 11172 stream definition      |MpegMultiplex            |
+   | |End ISO11172 stream definition         |EndMpegMultiplex         |
+   | |Start MPEG stream definition           |MpegStream               |
+   | |End MPEG stream definition             |EndMpegStream            |
+   | |Specify real time file                 |RealTime                 |
+   | |Specify file source data type          |SourceType               |
+   | |Specify data with subheader            |SubHeader                |
+   | |Specify null output to subcode area    |SubEmpty                 |
+   | |Specify subcode information file       |SubSource                |
+   | |Specify unit size                      |UnitSize                 |
+   +-+---------------------------------------+-------------------------+
+
+
+A.4 Compatibility with Saturn CD script
+A script which complies with the Saturn CD script specification can be included. (If deleted commands are included, they are ignored.)
+
+  Gd                          ---------------------------+
+      RecordArea SINGLE                                  |
+          Disc   sample.dsk   -+                         |
+              Session   CDROM  |Region compatible        |Region unique to
+                 :             |with Saturn CD script    |KATANA CD script
+              EnsDession       |                         |
+          EndDisc             -+                         |
+      EndRecordArea                                      |
+  EndGd                       ---------------------------+
+         Fig. A.1 Region of compatibility with Saturn CD script
+
+
+A.5 Pauses and Gaps
+Pause or gap areas are required between tracks where the mode changes.
+The tools automatically create pauses and gaps of appropriate size for these areas, so it is not necessary for a script to specify them. Any specifications are ignored.
+
+
+A.6 Lead-in and Lead-out
+A recording area starts with a lead-in area and ends with a lead-out area.
+The tools automatically create these areas, so it is not necessary for a script to specify them. Any specifications are ignored.
+
+
+A.7 Sessions
+There is no support for multiple session definitions. It is therefore not necessary for a user script to define the range of a session.
+
+
+Appendix B  Character Code Table
+The A Character Code and D Character Code are shown below.
+Only the characters marked with an asterisk (*) to the left of the character can be used.
+
+(1) A Character Code 
+ +-------+-----------------------------------+
+ |       |            bit 5 Å` 7             |
+ |       +-----+-----+-----+-----+-----+---- +
+ |       | 2   | 3   | 4   | 5   | 6   | 7   |
+ +---+-- +---- +---- +---- +---- +---- +---- +
+ |   |0  |*SP  |* 0  |  @  |* P  |  `  |  p  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |1  |* !  |* 1  |* A  |* Q  |  a  |  q  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |2  |* "  |* 2  |* B  |* R  |  b  |  r  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |3  |  #  |* 3  |* C  |* S  |  c  |  s  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |4  |  $  |* 4  |* D  |* T  |  d  |  t  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |b  |5  |* %  |* 5  |* E  |* U  |  e  |  u  |
+ |i  +-- +---- +---- +---- +---- +---- +---- +
+ |t  |6  |* &  |* 6  |* F  |* V  |  f  |  v  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |1  |7  |* '  |* 7  |* G  |* W  |  g  |  w  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |Å` |8  |* (  |* 8  |* H  |* X  |  h  |  x  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |4  |9  |* )  |* 9  |* I  |* Y  |  i  |  y  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |A  |* *  |* :  |* J  |* Z  |  j  |  z  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |B  |* +  |* ;  |* K  |  [  |  k  |  {  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |C  |* ,  |* <  |* L  |  \  |  l  |  |  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |D  |* -  |* =  |* M  |  ]  |  m  |  }  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |E  |* .  |* >  |* N  |  ^  |  n  |  ~  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |F  |* /  |* ?  |* O  |* _  |  o  | DEL |
+ +---+---+-----+-----+-----+-----+-----+-----+
+
+(2) D Character Code 
+ +-------+-----------------------------------+
+ |       |            bit 5 Å` 7             |
+ |       +-----+-----+-----+-----+-----+---- +
+ |       | 2   | 3   | 4   | 5   | 6   | 7   |
+ +---+-- +---- +---- +---- +---- +---- +---- +
+ |   |0  | SP  |* 0  |  @  |* P  |  `  |  p  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |1  |  !  |* 1  |* A  |* Q  |  a  |  q  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |2  |  "  |* 2  |* B  |* R  |  b  |  r  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |3  |  #  |* 3  |* C  |* S  |  c  |  s  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |4  |  $  |* 4  |* D  |* T  |  d  |  t  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |b  |5  |  %  |* 5  |* E  |* U  |  e  |  u  |
+ |i  +-- +---- +---- +---- +---- +---- +---- +
+ |t  |6  |  &  |* 6  |* F  |* V  |  f  |  v  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |1  |7  |  '  |* 7  |* G  |* W  |  g  |  w  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |Å` |8  |  (  |* 8  |* H  |* X  |  h  |  x  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |4  |9  |  )  |* 9  |* I  |* Y  |  i  |  y  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |A  |  *  |  :  |* J  |* Z  |  j  |  z  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |B  |  +  |  ;  |* K  |  [  |  k  |  {  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |C  |  ,  |  <  |* L  |  \  |  l  |  |  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |D  |  -  |  =  |* M  |  ]  |  m  |  }  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |E  |  .  |  >  |* N  |  ^  |  n  |  ~  |
+ |   +-- +---- +---- +---- +---- +---- +---- +
+ |   |F  |  /  |  ?  |* O  |* _  |  o  | DEL |
+ +---+---+-----+-----+-----+-----+-----+-----+
+
+/*--< end of file >---------------------------------------------------------*/

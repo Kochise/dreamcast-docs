@@ -1,0 +1,123 @@
+
+This program uses paintlib code. paintlib is copyright (c) 1996-1998 Ulrich von Zadow.
+http://www.paintlib.de
+
+
+More detail on DOSPVR command line options
+------------------------------------------
+
+-ALPHAPREFIX xxx
+
+The image's alpha channel is loaded from a file with
+the given prefix.
+The prefix can be just characters or even a
+full or relative path. To emulate the behavior of the
+PVRCONV.EXE too, use "-ALPHAPREFIX t"
+
+
+------------------------------------------
+
+-ALPHAFILE [file]
+
+The alpha channel is loaded from [file]. The -ALPHAPREFIX
+option has a higher priority. If both are specified on the
+command line, [file] will only be used if the -ALPHAPREFIX
+file cannot be found or loaded.
+
+
+------------------------------------------
+
+-PAGEMIPMAP
+
+The page mipmap option allows you to load all mipmaps from
+a single bitmap. The bitmap must be laid out with the full
+size mipmap at the top with each size directly underneath:
+
+   +----------+
+   |          |
+   |          |
+   |          |
+   |          |
+   +-----+----+
+   |     |
+   |     |
+   +--+--+
+   |  |
+   +--+
+   |_|
+   #
+   '
+
+This option cannot be used with -BATCHMIPMAP.
+
+------------------------------------------
+
+
+-BATCHMIPMAP
+
+The batch mipmap option allows you to specify your own
+mipmap images. For example:
+
+	DOSPVR foo.bmp /BATCHMIPMAP
+
+If foo.bmp is 64x64, then the program looks for:
+
+	foo.bmp  - 64x64
+	1foo.bmp - 32x32
+	2foo.bmp - 16x16
+	3foo.bmp - 8x8
+	4foo.bmp - 4x4
+	5foo.bmp - 2x2
+	6foo.bmp - 1x1
+
+-BATCHMIPMAP and -ALPHAPREFIX can be used together, in which
+case the batch prefix is appended first, followed by the alpha
+prefix, for example:
+
+	DOSPVR foo.bmp /BATCHMIPMAP /ALPHAPREFIX a
+
+Builds the batch mipmap from:
+foo.bmp + afoo.bmp, 1foo.bmp + a1foo.bmp ... Nfoo.bmp + aNfoo.bmp
+
+
+
+------------------------------------------
+
+
+-COLOURFORMAT [format]
+
+[format] can be any one of: SMART 4444 1555 565 555 SMARTYUV YUV422 8888
+
+SMART
+The program automatically selects from 4444, 1555 or 565 depending
+on the number of colours in the image's alpha channel. If the image
+has no alpha, or the alpha only has one colour, it uses 565. If the
+alpha only has two colours, it uses 1555. If the alpha has more than
+two colours, it uses 4444.
+
+4444
+The program uses 4 bits each for R,G,B and A
+
+1555
+The program uses 5 bits for R,G,B and 1 bit for A
+
+565
+The program uses 5 bits for R & B and 6 bits for G. No alpha is
+used.
+
+555
+The program uses 5 bits for R,G,B. No alpha us used.
+
+SMARTYUV
+This option behaves exactly like SMART mode, except that YUV422
+mode is selected instead of 565.
+
+YUV422
+The program encodes the colour information as YUV422 [YCbYCr].
+There is no alpha.
+
+8888
+Only available with palettised images. The palette is written out
+as 8888.
+
+

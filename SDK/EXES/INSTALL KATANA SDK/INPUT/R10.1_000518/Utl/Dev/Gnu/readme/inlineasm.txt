@@ -1,0 +1,307 @@
+
+Inline assembly mini-tutorial 
+by Toshiyasu Morita
+Created: 10/8/98 @ 2:15 pm
+-----------------------------
+
+This is ONLY a mini-tutorial; for a complete explanation of all inline
+assembly options see the "Assembler instructions with C expression operands"
+in the compiler documentation file "2_compile.pdf" in the info subdirectory.
+
+The basic format for inline assembly with gcc is:
+
+__asm__ volatile ("inst1; inst2; inst3 ..." : outputs : inputs : clobbers);
+
+where:
+
+ volatile: Optional; only required if the sequence has no outputs
+     inst: Assembly instructions
+  outputs: Output register constraints and (possibly loads) and saves
+   inputs: Input register constraints and loads 
+           (the inline assembly fragment should NOT clobber the inputs)
+ clobbers: Any registers clobbered by the inline assembly (or memory)
+
+The inputs and outputs are in the format:
+
+"foo"        or
+"foo" (bar)  or
+"=foo" (bar) or
+"+foo" (bar)
+
+where "foo" is the actual register constraint letter, and (bar) specifies
+expression to be loaded/saved to/from this register. The "=" or "+"
+prefix specifies the register is an output, or input/output, respectively.
+
+Any valid lvalue can be used for an output expression, and any valid
+rvalue can be used for the input expression.
+
+The clobbers are in the format:
+
+"registername"
+
+...where registername is a register known to gcc. Some registers
+are not known to the compiler, like r0_bank, etc so they are not
+accepted as valid clobbers.
+
+When the compiler compiles an inline assembly sequence, these steps
+are taken:
+
+1) If the "memory" clobber was specified, the compiler will flush
+   values in registers to memory.
+
+   You need to specify this if your assembly code reads memory
+   which may have been modified in the preceding lines of code.
+
+2) The compiler checks if any of the registers which will be modified
+   (outputs + clobbers) hold live values. If so, the compiler will save them
+   to memory or to registers which aren't modified.
+
+3) The compiler loads the input registers from input variables.
+
+   WARNING: The compiler assumes the input registers are not clobbered
+   by the inline assembly fragment. If you need to modify the input
+   registers you will need to:
+
+   a) Copy them to clobberable temporary registers and use the
+      clobberable registers instead or
+
+   b) Save the clobbered input registers on the stack and restore them.
+
+   Generally a) is better because GCC will use registers that do not
+   need to be saved/restored if possible, however if you are using
+   a large number of registers then b) may be necessary.
+
+4) The compiler then generates the inline assembly code and substitutes
+   real registers for the %0, %1, %2, etc register placeholders.
+
+5) The compiler saves the output registers to the output variables.
+
+6) The compiler handles the clobbers specified by your inline assembly.
+
+   If a "memory" clobber was specified, the compiler will invalidate
+   any values loaded from memory currently in registers because the values
+   may no longer be valid.
+
+   If the "t" clobber was specified, then gcc will assume the T bit
+   is clobbered by your code and will save/restore the T bit if necessary.
+
+   If explicit register clobbers are mentioned ("r0", "r1", etc) then
+   GCC will assume the registers are clobbered.
+
+Inline assembly sample with no inputs, an output, and no clobbers
+-----------------------------------------------------------------
+
+Take, for example, this inline assembly sequence to grab the SR:
+
+int sr;
+__asm__ ("stc sr,%0" : "=r" (sr) : : );
+
+The "stc sr,%0" specifies the "stc sr, rn" instruction. The output register
+is dynamically allocated by the compiler so we specify "%0" so the register
+will match the first register constraint specified.
+
+The first register constraint is "=r" (sr). The equals sign specifies
+the register will be modified, and the letter r specifies any integral
+register. The (sr) specifies that the register should be copied to the
+variable sr.
+
+Inline assembly sample with an input, no outputs, and no clobbers
+-----------------------------------------------------------------
+
+Here is an inline assembly sequence to set the SR:
+
+int sr;
+__asm__ volatile ("ldc %0,sr" : : "r" (sr) : );
+
+The "ldc %0,sr" specifies a register should be copied to the sr.
+The input register is dynamically allocated and specified by the first
+register constraint.
+
+The first register constraint is an input "r" (value) which specifies
+the register can be any integral register, and it is should be loaded
+from the variable "sr".
+
+This instruction sequence is special because it creates no data (has
+no outputs). The compiler may try to remove this sequence when optimizing
+because it has no apparent effect. Therefore, the "volatile" keyword
+is necessary to prevent the compiler from removing this sequence
+when optimization is enabled.
+
+Inline assembly sample with simultaneous inputs and outputs and no clobber
+--------------------------------------------------------------------------
+
+This is a rather contrived example, because the compiler already generates
+fmac, however:
+
+float a, *b, *c;
+int i;
+// a += b[i] * c[i];
+__asm__ ("fmac %1,%2,%0" : "+f" (a) : "w" (b[i]), "f" (c[i]) : );
+
+The "fmac %1,%2,%0" specifies the instructions to generate, which is
+"fmac frm,fr0,frn". The register placeholders %0 and %2 can be any
+floating point registers ("f"), but %1 must be fr0 ("w").
+
+The first register constraint is "+f", and is an input/output constraint.
+The plus sign specifies the register is both an input and output register
+(must be loaded before the assembly is generated and creates an output
+that must be saved). The letter "f" specifies a floating-point register .
+The value is loaded from the variable "a" and saved to the variable "a"
+before and after the inline assembly sequence.
+
+The second register constraint is "w" and is an input constraint.
+The "w" specifies the register must be fr0, and the following (b[i])
+specifies the register is loaded from the array entry before the 
+inline assembly sequence.
+
+The third register constraint is "f" and is an output constraint.
+The "f" specifies the register is any frn register, and it loaded
+from the array entry "c[i]" before the assembly executes.
+
+Inline assembly sample with inputs, outputs, temporaries, clobbers, labels
+--------------------------------------------------------------------------
+
+Here's a sample for an aligned memcpy which copies 8 bytes per loop:
+
+#define aligned_memcpy(dest, source, length)\
+{\
+	int dummy1, dummy2, dummy3, dummy4, dummy5;\
+	__asm__ volatile ("\
+		mov %5,%2;\
+		mov %6,%3;\
+		mov %7,%4;\
+		shlr2 %4;\
+		shlr %4;\
+L_%=:\
+		mov.l @%2+,%0;\
+		mov.l @%2+,%1;\
+		dt %4;\
+		mov.l %0,@%3;\
+		mov.l %1,@(4,%3);\
+		bf/s L_%=;\
+		add #8,%3"\
+		: "=r" (dummy1), "=r" (dummy2),\
+		  "=r" (dummy3), "=r" (dummy4), "=r" (dummy5)\
+		: "r" (source), "r" (dest), "r" (length)\
+		: "t", "memory");\
+}
+
+This sample copies the source, destination and length parameters to
+temporaries allocated by specifying dummy output registers. This is necessary
+because GCC assumes the input registers are never modified. The rest is
+fairly straightforward, and the t-bit and memory are specified as clobbers.
+
+The only other interesting point to note is the %= operator is used to
+generate a unique label for this inline assembly function. %= only generates
+a single unique number per inline assembly chunk; e.g. multiple uses
+of %= in the same inline assembly chunk generate the same number, so you 
+must qualify it with additional characters to use multiple local labels,
+such as LA%=: for the first label, LB%=: for the second label, LC%=: for third,
+etc.
+
+Valid register constraints for SH4 inline assembly
+--------------------------------------------------
+
+   a: all registers
+   c: fpscr
+   d: drn registers (does not work with -m4-single-only)
+   f: frn registers
+   l: pr
+   r: rn registers
+   t: t-bit
+   w: fr0
+   x: macl/mach
+   y: fpul
+   z: r0
+
+   I: integer value -127...128 (arithmetic operand)
+   K: integer 1, 2, 8, or 16 (shift operand)
+   L: logical operand 0...255 (byte logical operands)
+   M: constant 1
+   N: constant 0
+   O: constant 0...15 (used for displacements)
+
+Note: specifying a "O" before the constraint number will suppress the
+leading "#" for constants, e.g.
+
+	asm ("mov.l @(%O1,gbr),%0" : "=z" (data) : "i" (offset));
+
+Inline assembly caveats
+-----------------------
+
+o "memory" clobbers are generally very expensive. It forces the compiler
+  to generate many stores and loads. Try to avoid this if at all possible
+  by exposing your loads/stores to the compiler and avoiding the "memory"
+  clobber.
+  
+o When using the colon separators for register constraints, do not place
+  them together (::) otherwise they will be parsed as a C++ method
+  reference operator when used in C++ files. Please use a single space
+  between the colons (: :) to insure they will not be parsed as a
+  method reference.
+
+o If all the registers in one register class is used, then the compiler
+  may abort when generating code. This is usually only a problem with the
+  following register classes which have only one register:
+
+  "c" (fpscr)
+  "l" (pr)
+  "t" (t-bit)
+  "w" (fr0)
+  "z" (r0)
+
+  You can work around this by saving and restoring the register in another
+  register which is specified as clobbered.
+
+o If you specify a register as an input constraint but modify it somewhere
+  in the code, then bad things will eventually happen. Consider this code:
+
+  __asm__ volatile ("
+	fmov @%0+,fr0;\
+	fmov @%0+,fr1;\
+	fmov @%0+,fr2;\
+	fmov @%0+,fr3;\
+	add #-16,%0"
+	: 
+	: "r" (ptr));
+
+   This seems to be valid code, because "%0" is modified in the code, but
+   returned to the original value, so it seems okay to use an input constraint.
+
+   This is WRONG.
+
+   If you have four floats in your local stack frame, and they are at the
+   bottom of the stack and you try to load them into fr0-fr4, then the compiler
+   may use the stack pointer (r15) as your %0 register because it's already
+   pointing at the bottom of the stack and the inline assembly fragment
+   is specified not to modify it.
+
+   If the compiler uses r15 for %0, and the inline assembly fragment is
+   executed, and an interrupt is generated halfway through the code, then
+   the interrupt handler may use the stack and since some of the items
+   are now "under the stack pointer" they will be trashed!
+
+   Basically, it is only safe to use a input constraint if the register REALLY
+   is never modified in the inline assembly fragment.
+
+   The correct way to write the above code is:
+
+   {
+	int *temp_p = ptr;
+
+	__asm__ volatile("
+		fmov @%0+,fr0;
+		fmov @%0+,fr1;
+		fmov @%0+,fr2;
+		fmov @%0+,fr3"
+		: "+r" (temp)
+		: );
+   }
+
+   This way, the compiler will copy the value of ptr into another register
+   if the ptr value is required afterwards in the code.
+
+   If the value ptr is not needed later in the code, the optimizer can
+   collapse the two variables (temp_p and ptr) into a single register
+   and optimize away the register-to-register copy.
+
