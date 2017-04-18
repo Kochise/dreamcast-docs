@@ -1,0 +1,314 @@
+// TYPE    DU SCRIPT : KATANA
+// AUTEUR  DU SCRIPT : Kochise
+// VERSION DU SCRIPT : 2008/05/24
+
+#define USE_ALPHABLEND
+
+[Code]
+#ifdef USE_ALPHABLEND
+function GetWindowLong( hwnd : HWND; nIndex : Integer ): DWORD;
+external 'GetWindowLongA@user32.dll stdcall';
+
+function SetWindowLong( hwnd : HWND; nIndex : Integer; dwNewLong : DWORD ): DWORD;
+external 'SetWindowLongA@user32.dll stdcall';
+
+function SetLayeredWindowAttributes( hwnd : HWND; crKey : TColor; bAlpha : byte; dwFlags : DWORD ): Boolean;
+external 'SetLayeredWindowAttributes@user32.dll stdcall';
+#endif
+
+const
+#ifdef USE_ALPHABLEND
+  GWL_WNDPROC             = -4;
+  GWL_HINSTANCE            = -6;
+  GWL_HWNDPARENT          = -8;
+  GWL_STYLE               = -16;
+  GWL_EXSTYLE              = -20;
+  GWL_USERDATA            = -21;
+  GWL_ID                  = -12;
+
+  WS_EX_LAYERED           = $00080000;
+
+  AC_SRC_OVER             = $00;
+  AC_SRC_ALPHA            = $01;
+  AC_SRC_NO_PREMULT_ALPHA = $01;
+  AC_SRC_NO_ALPHA         = $02;
+
+  AC_DST_NO_PREMULT_ALPHA = $10;
+  AC_DST_NO_ALPHA         = $20;
+
+  LWA_COLORKEY            = $01;
+  LWA_ALPHA               = $02;
+
+  ULW_COLORKEY            = $01;
+  ULW_ALPHA               = $02;
+  ULW_OPAQUE              = $04;
+
+  MAX_UI_ALPHA            = 90;
+#endif
+
+var
+  g_bSkipPage   : Boolean;
+  g_oMemoReadMe : TMemo;
+  g_nAlpha      : Integer;
+
+#ifdef USE_MODIFYREPAIRDELETE
+function ComponentList(Default: String): String;
+begin
+  Result := WizardSelectedComponents(False);
+end;
+#endif
+
+{ . . TRANSPARENCY . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . }
+
+#ifdef USE_ALPHABLEND
+function SetWindowTransparency(i_hWnd: HWND; i_nTransparency: Integer): Boolean;
+begin
+  try
+    SetWindowLong(i_hWnd, GWL_EXSTYLE, GetWindowLong(i_hWnd, GWL_EXSTYLE) or WS_EX_LAYERED);
+    SetLayeredWindowAttributes(i_hWnd, 0, i_nTransparency, LWA_ALPHA);
+  finally
+  end;
+end;
+#endif
+
+procedure FindSubDir(const Dir, Wild: String; var List: TStringList);
+var
+  l_sFindRec : TFindRec;
+begin
+  if List.Count > 0 then begin
+    List.Clear();
+  end;
+  if FindFirst(Dir+Wild, l_sFindRec) then begin
+    try
+      repeat
+        if l_sFindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY = 0 then begin
+        end else begin
+          if (l_sFindRec.Name <> '.') and (l_sFindRec.Name <> '..') then begin
+            List.Add(l_sFindRec.Name);
+          end;
+        end;
+      until not FindNext(l_sFindRec);
+    finally
+      FindClose(l_sFindRec);
+    end;
+  end;
+end;
+
+function FindBestDir(const Dir, Wild: String): String;
+var
+  l_sFindDir : TStringList;
+  l_nLoop    : Integer;
+begin
+  Result := '';
+  l_sFindDir := TStringList.Create();
+  try
+    FindSubDir(Dir, Wild, l_sFindDir);
+    for l_nLoop := 0 to l_sFindDir.Count-1 do begin
+      if l_sFindDir[l_nLoop] > Result then begin
+        Result := l_sFindDir[l_nLoop];
+      end;
+    end;
+  finally
+    l_sFindDir.Free();
+  end;
+end;
+
+function SizeToStr(Taille: Longint): String;
+begin
+  if Taille >= 1073741824 then begin
+    Result := IntToStr(Taille / 107374182)+' Go';
+    Insert('.', Result, Pos(' Go', Result) - 1);
+  end else if Taille >= 1048576 then begin
+    Result := IntToStr(Taille / 104857)+' Mo';
+    Insert('.', Result, Pos(' Mo', Result) - 1);
+  end else if Taille >= 1024 then begin
+    Result := IntToStr(Taille / 102)+' Ko';
+    Insert('.', Result, Pos(' Ko', Result) - 1);
+  end else begin
+    Result := IntToStr(Taille)+' octets';
+  end;
+end;
+
+procedure DecodeVersion(i_oStrVersion: String; var o_panVersion: array of Integer);
+var
+  l_nIndex   : Integer;
+  l_nPos     : Integer;
+  l_oStrTemp : String;
+begin
+  o_panVersion := [0,0,0,0];
+
+  l_nIndex := 0;
+  while ((Length(i_oStrVersion) > 0) and (l_nIndex < 4)) do begin
+    l_nPos := pos('.', i_oStrVersion);
+    if l_nPos > 0 then begin
+      if l_nPos = 1 then begin
+        l_oStrTemp := '0'
+      end else begin
+        l_oStrTemp := Copy(i_oStrVersion, 1, l_nPos - 1);
+      end;
+
+      o_panVersion[l_nIndex] := StrToInt(l_oStrTemp);
+      l_nIndex := l_nIndex + 1;
+
+      i_oStrVersion := Copy(i_oStrVersion, l_nPos+1, Length(i_oStrVersion));
+    end else begin
+      o_panVersion[l_nIndex] := StrToInt(i_oStrVersion);
+      i_oStrVersion := '';
+    end;
+  end;
+end;
+
+function CompareVersion(i_oStrVersionDest, i_oStrVersionFrom: String) : Integer;
+var
+  l_anVersionDest : array of Integer;
+  l_anVersionFrom : array of Integer;
+  l_nIndex        : Integer;
+begin
+  SetArrayLength(l_anVersionDest, 4);
+  DecodeVersion(i_oStrVersionDest, l_anVersionDest);
+
+  SetArrayLength(l_anVersionFrom, 4);
+  DecodeVersion(i_oStrVersionFrom, l_anVersionFrom);
+
+  Result := 0;
+
+  l_nIndex := 0;
+  while ((Result = 0) and (l_nIndex < 4)) do begin
+    if l_anVersionDest[l_nIndex] > l_anVersionFrom[l_nIndex] then begin
+      Result := 1    // i_oStrVersionDest > i_oStrVersionFrom
+    end else begin
+      if l_anVersionDest[l_nIndex] < l_anVersionFrom[l_nIndex] then begin
+        Result := -1 // i_oStrVersionDest < i_oStrVersionFrom
+      end else begin
+        Result := 0; // i_oStrVersionDest = i_oStrVersionFrom
+      end;
+    end;
+
+    l_nIndex := l_nIndex + 1;
+  end;
+end;
+
+function UpdateMdac(): Boolean;
+var
+  l_oStrVersion : String;
+begin
+  Result := False;
+
+  GetVersionNumbersString(ExpandConstant('{cf}\System\Ado\msado15.dll') , l_oStrVersion);
+
+  MsgBox('MDAC version '+l_oStrVersion, mbInformation, MB_OK);
+
+  if CompareVersion(l_oStrVersion, '2.60') < 0 then begin
+    Result := True;
+  end;
+end;
+
+{ --- README -------------------------------------------------------------------------------------------------------- }
+
+function Readme_ShouldSkipPage(Page: TWizardPage): Boolean;
+begin
+  Result := False;
+end;
+
+procedure Readme_Activate(Page: TWizardPage);
+begin
+end;
+
+function Readme_NextButtonClick(Page: TWizardPage): Boolean;
+begin
+  Result := True;
+end;
+
+{ --- SETPATHS ------------------------------------------------------------------------------------------------------ }
+
+procedure CreateSetPathsFile();
+var
+  l_oaStrPathFile : TArrayOfString;
+  l_oStrPathBat   : String;
+  l_nLoop         : Integer;
+begin
+  l_oStrPathBat := ExpandConstant('{app}\setpaths.bat');
+
+  if LoadStringsFromFile(l_oStrPathBat, l_oaStrPathFile) = True then begin
+    for l_nLoop := 0 to GetArrayLength(l_oaStrPathFile)-1 do begin
+      if (l_oaStrPathFile[l_nLoop] = 'SET KATANA_ROOT=') then begin
+        l_oaStrPathFile[l_nLoop] := ExpandConstant('SET KATANA_ROOT={app}');
+      end;
+    end;
+
+    // Ecrase le fichier modifié
+    SaveStringsToFile(l_oStrPathBat, l_oaStrPathFile, False);
+  end;
+end;
+
+{ --- INSTALL ------------------------------------------------------------------------------------------------------- }
+
+procedure ISSI_InitializeWizard();
+var
+  l_oPage  : TWizardPage;
+begin
+  g_nAlpha := MAX_UI_ALPHA;
+
+#ifdef USE_ALPHABLEND
+//  for g_nAlpha := 0 to MAX_UI_ALPHA do begin
+    SetWindowTransparency(WizardForm.Handle, (g_nAlpha *255)/100);
+//    Sleep(5);
+//  end;
+#endif
+
+  g_bSkipPage := False;
+
+  try
+    // Page Readme!.txt (après la page licence) <- pour la suite, utiliser 'l_oPage.ID' à la place wpLicense
+    l_oPage := CreateCustomPage(wpLicense, ExpandConstant('{cm:KatanaTxtReadMeTitle}'), ExpandConstant('{cm:KatanaTxtReadMeBody}'));
+    l_oPage.OnShouldSkipPage  := @Readme_ShouldSkipPage;
+    l_oPage.OnActivate        := @Readme_Activate;
+    l_oPage.OnNextButtonClick := @Readme_NextButtonClick;
+    g_oMemoReadMe             := TMemo.Create(l_oPage);
+    g_oMemoReadMe.Parent      := l_oPage.Surface;
+    g_oMemoReadMe.Width       := l_oPage.SurfaceWidth;
+    g_oMemoReadMe.Height      := l_oPage.SurfaceHeight - ScaleY(8);
+    g_oMemoReadMe.SCROLLBARS  := ssVertical;
+    g_oMemoReadMe.READONLY    := True;
+
+	// LINES : TSTRINGS;
+    g_oMemoReadMe.LINES.LoadFromFile(ExpandConstant('{src}\Readme.txt'));
+  finally
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then begin
+    // A la fin de l'installation, on essaye de modifier le fichier de configuration des chemins
+    CreateSetPathsFile();
+  end;
+end;
+
+function ShouldSkipPage(CurPage: Integer): Boolean;
+begin
+  if (g_bSkipPage = True) and (CurPage <> wpInstalling) then begin
+    Result := True;
+#ifdef USE_MODIFYREPAIRDELETE
+  end else begin
+    if Pos('/SP-', UpperCase(GetCmdTail)) > 0 then begin
+    case CurPage of
+      wpWelcome, wpLicense, wpPassword, wpInfoBefore, wpUserInfo, wpSelectDir, wpSelectProgramGroup, wpInfoAfter:
+      Result := True;
+    end;
+  end;
+#endif
+  end;
+end;
+
+procedure DeinitializeSetup();
+begin
+  if g_nAlpha > 0 then begin
+#ifdef USE_ALPHABLEND
+    for g_nAlpha := MAX_UI_ALPHA downto 0 do begin
+      SetWindowTransparency(WizardForm.Handle, (g_nAlpha *255)/100);
+//      Sleep(5);
+    end;
+#endif
+  end;
+end;

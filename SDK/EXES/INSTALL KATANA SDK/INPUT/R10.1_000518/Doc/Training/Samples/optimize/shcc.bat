@@ -1,0 +1,1 @@
+shc -c=a -op=1 -speed -cpu=sh4 -fpu=single %1 %2 %3 %4

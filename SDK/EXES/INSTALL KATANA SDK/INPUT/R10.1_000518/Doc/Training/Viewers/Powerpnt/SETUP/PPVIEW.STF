@@ -1,0 +1,333 @@
+App Name	Microsoft PowerPoint Viewer 97
+App Version	96.11.18.01 (1033)
+Frame Bitmap	"ppview.dll, 122"
+Frame Caption	"Microsoft PowerPoint Viewer 97 Setup"
+Dialog Caption Base	"Microsoft PowerPoint Viewer 97"
+Usage String	Usage: Setup\n
+About Box String	"Microsoft PowerPoint Viewer 97\n\nCopyright (C) 1997 Microsoft Corporation"
+Check Modules	"PP97FrameClass,PowerPoint"
+MSAPPS Mode	local
+Inf File Name	ppview.inf
+Maximum Object ID	1000	
+Floppy Mode Root Object ID	11 : 1	
+Batch Mode Root Object ID	12: 1
+Maintenance Mode Root Object ID	13 : 1	
+Suppress Copy Disincentive Dialogs		
+Suppress Serial Number Dialog
+Setup Version	1.20.0.2402
+
+ObjID	Install During Batch Mode	Title	Descr	Type	Data	BMP Id	Vital	Shared	Dir Chang	Dest Dir	Check Dir	Installed By Us	Install Data	Install Dest Dir
+1	yes	"Microsoft PowerPoint Viewer"		AppSearch	"%p\ppview<%p\PowerPoint Viewer>,""PPVIEW32.EXE"",""8.0.0.0"",""200"",""Yes"",""Yes"",2" 	
+2	yes	Search_Drives		SearchReg	"""HKEY_LOCAL_MACHINE"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""InstalledTo"""
+
+
+11	yes	Floppy Installation		AppMainDlg	16 : 35 				
+12	yes	Batch Mode Installation		Group	16
+13	yes	Maintenance installation		Group	17
+
+16	yes	&Install	Microsoft PowerPoint Viewer 97 will be installed with all the options.  Older versions of the PowerPoint Viewer are no longer needed and will be removed.	Group	17	"ppview.dll, 111"
+17	yes	Main Group		Group	40 60 80 100 150 300
+
+30	yes	---NT 3.51---		CustomAction	"""ppview.dll"", ""OnWindowsNT"", ""3.51"""
+31	yes	--- netscape --		CustomAction	"""ppview.dll"", ""CheckReg"", ""netscape"""									
+32	yes	---PowerPoint Viewer 95-----		CustomAction	"""ppview.dll"", ""CheckReg"", ""PPView95"""
+33	yes	---PowerPoint 97-----		CustomAction	"""ppview.dll"", ""CheckReg"", ""PP97"""
+34	yes	---PowerPoint 95 ---		CustomAction	"""ppview.dll"", ""CheckReg"", ""PP95"""			
+
+35	yes	Microsoft PowerPoint Viewer 97 Setup	Are you sure you want to exit Setup?	CustomAction	"""ppview.dll"", ""DisplayEULAList"",""license.txt"""
+37				CustomAction	"""ppview.dll"", ""ReplaceWordInstall"""
+38	yes	---PowerPoint 4 ---		CustomAction	"""ppview.dll"", ""CheckReg"", ""PP4"""			
+
+40		Viewer Files		Group	41 42 43 44 45
+41				CopyFile	"""EXE"", ""ppview32_exe"""
+42				CopyFile	"""EXE"", ""ppintlv_dll"""
+43				CopySection	"""Readme"""
+44				CopySection	"""Viewer"""
+45			- If PP97 is installed -	Depend	33 ? 48 49 52 53 : 47 362 363
+46				CopySection	"""ViewerForPP95"""
+47				CopySection	"""Translators"""					%D\xlators
+48				CustomAction	"""ppview.dll"",""GetPathFromReg"",""LOCAL,Software\Microsoft\Office\8.0\PowerPoint\Translators,ViewerDirectory"""
+49				CustomAction	"""ppview.dll"",""NeverRemoveGroup"",""50 51"""
+
+50		pp4x322.dll		CopyFile	"""Translators"",""pp4x322_dll"""					%48
+51		pp7x32.dll		CopyFile	"""Translators"",""pp7x32_dll"""					%48
+52				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File5"",""%s\pp4x322.dll"""					%48
+53				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File6"",""%s\pp7x32.dll"""					%48
+
+
+60		System Files		Group	61 62 63 64 65 70 71 72 73 75 76 77 78 400					%M
+61				InstallSysFile	"""System"",""hlink_dll"""					%M
+62				InstallSysFile	"""System"",""docobj_dll"""					%M
+63				InstallShared	"""System"",""msv7enu_dll"",""msv7enu.dll"",,42"					%M
+64				InstallShared	"""System"",""mso97v_dll"",""mso97v.dll"",,42"					%M
+65				InstallShared	"""System"",""msorfs_dll"",""MSORFS.DLL"",,42"					%M
+70				InstallSysFile	"""System"",""t2embed_dll"""					%M
+71				InstallSysFile	"""System"",""urlmon_dll"""					%M
+72				InstallSysFile	"""System"",""wininet_dll"""					%M
+73				InstallSysFile	"""System"",""hlinkprx_dll"""					%M
+74				InstallSysFile	"""System"",""msvcrt40_dll"""					%M
+75				InstallShared	"""System"",""msimrt_dll"",""msimrt.dll"",,41"					%M
+76				InstallShared	"""System"",""msimrt16_dll"",""msimrt16.dll"",,41"					%M
+77				InstallShared	"""System"",""msimrt32_dll"",""msimrt32.dll"",,41"					%M
+78				InstallShared	"""System"",""msimusic_dll"",""msimusic.dll"",,41"					%M
+
+80		Remove Old Viewer Files		Depend	32 ? 81 82
+81				CustomAction	"""ppview.dll"",""GetPathFromRegStripExe"",""CURRENT,Software\Microsoft\Office\PowerPoint Viewer\7.0,File1"""
+82				Group	83 84 85 87					%81
+83				CustomAction	"""ppview.dll"", ""GetPathFromReg"", ""HKEY_CURRENT_USER,Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders,Programs"""					
+84				RemoveSection	"""RemovePPV95ShortCut"""					%83
+85				RemoveSection	"""RemovePPV95"""
+86				CustomAction	"""ppview.dll"",""CompareDstDir"",""40"""
+87				Depend	86 ? 90 : 88 91
+88				RemoveSection	"""RemovePPV95Exe"""
+90				Depend	46 ? : 91
+91				RemoveSection	"""RemovePPV95PNG"""
+
+100	yes	Shortcuts/Icons		Group	101 102 103
+101	yes			CustomAction	"""ppview.dll"", ""GetPathFromReg"", ""HKEY_CURRENT_USER,Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders,Desktop"""					
+102	yes			CustomAction	"""ppview.dll"", ""GetPathFromReg"", ""HKEY_CURRENT_USER,Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders,Programs"""					
+103	yes			Depend	30 ? 105 106 : 104
+104	yes			InstallShortcut	"""%41\%F41"", ""Microsoft PowerPoint Viewer 97"""					%102
+105	yes			AddProgmanItem	"""Microsoft PowerPoint Viewer 97"", ""Microsoft PowerPoint Viewer 97"", ""%41\%F41"""
+106	yes			AddProgmanItem	"""Microsoft PowerPoint Viewer 97"", ""Microsoft PowerPoint Viewer 97 Setup"", ""%150\setup.exe"""
+
+139		Is netscape installed 2.X
+140	yes			Depend	31 ? 141 200 
+141	yes	---Install Netscape---		Group	142					%p
+142	yes			Group	143					%d\Netscape
+143	yes			Group	144 145					%d\Navigator
+144	yes			CustomAction	"""ppview.dll"", ""GetPathFromReg"", ""HKEY_CURRENT_USER,Software\Netscape\Netscape Navigator\Main,Install Directory"""
+145	yes			Group	146 147 148 149					%144\Program
+146	yes			InstallShared	"""netscape"",""NPDOC_DLL"",""NPDOC.DLL"","""",""41"""					%d\Plugins
+147	yes			InstallShared	"""netscape"",""OLEGPLUG_DLL"",""OLEPLUG.DLL"","""",""41"""					%d\Plugins
+148	yes			InstallShared	"""netscape"",""ERRORMSG_DLL"",""ERRORMSG.DLL"","""",""41"""					%d\Plugins
+149	yes			InstallShared	"""netscape"",""OLEPLUG_INI"",""OLEPLUG.INI"","""",""41"""					%d\Plugins
+
+150	yes	Uninstall Support		Group	151 152 153 154 155					%D\setup
+151	yes			CopySection	"""setup"""					%D
+152	yes			WriteTableFile	"""setup.stf"""					%D
+153	yes			AddRegData	"""HKEY_LOCAL_MACHINE"", ""Software\Microsoft\Windows\CurrentVersion\Uninstall\PPTView97"", ""DisplayName"", ""Microsoft PowerPoint Viewer 97"", """""					%150
+154	yes			AddRegData	"""HKEY_LOCAL_MACHINE"", ""Software\Microsoft\Windows\CurrentVersion\Uninstall\PPTView97"", ""UninstallString"", ""%s\setup.exe"", """""					%150
+155	yes			RemoveRegEntry	HKEY_LOCAL_MACHINE, Software\Microsoft\Windows\CurrentVersion\Uninstall\PPTView95
+
+200	yes	---Netscape Installed---		Group	201 202 203
+201	yes			AddRegData	"""HKEY_CURRENT_USER"", ""Software\NCompass\ActiveX Plug-In"", ""Edition"", ""Full"", """""
+202	yes			AddRegData	"""HKEY_CURRENT_USER"", ""Software\NCompass\ActiveX Plug-In"", ""OCX Storage"", ""%s\ActiveX Control Cache"", """""					%w
+203	yes			AddRegData	"""HKEY_CURRENT_USER"", ""Software\NCompass\ActiveX Plug-In"", ""Root"", ""%s\Plugins"", """""					%145
+204	yes			Depend	31 ? 205 206 207 208 209 210
+205	yes			AddRegData	"""HKEY_CURRENT_USER"", ""Software\Netscape\Netscape Navigator\Suffixes"", ""application/msword"", ""doc"", """""
+206	yes			AddRegData	"""HKEY_CURRENT_USER"", ""Software\Netscape\Netscape Navigator\Suffixes"", ""application/rtf"", ""rtf"", """""
+207	yes			AddRegData	"""HKEY_CURRENT_USER"", ""Software\Netscape\Netscape Navigator\Viewers"", ""application/msword"", ""%41\%F41"", """""					%41
+208	yes			AddRegData	"""HKEY_CURRENT_USER"", ""Software\Netscape\Netscape Navigator\Viewers"", ""application/rtf"", ""%41\%F41"", """""					%41
+209	yes			AddRegData	"""HKEY_CURRENT_USER"", ""Software\Netscape\Netscape Navigator\Viewers"", ""TYPE0"", ""application/msword"", """""					%41
+210	yes			AddRegData	"""HKEY_CURRENT_USER"", ""Software\Netscape\Netscape Navigator\Viewers"", ""TYPE1"", ""application/rtf"", """""					%41
+
+300		=== Registry Entries ===		Group	305 320 325 510
+
+305		--- Srg Files ---		Group	311 314 315 316					%D
+311				CopyFile	"""EXE"",""base_srg"""
+312				CopyFile	"""EXE"",""ieview_srg"""
+314				CopyFile	"""EXE"",""servrdep_srg"""
+315				CopyFile	"""EXE"",""servrind_srg"""
+316				CopyFile	"""EXE"",""sshow_srg"""
+
+320		---Always---		Group	321 322 323 324 355					%40
+321				AddRegData	"""HKEY_LOCAL_MACHINE"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""InstalledTo"",""%s"","""""					%40
+322				AddRegData	"""HKEY_LOCAL_MACHINE"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""Path"",""%41\%F41"","""""
+323				AddRegData	"""HKEY_LOCAL_MACHINE"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""Version"",""8.0"","""""
+324				CustomAction	"""ppview.dll"",""RegFile"",""311,,PPVIEW32.EXE"""
+
+325		---No PowerPoint 97---		Depend	33 ? : 331 332 340 380
+331				CustomAction	"""ppview.dll"",""RegFile"",""314,,PPVIEW32.EXE"""
+332				CustomAction	"""ppview.dll"",""RegFile"",""316,,PPVIEW32.EXE"""
+
+340		-- No Power Point, Any Version --		Depend	34 ? : 345
+345				Depend	38 ? 390 : 350 390 395 408
+350				CustomAction	"""ppview.dll"",""RegFile"",""315,,PPVIEW32.EXE"""
+
+355		=== 97 Pack'n Go Keys ===		Group	356 357 358 359 360 361 364 365 366 367 368 369 370 371 373 374 375 376 378 379
+356				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer"","""",""PowerPoint Viewer"""
+357				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer"",""CurVer"",""8.0"""
+
+358				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File1"",""%41\%F41"""	
+359				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File2"",""%42\%F42"""
+360				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File3"",""%s\rappt.dll"""					%40
+361				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File4"",""%s\msppt8vr.olb"""					%40
+362				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File5"",""%s\pp4x322.dll"""					%47
+363				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File6"",""%s\pp7x32.dll"""					%47
+364				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File7"",""%61\%F61"""
+365				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File8"",""%63\%F63"""
+366				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File9"",""%64\%F64"""
+367				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File10"",""%65\%F65"""
+368				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File11"",""%70\%F70"""
+369				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File12"",""%71\%F71"""
+370				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File13"",""%72\%F72"""
+371				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File14"",""%73\%F73"""
+373				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File15"",""%75\%F75"""
+374				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File16"",""%76\%F76"""
+375				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File17"",""%77\%F77"""
+376				AddRegData	"""LOCAL"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\Viewer\8.0"",""File18"",""%78\%F78"""
+378				AddRegData	"""HKEY_LOCAL_MACHINE"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint"","""","""","""""
+379				AddRegData	"""HKEY_LOCAL_MACHINE"",""SOFTWARE\Microsoft\Office\8.0\PowerPoint\DLL Addins"","""","""","""""
+
+380		-- Translators Keys --		Group	381 382 383 384 386 387 388 389					%47
+381				AddRegData	"""LOCAL"",""Software\Microsoft\Office\8.0\PowerPoint\Translators\Import\PP4X32"",""Extensions"",""POT PPT"""
+382				AddRegData	"""LOCAL"",""Software\Microsoft\Office\8.0\PowerPoint\Translators\Import\PP4X32"",""Title"",""PowerPoint (2.0-4.0) Files"""
+383				AddRegData	"""LOCAL"",""Software\Microsoft\Office\8.0\PowerPoint\Translators\Import\PP4X32"",""TranslatorType"",""1"",""REG_DWORD"""
+384				AddRegData	"""LOCAL"",""Software\Microsoft\Office\8.0\PowerPoint\Translators\Import\PP4X32"",""Path"",""%s\pp4x322.dll"""
+
+386				AddRegData	"""LOCAL"",""Software\Microsoft\Office\8.0\PowerPoint\Translators\Import\PP7X32"",""Extensions"",""POT PPT PPS"""
+387				AddRegData	"""LOCAL"",""Software\Microsoft\Office\8.0\PowerPoint\Translators\Import\PP7X32"",""Title"",""PowerPoint 7.0 Files"""
+388				AddRegData	"""LOCAL"",""Software\Microsoft\Office\8.0\PowerPoint\Translators\Import\PP7X32"",""TranslatorType"",""2"",""REG_DWORD"""
+389				AddRegData	"""LOCAL"",""Software\Microsoft\Office\8.0\PowerPoint\Translators\Import\PP7X32"",""Path"",""%s\pp7x32.dll"""
+
+390		-- PPT 4.0 --		Group	391 392					%47
+391				AddRegData	"""HKEY_CLASSES_ROOT"",""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\TreatAs"","""",""{64818D10-4F9B-11CF-86EA-00AA00B929E8}"""
+392				AddRegData	"""HKEY_CLASSES_ROOT"",""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\TreatAs"","""",""{64818D11-4F9B-11CF-86EA-00AA00B929E8}"""
+
+395		-- No PPT --		Group	396 397					%47
+396				AddRegData	"""HKEY_CLASSES_ROOT"",""CLSID\{00044851-0000-0000-C000-000000000046}\TreatAs"","""",""{64818D10-4F9B-11CF-86EA-00AA00B929E8}"""
+397				AddRegData	"""HKEY_CLASSES_ROOT"",""CLSID\{000498C4-0000-0000-C000-000000000046}\TreatAs"","""",""{64818D11-4F9B-11CF-86EA-00AA00B929E8}"""
+
+400	yes	"Error Title"	"Error Description"	CustomAction	"""ppview.dll"",""NeverRemoveGroup"",""401 402 403 405"""
+401		hlink.dll		SelfReg	"""System"",""hlink_dll"""					%M
+402		docobj.dll		SelfReg	"""System"",""docobj_dll"""					%M
+403		urlmon.dll		SelfReg	"""System"",""urlmon_dll"""					%M
+405		hlinkprx.dll		SelfReg	"""System"",""hlinkprx_dll"""					%M
+
+408				Depend	32 ? 409
+409		-- 7.0 latest version --		Group	410 411 412 413 415					%47
+410	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"",""CLSID\{E3B1CA02-2B47-11cf-9BAF-00AA00A3F33C}\LocalServer32"""
+411	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{E3B1CA02-2B47-11cf-9BAF-00AA00A3F33C}\MiscStatus\1"""
+412	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{E3B1CA02-2B47-11cf-9BAF-00AA00A3F33C}\MiscStatus"""
+413	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{E3B1CA02-2B47-11cf-9BAF-00AA00A3F33C}\Version"""
+
+415		-- 4.0 latest version --		Group	416 420 421 422 423 424 425 426 427 428 429 430 431					%47
+416		-- sub1 --		Group	417 432 433 434 435 436 437 438 439 440 441 442 443 444 445 446 447					%47
+417		-- sub2 --		Group	418 448 449 450 451 452 453 454 455 456 457 458 459 460 461 462 463					%47
+418		-- sub3 --		Group	419 464 465 466 467 468 469 470 471 472 473 474 475 476 477 478 479					%47
+419		-- sub4 --		Group	480 481 482 483 484 485 486 487 488 499					%47
+420	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show.7\Insertable"""
+421	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show.7\protocol\StdfileEditing\Verb\0"""
+422	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show.7\protocol\StdFileEditing\server"""
+423	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show.7\protocol\StdFileEditing\RequestDataFormats"""
+424	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show.7\protocol\StdFileEditing\SetDataFormats"""
+
+425	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show.7\shell\open\command"""
+426	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show.7\shell\open"""
+427	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show.7\shell\print\command"""
+428	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show.7\shell"""
+429	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show.7\DocObject"""
+430	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\MiscStatus"""
+431	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\DocObject"""
+432	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\Insertable"""
+433	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\DataFormats\GetSet\0"""
+434	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\DataFormats\GetSet\1"""
+435	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\DataFormats\GetSet\2"""
+436	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\DataFormats\GetSet\2"""
+437	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\DataFormats\DefaultFile"""
+438	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\Conversion\Readable\Main"""
+439	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\DefaultIcon"""
+440	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\AuxUserType\2"""
+441	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\AuxUserType\3"""
+442	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\Verb\0"""
+443	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\LocalServer32"""
+444	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\InprocHandler32"""
+445	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\ProgID"""
+446	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}\VersionIndependentProgID"""
+447	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}"""
+
+448	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7\protocol\StdFileEditing\server"""
+449	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7\protocol\StdFileEditing\RequestDataFormats"""
+450	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7\protocol\StdFileEditing\SetDataFormats"""
+
+451	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7\shell\open\command"""
+452	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7\shell\print\command"""
+453	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7\shell\show\command"""
+454	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7\shell\show"""
+455	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7\shell"""
+
+456	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7\Insertable"""
+457	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7\protocol\StdFileEditing\Verb\0"""
+458	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7\protocol\StdFileEditing\Verb\1"""
+459	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7\CLSID"""
+460	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7"""
+
+461	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\Insertable"""
+462	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\MiscStatus"""
+463	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\DataFormats\GetSet\0"""
+464	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\DataFormats\GetSet\1"""
+465	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\DataFormats\GetSet\2"""
+466	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\DataFormats\GetSet\3"""
+467	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\DataFormats\DefaultFile"""
+468	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\Conversion\Readable\Main"""
+469	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\DefaultIcon"""
+470	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\AuxUserType\2"""
+471	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\AuxUserType\3"""
+472	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\Verb\0"""
+473	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\Verb\1"""
+474	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\LocalServer32"""
+475	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\InprocHandler32"""
+476	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\ProgID"""
+477	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}\VersionIndependentProgID"""
+478	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}"""
+
+479	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", "".pot"""
+480	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Template.7\CLSID"""
+481	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Template.7\Shell\print\command"""
+482	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Template.7\DefaultIcon"""
+483	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Template.7\Shell\open\command"""
+484	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Template.7\Shell\open"""
+485	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Template.7\Shell"""
+486	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Template.7"""
+
+487	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show.7\CLSID"""
+488	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show.7"""
+
+499		-- No PowerPoint Found --		Group	500 501 502 503 504					%47
+500	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", "".ppt"""
+501	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show\CLSID"""
+502	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show\CurVer"""
+503	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide\CLSID"""
+504	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide\CurVer"""
+
+510				Depend	32 ? 511 515 540
+511				Depend	34 ? 512
+
+512		=== ppviewer 95 and pp95?? ===		Group	513 514
+513	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{E3B1CA02-2B47-11cf-9BAF-00AA00A3F33C}"""
+514	yes			RemoveRegEntry	"""HKEY_CURRENT_USER"", ""Software\Microsoft\Office\PowerPoint Viewer\7.0"""
+
+515				Depend	38 ? 516
+516		=== ppviewer 95 and pp4?? ===		Group	517 518 519 520 521 522 523 524
+
+517	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{E3B1CA02-2B47-11cf-9BAF-00AA00A3F33C}"""
+518	yes			RemoveRegEntry	"""HKEY_CURRENT_USER"", ""Software\Microsoft\Office\PowerPoint Viewer\7.0"""
+
+519	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}"""
+520	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}"""
+521	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Template.7"""
+522	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7"""
+523	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show.7"""
+524	yes			RemoveRegEntry	"""HKEY_CURRENT_USER"", ""Software\Microsoft\Office\PowerPoint"""
+
+
+
+
+540				Depend	33 ? : 541
+541				Depend	34 ? : 542
+542				Depend	38 ? 543
+543		=== ppviewer 95 and no pp ===		Group	544 545 546 547 548 549 550 551 552 553 554
+
+544	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE71-FB3B-11CD-A903-00AA00510EA3}"""
+545	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{EA7BAE70-FB3B-11CD-A903-00AA00510EA3}"""
+546	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Template.7"""
+547	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide.7"""
+548	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show.7"""
+549	yes			RemoveRegEntry	"""HKEY_CURRENT_USER"", ""Software\Microsoft\Office\PowerPoint"""
+550	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""CLSID\{E3B1CA02-2B47-11cf-9BAF-00AA00A3F33C}"""
+551	yes			RemoveRegEntry	"""HKEY_CURRENT_USER"", ""Software\Microsoft\Office\PowerPoint Viewer\7.0"""
+
+552	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Slide"""
+553	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", ""PowerPoint.Show"""
+554	yes			RemoveRegEntry	"""HKEY_CLASSES_ROOT"", "".ppt"""

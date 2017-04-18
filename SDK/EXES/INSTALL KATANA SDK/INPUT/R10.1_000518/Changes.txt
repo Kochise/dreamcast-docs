@@ -1,0 +1,1555 @@
+changes.txt
+May 2, 2000
+
+Changes from R9 to R10
+----------------------
+
+Shinobi
+-------
+
+- Shinobi.lib updated to version 1.62.
+
+- Integrated C++ with multiple compilers.  For Gnu and Metrowerks, we
+  fixed the path naming problem so that there are no more conflicts
+  between Hitachi header files and gcc header files.
+
+- C++ global constructors were not being called at the appropriate
+  time; Shinobi initialization was clobbering C++ constructors.  This
+  has been fixed.
+
+- We now call the Hitachi C++ global constructors in the sbinit.c
+  file, as well as the gcc and Metrowerks C++ global constructors.
+
+- Added the fnomacsave compilation parameter to gcc.  Multiplying on
+  SH-4 puts the results in MACL and MACH.  Hitachi presumes that these
+  registers are not preserved during a function call.  gcc previously
+  assumed that they were preserved.  This has been fixed.
+
+- All malloc() operations internally call syMalloc(), regardless of
+  the compiler used.  Previously, users of gcc and Metrowerks were
+  using the compiler's own internal memory allocation, making global
+  memory management difficult.
+
+The following files were ADDED for R10:
+sg_fm.h       sg_dpldr.h   sg_sd2.h      
+
+SH4_mwerks.h - Replaces sh4_mwk.h
+
+The following files were REMOVED for R10:
+kcfg.h        sg_cp.h
+sg_syscd.h    sh4scif.h     smachine.h
+
+SH4_mwk.h - replaced with SH4_mwerks.h
+
+The following functionality was ADDED to R10:
+syChainFinish
+typedef SYS_MALLOC_IF
+syMallocChangeIF
+
+Support added for country keyboards
+#define PDD_KBDLANG_JP        0x01         /* Japan                      
+s#define PDD_KBDLANG_US        0x02         /* America                    
+#define PDD_KBDLANG_UK        0x03         /* England                    
+#define PDD_KBDLANG_GERMANY   0x04         /* Germany                    
+#define PDD_KBDLANG_FRANCE    0x05         /* France                     
+#define PDD_KBDLANG_ITALY     0x06         /* Italy                      
+#define PDD_KBDLANG_SPAIN     0x07         /* Spain                      
+#define PDD_KBDLANG_SWEDEN    0x08         /* Sweden                     
+#define PDD_KBDLANG_SWITZER   0x09         /* Switzerland                
+#define PDD_KBDLANG_NETHER    0x0a         /* The Netherlands            
+#define PDD_KBDLANG_PORTUGAL  0x0b         /* Portugal                   
+#define PDD_KBDLANG_LATIN     0x0c         /* Latin America              
+#define PDD_KBDLANG_CANFRENCH 0x0d         /* Canadian French            
+#define PDD_KBDLANG_RUSSIA    0x0e         /* Russia                     
+#define PDD_KBDLANG_CHINA     0x0f         /* China                      
+#define PDD_KBDLANG_KOREA     0x10         /* Korea                      
+
+pdKbdExit
+sySqEnd
+
+
+
+The following functionality was CHANGED to R10:
+Changed from macros to functions
+syMalloc  - changed from macro to function
+syRealloc - changed from macro to function
+syCalloc  - changed from macro to function
+syFree    - changed from macro to function
+
+Changed to incorporate 
+shinobi_workaround - changed order of program initiation so that
+                     shinobi setup isn't overwritten by GNU
+                     initialization.
+
+	
+Net
+---
+
+- Added an in-game browser for Europe and the US. Samples can be found in 
+  \Sample\Net\Browser\US and \Sample\Net\Browser\Europe, respectively.
+
+- Added two TCP/IP stacks. Samples can be found in \Sample\Net\PW and 
+  \Sample\Net\Access
+
+- Added include sub-directories for each stack
+  \Include\PW
+  \Include\Access
+
+- Added following .h files
+  
+  PlanetWeb:
+  errno2.h      netdb.h
+  fcntl2.h      pweb_net.h
+  pwebinc.h     inet.h
+  in.h          tcp.h
+  select.h      socket.h
+  types.h       types2.h
+  uio.h
+
+  Access:
+  at_api.h       at_pltfm.h
+  at_types.h     aveppp.h
+  cardprobe.h    cmcontex.h
+  dns.h          in.h
+  netdb.h        sock_errno.h
+  sockdef.h      socket.h
+  sockfunc.h     time.h
+  types.h        vsyncpro.h
+  dbdebug.h
+
+  Modem:
+  mdmAPI.h
+  netinfus.h
+  nt_utl.h
+
+
+Kamui2/Kamui
+-------------
+
+All of the Kamui version 1 samples have been removed from the SDK.
+Sega of America recommends that all developers who were previously
+using Kamui and whose titles are not going final in the next couple of
+months, switch to Kamui2.  Kamui functionality is still in the
+release, however, you must link with the Ninja libs and follow the
+Kamui2 finalization.
+
+The following files have been ADDED for R10: 
+
+km2dbg.h - kamui2 debug information; see Sample\Kamui2\Km2Debug
+
+The following files have been REMOVED for R10:
+
+These files have been removed because Kamui no longer exists in the
+release. km2*.h files previously conflicted with some km*.h files and
+now conflicts have been resolved.
+
+kamui.h         km2base.h
+km2kamuix.h     km2status.h
+km2util.h       kmapi.h
+kmdefs.h        kmenum.h
+kmsrvice.h      kmstruct.h
+kmvertex.h      kmymemory.h
+kmymemory.h     kmyparamdefs.h
+
+
+The following functionality has been ADDED for R10:
+
+Added faster level 5 macros: 
+#define kmChangeStripTextureSurface
+#define kmChangeStripListType
+#define kmChangeStripUseAlpha
+#define kmChangeStripTextureAddress
+
+
+
+Audio64
+--------
+
+The Audio64 audio streamer has been completely reworked.  The R9 version 
+used synchronous Shinobi File IO calls and synchronous SH4 memory copies 
+to transfer data to sound ram. The R10 version uses asynchronous File IO 
+calls and DMA data transfer methods (if selected) and is much more 
+efficient.  A number of R9 streamer calls which are no longer used have 
+been removed (see list below).
+
+The following is a list of API calls that have been REMOVED for R10:
+
+acIntInstallOsChainDeleteManager     
+acIntInstallOsChainAddManager
+amMemSh4Alloc
+amMemSh4Free
+amMemInit
+amMemInstallAlternateMemoryManager
+amStreamSetMix
+amStreamInitBuffer
+amStreamInstallUserCallback
+amStreamRewind
+amStreamSetBufferSizes
+amStreamPrimeBuffers
+amStreamGetTrackLengthInFrames
+amStreamGetNibblesPerFrame
+amStreamGetSampleRate
+amStreamGetMsPerIrq
+amStreamGetVolume
+amStreamGetPan
+amStreamGetIsrCount
+amStreamIsStereo
+amStreamIsMono
+amStreamOpen
+amStreamSetTransferMethod
+amStreamInstallAlternateIoManager
+
+The following calls have been CHANGED for R10:
+
+amStreamSetBuffers
+amStreamPlaying
+acDigiSetVolume
+acDspSetMixerChannel
+
+The following calls are NEW for R10:
+
+amStreamSetHeaderBuffer
+amVoiceFree
+amVoiceSetStreamIsr
+amVoiceInstallUserCallback
+amStreamReleaseVoiceChannels
+acSetTransferMode
+acGetTransferMode
+acTransfer     
+acDigiSetFilterEnvelope
+acDigiSetAmplitudeEnvelope
+acDigiSetLfoRegisters
+acSystemSetStereoOrMono
+acDigiSetLoopPoints
+acDigiPortsAvailable
+acSystemSetMasterVolume
+acDebugBreak
+acCkset_imask
+
+The following files have been ADDED for R10:
+a64chain.h        a64dma.h
+a64file.h         a64thunk.h
+
+
+Movie / Middleware
+------------------
+
+- Removed Duck samples. These samples would not work with Kamui2.
+
+- Audio64 can now be used. Sound and Movie libs are now independent of   
+  one another.
+
+The following files have been ADDED for R10:
+cir_fsel.h    cri_san.h
+Rca_mw.h      sg_mwrec.h
+
+The following files have been REMOVED for R10:
+fsel.h        sg_mwrv2.h
+sg_mw2.h
+
+The following functionality has been CHANGED for R10:
+struct MWS_PLY_CPRM
+mwInitSystem
+mwExitSystem
+
+The following functionality has been ADDED for R10:
+
+ADXF_CloseAll 
+#define	ADXT_CalcDataLen(sec, nch, sfreq)(sec*nch*sfreq*18/32 + 256)
+struct _adx_talk has added memebers
+ADXT_DestroyAll
+ADXT_CloseAllHandles
+ADXT_GetHdrLen
+ADXT_GetFmtBps
+ADXT_SetReloadTime
+ADXT_GetIbufRemainTime
+ADXT_SetDrctLvl
+ADXT_DiscardSmp
+ADXT_EntryFltFun
+mwPlyEntryFname 
+mwPlyStartSeamless 
+mwPlyReleaseSeamless
+mwPlySetLpFlg
+mwPlyStartFnameLp
+typedef void (*MW_ERRFN)
+mwExecMainServer
+mwEntryErrFunc
+#define mwPlyStartSj
+#define	mwPlyStartMem
+mwExecIdleSvr
+mwReturnToMain
+mwReturnToMainFromIntr
+mwMngConfigUsingKmWaitVsyncCb
+
+
+Makefile
+---------
+
+Changed all makefiles from "Prjectname.mak" to "makefile". When compiling 
+samples you no longer have to use specify a file name. 
+
+Added following options to command line environment:
+
+- #COMPILER =	SHC
+  Can be: SHC (SHC C) 
+          MWERKS (Metrowerks Codewarrior C/C++)
+	  GNU (GNU C/C++)
+  This option is currently commented out in all make files, SHC is used 
+  by default.
+
+- GFXLIB =	KAMUI2
+  Can be: KAMUI2 
+          NINJA
+
+- OUTPUT =	ELF
+  Can be: ELF (elf file output)
+          BIN (BIN file format for 1st_read.bin)
+	  LIB (Lib file)
+
+- SYSTEM_INCLUDE = $(DEF_INCLUDE)\MyIncDir
+  Added for additional include directories.
+ 
+
+SHC C
+------ 
+
+- Upgraded SHC/C++ to Ver. 5.1(Release09)
+
+- Updated to SH SERIES ASSEMBLER Ver. 4.1B.
+
+- Added include sub-directory for SHC headers
+  \Include\SHC
+
+
+Metrowerks Codewarrior C/C++
+----------------------------
+
+- Updated to version 4.0.6 Build 0518
+
+- Version includes new command line compiler
+
+- Integrated into SDK build environment. 
+
+Known Bugs: see readme.txt
+
+
+GNU C/C++
+---------
+
+- Updated to version 2.9 sh4p2final 990316
+
+
+- SRCONV generates incorrect SYSROF files.
+  SYSROF requires information which COFF files don't contain, and the 
+  Hitachi SYSROF loaders (linker & debugger) will not output error 
+  messages when an incorrect SYSROF file is loaded
+
+Flash Utility
+--------------
+
+- Updated GDRFlash bios to version 0.53 
+
+- Added GUI version of the flash util.
+
+
+Codescape
+----------
+
+- Updated to version 170
+
+- Fixes the following bugs:
+
+1)  Parts of a Memory region that change when out of view are still not
+    highlighted as changed. Redrawing the Memory region clears
+    highlighted	changes.
+
+2)  GPF when looking up template function names.
+
+3)  Lockup in Load Program File, processing scope 
+    information.
+
+4)  Syntax highlighting is now based on file extensions and is saved  
+    globally, not on a session by session basis.
+
+5)  Need an option to disable syntax highlighting in an Editor region.
+    Click Tools, Options, and select the Editor tab. Deselect the Use 
+    Syntax Highlighting check-box to disable syntax highlighting.
+
+6)  You can now zoom a region in to fit the window frame and zoom out 
+    again.
+
+
+GD Workshop
+-----------
+
+- Updated to version 2.9.0f.
+
+- Fixes the following bugs:
+
+1) TOC Sheet produced by GDWorkshop added 150 to tracks 1+2, this was 
+   based on CDCraft 2.30 this has been fixed to match 2.32 
+
+2) Scripts containing filesource's larger than 260 characters caused a 
+   GPF, this now produces an error message 
+
+3) When saving a script CDDA tracks would always use the emulation
+   filepath, this has been fixed 
+
+4) GDWorkshop can now output a TOC at anytime **NOTE** you must have 
+   first emulated the project (it requires a valid .HCD file)
+
+5) TOC format has been changed to match that of CDCraft 
+
+6) You can now do multiple burns with a simple burn another option
+   after a burn has completed
+
+7) If you do a test burn and it passes you are now asked if you want to  
+   do a real burn. 
+
+8) Problem with track 3 being empty, track 4 having a file less than 4   
+   seconds produced a bad TOC, this has been fixed 
+
+
+Additions :
+ 
+1) File Order Optimizer (not documented yet)
+
+2) Automatic track padding (empty tracks can now be emulated)
+
+3) When choosing an IP file the browse box defaults to *.bin
+
+4) Scripts can be saved with either the emulation file source or the
+   original file source
+
+5) Tool Tip on Disc Usage
+
+6) Right Click menu On Disc Usage
+
+7) Explorer Button
+
+8) Default Dates on Disc Tab
+
+9) Update Modification Dates as an option
+
+10) Explorer button added.
+ 
+ 
+Known Bugs:
+ 
+- If the project has only three tracks and the third track is empty then 
+  the emulation will fail.
+
+Submit
+------
+
+Added Submit directory. This directory contain information to help you   
+successfully submit your final submission to Sega. 
+
+- Added models in the Ninja model format and the Lightwave format.
+
+- Added fonts directory for Japanese fonts.
+
+- Added standards directory. Contained herein are the standards for      
+  submitting titles to Sega.
+
+- Added warnings for all areas in the warning directory.
+
+
+GFX
+----
+
+- Removed PVRviewer and replaced with PVRTool.
+
+- Moved LOGO directory from \Utl\GFX\ to Submit
+
+- Added screen capture tool. \Utl\GFX\Capture.
+
+
+DRIVER
+-------
+
+- Added Driver directory off root install directory.
+  This directory contains all sound and mini-game browser binaries needed
+  for game development.
+
+
+DOCS
+-----
+
+- Added version 4.0 of Acrobat Reader
+
+- Added new docs for:
+   
+   - Net: PlanetWebStack.pdf       AccessStack.pdf
+
+   - Kmaui2: KAM2_Gde.pdf          KAM2_REF.pdf
+
+- Added slide presentations from SOE Bootcamp and SOA Network Bootcamp.
+
+SAMPLES
+--------
+
+- Renamed Katana.inc to DC.inc to fit European standard.
+
+CIM_UTL
+--------
+
+Added CIM_UTL tool which can be found in \utl\dev\CIM_UTL. This tool
+will take a .CIM file and create a GD Workshop project, or take a GD
+Workshop project and create a .CIM file.
+
+
+DA INTERFACE
+-------------
+
+Added DA INTERFACE directory which is found in \utl\dev\DAInterface
+
+This replaces the functionality of Salsa. This is an interface to the 
+debug adapter, which is the layer that Codescape was written on top of.
+
+
+GDXFLASH
+---------
+
+Added the gdxflash directory: \utl\dev\dbflash\gdxflash
+
+This directory contains the latest firmware for the GDX plus
+instructions on how to flash the unit.
+
+
+
+
+Changes from R8.1 to R9
+-----------------------
+
+The following changes have been made to Sega
+Dreamcast SDK Release 9:
+
+Audio64
+-------
+
+The audio64 driver contains three important fixes:
+
+- On certain Sega Dreamcast units bad modem
+  connections would result in the generation of
+  spurious MIDI interrupts.  This caused the
+  driver to fail.  Spurious MIDI interrupts are
+  now properly rejected by the driver.
+	
+- There was a timing problem that caused the
+  contents of AICA registers to become corrupt in
+  certain situations. This has been fixed.
+
+- Pitch shifting was broken. Subtle changes would create 
+  larger jumps. This has been fixed. acDigiSetCurrentPitch
+  now works properly. 
+  
+	
+The amSoundStop() routine will now positively stop
+the sound given it via retrying the acDigiStop()
+command with a slight pause. This ensures that
+looping sounds are stopped on the first try every
+time.
+
+KTBOOL amSoundReleaseVoiceChannel(AM_SOUND_PTR theSound)
+
+This allows the app to release a voice channel
+that was allocated to a sound that will not be
+played. If a sound is not played and a voice was
+allocated it will be lost permanently if it is not
+released.
+
+KTBOOL acIntSetMessagingMode(AC_MESSAGE_MODE
+       messageMode)
+
+Now the message handler (ARM interrupt handler)
+can either be attached to the ARM interrupt
+(async) or to the VBLANK interrupt (isync). If no
+messages have been sent by the driver the routine
+will return and do nothing.
+
+void acIntSetPollingRate(KTU32 pollingRate)
+
+This allows the polling rate of the vblank based
+message handler to be adjusted.
+
+KTBOOL acDigiGetCurrentReadPosition(volatile KTU32
+voiceChannel,volatile KTU32 *currentSampleFrame)
+
+Gets the current read position of the PCM play
+cursor in frames from the start of the buffer.
+
+void acG2FifoCheck (void);
+
+Checks the Holly and AICA FIFO's and returns when
+the FIFO's are clear.
+
+KTBOOL acG2Fill( volatile KTU32 *target, KTU8 value, KTU32 sizeInBytes);
+
+Fills an area of G2 memory, a G2 compliant version of memset()
+
+KTBOOL acG2Read (volatile KTU32 *target, volatile KTU32 *source, KTU32 	
+	sizeInBytes);
+
+KTBOOL acG2Write (volatile KTU32 *target, volatile KTU32 *source, KTU32 
+	sizeInBytes);
+
+Read or Write to G2 memory from SH4 memory.
+
+KTBOOL acG2ReadLong (volatile KTU32 *address, KTU32*value);
+
+KTBOOL acG2WriteLong (volatile KTU32*address, KTU32 value);
+
+Read and write longs to G2 memory. The read does a double read to insure that accurate values are delivered back.
+
+KTBOOL acDmaInstallHandler (AC_DMA_TRANSFER_PROC theTransferProc);
+
+Allows installation of a DMA handler, see MyDma.c
+
+KTBOOL acDmaInit (void); 
+KTBOOL acDmaShutdown (void);
+
+Called by the AM layer to init and de-init the DMA shell.
+
+KTBOOL acDmaSuspendAll			(void);
+KTBOOL acDmaResumeAll			(void);
+
+Suspend and resume all DMA calls for the G2 layer.
+
+- Boilerplate changes
+
+*** MySfx.c
+
+MyLoadBank() now allocates a temp buffer in SH4 memory as direct reads to
+AICA memory are not supported by the GDFS API.
+
+MyPlaySoundEffect() & MyPlaySoundEffectFX()
+
+Now demonstrate the use of amSoundReleaseVoiceChannel() post voice 
+allocation to free the voice on error exit from the function.
+
+*** MyStream.c
+
+This has been updated to manage its own instance memory pool.
+
+*** MyInt.c
+
+This has been updated to show the current ARM/VBLANK interrupt handler 
+and callback handler. This is not invoked by the sample code but the 
+handlers invoked are the same as these.
+
+*** MyAmSetup.c
+
+This is a new module that contains the setup code for the AM library. It 
+allows via a boolean argument the selection of ARM or VBLANK interrupt 
+driven messaging.
+
+*** MyDma.c
+
+This contains the monolithic DMA shell proc that is installed into the 
+audio system to provide SuspendAll and ResumeAll functionality.
+
+
+Movie / Middleware
+------------------
+
+- Sample added to support movie playback with Kamui2.
+  MPEG movie playback and Kamui2 will now work together. 
+  See sample: \Sample\Movie\mw_km2
+
+- Audio64.drv updated for Duck samples.
+
+
+GNU C/C++
+---------
+
+- GCC updated to Phase 2, Final 33, ELF.
+
+- Fixes C++ debugging. Previously debugging
+  class structures through Codescape was broken. This is
+  now fixed.
+
+
+Flash Utility
+---------------
+
+- Updated GDRFlash bios to version 0.52 
+
+
+Codescape
+---------
+
+- Updated to version 145
+
+- Fixes the follwing bugs:
+
+1)  If a large file (~16Meg) that contains no 
+    linefeeds or carriage returns is dropped on 
+    to CodeScape, the debugger appears to stop.
+
+2)  In the Call Stack when the address is offset 
+    from a label it sometimes looks to chose the 
+    wrong label to offset from. The offset is still 
+    a correct / valid expression but it looks wrong.
+
+3)  If in the breakpoint configure dialog an invalid 
+    expression is entered and OK is hit. The dialog 
+    warns that the expression is invalid (this is 
+    correct), but it then disables the breakpoint 
+    and closes the dialog. 
+
+4)  The Advanced breakpoint options are not greyed out 
+    when the breakpoint type is set to software.
+
+
+Changes from R8 to R8.1 Update
+------------------------------
+
+The following changes have been made to Sega
+Dreamcast SDK Release 8:
+
+Shinobi
+-------
+
+- Shinobi.lib updated to version 1.44.
+
+- Fixed a serious bug in the syCache module which directly
+  affects movie playback.  The symptoms of the bug were:
+
+  1. Movie player may enter an infinite loop when a movie
+     is started.
+  2. Joypad input may be lost during the playback of a movie
+     and never return.
+  3. A GD-ROM read may fail and all subsequent reads fail.
+
+- Profiler.lib updated to match Shinobi.lib version 1.44.
+
+Audio64
+-------
+
+- Audio64.drv driver updated to version 1.80c.1.
+  Minor change to interrupt layer to enable host IntID writeback.
+
+- Audio64.lib matched to driver version 1.80c.1.
+  
+- Fixed a significant bug related to the shutdown and
+  re-initialization of audio drivers during playback of MPEG movies.
+  
+  The bug was discovered under the following conditions:
+
+  1. Application is loaded from a hard reset.
+  2. Audio64 driver is initialized.
+  3. Sounds are played via Audio64.
+  4. Audio64 is shutdown.
+  5. Manatee is initialized.
+  6. Occasionally, sdMultiUnitDownload() locks up
+     immediately after initialization in a call to
+     G2AicaFifoWaitEmpty().
+  7. Otherwise, the first frame of the movie may
+     play and then freeze.
+  8. Exiting out of the movie player at this point may
+     cause subsequent calls to Audio64 initialization to
+     fail with a driver mismatch error.
+
+  The cause of the error was the DSP running freely during the
+  period between shutdown and startup of audio drivers.  Under
+  certain conditions, the DSP would overwrite sound memory.
+  The fix to the Audio64 library is to clear the DSP during
+  startup and shutdown.
+
+- Audio64.lib modified for G2-bus compliency.
+
+- Support added for Store Queue writes to sound memory to improve
+  the performance of audio sample loads.
+
+- Audio64 header files [ac.h, am.h] modified to support changes
+  to driver and library.
+
+  Added acSystemClearDspRegisters()
+
+  Moved acSystemGetCurrentReadAddress() functionality to
+  acDigiGetCurrentReadPosition()
+
+  Added error check for AC_NON_32_BYTE_ALIGNED_SIZE
+
+  Chainable ARM interrupt handler exposed
+
+- All audio sample programs updated to match new driver and library
+  versions 1.80c.1.  [Assets did not change].
+
+Kamui
+-----
+
+- Ninja.lib updated with Kamui version 1.10.0.1 (Jul 09, 1999 build).
+
+- Support added for 512 line PAL video modes.
+
+  Kamui's standard PAL support is for a 640x480 display letterboxed.
+  With the new 640x480EXT video modes, the display can be stretched
+  to cover 512 lines and greater.
+
+- Kamui header files [kmapi.h kmstruct.h kmenum.h] changed:
+
+  Added kmSetPALEXTCallback()
+
+  typedef struct _tagKMPALEXTINFO
+  {
+      IN    KMDISPLAYMODE   nDisplayMode;
+      OUT   KMINT32         nPALExtMode;
+  } KMPALEXTINFO,*PKMPALEXTINFO;
+  
+- New video modes:
+
+  KM_DSPMODE_PALNI640x240EXT
+  KM_DSPMODE_PALNI640x480EXT
+  KM_DSPMODE_PALI640x480EXT
+
+  typedef enum
+  {
+      KM_PALEXT_HEIGHT_RATIO_1_033 = 0,  /* 247 || 495 */
+      KM_PALEXT_HEIGHT_RATIO_1_066 = 1,  /* 255 || 511 */
+      KM_PALEXT_HEIGHT_RATIO_1_100 = 2,  /* 263 || 527 */
+      KM_PALEXT_HEIGHT_RATIO_1_133 = 3,  /* 271 || 543 */
+      KM_PALEXT_HEIGHT_RATIO_1_166 = 4,  /* 279 || 559 */
+  } KMPALEXTHEIGHT;
+
+Kamui2
+------
+
+- Kamui2.lib updated to version 16.3.2.4 (Jul 23, 1999 build).
+
+- Support added for 512 line PAL video modes.
+
+  Kamui2's standard PAL support is for a 640x480 display letterboxed.
+  With the new 640x480EXT video modes, the display can be stretched
+  to cover 512 lines and greater.
+
+- Kamui2 header files [km2api_clb.h km2strct.h km2enum.h] changed:
+
+  Added kmSetPALEXTCallback()
+
+  typedef struct _tagKMPALEXTINFO
+  {
+      IN    KMDISPLAYMODE   nDisplayMode;
+      OUT   KMINT32         nPALExtMode;
+  } KMPALEXTINFO,*PKMPALEXTINFO;
+  
+- New video modes:
+
+  KM_DSPMODE_PALNI640x240EXT
+  KM_DSPMODE_PALNI640x480EXT
+  KM_DSPMODE_PALNI640x480FFEXT
+  KM_DSPMODE_PALI640x480EXT
+
+  typedef enum
+  {
+      KM_PALEXT_HEIGHT_RATIO_1_033 = 0,  /* 247 || 495 */
+      KM_PALEXT_HEIGHT_RATIO_1_066 = 1,  /* 255 || 511 */
+      KM_PALEXT_HEIGHT_RATIO_1_100 = 2,  /* 263 || 527 */
+      KM_PALEXT_HEIGHT_RATIO_1_133 = 3,  /* 271 || 543 */
+      KM_PALEXT_HEIGHT_RATIO_1_166 = 4,  /* 279 || 559 */
+  } KMPALEXTHEIGHT;
+
+- Kamui2_d.lib updated to match Kamui2.lib version 16.3.2.4.
+
+- Km2util.lib and Km2utl_d.lib updated to match Kamui2.lib
+  version 16.3.2.4.
+
+- Minor change made to the makefile for QuikTst2 to pass the correct
+  graphics API (KAMUI2).
+
+Movie / Middleware
+------------------
+
+- Mw_snd64 sample updated to reflect changes in Audio64 library.
+
+- Audio64.drv updated to version 1.80c.1 for Duck samples.
+
+- Official logo images added for MPEG Sofdec, ADX, and Truemotion
+  movie and streaming formats.  See the Sega publishing standards for
+  proper usage.  Images provided in ".bmp" format in 640x480 and
+  320x240 resolution with black or white backgrounds.
+
+- MPEG Sofdec movie encoders [both plug-in and stand-alone tools]
+  updated to version 1.02.
+
+  Fixes several crashing bugs
+  RGB-YUV converter optimized
+  Multiplexer sped up
+
+- Minor update to ADX encoder.  Switched from debug version to retail.
+
+Codescape
+---------
+
+- Updated CodeScape to version 2.2.0 Build 137.
+
+- Fixed the following bugs:
+
+  Active overlay was ignored in label and symbol lookup.
+
+  When the user correctly calls MWNotifyOverlayLoaded. CodeScape 
+  did not recognize that an overlay had been loaded.
+
+  Shortcuts in Overlay Management Dialog did not operate correctly.
+
+  Construction of abbreviated filenames produced extensive load times. 
+
+GD Workshop
+-----------
+
+- Updated GD Workshop to version 2.7.0f.
+
+- Important bug fix to "Save CRI script" feature.
+
+  The version of GD Workshop that shipped on R8 had a problem keeping the
+  correct order of tracks and files after items were deleted or added
+  to a project.  This update correctly exports CRI ".scr" files for use
+  with CD Craft.
+
+IP Maker
+-------
+
+- Updated IP Maker to version 1.0.3.0.
+
+- This version now allows U.S. and European product ID's to be entered
+  into the appropriate field instead of through the "Free Entry" box.
+
+- A registry file is provided to set the IP Maker tool to default 
+  settings,including English text.  Double-click on this file to install 
+  it.
+
+GNU C/C++
+---------
+
+- GCC updated to Phase 2, Final 29, ELF.
+
+- Important fix for delayed branch bug.
+
+- Fixed an "unrecognizable insn" bug in the compiler, and a related
+  assembler/disassembler bug.
+
+- Fixed a few incorrect opcodes.  These mainly affected debugger specific
+  code (instructions using the SGR and DBR registers).  Also fixed some
+  16-bit instructions (mulu.w/muls.w were specified as mulu and muls).
+
+
+Changes from R7 to R8
+---------------------
+
+This is a list of some important changes between the previous Katana
+development environment (R7) and this one.
+
+- Support for the gnu compiler and linker was added.  All 220 sample
+  programs in this release have been demonstrated to compile, link 
+  and run under the Hitachi, Metrowerks, and gnu compilers.  Developers 
+  wishing to use gcc as their primary compiler should read the file
+  gcc.faq, located in the \utl\dev\gnu\readme directory. 
+
+- Initial Kamui2 support was added.  Kamui2 is an improved, low-level
+  graphics API that provides developers fine-grained control over
+  rendering states.  It also allows developers to manage texture
+  memory themselves.
+
+  However, Kamui2 is relatively new, and backwards compatibility
+  between original Kamui applications and Kamui2 is not assured.
+  Therefore, we are simultaneously supporting Kamui and Kamui2 in this
+  release.
+
+  Our quality assurance department was unable to fact-check the
+  documentation for Kamui2 in time for general release, and so we
+  provide it here in its original format in the \doc\Kamui2 directory.
+
+- The new ginsu library was added.  Ginsu is an interface that allows
+  for easy creation of sampler-type titles, for use in kiosks or
+  demonstration versions of software.  Ginsu allows developers to
+  create limited-functionality versions of their titles and allow them
+  to be integrated gracefully onto a GD with titles from other
+  developers.  It can also be used as a general purpose menuing
+  system.  For more information, see doc\PDFs\Ginsu.pdf .
+
+- The video streaming playback samples were updated to demonstrate how
+  to do video playback using the Duck and CRI MPEG codecs, across the
+  Audio64 and Shinobi audio libraries, in conjunction with all three
+  compilers.  Each permutation of the listed tools and libraries is
+  possible with R8.
+
+- Install.txt (GetStart.pdf) was rewritten to correspond to the new
+  processes for burning GD-ROMs.  Please review this document when
+  creating a disc image for submission to Sega, as the burning process
+  can be subtle.
+
+- The DBFlash utility was updated to version 1.11, which includes some
+  user interface improvements.  DBFlash is used to update the
+  development hardware to the last versions of firmware.
+
+- New CRI-compatible MPEG compressors were added.  This release
+  includes the MPEG video compressor from Panasonic Wondertainment,
+  and an MPEG export plugin for Adobe Premiere.
+
+- Fifteen sample programs were included to demonstrate how to program
+  the Visual Memory Unit, or VMU, as a separate development
+  environment.
+
+- sbinit.c was updated to work around a compiler bug where a
+  semaphore is not correctly handled in the P2 area:
+
+	    _mp_SemaphoreAddress |= 0xA0000000;
+
+- A submittable version of warning.da was added.  Developers will use
+  this sound file in track 2 (CDDA) to warn people that the disc should
+  not be played on standard CD players.
+
+- Previous versions of the memcpy() function supplied in the Hitachi
+  libraries failed to copy aligned structures of 256 bytes correctly.
+  This has been fixed.
+
+- Shinobi header files were wrapped with #ifdef __cplusplus blocks to
+  work correctly with the gcc compiler.
+
+- The audio control layer AC_CMD_PORT_PLAY_WITH_PARAMS command, was
+  added to ac.h.  In addition, the following functions were added to
+  the ac layer:
+
+  acDigiPlay (KTU32 port,KTU32 startOffset, KTS16 aicaLoopFlag)
+  
+  acDigiPlayWithParameters (KTU32 port,KTU8 volume, KTU8 pan,
+              KTU8 dspMixerChannel, KTU8 dspSendLevel, KTU32
+              eventRequestAddress, KTU16 loopStartAddress, KTU16
+              loopEndAddress)
+  
+  acDigiPlayWithLoopParameters (KTU32 port,KTU32 startOffset,
+              KTS32 aicaLoopFlag,KTU16 loopStartAddress,KTU16
+              loopEndAddress)
+
+- Functions were added to the am layer to support MIDI playback.
+  However, most of these functions are stubbed at this time.  If you
+  require MIDI support for your title, please contact us at
+  dts@sega.com .
+
+- Metrowerks support of iostreams has been totally overhauled.  
+
+- The parameters of the kdInitSystem() function were reversed:
+
+  kdInitSystem(void* recvbuf, void* sendbuf);
+
+- The following functions were added to kaede.h to support the
+  development of lower-cost lightguns:
+
+  void kdSetGunTrigger(Uint32 port);
+  void kdSetGunCallback(Sint32 (*func)(void));
+  void kdSetHandler(Uint32 num, void (*func)(void));
+
+- Across all sample programs, sbinit.c was modified to support the gcc
+  code startup conventions.
+
+- Some new sample programs (CheapBump and Dragonfly) have been added to
+  the kmDemo folder, courtesy of VideoLogic.
+
+- The new Kamui initialization function, kmInitDevice(), is supported.
+  New code should use this function, as it is more flexible.
+
+- The following function was added to sg_sycfg.h:
+
+  Sint32 syCfgGetDefaultLanguage( Sint32* ) ;
+
+- The following function was changed in sg_sd.h:
+
+  EXTERN SDE_ERR sdDrvGetErr( Uint32 *err);
+
+- More comments were added to sg_pdvib.h to describe the use of the 
+  force feedback functionality (vibration unit) of Dreamcast.  
+  Additionally,  the comments in sg_pad.h were cleaned up.
+
+- A macro, MWD_PLY_LATENCY, was added to mw_sfd.h to support the 2V
+  versus 3V latency modes for Kamui playback.
+
+- A new CellSprite data format was added to Ninja in the njdef.h section
+  to support streaming of video surfaces into layered sprites.
+
+- Support for several new VGA display modes was added to Ninja:
+
+  320x240 VGA
+  320x480 VGA
+  640x240 VGA
+  
+  Flicker filtering is optional for each mode.
+
+- The njDrawPolygon3DEx() series of functions was added to ninjaapi.h. 
+  This series of functions permits buffering and batch rendering of
+  simple 3D primitives.
+
+Changes from R6 to R7
+---------------------
+
+- C++ support was added, in the form of the Metrowerks CodeWarrior
+  compiler and IDE environment.  Full documentation is supplied in PDF
+  format.  Most sample programs in this release have been demonstrated
+  to cross compile within the Metrowerks environment; for your
+  convenience, CodeWarrior projects have been added to most sample
+  programs.
+
+- The process for building Shinobi programs was redesigned.  Microsoft
+  Visual Studio is no longer required in order to build or run the
+  sample programs included in this release.  Instead, the build
+  process is designed around the freely redistributable gnu make
+  (gmake.exe) utility for Win32.  Source code for the utility is
+  included for your convenience.
+
+- Set 5.23 development hardware support was removed from this release.
+  You can check the version of development hardware you're using by
+  looking at the first four characters of the serial number of the
+  unit, located on the bottom of the development system.  If you are
+  still developing using Set 5.23, please contact your account manager
+  for an upgrade.
+
+- The firmware for the Set 5.24 system was updated.  Your development
+  system should be reflashed with the images included in this release:
+
+    Debug adapter firmware (genie.fsh): 4.6.0a
+    GD-M firmware (gm2_6_0h.fsh): 2.6.0h
+    Boot ROM firmware (btrf5001.bin): 1.001 
+
+  This process happens automatically if a Set 5.24 system is connected
+  to your development PC when you install R7.  The DBFlash utility is
+  used to do this reflash, but DACheck can be used to reflash and
+  check the debug adapter and GD-M.  For more information, see the
+  \utl\dev\dbflash folder.
+
+- Thirteen sample programs that demonstrate how to program the Visual
+  Memory Unit (VMU) were added to the release, in
+  \utl\dev\vmstools\sample.  These programs have not been tested and
+  are provided for reference only.
+
+- Movie compression and playback support was added to the release.
+  Fifteen sample programs demonstrating the CRI MPEG and TrueMotion
+  Duck codecs have been added to the \sample\movie folder, and
+  compressors have been added to the \utl\gfx\conv\movie folder.
+
+- There are now over 170 sample programs in this release.  Of
+  particular interest is ScrnGrab, which demonstrates how to capture
+  the current video frame and save it to the filesystem.  Useful for
+  creating screenshots for magazines.
+
+- CD Craft was added to the release, in the \utl\dev\cdcraft folder.
+  It is expected that this command-line tool will assist developers in
+  burning GD-ROMs for testing purposes.  CD Craft does not require
+  that a Set 5.24 system be attached to the SCSI bus in order to burn
+  a GD-ROM.
+
+  This tool was a late addition to the release.  If you do not need to
+  set up a separate station for burning GD-ROM images, please continue
+  to use GD Workshop for this purpose.
+
+- The documentation was overhauled.  Information was added and video
+  play, targeting Dreamcast, the Metrowerks IDE, the Ginsu programming
+  library, Codescape scripting, and getting started with Dreamcast.
+
+- Newly developed, detailed technical presentations were added to
+  \doc\training.  Information is also included about developing using
+  Microsoft's Windows CE for Dreamcast (available separately).  For
+  your convenience, PowerPoint and Word viewer programs were added to
+  \doc\training\viewers .
+
+- The new Audio64 library was added.  This is a new driver interface
+  for allowing developers to play 64 sound samples simultaneously
+  using the AICA engine.  There are two APIs for this interface,
+  implemented in ac.h and am.h.  This library does not require the use
+  of Macintosh tools in order to generate sound content.  To support
+  the Audio64 library, five command-line tools for processing audio
+  were added to \utl\snd\pc.  Additionally, two sample programs
+  showing how to use the new interface were added to \sample\audio64.
+
+- The release directory structure was overhauled to move most commonly
+  used items nearer to the root of the release.
+
+- The IPMaker utility was added into \utl\dev\ipmaker .  This utility
+  allows you to generate IP.BIN files, which are required for disc
+  verification, security, and testing.
+
+- The method for checking for the output type -- VGA, NTSC or PAL --
+  was redesigned.  The sg_sycbl.h file was updated, and the
+  syCblCheck() function is now available for this purpose.
+
+- Scripting support was added to GD Workshop and Codescape, via the
+  Windows Scripting Host.  If you have not added scripting capability
+  to your development PC, we have provided the self-extracting
+  executables for this support in \utl\dev\scripting .
+
+- The Hitachi linker automatically aligns certain data types that the
+  Metrowerks compiler does not necessarily need to align.  Due to the
+  fact that some Shinobi libraries (such as Kamui) expect their data
+  types to be naturally aligned, the following bit of code was added
+  to samples to force the Metrowerks linker to make them work:
+
+    #ifdef  __MWERKS__
+    #pragma align (4);
+    #endif
+
+  Kamui structures that previously happened to be allocated naturally
+  at 32-byte aligned addresses should be forced to allocate at 32-byte
+  addresses, if the CodeWarrior compiler is being used.  For an example
+  of this, see the QTDirect sample program.
+
+- Most sample programs rely on sbinit.c in order to initialize the
+  filesystem.  This initialization previously failed if the filesystem
+  for some reason became unavailable (for example, when a user removes
+  the disc).  As a result, sbinit.c has been updated in all sample
+  programs to poll the filesystem initialization function gdFsInit(),
+  and if the filesystem does not respond after 8 tries, the program
+  exits gracefully.  All shipping Dreamcast programs must behave
+  similarly.
+
+- The teapot and f40 sample programs were updated to demonstrate the
+  correct way to check for the presence of a VGA versus NTSC displays.
+  Additionally, QuikTest was updated to support PAL displays.
+
+- The 3DS2Kamui tool, kindly supplied by VideoLogic, supports several
+  new features.  Mesh animation, camera animation, UV transformations
+  from materials, smoothing groups, texture export, online help, and
+  #defines to indicate that a structure has been exported, have all
+  been added to the tool.
+
+  Normals are now renormalized before export, a bug in names export
+  was fixed, and mesh export was rewritten to be more robust.
+
+  Known limitations of the plugin include the following.  Exported
+  materials only include the names of all textures, diffuse, specular
+  and ambient colors, shininess, shininess strength, opacity, and
+  shading type.  Animation doesn't support mesh morphing.  Face
+  mapping (a special type of UV mapping) is not supported.  Textures
+  are exported as RGB 24 bit bitmaps only.  The camera does not export
+  ROL info.  Fans are not supported by the stripping algorithm.
+
+- A .pvr texture exporter from Photoshop was added to
+  \utl\gfx\phtoshop .
+
+- Shinobi include files were #ifdef'ed to prevent accidental recursive
+  inclusion.
+
+- The bool type, defined in sg_xpt.h, was redefined to Bool, which is
+  in turn #define'd to Sint32.  Note that CodeWarrior defines the type
+  bool (lowercase b) to have a sizeof 1, and Hitachi C defines the type
+  bool to have a sizeof 4.
+
+- The libcross library for debug output was slightly modified so that
+  most I/O functions, such as _write(), have been prefixed with
+  _debug, e.g. _debug_write().  This is to avoid name conflicts with
+  developer libraries.  See the memtest sample program for an example.
+
+- The ld_ext() function now generates a warning if the type passed
+  in is not (void *). 
+
+- Return values of the pdGetPeripheral() function are now cast to
+  (PDS_PERIPHERAL *) to avoid compiler warnings.
+
+- It's now possible for the application program to detect the 
+  country code of the target Dreamcast system.  The following
+  functions were added to sg_sycfg.h:
+ 
+    syCfgGetCountryCode  ( Sint32* ) ;
+    syCfgGetCountryCode  ( Sint32* ) ;
+    syCfgGetLanguage     ( Sint32* ) ;
+    syCfgGetBroadcastType( Sint32* ) ;
+    syCfgGetShortIndividualID( Sint8* ) ;
+    syCfgGetIndividualID( Sint8* ) ; 
+
+- The following types were added to sg_pad.h:
+
+    #define PDD_DEVTYPE_LIGHTGUN     (1 << 7)
+    #define PDD_DEVTYPE_VIBRATION    (1 << 8)
+
+- A function was added, gdFsIsTrayOpen(), to allow your application to 
+  check whether the GD-ROM tray has been opened by the user.
+
+- Several functions were deleted from the gdfs interface.
+  gdFsLoadDirFast(), gdFsChangeDirFast(), and gdFsOpenFast() are no
+  longer supported.
+
+- The Hitachi C compiler was updated.  Of particular importance are
+  the following fixes:
+
+  - A memory overflow error that occurred with very large arrays of
+    literal values was fixed.
+
+  - The compiler emitted illegal opcodes when the argument to some
+    builtin functions additionally made a register store.  This has
+    been fixed.
+
+  - The preprocessor choked on some complex typed expressions such as
+    (char *) cp = &(*char *)0xb804000).  This has been fixed.
+
+  - Several optimization improvements have been added which can map
+    structures into registers.
+
+  - Literal character strings can now be 32767 characters long.
+
+  - The compiler can align data types to 32 bytes.  Use
+    #pragma aligndata32 to force this.
+
+  - C++-style comments, //, are now supported.
+
+  - By default, the compiler now no longer spews a copyright message
+    on startup.
+  
+  - Floating point constants (such as 1.0f) can now be placed into a
+    literal pool for use by assembly functions.  Previously, the
+    preprocessor did not handle floats correctly.
+
+- The following functions were added to Ninja:
+
+   void njRenderStart( void );
+   void njFlipFrameBuffer( void );
+   void njSetEORCallBackFunction( void (*func)(void) );
+   void njGetSystemInfo(NJS_SYSTEMINFO *info);
+   void njMemCopy8( void *dst, const void *src, Sint32 num );
+   void njMemCopy16( void *dst, const void *src, Sint32 num );
+   void njMemCopy32( void *dst, const void *src, Sint32 num );
+   void njMemCopySQ( void *dst, const void *src, Sint32 num );
+   Sint32 njReLoadTexturePartNum(Uint32 n,Sint8 *addr,Uint32 offset,
+	  Uint32 size);
+   Sint32 njReLoadTexturePartNumG(Uint32 globalIndex,Sint8 *addr,
+	  Uint32 offset,Uint32 size);
+   Sint32 njLoadTextureReqStop(void);
+   void njGarbageTexture(NJS_TEXMEMLIST *addr,Uint32 n);
+   Sint32 njReadTextureNum(Uint32 n,Sint8 *addr);
+   Sint32 njReadTextureNumG(Uint32 globalIndex,Sint8 *addr);
+   Uint32 njCalcTextureSize(Uint32 nWidth,Uint32 nHeight,
+	  Uint32 nTextureType);
+   void njSetTextureParam(NJS_TEXMEMLIST *texmemlist);
+   void njCameraMotionOld(NJS_CAMERA *camera, NJS_MOTION *motion, 
+	Float frame );
+   void njCameraActionOld(NJS_CACTION *caction, Float frame );
+   Uint32 njGetPaletteMode(void);
+   void njGetPaletteData(Sint32 offset,Sint32 count,void* data);
+   Sint32 njReLoadTexturePartNum(Uint32 n,Sint8 *addr,Uint32 offset,
+	  Uint32 size);
+   Sint32 njReLoadTexturePartNumG(Uint32 globalIndex,Sint8 *addr,
+	  Uint32 offset,Uint32 size);
+
+- Nindows now supports the use of a Maple bus mouse.  See nindows.h.
+
+- Several keywords were removed from the Ninja file format, and the
+  3-D model exporters were updated to reflect this fact.  As a result,
+  the following Ninja samples were removed from this release:
+
+    Logo
+    Temjin
+    Motlink
+    Simple
+
+  Ninja models created with older versions of art tools will need to
+  be re-exported in order to work correctly with R7.  (Files with an
+  .nja and .nam extension created with R6 will not work with R7.)
+
+- Kanji characters were cleaned out of a few of the sample programs.
+
+- Shinobi header files had an #ifdef'd extern "C" declaration added to
+  support compilation by CodeWarrior.
+
+- Codescape, GD Workshop, and DACheck were all updated.  Check the 
+  release notes accompanying each tool for details.
+
+Changes from R5 to R6
+---------------------
+
+- A first version of a 3D Studio Max R2 to Kamui converter was added
+  to the \utl\gfx\conv\pc\3ds2kamui directory.  Special thanks to 
+  Videologic for supplying this early version.
+
+- Macintosh-based sound conversion, layout and processing tools were
+  added to the \utl\snd\mac directory.  The Macintosh archive in this
+  directory contains four programs for use with the Katana Sound Box.
+  The .bin file may be decompressed with StuffIt for the Macintosh.
+  PC-based conversion and processing tools will be supported in a
+  future release.
+
+- Early versions of the MPEG Sofdec video compression tools were added
+  at the last minute, for experimentation purposes only; QA testing
+  has shown them to be unreliable.
+
+- The Hitachi SH-C compiler was updated to R32.  elf2bin was updated
+  to 0.83.  prfdump was updated to 0.83.  GD-Workshop was updated to
+  46a.  Disk padding is now handled correctly.  The four-second track
+  check during a GD-ROM burn was removed.  Codescape was updated to
+  build 106.
+
+- Initial support for the vibration peripheral was added to kaede.h,
+  in the form of the KDD_FUNC_VIBRATION constant.
+
+- The following Kamui samples were added:
+
+    kmBlend kmCyberk kmCybr2v kmFlight kmflgt2v kmGasfl kmGas2v kmLogo
+    kmLogo2v kmMarble kmNefert kmNef2v kmSample kmSeal kmSeal2v
+    kmSpace kmStaind kmStnd2v kmStrips kmToyp kmToyp2v kmTrees
+    TableFog VertFog
+
+- The following Kamui demos were added:
+  
+    Fortune Knot Scanner Siberian Trilinear Vase Wrace
+
+  These excellent demonstrations were written by VideoLogic and Sega
+  wishes to express its gratitude for allowing these programs to be
+  included in this release.
+
+- The following Ninja samples were added:
+
+    CnkFlat DoorOpn MCLight2
+
+- Training content and information for Dreamcast was added to the 
+  \doc\training directory.  Also included are Word 97 and PowerPoint
+  viewing programs, which are freely redistributable.  Three sample
+  programs were included as training support.
+
+- The sfd_mw.h header was modified to 1.01, and includes functions for
+  determining and working with audio buffers, and setting display size
+  and playback.  Also, sg_mwply.h was completely overhauled, and a
+  MWD_PLY_ALLOC_SJBUF() function was added to wav_mw.h.
+
+- buRewriteExecFile() was added to sg_bup.h.
+
+- Digital audio support was added in the form of the GDFS_DAINFO
+  struct in sg_gd.h.
+
+- The sbrk() function is no longer supported; use syMalloc() and
+  syFree().
+
+- The syBtXXX() series of functions was added to sg_sybt.h for
+  accessing the boot ROM service and checking the system ID.
+
+- The following Ninja functions were added:
+
+void njCnkSimpleMultiDrawModel( NJS_CNK_MODEL *model );
+void njCnkSimpleMultiDrawObject( NJS_CNK_OBJECT *model );
+void njCnkSetSimpleMultiLight(Int num);
+void njCnkSetSimpleMultiLightSwitch(Int light, Int flag);
+void njCnkSetSimpleMultiAmbient(Float ar, Float ag, Float ab);
+void njCnkSetSimpleMultiLightColor(Int light, Float lr, Float lg, 
+     Floatlb);
+void njCnkSetSimpleMultiLightVector(Float vx, Float vy, Float vz);
+void njCnkSetSimpleMultiLightPoint(Int light, Float px, Float py, Float 
+     pz);
+void njCnkSetSimpleMultiLightRange(Int light, Float nrange, Float 
+frange);
+void njCnkSetSimpleMultiLightMatrices(void);
+void njChangeTextureMemorySize(Uint32 size );
+void njGarbageTexture(NJS_TEXMEMLIST *addr,Uint32 n);
+NJS_TEXERRSTAT *njGetTextureErrStat(void);
+
+- Support for bootable BIN files and CPP browser info was added to
+  katana.inc.  Due to an incompatibility with one of the sample
+  programs, support for targets with spaces in the target names was
+  removed from katana.inc.
+
+- The QuikTest sample program underwent a major cleanup.
+
+Changes from R4 to R5
+---------------------
+
+Hardware
+--------
+
+- Your Set 5.2x system contains a CLX2 graphics chip and an SH-4 CPU.
+  The performance of this hardware is roughly equivalent to the
+  performance of the final production unit.  You can begin hardware
+  performance testing with this development hardware.  However, please
+  keep in mind that we will continue optimizing software performance,
+  including further compiler optimizations.
+
+  The speed of translucency sorting with the new "punch through"
+  vertex format has been improved by approximately 4x.  This vertex
+  format allows polygons with 1 bit of translucency information (i.e.,
+  the polygon is either opaque or translucent at any point) to be
+  drawn nearly as fast as standard opaque polygons.  Kamui now
+  supports this type of vertex format.
+
+- This development hardware supports audio and MIDI output.  Some
+  sample content has been included for your experinmentation.
+
+Kamui
+-----
+
+- The process for loading textures in Kamui has changed slightly.
+  Kamui assumes that there exists a 16-byte header in any loaded .pvr
+  file and therefore skips this memory area.  Additionally, the Kamui
+  texture data must be 32-byte aligned for DMA purposes.  Therefore,
+  it is necessary to manually align texture data in system memory to
+  16(2n + 1) byte boundaries before attempting to use it in Kamui.
+
+- Additionally, files must be loaded on 32-byte aligned memory 
+  addresses as well.  Currently, the first range of memory allocated
+  by Shinobi's memory allocation routine happens to be 32-byte aligned.
+  However future allocations are not necessarily aligned.  Please 
+  keep this in mind if you're writing your own file loader.
+
+- The method of determining the video output device (VGA or NTSC)
+  has changed.  You can use the Ninja sbInitSystem() function to
+  determine whether a VGA cable is attached.
+
+- A number of Kamui functions have been replaced by macros.  In
+  particular, the kmStartVertexStrip() function has been replaced
+  by kmxxGetCurrentPtr(), kmxxStartVertexStrip(), kmxxSetVertex_0(),
+  and kmxxReleaseCurrentPtr().
+
+- Kamui kas a new way to display text characters to the display, which
+  is defined in dispstr.h.  Most of the Kamui sample programs use this
+  new method.  The printf() function used in Codescape was
+  demonstrated to be unreliable a few days before the code freeze
+  date; we suggest you try using the dispstr.h method for this
+  release.
+ 
+- The sbinit.c stubs have been heavily modified to support the GD-ROM
+  file system, to automatically determine the end of work RAM from
+  linker information, and to automatically use the default Dreamcast 
+  controller instead of the old-style Maple peripheral box.  
+  Additionally, sbinit.c now takes care of timer initialization and 
+  interrupt control.
+
+- Twenty-one new Kamui sample programs have been added.
+
+Ninja
+-----
+
+- Ninja now supports a chunk format model file for improved rendering
+  speed.  All Ninja exporters support this format, and a command-line
+  utility (NJAConv.exe) exists to convert Ninja models into the new
+  format.  Old format Ninja models are still supported by the library.
+  The new chunk format functions are prefixed with "njCnk".  See
+  ninjaapi.h and ninjacnk2.h for a list of these functions.
+
+- Ninja now uses a callback scheme to propagate errors to the caller.
+  See ninjadef.h for details.
+
+- Ninja now supports clipping to user-definable regions.  See the
+  tileclip Ninja example to see how this works.
+
+- Thirty-two new Ninja sample programs have been added.
+
+Build environment
+-----------------
+
+- The compilation process no longer halts on link warnings.  To change
+  this behavior, modify the HALT_ON_LINK_WARNINGS variable in
+  katana.inc.
+
+- _CLX_ and _CLX2_ must be defined for Kamui sample programs to build.
+
+- Single and double precision constants in float.h have been
+  overhauled.
+
+- A "Start a new compilation environment" icon is added to the desktop
+  as part of a standard installation, along with Codescape and GD
+  Workshop icons.  (This feature can be disabled by executing a Custom
+  installation.)
+
+Codescape
+---------
+
+- Codescape now requires the presence of binary files, usually IP.BIN
+  and IP0000.BIN, in order to build an executable GD-ROM image.  These
+  files contain peripheral support and other information about your
+  title; you will need to compile your own versions of these files.
+  See the Shinobi example program.
+
+- Codescape now supports code profiling; this functionality was broken
+  in R4.
