@@ -11,7 +11,7 @@ You need the following to get this program working :
 
 * List of programs
 
-\- AICA : ARM7TDMI based sound chipe<br>
+\- AICA : ARM7TDMI based sound chip<br>
 \- BOOT : startup code and disc images<br>
 \- CONTROLR : controllers and maple bus<br>
 \- CPU : Hitachi SH-4 CPU @ 200 MHz<br>
